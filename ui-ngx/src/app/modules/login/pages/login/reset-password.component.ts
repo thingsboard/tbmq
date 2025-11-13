@@ -28,7 +28,7 @@ import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle }
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { AsyncPipe } from '@angular/common';
 import { ToastDirective } from '@shared/components/toast.directive';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatInput } from '@angular/material/input';
@@ -54,7 +54,9 @@ import { MatButton } from '@angular/material/button';
     MatInput,
     MatButton,
     RouterLink,
-    TranslateModule
+    TranslateModule,
+    MatSuffix,
+    MatPrefix
   ],
   styleUrls: ['./reset-password.component.scss']
 })
