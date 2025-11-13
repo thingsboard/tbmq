@@ -43,8 +43,9 @@
                 </tb-copy-button>
                 @if (showWarningIcon(entity)) {
                   <section class="tb-warning-icon">
-                    <mat-icon (click)="gotoDocs('security/#authentication')"
-                      [matTooltip]="tooltipContent(entity.key)">
+                    <mat-icon (click)="gotoSecurityDocs()"
+                              class="cursor-pointer"
+                              [matTooltip]="tooltipContent(entity.key)">
                       warning
                     </mat-icon>
                   </section>

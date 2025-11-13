@@ -45,6 +45,7 @@ import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
 import { PageLink } from '@shared/models/page/page-link';
 import { of } from 'rxjs';
+import { HelpLinks } from '@shared/models/constants';
 
 @Component({
     selector: 'tb-card-config',
@@ -97,8 +98,9 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     return columns;
   }
 
-  gotoDocs(page: string){
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
+  gotoSecurityDocs() {
+    const link = HelpLinks.linksMap.securitySettings + '/#authentication'
+    window.open(link, '_blank');
   }
 
   transformValue(entity: BrokerConfigTableParam): string {
