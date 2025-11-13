@@ -58,6 +58,7 @@
                         [class.!hidden]="!(changePassword.get('newPassword').errors
                                           && !changePassword.get('newPassword').hasError('hasWhitespaces')
                                           && !changePassword.get('newPassword').hasError('samePassword')
+                                          && !changePassword.get('newPassword').hasError('alreadyUsed')
                                           && changePassword.get('newPassword').touched)"
                         class="tb-error">
                 warning
@@ -171,7 +172,7 @@
           </button>
           <button mat-raised-button color="primary"
             type="submit"
-            [disabled]="(isLoading$ | async) || !(changePassword.dirty || changePassword.touched)">
+            [disabled]="(isLoading$ | async) || !(changePassword.dirty || changePassword.touched) || changePassword.get('newPassword').errors || changePassword.get('newPassword2').errors">
             {{ 'profile.change-password' | translate }}
           </button>
         </div>
