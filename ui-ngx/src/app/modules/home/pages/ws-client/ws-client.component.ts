@@ -25,7 +25,7 @@ import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
-import { MediaBreakpoints } from '@shared/models/constants';
+import { HelpLinks, MediaBreakpoints } from '@shared/models/constants';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { SettingsService } from '@core/http/settings.service';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
@@ -47,6 +47,7 @@ export class WsClientComponent extends PageComponent implements OnInit {
 
   connections: Observable<WebSocketConnectionDto[]>;
   layoutSingleColumn = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
+  connectionHelpLink = HelpLinks.linksMap.connection;
 
   private connectConnection = false;
 

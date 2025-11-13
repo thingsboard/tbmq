@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
+import { HelpLinks } from '@shared/models/constants';
 
 @Component({
     selector: 'tb-card-title-button',
@@ -45,7 +46,8 @@ export class CardTitleButtonComponent implements AfterViewInit {
     this.router.navigate([this.title().link]);
   }
 
-  gotoDocs(){
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title().docsLink}`, '_blank');
+  gotoDocs() {
+    const link = HelpLinks.linksMap[this.title().docsLink];
+    window.open(link, '_blank');
   }
 }

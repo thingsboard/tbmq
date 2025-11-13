@@ -31,12 +31,9 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class HomeCardsTableComponent {
 
-  readonly isLoading$ = input<Observable<boolean>>();
   readonly cardType = input<HomePageTitleType>();
   readonly latestValues = input<ClientSessionStatsInfo | ClientCredentialsInfo>();
   readonly config = input<HomeCardFilter[]>();
-  readonly docsLink = input<string>();
-  readonly docsTooltip = input<string>();
 
   constructor(private router: Router) {
   }

@@ -56,7 +56,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'mqtt-client-session.sessions',
         tooltip: 'mqtt-client-session.sessions',
         link: 'sessions',
-        docsLink: 'user-guide/ui/sessions'
+        docsLink: 'sessions'
       }
     ],
     [
@@ -65,7 +65,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'mqtt-client-credentials.credentials',
         tooltip: 'mqtt-client-credentials.credentials',
         link: 'authentication/client-credentials',
-        docsLink: 'user-guide/ui/mqtt-client-credentials'
+        docsLink: 'clientCredentials'
       }
     ],
     [
@@ -73,7 +73,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'home.config',
         tooltip: 'home.config',
-        docsLink: 'user-guide/ui/monitoring/#config'
+        docsLink: 'monitoring'
       }
     ],
     [
@@ -82,7 +82,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'kafka.brokers',
         tooltip: 'kafka.brokers',
         link: 'kafka/brokers',
-        docsLink: 'user-guide/ui/monitoring/#kafka-brokers'
+        docsLink: 'monitoringKafkaBrokers'
       }
     ],
     [
@@ -91,7 +91,6 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'kafka.topics',
         tooltip: 'kafka.topics',
         link: 'kafka/topics',
-        docsLink: 'user-guide/ui/monitoring/#kafka-topics'
       }
     ],
     [
@@ -100,7 +99,6 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'kafka.consumer-groups',
         tooltip: 'kafka.consumer-groups',
         link: 'kafka/consumer-groups',
-        docsLink: 'user-guide/ui/monitoring/#kafka-consumer-groups'
       }
     ],
     [
