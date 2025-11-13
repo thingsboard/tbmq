@@ -36,9 +36,9 @@ import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { AsyncPipe, TitleCasePipe, DatePipe } from '@angular/common';
+import { AsyncPipe, TitleCasePipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTabGroup, MatTab, MatTabContent } from '@angular/material/tabs';
+import { MatTabGroup, MatTab, MatTabContent, MatTabChangeEvent } from '@angular/material/tabs';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -57,7 +57,7 @@ export interface SessionsDetailsDialogData {
     selector: 'tb-sessions-details-dialog',
     templateUrl: './sessions-details-dialog.component.html',
     styleUrls: ['./sessions-details-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe, NgTemplateOutlet]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
@@ -66,10 +66,11 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
-  selectedTab: number;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   clientCredentials = '';
+  selectedTab = this.data.selectedTab || 0;
+  loadedTabs: boolean[] = [(this.selectedTab === 0), (this.selectedTab === 1), (this.selectedTab === 2)];
 
   private mqttVersionTranslationMap = MqttVersionTranslationMap;
 
@@ -89,7 +90,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
-    this.selectedTab = this.data.selectedTab || 0;
     this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }
@@ -163,7 +163,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     );
   }
 
-  onTabChange(): void {
+  onTabChange(event: MatTabChangeEvent): void {
+    this.loadedTabs[event.index] = true;
     this.entityForm.get('subscriptions').updateValueAndValidity();
   }
 
