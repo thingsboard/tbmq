@@ -18,7 +18,7 @@
 <form class="mat-content flex flex-col" style="padding: 16px 8px 8px 8px;" (ngSubmit)="apply()">
   <ng-container *ngTemplateOutlet="subscriptionOptions"></ng-container>
   <div class="tb-panel-actions flex flex-row items-center justify-end" style="padding: 24px 0 0 16px;">
-    <button type="button"
+    <button type="button" color="primary"
       mat-button
       (click)="cancel()">
       {{ 'action.cancel' | translate }}
