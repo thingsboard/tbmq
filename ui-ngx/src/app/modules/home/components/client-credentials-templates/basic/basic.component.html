@@ -26,15 +26,6 @@
         [class.!hidden]="!credentialsMqttFormGroup.get('clientId')?.value?.length"
         [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
-      <button mat-icon-button matSuffix
-        [class.hidden]="disabled()"
-        [matTooltip]="'action.regenerate' | translate"
-        matTooltipPosition="above"
-        (click)="regenerate('clientId')">
-        <mat-icon>
-          autorenew
-        </mat-icon>
-      </button>
       <mat-icon matSuffix
                 matTooltipClass="tb-error-tooltip"
                 matTooltip="{{ 'mqtt-client-credentials.client-id-or-user-name-required' | translate }}"
@@ -42,6 +33,13 @@
                 class="tb-error">
         warning
       </mat-icon>
+      <button mat-icon-button matSuffix
+              [class.hidden]="disabled()"
+              [matTooltip]="'action.regenerate' | translate"
+              matTooltipPosition="above"
+              (click)="regenerate('clientId')">
+        <mat-icon>autorenew</mat-icon>
+      </button>
     </mat-form-field>
     <div class="flex flex-col">
       <div class="flex flex-row xs:flex-col gt-xs:gap-2">
@@ -49,18 +47,9 @@
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
           <tb-copy-button matSuffix
-            [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
-            [copyText]="credentialsMqttFormGroup.get('userName').value">
+                          [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
+                          [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
-          <button mat-icon-button matSuffix
-            [class.hidden]="disabled()"
-            [matTooltip]="'action.regenerate' | translate"
-            matTooltipPosition="above"
-            (click)="regenerate('userName')">
-            <mat-icon>
-              autorenew
-            </mat-icon>
-          </button>
           <mat-icon matSuffix
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'mqtt-client-credentials.client-id-or-user-name-required' | translate }}"
@@ -68,6 +57,13 @@
                     class="tb-error">
             warning
           </mat-icon>
+          <button mat-icon-button matSuffix
+                  [class.hidden]="disabled()"
+                  [matTooltip]="'action.regenerate' | translate"
+                  matTooltipPosition="above"
+                  (click)="regenerate('userName')">
+            <mat-icon>autorenew</mat-icon>
+          </button>
         </mat-form-field>
         @if (!entity()?.id) {
           <mat-form-field class="flex flex-1">
