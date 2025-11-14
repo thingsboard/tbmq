@@ -35,6 +35,7 @@ import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/ro
 import { Injectable } from '@angular/core';
 import { mergeMap, Observable, of } from 'rxjs';
 import { AuthService } from '@core/http/auth.service';
+import { ActionAuthUpdateUserDetails } from '@core/auth/auth.actions';
 
 @Injectable()
 export class UsersTableConfigResolver {
@@ -88,7 +89,16 @@ export class UsersTableConfigResolver {
     this.config.deleteEntitiesTitle = count => this.translate.instant('user.delete-users-title', {count});
     this.config.deleteEntitiesContent = () => this.translate.instant('user.delete-users-text');
     this.config.loadEntity = id => this.adminService.getUser(id);
-    this.config.saveEntity = user => this.adminService.saveUser(user);
+    this.config.saveEntity = user => this.adminService.saveUser(user).pipe(
+      mergeMap(userDetails => {
+        const currentUser = getCurrentAuthUser(this.store);
+        if (currentUser && currentUser.userId === userDetails.id && currentUser.sub !== userDetails.email) {
+          this.authService.refreshJwtToken(false);
+        }
+        this.store.dispatch(new ActionAuthUpdateUserDetails({ userDetails }));
+        return of(userDetails);
+      })
+    );
     this.config.deleteEntity = id => this.adminService.deleteUser(id);
 
     this.config.entitiesFetchFunction = pageLink => this.adminService.getUsers(pageLink);

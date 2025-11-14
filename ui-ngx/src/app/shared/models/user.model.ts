@@ -30,4 +30,5 @@ export interface AuthUser {
   scopes: string[];
   userId: string;
   authority: Authority;
+  sub?: string;
 }

@@ -39,6 +39,7 @@ import { MatOption } from '@angular/material/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { AuthService } from '@core/http/auth.service';
 
 @Component({
     selector: 'tb-profile',
@@ -55,6 +56,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
   constructor(protected store: Store<AppState>,
               private route: ActivatedRoute,
               private adminService: UserService,
+              private authService: AuthService,
               private translate: TranslateService,
               public dialog: MatDialog,
               public dialogService: DialogService,
@@ -97,6 +99,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
           }
         }));
         this.store.dispatch(new ActionSettingsChangeLanguage({userLang: user.additionalInfo.lang}));
+        this.authService.refreshJwtToken(false);
       }
     );
   }
