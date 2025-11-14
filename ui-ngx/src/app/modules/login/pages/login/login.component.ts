@@ -28,7 +28,6 @@ import { LogoComponent } from '@shared/components/logo.component';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
-import { MatDivider } from '@angular/material/divider';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatInput } from '@angular/material/input';
@@ -42,9 +41,11 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    imports: [MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe, MatTooltip]
+    imports: [MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe, MatTooltip]
 })
 export class LoginComponent extends PageComponent {
+
+  passwordViolation = false;
 
   loginFormGroup = this.fb.group({
     username: '',
@@ -66,6 +67,8 @@ export class LoginComponent extends PageComponent {
           if (error && error.error && error.error.errorCode) {
             if (error.error.errorCode === Constants.serverErrorCode.credentialsExpired) {
               this.router.navigateByUrl(`login/resetExpiredPassword?resetToken=${error.error.resetToken}`);
+            } else if (error.error.errorCode === Constants.serverErrorCode.passwordViolation) {
+              this.passwordViolation = true;
             }
           }
         }
