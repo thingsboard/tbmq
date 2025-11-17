@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 public interface ClientLogger {
 
     default void logEvent(String clientId, Class<?> eventLocation, String eventDescription) {
-        logEvent(clientId, eventLocation, ctx -> ctx.msg(eventDescription));
+        logEventWithDetails(clientId, eventLocation, ctx -> ctx.msg(eventDescription));
     }
 
-    void logEvent(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details);
+    void logEventWithDetails(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details);
 }

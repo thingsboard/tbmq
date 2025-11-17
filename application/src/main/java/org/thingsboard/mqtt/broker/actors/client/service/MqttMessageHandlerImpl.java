@@ -129,7 +129,7 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
     private void logProcessMsg(ClientSessionCtx clientSessionCtx,
                                MsgType msgType,
                                Consumer<ClientLogContext> extra) {
-        clientLogger.logEvent(clientSessionCtx.getClientId(), getClass(), ctx -> {
+        clientLogger.logEventWithDetails(clientSessionCtx.getClientId(), getClass(), ctx -> {
             ctx.msg(PROCESS_MSG_LABEL)
                     .kv(StatsConstantNames.MSG_TYPE, msgType);
             extra.accept(ctx);

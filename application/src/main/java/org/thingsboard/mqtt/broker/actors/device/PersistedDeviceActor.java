@@ -50,7 +50,7 @@ public class PersistedDeviceActor extends ContextAwareActor {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Received {} msg.", clientId, msg.getMsgType());
         }
-        clientLogger.logEvent(clientId, getClass(), ctx -> ctx
+        clientLogger.logEventWithDetails(clientId, getClass(), ctx -> ctx
                 .msg("Process actor msg")
                 .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
         );

@@ -167,7 +167,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             }
         }
 
-        clientLogger.logEvent(clientId, getClass(), ctx -> ctx
+        clientLogger.logEventWithDetails(clientId, getClass(), ctx -> ctx
                 .msg("Received msg from client")
                 .kv(StatsConstantNames.MSG_TYPE, msgType)
         );

@@ -104,7 +104,7 @@ public class ClientActor extends ContextAwareActor {
         if (msg instanceof TimedMsg) {
             clientActorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
         }
-        clientLogger.logEvent(state.getClientId(), getClass(), ctx -> ctx
+        clientLogger.logEventWithDetails(state.getClientId(), getClass(), ctx -> ctx
                 .msg("Process actor msg")
                 .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
         );
@@ -214,7 +214,7 @@ public class ClientActor extends ContextAwareActor {
             return success;
         } finally {
             clientActorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
-            clientLogger.logEvent(state.getClientId(), getClass(), ctx -> ctx
+            clientLogger.logEventWithDetails(state.getClientId(), getClass(), ctx -> ctx
                     .msg("Finished msg processing")
                     .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
             );

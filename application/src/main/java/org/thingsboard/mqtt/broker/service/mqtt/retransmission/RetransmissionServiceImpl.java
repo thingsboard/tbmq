@@ -102,7 +102,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         MqttPendingPublish pendingPublish = newMqttPendingPublish(sessionCtx, mqttPubMsg);
         pendingPublishes.put(pendingPublish.getPacketId(), pendingPublish);
 
-        clientLogger.logEvent(sessionCtx.getClientId(), getClass(), ctx -> ctx
+        clientLogger.logEventWithDetails(sessionCtx.getClientId(), getClass(), ctx -> ctx
                 .msg("Write and flush to client")
                 .kv("msgId", mqttPubMsg.variableHeader().packetId())
                 .kv("qos", mqttPubMsg.fixedHeader().qosLevel())
@@ -127,7 +127,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     }
 
     private void sendAndFlush(ClientSessionCtx sessionCtx, MqttMessage mqttMsg) {
-        clientLogger.logEvent(sessionCtx.getClientId(), getClass(), ctx -> {
+        clientLogger.logEventWithDetails(sessionCtx.getClientId(), getClass(), ctx -> {
             ctx.msg("Retransmitting write and flush to client")
                     .kv("msgType", mqttMsg.fixedHeader().messageType())
                     .kv("msgId", extractMessageId(mqttMsg));

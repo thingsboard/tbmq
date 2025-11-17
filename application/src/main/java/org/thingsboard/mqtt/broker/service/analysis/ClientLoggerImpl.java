@@ -31,7 +31,7 @@ public class ClientLoggerImpl implements ClientLogger {
     private final AnalysisLogConfiguration config;
 
     @Override
-    public void logEvent(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details) {
+    public void logEventWithDetails(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details) {
         if (config.isDisabled() || !log.isDebugEnabled()) {
             return;
         }

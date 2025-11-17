@@ -75,7 +75,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @Override
     public void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, getClass(), ctx -> ctx
+        clientLogger.logEventWithDetails(clientId, getClass(), ctx -> ctx
                 .msg("Persisting APPLICATION msg in queue")
                 .kv("topic", queueMsg.getValue().getTopicName())
         );
@@ -85,7 +85,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         callbackProcessor.submit(() -> {
-                            clientLogger.logEvent(clientId, ApplicationMsgQueuePublisherImpl.class, ctx -> ctx
+                            clientLogger.logEventWithDetails(clientId, ApplicationMsgQueuePublisherImpl.class, ctx -> ctx
                                     .msg("APPLICATION msg acknowledged")
                                     .kv("topic", queueMsg.getValue().getTopicName())
                             );

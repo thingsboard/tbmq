@@ -67,7 +67,7 @@ public class AppMsgBufferedDeliveryStrategy implements AppMsgDeliveryStrategy {
             if (currentCount % bufferedMsgCount == 0) {
                 clientSessionCtx.getChannel().flush();
             }
-            clientLogger.logEvent(clientSessionCtx.getClientId(), getClass(), ctx -> ctx
+            clientLogger.logEventWithDetails(clientSessionCtx.getClientId(), getClass(), ctx -> ctx
                     .msg("Delivered msg to App client")
                     .kv(StatsConstantNames.MSG_TYPE, msg.getPacketType())
                     .kv("msgId", msg.getPacketId())

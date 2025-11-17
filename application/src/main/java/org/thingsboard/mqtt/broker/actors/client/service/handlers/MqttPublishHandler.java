@@ -131,7 +131,7 @@ public class MqttPublishHandler {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 
-        clientLogger.logEvent(ctx.getClientId(), getClass(), logCtx -> logCtx
+        clientLogger.logEventWithDetails(ctx.getClientId(), getClass(), logCtx -> logCtx
                 .msg("Persisting PUBLISH in queue")
                 .kv("msgId", msg.getPublishMsg().getPacketId())
                 .kv("topic", msg.getPublishMsg().getTopicName())
@@ -219,7 +219,7 @@ public class MqttPublishHandler {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 callbackProcessor.submit(() -> {
-                    clientLogger.logEvent(ctx.getClientId(), MqttPublishHandler.class, logCtx -> logCtx
+                    clientLogger.logEventWithDetails(ctx.getClientId(), MqttPublishHandler.class, logCtx -> logCtx
                             .msg("PUBLISH acknowledged")
                             .kv("msgId", publishMsg.getPacketId())
                     );
