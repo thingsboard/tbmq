@@ -31,8 +31,13 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMs
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogContext;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.function.Consumer;
 
 @Slf4j
 @Component
@@ -40,8 +45,11 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 // not thread safe for one Client
 public class MqttMessageHandlerImpl implements MqttMessageHandler {
 
+    private static final String PROCESS_MSG_LABEL = "Process msg";
+
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
+    private final ClientLogger clientLogger;
 
     @Override
     public boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef) {
@@ -49,28 +57,54 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
         keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
         switch (msgType) {
             case MQTT_SUBSCRIBE_MSG:
-                messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMsg) msg);
+                MqttSubscribeMsg subscribeMsg = (MqttSubscribeMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("topics", subscribeMsg.getTopicSubscriptions()));
+                messageHandlers.getSubscribeHandler().process(clientSessionCtx, subscribeMsg);
                 break;
             case MQTT_UNSUBSCRIBE_MSG:
-                messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMsg) msg);
+                MqttUnsubscribeMsg unsubscribeMsg = (MqttUnsubscribeMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("topics", unsubscribeMsg.getTopics()));
+                messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, unsubscribeMsg);
                 break;
             case MQTT_PUBLISH_MSG:
-                messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMsg) msg, actorRef);
+                MqttPublishMsg publishMsg = (MqttPublishMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("msgId", publishMsg.getPublishMsg().getPacketId())
+                        .kv("qos", publishMsg.getPublishMsg().getQos())
+                        .kv("topic", publishMsg.getPublishMsg().getTopicName()));
+                messageHandlers.getPublishHandler().process(clientSessionCtx, publishMsg, actorRef);
                 break;
             case MQTT_PING_MSG:
+                logProcessMsg(clientSessionCtx, msgType, ctx -> {
+                    // no extra fields for ping yet; keep hook for future
+                });
                 messageHandlers.getPingHandler().process(clientSessionCtx);
                 break;
             case MQTT_PUBACK_MSG:
-                messageHandlers.getPubAckHandler().process(clientSessionCtx, ((MqttPubAckMsg) msg).getMessageId());
+                MqttPubAckMsg pubAckMsg = (MqttPubAckMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("msgId", pubAckMsg.getMessageId()));
+                messageHandlers.getPubAckHandler().process(clientSessionCtx, pubAckMsg.getMessageId());
                 break;
             case MQTT_PUBREC_MSG:
-                messageHandlers.getPubRecHandler().process(clientSessionCtx, ((MqttPubRecMsg) msg));
+                MqttPubRecMsg pubRecMsg = (MqttPubRecMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("msgId", pubRecMsg.getMessageId()));
+                messageHandlers.getPubRecHandler().process(clientSessionCtx, pubRecMsg);
                 break;
             case MQTT_PUBREL_MSG:
-                messageHandlers.getPubRelHandler().process(clientSessionCtx, ((MqttPubRelMsg) msg).getMessageId());
+                MqttPubRelMsg pubRelMsg = (MqttPubRelMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("msgId", pubRelMsg.getMessageId()));
+                messageHandlers.getPubRelHandler().process(clientSessionCtx, pubRelMsg.getMessageId());
                 break;
             case MQTT_PUBCOMP_MSG:
-                messageHandlers.getPubCompHandler().process(clientSessionCtx, ((MqttPubCompMsg) msg).getMessageId());
+                MqttPubCompMsg pubCompMsg = (MqttPubCompMsg) msg;
+                logProcessMsg(clientSessionCtx, msgType, ctx -> ctx
+                        .kv("msgId", pubCompMsg.getMessageId()));
+                messageHandlers.getPubCompHandler().process(clientSessionCtx, pubCompMsg.getMessageId());
                 break;
             default:
                 return false;
@@ -80,11 +114,25 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
 
     @Override
     public void processPubAckResponse(ClientSessionCtx clientSessionCtx, PubAckResponseMsg msg) {
+        logProcessMsg(clientSessionCtx, msg.getMsgType(), ctx -> ctx
+                .kv("msgId", msg.getMessageId()));
         messageHandlers.getPublishHandler().processPubAckResponse(clientSessionCtx, msg);
     }
 
     @Override
     public void processPubRecResponse(ClientSessionCtx clientSessionCtx, PubRecResponseMsg msg) {
+        logProcessMsg(clientSessionCtx, msg.getMsgType(), ctx -> ctx
+                .kv("msgId", msg.getMessageId()));
         messageHandlers.getPublishHandler().processPubRecResponse(clientSessionCtx, msg);
+    }
+
+    private void logProcessMsg(ClientSessionCtx clientSessionCtx,
+                               MsgType msgType,
+                               Consumer<ClientLogContext> extra) {
+        clientLogger.logEvent(clientSessionCtx.getClientId(), getClass(), ctx -> {
+            ctx.msg(PROCESS_MSG_LABEL)
+                    .kv(StatsConstantNames.MSG_TYPE, msgType);
+            extra.accept(ctx);
+        });
     }
 }

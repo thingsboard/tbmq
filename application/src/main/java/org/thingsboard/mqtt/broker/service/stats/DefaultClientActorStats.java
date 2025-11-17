@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultClientActorStats implements ClientActorStats {
-    private static final String MSG_TYPE_TAG = "msgType";
+
     private final String statsKey = StatsType.CLIENT_ACTOR.getPrintName();
 
     private final ConcurrentMap<String, ResettableTimer> timers = new ConcurrentHashMap<>();
@@ -45,7 +46,8 @@ public class DefaultClientActorStats implements ClientActorStats {
     public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
         String msgTypeStr = msgType.toString();
         long amount = System.nanoTime() - startTime;
-        timers.computeIfAbsent(msgTypeStr, s -> new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", MSG_TYPE_TAG, msgTypeStr)))
+        timers.computeIfAbsent(msgTypeStr, s ->
+                        new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", StatsConstantNames.MSG_TYPE, msgTypeStr)))
                 .logTime(amount, unit);
     }
 

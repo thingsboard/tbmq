@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
@@ -53,7 +54,11 @@ public class AppMsgFlushedDeliveryStrategy implements AppMsgDeliveryStrategy {
                         publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
             }
             clientSessionCtx.getChannel().flush();
-            clientLogger.logEvent(clientSessionCtx.getClientId(), this.getClass(), "Delivered msg to application client");
+            clientLogger.logEvent(clientSessionCtx.getClientId(), getClass(), ctx -> ctx
+                    .msg("Delivered msg to App client")
+                    .kv(StatsConstantNames.MSG_TYPE, msg.getPacketType())
+                    .kv("msgId", msg.getPacketId())
+            );
         });
     }
 

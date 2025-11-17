@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.stats.ClientActorStats;
@@ -103,16 +104,17 @@ public class ClientActor extends ContextAwareActor {
         if (msg instanceof TimedMsg) {
             clientActorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
         }
-        clientLogger.logEvent(state.getClientId(), this.getClass(), "Received msg - " + msg.getMsgType());
+        clientLogger.logEvent(state.getClientId(), getClass(), ctx -> ctx
+                .msg("Process actor msg")
+                .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
+        );
 
         long startTime = System.nanoTime();
 
         try {
             if (sessionNotMatch(msg)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}][{}] Received {} for another sessionId - {}.",
-                            state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
-                }
+                log.debug("[{}][{}] Received {} for another sessionId - {}.",
+                        state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
                 if (msg instanceof QueueableMqttMsg) {
                     ((QueueableMqttMsg) msg).release();
                 }
@@ -212,7 +214,10 @@ public class ClientActor extends ContextAwareActor {
             return success;
         } finally {
             clientActorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
-            clientLogger.logEvent(state.getClientId(), this.getClass(), "Finished msg processing - " + msg.getMsgType());
+            clientLogger.logEvent(state.getClientId(), getClass(), ctx -> ctx
+                    .msg("Finished msg processing")
+                    .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
+            );
         }
     }
 
@@ -240,9 +245,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Processing CONNECTION_REQUEST_MSG processConnectionRequestMsg {}", state.getClientId(), msg);
-            }
+            log.trace("[{}] Processing CONNECTION_REQUEST_MSG processConnectionRequestMsg {}", state.getClientId(), msg);
             sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
@@ -252,9 +255,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Processing SESSION_DISCONNECTED_MSG processSessionDisconnectedMsg {}", state.getClientId(), msg);
-            }
+            log.trace("[{}] Processing SESSION_DISCONNECTED_MSG processSessionDisconnectedMsg {}", state.getClientId(), msg);
             sessionClusterManager.processSessionDisconnected(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
@@ -264,9 +265,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processClearSessionMsg(ClearSessionMsg msg) {
         try {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Processing CLEAR_SESSION_MSG processClearSessionMsg {}", state.getClientId(), msg);
-            }
+            log.trace("[{}] Processing CLEAR_SESSION_MSG processClearSessionMsg {}", state.getClientId(), msg);
             sessionClusterManager.processClearSession(state.getClientId(), msg.getSessionId());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
@@ -276,10 +275,8 @@ public class ClientActor extends ContextAwareActor {
 
     private boolean processQueueableMqttMsg(QueueableMqttMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
-                        state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
-            }
+            log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
+                    state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
             release(msg);
             return true;
         }
@@ -321,10 +318,8 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectMsg(MqttConnectMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
-                        SessionState.DISCONNECTED, msg.getMsgType());
-            }
+            log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
+                    SessionState.DISCONNECTED, msg.getMsgType());
             return;
         }
 
@@ -348,10 +343,8 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionAcceptedMsg(ConnectionAcceptedMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
-                        SessionState.DISCONNECTED, msg.getMsgType());
-            }
+            log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
+                    SessionState.DISCONNECTED, msg.getMsgType());
             return;
         }
 
@@ -379,16 +372,12 @@ public class ClientActor extends ContextAwareActor {
 
     private void processActorStop(StopActorCommandMsg msg) {
         if (!msg.getCommandUUID().equals(state.getStopActorCommandId())) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
-            }
+            log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
             return;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
-                    state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
-        }
+        log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
+                state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
         ctx.stop(ctx.getSelf());
     }
 

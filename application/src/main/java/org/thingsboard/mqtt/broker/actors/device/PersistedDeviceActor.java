@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEven
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 
 @Slf4j
@@ -49,7 +50,10 @@ public class PersistedDeviceActor extends ContextAwareActor {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Received {} msg.", clientId, msg.getMsgType());
         }
-        clientLogger.logEvent(clientId, this.getClass(), "Received msg - " + msg.getMsgType());
+        clientLogger.logEvent(clientId, getClass(), ctx -> ctx
+                .msg("Process actor msg")
+                .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
+        );
         switch (msg.getMsgType()) {
             case DEVICE_CONNECTED_EVENT_MSG:
                 processor.processDeviceConnect(ctx, (DeviceConnectedEventMsg) msg);

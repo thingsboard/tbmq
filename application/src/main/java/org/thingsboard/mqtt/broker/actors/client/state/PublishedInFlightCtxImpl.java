@@ -67,14 +67,13 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         if (atMostOnce(mqttPubMsg)) {
             return true;
         }
+        log.trace("[{}] Adding in-flight msg [{}]", clientId, mqttPubMsg.variableHeader().packetId());
         lock.lock();
         try {
             int delayedMsgQueueSize = delayedMsgQueueSize();
             if (delayedMsgQueueSize == 0) {
                 if (publishedInFlightMsgQueueSize() >= clientReceiveMax) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}][{}] Max in-flight messages reached! Adding msg to empty delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
-                    }
+                    log.debug("[{}][{}] Max in-flight messages reached! Adding msg to empty delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
                     addDelayedMsg(mqttPubMsg);
                     flowControlService.addToMap(clientId, this);
                     return false;
@@ -86,9 +85,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                             clientId, clientReceiveMax, delayedMsgQueueMaxSize);
                     ReferenceCountUtil.release(mqttPubMsg);
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}][{}] Max in-flight messages reached! Adding msg to delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
-                    }
+                    log.debug("[{}][{}] Max in-flight messages reached! Adding msg to delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
                     addDelayedMsg(mqttPubMsg);
                 }
                 return false;
@@ -100,6 +97,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
     @Override
     public void ackInFlightMsg(int msgId) {
+        log.trace("[{}] Acknowledging in-flight msg [{}]", clientId, msgId);
         lock.lock();
         try {
             Integer publishedInFlightHead = publishedInFlightMsgQueue.peek();
@@ -114,14 +112,13 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     while (true) {
                         Integer publishedInFlightNextHead = publishedInFlightMsgQueue.peek();
                         if (publishedInFlightNextHead == null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("[{}] No more in-flight messages waiting for ack! Clearing received ack queue", clientId);
-                            }
+                            log.debug("[{}] No more in-flight messages waiting for ack! Clearing received ack queue", clientId);
                             receivedAckMsgInWrongOrderQueue.clear();
                             break;
                         } else {
                             if (receivedAckMsgInWrongOrderQueue.contains(publishedInFlightNextHead)) {
                                 receivedAckMsgInWrongOrderQueue.remove(publishedInFlightNextHead);
+                                log.debug("[{}] Removing unordered ack {} from queue", clientId, publishedInFlightNextHead);
                                 removePublishedInFlightMsg();
                             } else {
                                 break;
@@ -129,15 +126,11 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                         }
                     }
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Received ack [{}] in the wrong order. Head - [{}]", clientId, msgId, publishedInFlightHead);
-                    }
+                    log.debug("[{}] Received ack [{}] in the wrong order. Head - [{}]", clientId, msgId, publishedInFlightHead);
                     receivedAckMsgInWrongOrderQueue.add(msgId);
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] In-flight msg queue is empty. Received ack [{}] for published msg that was sent outside of the current network connection", clientId, msgId);
-                }
+                log.debug("[{}] In-flight msg queue is empty. Received ack [{}] for published msg that was sent outside of the current network connection", clientId, msgId);
             }
         } finally {
             lock.unlock();
@@ -149,26 +142,20 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         lock.lock();
         try {
             if (!allowedToSendMsg()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Still reaching clientReceiveMax... Waiting for more ack messages", clientId);
-                }
+                log.debug("[{}] Still reaching clientReceiveMax... Waiting for more ack messages", clientId);
                 return false;
             }
 
             while (true) {
                 MqttPubMsgWithCreatedTime head = delayedMsgQueue.poll();
                 if (head == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Delayed queue is empty!", clientId);
-                    }
+                    log.debug("[{}] Delayed queue is empty!", clientId);
                     flowControlService.removeFromMap(clientId);
                     return false;
                 }
                 delayedMsgCounter.decrementAndGet();
                 if (head.getCreatedTime() + ttlMs < System.currentTimeMillis()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Msg expired in delayed queue {}", clientId, head);
-                    }
+                    log.debug("[{}] Msg expired in delayed queue {}", clientId, head);
                     ReferenceCountUtil.release(head.getMqttPublishMessage());
                     continue;
                 }

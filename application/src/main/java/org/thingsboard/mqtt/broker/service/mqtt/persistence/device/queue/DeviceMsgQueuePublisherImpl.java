@@ -50,23 +50,23 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     @PostConstruct
     public void init() {
-        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-msg-callback-processor");
-        this.publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
+        callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-msg-callback-processor");
+        publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("deviceMsg")
                 .producer(devicePersistenceMsgQueueFactory.createProducer())
                 .build();
-        this.publisher.init();
+        publisher.init();
     }
 
     @Override
     public void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, this.getClass(), "Sending msg in DEVICE Queue");
+        clientLogger.logEvent(clientId, getClass(), "Sending msg in DEVICE Queue");
         publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         callbackProcessor.submit(() -> {
-                            clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
+                            clientLogger.logEvent(clientId, DeviceMsgQueuePublisherImpl.class, "Sent msg in DEVICE Queue");
                             if (log.isTraceEnabled()) {
                                 log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                             }

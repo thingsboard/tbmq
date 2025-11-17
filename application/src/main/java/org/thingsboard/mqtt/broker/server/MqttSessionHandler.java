@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -166,7 +167,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             }
         }
 
-        clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
+        clientLogger.logEvent(clientId, getClass(), ctx -> ctx
+                .msg("Received msg from client")
+                .kv(StatsConstantNames.MSG_TYPE, msgType)
+        );
         switch (msgType) {
             case DISCONNECT:
                 reportTraffic(BrokerConstants.TLS_DISCONNECT_BYTES_OVERHEAD);

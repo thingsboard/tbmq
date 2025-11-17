@@ -19,15 +19,18 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.concurrent.ConcurrentMap;
@@ -36,7 +39,10 @@ import java.util.concurrent.ScheduledExecutorService;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RetransmissionServiceImpl implements RetransmissionService {
+
+    private final ClientLogger clientLogger;
 
     @Value("${mqtt.retransmission.enabled:true}")
     private boolean retransmissionEnabled;
@@ -52,7 +58,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @PostConstruct
     public void init() {
         if (retransmissionEnabled) {
-            this.scheduler = Executors.newScheduledThreadPool(getCorePoolSize(), ThingsBoardThreadFactory.forName("retransmission-scheduler"));
+            scheduler = Executors.newScheduledThreadPool(getCorePoolSize(), ThingsBoardThreadFactory.forName("retransmission-scheduler"));
         }
     }
 
@@ -65,7 +71,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
 
     @PreDestroy
     public void destroy() {
-        if (this.scheduler != null) {
+        if (scheduler != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Retransmission scheduler");
         }
     }
@@ -96,6 +102,13 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         MqttPendingPublish pendingPublish = newMqttPendingPublish(sessionCtx, mqttPubMsg);
         pendingPublishes.put(pendingPublish.getPacketId(), pendingPublish);
 
+        clientLogger.logEvent(sessionCtx.getClientId(), getClass(), ctx -> ctx
+                .msg("Write and flush to client")
+                .kv("msgId", mqttPubMsg.variableHeader().packetId())
+                .kv("qos", mqttPubMsg.fixedHeader().qosLevel())
+                .kv("topic", mqttPubMsg.variableHeader().topicName())
+        );
+
         ChannelFuture channelFuture = sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         channelFuture.addListener(result -> {
             pendingPublish.setSent(true);
@@ -105,7 +118,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
                 if (pendingPublish.isSent() && pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
                     pendingPublishes.remove(pendingPublish.getPacketId());
                 } else if (pendingPublish.isSent()) {
-                    pendingPublish.startPublishRetransmissionTimer(this.scheduler, this::sendAndFlush);
+                    pendingPublish.startPublishRetransmissionTimer(scheduler, this::sendAndFlush);
                 } else {
                     pendingPublishes.remove(pendingPublish.getPacketId());
                 }
@@ -114,7 +127,24 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     }
 
     private void sendAndFlush(ClientSessionCtx sessionCtx, MqttMessage mqttMsg) {
+        clientLogger.logEvent(sessionCtx.getClientId(), getClass(), ctx -> {
+            ctx.msg("Retransmitting write and flush to client")
+                    .kv("msgType", mqttMsg.fixedHeader().messageType())
+                    .kv("msgId", extractMessageId(mqttMsg));
+        });
+
         sessionCtx.getChannel().writeAndFlush(mqttMsg);
+    }
+
+    private int extractMessageId(MqttMessage mqttMsg) {
+        Object variableHeader = mqttMsg.variableHeader();
+        if (variableHeader instanceof MqttPublishVariableHeader publishHeader) {
+            return publishHeader.packetId();
+        } else if (variableHeader instanceof MqttMessageIdVariableHeader header) {
+            return header.messageId();
+        } else {
+            return 0;
+        }
     }
 
     private MqttPendingPublish newMqttPendingPublish(ClientSessionCtx sessionCtx,
@@ -196,7 +226,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         ctx.getChannel().writeAndFlush(pubRelMsg);
 
         pendingPublish.setPubRelMessage(pubRelMsg);
-        pendingPublish.startPubRelRetransmissionTimer(this.scheduler, this::sendAndFlush);
+        pendingPublish.startPubRelRetransmissionTimer(scheduler, this::sendAndFlush);
     }
 
     @Override
