@@ -17,27 +17,35 @@ package org.thingsboard.mqtt.broker.service.analysis;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClientLoggerImpl implements ClientLogger {
 
-    private final boolean isDebugEnabled = log.isDebugEnabled();
-
-    @Value("${analysis.log.analyzed-client-ids:}")
-    private Set<String> analyzedClientIds;
+    private final AnalysisLogConfiguration config;
 
     @Override
-    public void logEvent(String clientId, Class<?> eventLocation, String eventDescription) {
-        if (!isDebugEnabled || CollectionUtils.isEmpty(analyzedClientIds) || !analyzedClientIds.contains(clientId)) {
+    public void logEventWithDetails(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details) {
+        if (config.isDisabled() || !log.isDebugEnabled()) {
             return;
         }
-        log.debug("[{}][{}] {}", clientId, eventLocation.getSimpleName(), eventDescription);
+
+        if (!config.isAllClients()) {
+            Set<String> analyzedClientIds = config.getAnalyzedClientIds();
+            if (CollectionUtils.isEmpty(analyzedClientIds) || !analyzedClientIds.contains(clientId)) {
+                return;
+            }
+        }
+
+        ClientLogContext ctx = new ClientLogContext();
+        details.accept(ctx);
+
+        log.debug("[{}][{}] {}", clientId, eventLocation.getSimpleName(), ctx);
     }
 }

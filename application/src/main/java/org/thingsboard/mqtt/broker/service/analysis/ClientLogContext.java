@@ -15,13 +15,29 @@
  */
 package org.thingsboard.mqtt.broker.service.analysis;
 
-import java.util.function.Consumer;
+public class ClientLogContext {
 
-public interface ClientLogger {
+    private final StringBuilder sb = new StringBuilder();
 
-    default void logEvent(String clientId, Class<?> eventLocation, String eventDescription) {
-        logEventWithDetails(clientId, eventLocation, ctx -> ctx.msg(eventDescription));
+    public ClientLogContext msg(String message) {
+        if (!sb.isEmpty()) {
+            sb.append(" | ");
+        }
+        sb.append(message);
+        return this;
     }
 
-    void logEventWithDetails(String clientId, Class<?> eventLocation, Consumer<ClientLogContext> details);
+    public ClientLogContext kv(String key, Object value) {
+        if (!sb.isEmpty()) {
+            sb.append(", ");
+        }
+        sb.append(key).append('=').append(value);
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return sb.toString();
+    }
+
 }

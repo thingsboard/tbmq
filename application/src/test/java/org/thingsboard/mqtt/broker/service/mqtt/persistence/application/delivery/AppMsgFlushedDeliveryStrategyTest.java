@@ -77,7 +77,7 @@ class AppMsgFlushedDeliveryStrategyTest {
 
         verify(deliveryService, times(3)).sendPublishMsgToClientWithoutFlush(eq(clientSessionCtx), any());
         verify(clientSessionCtx.getChannel(), times(3)).flush();
-        verify(clientLogger, times(3)).logEvent(eq("test-client"), any(), any());
+        verify(clientLogger, times(3)).logEventWithDetails(eq("test-client"), any(), any());
     }
 
     @Test
@@ -94,7 +94,7 @@ class AppMsgFlushedDeliveryStrategyTest {
         verify(deliveryService, times(2)).sendPublishMsgToClientWithoutFlush(eq(clientSessionCtx), any());
         verify(deliveryService).sendPubRelMsgToClientWithoutFlush(eq(clientSessionCtx), eq(1));
         verify(clientSessionCtx.getChannel(), times(3)).flush();
-        verify(clientLogger, times(3)).logEvent(eq("test-client"), any(), any());
+        verify(clientLogger, times(3)).logEventWithDetails(eq("test-client"), any(), any());
     }
 
     private void mockSubmitStrategyConsuming() {

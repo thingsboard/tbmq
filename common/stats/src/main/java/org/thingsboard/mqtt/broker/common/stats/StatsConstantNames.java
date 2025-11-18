@@ -51,4 +51,6 @@ public class StatsConstantNames {
     public static final String STATS_NAME_TAG = "statsName";
     public static final String QUEUE_SIZE = "queueSize";
 
+    public static final String MSG_TYPE = "msgType";
+
 }

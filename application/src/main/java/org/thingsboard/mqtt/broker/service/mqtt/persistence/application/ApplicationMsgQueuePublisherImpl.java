@@ -45,8 +45,6 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private final ServiceInfoProvider serviceInfoProvider;
     private final ApplicationClientHelperService appClientHelperService;
 
-    private final boolean isTraceEnabled = log.isTraceEnabled();
-
     private TbPublishServiceImpl<PublishMsgProto> publisher;
     private TbPublishServiceImpl<PublishMsgProto> sharedSubsPublisher;
 
@@ -61,33 +59,36 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @PostConstruct
     public void init() {
-        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "app-msg-callback-processor");
-        this.publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
+        callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "app-msg-callback-processor");
+        publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("applicationMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .partition(0)
                 .build();
-        this.publisher.init();
-        this.sharedSubsPublisher = TbPublishServiceImpl.<PublishMsgProto>builder()
+        publisher.init();
+        sharedSubsPublisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("applicationSharedSubsMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createSharedSubsProducer(serviceInfoProvider.getServiceId()))
                 .build();
-        this.sharedSubsPublisher.init();
+        sharedSubsPublisher.init();
     }
 
     @Override
     public void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
+        clientLogger.logEventWithDetails(clientId, getClass(), ctx -> ctx
+                .msg("Persisting APPLICATION msg in queue")
+                .kv("topic", queueMsg.getValue().getTopicName())
+        );
         String clientQueueTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         callbackProcessor.submit(() -> {
-                            clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
-                            if (isTraceEnabled) {
-                                log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
-                            }
+                            clientLogger.logEventWithDetails(clientId, ApplicationMsgQueuePublisherImpl.class, ctx -> ctx
+                                    .msg("APPLICATION msg acknowledged")
+                                    .kv("topic", queueMsg.getValue().getTopicName())
+                            );
                             callback.onSuccess();
                         });
                     }
@@ -110,12 +111,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        callbackProcessor.submit(() -> {
-                            if (isTraceEnabled) {
-                                log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
-                            }
-                            callback.onSuccess();
-                        });
+                        callbackProcessor.submit(callback::onSuccess);
                     }
 
                     @Override

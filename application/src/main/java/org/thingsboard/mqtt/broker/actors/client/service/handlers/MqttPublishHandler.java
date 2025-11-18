@@ -78,7 +78,7 @@ public class MqttPublishHandler {
 
     @PostConstruct
     public void init() {
-        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-callback-processor");
+        callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-callback-processor");
     }
 
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
@@ -131,7 +131,12 @@ public class MqttPublishHandler {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 
-        clientLogger.logEvent(ctx.getClientId(), this.getClass(), "Sending PUBLISH");
+        clientLogger.logEventWithDetails(ctx.getClientId(), getClass(), logCtx -> logCtx
+                .msg("Persisting PUBLISH in queue")
+                .kv("msgId", msg.getPublishMsg().getPacketId())
+                .kv("topic", msg.getPublishMsg().getTopicName())
+                .kv("qos", msg.getPublishMsg().getQos())
+        );
         persistPubMsg(ctx, publishMsg, actorRef, mqttMsgWrapper);
     }
 
@@ -214,7 +219,10 @@ public class MqttPublishHandler {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 callbackProcessor.submit(() -> {
-                    clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
+                    clientLogger.logEventWithDetails(ctx.getClientId(), MqttPublishHandler.class, logCtx -> logCtx
+                            .msg("PUBLISH acknowledged")
+                            .kv("msgId", publishMsg.getPacketId())
+                    );
                     if (isTraceEnabled) {
                         log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
                     }

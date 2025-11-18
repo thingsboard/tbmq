@@ -1245,5 +1245,10 @@ app:
 # Analysis parameters
 analysis:
   log:
-    # List of Client Ids separated with comas. Additional events for those clients will be logged
+    # Enable/disable the analysis logging
+    enabled: "${ANALYSIS_LOG_ENABLED:true}"
+    # If true – log events for ALL clients (ignores analyzed-client-ids)
+    all-clients: "${ANALYSIS_LOG_ALL_CLIENTS:false}"
+    # List of Client Ids separated with comas. Additional events for those clients will be logged.
+    # Example env var: ANALYSIS_LOG_CLIENT_IDS=client1,client2
     analyzed-client-ids: "${ANALYSIS_LOG_CLIENT_IDS:}"
