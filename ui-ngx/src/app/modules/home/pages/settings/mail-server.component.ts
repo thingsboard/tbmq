@@ -24,7 +24,7 @@ import { MailServerService } from '@core/http/mail-server.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
-import { isDefinedAndNotNull, isString } from '@core/utils';
+import { isString } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
@@ -53,8 +53,6 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
   mailSettings: UntypedFormGroup;
   adminSettings: AdminSettings<MailServerSettings>;
   smtpProtocols = ['smtp', 'smtps'];
-  showChangePassword = false;
-
   tlsVersions = ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];
 
   private destroy$ = new Subject<void>();
@@ -66,12 +64,6 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
     super(store);
   }
 
-  private get mailSettingsFormValue(): MailServerSettings {
-    const formValue = this.mailSettings.value;
-    delete formValue.changePassword;
-    return formValue;
-  }
-
   ngOnInit() {
     this.buildMailServerSettingsForm();
     this.adminService.getUserSettings<MailServerSettings>('mail').subscribe(
@@ -80,11 +72,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
         if (this.adminSettings.jsonValue && isString(this.adminSettings.jsonValue.enableTls)) {
           this.adminSettings.jsonValue.enableTls = (this.adminSettings.jsonValue.enableTls as any) === 'true';
         }
-        this.showChangePassword =
-          isDefinedAndNotNull(this.adminSettings.jsonValue.showChangePassword) ? this.adminSettings.jsonValue.showChangePassword : true;
-        delete this.adminSettings.jsonValue.showChangePassword;
         this.mailSettings.reset(this.adminSettings.jsonValue);
-        this.enableMailPassword(!this.showChangePassword);
         this.enableProxyChanged();
       }
     );
@@ -114,22 +102,15 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
       proxyUser: [''],
       proxyPassword: [''],
       username: [''],
-      changePassword: [false],
       password: ['']
     });
     this.registerDisableOnLoadFormControl(this.mailSettings.get('smtpProtocol'));
     this.registerDisableOnLoadFormControl(this.mailSettings.get('enableTls'));
     this.registerDisableOnLoadFormControl(this.mailSettings.get('enableProxy'));
-    this.registerDisableOnLoadFormControl(this.mailSettings.get('changePassword'));
     this.mailSettings.get('enableProxy').valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(() => {
       this.enableProxyChanged();
-    });
-    this.mailSettings.get('changePassword').valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((value) => {
-      this.enableMailPassword(value);
     });
   }
 
@@ -144,16 +125,8 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
     }
   }
 
-  enableMailPassword(enable: boolean) {
-    if (enable) {
-      this.mailSettings.get('password').enable({emitEvent: false});
-    } else {
-      this.mailSettings.get('password').disable({emitEvent: false});
-    }
-  }
-
   sendTestMail(): void {
-    this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettingsFormValue};
+    this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettings.value};
     this.adminService.sendTestMail(this.adminSettings).subscribe(
       () => {
         this.store.dispatch(new ActionNotificationShow({
@@ -165,11 +138,10 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
   }
 
   save(): void {
-    this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettingsFormValue};
+    this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettings.value};
     this.adminService.saveUserSettings(this.adminSettings).subscribe(
       (adminSettings) => {
         this.adminSettings = adminSettings;
-        this.showChangePassword = true;
         this.mailSettings.reset(this.adminSettings.jsonValue);
       }
     );

@@ -70,6 +70,7 @@ export class AuthGuard {
         const isPublic = data.module === 'public';
         if (!authState.isAuthenticated || isPublic) {
           if (!isPublic) {
+            this.authService.redirectUrl = url;
             return of(this.authService.defaultUrl(false));
           } else {
             return of(true);
