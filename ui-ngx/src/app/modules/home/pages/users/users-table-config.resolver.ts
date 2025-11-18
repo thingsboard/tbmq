@@ -92,10 +92,9 @@ export class UsersTableConfigResolver {
     this.config.saveEntity = user => this.adminService.saveUser(user).pipe(
       mergeMap(userDetails => {
         const currentUser = getCurrentAuthUser(this.store);
-        if (currentUser && currentUser.userId === userDetails.id && currentUser.sub !== userDetails.email) {
-          this.authService.refreshJwtToken(false);
+        if (currentUser.userId === userDetails.id) {
+          this.store.dispatch(new ActionAuthUpdateUserDetails({ userDetails }));
         }
-        this.store.dispatch(new ActionAuthUpdateUserDetails({ userDetails }));
         return of(userDetails);
       })
     );
