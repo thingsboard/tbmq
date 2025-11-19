@@ -110,7 +110,7 @@ public class AdminController extends BaseController {
     @PostMapping(value = "/settings/testMail")
     public void sendTestMail(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
-            if (!adminSettings.getJsonValue().has("password")) {
+            if (!adminSettings.getJsonValue().hasNonNull("password")) {
                 AdminSettings mailSettings =
                         checkNotNull(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey()));
                 ((ObjectNode) adminSettings.getJsonValue()).put("password", mailSettings.getJsonValue().get("password").asText());
