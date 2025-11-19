@@ -180,12 +180,19 @@
               <input matInput formControlName="username" placeholder="{{ 'common.enter-username' | translate }}"
                 autocomplete="new-username"/>
             </mat-form-field>
-            <mat-form-field class="mat-block">
-              <mat-label translate>common.password</mat-label>
-              <input matInput formControlName="password" type="password"
-                placeholder="{{ 'common.enter-password' | translate }}" autocomplete="new-password"/>
-              <tb-toggle-password matSuffix></tb-toggle-password>
-            </mat-form-field>
+            <section>
+              <mat-checkbox formControlName="changePassword" style="padding-bottom: 16px;">
+                {{ 'admin.change-password' | translate }}
+              </mat-checkbox>
+              @if (mailSettings.get('changePassword').value) {
+                <mat-form-field class="mat-block">
+                  <mat-label translate>common.password</mat-label>
+                  <input matInput formControlName="password" type="password"
+                         placeholder="{{ 'common.enter-password' | translate }}" autocomplete="new-password"/>
+                  <tb-toggle-password matSuffix></tb-toggle-password>
+                </mat-form-field>
+              }
+            </section>
           </fieldset>
           <div class="flex flex-row items-center justify-end gap-4 xs:flex-col xs:justify-end">
             <button mat-raised-button type="button"
