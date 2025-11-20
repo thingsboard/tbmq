@@ -11,13 +11,7 @@
 💡 [Get started](https://thingsboard.io/docs/mqtt-broker/getting-started/)&ensp;•&ensp;🌐 [Website](https://thingsboard.io/products/mqtt-broker/)&ensp;•&ensp;📚 [Documentation](https://thingsboard.io/docs/mqtt-broker/)&ensp;•&ensp;📄 [Architecture](https://thingsboard.io/docs/mqtt-broker/architecture/)&ensp;
 
 </div>
-TBMQ is an open-source MQTT message broker built for large-scale,
-production IoT deployments. A single TBMQ node can handle millions of
-concurrent client connections and millions of MQTT messages per second
-with low latency; in cluster mode, TBMQ scales horizontally to support
-massive IoT workloads.
-
----
+TBMQ is an open-source MQTT message broker built for large-scale, production IoT deployments. A single TBMQ node can handle millions of concurrent client connections and millions of MQTT messages per second with low latency; in cluster mode, TBMQ scales horizontally to support massive IoT workloads.
 
 ## 🚀 Installation options
 TBMQ offers flexible installation options tailored for both development and large-scale production environments:
@@ -28,22 +22,54 @@ TBMQ offers flexible installation options tailored for both development and larg
 
 ➡️ **[View Installation Guides ➜](https://thingsboard.io/docs/mqtt-broker/install/installation-options/)**
 
-—
-
-<br>
-
 ## 💡 Getting started with TBMQ
 
 Check out our [Getting Started guide](https://thingsboard.io/docs/mqtt-broker/getting-started/) to learn the basics of TBMQ. In minutes, you will learn to:
 
-* **Install and run** TBMQ.
 * **Connect** MQTT clients to TBMQ.
 * **Publish** messages.
 * **Subscribe** to topics.
 * **Configure** authentication and authorization.
 * **Monitor** sessions and subscriptions via the Web UI.
 
-<br>
+<div width="100%">
+ <img width="49%" src="./img/tbmq-home.png"/>
+ <img width="49%" src="./img/tbmq-sessions.png"/>
+</div>
+
+## 💊 Common IoT usage scenarios for TBMQ
+
+At ThingsBoard, we've gained a lot of experience in building scalable IoT applications, which has helped us identify three main scenarios for MQTT-based solutions. 
+
+### 1. Fan-in (telemetry ingestion)
+Numerous devices generate a large volume of messages that are consumed by specific applications. Normally, a few applications are set up to handle these lots of incoming data. It must be ensured that they do not miss any single message.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/bbc92bcf-c09b-4141-b71d-d5e469ceeec2" 
+       alt="Diagram showing fan-in communication pattern" 
+       width="600">
+</p>
+
+### 2. Fan-out (broadcast messaging)
+Numerous devices subscribing to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/85fe89da-ae81-4bef-8d50-c0c21e60b60f" 
+       alt="Diagram showing fan-out communication pattern" 
+       width="600">
+</p>
+
+### 3. Point-to-point (command & control)
+Messages are routed between a single publisher and a specific subscriber through uniquely defined topics. Pattern that is primarily used for one-to-one communication. Ideal for private messaging or command-based interactions.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/88ce216d-891a-4232-9b4a-8590ded2cdfc" 
+       alt="Diagram showing p2p communication pattern" 
+       width="600"
+       style="margin-left: 10px;">
+</p>
+
+Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for all three.
+
+## ✨ Features
+
 <table>
   <tr>
     <td width="50%" valign="top">
@@ -111,9 +137,24 @@ Check out our [Getting Started guide](https://thingsboard.io/docs/mqtt-broker/ge
   </tr>
 </table>
 
-<br>
+## Supported features:
 
-<br>
+- All MQTT v3.x features
+- All MQTT v5.0 features
+- Multi-node cluster support
+- X.509 certificate chain authentication support
+- JWT authentication
+- Access control (ACL) based on client ID, username, or X.509 certificate chain
+- REST query support for clients’ sessions and subscriptions
+- Rate limits of message processing
+- Cluster and clients' metrics monitoring
+- Unauthorized clients
+- MQTT WebSocket client
+- Integrations with external systems (HTTP, MQTT, Kafka)
+- Kafka topics and consumer groups monitoring
+- Proxy protocol
+- Blocked clients
+- MQTT channel backpressure support
 
 ## ⚙️ Cloud-Native Architecture
 
@@ -123,13 +164,11 @@ TBMQ is designed as a microservices-based solution (in cluster mode) or a monoli
 * **State Management:** Client sessions and subscriptions are managed via Redis for sub-millisecond access.
 * **Scalability:** Nodes can be added or removed dynamically without service interruption.
 
-[![TBMQ Architecture](https://thingsboard.io/images/products/mqtt-broker/architecture-diagram.svg)](https://thingsboard.io/docs/mqtt-broker/architecture/)
+![TBMQ Sessions](https://img.thingsboard.io/mqtt-broker/architecture/tbmq-architecture.png)
 
 <div align="center">
 <a href="https://thingsboard.io/docs/mqtt-broker/architecture/"><b>Explore the Architecture ➜</b></a>
 </div>
-
-<br>
 
 ---
 
