@@ -29,14 +29,41 @@ TBMQ offers flexible installation options tailored for both development and larg
 
 ➡️ **[View all installation options and guides ➜](https://thingsboard.io/docs/mqtt-broker/install/installation-options/)**
 
+For **Linux and macOS** users, you can deploy TBMQ in a **single-node setup** using the installation script below.
+
+#### 1. Download and run the installation script
+
+```bash
+wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.2.0/msa/tbmq/configs/tbmq-install-and-run.sh &&
+sudo chmod +x tbmq-install-and-run.sh &&
+./tbmq-install-and-run.sh
+```
+
+#### 2. Open the TBMQ Web UI
+
+After installation, open your browser and navigate to your host on default 8083 port. Example:
+
+```
+http://localhost:8083
+```
+
+#### 3. Log in using default credentials
+
+```
+Username: sysadmin@thingsboard.org
+Password: sysadmin
+```
+
+See the [**complete guide**](https://thingsboard.io/docs/mqtt-broker/install/docker/) for detailed steps, common troubleshooting scenarios, and advanced configuration.
+
 ## 💡 Getting started with TBMQ
 
 Check out our [Getting Started guide](https://thingsboard.io/docs/mqtt-broker/getting-started/) to learn the basics of TBMQ. In minutes, you will learn to:
 
 * **Connect** MQTT clients to TBMQ.
 * **Configure** authentication and authorization.
-* **Publish** messages.
 * **Subscribe** to topics.
+* **Publish** messages.
 
 ## 💊 Common IoT usage scenarios for TBMQ
 
@@ -76,30 +103,30 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
     <td width="50%" valign="top">
       <br>
       <div align="center">
-        <img src="https://placehold.co/378x200/EFEFEF/222222?text=Extreme+Scalability" alt="Extreme Scalability" width="378" />
-        <h3>Extreme Scalability & <br> Performance</h3>
+        <img src="https://img.thingsboard.io/mqtt-broker/product/scalability.svg" alt="Scalability"/>
+        <h3><b>Scalability</b></h3>
       </div>
       <div align="center">
-        <p>Built for massive IoT loads. TBMQ can handle over **4M+ concurrent connections** on a single node and **100M+** in cluster mode, delivering a throughput of **3M+ messages/sec** with consistently low latency.</p>
+        <p>Scale horizontally to manage more than 100M MQTT connections on a single cluster.</p>
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/products/mqtt-broker/">Read more ➜</a>
+        <a href="https://thingsboard.io/docs/mqtt-broker/reference/100m-connections-performance-test">Read more ➜</a>
       </div>
       <br>
     </td>
     <td width="50%" valign="top">
       <br>
       <div align="center">
-        <img src="https://placehold.co/378x200/EFEFEF/222222?text=Fault+Tolerance" alt="Fault Tolerance" width="378" />
-        <h3>Fault Tolerance & <br> High Availability</h3>
+        <img src="https://img.thingsboard.io/mqtt-broker/product/performance.svg" alt="Performance"/>
+        <h3><b>Performance</b></h3>
       </div>
       <div align="center">
-        <p>Ensure zero downtime with a masterless, horizontally scalable cluster architecture. TBMQ utilizes <b>Kafka</b> for persistent storage and <b>Redis</b> for caching, ensuring high data durability and no single point of failure.</p>
+        <p>Process millions of messages per second with 1 TBMQ server and single-digit latency.</p>
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/architecture/">Read more ➜</a>
+        <a href="https://thingsboard.io/docs/mqtt-broker/reference/3m-throughput-single-node-performance-test">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -108,11 +135,11 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
     <td width="50%" valign="top">
       <br>
       <div align="center">
-        <img src="https://placehold.co/378x200/EFEFEF/222222?text=MQTT+5.0+%26+Security" alt="MQTT 5.0 Compliance" width="378" />
-        <h3>Full MQTT 5.0 <br> & Security</h3>
+        <img src="https://img.thingsboard.io/mqtt-broker/product/durability.svg" alt="Durability"/>
+        <h3><b>Durability</b></h3>
       </div>
       <div align="center">
-        <p>Full compliance with <b>MQTT v3.1, v3.1.1, and v5.0</b> specifications. Features include QoS 0/1/2, Retained Messages, and Shared Subscriptions. Secures data via TLS/SSL and supports Basic, X.509, and OAuth2 authentication.</p>
+        <p>Guarantee the persistence and replication of your data to ensure it's never lost.</p>
       </div>
       <br>
       <div align="center">
@@ -123,11 +150,11 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
     <td width="50%" valign="top">
       <br>
       <div align="center">
-        <img src="https://placehold.co/378x200/EFEFEF/222222?text=Seamless+Integration" alt="Seamless Integration" width="378" />
-        <h3>Seamless Data <br> Integration</h3>
+        <img src="https://img.thingsboard.io/mqtt-broker/product/security.svg" alt="Fault tolerance"/>
+        <h3><b>Fault tolerance</b></h3>
       </div>
       <div align="center">
-        <p>Don't just route data—process it. Use the dedicated <b>Integration Executor</b> to forward MQTT streams to external systems like Kafka, HTTP endpoints, or other brokers without blocking the main processing loop.</p>
+        <p>Prevent single point of failure with masterless nodes in the cluster.</p>
       </div>
       <br>
       <div align="center">
@@ -138,37 +165,78 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
   </tr>
 </table>
 
-## Supported features:
+## 📚 Administer client sessions
 
-- All MQTT v3.x features
-- All MQTT v5.0 features
-- Multi-node cluster support
-- X.509 certificate chain authentication support
-- JWT authentication
-- Access control (ACL) based on client ID, username, or X.509 certificate chain
-- REST query support for clients’ sessions and subscriptions
-- Rate limits of message processing
-- Cluster and clients' metrics monitoring
-- Unauthorized clients
-- MQTT WebSocket client
-- Integrations with external systems (HTTP, MQTT, Kafka)
-- Kafka topics and consumer groups monitoring
-- Proxy protocol
-- Blocked clients
-- MQTT channel backpressure support
+Gain full visibility over your IoT ecosystem with the user-friendly session management dashboard, enabling you to monitor vital session attributes. Seamlessly administer your device subscriptions for efficient data communication.
 
-## ⚙️ Cloud-Native Architecture
-
-TBMQ is designed as a microservices-based solution (in cluster mode) or a monolithic application (in standalone mode) to fit any infrastructure requirement.
-
-* **Persistence:** All messages are persisted in Kafka to ensure data is never lost, even during processing spikes.
-* **State Management:** Client sessions and subscriptions are managed via Redis for sub-millisecond access.
-* **Scalability:** Nodes can be added or removed dynamically without service interruption.
-
-![TBMQ Sessions](https://img.thingsboard.io/mqtt-broker/architecture/tbmq-architecture.png)
+![TBMQ Client Sessions](https://img.thingsboard.io/mqtt-broker/product/administer-client-session.webp)
 
 <div align="center">
-<a href="https://thingsboard.io/docs/mqtt-broker/architecture/"><b>Explore the Architecture ➜</b></a>
+
+[**Read more about client sessions ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/sessions/)
+
+</div>
+
+## 🏫 Administer client subscriptions
+
+Efficiently manage subscriptions with a powerful and intuitive interface, ensuring optimal client communication and data flow across your IoT network.
+
+![TBMQ Client Sessions](https://img.thingsboard.io/mqtt-broker/product/administer-client-subscriptions.webp)
+
+<div align="center">
+
+[**Read more about client subscriptions ➜**](https://thingsboard.io/docs/qtt-broker/user-guide/ui/subscriptions/)
+
+</div>
+
+## 🏫 MQTT client credentials management
+
+Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authenticaion methods as [**Basic**](https://thingsboard.io/docs/mqtt-broker/security/authentication/basic/), [**JWT**](https://thingsboard.io/docs/mqtt-broker/security/authentication/jwt/), [**X.509 Certificate Chain**](https://thingsboard.io/docs/mqtt-broker/security/authentication/x509/) and [**SCRAM**](https://thingsboard.io/docs/mqtt-broker/security/authentication/scram/). 
+
+Manage fine-grained access with per-client ACL rules, and easily monitor or control connectivity using built-in tools for handling [**Blocked clients**](https://thingsboard.io/docs/mqtt-broker/other/blocked-client/) and [**Unauthorized clients**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/unauthorized-clients/).
+
+![Client Credentials](https://img.thingsboard.io/mqtt-broker/product/credentials-management.webp)
+
+<div align="center">
+
+[**Read more about client credentials ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/)
+
+</div>
+
+## 📈 Real-time MQTT monitoring
+
+Keep a pulse on your IoT environment by tracking key metrics in real-time, ensuring your network's health and performance are always at their peak.
+
+![Real-time MQTT monitoring](https://img.thingsboard.io/mqtt-broker/product/monitor-key-metrics.webp)
+
+<div align="center">
+
+[**Read more about monitoring tools ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring/)
+
+</div>
+
+## 🔌 External system integrations
+
+Enable smooth data transmission between IoT devices, the broker, and external platforms with a reliable and scalable solution — all without impacting core broker performance.
+
+![External system integrations](https://img.thingsboard.io/mqtt-broker/product/integrations.webp)
+
+<div align="center">
+
+[**Read more about integrations ➜**](https://thingsboard.io/docs/mqtt-broker/integrations/overview)
+
+</div>
+
+## 🧪 MQTT websocket connectivity
+
+Interact with your IoT devices in real-time through the WebSocket client, offering a streamlined and responsive interface for device messaging and monitoring.
+
+![MQTT websocket connectivity](https://img.thingsboard.io/mqtt-broker/product/websocket-client-connectivity.webp)
+
+<div align="center">
+
+[**Read more about WebSocket Client ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client)
+
 </div>
 
 ---
