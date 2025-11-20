@@ -23,11 +23,13 @@ TBMQ is fully compliant with the MQTT v3.1, v3.1.1 and v5.0 protocols, deliverin
 ## 🚀 Installation options
 TBMQ offers flexible installation options tailored for both development and large-scale production environments:
 
-* [Docker](https://thingsboard.io/docs/mqtt-broker/install/cluster/docker-compose-setup/).
-* Kubernetes (K8s) using [AWS](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/), [Azure](https://thingsboard.io/docs/mqtt-broker/install/cluster/azure-cluster-setup/), [GCP](https://thingsboard.io/docs/mqtt-broker/install/cluster/gcp-cluster-setup/).
-* [Helm Chart](https://thingsboard.io/docs/mqtt-broker/install/cluster/helm-cluster-setup-options/).
+* [**Docker**](https://thingsboard.io/docs/mqtt-broker/install/cluster/docker-compose-setup/) for quick local or on-premise setups.
+* **Kubernetes (K8s)** deployments on [AWS](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/), [Azure](https://thingsboard.io/docs/mqtt-broker/install/cluster/azure-cluster-setup/) or [GCP](https://thingsboard.io/docs/mqtt-broker/install/cluster/gcp-cluster-setup/).
+* [**Helm Charts**](https://thingsboard.io/docs/mqtt-broker/install/cluster/helm-cluster-setup-options/) for streamlined Kubernetes installation.
 
 ➡️ **[View all installation options and guides ➜](https://thingsboard.io/docs/mqtt-broker/install/installation-options/)**
+
+<br>
 
 For **Linux and macOS** users, you can deploy TBMQ in a **single-node setup** using the installation script below.
 
@@ -41,7 +43,7 @@ sudo chmod +x tbmq-install-and-run.sh &&
 
 #### 2. Open the TBMQ Web UI
 
-After installation, open your browser and navigate to your host on default 8083 port. Example:
+Once the installation is complete, open your browser and access TBMQ at your host address on the default port **8083**. For example:
 
 ```
 http://localhost:8083
@@ -53,8 +55,7 @@ http://localhost:8083
 Username: sysadmin@thingsboard.org
 Password: sysadmin
 ```
-
-See the [**complete guide**](https://thingsboard.io/docs/mqtt-broker/install/docker/) for detailed steps, common troubleshooting scenarios, and advanced configuration.
+Consult the full [guide](https://thingsboard.io/docs/mqtt-broker/install/docker/) for comprehensive instructions, troubleshooting guidance, and advanced configuration details.
 
 ## 💡 Getting started with TBMQ
 
@@ -177,7 +178,7 @@ Gain full visibility over your IoT ecosystem with the user-friendly session mana
 
 </div>
 
-## 🏫 Administer client subscriptions
+## 🧭 Administer client subscriptions
 
 Efficiently manage subscriptions with a powerful and intuitive interface, ensuring optimal client communication and data flow across your IoT network.
 
@@ -189,7 +190,7 @@ Efficiently manage subscriptions with a powerful and intuitive interface, ensuri
 
 </div>
 
-## 🏫 MQTT client credentials management
+## 🔒 MQTT clients security & management
 
 Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authenticaion methods as [**Basic**](https://thingsboard.io/docs/mqtt-broker/security/authentication/basic/), [**JWT**](https://thingsboard.io/docs/mqtt-broker/security/authentication/jwt/), [**X.509 Certificate Chain**](https://thingsboard.io/docs/mqtt-broker/security/authentication/x509/) and [**SCRAM**](https://thingsboard.io/docs/mqtt-broker/security/authentication/scram/). 
 
