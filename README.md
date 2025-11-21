@@ -49,10 +49,16 @@ http://localhost:8083
 
 #### 3. Log in using default credentials
 
+Username:
 ```
-Username: sysadmin@thingsboard.org
-Password: sysadmin
+sysadmin@thingsboard.org
 ```
+
+Password:
+```
+sysadmin
+```
+
 Consult the full [guide](https://thingsboard.io/docs/mqtt-broker/install/docker/) for comprehensive instructions, troubleshooting guidance, and advanced configuration details.
 
 ## 💡 Getting started with TBMQ
@@ -66,7 +72,7 @@ Check out our [Getting Started guide](https://thingsboard.io/docs/mqtt-broker/ge
 
 ## 💊 Common IoT usage scenarios for TBMQ
 
-At ThingsBoard, we've gained a lot of experience in building scalable IoT applications, which has helped us identify three main scenarios for MQTT-based solutions. 
+Utilize diverse communication patterns effectively, ensuring comprehensive coverage of your use cases. TBMQ places particular emphasis on mastering fan-in, fan-out, and point-to-point (p2p) messaging.
 
 ### 1. Fan-in (telemetry ingestion)
 Numerous devices generate a large volume of messages that are consumed by specific applications. Normally, a few applications are set up to handle these lots of incoming data. It must be ensured that they do not miss any single message.
@@ -142,7 +148,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/">Read more ➜</a>
+        <a href="https://thingsboard.io/docs/mqtt-broker/architecture/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -157,7 +163,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/integration-architecture/">Read more ➜</a>
+        <a href="https://thingsboard.io/docs/mqtt-broker/architecture/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -184,7 +190,7 @@ Efficiently manage subscriptions with a powerful and intuitive interface, ensuri
 
 <div align="center">
 
-[**Read more about client subscriptions ➜**](https://thingsboard.io/docs/qtt-broker/user-guide/ui/subscriptions/)
+[**Read more about client subscriptions ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/)
 
 </div>
 
@@ -222,7 +228,7 @@ Enable smooth data transmission between IoT devices, the broker, and external pl
 
 <div align="center">
 
-[**Read more about integrations ➜**](https://thingsboard.io/docs/mqtt-broker/integrations/overview)
+[**Read more about integrations ➜**](https://thingsboard.io/docs/mqtt-broker/integrations/)
 
 </div>
 
