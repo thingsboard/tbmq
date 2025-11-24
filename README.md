@@ -29,7 +29,8 @@ TBMQ offers flexible installation options tailored for both development and larg
 
 <br>
 
-For **Linux and macOS** users, you can deploy TBMQ in a **single-node setup** using the installation script below.
+For **Linux and macOS** users, you can deploy TBMQ as a **single-node Docker setup** using the installation script
+below.
 
 #### 1. Download and run the installation script
 
@@ -247,7 +248,11 @@ Interact with your IoT devices in real-time through the WebSocket client, offeri
 ---
 
 ## 🫶 Support
-To get support, please visit our **[GitHub issues page](https://github.com/thingsboard/tbmq/issues)** and check the [TBMQ FAQ](https://thingsboard.io/docs/mqtt-broker/faq/).
+
+If you find TBMQ helpful, consider giving the project a ⭐ on GitHub — it helps us grow and reach more users!
+
+For assistance, please visit our **[GitHub issues page](https://github.com/thingsboard/tbmq/issues)** and check
+the [TBMQ FAQ](https://thingsboard.io/docs/mqtt-broker/faq/).
 
 ---
 
