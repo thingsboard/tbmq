@@ -286,7 +286,7 @@ export class ClientCredentialsTableConfigResolver {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        credentialsId: credentials.id
+        credentials
       }
     }).afterClosed().subscribe((res: ClientCredentials) => {
       if (res) {
