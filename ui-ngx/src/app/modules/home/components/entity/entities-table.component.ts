@@ -130,6 +130,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
+  @ViewChild('entityDetailsPanel') entityDetailsPanel: EntityDetailsPanelComponent;
+
   readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeader');
   readonly searchInputField = viewChild<ElementRef>('searchInput');
 
@@ -302,7 +304,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.cd.detectChanges();
   }
 
-  updateData(closeDetails: boolean = true) {
+  updateData(closeDetails: boolean = true, reloadEntity: boolean = true) {
     if (closeDetails) {
       this.isDetailsOpen = false;
     }
@@ -328,6 +330,9 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       timePageLink.endTime = interval.endTime;
     }
     this.dataSource.loadEntities(this.pageLink);
+    if (reloadEntity && this.isDetailsOpen && this.entityDetailsPanel) {
+      this.entityDetailsPanel.reloadEntity();
+    }
   }
 
   private getTimePageLinkInterval(): { startTime?: number, endTime?: number } {

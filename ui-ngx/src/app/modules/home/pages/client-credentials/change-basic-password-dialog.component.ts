@@ -15,7 +15,14 @@
 ///
 
 import { Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogClose, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogActions,
+  MatDialog
+} from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -32,30 +39,40 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { ClientCredentials } from '@shared/models/credentials.model';
+import { PasswordChangedDialogComponent, PasswordChangedDialogData } from '@home/pages/client-credentials/password-changed-dialog.component';
+import { MatTooltip } from '@angular/material/tooltip';
+import { randomAlphanumeric } from '@core/utils';
 
 export interface ChangeBasicPasswordDialogData {
-  credentialsId: string;
+  credentials: ClientCredentials;
 }
 
 @Component({
-    selector: 'tb-change-basic-password-dialog',
-    templateUrl: './change-basic-password-dialog.component.html',
-    styleUrls: ['./change-basic-password-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe]
+  selector: 'tb-change-basic-password-dialog',
+  templateUrl: './change-basic-password-dialog.component.html',
+  styleUrls: ['./change-basic-password-dialog.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe, MatTooltip]
 })
 export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBasicPasswordDialogComponent,
   ChangeBasicPasswordDialogData> implements OnInit {
 
   changePassword: UntypedFormGroup;
-  credentialsId = this.data.credentialsId;
+  credentialsId = this.data.credentials.id;
+  mqttBasicPasswordIsSet = this.data.credentials.additionalInfo.mqttBasicPasswordIsSet;
 
-  constructor(protected store: Store<AppState>,
-              protected router: Router,
-              private translate: TranslateService,
-              public dialogRef: MatDialogRef<ChangeBasicPasswordDialogComponent>,
-              @Inject(MAT_DIALOG_DATA) public data: ChangeBasicPasswordDialogData,
-              public fb: UntypedFormBuilder,
-              private clientCredentialsService: ClientCredentialsService) {
+  private passwordIsGenerated = false;
+
+  constructor(
+    protected store: Store<AppState>,
+    protected router: Router,
+    private translate: TranslateService,
+    public dialogRef: MatDialogRef<ChangeBasicPasswordDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: ChangeBasicPasswordDialogData,
+    public fb: UntypedFormBuilder,
+    private clientCredentialsService: ClientCredentialsService,
+    private dialog: MatDialog,
+  ) {
     super(store, router, dialogRef);
   }
 
@@ -69,6 +86,9 @@ export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBa
       newPassword: [''],
       newPassword2: ['']
     });
+    this.changePassword.get('newPassword').valueChanges.subscribe(() => {
+      this.passwordIsGenerated = false;
+    });
   }
 
   onChangePassword(): void {
@@ -78,18 +98,38 @@ export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBa
         type: 'error'
       }));
     } else {
-      this.clientCredentialsService.changePassword(
-        this.changePassword.get('currentPassword').value,
-        this.changePassword.get('newPassword').value,
-        this.credentialsId).subscribe(
+      const currentPassowrd = this.changePassword.get('currentPassword').value;
+      const newPassowrd = this.changePassword.get('newPassword').value;
+      this.clientCredentialsService.changePassword(currentPassowrd, newPassowrd, this.credentialsId).subscribe(
         (credentials) => {
-          this.store.dispatch(new ActionNotificationShow({
-            message: this.translate.instant('mqtt-client-credentials.password-changed'),
-            type: 'success',
-            duration: 2000
-          }));
-          this.dialogRef.close(credentials);
-        });
+          if (this.passwordIsGenerated) {
+            this.dialog.open<PasswordChangedDialogComponent, PasswordChangedDialogData>(PasswordChangedDialogComponent, {
+              disableClose: true,
+              panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+              data: {
+                password: newPassowrd
+              }
+            }).afterClosed()
+              .subscribe(() => this.dialogRef.close(credentials));
+          } else {
+            this.store.dispatch(new ActionNotificationShow({
+              message: this.translate.instant('mqtt-client-credentials.password-changed'),
+              type: 'success',
+              duration: 2000
+            }));
+            this.dialogRef.close(credentials);
+          }
+        }
+      );
     }
+  }
+
+  generatePassword() {
+    this.passwordIsGenerated = true;
+    const password = randomAlphanumeric(16);
+    this.changePassword.patchValue({
+      newPassword: password,
+      newPassword2: password
+    }, {emitEvent: false});
   }
 }
