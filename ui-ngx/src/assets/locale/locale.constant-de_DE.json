@@ -40,7 +40,7 @@
     "clear": "Löschen",
     "copy-code": "Zum Kopieren klicken",
     "copy-id": "ID kopieren",
-    "reset": "Reset",
+    "reset": "Zurücksetzen",
     "open": "Öffnen",
     "next": "Weiter",
     "next-with-label": "Weiter: {{label}}",
@@ -120,7 +120,12 @@
       "port-pattern": "Port muss eine positive Ganzzahl sein.",
       "port-range": "Port sollte im Bereich von 1 bis 65535 liegen.",
       "port-required": "Port ist erforderlich.",
-      "set-port": "Setzen Sie den Listener-Port wie in der YAML-Konfiguration definiert: {{port}}"
+      "set-port": "Setzen Sie den Listener-Port wie in der YAML-Konfiguration definiert: {{port}}",
+      "base-url": "Basis-URL",
+      "base-url-required": "Basis-URL ist erforderlich.",
+      "base-url-hint": "Die öffentliche URL dieser TBMQ-Instanz. Wird verwendet, um Links in E-Mails und Passwort-Zurücksetzungslinks zu generieren. Sollte mit der öffentlichen Domain und dem Protokoll übereinstimmen (z.B. https://tbmq.example.com).",
+      "prohibit-different-url": "Verwendung des Hostnamens aus den Client-Request-Headern verbieten",
+      "prohibit-different-url-hint": "Diese Einstellung sollte für Produktionsumgebungen aktiviert sein. Kann bei Deaktivierung Sicherheitsprobleme verursachen"
     }
   },
   "aggregation": {
@@ -209,6 +214,8 @@
     "expiration-time-never": "Kein Ablauf",
     "expiration-time": "Ablaufzeit",
     "expiration-date": "Datum",
+    "expiration-date-start-date-invalid": "Die Ablaufzeit kann nicht in der Vergangenheit liegen.",
+    "expiration-date-format-invalid": "Geben Sie eine gültige Ablaufzeit ein.",
     "no-blocked-clients-text": "Keine Blocked Clients gefunden",
     "type": "Blockieren nach",
     "type-client-id": "Client ID",
@@ -232,6 +239,8 @@
     "title": "Ungespeicherte Änderungen"
   },
   "common": {
+    "allowed": "Erlaubt",
+    "not-allowed": "Nicht erlaubt",
     "username": "Username",
     "password": "Password",
     "enter-username": "Username eingeben",
@@ -295,6 +304,9 @@
     "clear-request-title": "Alle Events löschen",
     "clear-request-text": "Sind Sie sicher, dass Sie alle Events löschen möchten?"
   },
+  "entity": {
+    "create-new": "Neu erstellen"
+  },
   "fullscreen": {
     "exit": "Exit",
     "expand": "Expand"
@@ -342,6 +354,7 @@
   },
   "login": {
     "login": "Login",
+    "login-as-user": "Als Admin anmelden",
     "request-password-reset": "Passwort-Zurücksetzung anfordern",
     "reset-password": "Passwort zurücksetzen",
     "create-password": "Passwort erstellen",
@@ -355,8 +368,7 @@
     "new-password-again": "Neues Passwort bestätigen",
     "password-link-sent-message": "Link zum Zurücksetzen wurde gesendet",
     "email": "Email",
-    "error": "Error",
-    "login-as-user": "Login as admin"
+    "error": "Anmeldefehler"
   },
   "profile": {
     "profile": "Profil",
@@ -589,7 +601,13 @@
       "outdated-hint": "Aktualisiert vor über einer Woche",
       "delete-resource": "Veralteten Dienst löschen",
       "delete-resource-title": "Möchten Sie den Dienst '{{id}}' wirklich löschen?",
-      "delete-resource-text": "Achtung: Nach der Bestätigung wird der Dienst gelöscht und alle zugehörigen Daten gehen unwiderruflich verloren."
+      "delete-resource-text": "Achtung: Nach der Bestätigung wird der Dienst gelöscht und alle zugehörigen Daten gehen unwiderruflich verloren.",
+      "cpu-warning-text": "Hohe CPU-Auslastung. Zur Vermeidung eines Systemausfalls die Systemleistung optimieren.",
+      "cpu-critical-text": "Kritisch hohe CPU-Auslastung. Zur Vermeidung eines Systemausfalls die Systemleistung optimieren.",
+      "ram-warning-text": "Wenig verfügbarer Arbeitsspeicher. Zur Vermeidung eines Systemausfalls die Systemleistung optimieren oder den Arbeitsspeicher erweitern.",
+      "ram-critical-text": "Kritisch wenig verfügbarer Arbeitsspeicher. Zur Vermeidung eines Systemausfalls die Systemleistung optimieren oder den Arbeitsspeicher erweitern.",
+      "disk-warning-text": "Wenig Speicherplatz verfügbar. Zur Vermeidung von Datenverlust Speicherplatz freigeben oder erweitern.",
+      "disk-critical-text": "Kritisch wenig Speicherplatz. Zur Vermeidung von Datenverlust Speicherplatz freigeben oder erweitern."
     }
   },
   "mqtt-client": {
@@ -638,7 +656,11 @@
     "search": "Nach Name suchen",
     "selected-client-credentials": "{ count, plural, =1 {1 Credential} other {# Credentials} } ausgewählt",
     "password": "Password",
+    "password-change": "Passwort ändern",
     "password-changed": "Password erfolgreich geändert",
+    "password-changed-warning": "Dieses Passwort wird nur einmal angezeigt. Bitte kopieren und sicher aufbewahren.",
+    "password-set": "Passwort festlegen",
+    "password-generate": "Passwort generieren",
     "certificate-common-name": "Certificate Common Name",
     "certificate-common-name-filter": "Certificate CN",
     "certificate-common-name-required": "Certificate Common Name ist erforderlich.",
@@ -747,6 +769,8 @@
     "topic": "Topic",
     "topic-filter": "Topic Filter",
     "topic-filter-required": "Topic Filter ist erforderlich.",
+    "topic-filter-multi-level-error": "Multi-Level-Wildcard muss das letzte Zeichen im Topic-Filter sein.",
+    "topic-filter-single-level-error": "Single-Level-Wildcard darf kein Zeichen nach sich haben außer '/'.",
     "topic-name-required": "Topic Name ist erforderlich.",
     "topic-name-invalid": "Topic Name ist ungültig.",
     "type-session": "Session",
@@ -769,6 +793,12 @@
   "shared-subscription": {
     "add": "Application Shared Subscription hinzufügen",
     "application-shared-subscriptions": "Application Entities",
+    "create-kafka-topics": "Kafka-Topics synchronisieren",
+    "create-kafka-topics-title": "Kafka-Topics für alle Application Shared Subscriptions erstellen?",
+    "create-kafka-topics-text": "Hiermit werden Kafka-Topics für alle Application Shared Subscriptions erstellt. Bestehende Topics bleiben erhalten, fehlende werden neu erstellt.",
+    "delete-kafka-topics": "Kafka-Topics löschen",
+    "delete-kafka-topics-title": "Kafka-Topics für alle Application Shared Subscriptions löschen?",
+    "delete-kafka-topics-text": "Achtung: Hiermit werden die Kafka-Topics aller Application Shared Subscriptions dauerhaft gelöscht und der Nachrichtenfluss kann unterbrochen werden.",
     "delete": "Application Shared Subscription löschen",
     "delete-shared-subscriptions": "Application Shared Subscriptions löschen",
     "delete-shared-subscription-title": "Möchten Sie die Application Shared Subscription '{{name}}' wirklich löschen?",
@@ -858,6 +888,8 @@
       "previous-week": "Vorherige Woche (So - Sa)",
       "previous-week-iso": "Vorherige Woche (Mo - So)",
       "previous-month": "Vorheriger Monat",
+      "previous-quarter": "Vorheriges Quartal",
+      "previous-half-year": "Vorheriges Halbjahr",
       "previous-year": "Vorheriges Jahr",
       "current-hour": "Aktuelle Stunde",
       "current-day": "Aktueller Tag",
@@ -868,14 +900,12 @@
       "current-week-iso-so-far": "Bisherige aktuelle Woche (Mo - So)",
       "current-month": "Aktueller Monat",
       "current-month-so-far": "Bisheriger aktueller Monat",
-      "current-year": "Aktuelles Jahr",
-      "current-year-so-far": "Bisheriges aktuelles Jahr",
-      "previous-quarter": "Vorheriges Quartal",
-      "previous-half-year": "Vorheriges Halbjahr",
       "current-quarter": "Aktuelles Quartal",
-      "current-quarter-so-far": "Bisheriges aktuelles Quartal",
+      "current-quarter-so-far": "Bisher im laufenden Quartal",
       "current-half-year": "Aktuelles Halbjahr",
-      "current-half-year-so-far": "Bisheriges aktuelles Halbjahr"
+      "current-half-year-so-far": "Bisheriges aktuelles Halbjahr",
+      "current-year": "Aktuelles Jahr",
+      "current-year-so-far": "Bisheriges aktuelles Jahr"
     },
     "type": {
       "week": "Woche (So - Sa)",
@@ -892,10 +922,14 @@
     "units": "Units"
   },
   "timewindow": {
+    "timewindow": "Timewindow",
+    "time-invalid": "Geben Sie ein gültiges Zeitformat ein",
     "days": "{ days, plural, =1 { Tag } other {# Tage } }",
     "hours": "{ hours, plural, =0 { Stunde } =1 {1 Stunde } other {# Stunden } }",
     "minutes": "{ minutes, plural, =0 { Minute } =1 {1 Minute } other {# Minuten } }",
+    "min": "{{ min }} min",
     "seconds": "{ seconds, plural, =0 { Sekunde } =1 {1 Sekunde } other {# Sekunden } }",
+    "sec": "{{ sec }} sec",
     "short": {
       "days": "{ days, plural, =1 {1 Tag } other {# Tage } }",
       "hours": "{ hours, plural, =1 {1 Stunde } other {# Stunden } }",
@@ -907,14 +941,11 @@
     "last-prefix": "letzte",
     "period": "von {{ startTime }} bis {{ endTime }}",
     "edit": "Zeitfenster bearbeiten",
+    "for-all-time": "Für den gesamten Zeitraum",
     "last": "Letzte",
     "time-period": "Zeitraum",
     "hide": "Ausblenden",
-    "interval": "Intervall",
-    "timewindow": "Timewindow",
-    "min": "{{ min }} min",
-    "sec": "{{ sec }} sec",
-    "for-all-time": "Für den gesamten Zeitraum"
+    "interval": "Intervall"
   },
   "version": {
     "version": "Version",
@@ -926,6 +957,7 @@
     "no-updates": "Die Version ist auf dem neuesten Stand."
   },
   "config": {
+    "allow-kafka-topic-deletion": "Kafka-Topic-Löschung",
     "key": "Key",
     "value": "Value",
     "port-mqtt": "TCP Port",
@@ -1041,10 +1073,12 @@
     "json-value": "JSON value",
     "json-value-invalid": "JSON value hat ein ungültiges Format",
     "json-value-required": "JSON value ist erforderlich.",
-    "required": "Value ist erforderlich."
+    "required": "Value ist erforderlich.",
+    "key-required": "Schlüssel ist erforderlich."
   },
   "ws-client": {
     "ws-client": "WebSocket Client",
+    "ws-client-settings": "WebSocket-Client-Einstellungen",
     "show-logs": "MQTT-Client-Aktivität protokollieren",
     "show-logs-hint": "Wenn aktiviert, werden MQTT-Client-Logs für Events (wie connect, reconnect, message, error usw.) in der Browser-Konsole angezeigt.",
     "settings": "Einstellungen",
