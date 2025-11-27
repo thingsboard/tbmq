@@ -128,9 +128,7 @@ public class ConnectServiceImpl implements ConnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         String clientId = actorState.getClientId();
 
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
-        }
+        log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
 
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
         SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
@@ -196,9 +194,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         pushConnAckMsg(actorState, connectionAcceptedMsg);
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
-        }
+        log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         putIntoClientMqttVersionCache(sessionCtx);
         clientSessionCtxService.registerSession(sessionCtx);
@@ -260,13 +256,9 @@ public class ConnectServiceImpl implements ConnectService {
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {
         if (t == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId());
-            }
+            log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId());
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), t);
-            }
+            log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), t);
         }
     }
 
@@ -354,9 +346,7 @@ public class ConnectServiceImpl implements ConnectService {
         MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
         if (property != null) {
             int value = Math.min(property.value(), maxTopicAlias);
-            if (log.isDebugEnabled()) {
-                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, clientId);
-            }
+            log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, clientId);
             return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
         }
         return TopicAliasCtx.DISABLED_TOPIC_ALIASES;
@@ -376,9 +366,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         var keepAliveSeconds = msg.getKeepAliveTimeSeconds();
         if (MqttVersion.MQTT_5 == mqttVersion && keepAliveSeconds > maxServerKeepAlive) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
-            }
+            log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
             keepAliveSeconds = maxServerKeepAlive;
         }
         return keepAliveSeconds;
@@ -399,9 +387,7 @@ public class ConnectServiceImpl implements ConnectService {
 
     @PreDestroy
     public void destroy() {
-        if (log.isDebugEnabled()) {
-            log.debug("Shutting down connect handler executor");
-        }
+        log.debug("Shutting down connect handler executor");
         if (connectHandlerExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(connectHandlerExecutor, "Connect handler");
         }

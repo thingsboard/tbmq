@@ -68,16 +68,12 @@ public class DisconnectServiceImpl implements DisconnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
         if (sessionCtx.getSessionInfo() == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
-            }
+            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
             closeChannel(sessionCtx);
             return;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
-        }
+        log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
         if (needSendDisconnectToClient(sessionCtx, reason)) {
             MqttReasonCodes.Disconnect code = MqttReasonCodeResolver.disconnect(reason.getType());
@@ -100,9 +96,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
-        }
+        log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
     }
 
     private int getSessionExpiryInterval(MqttProperties properties) {
@@ -126,16 +120,12 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             sessionCtx.closeChannel();
         } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
-            }
+            log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
         }
     }
 
     void notifyClientDisconnected(ClientActorStateInfo actorState, int sessionExpiryInterval) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing notifyClientDisconnected", actorState.getClientId());
-        }
+        log.trace("[{}] Executing notifyClientDisconnected", actorState.getClientId());
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
             clientSessionEventService.notifyClientDisconnected(
