@@ -165,6 +165,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processIncomingMsg(IncomingPublishMsg msg) {
+        if (sessionCtx == null) {
+            log.trace("[{}] Processing incoming msg when disconnected {}", clientId, msg);
+            return;
+        }
         if (!channelWritable) {
             log.trace("[{}] Processing incoming msg on Channel non-writable {}", clientId, msg);
             return;
@@ -284,7 +288,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processRemovePersistedMessages() {
         deviceMsgService.removePersistedMessages(clientId).whenComplete((status, throwable) -> {
             if (throwable != null) {
-                log.trace("Failed to remove persisted messages, clientId - {}", clientId, throwable);
+                log.warn("Failed to remove persisted messages, clientId - {}", clientId, throwable);
             } else {
                 log.trace("Removed persisted messages, clientId - {}", clientId);
             }

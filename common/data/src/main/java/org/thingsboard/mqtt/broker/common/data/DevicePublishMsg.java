@@ -16,26 +16,16 @@
 package org.thingsboard.mqtt.broker.common.data;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
-@Slf4j
 @Builder(toBuilder = true)
 @EqualsAndHashCode(exclude = "properties")
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DevicePublishMsg {
 
     private String clientId;
@@ -46,99 +36,7 @@ public class DevicePublishMsg {
     private Integer packetId;
     private PersistedPacketType packetType;
     private byte[] payload;
-    @JsonIgnore
     private MqttProperties properties;
     private boolean isRetained;
-
-    public DevicePublishMsg() {
-        properties = new MqttProperties();
-    }
-
-    public UserProperties getUserProperties() {
-        return UserProperties.newInstance(properties);
-    }
-
-    public Integer getMsgExpiryInterval() {
-        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) this.getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
-        return property == null ? null : property.value();
-    }
-
-    public Integer getPayloadFormatIndicator() {
-        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) this.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID);
-        return property == null ? null : property.value();
-    }
-
-    public String getContentType() {
-        MqttProperties.StringProperty property = (MqttProperties.StringProperty) this.getProperties().getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID);
-        return property == null ? null : property.value();
-    }
-
-    public String getResponseTopic() {
-        MqttProperties.StringProperty property = (MqttProperties.StringProperty) this.getProperties().getProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID);
-        return property == null ? null : property.value();
-    }
-
-    public byte[] getCorrelationData() {
-        MqttProperties.BinaryProperty property = (MqttProperties.BinaryProperty) this.getProperties().getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID);
-        return property == null ? null : property.value();
-    }
-
-    @SuppressWarnings("unchecked")
-    public List<Integer> getSubscriptionIds() {
-        List<MqttProperties.IntegerProperty> properties = (List<MqttProperties.IntegerProperty>) this.getProperties().getProperties(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
-        if (properties.isEmpty()) {
-            return null;
-        }
-        ArrayList<Integer> subscriptionIds = new ArrayList<>(properties.size());
-        properties.forEach(mqttProperty -> subscriptionIds.add(mqttProperty.value()));
-        return subscriptionIds;
-    }
-
-    public void setUserProperties(UserProperties userProperties) {
-        MqttProperties.UserProperties mqttUserProperties = UserProperties.mapToMqttUserProperties(userProperties);
-        if (mqttUserProperties != null) {
-            properties.add(mqttUserProperties);
-        }
-    }
-
-    public void setMsgExpiryInterval(Integer msgExpiryInterval) {
-        if (msgExpiryInterval != null) {
-            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, msgExpiryInterval));
-        }
-    }
-
-    public void setPayloadFormatIndicator(Integer payloadFormatIndicator) {
-        if (payloadFormatIndicator != null) {
-            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID, payloadFormatIndicator));
-        }
-    }
-
-    public void setContentType(String contentType) {
-        if (contentType != null) {
-            properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, contentType));
-        }
-    }
-
-    public void setResponseTopic(String responseTopic) {
-        if (responseTopic != null) {
-            properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID, responseTopic));
-        }
-    }
-
-    public void setCorrelationData(byte[] correlationData) {
-        if (correlationData != null) {
-            properties.add(new MqttProperties.BinaryProperty(BrokerConstants.CORRELATION_DATA_PROP_ID, correlationData));
-        }
-    }
-
-    public void setSubscriptionIds(List<Integer> subscriptionIds) {
-        if (!CollectionUtils.isEmpty(subscriptionIds)) {
-            subscriptionIds.forEach(subscriptionId -> {
-                if (subscriptionId > 0) {
-                    properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
-                }
-            });
-        }
-    }
 
 }
