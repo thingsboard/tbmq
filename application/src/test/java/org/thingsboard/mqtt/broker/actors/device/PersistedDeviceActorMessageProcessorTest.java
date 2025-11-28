@@ -337,6 +337,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenDevicePublishMsg_whenMessageIsNotExpired_thenProcessingIsCorrect() {
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
         MqttProperties properties = new MqttProperties();
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 100));
 
