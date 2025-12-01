@@ -222,18 +222,12 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportInboundTraffic(long bytes) {
-        if (enabled) {
-            AtomicLong al = stats.get(INBOUND_PAYLOAD_BYTES);
-            al.addAndGet(bytes);
-        }
+        reportTraffic(INBOUND_PAYLOAD_BYTES, bytes);
     }
 
     @Override
     public void reportOutBoundTraffic(long bytes) {
-        if (enabled) {
-            AtomicLong al = stats.get(OUTBOUND_PAYLOAD_BYTES);
-            al.addAndGet(bytes);
-        }
+        reportTraffic(OUTBOUND_PAYLOAD_BYTES, bytes);
     }
 
     @Override
@@ -254,6 +248,13 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     public void removeClient(String clientId) {
         if (enabled) {
             clientSessionsStats.remove(clientId);
+        }
+    }
+
+    private void reportTraffic(String key, long bytes) {
+        if (enabled) {
+            AtomicLong al = stats.get(key);
+            al.addAndGet(bytes);
         }
     }
 
