@@ -66,21 +66,19 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
         constructWsPipeline(ch);
 
-        if (historicalDataReportEnabled) {
-            pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient(), sslHandler != null));
-        }
-
         pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
+
+        if (historicalDataReportEnabled) {
+            pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient()));
+        }
 
         MqttSessionHandler handler = handlerFactory.create(sslHandler, getChannelInitializerName());
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Created {} channel for IP {}.", handler.getSessionId(), getChannelInitializerName(), ch.localAddress());
-        }
+        log.debug("[{}] Created {} channel for IP {}.", handler.getSessionId(), getChannelInitializerName(), ch.localAddress());
     }
 
     protected void constructWsPipeline(SocketChannel ch) {

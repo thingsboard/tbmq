@@ -53,9 +53,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
@@ -220,9 +221,17 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     @Override
-    public void reportTraffic(long bytes) {
+    public void reportInboundTraffic(long bytes) {
         if (enabled) {
-            AtomicLong al = stats.get(PROCESSED_BYTES);
+            AtomicLong al = stats.get(INBOUND_PAYLOAD_BYTES);
+            al.addAndGet(bytes);
+        }
+    }
+
+    @Override
+    public void reportOutBoundTraffic(long bytes) {
+        if (enabled) {
+            AtomicLong al = stats.get(OUTBOUND_PAYLOAD_BYTES);
             al.addAndGet(bytes);
         }
     }

@@ -54,7 +54,6 @@ import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -80,7 +79,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RateLimitBatchProcessor rateLimitBatchProcessor;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -94,7 +92,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
         this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
-        this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -173,11 +170,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         );
         switch (msgType) {
             case DISCONNECT:
-                reportTraffic(BrokerConstants.TLS_DISCONNECT_BYTES_OVERHEAD);
                 disconnect(NettyMqttConverter.createMqttDisconnectMsg(clientSessionCtx, msg));
                 break;
             case CONNECT:
-                reportTraffic(BrokerConstants.TLS_CONNECT_BYTES_OVERHEAD);
                 if (clientSessionCtx.isDefaultAuth()) {
                     clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
                 }
@@ -379,9 +374,4 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         return address;
     }
 
-    private void reportTraffic(int bytes) {
-        if (clientSessionCtx.getSslHandler() != null) {
-            tbMessageStatsReportClient.reportTraffic(bytes);
-        }
-    }
 }
