@@ -27,6 +27,8 @@ public interface ClientSessionService extends ClientSessionCache {
 
     void init(Map<String, ClientSessionInfo> clientSessionInfos);
 
+    boolean isInitialized();
+
     void startListening(ClientSessionConsumer clientSessionConsumer);
 
     void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback);

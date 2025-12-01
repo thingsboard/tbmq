@@ -61,21 +61,26 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private final ClientMqttActorManager clientMqttActorManager;
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
+    private volatile boolean initialized = false;
 
     @Override
     public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
-        this.clientSubscriptionsMap = new ConcurrentHashMap<>();
-        clientTopicSubscriptions.forEach((key, value) -> this.clientSubscriptionsMap.put(key.getId(), value));
+        clientSubscriptionsMap = new ConcurrentHashMap<>();
+        clientTopicSubscriptions.forEach((key, value) -> clientSubscriptionsMap.put(key.getId(), value));
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
-            }
+            log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
             subscriptionService.subscribe(clientId, topicSubscriptions);
             sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
+        initialized = true;
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return initialized;
     }
 
     @Override
@@ -93,9 +98,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
-        }
+        log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
         Set<TopicSubscription> clientSubscriptions = subscribe(clientId, topicSubscriptions);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, clientSubscriptions, callback);
@@ -103,9 +106,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
-        }
+        log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
         subscribe(clientId, topicSubscriptions);
     }
 
@@ -135,9 +136,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
-        }
+        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
         Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
@@ -145,9 +144,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeInternally(String clientId, Collection<String> topicFilters) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
-        }
+        log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
         unsubscribe(clientId, topicFilters);
     }
 
@@ -182,27 +179,21 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Clearing all subscriptions.", clientId);
-        }
+        log.trace("[{}] Clearing all subscriptions.", clientId);
         clearSubscriptions(clientId);
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, Collections.emptySet(), callback);
     }
 
     @Override
     public void clearSubscriptionsInternally(String clientId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Clearing all subscriptions internally.", clientId);
-        }
+        log.trace("[{}] Clearing all subscriptions internally.", clientId);
         clearSubscriptions(clientId);
     }
 
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] There were no active subscriptions for client.", clientId);
-            }
+            log.debug("[{}] There were no active subscriptions for client.", clientId);
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()

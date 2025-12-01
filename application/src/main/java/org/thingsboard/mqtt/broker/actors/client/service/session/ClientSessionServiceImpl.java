@@ -51,11 +51,18 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     private final StatsManager statsManager;
 
     private ConcurrentMap<String, ClientSessionInfo> clientSessionMap;
+    private volatile boolean initialized = false;
 
     @Override
     public void init(Map<String, ClientSessionInfo> clientSessionInfos) {
-        this.clientSessionMap = new ConcurrentHashMap<>(clientSessionInfos);
+        clientSessionMap = new ConcurrentHashMap<>(clientSessionInfos);
         statsManager.registerAllClientSessionsStats(clientSessionMap);
+        initialized = true;
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return initialized;
     }
 
     @Override

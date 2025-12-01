@@ -99,7 +99,13 @@ public class HistoricalStatsTotalConsumer {
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
-            sessionsProcessingExecutor.execute(this::processSessionsStats);
+            boolean sessionsReady = clientSessionService.isInitialized();
+            boolean subscriptionsReady = clientSubscriptionService.isInitialized();
+            if (sessionsReady && subscriptionsReady) {
+                sessionsProcessingExecutor.execute(this::processSessionsStats);
+            } else {
+                log.debug("Skipping session related stats report: {} not yet initialized", !sessionsReady ? "ClientSessionService" : "ClientSubscriptionService");
+            }
         }
     }
 
