@@ -58,6 +58,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         clientSessionMap = new ConcurrentHashMap<>(clientSessionInfos);
         statsManager.registerAllClientSessionsStats(clientSessionMap);
         initialized = true;
+        log.info("Client sessions initialized. Total sessions: {}", clientSessionMap.size());
     }
 
     @Override

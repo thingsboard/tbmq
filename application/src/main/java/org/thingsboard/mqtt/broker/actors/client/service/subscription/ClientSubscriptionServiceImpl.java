@@ -69,13 +69,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         clientTopicSubscriptions.forEach((key, value) -> clientSubscriptionsMap.put(key.getId(), value));
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
-        log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
-            log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
             subscriptionService.subscribe(clientId, topicSubscriptions);
             sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
         initialized = true;
+        log.info("Subscriptions initialized. Total clients with subscriptions: {}", clientSubscriptionsMap.size());
     }
 
     @Override

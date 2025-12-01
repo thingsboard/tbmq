@@ -45,4 +45,6 @@ public interface RetainedMsgListenerService {
 
     List<RetainedMsg> getRetainedMessages();
 
+    int getRetainedMessagesCount();
+
 }

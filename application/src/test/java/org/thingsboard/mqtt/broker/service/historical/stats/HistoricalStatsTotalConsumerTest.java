@@ -60,7 +60,7 @@ public class HistoricalStatsTotalConsumerTest {
         ts = System.currentTimeMillis();
         timeseriesService = mock(TimeseriesService.class);
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
-                null, null, null, null, null, timeseriesService
+                null, null, null, null, null, null, timeseriesService
         ));
         historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());
     }
