@@ -44,6 +44,6 @@ public class ClientActorContext {
     private final ClientLogger clientLogger;
     private final StatsManager statsManager;
 
-    @Value("${mqtt.pre-connect-queue.max-size:10000}")
+    @Value("${mqtt.pre-connect-queue.max-size:1000}")
     private int maxPreConnectQueueSize;
 }
