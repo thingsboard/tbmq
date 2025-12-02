@@ -253,17 +253,22 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   private fetchEntityTimeseries(initCharts = false) {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(
-        this.statsService.getEntityTimeseries(
-          brokerId,
-          this.fixedWindowTimeMs.startTimeMs,
-          this.fixedWindowTimeMs.endTimeMs,
-          [this.chartType()],
-          MAX_DATAPOINTS_LIMIT,
-          this.timewindow.aggregation.type,
-          this.timeService.timewindowGroupingInterval(this.timewindow)
-        )
+      const data$ = this.statsService.getEntityTimeseries(
+        brokerId,
+        this.fixedWindowTimeMs.startTimeMs,
+        this.fixedWindowTimeMs.endTimeMs,
+        [this.chartType()],
+        MAX_DATAPOINTS_LIMIT,
+        this.timewindow.aggregation.type,
+        this.timeService.timewindowGroupingInterval(this.timewindow)
       );
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          $getEntityTimeseriesTasks.push(data$);
+        }
+      } else {
+        $getEntityTimeseriesTasks.push(data$);
+      }
     }
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
@@ -341,7 +346,14 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   private startPolling() {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, [this.chartType()]));
+      const data$ = this.statsService.getLatestTimeseries(brokerId, [this.chartType()]);
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          $getLatestTimeseriesTasks.push(data$);
+        }
+      } else {
+        $getLatestTimeseriesTasks.push(data$);
+      }
     }
     timer(0, POLLING_INTERVAL)
     .pipe(
@@ -374,16 +386,26 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   private pushLatestValue(data: TimeseriesData[]) {
     for (let i = 0; i < this.brokerIds.length; i++) {
-      let index = i;
-      if (data[index][this.chartType()]?.length) {
-        if (this.totalOnly()) {
-          index = 0;
+      const brokerId = this.brokerIds[i];
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          if (data[0][this.chartType()]?.length) {
+            const latestValue = data[0][this.chartType()][0];
+            const chartData = this.chart.data.datasets[0].data;
+            const chartLatestValue = chartData[0];
+            if (latestValue?.ts > chartLatestValue?.ts) {
+              this.chart.data.datasets[0].data.unshift(latestValue);
+            }
+          }
         }
-        const latestValue = data[index][this.chartType()][0];
-        const chartData = this.chart.data.datasets[index].data;
-        const chartLatestValue = chartData[0];
-        if (latestValue?.ts > chartLatestValue?.ts) {
-          this.chart.data.datasets[index].data.unshift(latestValue);
+      } else {
+        if (data[i][this.chartType()]?.length) {
+          const latestValue = data[i][this.chartType()][0];
+          const chartData = this.chart.data.datasets[i].data;
+          const chartLatestValue = chartData[0];
+          if (latestValue?.ts > chartLatestValue?.ts) {
+            this.chart.data.datasets[i].data.unshift(latestValue);
+          }
         }
       }
     }
