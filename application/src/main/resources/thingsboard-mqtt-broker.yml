@@ -873,7 +873,7 @@ mqtt:
   msg-subscriptions-parallel-processing: "${MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING:false}"
   pre-connect-queue:
     # Max number of messages that can be stored in queue before client gets connected and start processing them
-    max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
+    max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:1000}"
   # Max number of PUBLISH messages not yet responded
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   flow-control:
