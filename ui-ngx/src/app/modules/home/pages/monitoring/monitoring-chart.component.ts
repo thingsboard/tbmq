@@ -168,7 +168,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.isLoading = true;
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
-    this.processedBytesUnitTypeChanged();
+    this.trafficPayloadChartUnitTypeChanged();
     this.fetchEntityTimeseries();
     this.chart.resetZoom();
   }
@@ -188,8 +188,8 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     }
   }
 
-  processedBytesUnitTypeChanged(type = DataSizeUnitType.BYTE) {
-    if (this.chartType() === StatsChartType.processedBytes) {
+  trafficPayloadChartUnitTypeChanged(type = DataSizeUnitType.BYTE) {
+    if (this.isTrafficPayloadChart()) {
       for (let i = 0; i < this.brokerIds.length; i++) {
         this.chart.data.datasets[i].data = this.chart.data.datasets[i].data
           .map(el => {
@@ -236,6 +236,10 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   totalOnly(): boolean {
     return CHART_TOTAL_ONLY.includes(this.chartType());
+  }
+
+  isTrafficPayloadChart() {
+    return this.chartType() === StatsChartType.inboundPayloadTraffic || this.chartType() === StatsChartType.outboundPayloadTraffic;
   }
 
   private initData() {
@@ -304,7 +308,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
       }
       const params = {...chartJsParams(this.chartPage), ...datasets} as ChartConfiguration<'line', TsValue[]>;
       this.chart = new Chart<'line', TsValue[]>(ctx, params);
-      if (this.chartType() === StatsChartType.processedBytes) {
+      if (this.isTrafficPayloadChart()) {
         this.chart.options.plugins.tooltip.callbacks.label = (context) => {
           const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
           return `${value} ${this.dataSizeUnitTypeTranslationMap.get(this.currentDataSizeUnitType)}`;
@@ -358,13 +362,13 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   private prepareData(data: TimeseriesData[]) {
-    if (this.chartType() === StatsChartType.processedBytes) {
-      const tsValue = data[0][StatsChartType.processedBytes][0];
-      data[0][StatsChartType.processedBytes][0] = {
+    if (this.isTrafficPayloadChart()) {
+      const tsValue = data[0][this.chartType()][0];
+      data[0][StatsChartType[this.chartType()]][0] = {
         value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
         ts: tsValue.ts
       }
-      this.processedBytesUnitTypeChanged(this.currentDataSizeUnitType);
+      this.trafficPayloadChartUnitTypeChanged(this.currentDataSizeUnitType);
     }
   }
 

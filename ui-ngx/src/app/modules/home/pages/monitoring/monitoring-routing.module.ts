@@ -50,19 +50,34 @@ const routes: Routes = [
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {
-            SYS_ADMIN: '/monitoring/stats'
+            SYS_ADMIN: '/monitoring/state-health'
           }
         }
       },
       {
-        path: 'stats',
-        loadComponent: () => import('@home/pages/monitoring/monitoring.component').then(m => m.MonitoringComponent),
+        path: 'state-health',
+        loadComponent: () => import('@home/pages/monitoring/monitoring-state-health.component').then(m => m.MonitoringStateHealthComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'monitoring.stats',
+          title: 'monitoring.state-health',
           breadcrumb: {
-            label: 'monitoring.stats',
+            label: 'monitoring.state-health',
             icon: 'insert_chart'
+          }
+        },
+        resolve: {
+          brokerIds: BrokerIdsResolver
+        }
+      },
+      {
+        path: 'traffic-performance',
+        loadComponent: () => import('@home/pages/monitoring/monitoring-traffic-performance.component').then(m => m.MonitoringTrafficPerformanceComponent),
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'monitoring.traffic-performance',
+          breadcrumb: {
+            label: 'monitoring.traffic-performance',
+            icon: 'speed'
           }
         },
         resolve: {

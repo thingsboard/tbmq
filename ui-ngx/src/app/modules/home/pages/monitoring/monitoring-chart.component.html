@@ -36,10 +36,10 @@
           aggregation="true">
         </tb-timewindow>
         <span class="flex flex-1"></span>
-        <span [style]="{paddingLeft: chartType() === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
+        <span [style]="{paddingLeft: isTrafficPayloadChart() ? '170px' : 0}">{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
         <span class="flex flex-1"></span>
-        @if (chartType() === 'processedBytes') {
-          <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
+        @if (isTrafficPayloadChart()) {
+          <tb-toggle-header (valueChange)="trafficPayloadChartUnitTypeChanged($event)"
             [value]="currentDataSizeUnitType"
             style="padding-right: 12px"
             [name]="chartType()"

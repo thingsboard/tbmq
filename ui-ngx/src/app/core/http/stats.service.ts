@@ -21,7 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
 import { AggregationType, Interval } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
-import { CHART_ALL, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
+import { CHARTS_HOME, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
 import { PageData } from '@shared/models/page/page-data';
 import { ResourceUsage } from '@shared/models/resource-usage.model';
 
@@ -33,7 +33,7 @@ export class StatsService {
   constructor(private http: HttpClient) {
   }
 
-  public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = CHART_ALL,
+  public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = CHARTS_HOME,
                              limit: number = MAX_DATAPOINTS_LIMIT, agg: AggregationType = AggregationType.NONE, interval?: Interval,
                              orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/${encodeURIComponent(entityId)}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
@@ -59,7 +59,7 @@ export class StatsService {
     }));
   }
 
-  public getLatestTimeseries(entityId: string, keys: Array<string> = CHART_ALL,
+  public getLatestTimeseries(entityId: string, keys: Array<string> = CHARTS_HOME,
                              useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/latest?entityId=${encodeURIComponent(entityId)}&keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {

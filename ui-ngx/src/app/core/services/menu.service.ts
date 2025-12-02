@@ -201,11 +201,18 @@ export class MenuService {
         icon: 'mdi:monitor-dashboard',
         pages: [
           {
-            id: MenuId.monitoring_broker_stats,
-            name: 'monitoring.stats',
+            id: MenuId.monitoring_broker_state_health,
+            name: 'monitoring.state-health',
             type: 'link',
-            path: '/monitoring/stats',
+            path: '/monitoring/state-health',
             icon: 'insert_chart'
+          },
+          {
+            id: MenuId.monitoring_broker_traffic_performance,
+            name: 'monitoring.traffic-performance',
+            type: 'link',
+            path: '/monitoring/traffic-performance',
+            icon: 'speed'
           },
           {
             id: MenuId.monitoring_resource_usage,

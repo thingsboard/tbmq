@@ -581,8 +581,27 @@
   },
   "monitoring": {
     "monitoring": "Monitoring",
-    "stats": "Broker Stats",
+    "state-health": "State & Health",
+    "traffic-performance": "Traffic & Performance",
     "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points.",
+      "chart": {
+        "incoming-messages": "Inbound messaging rate",
+        "incoming-messages-tooltip": "Measures the rate of messages published to the broker by MQTT clients",
+        "outgoing-messages": "Outbound delivery rate",
+        "outgoing-messages-tooltip": "Measures the rate of messages delivered from the broker to subscribers",
+        "dropped-messages": "Message drop count",
+        "dropped-messages-tooltip": "Counts the total number of messages the broker fails to process or deliver. Reasons include lack of subscriber interest (no matching subscriptions), resource limitations (full queues, storage limits), or rate limiting enforcement",
+        "sessions": "Sessions",
+        "sessions-tooltip": "Tracks the total count of active client connections and disconnected persistent session records managed by the broker",
+        "subscriptions": "Subscriptions",
+        "subscriptions-tooltip": "Tracks the aggregate count of all topic filter entries maintained by the broker for both connected and disconnected persistent clients",
+        "inbound-payload-traffic": "Inbound payload traffic",
+        "inbound-payload-traffic-tooltip": "Measures the total byte size of the message content received by the broker from publishers. This metric excludes all MQTT protocol overhead (headers, acknowledgments, control packets)",
+        "outbound-payload-traffic": "Outbound payload traffic",
+        "outbound-payload-traffic-tooltip": "Measures the total byte size of the message content delivered by the broker to subscribers. This metric excludes all MQTT protocol overhead (headers, acknowledgments, control packets)",
+        "retained-messages": "Retained message count",
+        "retained-messages-tooltip": "Tracks the total count of retained messages currently stored by the broker. This metric represents the number of unique topics holding a \"last known state\" value, which consumes persistent storage and is delivered immediately to new matching subscribers"
+      },
     "resource-usage": {
       "resource-usage": "Resource Usage",
       "no-resource-usage-text": "No resources found",
@@ -856,20 +875,6 @@
     "show-data": "Payload",
     "user-properties": "User Properties",
     "filter-title": "Filter"
-  },
-  "overview": {
-    "incoming-messages": "Incoming messages",
-    "outgoing-messages": "Outgoing messages",
-    "dropped-messages": "Dropped messages",
-    "sessions": "Sessions",
-    "subscriptions": "Subscriptions",
-    "incoming-messages-tooltip": "Messages published by MQTT clients to the broker",
-    "outgoing-messages-tooltip": "Messages that the broker delivers to subscribing clients",
-    "dropped-messages-tooltip": "Messages that do not have subscribers or when the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations",
-    "sessions-tooltip": "Number of current MQTT sessions",
-    "subscriptions-tooltip": "Number of current subscriptions",
-    "processed-bytes": "Network traffic",
-    "processed-bytes-tooltip": "Size of processed data, sent or received by the MQTT clients"
   },
   "timeinterval": {
     "seconds-interval": "{ seconds, plural, =1 {1 second} other {# seconds} }",
