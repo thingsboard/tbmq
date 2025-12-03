@@ -177,11 +177,13 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.isFullscreen = !this.isFullscreen;
     if (this.isFullscreen) {
       this.fullscreenChart = chartType;
-      let height = 85;
-      if (this.brokerIds.length > 1) {
-        height -= (this.brokerIds.length * 2);
+      let legendHeight = 120;
+      if (!this.totalOnly()) {
+        if (this.brokerIds.length > 1) {
+          legendHeight += ((this.brokerIds.length - 1) * 24);
+        }
       }
-      this.chartContainerHeight = height + 'vh';
+      this.chartContainerHeight = `calc(100vh - ${legendHeight}px)`;
     } else {
       this.fullscreenChart = undefined;
       this.chartContainerHeight = this.chartHeight + 'px';
