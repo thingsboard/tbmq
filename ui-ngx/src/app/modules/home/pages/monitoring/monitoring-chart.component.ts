@@ -31,7 +31,7 @@ import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
-  CHART_TOTAL_ONLY,
+  CHARTS_TOTAL_ONLY,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
@@ -235,7 +235,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   totalOnly(): boolean {
-    return CHART_TOTAL_ONLY.includes(this.chartType());
+    return CHARTS_TOTAL_ONLY.includes(this.chartType());
   }
 
   isTrafficPayloadChart() {

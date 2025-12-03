@@ -61,7 +61,11 @@ export const CHARTS_TRAFFIC_PERFORMANCE = [
   StatsChartType.inboundPayloadTraffic,
   StatsChartType.outboundPayloadTraffic,
 ];
-export const CHART_TOTAL_ONLY = [StatsChartType.sessions, StatsChartType.subscriptions];
+export const CHARTS_TOTAL_ONLY = [
+  StatsChartType.sessions,
+  StatsChartType.subscriptions,
+  StatsChartType.retainedMsgs,
+];
 export const TOTAL_KEY = 'total';
 export const MAX_DATAPOINTS_LIMIT = 50000;
 
@@ -102,10 +106,10 @@ export const MonitoringChartColorMap = new Map<string, string[]>(
     [StatsChartType.outgoingMsgs, ['#4A6EA8', '#BE4BD1', '#604BDB', '#4A6EA8', '#B39B7C']],
     [StatsChartType.inboundPayloadTraffic, ['#47848F', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
     [StatsChartType.outboundPayloadTraffic, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
+    [StatsChartType.droppedMsgs, ['#4FA889', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
     [StatsChartType.sessions, ['#58519E']],
     [StatsChartType.subscriptions, ['#4A6EA8']],
-    [StatsChartType.droppedMsgs, ['#47848F', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
-    [StatsChartType.retainedMsgs, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
+    [StatsChartType.retainedMsgs, ['#47848F']],
   ]
 );
 
@@ -169,7 +173,7 @@ const baseChartConfig = {
     crosshairPlugin,
   ],
   options: {
-    animation: true,
+    animation: false,
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
