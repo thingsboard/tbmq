@@ -114,6 +114,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
+  private visibleBrokerIds: string[] = [TOTAL_KEY];
 
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -141,7 +142,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   ngAfterViewInit(): void {
-    this.fetchEntityTimeseries(true);
+    this.fetchEntityTimeseries(true, this.getHistoricalDataObservables(this.visibleBrokerIds));
     $(document).on('keydown',
       (event) => {
         if ((event.code === 'Escape') && this.isFullscreen) {
@@ -169,7 +170,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
     this.trafficPayloadChartUnitTypeChanged();
-    this.fetchEntityTimeseries();
+    this.fetchEntityTimeseries(false, this.getHistoricalDataObservables(this.visibleBrokerIds));
     this.chart.resetZoom();
   }
 
@@ -192,7 +193,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   trafficPayloadChartUnitTypeChanged(type = DataSizeUnitType.BYTE) {
     if (this.isTrafficPayloadChart()) {
-      for (let i = 0; i < this.brokerIds.length; i++) {
+      for (let i = 0; i < this.visibleBrokerIds.length; i++) {
         this.chart.data.datasets[i].data = this.chart.data.datasets[i].data
           .map(el => {
             return {
@@ -207,18 +208,32 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   onLegendKeyEnter(legendKey: LegendKey) {
-    const datasetIndex = legendKey.dataIndex;
-    this.chart.data.datasets[datasetIndex].borderWidth = 4;
-    this.updateChart();
+    if (this.isVisibleBrokerIdInLegend(legendKey.dataKey.label)) {
+      const datasetIndex = legendKey.dataIndex;
+      this.chart.data.datasets[datasetIndex].borderWidth = 4;
+      this.updateChart();
+    }
+  }
+
+  private isVisibleBrokerIdInLegend(brokerId: string): boolean {
+    return this.visibleBrokerIds.includes(brokerId);
   }
 
   onLegendKeyLeave(legendKey: LegendKey) {
-    const datasetIndex = legendKey.dataIndex;
-    this.chart.data.datasets[datasetIndex].borderWidth = 2;
-    this.updateChart();
+    if (this.isVisibleBrokerIdInLegend(legendKey.dataKey.label)) {
+      const datasetIndex = legendKey.dataIndex;
+      this.chart.data.datasets[datasetIndex].borderWidth = 2;
+      this.updateChart();
+    }
   }
 
   toggleLegendKey(legendKey: LegendKey) {
+    const brokerId = legendKey.dataKey.label;
+    if (!this.isVisibleBrokerIdInLegend(brokerId)) {
+      this.visibleBrokerIds.push(brokerId);
+      this.fetchEntityTimeseriesOne(brokerId, this.getHistoricalDataObservables([brokerId]));
+    }
+
     const datasetIndex = legendKey.dataIndex;
     if (this.chart.isDatasetVisible(datasetIndex)) {
       this.chart.hide(datasetIndex);
@@ -252,18 +267,10 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
   }
 
-  private fetchEntityTimeseries(initCharts = false) {
+  private getHistoricalDataObservables(brokerIds: string[]): Observable<TimeseriesData>[] {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
-    for (const brokerId of this.brokerIds) {
-      const data$ = this.statsService.getEntityTimeseries(
-        brokerId,
-        this.fixedWindowTimeMs.startTimeMs,
-        this.fixedWindowTimeMs.endTimeMs,
-        [this.chartType()],
-        MAX_DATAPOINTS_LIMIT,
-        this.timewindow.aggregation.type,
-        this.timeService.timewindowGroupingInterval(this.timewindow)
-      );
+    for (const brokerId of brokerIds) {
+      const data$ = this.getHistoricalData(brokerId);
       if (this.totalOnly()) {
         if (brokerId === TOTAL_KEY) {
           $getEntityTimeseriesTasks.push(data$);
@@ -272,14 +279,19 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
         $getEntityTimeseriesTasks.push(data$);
       }
     }
-    forkJoin($getEntityTimeseriesTasks)
+    return $getEntityTimeseriesTasks;
+  }
+
+  private fetchEntityTimeseries(initCharts: boolean, $tasks: Observable<TimeseriesData>[]) {
+    forkJoin($tasks)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
+        console.log('fetchEntityTimeseries', data)
         this.isLoading = false;
         if (initCharts) {
           this.initCharts(data as TimeseriesData[]);
         } else {
-            for (let i = 0; i < this.brokerIds.length; i++) {
+            for (let i = 0; i < this.visibleBrokerIds.length; i++) {
               if (this.totalOnly()) {
                 this.chart.data.datasets[0].data = data[0][this.chartType()];
               } else {
@@ -289,10 +301,37 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
             }
         }
         if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
-          this.startPolling();
+          this.startPolling(this.getLatestDataObservables());
         }
         this.checkMaxAllowedDataLength(data);
       });
+  }
+
+  private fetchEntityTimeseriesOne(brokerId: string, $tasks: Observable<TimeseriesData>[]) {
+    forkJoin($tasks)
+      .pipe(takeUntil(this.stopPolling$))
+      .subscribe(data => {
+        this.isLoading = false;
+        const dataIndex = this.chart.data.datasets.findIndex(ds => ds.label === brokerId);
+        this.chart.data.datasets[dataIndex].data = data[0][this.chartType()];
+        this.updateChartView();
+        if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
+          this.startPollingOne(brokerId, this.getLatestDataObservablesOne(brokerId));
+        }
+        this.checkMaxAllowedDataLength(data);
+      });
+  }
+
+  private getHistoricalData(brokerId: string): Observable<TimeseriesData> {
+    return this.statsService.getEntityTimeseries(
+      brokerId,
+      this.fixedWindowTimeMs.startTimeMs,
+      this.fixedWindowTimeMs.endTimeMs,
+      [this.chartType()],
+      MAX_DATAPOINTS_LIMIT,
+      this.timewindow.aggregation.type,
+      this.timeService.timewindowGroupingInterval(this.timewindow)
+    );
   }
 
   private initCharts(data: TimeseriesData[]) {
@@ -305,12 +344,22 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
         const brokerId = this.brokerIds[i];
         if (this.totalOnly()) {
           if (brokerId === TOTAL_KEY) {
-            datasets.data.datasets.push(this.getDataset(data, i, brokerId));
-            this.updateLegendData(data[i][this.chartType()]);
+            if (this.visibleBrokerIds.includes(brokerId)) {
+              datasets.data.datasets.push(this.getDataset(data, i, brokerId));
+              this.updateLegendData(data[i][this.chartType()]);
+            } else {
+              datasets.data.datasets.push(this.getDataset(null, i, brokerId))
+              this.updateLegendData(null);
+            }
           }
         } else {
-          datasets.data.datasets.push(this.getDataset(data, i, brokerId));
-          this.updateLegendData(data[i][this.chartType()]);
+          if (this.visibleBrokerIds.includes(brokerId)) {
+            datasets.data.datasets.push(this.getDataset(data, i, brokerId));
+            this.updateLegendData(data[i][this.chartType()]);
+          } else {
+            datasets.data.datasets.push(this.getDataset(null, i, brokerId));
+            this.updateLegendData(null);
+          }
         }
       }
       const params = {...chartJsParams(this.chartPage), ...datasets} as ChartConfiguration<'line', TsValue[]>;
@@ -345,10 +394,10 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     };
   }
 
-  private startPolling() {
+  private getLatestDataObservables() {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
-    for (const brokerId of this.brokerIds) {
-      const data$ = this.statsService.getLatestTimeseries(brokerId, [this.chartType()]);
+    for (const brokerId of this.visibleBrokerIds) {
+      const data$ = this.getLatestData(brokerId);
       if (this.totalOnly()) {
         if (brokerId === TOTAL_KEY) {
           $getLatestTimeseriesTasks.push(data$);
@@ -357,17 +406,46 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
         $getLatestTimeseriesTasks.push(data$);
       }
     }
+    return $getLatestTimeseriesTasks;
+  }
+
+  private getLatestDataObservablesOne(brokerId: string) {
+    const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
+    const data$ = this.getLatestData(brokerId);
+    $getLatestTimeseriesTasks.push(data$);
+    return $getLatestTimeseriesTasks;
+  }
+
+  private startPolling($tasks: Observable<TimeseriesData>[]) {
     timer(0, POLLING_INTERVAL)
-    .pipe(
-      switchMap(() => forkJoin($getLatestTimeseriesTasks)),
-      takeUntil(this.stopPolling$),
-      share()
-    ).subscribe(data => {
+      .pipe(
+        switchMap(() => forkJoin($tasks)),
+        takeUntil(this.stopPolling$),
+        share()
+      ).subscribe(data => {
       this.addPollingIntervalToTimewindow();
       this.prepareData(data);
       this.pushLatestValue(data as TimeseriesData[]);
       this.updateChartView();
     });
+  }
+
+  private startPollingOne(brokerId: string, $tasks: Observable<TimeseriesData>[]) {
+    timer(0, POLLING_INTERVAL)
+      .pipe(
+        switchMap(() => forkJoin($tasks)),
+        takeUntil(this.stopPolling$),
+        share()
+      ).subscribe(data => {
+      this.addPollingIntervalToTimewindow();
+      this.prepareData(data);
+      this.pushLatestValueOne(brokerId, data as TimeseriesData[]);
+      this.updateChartView();
+    });
+  }
+
+  private getLatestData(brokerId: string) {
+    return this.statsService.getLatestTimeseries(brokerId, [this.chartType()]);
   }
 
   private addPollingIntervalToTimewindow() {
@@ -387,8 +465,8 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   private pushLatestValue(data: TimeseriesData[]) {
-    for (let i = 0; i < this.brokerIds.length; i++) {
-      const brokerId = this.brokerIds[i];
+    for (let i = 0; i < this.visibleBrokerIds.length; i++) {
+      const brokerId = this.visibleBrokerIds[i];
       if (this.totalOnly()) {
         if (brokerId === TOTAL_KEY) {
           if (data[0][this.chartType()]?.length) {
@@ -409,6 +487,19 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
             this.chart.data.datasets[i].data.unshift(latestValue);
           }
         }
+      }
+    }
+  }
+
+  private pushLatestValueOne(brokerId: string, data: TimeseriesData[]) {
+    console.log('pushLatestValueOne', this.chart.data.datasets)
+    const dataIndex = this.chart.data.datasets.findIndex(ds => ds.label === brokerId);
+    if (data[0][this.chartType()]?.length) {
+      const latestValue = data[0][this.chartType()][0];
+      const chartData = this.chart.data.datasets[dataIndex].data;
+      const chartLatestValue = chartData[0];
+      if (latestValue?.ts > chartLatestValue?.ts) {
+        this.chart.data.datasets[dataIndex].data.unshift(latestValue);
       }
     }
   }
