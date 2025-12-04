@@ -27,7 +27,6 @@ import { MonitoringChartLegendItemComponent } from './monitoring-chart-legend-it
   templateUrl: './monitoring-chart-legend.component.html'
 })
 export class MonitoringChartLegendComponent {
-  readonly showLegend = input<boolean>(true);
   readonly isFullscreen = input<boolean>(false);
   readonly legendConfig = input<LegendConfig>({
     showMin: true,

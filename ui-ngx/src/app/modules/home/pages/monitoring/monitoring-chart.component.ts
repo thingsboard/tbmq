@@ -93,7 +93,6 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   isFullscreen = false;
   isLoading = false;
 
-  showLegend = true;
   legendConfig: LegendConfig = {
     showMin: true,
     showMax: true,
