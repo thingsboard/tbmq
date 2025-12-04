@@ -28,7 +28,6 @@ import {
   ChartTooltipTranslationMap,
   getColor,
   StatsChartType,
-  StatsChartTypeTranslationMap,
   TimeseriesData, TOTAL_KEY
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
@@ -39,14 +38,15 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { FormsModule } from '@angular/forms';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MonitoringChartCanvasComponent } from '../../pages/monitoring/monitoring-chart-canvas.component';
+import { MonitoringChartToolbarComponent } from '../../pages/monitoring/monitoring-chart-toolbar.component';
 import 'chartjs-adapter-moment';
 
 @Component({
     selector: 'tb-home-charts',
     templateUrl: './home-charts.component.html',
     styleUrls: ['./home-charts.component.scss'],
-    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, MatTooltip, TranslateModule]
+    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, TranslateModule, MonitoringChartCanvasComponent, MonitoringChartToolbarComponent]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
@@ -56,9 +56,9 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   chartPage = ChartPage.home;
   charts = {};
   chartKeys = CHARTS_HOME;
-  chartTypeTranslationMap = StatsChartTypeTranslationMap;
   chartWidth: string;
   chartHeight: string;
+  chartHeightPx: number;
   chartsCarouselIndex = 0;
   items = 5;
 
@@ -181,7 +181,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.items = 2;
       }
       this.chartWidth = chartWidthPx + 'px';
-      this.chartHeight = (chartWidthPx * 0.5) + 'px';
+      this.chartHeightPx = Math.round(chartWidthPx * 0.5);
+      this.chartHeight = this.chartHeightPx + 'px';
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

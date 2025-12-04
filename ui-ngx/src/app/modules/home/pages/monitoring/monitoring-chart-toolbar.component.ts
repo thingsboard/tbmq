@@ -41,6 +41,10 @@ export class MonitoringChartToolbarComponent {
   readonly chartType = input<string>();
   readonly isTrafficPayloadChart = input<boolean>(false);
   readonly currentDataSizeUnitType = input<string>();
+
+  readonly showTimewindow = input<boolean>(true);
+  readonly showUnitToggle = input<boolean>(true);
+  readonly showFullscreen = input<boolean>(true);
   readonly dataSizeUnitType = Object.values(DataSizeUnitType);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   readonly chartTypeTranslationMap = StatsChartTypeTranslationMap;
