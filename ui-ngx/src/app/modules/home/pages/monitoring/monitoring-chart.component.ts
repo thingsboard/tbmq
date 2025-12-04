@@ -111,8 +111,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
-
-  // Tooltip and translation maps moved to toolbar component
+  private pollingStarted = false;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -158,7 +157,10 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     }
   }
 
-  onTimewindowChange() {
+  onTimewindowChange(timewindow?: Timewindow) {
+    if (timewindow) {
+      this.timewindow = timewindow;
+    }
     this.isLoading = true;
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
@@ -285,8 +287,18 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
           this.updateChartView();
         }
         if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
-          const latestTasks = this.getTimeseriesData(brokerIds, true);
-          this.startPolling(brokerIds, latestTasks);
+          if (!this.pollingStarted) {
+            this.startPolling();
+          } else {
+            const latestTasks = this.getTimeseriesData(this.visibleBrokerIds, true);
+            forkJoin(latestTasks)
+              .pipe(takeUntil(this.stopPolling$))
+              .subscribe(latestData => {
+                this.prepareData(latestData as TimeseriesData[]);
+                this.pushLatestValue(this.visibleBrokerIds, latestData);
+                this.updateChartView();
+              });
+          }
         }
         this.checkMaxAllowedDataLength(data);
       });
@@ -364,16 +376,17 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     };
   }
 
-  private startPolling(brokerIds: string[], $tasks: Observable<TimeseriesData>[]) {
+  private startPolling() {
+    this.pollingStarted = true;
     timer(0, POLLING_INTERVAL)
       .pipe(
-        switchMap(() => forkJoin($tasks)),
+        switchMap(() => forkJoin(this.getTimeseriesData(this.visibleBrokerIds, true))),
         takeUntil(this.stopPolling$),
         share()
       ).subscribe(data => {
       this.addPollingIntervalToTimewindow();
       this.prepareData(data as TimeseriesData[]);
-      this.pushLatestValue(brokerIds, data);
+      this.pushLatestValue(this.visibleBrokerIds, data);
       this.updateChartView();
     });
   }
@@ -434,6 +447,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   private stopPolling() {
     this.stopPolling$.next();
+    this.pollingStarted = false;
   }
 
   private updateChart() {

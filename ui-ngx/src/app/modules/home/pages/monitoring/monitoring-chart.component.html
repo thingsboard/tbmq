@@ -27,7 +27,7 @@
     <div [id]="chartType() + 'container'" class="mat-padding chart-container flex h-full flex-col">
       <tb-monitoring-chart-toolbar
         [timewindow]="timewindow"
-        (timewindowChange)="onTimewindowChange()"
+        (timewindowChange)="onTimewindowChange($event)"
         [isFullscreen]="isFullscreen"
         [chartType]="chartType()"
         [isTrafficPayloadChart]="isTrafficPayloadChart()"
