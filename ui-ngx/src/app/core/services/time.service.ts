@@ -22,12 +22,14 @@ import {
   defaultTimewindow,
   Interval,
   IntervalMath,
-  MINUTE,
+  MINUTE, SECOND,
   TimeInterval,
   Timewindow
 } from '@shared/models/time/time.models';
 import { isDefined } from '@core/utils';
 import { MAX_DATAPOINTS_LIMIT } from '@app/shared/models/chart.model';
+import { Observable, timer } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 
 const MIN_INTERVAL = 2 * MINUTE;
 const MAX_INTERVAL = 365 * 20 * DAY;
@@ -39,6 +41,7 @@ const MIN_LIMIT = 1;
 export class TimeService {
 
   private maxDatapointsLimit = MAX_DATAPOINTS_LIMIT;
+  private syncTimer$: Observable<number> | null = null;
 
   constructor() {}
 
@@ -123,6 +126,20 @@ export class TimeService {
     if (isDefined(timewindow.history)) {
       return timewindow.history.interval;
     }
+  }
+
+  public getSyncTimer(interval = MINUTE, offset = 5 * SECOND): Observable<number> {
+    if (!this.syncTimer$) {
+      const now = Date.now();
+      const msIntoMinute = now % interval;
+      const initialDelay = (offset - msIntoMinute + interval) % interval;
+      this.syncTimer$ = timer(initialDelay, interval)
+        .pipe(shareReplay({
+          bufferSize: 1,
+          refCount: true
+        }));
+    }
+    return this.syncTimer$;
   }
 
   private toBound(value: number, min: number, max: number, defValue: number): number {

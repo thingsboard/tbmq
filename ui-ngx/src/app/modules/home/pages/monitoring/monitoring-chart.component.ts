@@ -25,7 +25,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, Subject } from 'rxjs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
@@ -34,7 +34,6 @@ import {
   CHARTS_TOTAL_ONLY,
   chartJsParams,
   ChartPage,
-  ChartTooltipTranslationMap,
   getColor,
   LegendConfig,
   LegendKey,
@@ -378,7 +377,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   private startPolling() {
     this.pollingStarted = true;
-    timer(0, POLLING_INTERVAL)
+    this.timeService.getSyncTimer()
       .pipe(
         switchMap(() => forkJoin(this.getTimeseriesData(this.visibleBrokerIds, true))),
         takeUntil(this.stopPolling$),

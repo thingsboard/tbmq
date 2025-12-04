@@ -15,8 +15,8 @@
 ///
 
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
-import { retry, Subject, timer } from 'rxjs';
-import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { retry, Subject } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
@@ -25,7 +25,6 @@ import {
   CHARTS_HOME,
   chartJsParams,
   ChartPage,
-  ChartTooltipTranslationMap,
   getColor,
   StatsChartType,
   TimeseriesData, TOTAL_KEY
@@ -66,11 +65,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
   private fixedWindowTimeMs: FixedWindow;
 
-  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
-
-  constructor(private translate: TranslateService,
-              private timeService: TimeService,
-              private statsService: StatsService) {
+  constructor(
+    private timeService: TimeService,
+    private statsService: StatsService,
+  ) {
   }
 
   ngOnInit() {
@@ -130,7 +128,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private startPolling() {
-    timer(0, POLLING_INTERVAL)
+    this.timeService.getSyncTimer()
       .pipe(
         switchMap(() => this.statsService.getLatestTimeseries(TOTAL_KEY)),
         retry(),

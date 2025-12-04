@@ -14,9 +14,6 @@
 /// limitations under the License.
 ///
 
-/*
- * Copyright © 2016-2025 The Thingsboard Authors
- */
 import { Component, input } from '@angular/core';
 
 @Component({

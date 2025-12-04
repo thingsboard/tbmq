@@ -14,9 +14,6 @@
 /// limitations under the License.
 ///
 
-/*
- * Copyright © 2016-2025 The Thingsboard Authors
- */
 import { Component, EventEmitter, input, Output } from '@angular/core';
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { LegendKey } from '@shared/models/chart.model';

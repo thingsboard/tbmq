@@ -14,9 +14,6 @@
 /// limitations under the License.
 ///
 
-/*
- * Copyright © 2016-2025 The Thingsboard Authors
- */
 import { Component, EventEmitter, input, Output } from '@angular/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
