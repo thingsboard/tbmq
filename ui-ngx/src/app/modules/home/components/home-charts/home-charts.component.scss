@@ -52,8 +52,9 @@
             padding-top: 4px;
 
             span {
-              font-size: 0.9em;
+              font-size: 0.8em;
               font-weight: 500;
+              white-space: nowrap;
               color: rgba(0,0,0,0.54);
               padding-left: 6px;
             }
@@ -63,7 +64,6 @@
               height: 1em;
               width: 1em;
               line-height: 1em;
-              padding-left: 0.25em;
               color: rgba(0,0,0,0.12);
               cursor: default;
             }

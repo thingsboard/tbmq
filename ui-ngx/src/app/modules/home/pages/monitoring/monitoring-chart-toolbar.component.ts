@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, input, Output } from '@angular/core';
+import { Component, computed, EventEmitter, input, Output } from '@angular/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
@@ -24,27 +24,32 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import { ChartTooltipTranslationMap, StatsChartTypeTranslationMap } from '@shared/models/chart.model';
+import { ChartPage, ChartTooltipTranslationMap, StatsChartTypeTranslationMap } from '@shared/models/chart.model';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 
 @Component({
   selector: 'tb-monitoring-chart-toolbar',
   standalone: true,
-  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule],
+  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule, AsyncPipe, NgTemplateOutlet],
   templateUrl: './monitoring-chart-toolbar.component.html'
 })
 export class MonitoringChartToolbarComponent {
   readonly timewindow = input<Timewindow>();
-  readonly isFullscreen = input<boolean>(false);
   readonly chartType = input<string>();
+  readonly chartPage = input<string>();
+
+  readonly isFullscreen = input<boolean>(false);
   readonly isTrafficPayloadChart = input<boolean>(false);
   readonly currentDataSizeUnitType = input<string>();
-
   readonly showTimewindow = input<boolean>(true);
   readonly showUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
+  readonly isHomeChart = computed(() => this.chartPage() === ChartPage.home);
+
   readonly dataSizeUnitType = Object.values(DataSizeUnitType);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   readonly chartTypeTranslationMap = StatsChartTypeTranslationMap;
+
   @Output() timewindowChange = new EventEmitter<Timewindow>();
   @Output() unitTypeChange = new EventEmitter<string>();
   @Output() fullscreenToggle = new EventEmitter<void>();

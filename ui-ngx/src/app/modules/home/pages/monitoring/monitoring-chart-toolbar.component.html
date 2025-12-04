@@ -15,9 +15,15 @@
     limitations under the License.
 
 -->
-<section class="flex flex-row items-center justify-between" [style]="{'padding-right': isFullscreen() ? '20px' : 0}">
-  @if (showTimewindow()) {
+@if (isHomeChart()) {
+  <section class="mx-1 flex flex-row items-center justify-between">
+    <ng-template *ngTemplateOutlet="title"></ng-template>
+    <ng-template *ngTemplateOutlet="infoIcon"></ng-template>
+  </section>
+} @else {
+  <section class="flex flex-row items-center justify-between">
     <tb-timewindow
+      [class.hidden]="!showTimewindow()"
       [ngModel]="timewindow()"
       (ngModelChange)="timewindowChange.emit($event)"
       asButton
@@ -25,28 +31,24 @@
       tooltipPosition="left"
       aggregation="true">
     </tb-timewindow>
-  }
-  <span class="flex flex-1"></span>
-  <span [style]="{paddingLeft: isTrafficPayloadChart() ? '170px' : 0}">{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
-  <span class="flex flex-1"></span>
-  @if (isTrafficPayloadChart() && showUnitToggle()) {
-    <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
-                      [value]="currentDataSizeUnitType()"
-                      style="padding-right: 12px"
-                      [name]="chartType()"
-                      useSelectOnMdLg="true"
-                      appearance="fill">
-      @for (type of dataSizeUnitType; track type) {
-        <tb-toggle-option [value]="type">
-          {{ dataSizeUnitTypeTranslationMap.get(type) }}
-        </tb-toggle-option>
-      }
-    </tb-toggle-header>
-  }
-  <mat-icon [matTooltip]="chartTooltip(chartType())" class="material-icons" style="cursor: default">
-    info_outline
-  </mat-icon>
-  @if (showFullscreen()) {
+    <span class="flex flex-1"></span>
+    <ng-template *ngTemplateOutlet="title"></ng-template>
+    <span class="flex flex-1"></span>
+    @if (isTrafficPayloadChart() && showUnitToggle()) {
+      <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
+                        [value]="currentDataSizeUnitType()"
+                        style="padding-right: 12px"
+                        [name]="chartType()"
+                        useSelectOnMdLg="true"
+                        appearance="fill">
+        @for (type of dataSizeUnitType; track type) {
+          <tb-toggle-option [value]="type">
+            {{ dataSizeUnitTypeTranslationMap.get(type) }}
+          </tb-toggle-option>
+        }
+      </tb-toggle-header>
+    }
+    <ng-template *ngTemplateOutlet="infoIcon"></ng-template>
     <button type="button"
             mat-icon-button class="tb-fullscreen-button tb-mat-40"
             (click)="fullscreenToggle.emit()"
@@ -54,5 +56,19 @@
             matTooltipPosition="above">
       <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
     </button>
-  }
-</section>
+  </section>
+}
+
+<ng-template #title>
+  <span [style]="{paddingLeft: isTrafficPayloadChart() && !isHomeChart() ? '170px' : 0}">
+    {{ chartTypeTranslationMap.get(chartType()) | translate }}
+  </span>
+</ng-template>
+
+<ng-template #infoIcon>
+  <mat-icon [matTooltip]="chartTooltip(chartType())"
+            class="material-icons md:!hidden"
+            style="cursor: default">
+    info_outline
+  </mat-icon>
+</ng-template>
