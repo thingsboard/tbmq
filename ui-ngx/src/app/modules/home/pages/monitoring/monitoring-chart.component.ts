@@ -59,27 +59,23 @@ import {
   convertDataSizeUnits
 } from '@core/utils';
 import { ChartConfiguration, ChartDataset, ChartType, LineController, Point, TimeSeriesScale } from 'chart.js';
-import { TimewindowComponent } from '@shared/components/time/timewindow.component';
-import { FormsModule } from '@angular/forms';
-import { NgTemplateOutlet } from '@angular/common';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
-import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatIconButton } from '@angular/material/button';
-import { SafePipe } from '@shared/pipe/safe.pipe';
 import { MatProgressBar } from '@angular/material/progress-bar';
 
 import Chart from 'chart.js/auto';
 import Zoom from 'chartjs-plugin-zoom';
 import 'chartjs-adapter-moment';
+import { MonitoringChartToolbarComponent } from './monitoring-chart-toolbar.component';
+import { MonitoringChartCanvasComponent } from './monitoring-chart-canvas.component';
+import { MonitoringChartLegendComponent } from './monitoring-chart-legend.component';
 Chart.register([Zoom]);
 
 @Component({
   selector: 'tb-monitoring-chart',
   templateUrl: './monitoring-chart.component.html',
   styleUrls: ['./monitoring-chart.component.scss'],
-  imports: [TimewindowComponent, FormsModule, FullscreenDirective, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule, MatProgressBar]
+  imports: [FullscreenDirective, TranslateModule, MatProgressBar,
+    MonitoringChartToolbarComponent, MonitoringChartCanvasComponent, MonitoringChartLegendComponent]
 })
 export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
@@ -88,9 +84,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
 
   chartPage = ChartPage.monitoring;
   chart: Chart<'line', TsValue[]>;
-  chartTypeTranslationMap = StatsChartTypeTranslationMap;
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
-  dataSizeUnitType = Object.values(DataSizeUnitType);
   timewindow: Timewindow;
 
   chartHeight = 300;
@@ -118,7 +112,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
-  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
+  // Tooltip and translation maps moved to toolbar component
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
