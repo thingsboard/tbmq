@@ -22,13 +22,13 @@ import { CHARTS_TRAFFIC_PERFORMANCE } from '@shared/models/chart.model';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
-import { MonitoringChartComponent } from '@home/pages/monitoring/monitoring-chart.component';
+import { MonitoringChartsComponent } from '@home/pages/monitoring/monitoring-charts.component';
 
 @Component({
     selector: 'tb-monitoring-traffic-performance',
     templateUrl: './monitoring-traffic-performance.component.html',
     styleUrls: ['./monitoring-traffic-performance.component.scss'],
-    imports: [MatToolbar, TimewindowComponent, FormsModule, TranslateModule, MonitoringChartComponent]
+    imports: [MatToolbar, TimewindowComponent, FormsModule, TranslateModule, MonitoringChartsComponent]
 })
 export class MonitoringTrafficPerformanceComponent {
 

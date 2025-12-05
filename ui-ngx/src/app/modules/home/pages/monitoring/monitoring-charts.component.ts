@@ -57,26 +57,26 @@ import {
   calculateTotal,
   convertDataSizeUnits
 } from '@core/utils';
-import { ChartConfiguration, ChartDataset, ChartType, LineController, Point, TimeSeriesScale } from 'chart.js';
+import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MonitoringChartToolbarComponent } from '@shared/components/chart/monitoring-chart-toolbar.component';
+import { MonitoringChartCanvasComponent } from '@shared/components/chart/monitoring-chart-canvas.component';
+import { MonitoringChartLegendComponent } from '@shared/components/chart/monitoring-chart-legend.component';
 
 import Chart from 'chart.js/auto';
 import Zoom from 'chartjs-plugin-zoom';
 import 'chartjs-adapter-moment';
-import { MonitoringChartToolbarComponent } from './monitoring-chart-toolbar.component';
-import { MonitoringChartCanvasComponent } from './monitoring-chart-canvas.component';
-import { MonitoringChartLegendComponent } from './monitoring-chart-legend.component';
+
 Chart.register([Zoom]);
 
 @Component({
-  selector: 'tb-monitoring-chart',
-  templateUrl: './monitoring-chart.component.html',
-  styleUrls: ['./monitoring-chart.component.scss'],
-  imports: [FullscreenDirective, TranslateModule, MatProgressBar,
-    MonitoringChartToolbarComponent, MonitoringChartCanvasComponent, MonitoringChartLegendComponent]
+  selector: 'tb-monitoring-charts',
+  templateUrl: './monitoring-charts.component.html',
+  styleUrls: ['./monitoring-charts.component.scss'],
+  imports: [FullscreenDirective, TranslateModule, MatProgressBar, MonitoringChartToolbarComponent, MonitoringChartCanvasComponent, MonitoringChartLegendComponent]
 })
-export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
+export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   isFullscreen = signal(false);
 

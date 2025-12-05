@@ -37,8 +37,8 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { FormsModule } from '@angular/forms';
-import { MonitoringChartCanvasComponent } from '../../pages/monitoring/monitoring-chart-canvas.component';
-import { MonitoringChartToolbarComponent } from '../../pages/monitoring/monitoring-chart-toolbar.component';
+import { MonitoringChartCanvasComponent } from '@shared/components/chart/monitoring-chart-canvas.component';
+import { MonitoringChartToolbarComponent } from '@shared/components/chart/monitoring-chart-toolbar.component';
 import 'chartjs-adapter-moment';
 
 @Component({
