@@ -15,6 +15,6 @@
     limitations under the License.
 
 -->
-<section [style]="{'height': chartContainerHeight()}">
+<section [style.height]="chartContainerHeight()">
   <canvas [id]="chartType() + chartPage()" [height]="chartHeight()"></canvas>
 </section>

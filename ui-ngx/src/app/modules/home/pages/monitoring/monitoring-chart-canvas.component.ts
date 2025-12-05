@@ -14,16 +14,38 @@
 /// limitations under the License.
 ///
 
-import { Component, input } from '@angular/core';
+import { Component, effect, input, model } from '@angular/core';
 
 @Component({
   selector: 'tb-monitoring-chart-canvas',
-  standalone: true,
   templateUrl: './monitoring-chart-canvas.component.html'
 })
 export class MonitoringChartCanvasComponent {
+
   readonly chartType = input<string>();
   readonly chartPage = input<string>();
-  readonly chartHeight = input<number>(300);
-  readonly chartContainerHeight = input<string>('300px');
+  readonly isFullscreen = input<boolean>(false);
+  readonly legendKeys = input<any[]>([]);
+  chartHeight = input<number>(300);
+  chartContainerHeight = model<any>('300px');
+
+  constructor() {
+    effect(() => {
+      this.onFullScreen();
+    });
+  }
+
+  onFullScreen() {
+    if (this.isFullscreen()) {
+      let legendHeight = 120;
+      if (this.legendKeys().length > 1) {
+        legendHeight += ((this.legendKeys().length - 1) * 24);
+      }
+      this.chartContainerHeight.set(`calc(100vh - ${legendHeight}px)`);
+    } else {
+      this.chartContainerHeight.set(this.chartHeight() + 'px');
+    }
+  }
+
+
 }

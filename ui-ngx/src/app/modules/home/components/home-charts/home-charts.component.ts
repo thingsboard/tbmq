@@ -55,9 +55,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   chartPage = ChartPage.home;
   charts = {};
   chartKeys = CHARTS_HOME;
-  chartWidth: string;
-  chartHeight: string;
-  chartHeightPx: number;
+  chartWidth: number;
+  chartHeight: number;
   chartsCarouselIndex = 0;
   items = 5;
 
@@ -172,15 +171,14 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeCharts() {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
-      let chartWidthPx = (containerWidth / 5) - 16;
+      let width = (containerWidth / 5) - 16;
       this.items = 5;
       if (containerWidth < 500 || window.innerHeight > window.innerWidth) { // mobile or portrait
-        chartWidthPx = containerWidth / 2;
+        width = containerWidth / 2;
         this.items = 2;
       }
-      this.chartWidth = chartWidthPx + 'px';
-      this.chartHeightPx = Math.round(chartWidthPx * 0.5);
-      this.chartHeight = this.chartHeightPx + 'px';
+      this.chartWidth = width;
+      this.chartHeight = Math.round(width * 0.5);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

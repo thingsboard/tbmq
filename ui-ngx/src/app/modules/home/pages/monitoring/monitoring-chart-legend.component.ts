@@ -22,9 +22,8 @@ import { MonitoringChartLegendItemComponent } from './monitoring-chart-legend-it
 
 @Component({
   selector: 'tb-monitoring-chart-legend',
-  standalone: true,
-  imports: [TranslateModule, SafePipe, MonitoringChartLegendItemComponent],
-  templateUrl: './monitoring-chart-legend.component.html'
+  templateUrl: './monitoring-chart-legend.component.html',
+  imports: [TranslateModule, SafePipe, MonitoringChartLegendItemComponent]
 })
 export class MonitoringChartLegendComponent {
   readonly isFullscreen = input<boolean>(false);
@@ -42,6 +41,9 @@ export class MonitoringChartLegendComponent {
   @Output() legendKeyEnter = new EventEmitter<LegendKey>();
   @Output() legendKeyLeave = new EventEmitter<LegendKey>();
   @Output() toggleLegendKey = new EventEmitter<LegendKey>();
+
+  constructor() {
+  }
 
   legendValue(index: number, type: string): number {
     if (this.totalOnly()) {

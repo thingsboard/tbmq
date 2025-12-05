@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, computed, EventEmitter, input, Output } from '@angular/core';
+import { Component, EventEmitter, input, Output } from '@angular/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
@@ -24,27 +24,29 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import { ChartPage, ChartTooltipTranslationMap, StatsChartTypeTranslationMap } from '@shared/models/chart.model';
-import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import {
+  ChartTooltipTranslationMap,
+  StatsChartType,
+  StatsChartTypeTranslationMap
+} from '@shared/models/chart.model';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
   selector: 'tb-monitoring-chart-toolbar',
-  standalone: true,
-  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule, AsyncPipe, NgTemplateOutlet],
-  templateUrl: './monitoring-chart-toolbar.component.html'
+  templateUrl: './monitoring-chart-toolbar.component.html',
+  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule, NgTemplateOutlet]
 })
 export class MonitoringChartToolbarComponent {
+
   readonly timewindow = input<Timewindow>();
   readonly chartType = input<string>();
-  readonly chartPage = input<string>();
-
-  readonly isFullscreen = input<boolean>(false);
-  readonly isTrafficPayloadChart = input<boolean>(false);
   readonly currentDataSizeUnitType = input<string>();
   readonly showTimewindow = input<boolean>(true);
-  readonly showUnitToggle = input<boolean>(true);
+  readonly showDataSizeUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
-  readonly isHomeChart = computed(() => this.chartPage() === ChartPage.home);
+  readonly carouselView = input<boolean>(false);
+
+  public isFullscreen = false;
 
   readonly dataSizeUnitType = Object.values(DataSizeUnitType);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
@@ -52,11 +54,20 @@ export class MonitoringChartToolbarComponent {
 
   @Output() timewindowChange = new EventEmitter<Timewindow>();
   @Output() unitTypeChange = new EventEmitter<string>();
-  @Output() fullscreenToggle = new EventEmitter<void>();
+  @Output() fullscreenToggle = new EventEmitter<boolean>();
 
   constructor(private translate: TranslateService) {}
 
   chartTooltip(type: string): string {
     return this.translate.instant(ChartTooltipTranslationMap.get(type));
+  }
+
+  isTrafficPayloadChart(): boolean {
+    return this.chartType() === StatsChartType.inboundPayloadTraffic || this.chartType() === StatsChartType.outboundPayloadTraffic;
+  }
+
+  onFullscreenChange() {
+    this.isFullscreen = !this.isFullscreen;
+    this.fullscreenToggle.emit(this.isFullscreen);
   }
 }

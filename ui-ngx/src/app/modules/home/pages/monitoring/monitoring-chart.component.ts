@@ -22,6 +22,7 @@ import {
   OnChanges,
   OnDestroy,
   OnInit,
+  signal,
   SimpleChanges
 } from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
@@ -39,7 +40,6 @@ import {
   LegendKey,
   MAX_DATAPOINTS_LIMIT,
   StatsChartType,
-  StatsChartTypeTranslationMap,
   TimeseriesData,
   TOTAL_KEY, TsValue
 } from '@shared/models/chart.model';
@@ -78,6 +78,8 @@ Chart.register([Zoom]);
 })
 export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
+  isFullscreen = signal(false);
+
   readonly chartType = input<StatsChartType>();
   readonly parentTimewindow = input<Timewindow>();
 
@@ -85,12 +87,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   chart: Chart<'line', TsValue[]>;
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   timewindow: Timewindow;
-
-  chartHeight = 300;
   currentDataSizeUnitType = DataSizeUnitType.BYTE;
-  chartContainerHeight: string;
-  fullscreenChart: string;
-  isFullscreen = false;
   isLoading = false;
 
   legendConfig: LegendConfig = {
@@ -135,9 +132,9 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.fetchEntityTimeseries(this.visibleBrokerIds, true, this.getHistoricalDataObservables(this.visibleBrokerIds));
     $(document).on('keydown',
       (event) => {
-        if ((event.code === 'Escape') && this.isFullscreen) {
+        if ((event.code === 'Escape') && this.isFullscreen()) {
           event.preventDefault();
-          this.onFullScreen();
+          this.onFullscreenChange(false)
         }
       });
     this.cd.detectChanges();
@@ -167,21 +164,8 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.chart.resetZoom();
   }
 
-  onFullScreen(chartType?: string) {
-    this.isFullscreen = !this.isFullscreen;
-    if (this.isFullscreen) {
-      this.fullscreenChart = chartType;
-      let legendHeight = 120;
-      if (!this.totalOnly()) {
-        if (this.brokerIds.length > 1) {
-          legendHeight += ((this.brokerIds.length - 1) * 24);
-        }
-      }
-      this.chartContainerHeight = `calc(100vh - ${legendHeight}px)`;
-    } else {
-      this.fullscreenChart = undefined;
-      this.chartContainerHeight = this.chartHeight + 'px';
-    }
+  onFullscreenChange(fullscreen: boolean) {
+    this.isFullscreen.set(fullscreen);
   }
 
   trafficPayloadChartUnitTypeChanged(type = DataSizeUnitType.BYTE) {
@@ -233,14 +217,6 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
       this.chart.show(datasetIndex);
     }
     this.updateLegendLabel(datasetIndex, this.chart.isDatasetVisible(datasetIndex));
-  }
-
-  legendValue(index: number, type: string): number {
-    if (this.totalOnly()) {
-      return this.legendData[0][type];
-    } else {
-      return this.legendData[index][type];
-    }
   }
 
   totalOnly(): boolean {

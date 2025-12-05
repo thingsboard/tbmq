@@ -17,7 +17,7 @@
 -->
 <div class="flex flex-col gap-4">
   <div tb-fullscreen
-    [fullscreen]="isFullscreen"
+    [fullscreen]="isFullscreen()"
     [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
     @if (isLoading) {
       <mat-progress-bar color="warn" mode="indeterminate"></mat-progress-bar>
@@ -28,23 +28,22 @@
       <tb-monitoring-chart-toolbar
         [timewindow]="timewindow"
         (timewindowChange)="onTimewindowChange($event)"
-        [isFullscreen]="isFullscreen"
+        [showFullscreen]="false"
         [chartType]="chartType()"
-        [isTrafficPayloadChart]="isTrafficPayloadChart()"
         [currentDataSizeUnitType]="currentDataSizeUnitType"
         (unitTypeChange)="trafficPayloadChartUnitTypeChanged($event)"
-        (fullscreenToggle)="onFullScreen(chartType())">
+        (fullscreenToggle)="onFullscreenChange($event)">
       </tb-monitoring-chart-toolbar>
 
       <tb-monitoring-chart-canvas
         [chartType]="chartType()"
         [chartPage]="chartPage"
-        [chartHeight]="chartHeight"
-        [chartContainerHeight]="chartContainerHeight">
+        [isFullscreen]="isFullscreen()"
+        [legendKeys]="legendKeys">
       </tb-monitoring-chart-canvas>
 
       <tb-monitoring-chart-legend
-        [isFullscreen]="isFullscreen"
+        [isFullscreen]="isFullscreen()"
         [legendConfig]="legendConfig"
         [legendKeys]="legendKeys"
         [legendData]="legendData"

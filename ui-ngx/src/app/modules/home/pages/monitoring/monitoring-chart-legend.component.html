@@ -15,10 +15,11 @@
     limitations under the License.
 
 -->
-<div [class.hidden]="!isFullscreen()" class="flex-1"></div>
-<section class="tb-time-series-chart-legend">
-  <table class="tb-time-series-chart-legend-table vertical">
-    <thead>
+<section>
+  <div [class.hidden]="!isFullscreen()" class="flex-1"></div>
+  <section class="tb-time-series-chart-legend">
+    <table class="tb-time-series-chart-legend-table vertical">
+      <thead>
       <tr>
         <th></th>
         @if (legendConfig().showMin === true) {
@@ -37,46 +38,47 @@
           <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Latest' | translate }}</th>
         }
       </tr>
-    </thead>
-    <tbody>
-      @for (legendKey of legendKeys(); track legendKey; let index = $index) {
-        <tr>
-          <th>
-            <tb-monitoring-chart-legend-item
-              [legendKey]="legendKey"
-              [left]="true"
-              (legendKeyEnter)="legendKeyEnter.emit($event)"
-              (legendKeyLeave)="legendKeyLeave.emit($event)"
-              (toggleLegendKey)="toggleLegendKey.emit($event)">
-            </tb-monitoring-chart-legend-item>
-          </th>
-          @if (legendConfig().showMin === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-                [innerHTML]="legendValue(index, 'min') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig().showMax === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-                [innerHTML]="legendValue(index, 'max') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig().showAvg === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-                [innerHTML]="legendValue(index, 'avg') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig().showTotal === true && !legendKey.dataKey.hidden && !totalOnly()) {
-            <td class="tb-time-series-chart-legend-value"
-                [innerHTML]="legendValue(index, 'total') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig().showLatest === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-                [innerHTML]="legendValue(index, 'latest') | safe: 'html'">
-            </td>
-          }
-        </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (legendKey of legendKeys(); track legendKey; let index = $index) {
+          <tr>
+            <th>
+              <tb-monitoring-chart-legend-item
+                [legendKey]="legendKey"
+                [left]="true"
+                (legendKeyEnter)="legendKeyEnter.emit($event)"
+                (legendKeyLeave)="legendKeyLeave.emit($event)"
+                (toggleLegendKey)="toggleLegendKey.emit($event)">
+              </tb-monitoring-chart-legend-item>
+            </th>
+            @if (legendConfig().showMin === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'min') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showMax === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'max') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showAvg === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'avg') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showTotal === true && !legendKey.dataKey.hidden && !totalOnly()) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'total') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showLatest === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'latest') | safe: 'html'">
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
 </section>

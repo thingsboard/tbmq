@@ -15,31 +15,25 @@
     limitations under the License.
 
 -->
-@if (isHomeChart()) {
+@if (carouselView()) {
   <section class="mx-1 flex flex-row items-center justify-between">
     <ng-template *ngTemplateOutlet="title"></ng-template>
     <ng-template *ngTemplateOutlet="infoIcon"></ng-template>
   </section>
 } @else {
   <section class="flex flex-row items-center justify-between">
-    <tb-timewindow
-      [class.hidden]="!showTimewindow()"
-      [ngModel]="timewindow()"
-      (ngModelChange)="timewindowChange.emit($event)"
-      asButton
-      flatButton
-      tooltipPosition="left"
-      aggregation="true">
+    <tb-timewindow [class.hidden]="!showTimewindow()" asButton flatButton
+                   [ngModel]="timewindow()" (ngModelChange)="timewindowChange.emit($event)"
+                   tooltipPosition="left"
+                   aggregation="true">
     </tb-timewindow>
-    <span class="flex flex-1"></span>
     <ng-template *ngTemplateOutlet="title"></ng-template>
-    <span class="flex flex-1"></span>
-    @if (isTrafficPayloadChart() && showUnitToggle()) {
+    <section class="flex items-center gap-2">
       <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
                         [value]="currentDataSizeUnitType()"
-                        style="padding-right: 12px"
+                        [class.hidden]="!isTrafficPayloadChart() && !showDataSizeUnitToggle()"
                         [name]="chartType()"
-                        useSelectOnMdLg="true"
+                        useSelectOnMdLg
                         appearance="fill">
         @for (type of dataSizeUnitType; track type) {
           <tb-toggle-option [value]="type">
@@ -47,22 +41,20 @@
           </tb-toggle-option>
         }
       </tb-toggle-header>
-    }
-    <ng-template *ngTemplateOutlet="infoIcon"></ng-template>
-    <button type="button"
-            mat-icon-button class="tb-fullscreen-button tb-mat-40"
-            (click)="fullscreenToggle.emit()"
-            [matTooltip]="(isFullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
-            matTooltipPosition="above">
-      <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-    </button>
+      <ng-template *ngTemplateOutlet="infoIcon"></ng-template>
+      <button type="button"
+              mat-icon-button class="tb-fullscreen-button tb-mat-40"
+              (click)="onFullscreenChange()"
+              [matTooltip]="(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
+              matTooltipPosition="above">
+        <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
+    </section>
   </section>
 }
 
 <ng-template #title>
-  <span [style]="{paddingLeft: isTrafficPayloadChart() && !isHomeChart() ? '170px' : 0}">
-    {{ chartTypeTranslationMap.get(chartType()) | translate }}
-  </span>
+  <span>{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
 </ng-template>
 
 <ng-template #infoIcon>

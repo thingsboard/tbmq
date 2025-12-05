@@ -37,18 +37,16 @@
             <div class="chart-container flex flex-col">
               <tb-monitoring-chart-toolbar
                 [chartType]="chart"
-                [chartPage]="chartPage"
-                [isFullscreen]="false"
+                [carouselView]="true"
                 [showTimewindow]="false"
-                [showUnitToggle]="false"
+                [showDataSizeUnitToggle]="false"
                 [showFullscreen]="false">
               </tb-monitoring-chart-toolbar>
-              <section [style]="{'width': chartWidth, 'height': chartHeight}">
+              <section [style.width.px]="chartWidth">
                 <tb-monitoring-chart-canvas
                   [chartType]="chart"
                   [chartPage]="chartPage"
-                  [chartHeight]="chartHeightPx"
-                  [chartContainerHeight]="chartHeight">
+                  [chartHeight]="chartHeight">
                 </tb-monitoring-chart-canvas>
               </section>
             </div>
