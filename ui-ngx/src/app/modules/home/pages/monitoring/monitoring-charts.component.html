@@ -44,13 +44,16 @@
 
       <tb-monitoring-chart-legend
         [isFullscreen]="isFullscreen()"
-        [legendConfig]="legendConfig"
-        [legendKeys]="legendKeys"
-        [legendData]="legendData"
+        [datasets]="chart?.data?.datasets"
+        [timewindow]="timewindow"
+        [chart]="chart"
+        [chartType]="chartType()"
+        [brokerIds]="brokerIds"
+        [visibleBrokerIds]="visibleBrokerIds"
         [totalOnly]="totalOnly()"
-        (legendKeyEnter)="onLegendKeyEnter($event)"
-        (legendKeyLeave)="onLegendKeyLeave($event)"
-        (toggleLegendKey)="toggleLegendKey($event)">
+        (legendKeysChange)="legendKeys = $event"
+        (visibleBrokerIdsChange)="onVisibleBrokerIdsChange($event)"
+        (needBrokerData)="onNeedBrokerData($event)">
       </tb-monitoring-chart-legend>
     </div>
   </div>

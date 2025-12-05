@@ -40,15 +40,15 @@
       </tr>
       </thead>
       <tbody>
-        @for (legendKey of legendKeys(); track legendKey; let index = $index) {
+        @for (legendKey of legendKeys; track legendKey; let index = $index) {
           <tr>
             <th>
               <tb-monitoring-chart-legend-item
                 [legendKey]="legendKey"
                 [left]="true"
-                (legendKeyEnter)="legendKeyEnter.emit($event)"
-                (legendKeyLeave)="legendKeyLeave.emit($event)"
-                (toggleLegendKey)="toggleLegendKey.emit($event)">
+                (legendKeyEnter)="onLegendKeyEnter($event)"
+                (legendKeyLeave)="onLegendKeyLeave($event)"
+                (toggleLegendKey)="toggleLegendKey($event)">
               </tb-monitoring-chart-legend-item>
             </th>
             @if (legendConfig().showMin === true && !legendKey.dataKey.hidden) {

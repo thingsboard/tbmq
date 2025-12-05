@@ -23,9 +23,16 @@ import {
   OnDestroy,
   OnInit,
   signal,
-  SimpleChanges
+  SimpleChanges,
+  ViewChild
 } from '@angular/core';
-import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
+import {
+  calculateFixedWindowTimeMs,
+  FixedWindow,
+  MINUTE,
+  Timewindow,
+  TimewindowType
+} from '@shared/models/time/time.models';
 import { forkJoin, Observable, Subject } from 'rxjs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
@@ -36,8 +43,6 @@ import {
   chartJsParams,
   ChartPage,
   getColor,
-  LegendConfig,
-  LegendKey,
   MAX_DATAPOINTS_LIMIT,
   StatsChartType,
   TimeseriesData,
@@ -49,14 +54,7 @@ import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import {
-  calculateAvg,
-  calculateLatest,
-  calculateMax,
-  calculateMin,
-  calculateTotal,
-  convertDataSizeUnits
-} from '@core/utils';
+import { convertDataSizeUnits } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -89,24 +87,17 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
   timewindow: Timewindow;
   currentDataSizeUnitType = DataSizeUnitType.BYTE;
   isLoading = false;
-
-  legendConfig: LegendConfig = {
-    showMin: true,
-    showMax: true,
-    showAvg: true,
-    showTotal: true,
-    showLatest: true
-  };
-  legendData = [];
   legendKeys = [];
+  brokerIds: string[];
+  visibleBrokerIds: string[] = [TOTAL_KEY];
 
   private fixedWindowTimeMs: FixedWindow;
-  private brokerIds: string[];
-  private visibleBrokerIds: string[] = [TOTAL_KEY];
-
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
   private pollingStarted = false;
+
+  @ViewChild(MonitoringChartLegendComponent)
+  private legendComp: MonitoringChartLegendComponent;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -183,40 +174,12 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
-  onLegendKeyEnter(legendKey: LegendKey) {
-    if (this.isVisibleBrokerIdInLegend(legendKey.dataKey.label)) {
-      const datasetIndex = legendKey.dataIndex;
-      this.chart.data.datasets[datasetIndex].borderWidth = 4;
-      this.updateChart();
-    }
+  onVisibleBrokerIdsChange(ids: string[]) {
+    this.visibleBrokerIds = ids;
   }
 
-  private isVisibleBrokerIdInLegend(brokerId: string): boolean {
-    return this.visibleBrokerIds.includes(brokerId);
-  }
-
-  onLegendKeyLeave(legendKey: LegendKey) {
-    if (this.isVisibleBrokerIdInLegend(legendKey.dataKey.label)) {
-      const datasetIndex = legendKey.dataIndex;
-      this.chart.data.datasets[datasetIndex].borderWidth = 2;
-      this.updateChart();
-    }
-  }
-
-  toggleLegendKey(legendKey: LegendKey) {
-    const brokerId = legendKey.dataKey.label;
-    if (!this.isVisibleBrokerIdInLegend(brokerId)) {
-      this.visibleBrokerIds.push(brokerId);
-      this.fetchEntityTimeseries([brokerId], false, this.getHistoricalDataObservables([brokerId]));
-    }
-
-    const datasetIndex = legendKey.dataIndex;
-    if (this.chart.isDatasetVisible(datasetIndex)) {
-      this.chart.hide(datasetIndex);
-    } else {
-      this.chart.show(datasetIndex);
-    }
-    this.updateLegendLabel(datasetIndex, this.chart.isDatasetVisible(datasetIndex));
+  onNeedBrokerData(brokerId: string) {
+    this.fetchEntityTimeseries([brokerId], false, this.getHistoricalDataObservables([brokerId]));
   }
 
   totalOnly(): boolean {
@@ -293,28 +256,21 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
   private initCharts(data: TimeseriesData[]) {
       const ctx = document.getElementById(this.chartType() + this.chartPage) as HTMLCanvasElement;
       const datasets = {data: {datasets: []}};
-      this.resetLegendKeys();
-      this.updateLegendKeys();
-      this.resetLegendData();
       for (let i = 0; i < this.brokerIds.length; i++) {
         const brokerId = this.brokerIds[i];
         if (this.totalOnly()) {
           if (brokerId === TOTAL_KEY) {
             if (this.visibleBrokerIds.includes(brokerId)) {
               datasets.data.datasets.push(this.getDataset(data, i, brokerId));
-              this.updateLegendData(data[i][this.chartType()]);
             } else {
               datasets.data.datasets.push(this.getDataset(null, i, brokerId))
-              this.updateLegendData(null);
             }
           }
         } else {
           if (this.visibleBrokerIds.includes(brokerId)) {
             datasets.data.datasets.push(this.getDataset(data, i, brokerId));
-            this.updateLegendData(data[i][this.chartType()]);
           } else {
             datasets.data.datasets.push(this.getDataset(null, i, brokerId));
-            this.updateLegendData(null);
           }
         }
       }
@@ -331,6 +287,7 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
         this.chart.resetZoom();
         this.updateChartView();
       });
+      this.legendComp?.updateLegend();
   }
 
   private getDataset(dataset, i, brokerId): ChartDataset {
@@ -416,7 +373,7 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
   private updateChartView() {
     this.updateXScale();
     this.updateChart();
-    this.updateLegend();
+    this.legendComp?.updateLegend();
   }
 
   private stopPolling() {
@@ -431,8 +388,8 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
   private updateXScale() {
     if (!this.chart.isZoomedOrPanned()) {
       const timewindow = calculateFixedWindowTimeMs(this.timewindow);
-      this.chart.options.scales.x.min = timewindow.startTimeMs + POLLING_INTERVAL; // TODO fix chart range
-      this.chart.options.scales.x.max = timewindow.endTimeMs;
+      this.chart.options.scales.x.min = Math.ceil(timewindow.startTimeMs / MINUTE) * MINUTE;
+      this.chart.options.scales.x.max = Math.floor(timewindow.endTimeMs / MINUTE) * MINUTE;
       const hours = this.hoursInRange();
       let format = 'MMM-DD';
       let round: string;
@@ -486,68 +443,6 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
-  private resetLegendKeys() {
-    this.legendKeys = [];
-  }
-
-  private resetLegendData() {
-    this.legendData = [];
-  }
-
-  private updateLegendKeys() {
-    for (let i = 0; i < this.brokerIds.length; i++) {
-      const color = getColor(this.chartType(), i);
-      const brokerId = this.brokerIds[i];
-      if (!this.totalOnly() || brokerId === TOTAL_KEY) {
-        this.addLegendKey(this.totalOnly() ? 0 : i, brokerId, color);
-      }
-    }
-  }
-
-  private updateLegendData(data: any[]) {
-    if (data?.length) {
-      this.legendData.push({
-        min: Math.floor(calculateMin(data)),
-        max: Math.floor(calculateMax(data)),
-        avg: Math.floor(calculateAvg(data)),
-        total: Math.floor(calculateTotal(data)),
-        latest: Math.floor(calculateLatest(data))
-      });
-    } else {
-      this.legendData.push({
-        min: 0,
-        max: 0,
-        avg: 0,
-        total: 0,
-        latest: 0
-      });
-    }
-  }
-
-  private addLegendKey(index: number, brokerId: string, color: string) {
-    this.legendKeys.push({
-      dataKey: {
-        label: brokerId,
-        color,
-        hidden: brokerId !== TOTAL_KEY
-      },
-      dataIndex: index
-    });
-  }
-
-  private updateLegend() {
-    this.resetLegendData();
-    for (const brokerId of this.brokerIds) {
-      const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === brokerId);
-      const data = this.chart.data.datasets[datasetIndex]?.data?.filter(
-        value => value.ts >= this.fixedWindowTimeMs.startTimeMs - POLLING_INTERVAL
-      );
-      if (!this.totalOnly() || brokerId === TOTAL_KEY) {
-        this.updateLegendData(data);
-      }
-    }
-  }
-
   private getTimeseriesData(brokerIds: string[], latest = false): Observable<TimeseriesData>[] {
     const tasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of brokerIds) {
@@ -557,11 +452,5 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
       tasks.push(latest ? this.getLatestData(brokerId) : this.getHistoricalData(brokerId));
     }
     return tasks;
-  }
-
-  private updateLegendLabel(datasetIndex, isDatasetvisible) {
-    this.legendKeys[datasetIndex].dataKey.color = isDatasetvisible ? getColor(this.chartType(), datasetIndex) : null;
-    this.legendKeys[datasetIndex].dataKey.hidden = !this.legendKeys[datasetIndex].dataKey.hidden;
-    this.cd.detectChanges();
   }
 }

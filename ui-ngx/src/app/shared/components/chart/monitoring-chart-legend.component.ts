@@ -14,18 +14,30 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { LegendConfig, LegendKey } from '@shared/models/chart.model';
+import { LegendConfig, LegendKey, StatsChartType, TOTAL_KEY } from '@shared/models/chart.model';
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { MonitoringChartLegendItemComponent } from './monitoring-chart-legend-item.component';
+import { ChartDataset } from 'chart.js';
+import { POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { calculateFixedWindowTimeMs, Timewindow } from '@shared/models/time/time.models';
+import {
+  calculateAvg,
+  calculateLatest,
+  calculateMax,
+  calculateMin,
+  calculateTotal
+} from '@core/utils';
+import { getColor } from '@shared/models/chart.model';
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'tb-monitoring-chart-legend',
   templateUrl: './monitoring-chart-legend.component.html',
   imports: [TranslateModule, SafePipe, MonitoringChartLegendItemComponent]
 })
-export class MonitoringChartLegendComponent {
+export class MonitoringChartLegendComponent implements OnChanges {
   readonly isFullscreen = input<boolean>(false);
   readonly legendConfig = input<LegendConfig>({
     showMin: true,
@@ -34,22 +46,164 @@ export class MonitoringChartLegendComponent {
     showTotal: true,
     showLatest: true
   });
-  readonly legendKeys = input<any[]>([]);
-  readonly legendData = input<any[]>([]);
   readonly totalOnly = input<boolean>(false);
+  readonly datasets = input<ChartDataset<'line', any>[]>([]);
+  readonly timewindow = input<Timewindow>();
+  readonly chartType = input<StatsChartType>();
+  readonly brokerIds = input<string[]>([]);
+  readonly chart = input<Chart<'line', any>>();
+  readonly visibleBrokerIds = input<string[]>([]);
 
-  @Output() legendKeyEnter = new EventEmitter<LegendKey>();
-  @Output() legendKeyLeave = new EventEmitter<LegendKey>();
-  @Output() toggleLegendKey = new EventEmitter<LegendKey>();
+  @Output() legendKeysChange = new EventEmitter<any[]>();
+  @Output() visibleBrokerIdsChange = new EventEmitter<string[]>();
+  @Output() needBrokerData = new EventEmitter<string>();
 
-  constructor() {
+  legendKeys: any[] = [];
+  legendData: Array<{
+    min: number;
+    max: number;
+    avg: number;
+    total: number;
+    latest: number
+  }> = [];
+
+  constructor(private cd: ChangeDetectorRef) {
   }
 
   legendValue(index: number, type: string): number {
     if (this.totalOnly()) {
-      return this.legendData()[0]?.[type];
+      return this.legendData[0]?.[type];
     } else {
-      return this.legendData()[index]?.[type];
+      return this.legendData[index]?.[type];
+    }
+  }
+
+  resetLegendData() {
+    this.legendData = [];
+  }
+
+  updateLegendData(data: any[]) {
+    if (data?.length) {
+      this.legendData.push({
+        min: Math.floor(calculateMin(data)),
+        max: Math.floor(calculateMax(data)),
+        avg: Math.floor(calculateAvg(data)),
+        total: Math.floor(calculateTotal(data)),
+        latest: Math.floor(calculateLatest(data))
+      });
+    } else {
+      this.legendData.push({
+        min: 0,
+        max: 0,
+        avg: 0,
+        total: 0,
+        latest: 0
+      });
+    }
+  }
+
+  updateLegend(): void {
+    this.resetLegendData();
+    const datasets = this.datasets() || [];
+    const tw = this.timewindow?.();
+    const fixed = tw ? calculateFixedWindowTimeMs(tw) : null;
+    const start = fixed?.startTimeMs || 0;
+    const end = fixed?.endTimeMs || Number.MAX_SAFE_INTEGER;
+    for (const ds of datasets) {
+      const data = (ds?.data as any[])?.filter(value => value.ts >= start - POLLING_INTERVAL && value.ts <= end);
+      this.updateLegendData(data);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['brokerIds'] || changes['chartType'] || changes['totalOnly']) {
+      this.updateLegendKeys();
+    }
+    if (changes['datasets'] || changes['timewindow']) {
+      this.updateLegend();
+    }
+  }
+
+  private updateLegendKeys() {
+    this.legendKeys = [];
+    const ids = this.brokerIds() || [];
+    for (let i = 0; i < ids.length; i++) {
+      const color = getColor(this.chartType(), i);
+      const brokerId = ids[i];
+      if (!this.totalOnly() || brokerId === TOTAL_KEY) {
+        const index = this.totalOnly() ? 0 : i;
+        this.addLegendKey(index, brokerId, color);
+      }
+    }
+    this.legendKeysChange.emit(this.legendKeys);
+    this.cd.detectChanges();
+  }
+
+  private addLegendKey(index: number, brokerId: string, color: string) {
+    this.legendKeys.push({
+      dataKey: {
+        label: brokerId,
+        color,
+        hidden: brokerId !== TOTAL_KEY
+      },
+      dataIndex: index
+    });
+  }
+
+  onLegendKeyEnter(legendKey: LegendKey) {
+    const visible = (this.visibleBrokerIds() || []).includes(legendKey.dataKey.label);
+    if (visible) {
+      const datasetIndex = legendKey.dataIndex as number;
+      const chart = this.chart?.();
+      if (chart?.data?.datasets?.[datasetIndex]) {
+        chart.data.datasets[datasetIndex].borderWidth = 4;
+        chart.update('none');
+      }
+    }
+  }
+
+  onLegendKeyLeave(legendKey: LegendKey) {
+    const visible = (this.visibleBrokerIds() || []).includes(legendKey.dataKey.label);
+    if (visible) {
+      const datasetIndex = legendKey.dataIndex as number;
+      const chart = this.chart?.();
+      if (chart?.data?.datasets?.[datasetIndex]) {
+        chart.data.datasets[datasetIndex].borderWidth = 2;
+        chart.update('none');
+      }
+    }
+  }
+
+  toggleLegendKey(legendKey: LegendKey) {
+    const brokerId = legendKey.dataKey.label;
+    const chart = this.chart?.();
+    if (!chart) {
+      return;
+    }
+    const visibleIds = [...(this.visibleBrokerIds() || [])];
+    if (!visibleIds.includes(brokerId)) {
+      visibleIds.push(brokerId);
+      this.visibleBrokerIdsChange.emit(visibleIds);
+      this.needBrokerData.emit(brokerId);
+    }
+
+    const datasetIndex = legendKey.dataIndex as number;
+    if (chart.isDatasetVisible(datasetIndex)) {
+      chart.hide(datasetIndex);
+    } else {
+      chart.show(datasetIndex);
+    }
+    const isVisible = chart.isDatasetVisible(datasetIndex);
+    this.updateLegendLabel(datasetIndex, isVisible);
+  }
+
+  private updateLegendLabel(datasetIndex: number, isDatasetVisible: boolean) {
+    const color = isDatasetVisible ? getColor(this.chartType(), datasetIndex) : null;
+    if (this.legendKeys[datasetIndex]?.dataKey) {
+      this.legendKeys[datasetIndex].dataKey.color = color as any;
+      this.legendKeys[datasetIndex].dataKey.hidden = !this.legendKeys[datasetIndex].dataKey.hidden;
+      this.legendKeysChange.emit(this.legendKeys);
+      this.cd.detectChanges();
     }
   }
 }
