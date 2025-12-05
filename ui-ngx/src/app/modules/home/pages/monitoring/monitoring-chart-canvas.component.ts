@@ -27,7 +27,8 @@ export class MonitoringChartCanvasComponent {
   readonly isFullscreen = input<boolean>(false);
   readonly legendKeys = input<any[]>([]);
   chartHeight = input<number>(300);
-  chartContainerHeight = model<any>('300px');
+
+  chartContainerHeight = model<string>('300px');
 
   constructor() {
     effect(() => {
@@ -37,15 +38,10 @@ export class MonitoringChartCanvasComponent {
 
   onFullScreen() {
     if (this.isFullscreen()) {
-      let legendHeight = 120;
-      if (this.legendKeys().length > 1) {
-        legendHeight += ((this.legendKeys().length - 1) * 24);
-      }
-      this.chartContainerHeight.set(`calc(100vh - ${legendHeight}px)`);
+      const height = 120 + ((this.legendKeys().length - 1) * 24);
+      this.chartContainerHeight.set(`calc(100vh - ${height}px)`);
     } else {
       this.chartContainerHeight.set(this.chartHeight() + 'px');
     }
   }
-
-
 }
