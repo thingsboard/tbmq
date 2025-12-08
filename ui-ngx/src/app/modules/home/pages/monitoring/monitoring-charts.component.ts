@@ -18,7 +18,7 @@ import { Component, output } from '@angular/core';
 import { FixedWindow, Timewindow } from '@shared/models/time/time.models';
 import { TranslateModule } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { StatsChartType } from '@shared/models/chart.model';
+import { ChartDataKey } from '@shared/models/chart.model';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
@@ -34,7 +34,7 @@ import { ActivatedRoute } from '@angular/router';
 export class MonitoringChartsComponent {
 
   readonly timewindowChanged = output<FixedWindow>();
-  chartTypes: StatsChartType[];
+  chartTypes: ChartDataKey[];
   timewindow: Timewindow;
 
   constructor(

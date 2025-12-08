@@ -26,8 +26,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import {
   ChartTooltipTranslationMap,
-  StatsChartType,
-  StatsChartTypeTranslationMap
+  ChartDataKey,
+  ChartDataKeyTranslationMap
 } from '@shared/models/chart.model';
 
 @Component({
@@ -48,7 +48,7 @@ export class ChartToolbarComponent {
 
   readonly dataSizeUnitType = Object.values(DataSizeUnitType);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
-  readonly chartTypeTranslationMap = StatsChartTypeTranslationMap;
+  readonly chartTypeTranslationMap = ChartDataKeyTranslationMap;
 
   @Output() timewindowChange = new EventEmitter<Timewindow>();
   @Output() unitTypeChange = new EventEmitter<string>();
@@ -61,7 +61,7 @@ export class ChartToolbarComponent {
   }
 
   isTrafficPayloadChart(): boolean {
-    return this.chartType() === StatsChartType.inboundPayloadTraffic || this.chartType() === StatsChartType.outboundPayloadTraffic;
+    return this.chartType() === ChartDataKey.inboundPayloadTraffic || this.chartType() === ChartDataKey.outboundPayloadTraffic;
   }
 
   onFullscreenChange() {

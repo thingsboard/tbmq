@@ -16,7 +16,7 @@
 
 import { ChangeDetectorRef, Component, EventEmitter, input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { LegendConfig, LegendKey, StatsChartType, TOTAL_KEY } from '@shared/models/chart.model';
+import { LegendConfig, LegendKey, ChartDataKey, TOTAL_KEY } from '@shared/models/chart.model';
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { ChartLegendItemComponent } from './chart-legend-item.component';
 import { ChartDataset } from 'chart.js';
@@ -49,7 +49,7 @@ export class ChartLegendComponent implements OnChanges {
   readonly totalOnly = input<boolean>(false);
   readonly datasets = input<ChartDataset<'line', any>[]>([]);
   readonly timewindow = input<Timewindow>();
-  readonly chartType = input<StatsChartType>();
+  readonly chartType = input<ChartDataKey>();
   readonly dataKeys = input<string[]>([]);
   readonly chart = input<Chart<'line', any>>();
   readonly visibleDataKeys = input<string[]>([]);
@@ -116,7 +116,7 @@ export class ChartLegendComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['brokerIds'] || changes['chartType'] || changes['totalOnly']) {
+    if (changes['dataKeys'] || changes['chartType'] || changes['totalOnly']) {
       this.updateLegendKeys();
     }
     if (changes['datasets'] || changes['timewindow']) {
@@ -129,22 +129,22 @@ export class ChartLegendComponent implements OnChanges {
     const ids = this.dataKeys() || [];
     for (let i = 0; i < ids.length; i++) {
       const color = getColor(this.chartType(), i);
-      const brokerId = ids[i];
-      if (!this.totalOnly() || brokerId === TOTAL_KEY) {
+      const dataKey = ids[i];
+      if (!this.totalOnly() || dataKey === TOTAL_KEY) {
         const index = this.totalOnly() ? 0 : i;
-        this.addLegendKey(index, brokerId, color);
+        this.addLegendKey(index, dataKey, color);
       }
     }
     this.legendKeysChange.emit(this.legendKeys);
     this.cd.detectChanges();
   }
 
-  private addLegendKey(index: number, brokerId: string, color: string) {
+  private addLegendKey(index: number, dataKey: string, color: string) {
     this.legendKeys.push({
       dataKey: {
-        label: brokerId,
+        label: dataKey,
         color,
-        hidden: brokerId !== TOTAL_KEY
+        hidden: dataKey !== TOTAL_KEY
       },
       dataIndex: index
     });
@@ -175,16 +175,16 @@ export class ChartLegendComponent implements OnChanges {
   }
 
   toggleLegendKey(legendKey: LegendKey) {
-    const brokerId = legendKey.dataKey.label;
+    const dataKey = legendKey.dataKey.label;
     const chart = this.chart?.();
     if (!chart) {
       return;
     }
     const visibleIds = [...(this.visibleDataKeys() || [])];
-    if (!visibleIds.includes(brokerId)) {
-      visibleIds.push(brokerId);
+    if (!visibleIds.includes(dataKey)) {
+      visibleIds.push(dataKey);
       this.visibleDataKeysChange.emit(visibleIds);
-      this.fetchDataKeyData.emit(brokerId);
+      this.fetchDataKeyData.emit(dataKey);
     }
 
     const datasetIndex = legendKey.dataIndex as number;

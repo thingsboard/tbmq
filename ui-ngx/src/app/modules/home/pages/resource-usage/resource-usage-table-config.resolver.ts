@@ -27,7 +27,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { Injectable } from '@angular/core';
-import { StatsService } from '@core/http/stats.service';
+import { TimeseriesService } from '@core/http/timeseries.service';
 import { convertDataSizeUnits } from '@core/utils';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import {
@@ -45,7 +45,7 @@ export class ResourceUsageTableConfigResolver {
 
   private readonly config: EntityTableConfig<ResourceUsage> = new EntityTableConfig<ResourceUsage>();
 
-  constructor(private statsService: StatsService,
+  constructor(private timeseriesService: TimeseriesService,
               private translate: TranslateService,
               private dialogService: DialogService,
               private datePipe: DatePipe) {
@@ -64,7 +64,7 @@ export class ResourceUsageTableConfigResolver {
     this.config.displayPagination = false;
 
     this.config.cellActionDescriptors = this.configureCellActions();
-    this.config.entitiesFetchFunction = () => this.statsService.getServiceInfos();
+    this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos();
 
     this.config.columns.push(
       new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'common.update-time', this.datePipe, '150px', undefined, undefined, false),
@@ -119,7 +119,7 @@ export class ResourceUsageTableConfigResolver {
       true
     ).subscribe((res) => {
         if (res) {
-          this.statsService.deleteServiceInfo(entity.serviceId).subscribe(() => this.config.getTable().updateData());
+          this.timeseriesService.deleteServiceInfo(entity.serviceId).subscribe(() => this.config.getTable().updateData());
         }
       }
     );

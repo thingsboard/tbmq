@@ -67,7 +67,7 @@ const routes: Routes = [
           charts: CHARTS_STATE_HEALTH,
         },
         resolve: {
-          brokerIds: BrokerIdsResolver
+          dataKeys: BrokerIdsResolver
         }
       },
       {
@@ -83,7 +83,7 @@ const routes: Routes = [
           charts: CHARTS_TRAFFIC_PERFORMANCE,
         },
         resolve: {
-          brokerIds: BrokerIdsResolver
+          dataKeys: BrokerIdsResolver
         }
       },
       {

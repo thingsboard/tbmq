@@ -35,15 +35,15 @@ import {
 import { forkJoin, Observable, Subject } from 'rxjs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { StatsService } from '@core/http/stats.service';
+import { TimeseriesService } from '@core/http/timeseries.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   chartJsParams,
-  ChartPage,
+  ChartView,
   CHARTS_TOTAL_ONLY,
   getColor,
   MAX_DATAPOINTS_LIMIT,
-  StatsChartType,
+  ChartDataKey,
   TimeseriesData,
   TOTAL_KEY,
   TsValue
@@ -80,12 +80,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   readonly isFullscreen = signal(false);
 
-  readonly chartType = input<StatsChartType>();
+  readonly chartDataKey = input<ChartDataKey>();
   readonly chartHeight = input<number>(300);
   readonly parentTimewindow = input<Timewindow>();
   readonly showLegend = input<boolean>(true);
   readonly showToolbar = input<boolean>(true);
-  readonly chartPage = input<ChartPage>(ChartPage.monitoring);
+  readonly chartView = input<ChartView>(ChartView.full);
   readonly showTimewindow = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
@@ -94,6 +94,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   timewindow = this.timeService.defaultTimewindow();
   currentDataSizeUnitType = DataSizeUnitType.BYTE;
+  ChartView = ChartView;
   isLoading = false;
   legendKeys = [];
   dataKeys: string[];
@@ -107,7 +108,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private timeService: TimeService,
-              private statsService: StatsService,
+              private timeseriesService: TimeseriesService,
               private route: ActivatedRoute) {
   }
 
@@ -168,24 +169,24 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     }
   }
 
-  onVisibleBrokerIdsChange(ids: string[]) {
+  onVisibleDataKeysChange(ids: string[]) {
     this.visibleDataKeys = ids;
   }
 
-  onNeedBrokerData(brokerId: string) {
-    this.fetchEntityTimeseries([brokerId], false, this.getHistoricalDataObservables([brokerId]));
+  onNeedBrokerData(dataKey: string) {
+    this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]));
   }
 
   totalOnly(): boolean {
-    return CHARTS_TOTAL_ONLY.includes(this.chartType());
+    return CHARTS_TOTAL_ONLY.includes(this.chartDataKey());
   }
 
   isTrafficPayloadChart() {
-    return this.chartType() === StatsChartType.inboundPayloadTraffic || this.chartType() === StatsChartType.outboundPayloadTraffic;
+    return this.chartDataKey() === ChartDataKey.inboundPayloadTraffic || this.chartDataKey() === ChartDataKey.outboundPayloadTraffic;
   }
 
   private init() {
-    this.dataKeys = this.route.snapshot.data.brokerIds || [TOTAL_KEY];
+    this.dataKeys = this.route.snapshot.data.dataKeys || [TOTAL_KEY];
     this.timewindow = this.parentTimewindow();
     this.calcWindowTime();
     $(document).on('keydown',
@@ -202,11 +203,11 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.fixedWindowTimeMs.startTimeMs = Math.ceil(this.fixedWindowTimeMs.startTimeMs / MINUTE) * MINUTE;
   }
 
-  private getHistoricalDataObservables(brokerIds: string[]): Observable<TimeseriesData>[] {
-    return this.getTimeseriesData(brokerIds, false);
+  private getHistoricalDataObservables(dataKeys: string[]): Observable<TimeseriesData>[] {
+    return this.getTimeseriesData(dataKeys, false);
   }
 
-  private fetchEntityTimeseries(brokerIds: string[], initCharts: boolean, $tasks: Observable<TimeseriesData>[]) {
+  private fetchEntityTimeseries(dataKeys: string[], initCharts: boolean, $tasks: Observable<TimeseriesData>[]) {
     forkJoin($tasks)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
@@ -215,13 +216,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           this.initCharts(data as TimeseriesData[]);
         } else {
           if (this.totalOnly()) {
-            this.chart.data.datasets[0].data = data[0][this.chartType()];
+            this.chart.data.datasets[0].data = data[0][this.chartDataKey()];
           } else {
-            for (let i = 0; i < brokerIds.length; i++) {
-              const brokerId = brokerIds[i];
-              const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === brokerId);
+            for (let i = 0; i < dataKeys.length; i++) {
+              const dataKey = dataKeys[i];
+              const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
               if (datasetIndex > -1) {
-                this.chart.data.datasets[datasetIndex].data = data[i][this.chartType()];
+                this.chart.data.datasets[datasetIndex].data = data[i][this.chartDataKey()];
               }
             }
           }
@@ -245,12 +246,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       });
   }
 
-  private getHistoricalData(brokerId: string): Observable<TimeseriesData> {
-    return this.statsService.getEntityTimeseries(
-      brokerId,
+  private getHistoricalData(dataKey: string): Observable<TimeseriesData> {
+    return this.timeseriesService.getEntityTimeseries(
+      dataKey,
       this.fixedWindowTimeMs.startTimeMs,
       this.fixedWindowTimeMs.endTimeMs,
-      [this.chartType()],
+      [this.chartDataKey()],
       MAX_DATAPOINTS_LIMIT,
       this.timewindow.aggregation.type,
       this.timeService.timewindowGroupingInterval(this.timewindow)
@@ -258,25 +259,25 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private initCharts(data: TimeseriesData[]) {
-    const ctx = document.getElementById(this.chartType() + this.chartPage()) as HTMLCanvasElement;
+    const ctx = document.getElementById(this.chartDataKey() + this.chartView()) as HTMLCanvasElement;
     const datasets = {data: {datasets: []}};
     for (let i = 0; i < this.dataKeys.length; i++) {
-      const brokerId = this.dataKeys[i];
+      const dataKey = this.dataKeys[i];
       if (this.totalOnly()) {
-        if (this.visibleDataKeys.includes(brokerId)) {
-          datasets.data.datasets.push(this.getDataset(data, i, brokerId));
+        if (this.visibleDataKeys.includes(dataKey)) {
+          datasets.data.datasets.push(this.getDataset(data, i, dataKey));
         } else {
-          datasets.data.datasets.push(this.getDataset(null, i, brokerId))
+          datasets.data.datasets.push(this.getDataset(null, i, dataKey))
         }
       } else {
-        if (this.visibleDataKeys.includes(brokerId)) {
-          datasets.data.datasets.push(this.getDataset(data, i, brokerId));
+        if (this.visibleDataKeys.includes(dataKey)) {
+          datasets.data.datasets.push(this.getDataset(data, i, dataKey));
         } else {
-          datasets.data.datasets.push(this.getDataset(null, i, brokerId));
+          datasets.data.datasets.push(this.getDataset(null, i, dataKey));
         }
       }
     }
-    const params = {...chartJsParams(this.chartPage()), ...datasets} as ChartConfiguration<'line', TsValue[]>;
+    const params = {...chartJsParams(this.chartView()), ...datasets} as ChartConfiguration<'line', TsValue[]>;
     this.chart = new Chart<'line', TsValue[]>(ctx, params);
     this.updateChartView();
     this.setListeners(ctx);
@@ -295,13 +296,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     });
   }
 
-  private getDataset(dataset, i, brokerId): ChartDataset {
-    const color = getColor(this.chartType(), i);
+  private getDataset(dataset: any[], i: number, dataKey: string): ChartDataset {
+    const color = getColor(this.chartDataKey(), i);
     return {
-      label: brokerId,
-      data: dataset ? dataset[i][this.chartType()] : null,
+      label: dataKey,
+      data: dataset ? dataset[i][this.chartDataKey()] : null,
       pointStyle: 'circle',
-      hidden: brokerId !== TOTAL_KEY,
+      hidden: dataKey !== TOTAL_KEY,
       borderColor: color,
       backgroundColor: color,
       pointHoverBackgroundColor: color,
@@ -328,8 +329,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     });
   }
 
-  private getLatestData(brokerId: string) {
-    return this.statsService.getLatestTimeseries(brokerId, [this.chartType()]);
+  private getLatestData(dataKey: string) {
+    return this.timeseriesService.getLatestTimeseries(dataKey, [this.chartDataKey()]);
   }
 
   private addPollingIntervalToTimewindow() {
@@ -338,24 +339,24 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private prepareData(data: TimeseriesData[]) {
-    if (this.isTrafficPayloadChart() && data?.length && data[0]?.[this.chartType()]?.length) {
-      const tsValue = data[0][this.chartType()][0];
-      data[0][this.chartType()][0] = {
+    if (this.isTrafficPayloadChart() && data?.length && data[0]?.[this.chartDataKey()]?.length) {
+      const tsValue = data[0][this.chartDataKey()][0];
+      data[0][this.chartDataKey()][0] = {
         value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
         ts: tsValue.ts
       } as TsValue;
     }
   }
 
-  private pushLatestValue(brokerIds: string[], data: TimeseriesData[]) {
-    for (let i = 0; i < brokerIds.length; i++) {
-      const brokerId = brokerIds[i];
+  private pushLatestValue(dataKeys: string[], data: TimeseriesData[]) {
+    for (let i = 0; i < dataKeys.length; i++) {
+      const dataKey = dataKeys[i];
       if (this.totalOnly()) {
-        if (brokerId !== TOTAL_KEY) {
+        if (dataKey !== TOTAL_KEY) {
           continue;
         }
-        if (data[0][this.chartType()]?.length) {
-          const latestValue = data[0][this.chartType()][0];
+        if (data[0][this.chartDataKey()]?.length) {
+          const latestValue = data[0][this.chartDataKey()][0];
           const chartData = this.chart.data.datasets[0].data;
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
@@ -363,9 +364,9 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           }
         }
       } else {
-        const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === brokerId);
-        if (datasetIndex > -1 && data[i]?.[this.chartType()]?.length) {
-          const latestValue = data[i][this.chartType()][0];
+        const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
+        if (datasetIndex > -1 && data[i]?.[this.chartDataKey()]?.length) {
+          const latestValue = data[i][this.chartDataKey()][0];
           const chartData = this.chart.data.datasets[datasetIndex].data;
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
@@ -453,13 +454,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     }
   }
 
-  private getTimeseriesData(brokerIds: string[], latest = false): Observable<TimeseriesData>[] {
+  private getTimeseriesData(dataKeys: string[], latest = false): Observable<TimeseriesData>[] {
     const tasks: Observable<TimeseriesData>[] = [];
-    for (const brokerId of brokerIds) {
-      if (this.totalOnly() && brokerId !== TOTAL_KEY) {
+    for (const dataKey of dataKeys) {
+      if (this.totalOnly() && dataKey !== TOTAL_KEY) {
         continue;
       }
-      tasks.push(latest ? this.getLatestData(brokerId) : this.getHistoricalData(brokerId));
+      tasks.push(latest ? this.getLatestData(dataKey) : this.getHistoricalData(dataKey));
     }
     return tasks;
   }

@@ -24,8 +24,8 @@
     } @else {
       <div style="height: 4px;"></div>
     }
-    <div [id]="chartType() + 'container'" class="chart-container flex h-full flex-col"
-         [class.mat-padding]="chartPage() === 'monitoring'">
+    <div [id]="chartDataKey() + 'container'" class="chart-container flex h-full flex-col"
+         [class.mat-padding]="chartView() === ChartView.full">
       <tb-chart-toolbar
         [class.hidden]="!showToolbar()"
         [timewindow]="timewindow"
@@ -33,15 +33,15 @@
         [showTimewindow]="showTimewindow()"
         [showFullscreen]="showFullscreen()"
         [showDataSizeUnitToggle]="showDataSizeUnitToggle()"
-        [chartType]="chartType()"
+        [chartType]="chartDataKey()"
         [currentDataSizeUnitType]="currentDataSizeUnitType"
         (unitTypeChange)="dataSizeUnitChanged($event)"
         (fullscreenToggle)="onFullscreenChange($event)"
       />
 
       <tb-chart-canvas
-        [chartType]="chartType()"
-        [chartPage]="chartPage()"
+        [chartType]="chartDataKey()"
+        [chartPage]="chartView()"
         [chartHeight]="chartHeight()"
         [isFullscreen]="isFullscreen()"
         [legendKeys]="legendKeys"
@@ -53,12 +53,12 @@
         [datasets]="chart?.data?.datasets"
         [timewindow]="timewindow"
         [chart]="chart"
-        [chartType]="chartType()"
+        [chartType]="chartDataKey()"
         [dataKeys]="dataKeys"
         [visibleDataKeys]="visibleDataKeys"
         [totalOnly]="totalOnly()"
         (legendKeysChange)="legendKeys = $event"
-        (visibleDataKeysChange)="onVisibleBrokerIdsChange($event)"
+        (visibleDataKeysChange)="onVisibleDataKeysChange($event)"
         (fetchDataKeyData)="onNeedBrokerData($event)"
       />
     </div>

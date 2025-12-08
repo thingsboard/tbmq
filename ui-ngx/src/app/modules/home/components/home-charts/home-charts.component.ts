@@ -18,7 +18,7 @@ import { Component, ElementRef, OnInit, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { ChartPage, CHARTS_HOME } from '@shared/models/chart.model';
+import { ChartView, CHARTS_HOME } from '@shared/models/chart.model';
 import { HOME_CHARTS_DURATION, HomePageTitleType } from '@shared/models/home-page.model';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
@@ -39,8 +39,8 @@ export class HomeChartsComponent implements OnInit {
   public readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
   public readonly cardType = HomePageTitleType.MONITORING;
-  public readonly chartTypes = CHARTS_HOME;
-  public readonly chartPage = ChartPage.home;
+  public readonly chartDataKeys = CHARTS_HOME;
+  public readonly chartView = ChartView.simplified;
 
   public carouselIndex = 0;
   public visibleItems = 5;
