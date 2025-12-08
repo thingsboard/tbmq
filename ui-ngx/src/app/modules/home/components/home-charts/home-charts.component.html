@@ -34,21 +34,25 @@
       <section ngx-hm-carousel-container class="content">
         @for (chart of chartKeys; track chart) {
           <article class="item" ngx-hm-carousel-item>
-            <div class="chart-container flex flex-col">
-              <tb-monitoring-chart-toolbar
-                [chartType]="chart"
-                [carouselView]="true"
-                [showTimewindow]="false"
-                [showDataSizeUnitToggle]="false"
-                [showFullscreen]="false">
-              </tb-monitoring-chart-toolbar>
-              <section [style.width.px]="chartWidth">
+            <div tb-fullscreen
+                 [fullscreen]="isFullscreen(chart)"
+                 [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+              <div class="chart-container flex flex-col">
+                <tb-monitoring-chart-toolbar
+                  [chartType]="chart"
+                  [carouselView]="true"
+                  [showTimewindow]="false"
+                  [showDataSizeUnitToggle]="false"
+                  [showFullscreen]="false"
+                  (fullscreenToggle)="onFullscreenChange($event, chart)">
+                </tb-monitoring-chart-toolbar>
                 <tb-monitoring-chart
+                  [isFullscreen]="isFullscreen(chart)"
                   [chartType]="chart"
                   [chartPage]="chartPage"
                   [chartHeight]="chartHeight">
                 </tb-monitoring-chart>
-              </section>
+              </div>
             </div>
           </article>
         }

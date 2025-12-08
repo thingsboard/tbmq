@@ -106,7 +106,7 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
               private cd: ChangeDetectorRef,
               private route: ActivatedRoute) {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.calculateFixedWindowTimeMs();
+    this.updateTimeRange();
   }
 
   ngOnInit() {
@@ -149,7 +149,7 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
     }
     this.isLoading = true;
     this.stopPolling();
-    this.calculateFixedWindowTimeMs();
+    this.updateTimeRange();
     this.trafficPayloadChartUnitTypeChanged();
     this.fetchEntityTimeseries(this.visibleBrokerIds, false, this.getHistoricalDataObservables(this.visibleBrokerIds));
     this.chart.resetZoom();
@@ -194,8 +194,9 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
     this.brokerIds = this.route.snapshot.data.brokerIds;
   }
 
-  private calculateFixedWindowTimeMs() {
+  private updateTimeRange() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
+    this.fixedWindowTimeMs.startTimeMs = Math.ceil(this.fixedWindowTimeMs.startTimeMs / MINUTE) * MINUTE;
   }
 
   private getHistoricalDataObservables(brokerIds: string[]): Observable<TimeseriesData>[] {
@@ -259,12 +260,10 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
       for (let i = 0; i < this.brokerIds.length; i++) {
         const brokerId = this.brokerIds[i];
         if (this.totalOnly()) {
-          if (brokerId === TOTAL_KEY) {
-            if (this.visibleBrokerIds.includes(brokerId)) {
-              datasets.data.datasets.push(this.getDataset(data, i, brokerId));
-            } else {
-              datasets.data.datasets.push(this.getDataset(null, i, brokerId))
-            }
+          if (this.visibleBrokerIds.includes(brokerId)) {
+            datasets.data.datasets.push(this.getDataset(data, i, brokerId));
+          } else {
+            datasets.data.datasets.push(this.getDataset(null, i, brokerId))
           }
         } else {
           if (this.visibleBrokerIds.includes(brokerId)) {
@@ -387,9 +386,9 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
 
   private updateXScale() {
     if (!this.chart.isZoomedOrPanned()) {
-      const timewindow = calculateFixedWindowTimeMs(this.timewindow);
-      this.chart.options.scales.x.min = Math.ceil(timewindow.startTimeMs / MINUTE) * MINUTE;
-      this.chart.options.scales.x.max = Math.floor(timewindow.endTimeMs / MINUTE) * MINUTE;
+      this.updateTimeRange();
+      this.chart.options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
+      this.chart.options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
       const hours = this.hoursInRange();
       let format = 'MMM-DD';
       let round: string;

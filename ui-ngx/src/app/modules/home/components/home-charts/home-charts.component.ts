@@ -14,11 +14,11 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { retry, Subject } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
-import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
+import { calculateFixedWindowTimeMs, FixedWindow, MINUTE } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
@@ -39,17 +39,19 @@ import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carou
 import { FormsModule } from '@angular/forms';
 import { MonitoringChartComponent } from '@shared/components/chart/monitoring-chart.component';
 import { MonitoringChartToolbarComponent } from '@shared/components/chart/monitoring-chart-toolbar.component';
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import 'chartjs-adapter-moment';
 
 @Component({
     selector: 'tb-home-charts',
     templateUrl: './home-charts.component.html',
     styleUrls: ['./home-charts.component.scss'],
-    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, TranslateModule, MonitoringChartComponent, MonitoringChartToolbarComponent]
+    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, TranslateModule, MonitoringChartComponent, MonitoringChartToolbarComponent, FullscreenDirective]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
+  fullscreenChart = signal<string | null>(null);
 
   cardType = HomePageTitleType.MONITORING;
   chartPage = ChartPage.home;
@@ -72,12 +74,15 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.resizeCharts();
-    this.calculateFixedWindowTimeMs();
+    this.updateTimeRange();
   }
 
-  private calculateFixedWindowTimeMs() {
-    this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timeService.defaultTimewindow());
-    this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - HOME_CHARTS_DURATION;
+  private updateTimeRange() {
+    const timewindow = this.timeService.defaultTimewindow();
+    timewindow.realtime.interval = HOME_CHARTS_DURATION;
+    timewindow.realtime.timewindowMs = HOME_CHARTS_DURATION;
+    this.fixedWindowTimeMs = calculateFixedWindowTimeMs(timewindow);
+    this.fixedWindowTimeMs.startTimeMs = Math.ceil(this.fixedWindowTimeMs.startTimeMs / MINUTE) * MINUTE;
   }
 
   ngAfterViewInit(): void {
@@ -88,6 +93,18 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.stopPolling$.next();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  onFullscreenChange(fullscreen: boolean, chartKey: string) {
+    if (fullscreen) {
+      this.fullscreenChart.set(chartKey);
+    } else if (this.fullscreenChart() === chartKey) {
+      this.fullscreenChart.set(null);
+    }
+  }
+
+  isFullscreen(chartKey: string): boolean {
+    return this.fullscreenChart() === chartKey;
   }
 
   private fetchEntityTimeseries() {
