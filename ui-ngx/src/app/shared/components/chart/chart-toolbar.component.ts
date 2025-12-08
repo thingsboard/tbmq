@@ -29,14 +29,13 @@ import {
   StatsChartType,
   StatsChartTypeTranslationMap
 } from '@shared/models/chart.model';
-import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
-  selector: 'tb-monitoring-chart-toolbar',
-  templateUrl: './monitoring-chart-toolbar.component.html',
-  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule, NgTemplateOutlet]
+  selector: 'tb-chart-toolbar',
+  templateUrl: './chart-toolbar.component.html',
+  imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule]
 })
-export class MonitoringChartToolbarComponent {
+export class ChartToolbarComponent {
 
   readonly timewindow = input<Timewindow>();
   readonly chartType = input<string>();
@@ -44,7 +43,6 @@ export class MonitoringChartToolbarComponent {
   readonly showTimewindow = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
-  readonly carouselView = input<boolean>(false);
 
   public isFullscreen = false;
 

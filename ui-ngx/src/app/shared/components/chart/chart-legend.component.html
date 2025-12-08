@@ -43,13 +43,13 @@
         @for (legendKey of legendKeys; track legendKey; let index = $index) {
           <tr>
             <th>
-              <tb-monitoring-chart-legend-item
+              <tb-chart-legend-item
                 [legendKey]="legendKey"
                 [left]="true"
                 (legendKeyEnter)="onLegendKeyEnter($event)"
                 (legendKeyLeave)="onLegendKeyLeave($event)"
                 (toggleLegendKey)="toggleLegendKey($event)">
-              </tb-monitoring-chart-legend-item>
+              </tb-chart-legend-item>
             </th>
             @if (legendConfig().showMin === true && !legendKey.dataKey.hidden) {
               <td class="tb-time-series-chart-legend-value"

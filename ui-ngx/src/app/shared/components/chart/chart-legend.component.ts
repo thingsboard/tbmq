@@ -18,7 +18,7 @@ import { ChangeDetectorRef, Component, EventEmitter, input, OnChanges, Output, S
 import { TranslateModule } from '@ngx-translate/core';
 import { LegendConfig, LegendKey, StatsChartType, TOTAL_KEY } from '@shared/models/chart.model';
 import { SafePipe } from '@shared/pipe/safe.pipe';
-import { MonitoringChartLegendItemComponent } from './monitoring-chart-legend-item.component';
+import { ChartLegendItemComponent } from './chart-legend-item.component';
 import { ChartDataset } from 'chart.js';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { calculateFixedWindowTimeMs, Timewindow } from '@shared/models/time/time.models';
@@ -33,11 +33,11 @@ import { getColor } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
 
 @Component({
-  selector: 'tb-monitoring-chart-legend',
-  templateUrl: './monitoring-chart-legend.component.html',
-  imports: [TranslateModule, SafePipe, MonitoringChartLegendItemComponent]
+  selector: 'tb-chart-legend',
+  templateUrl: './chart-legend.component.html',
+  imports: [TranslateModule, SafePipe, ChartLegendItemComponent]
 })
-export class MonitoringChartLegendComponent implements OnChanges {
+export class ChartLegendComponent implements OnChanges {
   readonly isFullscreen = input<boolean>(false);
   readonly legendConfig = input<LegendConfig>({
     showMin: true,
@@ -50,13 +50,13 @@ export class MonitoringChartLegendComponent implements OnChanges {
   readonly datasets = input<ChartDataset<'line', any>[]>([]);
   readonly timewindow = input<Timewindow>();
   readonly chartType = input<StatsChartType>();
-  readonly brokerIds = input<string[]>([]);
+  readonly dataKeys = input<string[]>([]);
   readonly chart = input<Chart<'line', any>>();
-  readonly visibleBrokerIds = input<string[]>([]);
+  readonly visibleDataKeys = input<string[]>([]);
 
   @Output() legendKeysChange = new EventEmitter<any[]>();
-  @Output() visibleBrokerIdsChange = new EventEmitter<string[]>();
-  @Output() needBrokerData = new EventEmitter<string>();
+  @Output() visibleDataKeysChange = new EventEmitter<string[]>();
+  @Output() fetchDataKeyData = new EventEmitter<string>();
 
   legendKeys: any[] = [];
   legendData: Array<{
@@ -126,7 +126,7 @@ export class MonitoringChartLegendComponent implements OnChanges {
 
   private updateLegendKeys() {
     this.legendKeys = [];
-    const ids = this.brokerIds() || [];
+    const ids = this.dataKeys() || [];
     for (let i = 0; i < ids.length; i++) {
       const color = getColor(this.chartType(), i);
       const brokerId = ids[i];
@@ -151,7 +151,7 @@ export class MonitoringChartLegendComponent implements OnChanges {
   }
 
   onLegendKeyEnter(legendKey: LegendKey) {
-    const visible = (this.visibleBrokerIds() || []).includes(legendKey.dataKey.label);
+    const visible = (this.visibleDataKeys() || []).includes(legendKey.dataKey.label);
     if (visible) {
       const datasetIndex = legendKey.dataIndex as number;
       const chart = this.chart?.();
@@ -163,7 +163,7 @@ export class MonitoringChartLegendComponent implements OnChanges {
   }
 
   onLegendKeyLeave(legendKey: LegendKey) {
-    const visible = (this.visibleBrokerIds() || []).includes(legendKey.dataKey.label);
+    const visible = (this.visibleDataKeys() || []).includes(legendKey.dataKey.label);
     if (visible) {
       const datasetIndex = legendKey.dataIndex as number;
       const chart = this.chart?.();
@@ -180,11 +180,11 @@ export class MonitoringChartLegendComponent implements OnChanges {
     if (!chart) {
       return;
     }
-    const visibleIds = [...(this.visibleBrokerIds() || [])];
+    const visibleIds = [...(this.visibleDataKeys() || [])];
     if (!visibleIds.includes(brokerId)) {
       visibleIds.push(brokerId);
-      this.visibleBrokerIdsChange.emit(visibleIds);
-      this.needBrokerData.emit(brokerId);
+      this.visibleDataKeysChange.emit(visibleIds);
+      this.fetchDataKeyData.emit(brokerId);
     }
 
     const datasetIndex = legendKey.dataIndex as number;

@@ -19,7 +19,7 @@ import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
-import { TOTAL_KEY } from '@shared/models/chart.model';
+import { CHARTS_STATE_HEALTH, CHARTS_TRAFFIC_PERFORMANCE, TOTAL_KEY } from '@shared/models/chart.model';
 import { mergeMap } from 'rxjs/operators';
 import { ResourceUsageTableConfigResolver } from '@home/pages/resource-usage/resource-usage-table-config.resolver';
 
@@ -56,14 +56,15 @@ const routes: Routes = [
       },
       {
         path: 'state-health',
-        loadComponent: () => import('@home/pages/monitoring/monitoring-state-health.component').then(m => m.MonitoringStateHealthComponent),
+        loadComponent: () => import('@home/pages/monitoring/monitoring-charts.component').then(m => m.MonitoringChartsComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'monitoring.state-health',
           breadcrumb: {
             label: 'monitoring.state-health',
             icon: 'insert_chart'
-          }
+          },
+          charts: CHARTS_STATE_HEALTH,
         },
         resolve: {
           brokerIds: BrokerIdsResolver
@@ -71,14 +72,15 @@ const routes: Routes = [
       },
       {
         path: 'traffic-performance',
-        loadComponent: () => import('@home/pages/monitoring/monitoring-traffic-performance.component').then(m => m.MonitoringTrafficPerformanceComponent),
+        loadComponent: () => import('@home/pages/monitoring/monitoring-charts.component').then(m => m.MonitoringChartsComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'monitoring.traffic-performance',
           breadcrumb: {
             label: 'monitoring.traffic-performance',
             icon: 'speed'
-          }
+          },
+          charts: CHARTS_TRAFFIC_PERFORMANCE,
         },
         resolve: {
           brokerIds: BrokerIdsResolver

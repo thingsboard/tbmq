@@ -19,12 +19,12 @@ import { SafePipe } from '@shared/pipe/safe.pipe';
 import { LegendKey } from '@shared/models/chart.model';
 
 @Component({
-  selector: 'tb-monitoring-chart-legend-item',
+  selector: 'tb-chart-legend-item',
   standalone: true,
   imports: [SafePipe],
-  templateUrl: './monitoring-chart-legend-item.component.html'
+  templateUrl: './chart-legend-item.component.html'
 })
-export class MonitoringChartLegendItemComponent {
+export class ChartLegendItemComponent {
   readonly legendKey = input.required<LegendKey>();
   readonly left = input<boolean>(false);
 
