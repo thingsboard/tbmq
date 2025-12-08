@@ -59,7 +59,7 @@ import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MonitoringChartToolbarComponent } from '@shared/components/chart/monitoring-chart-toolbar.component';
-import { MonitoringChartCanvasComponent } from '@shared/components/chart/monitoring-chart-canvas.component';
+import { MonitoringChartComponent } from '@shared/components/chart/monitoring-chart.component';
 import { MonitoringChartLegendComponent } from '@shared/components/chart/monitoring-chart-legend.component';
 
 import Chart from 'chart.js/auto';
@@ -72,7 +72,7 @@ Chart.register([Zoom]);
   selector: 'tb-monitoring-charts',
   templateUrl: './monitoring-charts.component.html',
   styleUrls: ['./monitoring-charts.component.scss'],
-  imports: [FullscreenDirective, TranslateModule, MatProgressBar, MonitoringChartToolbarComponent, MonitoringChartCanvasComponent, MonitoringChartLegendComponent]
+  imports: [FullscreenDirective, TranslateModule, MatProgressBar, MonitoringChartToolbarComponent, MonitoringChartComponent, MonitoringChartLegendComponent]
 })
 export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
@@ -125,7 +125,7 @@ export class MonitoringChartsComponent implements OnInit, AfterViewInit, OnDestr
       (event) => {
         if ((event.code === 'Escape') && this.isFullscreen()) {
           event.preventDefault();
-          this.onFullscreenChange(false)
+          this.onFullscreenChange(false);
         }
       });
     this.cd.detectChanges();

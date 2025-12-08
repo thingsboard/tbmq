@@ -35,12 +35,12 @@
         (fullscreenToggle)="onFullscreenChange($event)">
       </tb-monitoring-chart-toolbar>
 
-      <tb-monitoring-chart-canvas
+      <tb-monitoring-chart
         [chartType]="chartType()"
         [chartPage]="chartPage"
         [isFullscreen]="isFullscreen()"
         [legendKeys]="legendKeys">
-      </tb-monitoring-chart-canvas>
+      </tb-monitoring-chart>
 
       <tb-monitoring-chart-legend
         [isFullscreen]="isFullscreen()"

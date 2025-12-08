@@ -17,10 +17,10 @@
 import { Component, effect, input, model } from '@angular/core';
 
 @Component({
-  selector: 'tb-monitoring-chart-canvas',
-  templateUrl: './monitoring-chart-canvas.component.html'
+  selector: 'tb-monitoring-chart',
+  templateUrl: './monitoring-chart.component.html'
 })
-export class MonitoringChartCanvasComponent {
+export class MonitoringChartComponent {
 
   readonly chartType = input<string>();
   readonly chartPage = input<string>();
