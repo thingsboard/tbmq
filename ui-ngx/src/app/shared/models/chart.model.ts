@@ -247,10 +247,10 @@ const baseChartConfig = {
     },
     layout: {
       padding: {
-        right: 0,
+        right: 5,
         left: 0,
         bottom: 0,
-        top: 0
+        top: 5
       }
     },
     parsing: {

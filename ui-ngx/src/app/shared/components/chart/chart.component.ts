@@ -16,7 +16,6 @@
 
 import {
   AfterViewInit,
-  ChangeDetectorRef,
   Component,
   input,
   OnChanges,
@@ -109,7 +108,6 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
               private translate: TranslateService,
               private timeService: TimeService,
               private statsService: StatsService,
-              private cd: ChangeDetectorRef,
               private route: ActivatedRoute) {
   }
 
@@ -310,7 +308,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       pointBorderColor: color,
       pointBackgroundColor: color,
       pointHoverBorderColor: color,
-      pointRadius: 0
+      pointRadius: 0,
+      clip: 5,
     };
   }
 
