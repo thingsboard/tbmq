@@ -45,7 +45,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     private final ClientMqttActorManager clientMqttActorManager;
 
     @Scheduled(fixedRateString = "${mqtt.keep-alive.monitoring-delay-ms}")
-    void processKeepAlive() {
+    public void processKeepAlive() {
         for (Map.Entry<UUID, KeepAliveInfo> entry : keepAliveInfoMap.entrySet()) {
             UUID sessionId = entry.getKey();
             KeepAliveInfo keepAliveInfo = entry.getValue();

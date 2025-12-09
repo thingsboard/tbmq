@@ -97,7 +97,7 @@ public class HistoricalStatsTotalConsumer {
     }
 
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
-    private void process() {
+    public void process() {
         if (enabled) {
             sessionsProcessingExecutor.execute(this::processSessionsStats);
         }

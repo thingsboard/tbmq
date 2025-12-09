@@ -115,7 +115,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
-    private void process() {
+    public void process() {
         if (enabled) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
             reportAndPersistStats(startOfCurrentMinute, null); // async; don't block
