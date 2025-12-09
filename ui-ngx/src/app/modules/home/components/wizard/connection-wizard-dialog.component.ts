@@ -36,7 +36,7 @@ import {
   clientIdRandom,
   clientUserNameRandom,
   connectionName,
-  DataSizeUnitType,
+  DataSizeUnit,
   DataSizeUnitTypeTranslationMap,
   MqttVersions,
   TimeUnitTypeTranslationMap,
@@ -105,7 +105,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
   keepAliveTimeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
-  dataSizeUnitTypes = Object.keys(DataSizeUnitType).filter(el => el !== DataSizeUnitType.GIGABYTE);
+  dataSizeUnitTypes = Object.keys(DataSizeUnit).filter(el => el !== DataSizeUnit.GIGABYTE);
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
 
   title = 'ws-client.connections.add-connection';
@@ -243,7 +243,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         sessionExpiryInterval: [entity ? entity.configuration.sessionExpiryInterval : 0, []],
         sessionExpiryIntervalUnit: [entity ? entity.configuration.sessionExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
         maximumPacketSize: [entity ? entity.configuration.maxPacketSize : 256, []],
-        maximumPacketSizeUnit: [entity ? entity.configuration.maxPacketSizeUnit : DataSizeUnitType.MEGABYTE, []],
+        maximumPacketSizeUnit: [entity ? entity.configuration.maxPacketSizeUnit : DataSizeUnit.MEGABYTE, []],
         topicAliasMaximum: [entity ? entity.configuration.topicAliasMax : 0, []],
         receiveMaximum: [entity ? entity.configuration.receiveMax : 65535, []],
         requestResponseInfo: [entity ? entity.configuration.requestResponseInfo : false, []],
@@ -535,11 +535,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (type === 'maximumPacketSizeUnit') {
       const unit = this.connectionAdvancedFormGroup.get('properties')?.get(type)?.value;
       switch (unit) {
-        case DataSizeUnitType.BYTE:
+        case DataSizeUnit.BYTE:
           return 268435456;
-        case DataSizeUnitType.KILOBYTE:
+        case DataSizeUnit.KILOBYTE:
           return 262144;
-        case DataSizeUnitType.MEGABYTE:
+        case DataSizeUnit.MEGABYTE:
           return 256;
       }
     }

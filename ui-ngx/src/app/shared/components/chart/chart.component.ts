@@ -53,7 +53,7 @@ import { Store } from '@ngrx/store';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import { convertDataSizeUnits } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
@@ -94,7 +94,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   chart: Chart<'line', TsValue[]>;
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   timewindow = this.timeService.defaultTimewindow();
-  currentDataSizeUnitType = DataSizeUnitType.BYTE;
+  currentDataSizeUnitType = DataSizeUnit.BYTE;
   ChartView = ChartView;
   isLoading = false;
   legendItems = [];
@@ -155,7 +155,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.isFullscreen.set(fullscreen);
   }
 
-  dataSizeUnitChanged(type = DataSizeUnitType.BYTE) {
+  dataSizeUnitChanged(type = DataSizeUnit.BYTE) {
     if (this.isTrafficPayloadChart() && this.chart?.data?.datasets?.length) {
       for (const ds of this.chart.data.datasets) {
         if (ds.data?.length) {
@@ -343,7 +343,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     if (this.isTrafficPayloadChart() && data?.length && data[0]?.[this.chartDataKey()]?.length) {
       const tsValue = data[0][this.chartDataKey()][0];
       data[0][this.chartDataKey()][0] = {
-        value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
+        value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.currentDataSizeUnitType),
         ts: tsValue.ts
       } as TsValue;
     }

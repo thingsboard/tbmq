@@ -85,7 +85,7 @@ export interface WebSocketConnectionConfiguration {
   sessionExpiryInterval?: number;
   sessionExpiryIntervalUnit?: WebSocketTimeUnit;
   maxPacketSize?: number;
-  maxPacketSizeUnit?: DataSizeUnitType;
+  maxPacketSizeUnit?: DataSizeUnit;
   topicAliasMax?: number;
   receiveMax?: number;
   requestResponseInfo?: boolean;
@@ -148,7 +148,7 @@ export interface WebSocketUserPropertiesKeyValue {
 
 interface TbConnectionProperties {
   sessionExpiryIntervalUnit?: WebSocketTimeUnit;
-  maximumPacketSizeUnit?: DataSizeUnitType;
+  maximumPacketSizeUnit?: DataSizeUnit;
 }
 
 export interface ConnectionProperties extends TbConnectionProperties{
@@ -259,7 +259,7 @@ export enum AboveSecWebSocketTimeUnit {
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
-export enum DataSizeUnitType {
+export enum DataSizeUnit {
   BYTE = 'BYTE',
   KILOBYTE = 'KILOBYTE',
   MEGABYTE = 'MEGABYTE',
@@ -394,10 +394,10 @@ export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>(
   [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
 ]);
 export const DataSizeUnitTypeTranslationMap = new Map<string, string>([
-    [DataSizeUnitType.BYTE, 'B'],
-    [DataSizeUnitType.KILOBYTE, 'KB'],
-    [DataSizeUnitType.MEGABYTE, 'MB'],
-    [DataSizeUnitType.GIGABYTE, 'GB']
+    [DataSizeUnit.BYTE, 'B'],
+    [DataSizeUnit.KILOBYTE, 'KB'],
+    [DataSizeUnit.MEGABYTE, 'MB'],
+    [DataSizeUnit.GIGABYTE, 'GB']
   ]);
 export const TimeUnitTypeTranslationMap = new Map<string, string>([
     [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],

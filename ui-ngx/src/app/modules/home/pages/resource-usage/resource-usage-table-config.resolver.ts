@@ -29,7 +29,7 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { Injectable } from '@angular/core';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { convertDataSizeUnits } from '@core/utils';
-import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import {
   ResourceUsage,
   ResourceUsageStatus,
@@ -126,7 +126,7 @@ export class ResourceUsageTableConfigResolver {
   }
 
   private toGb(value: number): string {
-    return convertDataSizeUnits(value, DataSizeUnitType.BYTE, DataSizeUnitType.GIGABYTE).toFixed() + ' ' + DataSizeUnitTypeTranslationMap.get(DataSizeUnitType.GIGABYTE);
+    return convertDataSizeUnits(value, DataSizeUnit.BYTE, DataSizeUnit.GIGABYTE).toFixed() + ' ' + DataSizeUnitTypeTranslationMap.get(DataSizeUnit.GIGABYTE);
   }
 
   private toPercentage(value: number): string {

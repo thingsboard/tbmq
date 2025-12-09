@@ -23,7 +23,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import {
   ChartTooltipTranslationMap,
   ChartDataKey,
@@ -46,7 +46,7 @@ export class ChartToolbarComponent {
 
   public isFullscreen = false;
 
-  readonly dataSizeUnitType = Object.values(DataSizeUnitType);
+  readonly dataSizeUnitType = Object.values(DataSizeUnit);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   readonly chartTypeTranslationMap = ChartDataKeyTranslationMap;
 
