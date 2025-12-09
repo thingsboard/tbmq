@@ -149,7 +149,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.isLoading = true;
     this.stopPolling();
     this.calcWindowTime();
-    this.dataSizeUnitChanged();
+    this.dataSizeUnitChange();
     this.fetchEntityTimeseries(this.visibleLegendItems(), false, this.getHistoricalDataObservables(this.visibleLegendItems()));
     this.chart.resetZoom();
   }
@@ -158,7 +158,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.isFullscreen.set(fullscreen);
   }
 
-  dataSizeUnitChanged(type = DataSizeUnit.BYTE) {
+  dataSizeUnitChange(type = DataSizeUnit.BYTE) {
     const datasets = this.chart?.data?.datasets;
     if (this.isPayloadTrafficChart() && datasets?.length) {
       for (const ds of datasets) {
@@ -229,12 +229,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           if (!this.pollingStarted) {
             this.startPolling();
           } else {
-            const latestTasks = this.getTimeseriesData(this.visibleLegendItems(), true);
+            const latestTasks = this.getTimeseriesData(dataKeys, true);
             forkJoin(latestTasks)
               .pipe(takeUntil(this.stopPolling$))
               .subscribe(latestData => {
                 this.prepareData(latestData as TimeseriesData[]);
-                this.pushLatestValue(this.visibleLegendItems(), latestData);
+                this.pushLatestValue(dataKeys, latestData);
                 this.updateChartView();
               });
           }
