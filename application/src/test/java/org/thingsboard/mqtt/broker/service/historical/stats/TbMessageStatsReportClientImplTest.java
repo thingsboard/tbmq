@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -40,12 +41,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -67,6 +66,8 @@ public class TbMessageStatsReportClientImplTest {
     @Mock
     private HistoricalStatsTotalHelper helper;
     @Mock
+    private HistoricalDataReportProperties historicalDataReportProperties;
+    @Mock
     private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @InjectMocks
@@ -81,8 +82,8 @@ public class TbMessageStatsReportClientImplTest {
         when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
         when(historicalDataQueueFactory.createProducer(any())).thenReturn(historicalStatsProducer);
 
-        tbMessageStatsReportClient.setEnabled(true);
-        tbMessageStatsReportClient.setInterval(1);
+        when(historicalDataReportProperties.isEnabled()).thenReturn(true);
+        when(historicalDataReportProperties.getInterval()).thenReturn(1);
     }
 
     @After
@@ -102,7 +103,7 @@ public class TbMessageStatsReportClientImplTest {
 
     @Test
     public void testInitDisabled() {
-        tbMessageStatsReportClient.setEnabled(false);
+        when(historicalDataReportProperties.isDisabled()).thenReturn(true);
         tbMessageStatsReportClient.init();
 
         assertNull(tbMessageStatsReportClient.getStats());
@@ -164,20 +165,6 @@ public class TbMessageStatsReportClientImplTest {
         tbMessageStatsReportClient.removeClient("client-1");
 
         assertFalse(tbMessageStatsReportClient.getClientSessionsStats().containsKey("client-1"));
-    }
-
-    @Test
-    public void testValidateIntervalValid() {
-        tbMessageStatsReportClient.setInterval(5);
-        assertDoesNotThrow(() -> tbMessageStatsReportClient.validateIntervalAndThrowExceptionOnInvalid());
-    }
-
-    @Test
-    public void testValidateIntervalInvalid() {
-        tbMessageStatsReportClient.setInterval(61);
-        RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> tbMessageStatsReportClient.validateIntervalAndThrowExceptionOnInvalid());
-        assertTrue(thrown.getMessage().contains("interval value provided is not within the correct range"));
     }
 
     @Test
