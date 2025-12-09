@@ -14,7 +14,14 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  input,
+  OnChanges,
+  output,
+  SimpleChanges
+} from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { LegendConfig, LegendKey, ChartDataKey, TOTAL_KEY } from '@shared/models/chart.model';
 import { SafePipe } from '@shared/pipe/safe.pipe';
@@ -54,9 +61,9 @@ export class ChartLegendComponent implements OnChanges {
   readonly chart = input<Chart<'line', any>>();
   readonly visibleLegendItems = input<string[]>();
 
-  @Output() dataKeyItemsChanged = new EventEmitter<any[]>();
-  @Output() visibleDataKeyItemsChanged = new EventEmitter<string[]>();
-  @Output() fetchDataKeyItemTimeseries = new EventEmitter<string>();
+  readonly visibleDataKeyItemsChanged = output<string[]>();
+  readonly dataKeyItemsChanged = output<LegendKey[]>();
+  readonly fetchDataKeyItemTimeseries = output<string>();
 
   legendKeys: LegendKey[] = [];
   legendData: Array<{
