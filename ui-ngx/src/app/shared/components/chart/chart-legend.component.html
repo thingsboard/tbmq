@@ -46,8 +46,8 @@
               <tb-chart-legend-item
                 [legendKey]="legendKey"
                 [left]="true"
-                (legendKeyEnter)="onLegendKeyEnter($event)"
-                (legendKeyLeave)="onLegendKeyLeave($event)"
+                (legendKeyEnter)="updateLineWidth($event, 4)"
+                (legendKeyLeave)="updateLineWidth($event, 2)"
                 (toggleLegendKey)="toggleLegendKey($event)">
               </tb-chart-legend-item>
             </th>

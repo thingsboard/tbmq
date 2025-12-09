@@ -17,7 +17,7 @@
 import {
   AfterViewInit,
   Component,
-  input,
+  input, model,
   OnChanges,
   OnDestroy,
   OnInit,
@@ -80,7 +80,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   readonly isFullscreen = signal(false);
 
-  readonly chartDataKey = input<ChartDataKey>();
+  readonly chartDataKey = input.required<ChartDataKey>();
   readonly chartHeight = input<number>(300);
   readonly globalTimewindow = input<Timewindow>();
   readonly showLegend = input<boolean>(true);
@@ -89,6 +89,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   readonly showTimewindow = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
+  // legendItems = model<any[]>()
 
   chart: Chart<'line', TsValue[]>;
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;

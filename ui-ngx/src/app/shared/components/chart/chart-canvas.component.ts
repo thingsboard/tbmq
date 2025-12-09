@@ -15,6 +15,7 @@
 ///
 
 import { Component, effect, input, signal } from '@angular/core';
+import { ChartDataKey, LegendKey } from '@shared/models/chart.model';
 
 @Component({
   selector: 'tb-chart-canvas',
@@ -25,10 +26,10 @@ import { Component, effect, input, signal } from '@angular/core';
 })
 export class ChartCanvasComponent {
 
-  readonly chartDataKey = input<string>();
+  readonly chartDataKey = input.required<ChartDataKey>();
+  readonly chartHeight = input.required<number>();
+  readonly legendItems = input<LegendKey[]>();
   readonly isFullscreen = input<boolean>();
-  readonly legendItems = input<any[]>();
-  readonly chartHeight = input<number>();
 
   containerHeight = signal<string>(null);
 

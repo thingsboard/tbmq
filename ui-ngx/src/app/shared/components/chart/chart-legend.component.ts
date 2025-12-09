@@ -58,7 +58,7 @@ export class ChartLegendComponent implements OnChanges {
   @Output() legendItemsVisibilityChange = new EventEmitter<string[]>();
   @Output() fetchDataKeyData = new EventEmitter<string>();
 
-  legendKeys: any[] = [];
+  legendKeys: LegendKey[] = [];
   legendData: Array<{
     min: number;
     max: number;
@@ -150,25 +150,13 @@ export class ChartLegendComponent implements OnChanges {
     });
   }
 
-  onLegendKeyEnter(legendKey: LegendKey) {
+  updateLineWidth(legendKey: LegendKey, width: number) {
     const visible = (this.visibleDataKeys() || []).includes(legendKey.dataKey.label);
     if (visible) {
       const datasetIndex = legendKey.dataIndex as number;
       const chart = this.chart?.();
       if (chart?.data?.datasets?.[datasetIndex]) {
-        chart.data.datasets[datasetIndex].borderWidth = 4;
-        chart.update('none');
-      }
-    }
-  }
-
-  onLegendKeyLeave(legendKey: LegendKey) {
-    const visible = (this.visibleDataKeys() || []).includes(legendKey.dataKey.label);
-    if (visible) {
-      const datasetIndex = legendKey.dataIndex as number;
-      const chart = this.chart?.();
-      if (chart?.data?.datasets?.[datasetIndex]) {
-        chart.data.datasets[datasetIndex].borderWidth = 2;
+        chart.data.datasets[datasetIndex].borderWidth = width;
         chart.update('none');
       }
     }
