@@ -70,8 +70,8 @@ export const TOTAL_KEY = 'total';
 export const MAX_DATAPOINTS_LIMIT = 50000;
 
 export enum ChartView {
-  simplified = 'simplified',
-  full = 'full',
+  compact = 'compact',
+  detailed = 'detailed',
 }
 
 export const ChartDataKeyTranslationMap = new Map<string, string>(
@@ -261,7 +261,7 @@ const baseChartConfig = {
 }
 
 function pageChartConfig(type: ChartView): object {
-  if (type === ChartView.full) {
+  if (type === ChartView.detailed) {
     return {
       options: {
         plugins: {
@@ -333,7 +333,7 @@ function pageChartConfig(type: ChartView): object {
       },
     };
   }
-  if (type === ChartView.simplified) {
+  if (type === ChartView.compact) {
     return {
       options: {
         title: {

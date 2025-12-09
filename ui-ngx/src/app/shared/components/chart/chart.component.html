@@ -24,8 +24,9 @@
     } @else {
       <div style="height: 4px;"></div>
     }
-    <div [id]="chartDataKey() + 'container'" class="chart-container flex h-full flex-col"
-         [class.mat-padding]="chartView() === ChartView.full">
+    <div [id]="chartDataKey() + 'container'"
+         class="chart-container flex h-full flex-col"
+         [class.mat-padding]="chartView() === ChartView.detailed">
       <tb-chart-toolbar
         [class.hidden]="!showToolbar()"
         [timewindow]="timewindow"
@@ -40,11 +41,10 @@
       />
 
       <tb-chart-canvas
-        [chartType]="chartDataKey()"
-        [chartPage]="chartView()"
+        [chartDataKey]="chartDataKey()"
         [chartHeight]="chartHeight()"
         [isFullscreen]="isFullscreen()"
-        [legendKeys]="legendKeys"
+        [legendItems]="legendItems"
       />
 
       <tb-chart-legend
@@ -57,9 +57,9 @@
         [dataKeys]="dataKeys"
         [visibleDataKeys]="visibleDataKeys"
         [totalOnly]="totalOnly()"
-        (legendKeysChange)="legendKeys = $event"
-        (visibleDataKeysChange)="onVisibleDataKeysChange($event)"
-        (fetchDataKeyData)="onNeedBrokerData($event)"
+        (legendItemsChange)="legendItems = $event"
+        (legendItemsVisibilityChange)="onVisibleDataKeysChange($event)"
+        (fetchDataKeyData)="fetchTimeseriesData($event)"
       />
     </div>
   </div>

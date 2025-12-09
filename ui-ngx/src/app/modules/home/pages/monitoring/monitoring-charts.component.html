@@ -27,6 +27,6 @@
 </mat-toolbar>
 <div class="mat-padding flex flex-1 flex-col gap-4">
   @for (chartType of chartTypes; track $index;) {
-    <tb-chart [parentTimewindow]="timewindow" [chartDataKey]="chartType"></tb-chart>
+    <tb-chart [globalTimewindow]="timewindow" [chartDataKey]="chartType"></tb-chart>
   }
 </div>

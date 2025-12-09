@@ -36,16 +36,16 @@ import { ChartComponent } from '@shared/components/chart/chart.component';
 })
 export class HomeChartsComponent implements OnInit {
 
-  public readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
+  readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
-  public readonly cardType = HomePageTitleType.MONITORING;
-  public readonly chartDataKeys = CHARTS_HOME;
-  public readonly chartView = ChartView.simplified;
+  readonly cardType = HomePageTitleType.MONITORING;
+  readonly chartDataKeys = CHARTS_HOME;
+  readonly chartView = ChartView.compact;
 
-  public carouselIndex = 0;
-  public visibleItems = 5;
-  public height: number;
-  public timewindow: Timewindow;
+  carouselIndex = 0;
+  visibleItems = 5;
+  chartHeight: number;
+  timewindow: Timewindow;
 
   constructor(private timeService: TimeService) {
   }
@@ -69,7 +69,7 @@ export class HomeChartsComponent implements OnInit {
         width = containerWidth / 2;
         this.visibleItems = 2;
       }
-      this.height = Math.round(width * 0.5);
+      this.chartHeight = Math.round(width * 0.5);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

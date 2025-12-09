@@ -14,34 +14,36 @@
 /// limitations under the License.
 ///
 
-import { Component, effect, input, model } from '@angular/core';
+import { Component, effect, input, signal } from '@angular/core';
 
 @Component({
   selector: 'tb-chart-canvas',
-  templateUrl: './chart-canvas.component.html'
+  templateUrl: './chart-canvas.component.html',
+  host: {
+    '[style.height]': 'containerHeight()'
+  }
 })
 export class ChartCanvasComponent {
 
-  readonly chartType = input<string>();
-  readonly chartPage = input<string>();
-  readonly isFullscreen = input<boolean>(false);
-  readonly legendKeys = input<any[]>([]);
-  chartHeight = input<number>(300);
+  readonly chartDataKey = input<string>();
+  readonly isFullscreen = input<boolean>();
+  readonly legendItems = input<any[]>();
+  readonly chartHeight = input<number>();
 
-  chartContainerHeight = model<string>('300px');
+  containerHeight = signal<string>(null);
 
   constructor() {
     effect(() => {
-      this.onFullScreen();
+      this.onFullScreen(this.isFullscreen());
     });
   }
 
-  onFullScreen() {
-    if (this.isFullscreen()) {
-      const height = 120 + ((this.legendKeys().length - 1) * 24);
-      this.chartContainerHeight.set(`calc(100vh - ${height}px)`);
+  private onFullScreen(isFullscreen: boolean) {
+    if (isFullscreen) {
+      const height = 120 + ((this.legendItems().length - 1) * 24);
+      this.containerHeight.set(`calc(100vh - ${height}px)`);
     } else {
-      this.chartContainerHeight.set(this.chartHeight() + 'px');
+      this.containerHeight.set(this.chartHeight() + 'px');
     }
   }
 }

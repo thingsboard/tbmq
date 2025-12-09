@@ -54,8 +54,8 @@ export class ChartLegendComponent implements OnChanges {
   readonly chart = input<Chart<'line', any>>();
   readonly visibleDataKeys = input<string[]>([]);
 
-  @Output() legendKeysChange = new EventEmitter<any[]>();
-  @Output() visibleDataKeysChange = new EventEmitter<string[]>();
+  @Output() legendItemsChange = new EventEmitter<any[]>();
+  @Output() legendItemsVisibilityChange = new EventEmitter<string[]>();
   @Output() fetchDataKeyData = new EventEmitter<string>();
 
   legendKeys: any[] = [];
@@ -135,7 +135,7 @@ export class ChartLegendComponent implements OnChanges {
         this.addLegendKey(index, dataKey, color);
       }
     }
-    this.legendKeysChange.emit(this.legendKeys);
+    this.legendItemsChange.emit(this.legendKeys);
     this.cd.detectChanges();
   }
 
@@ -183,7 +183,7 @@ export class ChartLegendComponent implements OnChanges {
     const visibleIds = [...(this.visibleDataKeys() || [])];
     if (!visibleIds.includes(dataKey)) {
       visibleIds.push(dataKey);
-      this.visibleDataKeysChange.emit(visibleIds);
+      this.legendItemsVisibilityChange.emit(visibleIds);
       this.fetchDataKeyData.emit(dataKey);
     }
 
@@ -202,8 +202,7 @@ export class ChartLegendComponent implements OnChanges {
     if (this.legendKeys[datasetIndex]?.dataKey) {
       this.legendKeys[datasetIndex].dataKey.color = color as any;
       this.legendKeys[datasetIndex].dataKey.hidden = !this.legendKeys[datasetIndex].dataKey.hidden;
-      this.legendKeysChange.emit(this.legendKeys);
-      this.cd.detectChanges();
+      this.legendItemsChange.emit(this.legendKeys);
     }
   }
 }

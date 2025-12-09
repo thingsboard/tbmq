@@ -82,10 +82,10 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   readonly chartDataKey = input<ChartDataKey>();
   readonly chartHeight = input<number>(300);
-  readonly parentTimewindow = input<Timewindow>();
+  readonly globalTimewindow = input<Timewindow>();
   readonly showLegend = input<boolean>(true);
   readonly showToolbar = input<boolean>(true);
-  readonly chartView = input<ChartView>(ChartView.full);
+  readonly chartView = input<ChartView>(ChartView.detailed);
   readonly showTimewindow = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
@@ -96,7 +96,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   currentDataSizeUnitType = DataSizeUnitType.BYTE;
   ChartView = ChartView;
   isLoading = false;
-  legendKeys = [];
+  legendItems = [];
   dataKeys: string[];
   visibleDataKeys: string[] = [TOTAL_KEY];
 
@@ -130,7 +130,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     for (const propName of Object.keys(changes)) {
       const change = changes[propName];
       if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'parentTimewindow') {
+        if (propName === 'globalTimewindow') {
           this.timewindow = change.currentValue;
           this.onTimewindowChange();
         }
@@ -173,7 +173,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.visibleDataKeys = ids;
   }
 
-  onNeedBrokerData(dataKey: string) {
+  fetchTimeseriesData(dataKey: string) {
     this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]));
   }
 
@@ -187,7 +187,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   private init() {
     this.dataKeys = this.route.snapshot.data.dataKeys || [TOTAL_KEY];
-    this.timewindow = this.parentTimewindow();
+    this.timewindow = this.globalTimewindow();
     this.calcWindowTime();
     $(document).on('keydown',
       (event) => {
@@ -259,7 +259,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private initCharts(data: TimeseriesData[]) {
-    const ctx = document.getElementById(this.chartDataKey() + this.chartView()) as HTMLCanvasElement;
+    const ctx = document.getElementById(this.chartDataKey()) as HTMLCanvasElement;
     const datasets = {data: {datasets: []}};
     for (let i = 0; i < this.dataKeys.length; i++) {
       const dataKey = this.dataKeys[i];
