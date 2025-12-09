@@ -29,13 +29,14 @@
          [class.mat-padding]="chartView() === ChartView.detailed">
       <tb-chart-toolbar
         [class.hidden]="!showToolbar()"
+        [chartType]="chartDataKey()"
+        [currentDataSizeUnit]="currentDataSizeUnit"
         [timewindow]="timewindow"
-        (timewindowChange)="onTimewindowChange($event)"
         [showTimewindow]="showTimewindow()"
         [showFullscreen]="showFullscreen()"
         [showDataSizeUnitToggle]="showDataSizeUnitToggle()"
-        [chartType]="chartDataKey()"
-        [currentDataSizeUnitType]="currentDataSizeUnitType"
+        [isPayloadTrafficChart]="isPayloadTrafficChart()"
+        (timewindowChange)="onTimewindowChange($event)"
         (unitTypeChange)="dataSizeUnitChanged($event)"
         (fullscreenToggle)="onFullscreenChange($event)"
       />
@@ -44,22 +45,22 @@
         [chartDataKey]="chartDataKey()"
         [chartHeight]="chartHeight()"
         [isFullscreen]="isFullscreen()"
-        [legendItems]="legendItems"
+        [legendItems]="legendItems()"
       />
 
       <tb-chart-legend
         [class.hidden]="!showLegend()"
-        [isFullscreen]="isFullscreen()"
-        [datasets]="chart?.data?.datasets"
-        [timewindow]="timewindow"
         [chart]="chart"
-        [chartType]="chartDataKey()"
-        [dataKeys]="dataKeys"
-        [visibleDataKeys]="visibleDataKeys"
-        [totalOnly]="totalOnly()"
-        (legendItemsChange)="legendItems = $event"
-        (legendItemsVisibilityChange)="onVisibleDataKeysChange($event)"
-        (fetchDataKeyData)="fetchTimeseriesData($event)"
+        [chartDataKey]="chartDataKey()"
+        [dataKeys]="dataKeys()"
+        [datasets]="chart?.data?.datasets"
+        [isFullscreen]="isFullscreen()"
+        [onlyTotalDataKey]="onlyTotalDataKey()"
+        [visibleLegendItems]="visibleLegendItems()"
+        [timewindow]="timewindow"
+        (dataKeyItemsChanged)="legendItems.set($event)"
+        (visibleDataKeyItemsChanged)="visibleLegendItems.set($event)"
+        (fetchDataKeyItemTimeseries)="fetchTimeseriesData($event)"
       />
     </div>
   </div>

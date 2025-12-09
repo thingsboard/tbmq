@@ -61,7 +61,7 @@ export const CHARTS_TRAFFIC_PERFORMANCE = [
   ChartDataKey.inboundPayloadTraffic,
   ChartDataKey.outboundPayloadTraffic,
 ];
-export const CHARTS_TOTAL_ONLY = [
+export const CHARTS_ONLY_TOTAL = [
   ChartDataKey.sessions,
   ChartDataKey.subscriptions,
   ChartDataKey.retainedMsgs,

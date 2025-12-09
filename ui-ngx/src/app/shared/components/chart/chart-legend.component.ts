@@ -46,17 +46,17 @@ export class ChartLegendComponent implements OnChanges {
     showTotal: true,
     showLatest: true
   });
-  readonly totalOnly = input<boolean>(false);
+  readonly onlyTotalDataKey = input<boolean>(false);
   readonly datasets = input<ChartDataset<'line', any>[]>([]);
   readonly timewindow = input<Timewindow>();
-  readonly chartType = input<ChartDataKey>();
+  readonly chartDataKey = input<ChartDataKey>();
   readonly dataKeys = input<string[]>([]);
   readonly chart = input<Chart<'line', any>>();
-  readonly visibleDataKeys = input<string[]>([]);
+  readonly visibleLegendItems = input<string[]>();
 
-  @Output() legendItemsChange = new EventEmitter<any[]>();
-  @Output() legendItemsVisibilityChange = new EventEmitter<string[]>();
-  @Output() fetchDataKeyData = new EventEmitter<string>();
+  @Output() dataKeyItemsChanged = new EventEmitter<any[]>();
+  @Output() visibleDataKeyItemsChanged = new EventEmitter<string[]>();
+  @Output() fetchDataKeyItemTimeseries = new EventEmitter<string>();
 
   legendKeys: LegendKey[] = [];
   legendData: Array<{
@@ -64,41 +64,26 @@ export class ChartLegendComponent implements OnChanges {
     max: number;
     avg: number;
     total: number;
-    latest: number
+    latest: number;
   }> = [];
 
   constructor(private cd: ChangeDetectorRef) {
   }
 
-  legendValue(index: number, type: string): number {
-    if (this.totalOnly()) {
-      return this.legendData[0]?.[type];
-    } else {
-      return this.legendData[index]?.[type];
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['dataKeys'] || changes['chartType'] || changes['totalOnly']) {
+      this.updateLegendKeys();
+    }
+    if (changes['datasets'] || changes['timewindow']) {
+      this.updateLegend();
     }
   }
 
-  resetLegendData() {
-    this.legendData = [];
-  }
-
-  updateLegendData(data: any[]) {
-    if (data?.length) {
-      this.legendData.push({
-        min: Math.floor(calculateMin(data)),
-        max: Math.floor(calculateMax(data)),
-        avg: Math.floor(calculateAvg(data)),
-        total: Math.floor(calculateTotal(data)),
-        latest: Math.floor(calculateLatest(data))
-      });
+  legendValue(index: number, type: string): number {
+    if (this.onlyTotalDataKey()) {
+      return this.legendData[0]?.[type];
     } else {
-      this.legendData.push({
-        min: 0,
-        max: 0,
-        avg: 0,
-        total: 0,
-        latest: 0
-      });
+      return this.legendData[index]?.[type];
     }
   }
 
@@ -115,43 +100,8 @@ export class ChartLegendComponent implements OnChanges {
     }
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['dataKeys'] || changes['chartType'] || changes['totalOnly']) {
-      this.updateLegendKeys();
-    }
-    if (changes['datasets'] || changes['timewindow']) {
-      this.updateLegend();
-    }
-  }
-
-  private updateLegendKeys() {
-    this.legendKeys = [];
-    const ids = this.dataKeys() || [];
-    for (let i = 0; i < ids.length; i++) {
-      const color = getColor(this.chartType(), i);
-      const dataKey = ids[i];
-      if (!this.totalOnly() || dataKey === TOTAL_KEY) {
-        const index = this.totalOnly() ? 0 : i;
-        this.addLegendKey(index, dataKey, color);
-      }
-    }
-    this.legendItemsChange.emit(this.legendKeys);
-    this.cd.detectChanges();
-  }
-
-  private addLegendKey(index: number, dataKey: string, color: string) {
-    this.legendKeys.push({
-      dataKey: {
-        label: dataKey,
-        color,
-        hidden: dataKey !== TOTAL_KEY
-      },
-      dataIndex: index
-    });
-  }
-
   updateLineWidth(legendKey: LegendKey, width: number) {
-    const visible = (this.visibleDataKeys() || []).includes(legendKey.dataKey.label);
+    const visible = (this.visibleLegendItems() || []).includes(legendKey.dataKey.label);
     if (visible) {
       const datasetIndex = legendKey.dataIndex as number;
       const chart = this.chart?.();
@@ -168,11 +118,11 @@ export class ChartLegendComponent implements OnChanges {
     if (!chart) {
       return;
     }
-    const visibleIds = [...(this.visibleDataKeys() || [])];
+    const visibleIds = [...(this.visibleLegendItems() || [])];
     if (!visibleIds.includes(dataKey)) {
       visibleIds.push(dataKey);
-      this.legendItemsVisibilityChange.emit(visibleIds);
-      this.fetchDataKeyData.emit(dataKey);
+      this.visibleDataKeyItemsChanged.emit(visibleIds);
+      this.fetchDataKeyItemTimeseries.emit(dataKey);
     }
 
     const datasetIndex = legendKey.dataIndex as number;
@@ -185,12 +135,56 @@ export class ChartLegendComponent implements OnChanges {
     this.updateLegendLabel(datasetIndex, isVisible);
   }
 
+  private resetLegendData() {
+    this.legendData = [];
+  }
+
+  private updateLegendData(data: any[]) {
+    this.legendData.push({
+      min: data?.length ? Math.floor(calculateMin(data)) : 0,
+      max: data?.length ? Math.floor(calculateMax(data)) : 0,
+      avg: data?.length ? Math.floor(calculateAvg(data)) : 0,
+      total: data?.length ? Math.floor(calculateTotal(data)) : 0,
+      latest: data?.length ? Math.floor(calculateLatest(data)) : 0
+    });
+  }
+
+  private updateLegendKeys() {
+    this.legendKeys = [];
+    const keys = this.dataKeys() || [];
+    for (let i = 0; i < keys.length; i++) {
+      const color = getColor(this.chartDataKey(), i);
+      const dataKey = keys[i];
+      if (!this.onlyTotalDataKey() || dataKey === TOTAL_KEY) {
+        const index = this.onlyTotalDataKey() ? 0 : i;
+        this.addLegendKey(index, dataKey, color);
+      }
+    }
+    this.notifyDataKeyItemsChanged();
+  }
+
+  private addLegendKey(index: number, dataKey: string, color: string) {
+    this.legendKeys.push({
+      dataKey: {
+        label: dataKey,
+        color,
+        hidden: dataKey !== TOTAL_KEY
+      },
+      dataIndex: index
+    });
+  }
+
   private updateLegendLabel(datasetIndex: number, isDatasetVisible: boolean) {
-    const color = isDatasetVisible ? getColor(this.chartType(), datasetIndex) : null;
+    const color = isDatasetVisible ? getColor(this.chartDataKey(), datasetIndex) : null;
     if (this.legendKeys[datasetIndex]?.dataKey) {
       this.legendKeys[datasetIndex].dataKey.color = color as any;
       this.legendKeys[datasetIndex].dataKey.hidden = !this.legendKeys[datasetIndex].dataKey.hidden;
-      this.legendItemsChange.emit(this.legendKeys);
+      this.notifyDataKeyItemsChanged();
     }
+  }
+
+  private notifyDataKeyItemsChanged() {
+    this.dataKeyItemsChanged.emit(this.legendKeys);
+    this.cd.detectChanges();
   }
 }

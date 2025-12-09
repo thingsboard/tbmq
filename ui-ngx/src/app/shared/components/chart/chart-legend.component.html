@@ -31,7 +31,7 @@
         @if (legendConfig().showAvg === true) {
           <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Avg' | translate }}</th>
         }
-        @if (legendConfig().showTotal === true && !totalOnly()) {
+        @if (legendConfig().showTotal === true && !onlyTotalDataKey()) {
           <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Total' | translate }}</th>
         }
         @if (legendConfig().showLatest === true) {
@@ -66,7 +66,7 @@
                   [innerHTML]="legendValue(index, 'avg') | safe: 'html'">
               </td>
             }
-            @if (legendConfig().showTotal === true && !legendKey.dataKey.hidden && !totalOnly()) {
+            @if (legendConfig().showTotal === true && !legendKey.dataKey.hidden && !onlyTotalDataKey()) {
               <td class="tb-time-series-chart-legend-value"
                   [innerHTML]="legendValue(index, 'total') | safe: 'html'">
               </td>

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
@@ -24,11 +24,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import {
-  ChartTooltipTranslationMap,
-  ChartDataKey,
-  ChartDataKeyTranslationMap
-} from '@shared/models/chart.model';
+import { ChartTooltipTranslationMap, ChartDataKeyTranslationMap } from '@shared/models/chart.model';
 
 @Component({
   selector: 'tb-chart-toolbar',
@@ -39,29 +35,26 @@ export class ChartToolbarComponent {
 
   readonly timewindow = input<Timewindow>();
   readonly chartType = input<string>();
-  readonly currentDataSizeUnitType = input<string>();
+  readonly currentDataSizeUnit = input<string>();
+  readonly isPayloadTrafficChart = input<boolean>();
   readonly showTimewindow = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
 
-  public isFullscreen = false;
+  readonly timewindowChange = output<Timewindow>();
+  readonly unitTypeChange = output<DataSizeUnit>();
+  readonly fullscreenToggle = output<boolean>();
 
   readonly dataSizeUnitType = Object.values(DataSizeUnit);
   readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   readonly chartTypeTranslationMap = ChartDataKeyTranslationMap;
 
-  @Output() timewindowChange = new EventEmitter<Timewindow>();
-  @Output() unitTypeChange = new EventEmitter<string>();
-  @Output() fullscreenToggle = new EventEmitter<boolean>();
+  isFullscreen = false;
 
   constructor(private translate: TranslateService) {}
 
   chartTooltip(type: string): string {
     return this.translate.instant(ChartTooltipTranslationMap.get(type));
-  }
-
-  isPayloadTrafficChart(): boolean {
-    return this.chartType() === ChartDataKey.inboundPayloadTraffic || this.chartType() === ChartDataKey.outboundPayloadTraffic;
   }
 
   onFullscreenChange() {
