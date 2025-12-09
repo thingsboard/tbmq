@@ -60,7 +60,7 @@ export class ChartToolbarComponent {
     return this.translate.instant(ChartTooltipTranslationMap.get(type));
   }
 
-  isTrafficPayloadChart(): boolean {
+  isPayloadTrafficChart(): boolean {
     return this.chartType() === ChartDataKey.inboundPayloadTraffic || this.chartType() === ChartDataKey.outboundPayloadTraffic;
   }
 

@@ -32,7 +32,7 @@
   <section class="flex items-center">
     <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
                       [value]="currentDataSizeUnitType()"
-                      [class.hidden]="!(isTrafficPayloadChart() && showDataSizeUnitToggle())"
+                      [class.hidden]="!(isPayloadTrafficChart() && showDataSizeUnitToggle())"
                       [name]="chartType()"
                       useSelectOnMdLg
                       appearance="fill">
