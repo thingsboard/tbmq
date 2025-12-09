@@ -21,10 +21,10 @@
                  tooltipPosition="left"
                  aggregation="true">
   </tb-timewindow>
-  <section class="flex items-center gap-1">
-    <span>{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
+  <section class="flex min-w-0 items-center gap-1 overflow-hidden">
+    <span class="truncate">{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
     <mat-icon [matTooltip]="chartTooltip(chartType())"
-              class="material-icons md:!hidden"
+              class="material-icons flex-shrink-0"
               style="cursor: default">
       info_outline
     </mat-icon>
