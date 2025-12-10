@@ -180,20 +180,6 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkDevicePersistedMsgsLimit() {
-        if (!devicePersistedMsgsRateLimitsConfiguration.isEnabled()) {
-            return true;
-        }
-        if (!rateLimitCacheService.tryConsumeDevicePersistedMsg()) {
-            if (log.isTraceEnabled()) {
-                log.trace("Device persisted messages rate limit detected!");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
         return rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(limit);
     }
@@ -201,20 +187,6 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Override
     public boolean isDevicePersistedMsgsLimitEnabled() {
         return devicePersistedMsgsRateLimitsConfiguration.isEnabled();
-    }
-
-    @Override
-    public boolean checkTotalMsgsLimit() {
-        if (!isTotalMsgsLimitEnabled()) {
-            return true;
-        }
-        if (!rateLimitCacheService.tryConsumeTotalMsg()) {
-            if (log.isTraceEnabled()) {
-                log.trace("Total incoming and outgoing messages rate limit detected!");
-            }
-            return false;
-        }
-        return true;
     }
 
     @Override

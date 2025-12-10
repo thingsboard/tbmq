@@ -280,63 +280,11 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
-    public void givenDevicePersistedMsgsRateLimitsDisabled_whenCheckDevicePersistedMsgsLimit_thenSuccess() {
-        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
-
-        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
-        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(true);
-
-        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
-        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(false);
-
-        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
-        Assert.assertFalse(result);
-    }
-
-    @Test
     public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleDevicePersistedMsgs_thenSuccess() {
         when(rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(eq(10L))).thenReturn(10L);
 
         long tokens = rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(10L);
         assertEquals(10L, tokens);
-    }
-
-    @Test
-    public void givenTotalMsgsRateLimitsDisabled_whenCheckTotalMsgsLimit_thenSuccess() {
-        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
-
-        boolean result = rateLimitService.checkTotalMsgsLimit();
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
-        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(true);
-
-        boolean result = rateLimitService.checkTotalMsgsLimit();
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
-        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(false);
-
-        boolean result = rateLimitService.checkTotalMsgsLimit();
-        Assert.assertFalse(result);
     }
 
     @Test
