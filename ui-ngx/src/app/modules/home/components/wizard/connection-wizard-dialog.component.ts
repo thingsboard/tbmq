@@ -37,7 +37,7 @@ import {
   clientUserNameRandom,
   connectionName,
   DataSizeUnit,
-  DataSizeUnitTypeTranslationMap,
+  DataSizeUnitTranslationMap,
   MqttVersions,
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
@@ -106,7 +106,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   keepAliveTimeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
   dataSizeUnitTypes = Object.keys(DataSizeUnit).filter(el => el !== DataSizeUnit.GIGABYTE);
-  dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
+  dataSizeUnitTypeTranslationMap = DataSizeUnitTranslationMap;
 
   title = 'ws-client.connections.add-connection';
   connection: WebSocketConnection;

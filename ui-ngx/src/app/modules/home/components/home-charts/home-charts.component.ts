@@ -39,7 +39,7 @@ export class HomeChartsComponent implements OnInit {
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
   readonly cardType = HomePageTitleType.MONITORING;
-  readonly chartDataKeys = CHARTS_HOME;
+  readonly chartKeys = CHARTS_HOME;
   readonly chartView = ChartView.compact;
 
   carouselIndex = 0;

@@ -19,14 +19,14 @@ import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
-import { CHARTS_STATE_HEALTH, CHARTS_TRAFFIC_PERFORMANCE, TOTAL_KEY } from '@shared/models/chart.model';
+import { CHARTS_STATE_HEALTH, CHARTS_TRAFFIC_PERFORMANCE, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { mergeMap } from 'rxjs/operators';
 import { ResourceUsageTableConfigResolver } from '@home/pages/resource-usage/resource-usage-table-config.resolver';
 
 export const BrokerIdsResolver: ResolveFn<string[]> = () =>
   inject(ConfigService).getBrokerServiceIds().pipe(
     mergeMap((brokerIds) => {
-      let ids = [TOTAL_KEY];
+      let ids = [TOTAL_ENTITY_ID];
       ids = brokerIds.length <= 1 ? ids : ids.concat(brokerIds);
       return of(ids);
     })
@@ -67,7 +67,7 @@ const routes: Routes = [
           charts: CHARTS_STATE_HEALTH,
         },
         resolve: {
-          dataKeys: BrokerIdsResolver
+          entityIds: BrokerIdsResolver
         }
       },
       {
@@ -83,7 +83,7 @@ const routes: Routes = [
           charts: CHARTS_TRAFFIC_PERFORMANCE,
         },
         resolve: {
-          dataKeys: BrokerIdsResolver
+          entityIds: BrokerIdsResolver
         }
       },
       {

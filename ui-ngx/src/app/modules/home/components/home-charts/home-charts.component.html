@@ -20,7 +20,7 @@
     <tb-card-title-button [cardType]="cardType" [disabled]="false"></tb-card-title-button>
     <div class="flex flex-row items-center gap-2">
       <button mat-icon-button class="tb-mat-24" [disabled]="carouselIndex === 0" (click)="carouselIndex = carouselIndex - 1"><mat-icon>keyboard_arrow_left</mat-icon></button>
-      <button mat-icon-button class="tb-mat-24" [disabled]="carouselIndex >= chartDataKeys?.length - visibleItems" (click)="carouselIndex = carouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
+      <button mat-icon-button class="tb-mat-24" [disabled]="carouselIndex >= chartKeys?.length - visibleItems" (click)="carouselIndex = carouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
     </div>
   </div>
   <div class="tb-home-charts">
@@ -28,12 +28,12 @@
                      [(ngModel)]="carouselIndex"
                      [drag-many]="true"
                      [show-num]="visibleItems"
-                     [data]="chartDataKeys">
+                     [data]="chartKeys">
       <section ngx-hm-carousel-container class="content">
-        @for (chartDataKey of chartDataKeys; track chartDataKey) {
+        @for (chartKey of chartKeys; track chartKey) {
           <article class="item" ngx-hm-carousel-item>
             <tb-chart
-              [chartDataKey]="chartDataKey"
+              [chartKey]="chartKey"
               [chartView]="chartView"
               [chartHeight]="chartHeight"
               [globalTimewindow]="timewindow"

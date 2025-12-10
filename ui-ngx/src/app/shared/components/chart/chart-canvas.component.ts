@@ -15,7 +15,7 @@
 ///
 
 import { Component, effect, input, signal } from '@angular/core';
-import { ChartDataKey, LegendKey } from '@shared/models/chart.model';
+import { ChartKey } from '@shared/models/chart.model';
 
 @Component({
   selector: 'tb-chart-canvas',
@@ -26,10 +26,11 @@ import { ChartDataKey, LegendKey } from '@shared/models/chart.model';
 })
 export class ChartCanvasComponent {
 
-  readonly chartDataKey = input.required<ChartDataKey>();
-  readonly chartHeight = input.required<number>();
-  readonly legendItems = input<LegendKey[]>();
+  readonly chartKey = input<ChartKey>();
+  readonly chartHeight = input<number>();
+  readonly entityIds = input<string[]>();
   readonly isFullscreen = input<boolean>();
+  readonly totalEntityIdOnly = input<boolean>();
 
   containerHeight = signal<string>(null);
 
@@ -41,8 +42,9 @@ export class ChartCanvasComponent {
 
   private onFullScreen(isFullscreen: boolean) {
     if (isFullscreen) {
-      const height = 120 + ((this.legendItems().length - 1) * 24);
-      this.containerHeight.set(`calc(100vh - ${height}px)`);
+      const legendRows = this.totalEntityIdOnly() ? 1 : this.entityIds().length;
+      const legendHeight = 100 + (legendRows * 24);
+      this.containerHeight.set(`calc(100vh - ${legendHeight}px)`);
     } else {
       this.containerHeight.set(this.chartHeight() + 'px');
     }

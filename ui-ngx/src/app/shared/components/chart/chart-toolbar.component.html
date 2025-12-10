@@ -22,8 +22,8 @@
                  aggregation="true">
   </tb-timewindow>
   <section class="flex min-w-0 items-center gap-1 overflow-hidden">
-    <span class="truncate">{{ chartTypeTranslationMap.get(chartType()) | translate }}</span>
-    <mat-icon [matTooltip]="chartTooltip(chartType())"
+    <span class="truncate">{{ chartDataKeyTranslations.get(chartKey()) | translate }}</span>
+    <mat-icon [matTooltip]="chartTooltip(chartKey())"
               class="material-icons flex-shrink-0"
               style="cursor: default">
       info_outline
@@ -31,14 +31,14 @@
   </section>
   <section class="flex items-center">
     <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
-                      [value]="currentDataSizeUnit()"
-                      [class.hidden]="!(isPayloadTrafficChart() && showDataSizeUnitToggle())"
-                      [name]="chartType()"
+                      [value]="dataSizeUnit()"
+                      [class.hidden]="!(chartHasDataSize() && showDataSizeUnitToggle())"
+                      [name]="chartKey()"
                       useSelectOnMdLg
                       appearance="fill">
-      @for (type of dataSizeUnitType; track type) {
+      @for (type of dataSizeUnits; track type) {
         <tb-toggle-option [value]="type">
-          {{ dataSizeUnitTypeTranslationMap.get(type) }}
+          {{ dataSizeUnitTranslations.get(type) }}
         </tb-toggle-option>
       }
     </tb-toggle-header>

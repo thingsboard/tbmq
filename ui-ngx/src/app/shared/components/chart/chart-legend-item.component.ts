@@ -25,7 +25,7 @@ import { LegendKey } from '@shared/models/chart.model';
   templateUrl: './chart-legend-item.component.html'
 })
 export class ChartLegendItemComponent {
-  readonly legendKey = input.required<LegendKey>();
+  readonly legendKey = input<LegendKey>();
   readonly left = input<boolean>(false);
 
   @Output() legendKeyEnter = new EventEmitter<LegendKey>();

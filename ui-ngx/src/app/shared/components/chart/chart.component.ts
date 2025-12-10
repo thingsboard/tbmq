@@ -41,21 +41,20 @@ import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   chartJsParams,
   ChartView,
-  CHARTS_ONLY_TOTAL,
+  CHARTS_TOTAL_ENTITY_ID_ONLY,
   getColor,
   MAX_DATAPOINTS_LIMIT,
-  ChartDataKey,
+  ChartKey,
   TimeseriesData,
-  TOTAL_KEY,
+  TOTAL_ENTITY_ID,
   TsValue,
-  DataKey,
 } from '@shared/models/chart.model';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
 import { convertDataSizeUnits } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
@@ -82,7 +81,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   readonly isFullscreen = signal(false);
 
-  readonly chartDataKey = input.required<ChartDataKey>();
+  readonly chartKey = input<ChartKey>();
   readonly chartHeight = input<number>(300);
   readonly globalTimewindow = input<Timewindow>();
   readonly showLegend = input<boolean>(true);
@@ -92,15 +91,15 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   readonly showFullscreen = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
 
-  readonly legendItems = model<any[]>();
-  readonly visibleLegendItems = model<string[]>([TOTAL_KEY]);
-  readonly dataKeys = model<string[]>();
-  readonly isPayloadTrafficChart = computed(() => this.chartDataKey() === ChartDataKey.inboundPayloadTraffic || this.chartDataKey() === ChartDataKey.outboundPayloadTraffic);
+  readonly entityIds = signal<string[]>(this.route.snapshot.data.entityIds || [TOTAL_ENTITY_ID]);
+  readonly totalEntityIdOnly = computed(() => CHARTS_TOTAL_ENTITY_ID_ONLY.includes(this.chartKey()));
+  readonly visibleEntityIds = model<string[]>([TOTAL_ENTITY_ID]);
+  readonly chartHasDataSize = computed(() => this.chartKey() === ChartKey.inboundPayloadTraffic || this.chartKey() === ChartKey.outboundPayloadTraffic);
+  readonly dataSizeUnit = signal<DataSizeUnit>(DataSizeUnit.BYTE);
 
   chart: Chart<'line', TsValue[]>;
-  dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
+  dataSizeUnitTranslations = DataSizeUnitTranslationMap;
   timewindow = this.timeService.defaultTimewindow();
-  currentDataSizeUnit = DataSizeUnit.BYTE;
   ChartView = ChartView;
   isLoading = false;
 
@@ -127,7 +126,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   ngAfterViewInit(): void {
-    this.fetchEntityTimeseries(this.visibleLegendItems(), true, this.getHistoricalDataObservables(this.visibleLegendItems()));
+    this.fetchEntityTimeseries(this.visibleEntityIds(), true, this.getHistoricalDataObservables(this.visibleEntityIds()));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -150,7 +149,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.stopPolling();
     this.calcWindowTime();
     this.dataSizeUnitChange();
-    this.fetchEntityTimeseries(this.visibleLegendItems(), false, this.getHistoricalDataObservables(this.visibleLegendItems()));
+    this.fetchEntityTimeseries(this.visibleEntityIds(), false, this.getHistoricalDataObservables(this.visibleEntityIds()));
     this.chart.resetZoom();
   }
 
@@ -160,30 +159,25 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   dataSizeUnitChange(type = DataSizeUnit.BYTE) {
     const datasets = this.chart?.data?.datasets;
-    if (this.isPayloadTrafficChart() && datasets?.length) {
+    if (this.chartHasDataSize() && datasets?.length) {
       for (const ds of datasets) {
         if (ds.data?.length) {
           ds.data = ds.data.map(el => ({
-            value: convertDataSizeUnits(el.value, this.currentDataSizeUnit, type),
+            value: convertDataSizeUnits(el.value, this.dataSizeUnit(), type),
             ts: el.ts
           }));
         }
       }
-      this.currentDataSizeUnit = type;
+      this.dataSizeUnit.set(type);
       this.updateChartView();
     }
   }
 
-  fetchTimeseriesData(dataKey: string) {
+  onEntityIdTimeseriesRequested(dataKey: string) {
     this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]));
   }
 
-  onlyTotalDataKey(): boolean {
-    return CHARTS_ONLY_TOTAL.includes(this.chartDataKey());
-  }
-
   private init() {
-    this.dataKeys.set(this.route.snapshot.data.dataKeys || [TOTAL_KEY]);
     this.timewindow = this.globalTimewindow();
     this.calcWindowTime();
     $(document).on('keydown',
@@ -212,14 +206,14 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
         if (initCharts) {
           this.initCharts(data);
         } else {
-          if (this.onlyTotalDataKey()) {
-            this.chart.data.datasets[0].data = data[0][this.chartDataKey()];
+          if (this.totalEntityIdOnly()) {
+            this.chart.data.datasets[0].data = data[0][this.chartKey()];
           } else {
             for (let i = 0; i < dataKeys.length; i++) {
               const dataKey = dataKeys[i];
               const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
               if (datasetIndex > -1) {
-                this.chart.data.datasets[datasetIndex].data = data[i][this.chartDataKey()];
+                this.chart.data.datasets[datasetIndex].data = data[i][this.chartKey()];
               }
             }
           }
@@ -248,7 +242,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       dataKey,
       this.fixedWindowTimeMs.startTimeMs,
       this.fixedWindowTimeMs.endTimeMs,
-      [this.chartDataKey()],
+      [this.chartKey()],
       MAX_DATAPOINTS_LIMIT,
       this.timewindow.aggregation.type,
       this.timeService.timewindowGroupingInterval(this.timewindow)
@@ -256,11 +250,11 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private initCharts(data: TimeseriesData[]) {
-    const ctx = document.getElementById(this.chartDataKey()) as HTMLCanvasElement;
+    const ctx = document.getElementById(this.chartKey()) as HTMLCanvasElement;
     const datasets = {data: {datasets: []}};
-    for (let i = 0; i < this.dataKeys().length; i++) {
-      const dataKey = this.dataKeys()[i];
-      const value = this.visibleLegendItems().includes(dataKey) ? data : null
+    for (let i = 0; i < this.entityIds().length; i++) {
+      const dataKey = this.entityIds()[i];
+      const value = this.visibleEntityIds().includes(dataKey) ? data : null
       datasets.data.datasets.push(this.getDataset(value, i, dataKey));
     }
     const params = {...chartJsParams(this.chartView()), ...datasets} as ChartConfiguration<'line', TsValue[]>;
@@ -270,10 +264,10 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private setListeners(ctx: HTMLCanvasElement) {
-    if (this.isPayloadTrafficChart()) {
+    if (this.chartHasDataSize()) {
       this.chart.options.plugins.tooltip.callbacks.label = (context) => {
         const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
-        return `${value} ${this.dataSizeUnitTypeTranslationMap.get(this.currentDataSizeUnit)}`;
+        return `${value} ${this.dataSizeUnitTranslations.get(this.dataSizeUnit())}`;
       }
     }
     ctx.addEventListener('dblclick', () => {
@@ -283,12 +277,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private getDataset(dataset: any[], i: number, dataKey: string): ChartDataset {
-    const color = getColor(this.chartDataKey(), i);
+    const color = getColor(this.chartKey(), i);
     return {
       label: dataKey,
-      data: dataset ? dataset[i][this.chartDataKey()] : null,
+      data: dataset ? dataset[i][this.chartKey()] : null,
       pointStyle: 'circle',
-      hidden: dataKey !== TOTAL_KEY,
+      hidden: dataKey !== TOTAL_ENTITY_ID,
       borderColor: color,
       backgroundColor: color,
       pointHoverBackgroundColor: color,
@@ -304,19 +298,19 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.pollingStarted = true;
     this.timeService.getSyncTimer()
       .pipe(
-        switchMap(() => forkJoin(this.getTimeseriesData(this.visibleLegendItems(), true))),
+        switchMap(() => forkJoin(this.getTimeseriesData(this.visibleEntityIds(), true))),
         takeUntil(this.stopPolling$),
         share()
       ).subscribe(data => {
       this.addPollingIntervalToTimewindow();
       this.prepareData(data as TimeseriesData[]);
-      this.pushLatestValue(this.visibleLegendItems(), data);
+      this.pushLatestValue(this.visibleEntityIds(), data);
       this.updateChartView();
     });
   }
 
   private getLatestData(dataKey: string) {
-    return this.timeseriesService.getLatestTimeseries(dataKey, [this.chartDataKey()]);
+    return this.timeseriesService.getLatestTimeseries(dataKey, [this.chartKey()]);
   }
 
   private addPollingIntervalToTimewindow() {
@@ -325,10 +319,10 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private prepareData(data: TimeseriesData[]) {
-    if (this.isPayloadTrafficChart() && data?.length && data[0]?.[this.chartDataKey()]?.length) {
-      const tsValue = data[0][this.chartDataKey()][0];
-      data[0][this.chartDataKey()][0] = {
-        value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.currentDataSizeUnit),
+    if (this.chartHasDataSize() && data[0]?.[this.chartKey()]?.length) {
+      const tsValue = data[0][this.chartKey()][0];
+      data[0][this.chartKey()][0] = {
+        value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
         ts: tsValue.ts
       } as TsValue;
     }
@@ -337,12 +331,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   private pushLatestValue(dataKeys: string[], data: TimeseriesData[]) {
     for (let i = 0; i < dataKeys.length; i++) {
       const dataKey = dataKeys[i];
-      if (this.onlyTotalDataKey()) {
-        if (dataKey !== TOTAL_KEY) {
+      if (this.totalEntityIdOnly()) {
+        if (dataKey !== TOTAL_ENTITY_ID) {
           continue;
         }
-        if (data[0][this.chartDataKey()]?.length) {
-          const latestValue = data[0][this.chartDataKey()][0];
+        if (data[0][this.chartKey()]?.length) {
+          const latestValue = data[0][this.chartKey()][0];
           const chartData = this.chart.data.datasets[0].data;
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
@@ -351,8 +345,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
         }
       } else {
         const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
-        if (datasetIndex > -1 && data[i]?.[this.chartDataKey()]?.length) {
-          const latestValue = data[i][this.chartDataKey()][0];
+        if (datasetIndex > -1 && data[i]?.[this.chartKey()]?.length) {
+          const latestValue = data[i][this.chartKey()][0];
           const chartData = this.chart.data.datasets[datasetIndex].data;
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
@@ -443,7 +437,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   private getTimeseriesData(dataKeys: string[], latest = false): Observable<TimeseriesData>[] {
     const tasks: Observable<TimeseriesData>[] = [];
     for (const dataKey of dataKeys) {
-      if (this.onlyTotalDataKey() && dataKey !== TOTAL_KEY) {
+      if (this.totalEntityIdOnly() && dataKey !== TOTAL_ENTITY_ID) {
         continue;
       }
       tasks.push(latest ? this.getLatestData(dataKey) : this.getHistoricalData(dataKey));

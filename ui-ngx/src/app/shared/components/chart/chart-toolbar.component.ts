@@ -23,8 +23,8 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DataSizeUnit, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import { ChartTooltipTranslationMap, ChartDataKeyTranslationMap } from '@shared/models/chart.model';
+import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
+import { ChartDataKeyTooltipTranslationMap, ChartDataKeyTranslationMap, ChartKey } from '@shared/models/chart.model';
 
 @Component({
   selector: 'tb-chart-toolbar',
@@ -34,31 +34,31 @@ import { ChartTooltipTranslationMap, ChartDataKeyTranslationMap } from '@shared/
 export class ChartToolbarComponent {
 
   readonly timewindow = input<Timewindow>();
-  readonly chartType = input<string>();
-  readonly currentDataSizeUnit = input<string>();
-  readonly isPayloadTrafficChart = input<boolean>();
+  readonly chartKey = input<ChartKey>();
+  readonly chartHasDataSize = input<boolean>();
+  readonly dataSizeUnit = input<DataSizeUnit>(DataSizeUnit.BYTE);
   readonly showTimewindow = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
 
+  readonly fullscreenChange = output<boolean>();
   readonly timewindowChange = output<Timewindow>();
   readonly unitTypeChange = output<DataSizeUnit>();
-  readonly fullscreenToggle = output<boolean>();
 
-  readonly dataSizeUnitType = Object.values(DataSizeUnit);
-  readonly dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
-  readonly chartTypeTranslationMap = ChartDataKeyTranslationMap;
+  readonly dataSizeUnits = Object.values(DataSizeUnit);
+  readonly dataSizeUnitTranslations = DataSizeUnitTranslationMap;
+  readonly chartDataKeyTranslations = ChartDataKeyTranslationMap;
 
   isFullscreen = false;
 
   constructor(private translate: TranslateService) {}
 
-  chartTooltip(type: string): string {
-    return this.translate.instant(ChartTooltipTranslationMap.get(type));
+  chartTooltip(type: ChartKey): string {
+    return this.translate.instant(ChartDataKeyTooltipTranslationMap.get(type));
   }
 
   onFullscreenChange() {
     this.isFullscreen = !this.isFullscreen;
-    this.fullscreenToggle.emit(this.isFullscreen);
+    this.fullscreenChange.emit(this.isFullscreen);
   }
 }

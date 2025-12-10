@@ -24,43 +24,41 @@
     } @else {
       <div style="height: 4px;"></div>
     }
-    <div [id]="chartDataKey() + 'container'"
+    <div [id]="chartKey() + 'container'"
          class="chart-container flex h-full flex-col"
          [class.mat-padding]="chartView() === ChartView.detailed">
       <tb-chart-toolbar
         [class.hidden]="!showToolbar()"
-        [chartType]="chartDataKey()"
-        [currentDataSizeUnit]="currentDataSizeUnit"
+        [chartKey]="chartKey()"
+        [chartHasDataSize]="chartHasDataSize()"
+        [dataSizeUnit]="dataSizeUnit()"
         [timewindow]="timewindow"
         [showTimewindow]="showTimewindow()"
         [showFullscreen]="showFullscreen()"
         [showDataSizeUnitToggle]="showDataSizeUnitToggle()"
-        [isPayloadTrafficChart]="isPayloadTrafficChart()"
+        (fullscreenChange)="onFullscreenChange($event)"
         (timewindowChange)="onTimewindowChange($event)"
         (unitTypeChange)="dataSizeUnitChange($event)"
-        (fullscreenToggle)="onFullscreenChange($event)"
       />
-
       <tb-chart-canvas
-        [chartDataKey]="chartDataKey()"
+        [chartKey]="chartKey()"
         [chartHeight]="chartHeight()"
+        [entityIds]="entityIds()"
         [isFullscreen]="isFullscreen()"
-        [legendItems]="legendItems()"
+        [totalEntityIdOnly]="totalEntityIdOnly()"
       />
-
       <tb-chart-legend
         [class.hidden]="!showLegend()"
         [chart]="chart"
-        [chartDataKey]="chartDataKey()"
-        [dataKeys]="dataKeys()"
+        [chartKey]="chartKey()"
+        [entityIds]="entityIds()"
         [datasets]="chart?.data?.datasets"
         [isFullscreen]="isFullscreen()"
-        [onlyTotalDataKey]="onlyTotalDataKey()"
-        [visibleLegendItems]="visibleLegendItems()"
+        [totalEntityIdOnly]="totalEntityIdOnly()"
+        [visibleEntityIds]="visibleEntityIds()"
         [timewindow]="timewindow"
-        (dataKeyItemsChanged)="legendItems.set($event)"
-        (visibleDataKeyItemsChanged)="visibleLegendItems.set($event)"
-        (fetchDataKeyItemTimeseries)="fetchTimeseriesData($event)"
+        (visibleEntityIdsChange)="visibleEntityIds.set($event)"
+        (entityIdTimeseriesRequested)="onEntityIdTimeseriesRequested($event)"
       />
     </div>
   </div>

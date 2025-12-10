@@ -393,7 +393,7 @@ export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>(
   [ConnectionStatus.END, 'ws-client.connections.end'],
   [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
 ]);
-export const DataSizeUnitTypeTranslationMap = new Map<string, string>([
+export const DataSizeUnitTranslationMap = new Map<string, string>([
     [DataSizeUnit.BYTE, 'B'],
     [DataSizeUnit.KILOBYTE, 'KB'],
     [DataSizeUnit.MEGABYTE, 'MB'],
