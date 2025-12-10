@@ -47,7 +47,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     public void process(String clientId, PublishMsgProto msg) {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
         if (clientSessionCtx == null) {
-            log.trace("[{}] No client session on the node while processing basic downlink.", clientId);
+            log.trace("[{}] No client session on the node while processing basic downlink", clientId);
             return;
         }
         if (rateLimitService.checkOutgoingLimits(clientId, msg)) {
