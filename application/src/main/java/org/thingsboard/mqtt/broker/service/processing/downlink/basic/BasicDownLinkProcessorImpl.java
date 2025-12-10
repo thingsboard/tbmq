@@ -47,9 +47,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     public void process(String clientId, PublishMsgProto msg) {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
         if (clientSessionCtx == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] No client session on the node while processing basic downlink.", clientId);
-            }
+            log.trace("[{}] No client session on the node while processing basic downlink.", clientId);
             return;
         }
         if (rateLimitService.checkOutgoingLimits(clientId, msg)) {
@@ -57,16 +55,14 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         } else {
             disconnectOnRateLimits(clientId, clientSessionCtx.getSessionId());
         }
-        clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
+        logClientEvent(clientId);
     }
 
     @Override
     public void process(Subscription subscription, PublishMsgProto msg) {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(subscription.getClientId());
         if (clientSessionCtx == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] No client session on the node while processing basic downlink with subscription {}", subscription.getClientId(), subscription);
-            }
+            log.trace("[{}] No client session on the node while processing basic downlink with subscription {}", subscription.getClientId(), subscription);
             return;
         }
         if (rateLimitService.checkOutgoingLimits(subscription.getClientId(), msg)) {
@@ -74,11 +70,15 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         } else {
             disconnectOnRateLimits(subscription.getClientId(), clientSessionCtx.getSessionId());
         }
-        clientLogger.logEvent(subscription.getClientId(), this.getClass(), "Delivered msg to basic client");
+        logClientEvent(subscription.getClientId());
     }
 
     private void disconnectOnRateLimits(String clientId, UUID sessionId) {
         clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS)));
+    }
+
+    private void logClientEvent(String clientId) {
+        clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
     }
 
 }
