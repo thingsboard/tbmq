@@ -19,10 +19,10 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
@@ -43,20 +43,22 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.BLANK_PACKET_ID;
 
 @RunWith(SpringRunner.class)
+@ContextConfiguration(classes = DeviceMsgProcessorImpl.class)
 public class DeviceMsgProcessorImplTest {
 
     private final String TEST_CLIENT_ID = "clientId";
 
-    @MockBean
+    @MockitoBean
     ClientSessionCache clientSessionCache;
-    @MockBean
+    @MockitoBean
     DownLinkProxy downLinkProxy;
-    @MockBean
+    @MockitoBean
     DeviceMsgService deviceMsgService;
 
-    @SpyBean
+    @MockitoSpyBean
     DeviceMsgProcessorImpl deviceMsgProcessor;
 
     @Test
@@ -96,7 +98,7 @@ public class DeviceMsgProcessorImplTest {
         // THEN
         var msgArgumentCaptor = ArgumentCaptor.forClass(DevicePublishMsg.class);
         then(downLinkProxy).should(times(2))
-                .sendPersistentMsg(eq("service-id"), eq(TEST_CLIENT_ID), msgArgumentCaptor.capture());
+                .sendPersistentMsg(eq("service-id"), msgArgumentCaptor.capture());
 
         var packetIdDto = new PacketIdDto(0);
         for (var devicePublishMsg : devicePublishMessages.messages()) {
@@ -134,11 +136,7 @@ public class DeviceMsgProcessorImplTest {
     }
 
     private DevicePublishMsg getDevicePublishMsgWithBlankPacketId() {
-        return getDevicePublishMsg(BrokerConstants.BLANK_PACKET_ID);
-    }
-
-    private DevicePublishMsg getDevicePublishMsg(int packetId) {
-        return new DevicePublishMsg(TEST_CLIENT_ID, "some_topic", 0L, 1, packetId,
+        return new DevicePublishMsg(TEST_CLIENT_ID, "some_topic", 0L, 1, BLANK_PACKET_ID,
                 PersistedPacketType.PUBLISH, "test payload".getBytes(), MqttProperties.NO_PROPERTIES, false);
     }
 

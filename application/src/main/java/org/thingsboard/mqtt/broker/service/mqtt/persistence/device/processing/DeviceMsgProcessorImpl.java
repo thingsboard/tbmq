@@ -47,17 +47,14 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
             return;
         }
         if (!clientSessionInfo.isConnected()) {
-            log.trace("[{}] Client session is disconnected", clientId);
+            log.debug("[{}] Client session is disconnected", clientId);
             return;
         }
         String targetServiceId = clientSessionInfo.getServiceId();
         var packetIdDto = new PacketIdDto(devicePubMsgsAndPrevId.previousPacketId());
         for (var devicePublishMsg : devicePubMsgsAndPrevId.messages()) {
             devicePublishMsg.setPacketId(packetIdDto.getNextPacketId());
-            downLinkProxy.sendPersistentMsg(
-                    targetServiceId,
-                    devicePublishMsg.getClientId(),
-                    devicePublishMsg);
+            downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg);
         }
     }
 

@@ -47,7 +47,8 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     @Override
-    public void sendPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg) {
+    public void sendPersistentMsg(String targetServiceId, DevicePublishMsg devicePublishMsg) {
+        var clientId = devicePublishMsg.getClientId();
         if (belongsToThisNode(targetServiceId)) {
             persistentDownLinkProcessor.process(clientId, devicePublishMsg);
         } else {

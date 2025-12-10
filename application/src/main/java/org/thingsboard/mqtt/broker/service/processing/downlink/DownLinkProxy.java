@@ -23,7 +23,7 @@ public interface DownLinkProxy {
 
     void sendBasicMsg(Subscription subscription, PublishMsgProto msg);
 
-    void sendPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg);
+    void sendPersistentMsg(String targetServiceId, DevicePublishMsg devicePublishMsg);
 
     String getServiceId();
 }
