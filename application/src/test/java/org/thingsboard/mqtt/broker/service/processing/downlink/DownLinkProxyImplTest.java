@@ -60,30 +60,6 @@ public class DownLinkProxyImplTest {
     }
 
     @Test
-    public void givenPubMsgForSubscriberOnSameBroker_whenSendBasicMsg_thenPublishMsgToSubscriber() {
-        String serviceId = "broker-0";
-        String clientId = "clientId";
-        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
-
-        when(serviceInfoProvider.getServiceId()).thenReturn(serviceId);
-        downLinkProxy.sendBasicMsg(serviceId, clientId, publishMsgProto);
-
-        verify(basicDownLinkProcessor, times(1)).process(eq(clientId), eq(publishMsgProto));
-    }
-
-    @Test
-    public void givenPubMsgForSubscriberOnDifferentBroker_whenSendBasicMsg_thenPublishMsgToAnotherBroker() {
-        String serviceId = "broker-0";
-        String clientId = "clientId";
-        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
-
-        when(serviceInfoProvider.getServiceId()).thenReturn("broker-1");
-        downLinkProxy.sendBasicMsg(serviceId, clientId, publishMsgProto);
-
-        verify(queuePublisher, times(1)).publishBasicMsg(eq(serviceId), eq(clientId), eq(publishMsgProto));
-    }
-
-    @Test
     public void givenPubMsgWithSubscriptionForSubscriberOnSameBroker_whenSendBasicMsg_thenPublishMsgToSubscriber() {
         String serviceId = "broker-0";
         String clientId = "clientId";

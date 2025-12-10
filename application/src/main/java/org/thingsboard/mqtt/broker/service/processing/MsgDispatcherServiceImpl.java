@@ -278,7 +278,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private IntegrationSessionInfo getIntegrationSessionInfo(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
         return new IntegrationSessionInfo(
                 clientSubscription.getValue().getClientId(),
-                downLinkProxy.getServiceInfoProvider().getServiceId()
+                downLinkProxy.getServiceId()
         );
     }
 
