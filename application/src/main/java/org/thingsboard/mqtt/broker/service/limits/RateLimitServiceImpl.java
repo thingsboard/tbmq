@@ -78,9 +78,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
         TbRateLimits rateLimits = incomingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(incomingRateLimitsConfiguration.getClientConfig()));
         if (!rateLimits.tryConsume()) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Client level incoming PUBLISH rate limit detected: {}", clientId, sessionId, msg);
-            }
+            log.trace("[{}][{}] Client level incoming PUBLISH rate limit detected: {}", clientId, sessionId, msg);
             return false;
         }
         return true;
@@ -96,9 +94,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
         TbRateLimits rateLimits = outgoingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(outgoingRateLimitsConfiguration.getClientConfig()));
         if (!rateLimits.tryConsume()) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Client level outgoing PUBLISH rate limit detected: {}", clientId, msg);
-            }
+            log.trace("[{}] Client level outgoing PUBLISH rate limit detected: {}", clientId, msg);
             return false;
         }
         return true;
