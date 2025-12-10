@@ -133,16 +133,16 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     }
 
     @Override
-    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return tryConsumeAsMuchAsPossible(devicePersistedMsgsBucketProxy, limit);
+    public long tryConsumeDevicePersistedMsgs(long limit) {
+        return tryConsume(devicePersistedMsgsBucketProxy, limit);
     }
 
     @Override
-    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return tryConsumeAsMuchAsPossible(totalMsgsBucketProxy, limit);
+    public long tryConsumeTotalMsgs(long limit) {
+        return tryConsume(totalMsgsBucketProxy, limit);
     }
 
-    private long tryConsumeAsMuchAsPossible(Bucket bucket, long limit) {
+    private long tryConsume(Bucket bucket, long limit) {
         if (limit <= 0) {
             return 0;
         }

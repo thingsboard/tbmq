@@ -117,7 +117,7 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitReached() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(0L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(3L))).thenReturn(0L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -134,7 +134,7 @@ public class MsgDispatcherServiceImplTest {
         // the limit is set to (size - 1) since one token
         // was already consumed on retrieval from 'tbmq.msg.all' queue.
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(2L))).thenReturn(2L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(2L))).thenReturn(2L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -149,7 +149,7 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(4L))).thenReturn(1L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(4L))).thenReturn(1L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),

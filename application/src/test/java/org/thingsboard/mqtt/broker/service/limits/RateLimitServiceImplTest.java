@@ -20,9 +20,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -48,20 +48,20 @@ public class RateLimitServiceImplTest {
 
     private static final String CLIENT_ID = "test";
 
-    @MockBean
+    @MockitoBean
     IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
-    @MockBean
+    @MockitoBean
     OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
-    @MockBean
+    @MockitoBean
     DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
-    @MockBean
+    @MockitoBean
     TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
-    @MockBean
+    @MockitoBean
     ClientSessionService clientSessionService;
-    @MockBean
+    @MockitoBean
     RateLimitCacheService rateLimitCacheService;
 
-    @SpyBean
+    @MockitoSpyBean
     RateLimitServiceImpl rateLimitService;
 
     @Before
@@ -280,18 +280,18 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
-    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleDevicePersistedMsgs_thenSuccess() {
-        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(eq(10L))).thenReturn(10L);
+    public void givenTokensAvailable_whenTryConsumeDevicePersistedMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeDevicePersistedMsgs(eq(10L))).thenReturn(10L);
 
-        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(10L);
+        long tokens = rateLimitService.tryConsumeDevicePersistedMsgs(10L);
         assertEquals(10L, tokens);
     }
 
     @Test
-    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleTotalMsgs_thenSuccess() {
-        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(10L))).thenReturn(10L);
+    public void givenTokensAvailable_whenTryConsumeTotalMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeTotalMsgs(eq(10L))).thenReturn(10L);
 
-        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(10L);
+        long tokens = rateLimitService.tryConsumeTotalMsgs(10L);
         assertEquals(10L, tokens);
     }
 }

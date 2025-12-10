@@ -124,7 +124,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     void processDeviceSubscriptionsWithRateLimits(List<Subscription> deviceSubscriptions,
                                                   PublishMsgWithId publishMsgWithId,
                                                   PublishMsgCallback callbackWrapper) {
-        int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(deviceSubscriptions.size());
+        int availableTokens = (int) rateLimitService.tryConsumeDevicePersistedMsgs(deviceSubscriptions.size());
         for (int i = 0; i < deviceSubscriptions.size(); i++) {
             if (i < availableTokens) {
                 sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);

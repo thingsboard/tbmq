@@ -196,7 +196,7 @@ public class MqttSubscribeHandler {
 
     List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
         if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgList.size());
+            int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(retainedMsgList.size());
             if (availableTokens == 0) {
                 log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgList.size());
                 return Collections.emptyList();

@@ -158,7 +158,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private List<TbProtoQueueMsg<PublishMsgProto>> applyRateLimits(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                                                    List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
         if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(msgs.size());
+            int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(msgs.size());
             if (availableTokens == 0) {
                 log.debug("No available tokens left for total msgs bucket during consumer polling. Skipping {} messages", msgs.size());
                 consumer.commitSync();

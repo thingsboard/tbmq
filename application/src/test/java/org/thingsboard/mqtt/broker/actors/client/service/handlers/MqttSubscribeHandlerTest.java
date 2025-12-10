@@ -588,7 +588,7 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsWithNoTokensLeft_thenReturnEmptyResult() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(0L);
+        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);
 
         List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("msg1", 1),
@@ -601,7 +601,7 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimits_thenReturnExpectedResult() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(2L);
+        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(2L);
 
         List<RetainedMsg> retainedMsgSet = List.of(
                 newRetainedMsg("msg1", 1), newRetainedMsg("msg2", 2)
@@ -615,7 +615,7 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsAndPartlyTokensAvailable_thenReturnExpectedResult() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(1L);
+        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(1L);
 
         List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("msg1", 1),

@@ -176,8 +176,8 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(limit);
+    public long tryConsumeDevicePersistedMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeDevicePersistedMsgs(limit);
     }
 
     @Override
@@ -186,8 +186,8 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(limit);
+    public long tryConsumeTotalMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeTotalMsgs(limit);
     }
 
     @Override

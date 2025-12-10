@@ -146,7 +146,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(1L);
+        when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(1L);
 
         msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
 
@@ -167,7 +167,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(0L);
+        when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(0L);
 
         msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
 
@@ -188,7 +188,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(3L);
+        when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(3L);
 
         msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
 

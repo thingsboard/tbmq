@@ -90,7 +90,7 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
             }
 
             int tokensToConsume = messageCount.get();
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensToConsume);
+            int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(tokensToConsume);
             int messagesToProcess = Math.min(availableTokens, tokensToConsume);
 
             for (int i = 0; i < messagesToProcess; i++) {
