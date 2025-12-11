@@ -64,7 +64,7 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
     }
 
     @Scheduled(cron = "${mqtt.retain-msg-trie.clear-nodes-cron}", zone = "${mqtt.retain-msg-trie.clear-nodes-zone}")
-    void scheduleEmptyNodeClear() {
+    public void scheduleEmptyNodeClear() {
         log.info("Start clearing empty nodes in RetainMsgTrie");
         try {
             retainMsgTrie.clearEmptyNodes();

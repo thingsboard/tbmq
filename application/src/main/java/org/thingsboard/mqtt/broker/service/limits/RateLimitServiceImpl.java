@@ -78,9 +78,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
         TbRateLimits rateLimits = incomingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(incomingRateLimitsConfiguration.getClientConfig()));
         if (!rateLimits.tryConsume()) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Client level incoming PUBLISH rate limit detected: {}", clientId, sessionId, msg);
-            }
+            log.trace("[{}][{}] Client level incoming PUBLISH rate limit detected: {}", clientId, sessionId, msg);
             return false;
         }
         return true;
@@ -96,9 +94,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
         TbRateLimits rateLimits = outgoingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(outgoingRateLimitsConfiguration.getClientConfig()));
         if (!rateLimits.tryConsume()) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Client level outgoing PUBLISH rate limit detected: {}", clientId, msg);
-            }
+            log.trace("[{}] Client level outgoing PUBLISH rate limit detected: {}", clientId, msg);
             return false;
         }
         return true;
@@ -180,22 +176,8 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkDevicePersistedMsgsLimit() {
-        if (!devicePersistedMsgsRateLimitsConfiguration.isEnabled()) {
-            return true;
-        }
-        if (!rateLimitCacheService.tryConsumeDevicePersistedMsg()) {
-            if (log.isTraceEnabled()) {
-                log.trace("Device persisted messages rate limit detected!");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(limit);
+    public long tryConsumeDevicePersistedMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeDevicePersistedMsgs(limit);
     }
 
     @Override
@@ -204,22 +186,8 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkTotalMsgsLimit() {
-        if (!isTotalMsgsLimitEnabled()) {
-            return true;
-        }
-        if (!rateLimitCacheService.tryConsumeTotalMsg()) {
-            if (log.isTraceEnabled()) {
-                log.trace("Total incoming and outgoing messages rate limit detected!");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(limit);
+    public long tryConsumeTotalMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeTotalMsgs(limit);
     }
 
     @Override

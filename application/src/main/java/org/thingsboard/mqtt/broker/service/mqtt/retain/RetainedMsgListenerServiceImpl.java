@@ -169,7 +169,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     }
 
     @Scheduled(fixedRateString = "${mqtt.retain-msg.expiry-processing-period-ms}")
-    void clearRetainedMessagesByMessageExpiryIntervals() {
+    public void clearRetainedMessagesByMessageExpiryIntervals() {
         if (retainedMessagesMap == null) {
             log.debug("Retained messages map is not yet initialized!");
             return;

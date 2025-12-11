@@ -22,9 +22,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
@@ -66,20 +67,22 @@ public class MqttPublishHandlerTest {
 
     private static final int MAX_AWAITING_QUEUE_SIZE = 10;
 
-    @MockBean
+    @MockitoBean
     MqttMessageGenerator mqttMessageGenerator;
-    @MockBean
+    @MockitoBean
     MsgDispatcherService msgDispatcherService;
-    @MockBean
+    @MockitoBean
     ClientMqttActorManager clientMqttActorManager;
-    @MockBean
+    @MockitoBean
     ClientLogger clientLogger;
-    @MockBean
+    @MockitoBean
     RetainedMsgProcessor retainedMsgProcessor;
-    @MockBean
+    @MockitoBean
     PublishMsgValidationService publishMsgValidationService;
+    @MockitoBean
+    TbMessageStatsReportClient tbMessageStatsReportClient;
 
-    @SpyBean
+    @MockitoSpyBean
     MqttPublishHandler mqttPublishHandler;
 
     ClientSessionCtx ctx;

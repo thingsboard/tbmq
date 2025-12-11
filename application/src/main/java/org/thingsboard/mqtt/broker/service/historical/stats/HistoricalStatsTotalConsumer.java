@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -73,13 +74,10 @@ public class HistoricalStatsTotalConsumer {
     private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgService;
     private final TimeseriesService timeseriesService;
+    private final HistoricalDataReportProperties historicalDataReportProperties;
 
     private volatile boolean stopped = false;
 
-    @Value("${historical-data-report.enabled:true}")
-    private boolean enabled;
-    @Value("${historical-data-report.interval}")
-    private int intervalMinutes;
     @Value("${queue.historical-data-total.poll-interval}")
     private long pollDuration;
 
@@ -91,7 +89,9 @@ public class HistoricalStatsTotalConsumer {
 
     @PostConstruct
     private void init() {
-        if (!enabled) return;
+        if (historicalDataReportProperties.isDisabled()) {
+            return;
+        }
 
         initConsumer();
         initExecutors();
@@ -99,9 +99,9 @@ public class HistoricalStatsTotalConsumer {
         totalStatsProcessingExecutor.execute(this::processHistoricalDataTotalStats);
     }
 
-    @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
-    private void process() {
-        if (!enabled) {
+    @Scheduled(cron = "#{@historicalDataReportProperties.cron}", zone = "#{@historicalDataReportProperties.zone}")
+    public void process() {
+        if (historicalDataReportProperties.isDisabled()) {
             return;
         }
         boolean isSystemReady = checkAllStatsServicesReady();
@@ -192,7 +192,7 @@ public class HistoricalStatsTotalConsumer {
 
     @SneakyThrows
     private TsKvEntry findLatestTimeseriesForInterval(String key, long msgTs) {
-        long intervalMs = ONE_MINUTE_MS * intervalMinutes;
+        long intervalMs = ONE_MINUTE_MS * historicalDataReportProperties.getInterval();
         List<TsKvEntry> latestTs = timeseriesService.findLatest(ENTITY_ID_TOTAL, List.of(key)).get();
 
         if (!latestTs.isEmpty()) {
@@ -247,7 +247,9 @@ public class HistoricalStatsTotalConsumer {
 
     @PreDestroy
     public void destroy() {
-        if (!enabled) return;
+        if (historicalDataReportProperties.isDisabled()) {
+            return;
+        }
         stopped = true;
         if (totalStatsProcessingExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(totalStatsProcessingExecutor, "Historical total stats");

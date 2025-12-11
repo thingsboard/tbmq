@@ -89,7 +89,7 @@ public class RateLimitBatchProcessorImplTest {
 
         rateLimitBatchProcessor.addMessage(message, onSuccess, onRateLimits);
 
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(1)).thenReturn(1L);
+        when(rateLimitService.tryConsumeTotalMsgs(1)).thenReturn(1L);
 
         rateLimitBatchProcessor.processBatch();
 
@@ -105,7 +105,7 @@ public class RateLimitBatchProcessorImplTest {
 
         rateLimitBatchProcessor.addMessage(message, onSuccess, onRateLimits);
 
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(1)).thenReturn(0L);
+        when(rateLimitService.tryConsumeTotalMsgs(1)).thenReturn(0L);
 
         rateLimitBatchProcessor.processBatch();
 

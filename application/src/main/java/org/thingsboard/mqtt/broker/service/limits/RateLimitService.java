@@ -41,15 +41,11 @@ public interface RateLimitService {
 
     boolean checkApplicationClientsLimit(SessionInfo sessionInfo);
 
-    boolean checkDevicePersistedMsgsLimit();
-
-    long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit);
+    long tryConsumeDevicePersistedMsgs(long limit);
 
     boolean isDevicePersistedMsgsLimitEnabled();
 
-    boolean checkTotalMsgsLimit();
-
-    long tryConsumeAsMuchAsPossibleTotalMsgs(long limit);
+    long tryConsumeTotalMsgs(long limit);
 
     boolean isTotalMsgsLimitEnabled();
 

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
@@ -32,17 +33,22 @@ import java.util.function.Consumer;
 public class QueuedMqttMessages {
 
     private final Queue<QueueableMqttMsg> queuedMessages = new LinkedList<>();
-
     private final int maxQueueSize;
+
+    private int publishMsgCount = 0;
 
     public void process(Consumer<QueueableMqttMsg> processor) {
         while (!queuedMessages.isEmpty()) {
             QueueableMqttMsg msg = queuedMessages.poll();
             processor.accept(msg);
         }
+        publishMsgCount = 0;
     }
 
     public void add(QueueableMqttMsg msg) throws FullMsgQueueException {
+        if (msg instanceof MqttPublishMsg) {
+            publishMsgCount++;
+        }
         if (queuedMessages.size() >= maxQueueSize) {
             throw new FullMsgQueueException("Current queue size is " + queuedMessages.size());
         } else {
@@ -51,8 +57,17 @@ public class QueuedMqttMessages {
     }
 
     public void clear() {
+        if (queuedMessages.isEmpty()) {
+            return;
+        }
         queuedMessages.forEach(QueueableMqttMsg::release);
         queuedMessages.clear();
+        publishMsgCount = 0;
     }
 
+    public int getPublishMsgCountAndClear() {
+        var result = publishMsgCount;
+        clear();
+        return result;
+    }
 }
