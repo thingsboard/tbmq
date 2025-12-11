@@ -37,7 +37,7 @@ public class BrokerConstants {
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
     public static final String RETAINED_MSGS = "retainedMsgs";
-    //TODO: delete completely PROCESSED_BYTES
+    //TODO: delete completely PROCESSED_BYTES (with upgrade script to remove data from psql)
     public static final String PROCESSED_BYTES = "processedBytes";
     public static final String INBOUND_PAYLOAD_BYTES = "inboundPayloadTraffic";
     public static final String OUTBOUND_PAYLOAD_BYTES = "outboundPayloadTraffic";
