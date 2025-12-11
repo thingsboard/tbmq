@@ -16,9 +16,10 @@
 
 import { ConnectionState } from '@shared/models/session.model';
 import { ClientType } from '@shared/models/client.model';
+import { MINUTE } from '@shared/models/time/time.models';
 
-export const POLLING_INTERVAL = 1000 * 60;
-export const HOME_CHARTS_DURATION = 1000 * 60 * 11;
+export const POLLING_INTERVAL = MINUTE;
+export const HOME_CHARTS_DURATION = 10 * MINUTE;
 
 export enum HomePageTitleType {
   MONITORING = 'MONITORING',

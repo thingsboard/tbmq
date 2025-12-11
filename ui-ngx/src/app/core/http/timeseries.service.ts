@@ -28,7 +28,7 @@ import { ResourceUsage } from '@shared/models/resource-usage.model';
 @Injectable({
   providedIn: 'root'
 })
-export class StatsService {
+export class TimeseriesService {
 
   constructor(private http: HttpClient) {
   }

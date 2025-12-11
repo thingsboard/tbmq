@@ -16,7 +16,7 @@
 
 import _ from 'lodash';
 import { Tooltip } from 'chart.js';
-import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -28,7 +28,7 @@ export interface TsValue {
   count?: number;
 }
 
-export enum StatsChartType {
+export enum ChartKey {
   incomingMsgs = 'incomingMsgs',
   outgoingMsgs = 'outgoingMsgs',
   droppedMsgs = 'droppedMsgs',
@@ -40,81 +40,81 @@ export enum StatsChartType {
 }
 
 export const CHARTS_HOME = [
-  StatsChartType.sessions,
-  StatsChartType.incomingMsgs,
-  StatsChartType.outgoingMsgs,
-  StatsChartType.droppedMsgs,
-  StatsChartType.inboundPayloadTraffic,
-  StatsChartType.outboundPayloadTraffic,
-  StatsChartType.subscriptions,
-  StatsChartType.retainedMsgs,
+  ChartKey.sessions,
+  ChartKey.incomingMsgs,
+  ChartKey.outgoingMsgs,
+  ChartKey.droppedMsgs,
+  ChartKey.inboundPayloadTraffic,
+  ChartKey.outboundPayloadTraffic,
+  ChartKey.subscriptions,
+  ChartKey.retainedMsgs,
 ];
 export const CHARTS_STATE_HEALTH = [
-  StatsChartType.sessions,
-  StatsChartType.subscriptions,
-  StatsChartType.retainedMsgs,
-  StatsChartType.droppedMsgs,
+  ChartKey.sessions,
+  ChartKey.subscriptions,
+  ChartKey.retainedMsgs,
+  ChartKey.droppedMsgs,
 ];
 export const CHARTS_TRAFFIC_PERFORMANCE = [
-  StatsChartType.incomingMsgs,
-  StatsChartType.outgoingMsgs,
-  StatsChartType.inboundPayloadTraffic,
-  StatsChartType.outboundPayloadTraffic,
+  ChartKey.incomingMsgs,
+  ChartKey.outgoingMsgs,
+  ChartKey.inboundPayloadTraffic,
+  ChartKey.outboundPayloadTraffic,
 ];
-export const CHARTS_TOTAL_ONLY = [
-  StatsChartType.sessions,
-  StatsChartType.subscriptions,
-  StatsChartType.retainedMsgs,
+export const CHARTS_TOTAL_ENTITY_ID_ONLY = [
+  ChartKey.sessions,
+  ChartKey.subscriptions,
+  ChartKey.retainedMsgs,
 ];
-export const TOTAL_KEY = 'total';
+export const TOTAL_ENTITY_ID = 'total';
 export const MAX_DATAPOINTS_LIMIT = 50000;
 
-export enum ChartPage {
-  home = 'home',
-  monitoring = 'monitoring'
+export enum ChartView {
+  compact = 'compact',
+  detailed = 'detailed',
 }
 
-export const StatsChartTypeTranslationMap = new Map<string, string>(
+export const ChartDataKeyTranslationMap = new Map<ChartKey, string>(
   [
-    [StatsChartType.incomingMsgs, 'monitoring.chart.incoming-messages'],
-    [StatsChartType.outgoingMsgs, 'monitoring.chart.outgoing-messages'],
-    [StatsChartType.droppedMsgs, 'monitoring.chart.dropped-messages'],
-    [StatsChartType.sessions, 'monitoring.chart.sessions'],
-    [StatsChartType.subscriptions, 'monitoring.chart.subscriptions'],
-    [StatsChartType.retainedMsgs, 'monitoring.chart.retained-messages'],
-    [StatsChartType.inboundPayloadTraffic, 'monitoring.chart.inbound-payload-traffic'],
-    [StatsChartType.outboundPayloadTraffic, 'monitoring.chart.outbound-payload-traffic'],
+    [ChartKey.incomingMsgs, 'monitoring.chart.incoming-messages'],
+    [ChartKey.outgoingMsgs, 'monitoring.chart.outgoing-messages'],
+    [ChartKey.droppedMsgs, 'monitoring.chart.dropped-messages'],
+    [ChartKey.sessions, 'monitoring.chart.sessions'],
+    [ChartKey.subscriptions, 'monitoring.chart.subscriptions'],
+    [ChartKey.retainedMsgs, 'monitoring.chart.retained-messages'],
+    [ChartKey.inboundPayloadTraffic, 'monitoring.chart.inbound-payload-traffic'],
+    [ChartKey.outboundPayloadTraffic, 'monitoring.chart.outbound-payload-traffic'],
   ]
 );
 
-export const ChartTooltipTranslationMap = new Map<string, string>(
+export const ChartDataKeyTooltipTranslationMap = new Map<ChartKey, string>(
   [
-    [StatsChartType.incomingMsgs, 'monitoring.chart.incoming-messages-tooltip'],
-    [StatsChartType.outgoingMsgs, 'monitoring.chart.outgoing-messages-tooltip'],
-    [StatsChartType.droppedMsgs, 'monitoring.chart.dropped-messages-tooltip'],
-    [StatsChartType.sessions, 'monitoring.chart.sessions-tooltip'],
-    [StatsChartType.subscriptions, 'monitoring.chart.subscriptions-tooltip'],
-    [StatsChartType.retainedMsgs, 'monitoring.chart.retained-messages-tooltip'],
-    [StatsChartType.inboundPayloadTraffic, 'monitoring.chart.inbound-payload-traffic-tooltip'],
-    [StatsChartType.outboundPayloadTraffic, 'monitoring.chart.outbound-payload-traffic-tooltip'],
+    [ChartKey.incomingMsgs, 'monitoring.chart.incoming-messages-tooltip'],
+    [ChartKey.outgoingMsgs, 'monitoring.chart.outgoing-messages-tooltip'],
+    [ChartKey.droppedMsgs, 'monitoring.chart.dropped-messages-tooltip'],
+    [ChartKey.sessions, 'monitoring.chart.sessions-tooltip'],
+    [ChartKey.subscriptions, 'monitoring.chart.subscriptions-tooltip'],
+    [ChartKey.retainedMsgs, 'monitoring.chart.retained-messages-tooltip'],
+    [ChartKey.inboundPayloadTraffic, 'monitoring.chart.inbound-payload-traffic-tooltip'],
+    [ChartKey.outboundPayloadTraffic, 'monitoring.chart.outbound-payload-traffic-tooltip'],
   ]
 );
 
-export const MonitoringChartColorMap = new Map<string, string[]>(
+export const ChartColorMap = new Map<ChartKey, string[]>(
   [
-    [StatsChartType.incomingMsgs, ['#58519E', '#4FA889', '#A356D1', '#AAA081', '#D1A656']],
-    [StatsChartType.outgoingMsgs, ['#4A6EA8', '#BE4BD1', '#604BDB', '#4A6EA8', '#B39B7C']],
-    [StatsChartType.inboundPayloadTraffic, ['#47848F', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
-    [StatsChartType.outboundPayloadTraffic, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
-    [StatsChartType.droppedMsgs, ['#4FA889', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
-    [StatsChartType.sessions, ['#58519E']],
-    [StatsChartType.subscriptions, ['#4A6EA8']],
-    [StatsChartType.retainedMsgs, ['#47848F']],
+    [ChartKey.incomingMsgs, ['#58519E', '#4FA889', '#A356D1', '#AAA081', '#D1A656']],
+    [ChartKey.outgoingMsgs, ['#4A6EA8', '#BE4BD1', '#604BDB', '#4A6EA8', '#B39B7C']],
+    [ChartKey.inboundPayloadTraffic, ['#47848F', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
+    [ChartKey.outboundPayloadTraffic, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
+    [ChartKey.droppedMsgs, ['#4FA889', '#D1A656', '#1860F5', '#499E55', '#BE4BD1']],
+    [ChartKey.sessions, ['#58519E']],
+    [ChartKey.subscriptions, ['#4A6EA8']],
+    [ChartKey.retainedMsgs, ['#47848F']],
   ]
 );
 
-export function getColor(type: string, index: number): string {
-  const palette = MonitoringChartColorMap.get(type);
+export function getColor(type: ChartKey, index: number): string {
+  const palette = ChartColorMap.get(type);
   const normalizedIndex = ((index % palette.length) + palette.length) % palette.length;
   return palette[normalizedIndex];
 }
@@ -247,10 +247,10 @@ const baseChartConfig = {
     },
     layout: {
       padding: {
-        right: 0,
+        right: 5,
         left: 0,
         bottom: 0,
-        top: 0
+        top: 5
       }
     },
     parsing: {
@@ -260,8 +260,8 @@ const baseChartConfig = {
   }
 }
 
-function pageChartConfig(type: ChartPage): object {
-  if (type === ChartPage.monitoring) {
+function pageChartConfig(type: ChartView): object {
+  if (type === ChartView.detailed) {
     return {
       options: {
         plugins: {
@@ -333,7 +333,7 @@ function pageChartConfig(type: ChartPage): object {
       },
     };
   }
-  if (type === ChartPage.home) {
+  if (type === ChartView.compact) {
     return {
       options: {
         title: {
@@ -376,8 +376,8 @@ function pageChartConfig(type: ChartPage): object {
                 const chartType = context.dataset.chartType;
                 const value = context.parsed.y || 0;
                 let label = `${context.dataset.label}: ${value}`;
-                if (chartType === StatsChartType.inboundPayloadTraffic || chartType === StatsChartType.outboundPayloadTraffic) {
-                  label += ' ' + DataSizeUnitTypeTranslationMap.get(DataSizeUnitType.BYTE);
+                if (chartType === ChartKey.inboundPayloadTraffic || chartType === ChartKey.outboundPayloadTraffic) {
+                  label += ' ' + DataSizeUnitTranslationMap.get(DataSizeUnit.BYTE);
                 }
                 return label;
               }
@@ -390,7 +390,7 @@ function pageChartConfig(type: ChartPage): object {
   return {};
 }
 
-export const chartJsParams = (type: ChartPage) => {
+export const chartJsParams = (type: ChartView) => {
   const baseConfig = _.cloneDeep(baseChartConfig);
   const pageConfig = pageChartConfig(type);
   return _.merge(baseConfig, pageConfig);

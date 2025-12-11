@@ -14,174 +14,62 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
-import { retry, Subject, timer } from 'rxjs';
-import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { StatsService } from '@core/http/stats.service';
-import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
+import { Component, ElementRef, OnInit, viewChild } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+import { Timewindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import {
-  CHARTS_HOME,
-  chartJsParams,
-  ChartPage,
-  ChartTooltipTranslationMap,
-  getColor,
-  StatsChartType,
-  StatsChartTypeTranslationMap,
-  TimeseriesData, TOTAL_KEY
-} from '@shared/models/chart.model';
-import Chart from 'chart.js/auto';
-import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { ChartView, CHARTS_HOME } from '@shared/models/chart.model';
+import { HOME_CHARTS_DURATION, HomePageTitleType } from '@shared/models/home-page.model';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { FormsModule } from '@angular/forms';
-import { MatTooltip } from '@angular/material/tooltip';
-import 'chartjs-adapter-moment';
+import { ChartComponent } from '@shared/components/chart/chart.component';
 
 @Component({
-    selector: 'tb-home-charts',
-    templateUrl: './home-charts.component.html',
-    styleUrls: ['./home-charts.component.scss'],
-    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, MatTooltip, TranslateModule]
+  selector: 'tb-home-charts',
+  templateUrl: './home-charts.component.html',
+  styleUrls: ['./home-charts.component.scss'],
+  imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, TranslateModule, ChartComponent]
 })
-export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
+export class HomeChartsComponent implements OnInit {
 
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
-  cardType = HomePageTitleType.MONITORING;
-  chartPage = ChartPage.home;
-  charts = {};
-  chartKeys = CHARTS_HOME;
-  chartTypeTranslationMap = StatsChartTypeTranslationMap;
-  chartWidth: string;
-  chartHeight: string;
-  chartsCarouselIndex = 0;
-  items = 5;
+  readonly cardType = HomePageTitleType.MONITORING;
+  readonly chartKeys = CHARTS_HOME;
+  readonly chartView = ChartView.compact;
 
-  private stopPolling$ = new Subject<void>();
-  private destroy$ = new Subject<void>();
-  private fixedWindowTimeMs: FixedWindow;
+  carouselIndex = 0;
+  visibleItems = 5;
+  chartHeight: number;
+  timewindow: Timewindow;
 
-  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
-
-  constructor(private translate: TranslateService,
-              private timeService: TimeService,
-              private statsService: StatsService) {
+  constructor(private timeService: TimeService) {
   }
 
   ngOnInit() {
-    this.resizeCharts();
-    this.calculateFixedWindowTimeMs();
+    this.setTimewindow();
+    this.onResize();
   }
 
-  private calculateFixedWindowTimeMs() {
-    this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timeService.defaultTimewindow());
-    this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - HOME_CHARTS_DURATION;
+  private setTimewindow() {
+    this.timewindow = this.timeService.defaultTimewindow();
+    this.timewindow.realtime.timewindowMs = HOME_CHARTS_DURATION;
   }
 
-  ngAfterViewInit(): void {
-    this.fetchEntityTimeseries();
-  }
-
-  ngOnDestroy() {
-    this.stopPolling$.next();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private fetchEntityTimeseries() {
-    this.statsService.getEntityTimeseries(TOTAL_KEY, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs)
-      .pipe(takeUntil(this.stopPolling$))
-      .subscribe(data => {
-        this.initCharts(data);
-        this.startPolling();
-      },
-        () => {
-          this.initCharts();
-        }
-      );
-  }
-
-  private initCharts(data = null) {
-    for (const chartType in StatsChartType) {
-      this.charts[chartType] = {} as Chart;
-      const ctx = document.getElementById(chartType + this.chartPage) as HTMLCanvasElement;
-      const color = getColor(chartType, 0);
-      const dataSet = {
-        data: data ? data[chartType] : null,
-        borderColor: color,
-        backgroundColor: color,
-        label: TOTAL_KEY,
-        pointBorderColor: color,
-        pointBackgroundColor: color,
-        pointHoverBackgroundColor: color,
-        pointHoverBorderColor: color,
-        pointRadius: 0,
-        chartType
-      };
-      const params = {...chartJsParams(this.chartPage), ...{data: {datasets: [dataSet]}}};
-      this.charts[chartType] = new Chart(ctx, params as any);
-      this.updateXScale(chartType);
-    }
-  }
-
-  private startPolling() {
-    timer(0, POLLING_INTERVAL)
-      .pipe(
-        switchMap(() => this.statsService.getLatestTimeseries(TOTAL_KEY)),
-        retry(),
-        takeUntil(this.stopPolling$),
-        shareReplay())
-      .subscribe(data => {
-        this.addPollingIntervalToTimewindow();
-        for (const chartType in StatsChartType) {
-          this.pushLatestValue(chartType, data);
-          this.updateChartView(chartType);
-        }
-      });
-  }
-
-  private addPollingIntervalToTimewindow() {
-    this.fixedWindowTimeMs.startTimeMs += POLLING_INTERVAL;
-    this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
-  }
-
-  private pushLatestValue(chartType: string, latestData: TimeseriesData) {
-    if (latestData[chartType]?.length) {
-      const latestValue = latestData[chartType][0];
-      this.charts[chartType].data.datasets[0].data.unshift(latestValue);
-    }
-  }
-
-  private updateChartView(chartType) {
-    this.updateXScale(chartType);
-    this.updateChart(chartType);
-  }
-
-  private updateXScale(chartType: string) {
-    this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
-    this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
-  }
-
-  private updateChart(chartType) {
-    this.charts[chartType].update();
-  }
-
-  private resizeCharts() {
+  private onResize() {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
-      let chartWidthPx = (containerWidth / 5) - 16;
-      this.items = 5;
+      let width = (containerWidth / 5) - 16;
+      this.visibleItems = 5;
       if (containerWidth < 500 || window.innerHeight > window.innerWidth) { // mobile or portrait
-        chartWidthPx = containerWidth / 2;
-        this.items = 2;
+        width = containerWidth / 2;
+        this.visibleItems = 2;
       }
-      this.chartWidth = chartWidthPx + 'px';
-      this.chartHeight = (chartWidthPx * 0.5) + 'px';
+      this.chartHeight = Math.round(width * 0.5);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

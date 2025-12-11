@@ -17,7 +17,7 @@
 import _ from 'lodash';
 import {Observable, Subject} from 'rxjs';
 import {finalize, share} from 'rxjs/operators';
-import {DataSizeUnitType, WebSocketTimeUnit} from '@shared/models/ws-client.model';
+import {DataSizeUnit, WebSocketTimeUnit} from '@shared/models/ws-client.model';
 import RandExp from 'randexp';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 
@@ -581,32 +581,32 @@ const convertToMilliseconds = (value: number, unit: WebSocketTimeUnit): number =
   }
 }
 
-export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType, targetUnit: DataSizeUnitType): number => {
+export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnit, targetUnit: DataSizeUnit): number => {
   if (!valueUnit) return 0;
   const bytes: number = convertToBytes(value, valueUnit);
   switch(targetUnit) {
-    case DataSizeUnitType.BYTE:
+    case DataSizeUnit.BYTE:
       return bytes;
-    case DataSizeUnitType.KILOBYTE:
+    case DataSizeUnit.KILOBYTE:
       return bytes / 1024;
-    case DataSizeUnitType.MEGABYTE:
+    case DataSizeUnit.MEGABYTE:
       return bytes / (1024 * 1024);
-    case DataSizeUnitType.GIGABYTE:
+    case DataSizeUnit.GIGABYTE:
       return bytes / (1024 * 1024 * 1024);
     default:
       throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', 'megabytes', 'gigabytes'`)
   }
 }
 
-const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
+const convertToBytes = (value: number, valueUnit: DataSizeUnit): number => {
   switch(valueUnit) {
-    case DataSizeUnitType.BYTE:
+    case DataSizeUnit.BYTE:
       return value;
-    case DataSizeUnitType.KILOBYTE:
+    case DataSizeUnit.KILOBYTE:
       return value * 1024;
-    case DataSizeUnitType.MEGABYTE:
+    case DataSizeUnit.MEGABYTE:
       return value * 1024 * 1024;
-    case DataSizeUnitType.GIGABYTE:
+    case DataSizeUnit.GIGABYTE:
       return value * 1024 * 1024 * 1024;
     default:
       throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', 'megabytes', 'gigabytes'`);

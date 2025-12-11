@@ -19,7 +19,7 @@ export * from './client-credentials.service';
 export * from './client-session.service';
 export * from './user.service';
 export * from './auth.service';
-export * from './stats.service';
+export * from './timeseries.service';
 export * from './retained-msg.service';
 export * from './instructions.service';
 export * from './config.service';
