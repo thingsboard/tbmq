@@ -33,11 +33,5 @@ public interface TbActor {
         return InitFailureStrategy.retryWithDelay(5000L * attempt);
     }
 
-    default ProcessFailureStrategy onProcessFailure(Throwable t) {
-        if (t instanceof Error) {
-            return ProcessFailureStrategy.stop();
-        } else {
-            return ProcessFailureStrategy.resume();
-        }
-    }
+    ProcessFailureStrategy onProcessFailure(Throwable t);
 }

@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
@@ -57,6 +58,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -68,6 +71,7 @@ public class MqttPublishHandler {
     private final ClientLogger clientLogger;
     private final RetainedMsgProcessor retainedMsgProcessor;
     private final PublishMsgValidationService publishMsgValidationService;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -234,6 +238,7 @@ public class MqttPublishHandler {
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+                    tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
                     handleMsgPersistenceFailure(ctx, publishMsg);
                 });
             }

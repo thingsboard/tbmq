@@ -114,7 +114,7 @@ public class MqttSubscribeHandler {
 
             if (isSharedSubscriptionWithNoLocal(subscription)) {
                 log.warn("[{}] It is a Protocol Error to set the NoLocal option to true on a Shared Subscription.", ctx.getClientId());
-                disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR);
+                disconnectClient(ctx);
                 return Collections.emptyList();
             }
 
@@ -168,12 +168,12 @@ public class MqttSubscribeHandler {
         );
     }
 
-    private void disconnectClient(ClientSessionCtx ctx, DisconnectReasonType disconnectReasonType) {
+    private void disconnectClient(ClientSessionCtx ctx) {
         clientMqttActorManager.disconnect(
                 ctx.getClientId(),
                 new MqttDisconnectMsg(
                         ctx.getSessionId(),
-                        new DisconnectReason(disconnectReasonType))
+                        new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR))
         );
     }
 
@@ -195,21 +195,24 @@ public class MqttSubscribeHandler {
     }
 
     List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
-        if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(retainedMsgList.size());
-            if (availableTokens == 0) {
-                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgList.size());
-                return Collections.emptyList();
-            }
-            if (availableTokens == retainedMsgList.size()) {
-                return retainedMsgList;
-            }
-            if (log.isDebugEnabled() && availableTokens < retainedMsgList.size()) {
-                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgList.size() - availableTokens);
-            }
-            return retainedMsgList.subList(0, availableTokens);
+        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
+            return retainedMsgList;
         }
-        return retainedMsgList;
+
+        int totalMsgCount = retainedMsgList.size();
+        int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(totalMsgCount);
+
+        if (availableTokens >= totalMsgCount) {
+            return retainedMsgList;
+        }
+
+        if (availableTokens <= 0) {
+            log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", totalMsgCount);
+            return Collections.emptyList();
+        }
+
+        log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", totalMsgCount - availableTokens);
+        return retainedMsgList.subList(0, availableTokens);
     }
 
     List<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,

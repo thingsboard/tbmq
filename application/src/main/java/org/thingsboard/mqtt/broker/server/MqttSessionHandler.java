@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
@@ -54,6 +55,7 @@ import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -69,16 +71,22 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CLIENT_INCOMING_MESSAGES_RATE_LIMITS_DETECTED;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_RATE_LIMITS_DETECTED;
+
 @Slf4j
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
 
     public static final AttributeKey<InetSocketAddress> ADDRESS = AttributeKey.newInstance("SRC_ADDRESS");
+    public static final AttributeKey<String> CLIENT_ID_ATTR = AttributeKey.valueOf("CLIENT_ID");
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RateLimitBatchProcessor rateLimitBatchProcessor;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -92,6 +100,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
         this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
+        this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -112,9 +121,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 return;
             }
 
-            if (!message.decoderResult().isSuccess()) {
-                log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
-                if (message.decoderResult().cause() instanceof TooLongFrameException) {
+            DecoderResult decoderResult = message.decoderResult();
+            if (!decoderResult.isSuccess()) {
+                log.warn("[{}][{}][{}] Message decoding failed: {}", clientId, sessionId, message.fixedHeader().messageType(), decoderResult.cause().getMessage());
+                if (decoderResult.cause() instanceof TooLongFrameException) {
                     disconnect(new DisconnectReason(DisconnectReasonType.ON_PACKET_TOO_LARGE));
                 } else {
                     disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
@@ -146,17 +156,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             } else {
                 var scramAlgorithmOpt = ScramAlgorithm.fromMqttName(authMethod);
                 if (scramAlgorithmOpt.isEmpty()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}][{}] Unsupported authentication method: {}!", address, sessionId, authMethod);
-                    }
+                    log.debug("[{}][{}] Unsupported authentication method: {}!", address, sessionId, authMethod);
                     connAckAndCloseCtx(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD);
                     return;
                 }
                 byte[] authData = MqttPropertiesUtil.getAuthenticationDataValue(properties);
                 if (authData == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}][{}] No authentication data found!", address, sessionId);
-                    }
+                    log.debug("[{}][{}] No authentication data found!", address, sessionId);
                     connAckAndCloseCtx(MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR);
                     return;
                 }
@@ -219,22 +225,38 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void processPublish(MqttMessage msg) {
-        if (checkClientLimits(msg)) {
-            MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg);
-            if (rateLimitService.isTotalMsgsLimitEnabled()) {
-                rateLimitBatchProcessor.addMessage(mqttPublishMsg,
-                        mqttMsg -> clientMqttActorManager.processMqttMsg(clientId, mqttMsg),
-                        mqttMsg -> {
-                            processMsgOnRateLimits(mqttMsg.getPublishMsg().getPacketId(), mqttMsg.getPublishMsg().getQos(), "Total rate limits detected");
-                            mqttMsg.release();
-                        });
-                return;
-            }
-            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
-        } else {
-            MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) msg;
-            processMsgOnRateLimits(mqttPublishMessage.variableHeader().packetId(), mqttPublishMessage.fixedHeader().qosLevel().value(), "Client incoming messages rate limits detected");
+        MqttPublishMessage publishMsg = (MqttPublishMessage) msg;
+
+        if (!checkClientLimits(publishMsg)) {
+            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            processMsgOnRateLimits(
+                    publishMsg.variableHeader().packetId(),
+                    publishMsg.fixedHeader().qosLevel().value(),
+                    CLIENT_INCOMING_MESSAGES_RATE_LIMITS_DETECTED
+            );
+            return;
         }
+
+        MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, publishMsg);
+
+        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
+            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
+            return;
+        }
+
+        rateLimitBatchProcessor.addMessage(
+                mqttPublishMsg,
+                msgToProcess -> clientMqttActorManager.processMqttMsg(clientId, msgToProcess),
+                msgToDrop -> {
+                    tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                    processMsgOnRateLimits(
+                            msgToDrop.getPublishMsg().getPacketId(),
+                            msgToDrop.getPublishMsg().getQos(),
+                            TOTAL_RATE_LIMITS_DETECTED
+                    );
+                    msgToDrop.release();
+                }
+        );
     }
 
     private void processMsgOnRateLimits(int packetId, int qos, String message) {
@@ -279,6 +301,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientId = connectMessage.payload().clientIdentifier();
         boolean generated = StringUtils.isEmpty(clientId);
         clientId = generated ? UUIDUtil.randomUuid() : clientId;
+        clientSessionCtx.getChannel().channel().attr(CLIENT_ID_ATTR).set(clientId);
         return generated;
     }
 
@@ -336,15 +359,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     void disconnect(DisconnectReason reason) {
         if (clientId == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Session wasn't initialized yet, closing channel. Reason - {}.", sessionId, reason);
-            }
+            log.debug("[{}] Session wasn't initialized yet, closing channel. Reason - {}.", sessionId, reason);
             try {
                 clientSessionCtx.closeChannel();
             } catch (Exception e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Failed to close channel.", sessionId, e);
-                }
+                log.debug("[{}] Failed to close channel.", sessionId, e);
             }
         } else {
             disconnect(new MqttDisconnectMsg(sessionId, reason));
@@ -358,18 +377,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     InetSocketAddress getAddress(ChannelHandlerContext ctx) {
         var address = ctx.channel().attr(ADDRESS).get();
         if (address == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Received empty address.", ctx.channel().id());
-            }
+            log.trace("[{}] Received empty address.", ctx.channel().id());
             InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Going to use address: {}", ctx.channel().id(), remoteAddress);
-            }
+            log.trace("[{}] Going to use address: {}", ctx.channel().id(), remoteAddress);
             return remoteAddress;
         } else {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Received address: {}", ctx.channel().id(), address);
-            }
+            log.trace("[{}] Received address: {}", ctx.channel().id(), address);
         }
         return address;
     }

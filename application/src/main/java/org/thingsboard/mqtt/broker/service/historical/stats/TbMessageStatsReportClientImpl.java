@@ -221,6 +221,14 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     @Override
+    public void reportStats(String key, int count) {
+        if (enabled) {
+            AtomicLong al = stats.get(key);
+            al.addAndGet(count);
+        }
+    }
+
+    @Override
     public void reportInboundTraffic(long bytes) {
         reportTraffic(INBOUND_PAYLOAD_BYTES, bytes);
     }

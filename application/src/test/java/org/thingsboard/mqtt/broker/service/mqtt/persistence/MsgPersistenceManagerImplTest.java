@@ -19,7 +19,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -27,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -52,12 +56,12 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = MsgPersistenceManagerImpl.class)
 public class MsgPersistenceManagerImplTest {
 
     static final String SERVICE_ID = "serviceId";
@@ -66,32 +70,29 @@ public class MsgPersistenceManagerImplTest {
     SessionInfo sessionInfo;
     ClientInfo clientInfo;
 
+    @MockitoBean
     GenericClientSessionCtxManager genericClientSessionCtxManager;
+    @MockitoBean
     ApplicationMsgQueuePublisher applicationMsgQueuePublisher;
+    @MockitoBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    @MockitoBean
     DeviceMsgQueuePublisher deviceMsgQueuePublisher;
+    @MockitoBean
     DevicePersistenceProcessor devicePersistenceProcessor;
+    @MockitoBean
     ClientLogger clientLogger;
+    @MockitoBean
     RateLimitService rateLimitService;
+    @MockitoBean
     IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
+    @MockitoBean
+    TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockitoSpyBean
     MsgPersistenceManagerImpl msgPersistenceManager;
 
     @Before
     public void setUp() throws Exception {
-        genericClientSessionCtxManager = mock(GenericClientSessionCtxManager.class);
-        applicationMsgQueuePublisher = mock(ApplicationMsgQueuePublisher.class);
-        applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
-        deviceMsgQueuePublisher = mock(DeviceMsgQueuePublisher.class);
-        devicePersistenceProcessor = mock(DevicePersistenceProcessor.class);
-        clientLogger = mock(ClientLogger.class);
-        rateLimitService = mock(RateLimitService.class);
-        integrationMsgQueuePublisher = mock(IntegrationMsgQueuePublisher.class);
-
-        msgPersistenceManager = spy(new MsgPersistenceManagerImpl(
-                genericClientSessionCtxManager, applicationMsgQueuePublisher, applicationPersistenceProcessor,
-                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger,
-                rateLimitService, integrationMsgQueuePublisher));
-
         ctx = mock(ClientSessionCtx.class);
         sessionInfo = mock(SessionInfo.class);
         clientInfo = mock(ClientInfo.class);
@@ -173,7 +174,7 @@ public class MsgPersistenceManagerImplTest {
 
         verify(deviceMsgQueuePublisher, never()).sendMsg(
                 any(), any(), any());
-        verify(callbackWrapper, times(3)).onSuccess();
+        verify(callbackWrapper).onBatchSuccess(eq(3));
     }
 
     @Test
