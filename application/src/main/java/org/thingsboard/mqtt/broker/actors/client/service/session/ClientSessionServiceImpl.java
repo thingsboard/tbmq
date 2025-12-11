@@ -51,11 +51,19 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     private final StatsManager statsManager;
 
     private ConcurrentMap<String, ClientSessionInfo> clientSessionMap;
+    private volatile boolean initialized = false;
 
     @Override
     public void init(Map<String, ClientSessionInfo> clientSessionInfos) {
-        this.clientSessionMap = new ConcurrentHashMap<>(clientSessionInfos);
+        clientSessionMap = new ConcurrentHashMap<>(clientSessionInfos);
         statsManager.registerAllClientSessionsStats(clientSessionMap);
+        initialized = true;
+        log.info("Client sessions initialized. Total sessions: {}", clientSessionMap.size());
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return initialized;
     }
 
     @Override
@@ -70,9 +78,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
                     "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
             throw new MqttException("Key clientId should be equals to ClientSession's clientId");
         }
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Saving ClientSession.", clientId);
-        }
+        log.trace("[{}] Saving ClientSession.", clientId);
 
         ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
         clientSessionMap.put(clientId, clientSessionInfo);
@@ -87,9 +93,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public void clearClientSession(String clientId, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Clearing ClientSession.", clientId);
-        }
+        log.trace("[{}] Clearing ClientSession.", clientId);
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
@@ -141,20 +145,14 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Msg was already processed.", clientId);
-            }
+            log.trace("[{}] Msg was already processed.", clientId);
             return;
         }
         if (clientSessionInfo == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
-            }
+            log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
             clientSessionMap.remove(clientId);
         } else {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Saving remote ClientSession.", serviceId, clientId);
-            }
+            log.trace("[{}][{}] Saving remote ClientSession.", serviceId, clientId);
             clientSessionMap.put(clientId, clientSessionInfo);
         }
     }

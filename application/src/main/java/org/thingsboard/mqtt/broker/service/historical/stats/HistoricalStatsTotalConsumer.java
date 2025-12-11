@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -55,6 +56,7 @@ import java.util.concurrent.Executors;
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RETAINED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SESSIONS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTIONS;
 
@@ -70,6 +72,7 @@ public class HistoricalStatsTotalConsumer {
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
+    private final RetainedMsgListenerService retainedMsgService;
     private final TimeseriesService timeseriesService;
     private final HistoricalDataReportProperties historicalDataReportProperties;
 
@@ -98,8 +101,12 @@ public class HistoricalStatsTotalConsumer {
 
     @Scheduled(cron = "#{@historicalDataReportProperties.cron}", zone = "#{@historicalDataReportProperties.zone}")
     public void process() {
-        if (historicalDataReportProperties.isEnabled()) {
-            sessionsProcessingExecutor.execute(this::processSessionsStats);
+        if (historicalDataReportProperties.isDisabled()) {
+            return;
+        }
+        boolean isSystemReady = checkAllStatsServicesReady();
+        if (isSystemReady) {
+            sessionsProcessingExecutor.execute(this::processCountStats);
         }
     }
 
@@ -128,15 +135,18 @@ public class HistoricalStatsTotalConsumer {
         log.info("Historical Data Total Consumer stopped.");
     }
 
-    private void processSessionsStats() {
+    private void processCountStats() {
         long ts = getStartOfCurrentMinute();
         long clientSessionCount = clientSessionService.getClientSessionsCount();
         long clientSubscriptionCount = clientSubscriptionService.getClientSubscriptionsCount();
-        List<TsKvEntry> entries = new ArrayList<>();
+        long retainedMessagesCount = retainedMsgService.getRetainedMessagesCount();
+        List<TsKvEntry> entries = new ArrayList<>(3);
         entries.add(new BasicTsKvEntry(ts,
                 new LongDataEntry(SESSIONS, clientSessionCount)));
         entries.add(new BasicTsKvEntry(ts,
                 new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
+        entries.add(new BasicTsKvEntry(ts,
+                new LongDataEntry(RETAINED_MSGS, retainedMessagesCount)));
 
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
         DonAsynchron.withCallback(savedTsFuture,
@@ -220,6 +230,19 @@ public class HistoricalStatsTotalConsumer {
     private void initExecutors() {
         sessionsProcessingExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-stats-sessions-consumer"));
         totalStatsProcessingExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-stats-total-consumer"));
+    }
+
+    private boolean checkAllStatsServicesReady() {
+        boolean sessionsReady = clientSessionService.isInitialized();
+        boolean subscriptionsReady = clientSubscriptionService.isInitialized();
+        boolean retainedMsgsReady = retainedMsgService.isInitialized();
+
+        if (sessionsReady && subscriptionsReady && retainedMsgsReady) {
+            return true;
+        } else {
+            log.debug("Skipping scheduled stats report: Core system state not fully initialized.");
+            return false;
+        }
     }
 
     @PreDestroy

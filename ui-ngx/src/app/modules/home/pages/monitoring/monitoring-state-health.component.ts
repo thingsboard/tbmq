@@ -18,22 +18,22 @@ import { Component, output } from '@angular/core';
 import { FixedWindow, Timewindow } from '@shared/models/time/time.models';
 import { TranslateModule } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { CHART_ALL } from '@shared/models/chart.model';
+import { CHARTS_STATE_HEALTH } from '@shared/models/chart.model';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
 import { MonitoringChartComponent } from '@home/pages/monitoring/monitoring-chart.component';
 
 @Component({
-    selector: 'tb-monitoring',
-    templateUrl: './monitoring.component.html',
-    styleUrls: ['./monitoring.component.scss'],
+    selector: 'tb-monitoring-state-health',
+    templateUrl: './monitoring-state-health.component.html',
+    styleUrls: ['./monitoring-state-health.component.scss'],
     imports: [MatToolbar, TimewindowComponent, FormsModule, TranslateModule, MonitoringChartComponent]
 })
-export class MonitoringComponent {
+export class MonitoringStateHealthComponent {
 
   readonly timewindowChanged = output<FixedWindow>();
-  readonly chartTypes = CHART_ALL;
+  readonly chartTypes = CHARTS_STATE_HEALTH;
   timewindow: Timewindow;
 
   constructor(private timeService: TimeService) {

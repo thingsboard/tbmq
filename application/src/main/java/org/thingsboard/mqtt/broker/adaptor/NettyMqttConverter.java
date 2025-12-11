@@ -115,6 +115,10 @@ public class NettyMqttConverter {
         return new MqttPublishMsg(sessionId, extractPublishMsg(nettyPublishMsg));
     }
 
+    public static int extractPublishQos(MqttMessage mqttMessage) {
+        return mqttMessage.fixedHeader().qosLevel().value();
+    }
+
     public static MqttPubAckMsg createMqttPubAckMsg(UUID sessionId, MqttPubReplyMessageVariableHeader variableHeader) {
         MqttReasonCodes.PubAck pubAckReasonCode = MqttReasonCodes.PubAck.valueOf(variableHeader.reasonCode());
         return new MqttPubAckMsg(sessionId, variableHeader.messageId(), pubAckReasonCode);

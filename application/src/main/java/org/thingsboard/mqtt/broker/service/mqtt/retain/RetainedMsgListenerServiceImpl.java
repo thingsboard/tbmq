@@ -48,24 +48,21 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     private final StatsManager statsManager;
 
     private ConcurrentMap<String, RetainedMsg> retainedMessagesMap;
+    private volatile boolean initialized = false;
 
     @Override
     public void init(Map<String, RetainedMsg> retainedMsgMap) {
-        this.retainedMessagesMap = new ConcurrentHashMap<>(retainedMsgMap);
+        retainedMessagesMap = new ConcurrentHashMap<>(retainedMsgMap);
         statsManager.registerRetainedMsgStats(retainedMessagesMap);
 
-        log.info("Restoring stored retained messages for {} topics.", retainedMsgMap.size());
-        retainedMsgMap.forEach((topic, retainedMsg) -> {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Restoring retained msg - {}.", topic, retainedMsg);
-            }
-            retainedMsgService.saveRetainedMsg(topic, retainedMsg);
-        });
+        retainedMsgMap.forEach(retainedMsgService::saveRetainedMsg);
+        initialized = true;
+        log.info("Retained messages initialized. Total messages in memory: {}", retainedMessagesMap.size());
     }
 
     @Override
     public boolean isInitialized() {
-        return this.retainedMessagesMap != null;
+        return initialized;
     }
 
     @Override
@@ -76,20 +73,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     @Override
     public void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted retained msg", topic);
-                    }
-                },
+                () -> log.trace("[{}] Persisted retained msg", topic),
                 t -> log.warn("[{}] Failed to persist retained msg", topic, t));
         cacheRetainedMsgAndPersist(topic, retainedMsg, callback);
     }
 
     @Override
     public void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing cacheRetainedMsgAndPersist {}.", topic, retainedMsg);
-        }
+        log.trace("[{}] Executing cacheRetainedMsgAndPersist {}.", topic, retainedMsg);
         cacheRetainedMsg(topic, retainedMsg);
 
         RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
@@ -104,9 +95,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
 
     @Override
     public void cacheRetainedMsg(String topic, RetainedMsg retainedMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing cacheRetainedMsg {}.", topic, retainedMsg);
-        }
+        log.trace("[{}] Executing cacheRetainedMsg {}.", topic, retainedMsg);
         retainedMsgService.saveRetainedMsg(topic, retainedMsg);
         retainedMessagesMap.put(topic, retainedMsg);
     }
@@ -114,20 +103,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     @Override
     public void clearRetainedMsgAndPersist(String topic) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted cleared retained msg", topic);
-                    }
-                },
+                () -> log.trace("[{}] Persisted cleared retained msg", topic),
                 t -> log.warn("[{}] Failed to persist cleared retained msg", topic, t));
         clearRetainedMsgAndPersist(topic, callback);
     }
 
     @Override
     public void clearRetainedMsgAndPersist(String topic, BasicCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing clearRetainedMsgAndPersist", topic);
-        }
+        log.trace("[{}] Executing clearRetainedMsgAndPersist", topic);
         clearRetainedMsg(topic);
 
         retainedMsgPersistenceService.persistRetainedMsgAsync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO, callback);
@@ -135,18 +118,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
 
     @Override
     public void clearRetainedMsg(String topic) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing clearRetainedMsg", topic);
-        }
+        log.trace("[{}] Executing clearRetainedMsg", topic);
         retainedMsgService.clearRetainedMsg(topic);
         retainedMessagesMap.remove(topic);
     }
 
     @Override
     public RetainedMsgDto getRetainedMsgForTopic(String topic) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing getRetainedMsgForTopic", topic);
-        }
+        log.trace("[{}] Executing getRetainedMsgForTopic", topic);
         if (retainedMessagesMap == null) {
             return null;
         }
@@ -160,9 +139,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
 
     @Override
     public List<RetainedMsg> getRetainedMessages() {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getRetainedMessages");
-        }
+        log.trace("Executing getRetainedMessages");
         long currentTs = System.currentTimeMillis();
         List<RetainedMsg> collect = retainedMessagesMap
                 .values()
@@ -172,22 +149,21 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         return new ArrayList<>(collect);
     }
 
+    @Override
+    public int getRetainedMessagesCount() {
+        return retainedMessagesMap == null ? 0 : retainedMessagesMap.size();
+    }
+
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Msg was already processed.", topic);
-            }
+            log.trace("[{}] Msg was already processed.", topic);
             return;
         }
         if (retainedMsg == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Clearing remote retained msg.", serviceId, topic);
-            }
+            log.trace("[{}][{}] Clearing remote retained msg.", serviceId, topic);
             clearRetainedMsg(topic);
         } else {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Saving remote retained msg.", serviceId, topic);
-            }
+            log.trace("[{}][{}] Saving remote retained msg.", serviceId, topic);
             cacheRetainedMsg(topic, retainedMsg);
         }
     }
@@ -195,18 +171,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     @Scheduled(fixedRateString = "${mqtt.retain-msg.expiry-processing-period-ms}")
     public void clearRetainedMessagesByMessageExpiryIntervals() {
         if (retainedMessagesMap == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Retained messages map is not yet initialized!");
-            }
+            log.debug("Retained messages map is not yet initialized!");
             return;
         }
         long currentTs = System.currentTimeMillis();
         retainedMessagesMap.forEach((topic, retainedMsg) -> {
             boolean retainedMsgExpired = MqttPropertiesUtil.isRetainedMsgExpired(retainedMsg, currentTs);
             if (retainedMsgExpired) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Clearing retained message by scheduled expiry interval!", retainedMsg.getTopic());
-                }
+                log.debug("[{}] Clearing retained message by scheduled expiry interval!", retainedMsg.getTopic());
                 clearRetainedMsgAndPersist(retainedMsg.getTopic());
             }
         });

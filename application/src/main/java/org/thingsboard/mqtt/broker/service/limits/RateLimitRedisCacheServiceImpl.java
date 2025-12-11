@@ -132,33 +132,17 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         decrement(appClientsLimitCacheKey);
     }
 
-    /**
-     * This method is used when device persisted messages rate limits are enabled, so bucketProxy can not be null here
-     */
     @Override
-    public boolean tryConsumeDevicePersistedMsg() {
-        return devicePersistedMsgsBucketProxy.tryConsume(1);
+    public long tryConsumeDevicePersistedMsgs(long limit) {
+        return tryConsume(devicePersistedMsgsBucketProxy, limit);
     }
 
     @Override
-    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return tryConsumeAsMuchAsPossible(devicePersistedMsgsBucketProxy, limit);
+    public long tryConsumeTotalMsgs(long limit) {
+        return tryConsume(totalMsgsBucketProxy, limit);
     }
 
-    /**
-     * This method is used when total messages rate limits are enabled, so bucketProxy can not be null here
-     */
-    @Override
-    public boolean tryConsumeTotalMsg() {
-        return totalMsgsBucketProxy.tryConsume(1);
-    }
-
-    @Override
-    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return tryConsumeAsMuchAsPossible(totalMsgsBucketProxy, limit);
-    }
-
-    private long tryConsumeAsMuchAsPossible(Bucket bucket, long limit) {
+    private long tryConsume(Bucket bucket, long limit) {
         if (limit <= 0) {
             return 0;
         }

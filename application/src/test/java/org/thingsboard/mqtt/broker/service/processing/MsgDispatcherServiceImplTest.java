@@ -19,9 +19,9 @@ import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
@@ -66,29 +66,29 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MsgDispatcherServiceImpl.class)
 public class MsgDispatcherServiceImplTest {
 
-    @MockBean
+    @MockitoBean
     SubscriptionService subscriptionService;
-    @MockBean
+    @MockitoBean
     StatsManager statsManager;
-    @MockBean
+    @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
-    @MockBean
+    @MockitoBean
     ClientSessionCache clientSessionCache;
-    @MockBean
+    @MockitoBean
     DownLinkProxy downLinkProxy;
-    @MockBean
+    @MockitoBean
     ClientLogger clientLogger;
-    @MockBean
+    @MockitoBean
     PublishMsgQueuePublisher publishMsgQueuePublisher;
-    @MockBean
+    @MockitoBean
     DeviceSharedSubscriptionProcessorImpl deviceSharedSubscriptionProcessor;
-    @MockBean
+    @MockitoBean
     SharedSubscriptionCacheServiceImpl sharedSubscriptionCacheService;
-    @MockBean
+    @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
-    @MockBean
+    @MockitoBean
     RateLimitService rateLimitService;
-    @SpyBean
+    @MockitoSpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
     ClientSessionInfo clientSessionInfo;
@@ -117,7 +117,7 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitReached() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(0L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(3L))).thenReturn(0L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -126,7 +126,7 @@ public class MsgDispatcherServiceImplTest {
         );
         List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
-        assertEquals(List.of(), result);
+        assertEquals(1, result.size());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class MsgDispatcherServiceImplTest {
         // the limit is set to (size - 1) since one token
         // was already consumed on retrieval from 'tbmq.msg.all' queue.
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(2L))).thenReturn(2L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(2L))).thenReturn(2L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -149,7 +149,7 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(4L))).thenReturn(1L);
+        when(rateLimitService.tryConsumeTotalMsgs(eq(4L))).thenReturn(1L);
 
         List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),

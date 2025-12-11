@@ -22,7 +22,7 @@ import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/tim
 import { TimeService } from '@core/services/time.service';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
-  CHART_ALL,
+  CHARTS_HOME,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
@@ -55,7 +55,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   cardType = HomePageTitleType.MONITORING;
   chartPage = ChartPage.home;
   charts = {};
-  chartKeys = CHART_ALL;
+  chartKeys = CHARTS_HOME;
   chartTypeTranslationMap = StatsChartTypeTranslationMap;
   chartWidth: string;
   chartHeight: string;

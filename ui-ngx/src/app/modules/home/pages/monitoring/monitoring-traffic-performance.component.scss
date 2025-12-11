@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors;
+:host {
+  overflow: auto;
 
-import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+  mat-toolbar {
+    overflow: hidden;
+    position: absolute;
+    z-index: 2;
+    height: 42px;
+    background: #eee;
 
-public interface TbActor {
-
-    void process(TbActorMsg msg);
-
-    TbActorRef getActorRef();
-
-    default void init(TbActorCtx ctx) throws TbActorException {
+    + div {
+      margin-top: 28px;
     }
-
-    default void destroy() throws TbActorException {
-    }
-
-    default InitFailureStrategy onInitFailure(int attempt, Throwable t) {
-        return InitFailureStrategy.retryWithDelay(5000L * attempt);
-    }
-
-    ProcessFailureStrategy onProcessFailure(Throwable t);
+  }
 }

@@ -146,14 +146,25 @@ public class TbMessageStatsReportClientImplTest {
     }
 
     @Test
-    public void testReportTraffic() {
+    public void testReportInboundTraffic() {
         tbMessageStatsReportClient.init();
 
-        tbMessageStatsReportClient.getStats().put(BrokerConstants.PROCESSED_BYTES, new AtomicLong(0));
+        tbMessageStatsReportClient.getStats().put(BrokerConstants.INBOUND_PAYLOAD_BYTES, new AtomicLong(0));
 
-        tbMessageStatsReportClient.reportTraffic(1024);
+        tbMessageStatsReportClient.reportInboundTraffic(1024);
 
-        assertEquals(1024, tbMessageStatsReportClient.getStats().get(BrokerConstants.PROCESSED_BYTES).get());
+        assertEquals(1024, tbMessageStatsReportClient.getStats().get(BrokerConstants.INBOUND_PAYLOAD_BYTES).get());
+    }
+
+    @Test
+    public void testReportOutboundTraffic() {
+        tbMessageStatsReportClient.init();
+
+        tbMessageStatsReportClient.getStats().put(BrokerConstants.OUTBOUND_PAYLOAD_BYTES, new AtomicLong(0));
+
+        tbMessageStatsReportClient.reportOutBoundTraffic(1024);
+
+        assertEquals(1024, tbMessageStatsReportClient.getStats().get(BrokerConstants.OUTBOUND_PAYLOAD_BYTES).get());
     }
 
     @Test
@@ -236,8 +247,8 @@ public class TbMessageStatsReportClientImplTest {
         tbMessageStatsReportClient.reportAndPersistStats(timestamp, null);
 
         // Then
-        verify(timeseriesService, times(4)).save(anyString(), any(BasicTsKvEntry.class));
-        verify(historicalStatsProducer, times(4)).send(eq("topic"), eq(null), any(TbProtoQueueMsg.class), any(TbQueueCallback.class));
+        verify(timeseriesService, times(6)).save(anyString(), any(BasicTsKvEntry.class));
+        verify(historicalStatsProducer, times(6)).send(eq("topic"), eq(null), any(TbProtoQueueMsg.class), any(TbQueueCallback.class));
 
         // Assert that stats are reset to 0
         assertEquals(0, tbMessageStatsReportClient.getStats().get(BrokerConstants.INCOMING_MSGS).get());

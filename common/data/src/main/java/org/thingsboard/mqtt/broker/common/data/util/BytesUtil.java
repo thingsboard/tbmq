@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.util;
 
-import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
@@ -79,12 +79,8 @@ public class BytesUtil {
         }
     }
 
-    public static int getPacketSize(ByteBuf byteBuf, boolean isTlsConnection) {
-        return byteBuf.readableBytes() + BytesUtil.getPacketOverhead(isTlsConnection);
-    }
-
-    public static int getPacketOverhead(boolean isTlsConnection) {
-        return isTlsConnection ? BrokerConstants.TLS_PACKET_BYTES_OVERHEAD : BrokerConstants.TCP_PACKET_BYTES_OVERHEAD;
+    public static int getPacketSize(MqttPublishMessage publishMsg) {
+        return publishMsg.payload().readableBytes();
     }
 
     public static byte[] generateSafeTokenBytes(int length) {

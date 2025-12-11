@@ -53,13 +53,11 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 
 @Service
 @Slf4j
@@ -94,8 +92,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg);
         producerStats.incrementTotal();
-        tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
-        tbMessageStatsReportClient.reportClientSendStats(sessionInfo.getClientId(), publishMsg.getQos());
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
 
         DefaultTbQueueMsgHeaders headers = createHeaders(publishMsg);
@@ -112,9 +108,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
         if (msgSubscriptions == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] No subscriptions found for publish message!", publishMsgProto.getTopicName());
-            }
             tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
             callback.onSuccess();
             return;
@@ -164,9 +157,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
         clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
-        if (clientSubscriptions.isEmpty()) {
-            return null;
-        }
 
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
             var compositeSubscriptions = sharedSubscriptionCacheService.getSubscriptions(clientSubscriptions);
@@ -186,22 +176,39 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     List<ValueWithTopicFilter<EntitySubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
-        if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
-            int tokensLimit = clientSubscriptions.size() - 1;
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensLimit);
-            if (availableTokens == 0) {
-                log.debug("No available tokens left for total msgs bucket");
-                return Collections.emptyList();
-            }
-            if (availableTokens == tokensLimit) {
-                return clientSubscriptions;
-            }
-            if (log.isDebugEnabled() && availableTokens < tokensLimit) {
-                log.debug("Hitting total messages rate limits on subscriptions processing. Skipping {} messages", clientSubscriptions.size() - availableTokens);
-            }
-            return clientSubscriptions.subList(0, availableTokens + 1);
+        int total = clientSubscriptions.size();
+
+        if (!rateLimitService.isTotalMsgsLimitEnabled() || total <= 1) {
+            return clientSubscriptions;
         }
-        return clientSubscriptions;
+
+        // We have already consumed 1 token for one subscription in PublishMsgConsumerServiceImpl.
+        // Here we only check if we can send to the remaining (total - 1) subscriptions.
+        int extraCandidates = total - 1;
+
+        long consumed = rateLimitService.tryConsumeTotalMsgs(extraCandidates);
+        int allowedExtra = (int) Math.min(consumed, extraCandidates);
+
+        if (allowedExtra == extraCandidates) {
+            return clientSubscriptions;
+        }
+
+        int deliverCount = 1 + allowedExtra;
+        int dropped = total - deliverCount;
+
+        if (allowedExtra == 0) {
+            log.debug("No available extra tokens left for total msgs bucket. Delivering to 1 subscription, dropping {}",
+                    dropped);
+        } else {
+            log.debug("Hitting total messages rate limits on subscriptions processing. Delivering to {}, dropping {}",
+                    deliverCount, dropped);
+        }
+
+        if (dropped > 0) {
+            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
+        }
+
+        return clientSubscriptions.subList(0, deliverCount);
     }
 
     private List<Subscription> collectCommonSubscriptions(
@@ -226,10 +233,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
             boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
             if (noLocalOptionMet) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] No local option is met for sender client!", senderClientId);
-                }
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                log.debug("[{}] No local option is met for sender client!", senderClientId);
                 continue;
             }
 
@@ -278,7 +282,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private IntegrationSessionInfo getIntegrationSessionInfo(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
         return new IntegrationSessionInfo(
                 clientSubscription.getValue().getClientId(),
-                downLinkProxy.getServiceInfoProvider().getServiceId()
+                downLinkProxy.getServiceId()
         );
     }
 

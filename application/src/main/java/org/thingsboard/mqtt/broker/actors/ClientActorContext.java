@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterM
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionCommandService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 @Slf4j
@@ -43,7 +44,8 @@ public class ClientActorContext {
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
     private final StatsManager statsManager;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
-    @Value("${mqtt.pre-connect-queue.max-size:10000}")
+    @Value("${mqtt.pre-connect-queue.max-size:1000}")
     private int maxPreConnectQueueSize;
 }

@@ -63,7 +63,7 @@ public class HistoricalStatsTotalConsumerTest {
         timeseriesService = mock(TimeseriesService.class);
         historicalDataReportProperties = mock(HistoricalDataReportProperties.class);
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
-                null, null, null, null, null,
+                null, null, null, null, null, null,
                 timeseriesService, historicalDataReportProperties
         ));
         historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());

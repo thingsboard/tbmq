@@ -76,6 +76,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     @Override
     public void init(Map<String, BlockedClient> initBlockedClientMap) {
         initBlockedClientMap.forEach(this::addBlockedClient);
+        log.info("Blocked clients initialized. Total blocked clients: {}", initBlockedClientMap.size());
     }
 
     @Override

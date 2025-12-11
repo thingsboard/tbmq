@@ -18,42 +18,44 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BasicDownLinkProcessorImpl.class)
 public class BasicDownLinkProcessorImplTest {
 
-    @MockBean
+    @MockitoBean
     ClientSessionCtxService clientSessionCtxService;
-    @MockBean
+    @MockitoBean
     PublishMsgDeliveryService publishMsgDeliveryService;
-    @MockBean
+    @MockitoBean
     ClientLogger clientLogger;
-    @MockBean
+    @MockitoBean
     RateLimitService rateLimitService;
-    @MockBean
-    ClientMqttActorManager clientMqttActorManager;
+    @MockitoBean
+    TbMessageStatsReportClient tbMessageStatsReportClient;
 
-    @SpyBean
+    @MockitoSpyBean
     BasicDownLinkProcessorImpl basicDownLinkProcessor;
 
     @Before
@@ -71,7 +73,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any());
-        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
     }
 
     @Test
@@ -85,7 +87,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(publishMsgDeliveryService, times(1)).sendPublishMsgProtoToClient(any(), any());
-        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
     }
 
     @Test
@@ -99,7 +101,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any());
-        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(tbMessageStatsReportClient).reportStats(eq(DROPPED_MSGS));
     }
 
     @Test
@@ -112,7 +114,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
     }
 
     @Test
@@ -126,7 +128,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(publishMsgDeliveryService, times(1)).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
     }
 
     @Test
@@ -140,7 +142,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(tbMessageStatsReportClient).reportStats(eq(DROPPED_MSGS));
     }
 
     private Subscription getSubscription(String clientId) {

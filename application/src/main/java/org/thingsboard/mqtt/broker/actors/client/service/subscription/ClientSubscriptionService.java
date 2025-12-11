@@ -29,6 +29,8 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
     void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions);
 
+    boolean isInitialized();
+
     void startListening(ClientSubscriptionConsumer consumer);
 
     void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);

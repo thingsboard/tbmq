@@ -36,12 +36,16 @@ public class BrokerConstants {
     public static final String DROPPED_MSGS = "droppedMsgs";
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
+    public static final String RETAINED_MSGS = "retainedMsgs";
+    //TODO: delete completely PROCESSED_BYTES (with upgrade script to remove data from psql)
     public static final String PROCESSED_BYTES = "processedBytes";
+    public static final String INBOUND_PAYLOAD_BYTES = "inboundPayloadTraffic";
+    public static final String OUTBOUND_PAYLOAD_BYTES = "outboundPayloadTraffic";
 
-    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, PROCESSED_BYTES);
+    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, PROCESSED_BYTES, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
     public static final int MSG_RELATED_HISTORICAL_KEYS_COUNT = MSG_RELATED_HISTORICAL_KEYS.size();
 
-    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, PROCESSED_BYTES);
+    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, RETAINED_MSGS, PROCESSED_BYTES, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
 
     public static final String RECEIVED_PUBLISH_MSGS = "receivedPubMsgs";
     public static final String QOS_0_RECEIVED_PUBLISH_MSGS = "qos0ReceivedPubMsgs";
@@ -96,11 +100,6 @@ public class BrokerConstants {
 
     public static final int WRITE_BUFFER_DEFAULT_HIGH_WATER_MARK = 64 * 1024; // 64 KB
     public static final int WRITE_BUFFER_DEFAULT_LOW_WATER_MARK = 32 * 1024; // 32 KB
-
-    public static final int TCP_PACKET_BYTES_OVERHEAD = 66;
-    public static final int TLS_PACKET_BYTES_OVERHEAD = 95;
-    public static final int TLS_CONNECT_BYTES_OVERHEAD = 4078;
-    public static final int TLS_DISCONNECT_BYTES_OVERHEAD = 364;
 
     public static final int WS_MAX_CONTENT_LENGTH = 65536;
     public static final String WS_PATH = "/mqtt";
@@ -167,6 +166,8 @@ public class BrokerConstants {
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
     public static final String REQUEST_TIME = "requestTime";
 
+    public static final String CLIENT_INCOMING_MESSAGES_RATE_LIMITS_DETECTED = "Client incoming messages rate limits detected";
+    public static final String TOTAL_RATE_LIMITS_DETECTED = "Total rate limits detected";
     public static final String SUBSCRIPTION_ID_IS_0_ERROR_MSG = "It is a Protocol Error if the Subscription Identifier has a value of 0";
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
     public static final String BLOCKED_CLIENT_MSG = "Blocked client by ";

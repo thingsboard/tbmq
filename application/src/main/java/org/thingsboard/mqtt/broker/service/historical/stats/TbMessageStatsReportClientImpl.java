@@ -53,9 +53,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
@@ -217,11 +218,21 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     @Override
-    public void reportTraffic(long bytes) {
+    public void reportStats(String key, int count) {
         if (historicalDataReportProperties.isEnabled()) {
-            AtomicLong al = stats.get(PROCESSED_BYTES);
-            al.addAndGet(bytes);
+            AtomicLong al = stats.get(key);
+            al.addAndGet(count);
         }
+    }
+
+    @Override
+    public void reportInboundTraffic(long bytes) {
+        reportTraffic(INBOUND_PAYLOAD_BYTES, bytes);
+    }
+
+    @Override
+    public void reportOutBoundTraffic(long bytes) {
+        reportTraffic(OUTBOUND_PAYLOAD_BYTES, bytes);
     }
 
     @Override
@@ -242,6 +253,13 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     public void removeClient(String clientId) {
         if (historicalDataReportProperties.isEnabled()) {
             clientSessionsStats.remove(clientId);
+        }
+    }
+
+    private void reportTraffic(String key, long bytes) {
+        if (historicalDataReportProperties.isEnabled()) {
+            AtomicLong al = stats.get(key);
+            al.addAndGet(bytes);
         }
     }
 

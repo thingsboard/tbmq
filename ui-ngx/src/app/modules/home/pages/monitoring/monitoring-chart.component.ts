@@ -31,7 +31,7 @@ import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
-  CHART_TOTAL_ONLY,
+  CHARTS_TOTAL_ONLY,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
@@ -168,7 +168,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     this.isLoading = true;
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
-    this.processedBytesUnitTypeChanged();
+    this.trafficPayloadChartUnitTypeChanged();
     this.fetchEntityTimeseries();
     this.chart.resetZoom();
   }
@@ -188,8 +188,8 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
     }
   }
 
-  processedBytesUnitTypeChanged(type = DataSizeUnitType.BYTE) {
-    if (this.chartType() === StatsChartType.processedBytes) {
+  trafficPayloadChartUnitTypeChanged(type = DataSizeUnitType.BYTE) {
+    if (this.isTrafficPayloadChart()) {
       for (let i = 0; i < this.brokerIds.length; i++) {
         this.chart.data.datasets[i].data = this.chart.data.datasets[i].data
           .map(el => {
@@ -235,7 +235,11 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   totalOnly(): boolean {
-    return CHART_TOTAL_ONLY.includes(this.chartType());
+    return CHARTS_TOTAL_ONLY.includes(this.chartType());
+  }
+
+  isTrafficPayloadChart() {
+    return this.chartType() === StatsChartType.inboundPayloadTraffic || this.chartType() === StatsChartType.outboundPayloadTraffic;
   }
 
   private initData() {
@@ -249,17 +253,22 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   private fetchEntityTimeseries(initCharts = false) {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(
-        this.statsService.getEntityTimeseries(
-          brokerId,
-          this.fixedWindowTimeMs.startTimeMs,
-          this.fixedWindowTimeMs.endTimeMs,
-          [this.chartType()],
-          MAX_DATAPOINTS_LIMIT,
-          this.timewindow.aggregation.type,
-          this.timeService.timewindowGroupingInterval(this.timewindow)
-        )
+      const data$ = this.statsService.getEntityTimeseries(
+        brokerId,
+        this.fixedWindowTimeMs.startTimeMs,
+        this.fixedWindowTimeMs.endTimeMs,
+        [this.chartType()],
+        MAX_DATAPOINTS_LIMIT,
+        this.timewindow.aggregation.type,
+        this.timeService.timewindowGroupingInterval(this.timewindow)
       );
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          $getEntityTimeseriesTasks.push(data$);
+        }
+      } else {
+        $getEntityTimeseriesTasks.push(data$);
+      }
     }
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
@@ -304,7 +313,7 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
       }
       const params = {...chartJsParams(this.chartPage), ...datasets} as ChartConfiguration<'line', TsValue[]>;
       this.chart = new Chart<'line', TsValue[]>(ctx, params);
-      if (this.chartType() === StatsChartType.processedBytes) {
+      if (this.isTrafficPayloadChart()) {
         this.chart.options.plugins.tooltip.callbacks.label = (context) => {
           const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
           return `${value} ${this.dataSizeUnitTypeTranslationMap.get(this.currentDataSizeUnitType)}`;
@@ -337,7 +346,14 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   private startPolling() {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, [this.chartType()]));
+      const data$ = this.statsService.getLatestTimeseries(brokerId, [this.chartType()]);
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          $getLatestTimeseriesTasks.push(data$);
+        }
+      } else {
+        $getLatestTimeseriesTasks.push(data$);
+      }
     }
     timer(0, POLLING_INTERVAL)
     .pipe(
@@ -358,28 +374,38 @@ export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   private prepareData(data: TimeseriesData[]) {
-    if (this.chartType() === StatsChartType.processedBytes) {
-      const tsValue = data[0][StatsChartType.processedBytes][0];
-      data[0][StatsChartType.processedBytes][0] = {
+    if (this.isTrafficPayloadChart()) {
+      const tsValue = data[0][this.chartType()][0];
+      data[0][StatsChartType[this.chartType()]][0] = {
         value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
         ts: tsValue.ts
       }
-      this.processedBytesUnitTypeChanged(this.currentDataSizeUnitType);
+      this.trafficPayloadChartUnitTypeChanged(this.currentDataSizeUnitType);
     }
   }
 
   private pushLatestValue(data: TimeseriesData[]) {
     for (let i = 0; i < this.brokerIds.length; i++) {
-      let index = i;
-      if (data[index][this.chartType()]?.length) {
-        if (this.totalOnly()) {
-          index = 0;
+      const brokerId = this.brokerIds[i];
+      if (this.totalOnly()) {
+        if (brokerId === TOTAL_KEY) {
+          if (data[0][this.chartType()]?.length) {
+            const latestValue = data[0][this.chartType()][0];
+            const chartData = this.chart.data.datasets[0].data;
+            const chartLatestValue = chartData[0];
+            if (latestValue?.ts > chartLatestValue?.ts) {
+              this.chart.data.datasets[0].data.unshift(latestValue);
+            }
+          }
         }
-        const latestValue = data[index][this.chartType()][0];
-        const chartData = this.chart.data.datasets[index].data;
-        const chartLatestValue = chartData[0];
-        if (latestValue?.ts > chartLatestValue?.ts) {
-          this.chart.data.datasets[index].data.unshift(latestValue);
+      } else {
+        if (data[i][this.chartType()]?.length) {
+          const latestValue = data[i][this.chartType()][0];
+          const chartData = this.chart.data.datasets[i].data;
+          const chartLatestValue = chartData[0];
+          if (latestValue?.ts > chartLatestValue?.ts) {
+            this.chart.data.datasets[i].data.unshift(latestValue);
+          }
         }
       }
     }
