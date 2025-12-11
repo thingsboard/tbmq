@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
@@ -50,6 +51,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_M
 public class HistoricalStatsTotalConsumerTest {
 
     private TimeseriesService timeseriesService;
+    private HistoricalDataReportProperties historicalDataReportProperties;
 
     private HistoricalStatsTotalConsumer historicalStatsTotalConsumer;
 
@@ -59,8 +61,10 @@ public class HistoricalStatsTotalConsumerTest {
     public void init() {
         ts = System.currentTimeMillis();
         timeseriesService = mock(TimeseriesService.class);
+        historicalDataReportProperties = mock(HistoricalDataReportProperties.class);
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
-                null, null, null, null, null, null, timeseriesService
+                null, null, null, null, null, null,
+                timeseriesService, historicalDataReportProperties
         ));
         historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());
     }

@@ -22,7 +22,6 @@ import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -30,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
@@ -67,15 +67,11 @@ import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalSta
 @RequiredArgsConstructor
 public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClient {
 
-    @Value("${historical-data-report.enabled:true}")
-    private boolean enabled;
-    @Value("${historical-data-report.interval:5}")
-    private long interval;
-
     private final HistoricalDataQueueFactory historicalDataQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
     private final HistoricalStatsTotalHelper helper;
+    private final HistoricalDataReportProperties historicalDataReportProperties;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
@@ -84,8 +80,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @PostConstruct
     void init() {
-        if (!enabled) return;
-        validateIntervalAndThrowExceptionOnInvalid();
+        if (historicalDataReportProperties.isDisabled()) {
+            return;
+        }
 
         serviceId = serviceInfoProvider.getServiceId();
         historicalStatsProducer = historicalDataQueueFactory.createProducer(serviceId);
@@ -98,7 +95,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @PreDestroy
     private void destroy() {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             CountDownLatch latch = new CountDownLatch(MSG_RELATED_HISTORICAL_KEYS_COUNT);
             reportAndPersistStats(getStartOfNextInterval(), latch); // sync; block to persist in Kafka
             try {
@@ -115,9 +112,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
     }
 
-    @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
-    private void process() {
-        if (enabled) {
+    @Scheduled(cron = "#{@historicalDataReportProperties.cron}", zone = "#{@historicalDataReportProperties.zone}")
+    public void process() {
+        if (historicalDataReportProperties.isEnabled()) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
             reportAndPersistStats(startOfCurrentMinute, null); // async; don't block
             reportClientSessionsStats(startOfCurrentMinute);
@@ -214,7 +211,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportStats(String key) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             AtomicLong al = stats.get(key);
             al.incrementAndGet();
         }
@@ -222,7 +219,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportStats(String key, int count) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             AtomicLong al = stats.get(key);
             al.addAndGet(count);
         }
@@ -240,27 +237,27 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportClientSendStats(String clientId, int qos) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             reportClientStats(clientId, SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
         }
     }
 
     @Override
     public void reportClientReceiveStats(String clientId, int qos) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             reportClientStats(clientId, RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
         }
     }
 
     @Override
     public void removeClient(String clientId) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             clientSessionsStats.remove(clientId);
         }
     }
 
     private void reportTraffic(String key, long bytes) {
-        if (enabled) {
+        if (historicalDataReportProperties.isEnabled()) {
             AtomicLong al = stats.get(key);
             al.addAndGet(bytes);
         }
@@ -280,18 +277,12 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         return ClientSessionMetricState.newClientSessionMetricState();
     }
 
-    void validateIntervalAndThrowExceptionOnInvalid() {
-        if (interval < 1 || interval > 60) {
-            throw new RuntimeException(String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval));
-        }
-    }
-
     private long getStartOfCurrentMinute() {
         return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
     private long getStartOfNextInterval() {
-        return getStartOfCurrentMinute() + interval * ONE_MINUTE_MS;
+        return getStartOfCurrentMinute() + historicalDataReportProperties.getInterval() * ONE_MINUTE_MS;
     }
 
 }

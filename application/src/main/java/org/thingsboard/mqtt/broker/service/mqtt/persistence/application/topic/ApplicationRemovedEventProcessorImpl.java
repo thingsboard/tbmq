@@ -63,7 +63,7 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
     }
 
     @Scheduled(cron = "${queue.application-removed-event.processing.cron}", zone = "${queue.application-removed-event.processing.zone}")
-    private void scheduleApplicationRemovedEventProcessing() {
+    public void scheduleApplicationRemovedEventProcessing() {
         try {
             processEvents();
         } catch (Exception e) {
