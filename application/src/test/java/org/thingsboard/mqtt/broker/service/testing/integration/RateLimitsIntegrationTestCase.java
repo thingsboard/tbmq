@@ -27,6 +27,7 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -34,6 +35,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClientImpl;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -49,11 +52,14 @@ import static org.junit.Assert.assertTrue;
         "mqtt.rate-limits.incoming-publish.enabled=true",
         "mqtt.rate-limits.incoming-publish.client-config=100:1,300:60",
         "mqtt.rate-limits.outgoing-publish.enabled=true",
-        "mqtt.rate-limits.outgoing-publish.client-config=10:1,300:60"
+        "mqtt.rate-limits.outgoing-publish.client-config=20:60"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest {
+
+    @Autowired
+    private TbMessageStatsReportClientImpl reportClient;
 
     @Test
     public void givenPublisher_whenRateLimitsDetected_thenGotDisconnected() throws Throwable {
@@ -131,13 +137,11 @@ public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest
     }
 
     @Test
-    public void givenNonPersistentSubscriberWithQos0_whenRateLimitsDetected_thenGotDisconnected() throws Throwable {
+    public void givenNonPersistentSubscriberWithQos0_whenRateLimitsDetected_thenGotMessagesDropped() throws Throwable {
         CountDownLatch latch = new CountDownLatch(50);
 
         MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subscriber_rate_limits");
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setAutomaticReconnect(false);
-        subClient.connect(options);
+        subClient.connect(new MqttConnectOptions());
         subClient.subscribe("outgoing/rate/limits", 0, (topic, message) -> latch.countDown());
 
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "publisher_rate_limits");
@@ -148,12 +152,15 @@ public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest
         }
 
         latch.await(2, TimeUnit.SECONDS);
+        assertEquals(30, latch.getCount());
+        assertEquals(30, reportClient.getStats().get(DROPPED_MSGS).get());
 
-        assertFalse(subClient.isConnected());
+        assertTrue(subClient.isConnected());
 
         pubClient.disconnect();
         pubClient.close();
 
+        subClient.disconnect();
         subClient.close();
     }
 
