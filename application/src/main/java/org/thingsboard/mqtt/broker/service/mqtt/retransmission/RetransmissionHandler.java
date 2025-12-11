@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated(forRemoval = true, since = "2.3")
 public class RetransmissionHandler<T extends MqttMessage> {
 
     private final PendingOperation pendingOperation;

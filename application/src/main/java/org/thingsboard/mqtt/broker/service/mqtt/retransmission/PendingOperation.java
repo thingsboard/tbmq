@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retransmission;
 
+@Deprecated(forRemoval = true, since = "2.3")
 public interface PendingOperation {
 
     boolean isCanceled();

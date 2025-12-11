@@ -29,6 +29,7 @@ import java.util.function.BiConsumer;
 
 @Getter
 @Slf4j
+@Deprecated(forRemoval = true, since = "2.3")
 public class MqttPendingPublish {
 
     private final ClientSessionCtx sessionCtx;

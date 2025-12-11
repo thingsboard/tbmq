@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+@Deprecated(forRemoval = true, since = "2.3")
 public interface RetransmissionService {
 
     void sendPublishWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);

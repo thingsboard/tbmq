@@ -890,14 +890,15 @@ mqtt:
     delayed-queue-max-size: "${MQTT_FLOW_CONTROL_DELAYED_QUEUE_MAX_SIZE:1000}"
     # Receive maximum value for MQTT 3.x clients
     mqtt3x-receive-max: "${MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX:65535}"
+  # [DEPRECATED]
   retransmission:
-    # Enable/disable MQTT msg retransmission
+    # [DEPRECATED] Enable/disable MQTT msg retransmission
     enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"
-    # Retransmission scheduler pool size (0 means the number of processors available to the JVM multiplied by 2 will be used)
+    # [DEPRECATED] Retransmission scheduler pool size (0 means the number of processors available to the JVM multiplied by 2 will be used)
     scheduler-pool-size: "${MQTT_RETRANSMISSION_SCHEDULER_POOL_SIZE:0}"
-    # Initial delay for the msg retransmission in seconds
+    # [DEPRECATED] Initial delay for the msg retransmission in seconds
     initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}"
-    # Increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
+    # [DEPRECATED] Increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
     period: "${MQTT_RETRANSMISSION_PERIOD:5}"
   keep-alive:
     # Time in milliseconds between subsequent checks for the non-active clients

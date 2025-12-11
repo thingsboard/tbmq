@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated(forRemoval = true, since = "2.3")
 public class RetransmissionServiceImpl implements RetransmissionService {
 
     private final ClientLogger clientLogger;
@@ -58,6 +59,10 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @PostConstruct
     public void init() {
         if (retransmissionEnabled) {
+            log.warn("\n\nMQTT message retransmission on active connection is DEPRECATED "
+                    + "and will be removed in TBMQ v2.4. "
+                    + "Please disable mqtt.retransmission.enabled (MQTT_RETRANSMISSION_ENABLED=false) and rely on "
+                    + "session-based retransmission on reconnect.\n\n");
             scheduler = Executors.newScheduledThreadPool(getCorePoolSize(), ThingsBoardThreadFactory.forName("retransmission-scheduler"));
         }
     }
