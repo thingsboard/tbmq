@@ -16,28 +16,25 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MqttPubRecHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
 
     public void process(ClientSessionCtx ctx, MqttPubRecMsg msg) throws MqttException {
         int messageId = msg.getMessageId();
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
-        }
 
         if (reasonCodeFailure(msg)) {
             ctx.ackInFlightMsg(messageId);
@@ -54,7 +51,7 @@ public class MqttPubRecHandler {
                 log.debug("[{}] Channel is not writable. Skip send PubRel {}", ctx.getClientId(), messageId);
                 return;
             }
-            publishMsgDeliveryService.sendPubRelMsgToClient(ctx, messageId);
+            mqttMsgDeliveryService.sendPubRelMsgToClient(ctx, messageId);
         }
     }
 

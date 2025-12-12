@@ -22,7 +22,6 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
@@ -32,14 +31,11 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
-import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 @Data
@@ -49,7 +45,6 @@ public class ClientSessionCtx implements SessionContext {
     private final SslHandler sslHandler;
     private final String initializerName;
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
-    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes;
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
 
@@ -75,7 +70,6 @@ public class ClientSessionCtx implements SessionContext {
         this.sslHandler = sslHandler;
         this.initializerName = initializerName;
         this.pubResponseProcessingCtx = new PubResponseProcessingCtx(getMaxAwaitingQueueSize(mqttHandlerCtx));
-        this.pendingPublishes = initPendingPublishes(mqttHandlerCtx);
     }
 
     public byte[] getAddressBytes() {
@@ -88,13 +82,6 @@ public class ClientSessionCtx implements SessionContext {
 
     private int getMaxAwaitingQueueSize(MqttHandlerCtx mqttHandlerCtx) {
         return mqttHandlerCtx == null ? BrokerConstants.MAX_IN_FLIGHT_MESSAGES : mqttHandlerCtx.getMaxInFlightMsgs();
-    }
-
-    private ConcurrentMap<Integer, MqttPendingPublish> initPendingPublishes(MqttHandlerCtx mqttHandlerCtx) {
-        if (mqttHandlerCtx == null) {
-            return null;
-        }
-        return mqttHandlerCtx.isRetransmissionEnabled() ? new ConcurrentHashMap<>() : null;
     }
 
     public String getClientId() {
@@ -134,10 +121,6 @@ public class ClientSessionCtx implements SessionContext {
         log.debug("[{}] Closing channel...", getClientId());
         channel.flush();
         channel.close();
-        if (!CollectionUtils.isEmpty(pendingPublishes)) {
-            pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-            pendingPublishes.clear();
-        }
     }
 
     public boolean isDefaultAuth() {

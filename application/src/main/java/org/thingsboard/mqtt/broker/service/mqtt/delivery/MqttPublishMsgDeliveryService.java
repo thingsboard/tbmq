@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retransmission;
+package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface RetransmissionService {
+public interface MqttPublishMsgDeliveryService {
 
-    void sendPublishWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+    void sendPublishMsgToClient(ClientSessionCtx ctx, MqttPublishMessage mqttPubMsg);
 
-    void sendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
-
-    void onPubAckReceived(ClientSessionCtx ctx, int messageId);
-
-    void onPubRecReceived(ClientSessionCtx ctx, MqttMessage pubRelMsg);
-
-    void onPubRecReceivedWithoutFlush(ClientSessionCtx ctx, MqttMessage pubRelMsg);
-
-    void onPubCompReceived(ClientSessionCtx ctx, int messageId);
+    void sendPublishMsgToClientWithoutFlush(ClientSessionCtx ctx, MqttPublishMessage mqttPubMsg);
 
 }

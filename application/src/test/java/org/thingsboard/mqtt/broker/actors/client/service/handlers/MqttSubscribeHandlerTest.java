@@ -42,7 +42,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -88,7 +88,7 @@ public class MqttSubscribeHandlerTest {
     @MockitoBean
     RetainedMsgService retainedMsgService;
     @MockitoBean
-    PublishMsgDeliveryService publishMsgDeliveryService;
+    MqttMsgDeliveryService mqttMsgDeliveryService;
     @MockitoBean
     ClientMqttActorManager clientMqttActorManager;
     @MockitoBean
