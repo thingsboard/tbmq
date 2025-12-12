@@ -140,7 +140,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             invalidateTopics();
         } catch (ExecutionException ee) {
             if (ee.getCause() instanceof TopicExistsException) {
-                //do nothing
+                invalidateTopics();
             } else {
                 log.warn("[{}] Failed to create topic", topic, ee);
                 throw new RuntimeException(ee);
