@@ -44,7 +44,7 @@ import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -69,7 +69,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     private final String clientId;
     private final DeviceMsgService deviceMsgService;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final ClientLogger clientLogger;
     private final DeviceActorConfiguration deviceActorConfig;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
@@ -91,7 +91,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         super(systemContext);
         this.clientId = clientId;
         this.deviceMsgService = systemContext.getDeviceMsgService();
-        this.publishMsgDeliveryService = systemContext.getPublishMsgDeliveryService();
+        this.mqttMsgDeliveryService = systemContext.getMqttMsgDeliveryService();
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
         this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
@@ -190,7 +190,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
-            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg, isDup);
+            mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg, isDup);
             unacknowledgedMsgCounter.incrementAndGet();
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
@@ -361,7 +361,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     private void processPubRelMsg(int packetId) {
-        publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, packetId);
+        mqttMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, packetId);
     }
 
     private void tellDeliverMessagesEvent(TbActorCtx actorCtx, List<DevicePublishMsg> persistedMessages) {

@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -68,7 +68,7 @@ public class MqttSubscribeHandler {
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     private final MsgPersistenceManager msgPersistenceManager;
@@ -190,7 +190,7 @@ public class MqttSubscribeHandler {
         }
         retainedMsgList = applyRateLimits(retainedMsgList);
         if (!CollectionUtils.isEmpty(retainedMsgList)) {
-            retainedMsgList.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+            retainedMsgList.forEach(retainedMsg -> mqttMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
         }
     }
 

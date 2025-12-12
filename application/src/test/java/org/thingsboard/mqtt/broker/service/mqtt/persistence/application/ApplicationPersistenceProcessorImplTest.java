@@ -21,16 +21,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
@@ -56,34 +56,34 @@ import java.util.Set;
 @Slf4j
 public class ApplicationPersistenceProcessorImplTest {
 
-    @MockBean
+    @MockitoBean
     ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
-    @MockBean
+    @MockitoBean
     ApplicationSubmitStrategyFactory submitStrategyFactory;
-    @MockBean
+    @MockitoBean
     ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    @MockBean
-    PublishMsgDeliveryService publishMsgDeliveryService;
-    @MockBean
+    @MockitoBean
+    MqttMsgDeliveryService mqttMsgDeliveryService;
+    @MockitoBean
     TbQueueAdmin queueAdmin;
-    @MockBean
+    @MockitoBean
     StatsManager statsManager;
-    @MockBean
+    @MockitoBean
     ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
-    @MockBean
+    @MockitoBean
     ClientMqttActorManager clientMqttActorManager;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
+    @MockitoBean
     ClientLogger clientLogger;
-    @MockBean
+    @MockitoBean
     ApplicationTopicService applicationTopicService;
-    @MockBean
+    @MockitoBean
     ApplicationClientHelperService appClientHelperService;
-    @MockBean
+    @MockitoBean
     AppMsgDeliveryStrategy appMsgDeliveryStrategy;
 
-    @SpyBean
+    @MockitoSpyBean
     ApplicationPersistenceProcessorImpl applicationPersistenceProcessor;
 
     @Before

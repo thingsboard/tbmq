@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 class AppMsgBufferedDeliveryStrategyTest {
 
-    PublishMsgDeliveryService deliveryService;
+    MqttMsgDeliveryService deliveryService;
     ClientLogger clientLogger;
 
     ApplicationSubmitStrategy submitStrategy;
@@ -52,7 +52,7 @@ class AppMsgBufferedDeliveryStrategyTest {
         ChannelHandlerContext channel = mock(ChannelHandlerContext.class);
         when(clientSessionCtx.getChannel()).thenReturn(channel);
 
-        deliveryService = mock(PublishMsgDeliveryService.class);
+        deliveryService = mock(MqttMsgDeliveryService.class);
         clientLogger = mock(ClientLogger.class);
         submitStrategy = mock(ApplicationSubmitStrategy.class);
 

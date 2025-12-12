@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface PublishMsgDeliveryService {
+public interface MqttMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx sessionCtx, DevicePublishMsg publishMsg, boolean isDup);
 

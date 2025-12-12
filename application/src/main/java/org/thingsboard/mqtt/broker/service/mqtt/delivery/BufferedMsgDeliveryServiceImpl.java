@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryService {
 
-    private final MqttMsgDeliveryService mqttMsgDeliveryService;
+    private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
     private final BufferedMsgDeliverySettings settings;
 
     @Value("${mqtt.write-and-flush:true}")
@@ -96,7 +96,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
     private void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, boolean writeAndFlush, int bufferedMsgCount) {
         if (writeAndFlush) {
-            mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+            mqttPublishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
             return;
         }
 
@@ -105,11 +105,11 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
             state = cache.get(sessionCtx.getSessionId(), () -> newSessionState(sessionCtx));
         } catch (ExecutionException e) {
             log.warn("[{}] Unexpected exception while loading SessionFlushState", sessionCtx.getClientId(), e);
-            mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+            mqttPublishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
             return;
         }
 
-        mqttMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
+        mqttPublishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
         if (isFlushNeeded(state, bufferedMsgCount)) {
             doFlush(state, System.currentTimeMillis());
         }

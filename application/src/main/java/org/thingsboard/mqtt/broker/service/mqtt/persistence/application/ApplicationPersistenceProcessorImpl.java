@@ -38,8 +38,8 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
@@ -99,7 +99,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
     private final ApplicationSubmitStrategyFactory submitStrategyFactory;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final TbQueueAdmin queueAdmin;
     private final StatsManager statsManager;
     private final ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
@@ -219,7 +219,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         if (CollectionUtils.isEmpty(contexts)) {
             log.warn(format, clientSessionCtx.getClientId(), packetId);
             if (sendPubRelMsg) {
-                publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+                mqttMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
             }
             return;
         }
@@ -233,7 +233,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
         }
         if (sendPubRelMsg) {
-            publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+            mqttMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
         }
     }
 

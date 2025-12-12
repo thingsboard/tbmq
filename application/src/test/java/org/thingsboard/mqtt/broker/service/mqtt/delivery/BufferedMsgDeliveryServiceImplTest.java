@@ -42,19 +42,19 @@ import static org.mockito.Mockito.when;
 
 public class BufferedMsgDeliveryServiceImplTest {
 
-    private MqttMsgDeliveryService mqttMsgDeliveryService;
+    private MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
     private BufferedMsgDeliveryServiceImpl bufferedMsgDeliveryService;
 
     @BeforeEach
     void setup() {
-        mqttMsgDeliveryService = mock(MqttMsgDeliveryService.class);
+        mqttPublishMsgDeliveryService = mock(MqttPublishMsgDeliveryService.class);
         BufferedMsgDeliverySettings bufferedMsgDeliverySettings = new BufferedMsgDeliverySettings();
         bufferedMsgDeliverySettings.setSchedulerExecutionIntervalMs(100);
         bufferedMsgDeliverySettings.setIdleSessionFlushTimeoutMs(1000);
         bufferedMsgDeliverySettings.setSessionCacheExpirationMs(1000);
         bufferedMsgDeliverySettings.setSessionCacheMaxSize(100);
 
-        bufferedMsgDeliveryService = new BufferedMsgDeliveryServiceImpl(mqttMsgDeliveryService, bufferedMsgDeliverySettings);
+        bufferedMsgDeliveryService = new BufferedMsgDeliveryServiceImpl(mqttPublishMsgDeliveryService, bufferedMsgDeliverySettings);
 
         bufferedMsgDeliveryService.setWriteAndFlush(false);
         bufferedMsgDeliveryService.setBufferedMsgCount(2);
@@ -76,10 +76,10 @@ public class BufferedMsgDeliveryServiceImplTest {
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
         bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
         bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService, times(2)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService, times(2)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
         verify(ctx.getChannel()).flush();
         assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
@@ -93,7 +93,7 @@ public class BufferedMsgDeliveryServiceImplTest {
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
         bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService).sendPublishMsgToClient(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService).sendPublishMsgToClient(eq(ctx), eq(mqttMsg));
         assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId)).isNull();
     }
 
@@ -104,13 +104,13 @@ public class BufferedMsgDeliveryServiceImplTest {
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
         bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
         bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService, times(2)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService, times(2)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
         bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService, times(3)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService, times(3)).sendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
         verify(ctx.getChannel()).flush();
         assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
@@ -124,7 +124,7 @@ public class BufferedMsgDeliveryServiceImplTest {
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
         bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
-        verify(mqttMsgDeliveryService).sendPublishMsgToClient(eq(ctx), eq(mqttMsg));
+        verify(mqttPublishMsgDeliveryService).sendPublishMsgToClient(eq(ctx), eq(mqttMsg));
         assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId)).isNull();
     }
 

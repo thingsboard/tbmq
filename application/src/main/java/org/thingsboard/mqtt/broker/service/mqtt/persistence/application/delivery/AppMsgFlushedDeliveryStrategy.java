@@ -21,7 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -38,7 +38,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @RequiredArgsConstructor
 public class AppMsgFlushedDeliveryStrategy implements AppMsgDeliveryStrategy {
 
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final ClientLogger clientLogger;
 
     @Override
@@ -49,9 +49,9 @@ public class AppMsgFlushedDeliveryStrategy implements AppMsgDeliveryStrategy {
         submitStrategy.process(msg -> {
             switch (msg.getPacketType()) {
                 case PUBLISH ->
-                        publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, msg.getPublishMsg());
+                        mqttMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, msg.getPublishMsg());
                 case PUBREL ->
-                        publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
+                        mqttMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
             }
             clientSessionCtx.getChannel().flush();
             clientLogger.logEventWithDetails(clientSessionCtx.getClientId(), getClass(), ctx -> ctx

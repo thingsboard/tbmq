@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.BufferedMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -44,26 +44,26 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 
 @Slf4j
 @Service
-public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryService {
+public class DefaultMqttMsgDeliveryService implements MqttMsgDeliveryService {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final BufferedMsgDeliveryService bufferedMsgDeliveryService;
-    private final MqttMsgDeliveryService mqttMsgDeliveryService;
+    private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
     @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
     private int minTopicNameLengthForAliasReplacement;
 
-    public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
-                                            TbMessageStatsReportClient tbMessageStatsReportClient,
-                                            BufferedMsgDeliveryService bufferedMsgDeliveryService,
-                                            MqttMsgDeliveryService mqttMsgDeliveryService) {
+    public DefaultMqttMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
+                                         TbMessageStatsReportClient tbMessageStatsReportClient,
+                                         BufferedMsgDeliveryService bufferedMsgDeliveryService,
+                                         MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.bufferedMsgDeliveryService = bufferedMsgDeliveryService;
-        this.mqttMsgDeliveryService = mqttMsgDeliveryService;
+        this.mqttPublishMsgDeliveryService = mqttPublishMsgDeliveryService;
     }
 
     @Override
@@ -124,7 +124,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
-        mqttMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
+        mqttPublishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
-        mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        mqttPublishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
     @Override

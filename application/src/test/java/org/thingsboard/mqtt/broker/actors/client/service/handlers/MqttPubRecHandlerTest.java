@@ -23,7 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -41,15 +41,15 @@ import static org.mockito.Mockito.when;
 public class MqttPubRecHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
-    PublishMsgDeliveryService publishMsgDeliveryService;
+    MqttMsgDeliveryService mqttMsgDeliveryService;
     MqttPubRecHandler mqttPubRecHandler;
     ClientSessionCtx ctx;
 
     @Before
     public void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
-        publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
-        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, publishMsgDeliveryService));
+        mqttMsgDeliveryService = mock(MqttMsgDeliveryService.class);
+        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, mqttMsgDeliveryService));
 
         ctx = mock(ClientSessionCtx.class);
     }
@@ -67,7 +67,7 @@ public class MqttPubRecHandlerTest {
         when(ctx.isWritable()).thenReturn(true);
 
         mqttPubRecHandler.process(ctx, newMqttPubRecMsg(MqttReasonCodes.PubRec.SUCCESS));
-        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(mqttMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
     }
 
     @Test

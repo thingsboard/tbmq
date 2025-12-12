@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface MqttMsgDeliveryService {
+public interface MqttPublishMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx ctx, MqttPublishMessage mqttPubMsg);
 

@@ -30,14 +30,14 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 
 @Service
 @Slf4j
-public class DefaultMqttMsgDeliveryService implements MqttMsgDeliveryService {
+public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliveryService {
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final DeliveryTimerStats deliveryTimerStats;
 
     @Autowired
-    public DefaultMqttMsgDeliveryService(TbMessageStatsReportClient tbMessageStatsReportClient,
-                                         StatsManager statsManager) {
+    public DefaultMqttPublishMsgDeliveryService(TbMessageStatsReportClient tbMessageStatsReportClient,
+                                                StatsManager statsManager) {
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
     }

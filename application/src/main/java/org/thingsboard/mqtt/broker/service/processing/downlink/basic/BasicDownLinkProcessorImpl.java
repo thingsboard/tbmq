@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -35,7 +35,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
 
     private final ClientSessionCtxService clientSessionCtxService;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
@@ -51,7 +51,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             dropMessage();
             return;
         }
-        publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg);
+        mqttMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg);
         logClientEvent(clientId);
     }
 
@@ -66,7 +66,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             dropMessage();
             return;
         }
-        publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg, subscription);
+        mqttMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg, subscription);
         logClientEvent(subscription.getClientId());
     }
 

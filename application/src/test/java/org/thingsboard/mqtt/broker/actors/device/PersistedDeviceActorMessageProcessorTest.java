@@ -38,7 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -76,7 +76,7 @@ public class PersistedDeviceActorMessageProcessorTest {
     PersistedDeviceActorMessageProcessor persistedDeviceActorMessageProcessor;
 
     DeviceMsgService deviceMsgService;
-    PublishMsgDeliveryService publishMsgDeliveryService;
+    MqttMsgDeliveryService mqttMsgDeliveryService;
     ClientMqttActorManager clientMqttActorManager;
     ClientLogger clientLogger;
     DeviceActorConfiguration deviceActorConfig;
@@ -87,7 +87,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         ActorSystemContext actorSystemContext = mock(ActorSystemContext.class);
 
         deviceMsgService = mock(DeviceMsgService.class);
-        publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
+        mqttMsgDeliveryService = mock(MqttMsgDeliveryService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         clientLogger = mock(ClientLogger.class);
         deviceActorConfig = mock(DeviceActorConfiguration.class);
@@ -95,7 +95,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         ClientActorContext clientActorContext = mock(ClientActorContext.class);
 
         when(actorSystemContext.getDeviceMsgService()).thenReturn(deviceMsgService);
-        when(actorSystemContext.getPublishMsgDeliveryService()).thenReturn(publishMsgDeliveryService);
+        when(actorSystemContext.getMqttMsgDeliveryService()).thenReturn(mqttMsgDeliveryService);
         when(actorSystemContext.getClientActorContext()).thenReturn(clientActorContext);
         when(clientActorContext.getClientLogger()).thenReturn(clientLogger);
         when(actorSystemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
@@ -247,8 +247,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
-        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
     }
 
     @Test
@@ -266,8 +266,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
-        verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
     }
 
     @Test
@@ -286,8 +286,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
-        verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
+        verify(mqttMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
 
         assertEquals(1, persistedDeviceActorMessageProcessor.getInFlightPacketIds().size());
     }
@@ -315,7 +315,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
@@ -332,7 +332,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
@@ -353,7 +353,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().contains(1));
     }
@@ -391,7 +391,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         persistedDeviceActorMessageProcessor.processPacketReceived(new PacketReceivedEventMsg(1));
 
         verify(deviceMsgService).updatePacketReceived(eq(CLIENT_ID), eq(1));
-        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(mqttMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
@@ -410,7 +410,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         persistedDeviceActorMessageProcessor.processPacketReceived(new PacketReceivedEventMsg(1));
 
         verify(deviceMsgService).updatePacketReceived(eq(SS_TEST_KEY), eq(200));
-        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(mqttMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
@@ -539,7 +539,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));
         assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
 }
