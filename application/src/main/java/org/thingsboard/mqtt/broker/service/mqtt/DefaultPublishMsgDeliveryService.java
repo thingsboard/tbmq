@@ -28,9 +28,8 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.BufferedMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
-import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasResult;
@@ -39,7 +38,6 @@ import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
@@ -49,9 +47,9 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryService {
 
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final DeliveryTimerStats deliveryTimerStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final BufferedMsgDeliveryService bufferedMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -59,13 +57,13 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private int minTopicNameLengthForAliasReplacement;
 
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
-                                            StatsManager statsManager,
                                             TbMessageStatsReportClient tbMessageStatsReportClient,
-                                            BufferedMsgDeliveryService bufferedMsgDeliveryService) {
+                                            BufferedMsgDeliveryService bufferedMsgDeliveryService,
+                                            MqttMsgDeliveryService mqttMsgDeliveryService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
-        this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.bufferedMsgDeliveryService = bufferedMsgDeliveryService;
+        this.mqttMsgDeliveryService = mqttMsgDeliveryService;
     }
 
     @Override
@@ -126,7 +124,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
-        doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
+        mqttMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -136,7 +134,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
-        doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -153,32 +151,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             log.trace("[{}] Executing sendPubRelMsgToClientWithoutFlush {}", sessionCtx.getClientId(), packetId);
         }
         processSendPubRel(sessionCtx, packetId, msg -> sessionCtx.getChannel().write(msg));
-    }
-
-    @Override
-    public void doSendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
-        processSendPublish(sessionCtx, mqttPubMsg, msg -> sessionCtx.getChannel().writeAndFlush(msg));
-    }
-
-    @Override
-    public void doSendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
-        processSendPublish(sessionCtx, mqttPubMsg, msg -> sessionCtx.getChannel().write(msg));
-    }
-
-    private void processSendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, Consumer<MqttPublishMessage> processor) {
-        try {
-            boolean added = sessionCtx.addInFlightMsg(mqttPubMsg);
-            if (added) {
-                long startTime = System.nanoTime();
-                processor.accept(mqttPubMsg);
-                deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
-            }
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
-            if (!mqttPubMsg.fixedHeader().isRetain()) {
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
-            }
-        }
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {

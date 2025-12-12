@@ -27,10 +27,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
@@ -44,9 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryService {
 
-    // @Lazy introduces a proxy, which has a slight runtime cost on method access.
-    // In performance-sensitive code, it's better to initialize eagerly or restructure dependencies
-    private final @Lazy PublishMsgDeliveryService publishMsgDeliveryService;
+    private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final BufferedMsgDeliverySettings settings;
 
     @Value("${mqtt.write-and-flush:true}")
@@ -100,7 +96,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
     private void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, boolean writeAndFlush, int bufferedMsgCount) {
         if (writeAndFlush) {
-            publishMsgDeliveryService.doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
+            mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
             return;
         }
 
@@ -109,11 +105,11 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
             state = cache.get(sessionCtx.getSessionId(), () -> newSessionState(sessionCtx));
         } catch (ExecutionException e) {
             log.warn("[{}] Unexpected exception while loading SessionFlushState", sessionCtx.getClientId(), e);
-            publishMsgDeliveryService.doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
+            mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, mqttPubMsg);
             return;
         }
 
-        publishMsgDeliveryService.doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
+        mqttMsgDeliveryService.sendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
         if (isFlushNeeded(state, bufferedMsgCount)) {
             doFlush(state, System.currentTimeMillis());
         }
