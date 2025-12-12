@@ -39,7 +39,6 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -49,6 +48,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
+import org.thingsboard.mqtt.broker.common.util.CachedValue;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;
@@ -67,6 +67,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -74,31 +75,46 @@ import java.util.stream.Collectors;
 @Component
 public class TbKafkaAdmin implements TbQueueAdmin {
 
-    @Value("${queue.kafka.enable-topic-deletion:true}")
-    private boolean enableTopicDeletion;
-    @Value("${queue.kafka.kafka-prefix:}")
-    private String kafkaPrefix;
-    @Value("${queue.kafka.admin.command-timeout:30}")
-    private int kafkaAdminCommandTimeout;
-
+    private final TbKafkaAdminSettings adminSettings;
     private final Admin client;
-    private final Set<String> topics = ConcurrentHashMap.newKeySet();
+    private final CachedValue<Set<String>> topics;
     private final Consumer<String, byte[]> consumer;
     private final Duration timeoutDuration;
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
-        client = Admin.create(adminSettings.toProps());
-        try {
-            topics.addAll(client.listTopics().names().get());
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to get all topics.", e);
-        }
+        this.adminSettings = adminSettings;
+        this.client = Admin.create(adminSettings.toProps());
+        this.topics = new CachedValue<>(() -> {
+            Set<String> topics = ConcurrentHashMap.newKeySet();
+            topics.addAll(listTopics());
+            return topics;
+        }, adminSettings.getTopicsCacheTtlMs());
         this.consumer = createConsumer(consumerSettings, homePageConsumerKafkaSettings);
         this.timeoutDuration = Duration.ofMillis(homePageConsumerKafkaSettings.getKafkaResponseTimeoutMs());
     }
 
+    private Set<String> listTopics() {
+        try {
+            Set<String> topics = client.listTopics().names().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
+            log.trace("Listed topics: {}", topics);
+            return topics;
+        } catch (Exception e) {
+            log.error("Failed to get all topics.", e);
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<String> getTopics() {
+        return topics.get();
+    }
+
+    private void invalidateTopics() {
+        topics.invalidate();
+    }
+
     private Consumer<String, byte[]> createConsumer(TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         Properties consumerProps = consumerSettings.toProps("kafka_admin_home_page", homePageConsumerKafkaSettings.getConsumerProperties());
+        var kafkaPrefix = adminSettings.getKafkaPrefix();
         consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "home-page-client");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "home-page-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
@@ -108,7 +124,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopicIfNotExists(String topic, Map<String, String> topicConfigs) {
-        if (!topics.contains(topic)) {
+        if (!getTopics().contains(topic)) {
             createTopic(topic, topicConfigs);
         }
     }
@@ -120,11 +136,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         log.trace("Topic configs - {}.", configs);
         try {
             NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(configs), extractReplicationFactor(configs)).configs(configs);
-            client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
-            topics.add(topic);
+            client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
+            invalidateTopics();
         } catch (ExecutionException ee) {
             if (ee.getCause() instanceof TopicExistsException) {
-                topics.add(topic);
+                //do nothing
             } else {
                 log.warn("[{}] Failed to create topic", topic, ee);
                 throw new RuntimeException(ee);
@@ -139,7 +155,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void deleteTopic(String topic, BasicCallback callback) {
-        if (!enableTopicDeletion) {
+        if (!adminSettings.isEnableTopicDeletion()) {
             log.debug("Ignoring deletion of topic {}", topic);
             return;
         }
@@ -147,14 +163,12 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         result.all().whenComplete((unused, throwable) -> {
             if (throwable == null) {
+                invalidateTopics();
                 callback.onSuccess();
             } else {
                 callback.onFailure(throwable);
             }
         });
-        if (result.topicNameValues().containsKey(topic)) {
-            topics.remove(topic);
-        }
     }
 
     @Override
@@ -168,27 +182,32 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException {
+    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException, TimeoutException {
         log.trace("Executing deleteConsumerGroup {}", groupId);
         doDeleteConsumerGroups(List.of(groupId));
     }
 
-    private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException {
-        client.deleteConsumerGroups(consumerGroups).all().get();
+    private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException, TimeoutException {
+        client.deleteConsumerGroups(consumerGroups).all().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
     }
 
     @Override
     public int getNumberOfPartitions(String topic) {
         try {
-            return client.describeTopics(Collections.singletonList(topic)).allTopicNames().get().get(topic).partitions().size();
-        } catch (InterruptedException | ExecutionException e) {
+            return client.describeTopics(Collections.singletonList(topic))
+                    .allTopicNames()
+                    .get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS)
+                    .get(topic)
+                    .partitions()
+                    .size();
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
     public Collection<Node> getNodes() throws Exception {
-        return client.describeCluster().nodes().get(kafkaAdminCommandTimeout, TimeUnit.SECONDS);
+        return client.describeCluster().nodes().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -223,7 +242,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         try {
             Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
-            Set<String> topics = client.listTopics().names().get().stream().filter(topic -> topic.startsWith(kafkaPrefix)).collect(Collectors.toSet());
+            Set<String> topics = client.listTopics().names().get().stream().filter(topic -> topic.startsWith(adminSettings.getKafkaPrefix())).collect(Collectors.toSet());
             Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).allTopicNames().get();
 
             for (Map.Entry<String, TopicDescription> topicDescriptionEntry : topicDescriptionsMap.entrySet()) {
@@ -291,7 +310,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         try {
             List<KafkaConsumerGroup> kafkaConsumerGroups = client.listConsumerGroups().all().get()
                     .stream()
-                    .filter(consumerGroupListing -> consumerGroupListing.groupId().startsWith(kafkaPrefix))
+                    .filter(consumerGroupListing -> consumerGroupListing.groupId().startsWith(adminSettings.getKafkaPrefix()))
                     .map(consumerGroupListing -> {
                         KafkaConsumerGroup kafkaConsumerGroup = new KafkaConsumerGroup();
                         kafkaConsumerGroup.setGroupId(consumerGroupListing.groupId());
@@ -437,6 +456,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     private String getPrefix(String consumerGroupPrefix) {
+        var kafkaPrefix = adminSettings.getKafkaPrefix();
         return kafkaPrefix != null ? kafkaPrefix + consumerGroupPrefix : consumerGroupPrefix;
     }
 

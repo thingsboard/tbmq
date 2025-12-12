@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public interface TbQueueAdmin {
 
@@ -38,7 +39,7 @@ public interface TbQueueAdmin {
 
     void deleteConsumerGroups(Collection<String> consumerGroups);
 
-    void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException;
+    void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException, TimeoutException;
 
     int getNumberOfPartitions(String topic);
 
