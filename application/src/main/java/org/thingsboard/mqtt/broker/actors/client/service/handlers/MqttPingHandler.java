@@ -15,23 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MqttPingHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Received PING msg.", ctx.getClientId(), ctx.getSessionId());
-        }
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 

@@ -40,8 +40,6 @@ public class MqttHandlerCtx {
 
     @Value("${mqtt.max-in-flight-msgs:1000}")
     private int maxInFlightMsgs;
-    @Value("${mqtt.retransmission.enabled:false}")
-    private boolean retransmissionEnabled;
 
     private volatile MqttClientAuthType clientAuthType = MqttClientAuthType.CLIENT_AUTH_REQUESTED;
 

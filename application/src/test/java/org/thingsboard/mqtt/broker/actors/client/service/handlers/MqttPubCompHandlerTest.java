@@ -21,7 +21,6 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
-import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.Mockito.mock;
@@ -33,14 +32,12 @@ import static org.mockito.Mockito.verify;
 public class MqttPubCompHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
-    RetransmissionService retransmissionService;
     MqttPubCompHandler mqttPubCompHandler;
 
     @Before
     public void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
-        retransmissionService = mock(RetransmissionService.class);
-        mqttPubCompHandler = spy(new MqttPubCompHandler(msgPersistenceManager, retransmissionService));
+        mqttPubCompHandler = spy(new MqttPubCompHandler(msgPersistenceManager));
     }
 
     @Test
@@ -49,7 +46,6 @@ public class MqttPubCompHandlerTest {
         ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(1).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubComp(ctx, 1);
-        verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);
     }
 
     @Test
@@ -57,6 +53,5 @@ public class MqttPubCompHandlerTest {
         ClientSessionCtx ctx = new ClientSessionCtx();
         ctx.setSessionInfo(SessionInfo.builder().cleanStart(true).sessionExpiryInterval(0).build());
         mqttPubCompHandler.process(ctx, 1);
-        verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);
     }
 }

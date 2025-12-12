@@ -15,13 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.stereotype.Component;
 
 @Component
-@AllArgsConstructor
-@Getter
+@Data
 public class MqttMessageHandlers {
 
     private final MqttSubscribeHandler subscribeHandler;

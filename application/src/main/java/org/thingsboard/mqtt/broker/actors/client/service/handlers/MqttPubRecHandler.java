@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MqttPubRecHandler {
 
@@ -35,9 +35,6 @@ public class MqttPubRecHandler {
 
     public void process(ClientSessionCtx ctx, MqttPubRecMsg msg) throws MqttException {
         int messageId = msg.getMessageId();
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
-        }
 
         if (reasonCodeFailure(msg)) {
             ctx.ackInFlightMsg(messageId);
