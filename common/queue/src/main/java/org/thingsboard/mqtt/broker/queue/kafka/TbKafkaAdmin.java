@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka;
 
+import com.google.common.collect.Maps;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
@@ -25,6 +26,7 @@ import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
+import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsSpec;
 import org.apache.kafka.clients.admin.ListConsumerGroupsOptions;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.LogDirDescription;
@@ -78,6 +80,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class TbKafkaAdmin implements TbQueueAdmin {
+
+    private static final int LIST_OFFSETS_BATCH_SIZE = 1000;
 
     private final TbKafkaAdminSettings adminSettings;
     private final Admin client;
@@ -520,12 +524,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     }
                     return groups;
                 })
-                .thenCompose(groups ->
-                        CompletableFuture.allOf(groups.stream()
-                                        .map(this::fillLagAsyncUsingAdmin)
-                                        .toArray(CompletableFuture[]::new))
-                                .thenApply(__ -> groups)
-                )
+                .thenCompose(groups -> fillLagBatchAsyncUsingAdmin(groups).thenApply(__ -> groups))
                 .thenApply(groups -> {
                     if (pageLink.getTextSearch() != null) {
                         String q = pageLink.getTextSearch().toLowerCase();
@@ -549,33 +548,76 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 });
     }
 
-    private CompletableFuture<Void> fillLagAsyncUsingAdmin(KafkaConsumerGroup group) {
-        CompletableFuture<Map<TopicPartition, OffsetAndMetadata>> committedFut =
-                toCompletable(client.listConsumerGroupOffsets(group.getGroupId()).partitionsToOffsetAndMetadata());
+    private CompletableFuture<Void> fillLagBatchAsyncUsingAdmin(List<KafkaConsumerGroup> groups) {
+        if (groups.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
 
-        return committedFut.thenCompose(committed -> {
-            if (committed.isEmpty()) {
-                group.setLag(0L);
+        Map<String, KafkaConsumerGroup> byId = groups.stream()
+                .collect(Collectors.toMap(KafkaConsumerGroup::getGroupId, g -> g));
+
+        Map<String, ListConsumerGroupOffsetsSpec> req = groups.stream()
+                .map(KafkaConsumerGroup::getGroupId)
+                .distinct()
+                .collect(Collectors.toMap(Function.identity(), __ -> new ListConsumerGroupOffsetsSpec()));
+
+        CompletableFuture<Map<String, Map<TopicPartition, OffsetAndMetadata>>> committedByGroupFut =
+                toCompletable(client.listConsumerGroupOffsets(req).all());
+
+        return committedByGroupFut.thenCompose(committedByGroup -> {
+            groups.forEach(g -> g.setLag(0L));
+
+            Set<TopicPartition> allTps = committedByGroup.values().stream()
+                    .flatMap(m -> m.keySet().stream())
+                    .collect(Collectors.toSet());
+
+            if (allTps.isEmpty()) {
                 return CompletableFuture.completedFuture(null);
             }
 
-            Map<TopicPartition, OffsetSpec> latestReq = committed.keySet().stream()
-                    .collect(Collectors.toMap(tp -> tp, tp -> OffsetSpec.latest()));
-
-            ListOffsetsResult endOffsetsRes = client.listOffsets(latestReq);
-            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> endFut =
-                    toCompletable(endOffsetsRes.all());
-
-            return endFut.thenAccept(endOffsetsInfo -> {
-                long lag = 0L;
-                for (Map.Entry<TopicPartition, OffsetAndMetadata> e : committed.entrySet()) {
-                    long committedOffset = e.getValue().offset();
-                    long endOffset = endOffsetsInfo.get(e.getKey()).offset();
-                    lag += (endOffset - committedOffset);
-                }
-                group.setLag(lag);
-            });
+            return fetchEndOffsetsBatched(allTps)
+                    .thenAccept(endOffsets -> {
+                        committedByGroup.forEach((groupId, committed) -> {
+                            long lag = 0L;
+                            for (Map.Entry<TopicPartition, OffsetAndMetadata> e : committed.entrySet()) {
+                                Long endOffset = endOffsets.get(e.getKey());
+                                if (endOffset == null) {
+                                    continue;
+                                }
+                                long diff = endOffset - e.getValue().offset();
+                                if (diff > 0) {
+                                    lag += diff;
+                                }
+                            }
+                            KafkaConsumerGroup g = byId.get(groupId);
+                            if (g != null) {
+                                g.setLag(lag);
+                            }
+                        });
+                    });
         });
+    }
+
+    private CompletableFuture<Map<TopicPartition, Long>> fetchEndOffsetsBatched(Set<TopicPartition> tps) {
+        List<TopicPartition> list = new ArrayList<>(tps);
+        List<CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>>> futures = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += LIST_OFFSETS_BATCH_SIZE) {
+            List<TopicPartition> batch = list.subList(i, Math.min(i + LIST_OFFSETS_BATCH_SIZE, list.size()));
+            Map<TopicPartition, OffsetSpec> latestReq = batch.stream()
+                    .collect(Collectors.toMap(Function.identity(), __ -> OffsetSpec.latest()));
+            futures.add(toCompletable(client.listOffsets(latestReq).all()));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                .thenApply(__ -> {
+                    Map<TopicPartition, Long> endOffsets = Maps.newHashMapWithExpectedSize(tps.size());
+                    for (CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> f : futures) {
+                        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> part = f.join();
+                        part.forEach((tp, info) -> endOffsets.put(tp, info.offset()));
+                    }
+                    return endOffsets;
+                });
     }
 
     private static <T> CompletableFuture<T> toCompletable(KafkaFuture<T> kafkaFuture) {
