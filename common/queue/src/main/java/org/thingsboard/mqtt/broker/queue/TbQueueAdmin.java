@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -45,11 +46,20 @@ public interface TbQueueAdmin {
 
     Collection<Node> getNodes() throws Exception;
 
+    @Deprecated(forRemoval = true, since = "2.3")
     PageData<KafkaBroker> getClusterInfo();
 
+    CompletableFuture<PageData<KafkaBroker>> getClusterInfoAsync();
+
+    @Deprecated(forRemoval = true, since = "2.3")
     PageData<KafkaTopic> getTopics(PageLink pageLink);
 
+    CompletableFuture<PageData<KafkaTopic>> getTopicsAsync(PageLink pageLink);
+
+    @Deprecated(forRemoval = true, since = "2.3")
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
+
+    CompletableFuture<PageData<KafkaConsumerGroup>> getConsumerGroupsAsync(PageLink pageLink);
 
     void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix);
 
