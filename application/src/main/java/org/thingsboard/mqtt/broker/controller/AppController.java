@@ -41,6 +41,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @RestController
 @RequiredArgsConstructor
@@ -65,6 +67,19 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/cluster-info/v2")
+    public CompletableFuture<PageData<KafkaBroker>> getKafkaClusterInfoV2() {
+        return tbQueueAdmin.getClusterInfoAsync()
+                .thenApply(res -> {
+                    try {
+                        return checkNotNull(res);
+                    } catch (ThingsboardException e) {
+                        throw new CompletionException(e);
+                    }
+                });
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/kafka-topics", params = {"pageSize", "page"})
     public PageData<KafkaTopic> getKafkaTopics(@RequestParam int pageSize,
                                                @RequestParam int page,
@@ -76,6 +91,24 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/kafka-topics/v2", params = {"pageSize", "page"})
+    public CompletableFuture<PageData<KafkaTopic>> getKafkaTopicsV2(@RequestParam int pageSize,
+                                                                    @RequestParam int page,
+                                                                    @RequestParam(required = false) String textSearch,
+                                                                    @RequestParam(required = false) String sortProperty,
+                                                                    @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return tbQueueAdmin.getTopicsAsync(pageLink)
+                .thenApply(res -> {
+                    try {
+                        return checkNotNull(res);
+                    } catch (ThingsboardException e) {
+                        throw new CompletionException(e);
+                    }
+                });
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/consumer-groups", params = {"pageSize", "page"})
     public PageData<KafkaConsumerGroup> getKafkaConsumerGroups(@RequestParam int pageSize,
                                                                @RequestParam int page,
@@ -84,6 +117,24 @@ public class AppController extends BaseController {
                                                                @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
         return checkNotNull(tbQueueAdmin.getConsumerGroups(pageLink));
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/consumer-groups/v2", params = {"pageSize", "page"})
+    public CompletableFuture<PageData<KafkaConsumerGroup>> getKafkaConsumerGroupsV2(@RequestParam int pageSize,
+                                                                                    @RequestParam int page,
+                                                                                    @RequestParam(required = false) String textSearch,
+                                                                                    @RequestParam(required = false) String sortProperty,
+                                                                                    @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return tbQueueAdmin.getConsumerGroupsAsync(pageLink)
+                .thenApply(res -> {
+                    try {
+                        return checkNotNull(res);
+                    } catch (ThingsboardException e) {
+                        throw new CompletionException(e);
+                    }
+                });
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,14 +25,27 @@ import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 import java.util.Properties;
 
 @Setter
+@Getter
 @Component
 public class TbKafkaAdminSettings {
 
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
+    @Value("${queue.kafka.enable-topic-deletion:true}")
+    private boolean enableTopicDeletion;
+
     @Value("${queue.kafka.admin.config:#{null}}")
     private String config;
+
+    @Value("${queue.kafka.admin.command-timeout:30}")
+    private int kafkaAdminCommandTimeout;
+
+    @Value("${queue.kafka.admin.topics-cache-ttl-ms:300000}")
+    private int topicsCacheTtlMs;
+
+    @Value("${queue.kafka.kafka-prefix:}")
+    private String kafkaPrefix;
 
     public Properties toProps() {
         Properties props = new Properties();

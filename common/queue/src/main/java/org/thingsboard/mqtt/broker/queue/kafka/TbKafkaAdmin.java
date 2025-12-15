@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka;
 
+import com.google.common.collect.Maps;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
@@ -25,9 +26,12 @@ import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
+import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsSpec;
 import org.apache.kafka.clients.admin.ListConsumerGroupsOptions;
+import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.admin.ReplicaInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -39,7 +43,6 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -49,6 +52,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
+import org.thingsboard.mqtt.broker.common.util.CachedValue;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;
@@ -64,9 +68,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -74,31 +81,48 @@ import java.util.stream.Collectors;
 @Component
 public class TbKafkaAdmin implements TbQueueAdmin {
 
-    @Value("${queue.kafka.enable-topic-deletion:true}")
-    private boolean enableTopicDeletion;
-    @Value("${queue.kafka.kafka-prefix:}")
-    private String kafkaPrefix;
-    @Value("${queue.kafka.admin.command-timeout:30}")
-    private int kafkaAdminCommandTimeout;
+    private static final int LIST_OFFSETS_BATCH_SIZE = 1000;
 
+    private final TbKafkaAdminSettings adminSettings;
     private final Admin client;
-    private final Set<String> topics = ConcurrentHashMap.newKeySet();
+    private final CachedValue<Set<String>> topics;
     private final Consumer<String, byte[]> consumer;
     private final Duration timeoutDuration;
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
-        client = Admin.create(adminSettings.toProps());
-        try {
-            topics.addAll(client.listTopics().names().get());
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to get all topics.", e);
-        }
+        this.adminSettings = adminSettings;
+        this.client = Admin.create(adminSettings.toProps());
+        this.topics = new CachedValue<>(() -> {
+            Set<String> topics = ConcurrentHashMap.newKeySet();
+            topics.addAll(listTopics());
+            return topics;
+        }, adminSettings.getTopicsCacheTtlMs());
         this.consumer = createConsumer(consumerSettings, homePageConsumerKafkaSettings);
         this.timeoutDuration = Duration.ofMillis(homePageConsumerKafkaSettings.getKafkaResponseTimeoutMs());
     }
 
+    private Set<String> listTopics() {
+        try {
+            Set<String> topics = client.listTopics().names().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
+            log.trace("Listed topics: {}", topics);
+            return topics;
+        } catch (Exception e) {
+            log.error("Failed to get all topics.", e);
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<String> getTopics() {
+        return topics.get();
+    }
+
+    private void invalidateTopics() {
+        topics.invalidate();
+    }
+
     private Consumer<String, byte[]> createConsumer(TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         Properties consumerProps = consumerSettings.toProps("kafka_admin_home_page", homePageConsumerKafkaSettings.getConsumerProperties());
+        var kafkaPrefix = adminSettings.getKafkaPrefix();
         consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "home-page-client");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "home-page-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
@@ -108,7 +132,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopicIfNotExists(String topic, Map<String, String> topicConfigs) {
-        if (!topics.contains(topic)) {
+        if (!getTopics().contains(topic)) {
             createTopic(topic, topicConfigs);
         }
     }
@@ -120,11 +144,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         log.trace("Topic configs - {}.", configs);
         try {
             NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(configs), extractReplicationFactor(configs)).configs(configs);
-            client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
-            topics.add(topic);
+            client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
+            invalidateTopics();
         } catch (ExecutionException ee) {
             if (ee.getCause() instanceof TopicExistsException) {
-                topics.add(topic);
+                invalidateTopics();
             } else {
                 log.warn("[{}] Failed to create topic", topic, ee);
                 throw new RuntimeException(ee);
@@ -139,7 +163,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void deleteTopic(String topic, BasicCallback callback) {
-        if (!enableTopicDeletion) {
+        if (!adminSettings.isEnableTopicDeletion()) {
             log.debug("Ignoring deletion of topic {}", topic);
             return;
         }
@@ -147,14 +171,12 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         result.all().whenComplete((unused, throwable) -> {
             if (throwable == null) {
+                invalidateTopics();
                 callback.onSuccess();
             } else {
                 callback.onFailure(throwable);
             }
         });
-        if (result.topicNameValues().containsKey(topic)) {
-            topics.remove(topic);
-        }
     }
 
     @Override
@@ -168,27 +190,32 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException {
+    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException, TimeoutException {
         log.trace("Executing deleteConsumerGroup {}", groupId);
         doDeleteConsumerGroups(List.of(groupId));
     }
 
-    private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException {
-        client.deleteConsumerGroups(consumerGroups).all().get();
+    private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException, TimeoutException {
+        client.deleteConsumerGroups(consumerGroups).all().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
     }
 
     @Override
     public int getNumberOfPartitions(String topic) {
         try {
-            return client.describeTopics(Collections.singletonList(topic)).allTopicNames().get().get(topic).partitions().size();
-        } catch (InterruptedException | ExecutionException e) {
+            return client.describeTopics(Collections.singletonList(topic))
+                    .allTopicNames()
+                    .get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS)
+                    .get(topic)
+                    .partitions()
+                    .size();
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
     public Collection<Node> getNodes() throws Exception {
-        return client.describeCluster().nodes().get(kafkaAdminCommandTimeout, TimeUnit.SECONDS);
+        return client.describeCluster().nodes().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -219,11 +246,53 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
+    public CompletableFuture<PageData<KafkaBroker>> getClusterInfoAsync() {
+        DescribeClusterResult cluster = client.describeCluster();
+
+        KafkaFuture<Collection<Node>> nodesFut = cluster.nodes();
+        return toCompletable(nodesFut)
+                .thenCompose(nodes -> {
+                    Map<Integer, Node> brokerNodes = nodes.stream()
+                            .collect(Collectors.toMap(Node::id, Function.identity()));
+
+                    DescribeLogDirsResult logDirs = client.describeLogDirs(brokerNodes.keySet());
+                    KafkaFuture<Map<Integer, Map<String, LogDirDescription>>> logDirsFut =
+                            logDirs.allDescriptions();
+
+                    return toCompletable(logDirsFut)
+                            .thenApply(logDirDescriptionsPerBroker -> {
+                                List<KafkaBroker> kafkaBrokers = new ArrayList<>();
+
+                                for (var entry : logDirDescriptionsPerBroker.entrySet()) {
+                                    int brokerId = entry.getKey();
+
+                                    long brokerTotalSize = 0L;
+                                    for (LogDirDescription logDirDescription : entry.getValue().values()) {
+                                        for (ReplicaInfo replicaInfo : logDirDescription.replicaInfos().values()) {
+                                            brokerTotalSize += replicaInfo.size();
+                                        }
+                                    }
+
+                                    Node node = brokerNodes.get(brokerId);
+                                    kafkaBrokers.add(new KafkaBroker(brokerId, node.host(), brokerTotalSize));
+                                }
+
+                                return new PageData<>(kafkaBrokers, 1, kafkaBrokers.size(), false);
+                            });
+                })
+                .exceptionally(ex -> {
+                    Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
+                    log.warn("Failed to get Kafka cluster info", cause);
+                    throw new CompletionException(cause);
+                });
+    }
+
+    @Override
     public PageData<KafkaTopic> getTopics(PageLink pageLink) {
         try {
             Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
-            Set<String> topics = client.listTopics().names().get().stream().filter(topic -> topic.startsWith(kafkaPrefix)).collect(Collectors.toSet());
+            Set<String> topics = client.listTopics().names().get().stream().filter(topic -> topic.startsWith(adminSettings.getKafkaPrefix())).collect(Collectors.toSet());
             Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).allTopicNames().get();
 
             for (Map.Entry<String, TopicDescription> topicDescriptionEntry : topicDescriptionsMap.entrySet()) {
@@ -287,11 +356,94 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
+    public CompletableFuture<PageData<KafkaTopic>> getTopicsAsync(PageLink pageLink) {
+        String kafkaPrefix = adminSettings.getKafkaPrefix();
+
+        CompletableFuture<Set<String>> topicNamesFut =
+                toCompletable(client.listTopics().names())
+                        .thenApply(allTopics -> allTopics.stream()
+                                .filter(t -> t.startsWith(kafkaPrefix))
+                                .collect(Collectors.toSet()));
+
+        CompletableFuture<Map<String, TopicDescription>> topicDescriptionsFut =
+                topicNamesFut.thenCompose(topicNames -> {
+                    if (topicNames.isEmpty()) {
+                        return CompletableFuture.completedFuture(Collections.emptyMap());
+                    }
+                    return toCompletable(client.describeTopics(topicNames).allTopicNames());
+                });
+
+        CompletableFuture<Map<String, Long>> topicSizesFut =
+                toCompletable(client.describeCluster().nodes())
+                        .thenCompose(nodes -> {
+                            Map<Integer, Node> brokerNodes = nodes.stream()
+                                    .collect(Collectors.toMap(Node::id, Function.identity()));
+                            if (brokerNodes.isEmpty()) {
+                                return CompletableFuture.completedFuture(Collections.emptyMap());
+                            }
+                            DescribeLogDirsResult logDirs = client.describeLogDirs(brokerNodes.keySet());
+                            return toCompletable(logDirs.allDescriptions());
+                        })
+                        .thenApply(logDirDescriptionsPerBroker -> {
+                            Map<String, Long> sizes = new HashMap<>();
+
+                            for (Map<String, LogDirDescription> perDisk : logDirDescriptionsPerBroker.values()) {
+                                for (LogDirDescription logDirDescription : perDisk.values()) {
+                                    for (Map.Entry<TopicPartition, ReplicaInfo> e : logDirDescription.replicaInfos().entrySet()) {
+                                        String topic = e.getKey().topic();
+                                        long size = e.getValue().size();
+                                        sizes.merge(topic, size, Long::sum);
+                                    }
+                                }
+                            }
+                            return sizes;
+                        });
+
+        return topicDescriptionsFut.thenCombine(topicSizesFut, (topicDescriptions, topicSizes) -> {
+                    Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
+
+                    for (Map.Entry<String, TopicDescription> entry : topicDescriptions.entrySet()) {
+                        kafkaTopicsMap.put(entry.getKey(), createKafkaTopic(entry.getKey(), entry.getValue()));
+                    }
+
+                    for (Map.Entry<String, Long> sizeEntry : topicSizes.entrySet()) {
+                        KafkaTopic kafkaTopic = kafkaTopicsMap.get(sizeEntry.getKey());
+                        if (kafkaTopic != null) {
+                            kafkaTopic.setSize(sizeEntry.getValue());
+                        }
+                    }
+
+                    List<KafkaTopic> kafkaTopics;
+                    if (pageLink.getTextSearch() != null) {
+                        String q = pageLink.getTextSearch().toLowerCase();
+                        kafkaTopics = kafkaTopicsMap.values().stream()
+                                .filter(t -> t.getName().toLowerCase().contains(q))
+                                .collect(Collectors.toList());
+                    } else {
+                        kafkaTopics = new ArrayList<>(kafkaTopicsMap.values());
+                    }
+
+                    List<KafkaTopic> data = kafkaTopics.stream()
+                            .sorted(KafkaTopic.sorted(pageLink))
+                            .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                            .limit(pageLink.getPageSize())
+                            .collect(Collectors.toList());
+
+                    return PageData.of(data, kafkaTopics.size(), pageLink);
+                })
+                .exceptionally(ex -> {
+                    Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
+                    log.warn("Failed to get Kafka topic infos", cause);
+                    throw new CompletionException(cause);
+                });
+    }
+
+    @Override
     public PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink) {
         try {
             List<KafkaConsumerGroup> kafkaConsumerGroups = client.listConsumerGroups().all().get()
                     .stream()
-                    .filter(consumerGroupListing -> consumerGroupListing.groupId().startsWith(kafkaPrefix))
+                    .filter(consumerGroupListing -> consumerGroupListing.groupId().startsWith(adminSettings.getKafkaPrefix()))
                     .map(consumerGroupListing -> {
                         KafkaConsumerGroup kafkaConsumerGroup = new KafkaConsumerGroup();
                         kafkaConsumerGroup.setGroupId(consumerGroupListing.groupId());
@@ -335,6 +487,149 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             log.warn("Failed to get Kafka consumer groups", e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public CompletableFuture<PageData<KafkaConsumerGroup>> getConsumerGroupsAsync(PageLink pageLink) {
+        String kafkaPrefix = adminSettings.getKafkaPrefix();
+
+        CompletableFuture<List<KafkaConsumerGroup>> groupsFut =
+                toCompletable(client.listConsumerGroups().all())
+                        .thenApply(listings -> listings.stream()
+                                .filter(cg -> cg.groupId().startsWith(kafkaPrefix))
+                                .map(cg -> {
+                                    KafkaConsumerGroup g = new KafkaConsumerGroup();
+                                    g.setGroupId(cg.groupId());
+                                    g.setState(getKafkaConsumerGroupState(cg));
+                                    return g;
+                                })
+                                .collect(Collectors.toList()));
+
+        CompletableFuture<Map<String, ConsumerGroupDescription>> descFut =
+                groupsFut.thenCompose(groups -> {
+                    List<String> groupIds = groups.stream().map(KafkaConsumerGroup::getGroupId).toList();
+                    if (groupIds.isEmpty()) {
+                        return CompletableFuture.completedFuture(Collections.emptyMap());
+                    }
+                    DescribeConsumerGroupsResult res = client.describeConsumerGroups(groupIds);
+                    return toCompletable(res.all());
+                });
+
+        return groupsFut.thenCombine(descFut, (groups, descriptions) -> {
+                    for (KafkaConsumerGroup g : groups) {
+                        ConsumerGroupDescription d = descriptions.get(g.getGroupId());
+                        if (d != null) {
+                            g.setMembers(d.members().size());
+                        }
+                    }
+                    return groups;
+                })
+                .thenCompose(groups -> fillLagBatchAsyncUsingAdmin(groups).thenApply(__ -> groups))
+                .thenApply(groups -> {
+                    if (pageLink.getTextSearch() != null) {
+                        String q = pageLink.getTextSearch().toLowerCase();
+                        groups = groups.stream()
+                                .filter(g -> g.getGroupId().toLowerCase().contains(q))
+                                .toList();
+                    }
+
+                    List<KafkaConsumerGroup> data = groups.stream()
+                            .sorted(KafkaConsumerGroup.sorted(pageLink))
+                            .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                            .limit(pageLink.getPageSize())
+                            .collect(Collectors.toList());
+
+                    return PageData.of(data, groups.size(), pageLink);
+                })
+                .exceptionally(ex -> {
+                    Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
+                    log.warn("Failed to get Kafka consumer groups", cause);
+                    throw new CompletionException(cause);
+                });
+    }
+
+    private CompletableFuture<Void> fillLagBatchAsyncUsingAdmin(List<KafkaConsumerGroup> groups) {
+        if (groups.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        Map<String, KafkaConsumerGroup> byId = groups.stream()
+                .collect(Collectors.toMap(KafkaConsumerGroup::getGroupId, g -> g));
+
+        Map<String, ListConsumerGroupOffsetsSpec> req = groups.stream()
+                .map(KafkaConsumerGroup::getGroupId)
+                .distinct()
+                .collect(Collectors.toMap(Function.identity(), __ -> new ListConsumerGroupOffsetsSpec()));
+
+        CompletableFuture<Map<String, Map<TopicPartition, OffsetAndMetadata>>> committedByGroupFut =
+                toCompletable(client.listConsumerGroupOffsets(req).all());
+
+        return committedByGroupFut.thenCompose(committedByGroup -> {
+            groups.forEach(g -> g.setLag(0L));
+
+            Set<TopicPartition> allTps = committedByGroup.values().stream()
+                    .flatMap(m -> m.keySet().stream())
+                    .collect(Collectors.toSet());
+
+            if (allTps.isEmpty()) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            return fetchEndOffsetsBatched(allTps)
+                    .thenAccept(endOffsets -> {
+                        committedByGroup.forEach((groupId, committed) -> {
+                            long lag = 0L;
+                            for (Map.Entry<TopicPartition, OffsetAndMetadata> e : committed.entrySet()) {
+                                Long endOffset = endOffsets.get(e.getKey());
+                                if (endOffset == null) {
+                                    continue;
+                                }
+                                long diff = endOffset - e.getValue().offset();
+                                if (diff > 0) {
+                                    lag += diff;
+                                }
+                            }
+                            KafkaConsumerGroup g = byId.get(groupId);
+                            if (g != null) {
+                                g.setLag(lag);
+                            }
+                        });
+                    });
+        });
+    }
+
+    private CompletableFuture<Map<TopicPartition, Long>> fetchEndOffsetsBatched(Set<TopicPartition> tps) {
+        List<TopicPartition> list = new ArrayList<>(tps);
+        List<CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>>> futures = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += LIST_OFFSETS_BATCH_SIZE) {
+            List<TopicPartition> batch = list.subList(i, Math.min(i + LIST_OFFSETS_BATCH_SIZE, list.size()));
+            Map<TopicPartition, OffsetSpec> latestReq = batch.stream()
+                    .collect(Collectors.toMap(Function.identity(), __ -> OffsetSpec.latest()));
+            futures.add(toCompletable(client.listOffsets(latestReq).all()));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                .thenApply(__ -> {
+                    Map<TopicPartition, Long> endOffsets = Maps.newHashMapWithExpectedSize(tps.size());
+                    for (CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> f : futures) {
+                        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> part = f.join();
+                        part.forEach((tp, info) -> endOffsets.put(tp, info.offset()));
+                    }
+                    return endOffsets;
+                });
+    }
+
+    private static <T> CompletableFuture<T> toCompletable(KafkaFuture<T> kafkaFuture) {
+        CompletableFuture<T> cf = new CompletableFuture<>();
+        kafkaFuture.whenComplete((val, err) -> {
+            if (err != null) {
+                cf.completeExceptionally(err);
+            } else {
+                cf.complete(val);
+            }
+        });
+        return cf;
     }
 
     private KafkaConsumerGroupState getKafkaConsumerGroupState(ConsumerGroupListing consumerGroupListing) {
@@ -437,6 +732,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     private String getPrefix(String consumerGroupPrefix) {
+        var kafkaPrefix = adminSettings.getKafkaPrefix();
         return kafkaPrefix != null ? kafkaPrefix + consumerGroupPrefix : consumerGroupPrefix;
     }
 

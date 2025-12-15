@@ -86,6 +86,8 @@ queue:
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
       # Kafka Admin client command timeout (in seconds). Applies to operations like describeCluster, listTopics, etc
       command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
+      # Kafka topics cache TTL (in milliseconds). Defines how long the list of topics is kept in memory before reloading from Kafka. Default is 5 minutes
+      topics-cache-ttl-ms: "${TB_KAFKA_ADMIN_TOPICS_CACHE_TTL_MS:300000}"
     consumer-stats:
       # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
