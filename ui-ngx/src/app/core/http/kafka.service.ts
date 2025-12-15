@@ -33,15 +33,15 @@ export class KafkaService {
   }
 
   public getKafkaBrokers(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaBroker>> {
-    return this.http.get<PageData<KafkaBroker>>(`/api/app/cluster-info${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaBroker>>(`/api/app/cluster-info/v2${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getKafkaTopics(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaTopic>> {
-    return this.http.get<PageData<KafkaTopic>>(`/api/app/kafka-topics${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaTopic>>(`/api/app/kafka-topics/v2${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getKafkaConsumerGroups(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaConsumerGroup>> {
-    return this.http.get<PageData<KafkaConsumerGroup>>(`/api/app/consumer-groups${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaConsumerGroup>>(`/api/app/consumer-groups/v2${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteConsumerGroup(groupId: string, config?: RequestConfig) {
