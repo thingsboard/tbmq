@@ -129,16 +129,14 @@ export class TimeService {
   }
 
   public getSyncTimer(interval = MINUTE, offset = 5 * SECOND): Observable<number> {
-    if (!this.syncTimer$) {
-      const now = Date.now();
-      const msIntoMinute = now % interval;
-      const initialDelay = (offset - msIntoMinute + interval) % interval;
-      this.syncTimer$ = timer(initialDelay, interval)
-        .pipe(shareReplay({
-          bufferSize: 1,
-          refCount: true
-        }));
-    }
+    const now = Date.now();
+    const msIntoMinute = now % interval;
+    const initialDelay = (offset - msIntoMinute + interval) % interval;
+    this.syncTimer$ = timer(initialDelay, interval)
+      .pipe(shareReplay({
+        bufferSize: 1,
+        refCount: false
+      }));
     return this.syncTimer$;
   }
 

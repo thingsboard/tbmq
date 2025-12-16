@@ -106,7 +106,6 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   private fixedWindowTimeMs: FixedWindow;
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
-  private pollingStarted = false;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -220,18 +219,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           this.updateChartView();
         }
         if (fetchLatest && this.timewindow.selectedTab === TimewindowType.REALTIME) {
-          if (!this.pollingStarted) {
-            this.startPolling();
-          } else {
-            const latestTasks = this.getTimeseriesData(dataKeys, true);
-            forkJoin(latestTasks)
-              .pipe(takeUntil(this.stopPolling$))
-              .subscribe(latestData => {
-                this.prepareData(latestData as TimeseriesData[]);
-                this.pushLatestValue(dataKeys, latestData);
-                this.updateChartView();
-              });
-          }
+          this.startPolling();
         }
         this.checkMaxAllowedDataLength(data);
       });
@@ -295,18 +283,18 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private startPolling() {
-    this.pollingStarted = true;
     this.timeService.getSyncTimer()
       .pipe(
         switchMap(() => forkJoin(this.getTimeseriesData(this.visibleEntityIds(), true))),
         takeUntil(this.stopPolling$),
         share()
-      ).subscribe(data => {
-      this.addPollingIntervalToTimewindow();
-      this.prepareData(data as TimeseriesData[]);
-      this.pushLatestValue(this.visibleEntityIds(), data);
-      this.updateChartView();
-    });
+      )
+      .subscribe(data => {
+        this.addPollingIntervalToTimewindow();
+        this.prepareData(data as TimeseriesData[]);
+        this.pushLatestValue(this.visibleEntityIds(), data);
+        this.updateChartView();
+      });
   }
 
   private getLatestData(dataKey: string) {
@@ -367,7 +355,6 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   private stopPolling() {
     this.stopPolling$.next();
-    this.pollingStarted = false;
   }
 
   private updateChart() {
