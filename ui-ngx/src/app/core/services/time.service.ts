@@ -135,7 +135,7 @@ export class TimeService {
     this.syncTimer$ = timer(initialDelay, interval)
       .pipe(shareReplay({
         bufferSize: 1,
-        refCount: false
+        refCount: true
       }));
     return this.syncTimer$;
   }
