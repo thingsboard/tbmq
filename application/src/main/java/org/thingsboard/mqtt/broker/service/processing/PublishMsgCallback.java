@@ -19,5 +19,11 @@ public interface PublishMsgCallback {
 
     void onSuccess();
 
+    default void onBatchSuccess(int totalCount) {
+        for (int i = 0; i < totalCount; i++) {
+            onSuccess();
+        }
+    }
+
     void onFailure(Throwable t);
 }

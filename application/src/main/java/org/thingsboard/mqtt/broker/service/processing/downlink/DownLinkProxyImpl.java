@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,24 +32,10 @@ import static org.thingsboard.mqtt.broker.adaptor.ProtoConverter.updatePublishMs
 @RequiredArgsConstructor
 public class DownLinkProxyImpl implements DownLinkProxy {
 
-    @Getter
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkQueuePublisher queuePublisher;
     private final BasicDownLinkProcessor basicDownLinkProcessor;
     private final PersistentDownLinkProcessor persistentDownLinkProcessor;
-
-    /**
-     * This method will almost never be executed since it is called when Redis was
-     * not reachable to persist Device messages before delivery to client
-     */
-    @Override
-    public void sendBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
-        if (belongsToThisNode(targetServiceId)) {
-            basicDownLinkProcessor.process(clientId, msg);
-        } else {
-            queuePublisher.publishBasicMsg(targetServiceId, clientId, msg);
-        }
-    }
 
     @Override
     public void sendBasicMsg(Subscription subscription, PublishMsgProto msg) {
@@ -62,7 +47,8 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     @Override
-    public void sendPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg) {
+    public void sendPersistentMsg(String targetServiceId, DevicePublishMsg devicePublishMsg) {
+        var clientId = devicePublishMsg.getClientId();
         if (belongsToThisNode(targetServiceId)) {
             persistentDownLinkProcessor.process(clientId, devicePublishMsg);
         } else {
@@ -70,8 +56,13 @@ public class DownLinkProxyImpl implements DownLinkProxy {
         }
     }
 
+    @Override
+    public String getServiceId() {
+        return serviceInfoProvider.getServiceId();
+    }
+
     private boolean belongsToThisNode(String targetServiceId) {
-        return serviceInfoProvider.getServiceId().equals(targetServiceId);
+        return getServiceId().equals(targetServiceId);
     }
 
 }

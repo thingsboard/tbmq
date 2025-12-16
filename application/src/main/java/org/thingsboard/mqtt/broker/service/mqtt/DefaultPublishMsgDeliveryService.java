@@ -44,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 
 @Slf4j
 @Service
@@ -80,8 +79,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg, isDup);
-        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
-        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQos());
         bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(sessionCtx, mqttPubMsg);
     }
 
@@ -123,8 +120,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
 
-        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
-        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), qos);
         bufferedMsgDeliveryService.sendPublishMsgToRegularClient(sessionCtx, mqttPubMsg);
     }
 
@@ -135,8 +130,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
-        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
-        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQos());
         doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
     }
 
@@ -147,8 +140,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
-        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
-        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), retainedMsg.getQos());
         doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
@@ -179,21 +170,19 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     private void processSendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, Consumer<MqttPublishMessage> processor) {
-        long startTime = System.nanoTime();
         try {
             boolean added = sessionCtx.addInFlightMsg(mqttPubMsg);
             if (added) {
+                long startTime = System.nanoTime();
                 processor.accept(mqttPubMsg);
+                deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
             }
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client.",
-                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             if (!mqttPubMsg.fixedHeader().isRetain()) {
                 tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
             }
-            throw e;
         }
-        deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {
@@ -202,9 +191,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         try {
             processor.accept(mqttPubRelMsg);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client.",
-                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
-            throw e;
+            log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
         }
     }
 
