@@ -341,6 +341,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
             this.chart.data.datasets[0].data.unshift(latestValue);
+            this.chart.data.datasets[0].data.pop();
           }
         }
       } else {
@@ -351,6 +352,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
             this.chart.data.datasets[datasetIndex].data.unshift(latestValue);
+            this.chart.data.datasets[datasetIndex].data.pop();
           }
         }
       }

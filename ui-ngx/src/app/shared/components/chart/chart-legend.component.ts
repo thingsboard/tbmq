@@ -27,15 +27,12 @@ import { LegendConfig, LegendKey, ChartKey, TOTAL_ENTITY_ID } from '@shared/mode
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { ChartLegendItemComponent } from './chart-legend-item.component';
 import { ChartDataset } from 'chart.js';
-import { POLLING_INTERVAL } from '@shared/models/home-page.model';
-import { calculateFixedWindowTimeMs, Timewindow } from '@shared/models/time/time.models';
 import {
   calculateAvg,
   calculateLatest,
   calculateMax,
   calculateMin,
   calculateTotal,
-  isDefinedAndNotNull,
 } from '@core/utils';
 import { getColor } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
@@ -57,7 +54,6 @@ export class ChartLegendComponent implements OnInit, OnChanges {
   readonly chart = input<Chart<'line', any>>();
   readonly datasets = input<ChartDataset<'line', any>[]>([]);
   readonly chartKey = input<ChartKey>();
-  readonly timewindow = input<Timewindow>();
   readonly entityIds = input<string[]>([]);
   readonly visibleEntityIds = input<string[]>();
   readonly totalEntityIdOnly = input<boolean>();
@@ -123,14 +119,8 @@ export class ChartLegendComponent implements OnInit, OnChanges {
   updateLegend(): void {
     this.legendData = [];
     const datasets = this.datasets() || [];
-    if (isDefinedAndNotNull(this.timewindow())) {
-      const fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow());
-      const startTimeMs = fixedWindowTimeMs.startTimeMs;
-      const endTimeMs = fixedWindowTimeMs.endTimeMs;
-      for (const ds of datasets) {
-        const data = (ds?.data as any[])?.filter(value => value.ts >= startTimeMs - POLLING_INTERVAL && value.ts <= endTimeMs);
-        this.updateLegendData(data);
-      }
+    for (const ds of datasets) {
+      this.updateLegendData(ds?.data);
     }
   }
 
