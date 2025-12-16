@@ -174,7 +174,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   onEntityIdTimeseriesRequested(dataKey: string) {
-    this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]));
+    this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]), false);
   }
 
   private init() {
@@ -198,7 +198,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     return this.getTimeseriesData(dataKeys, false);
   }
 
-  private fetchEntityTimeseries(dataKeys: string[], initCharts: boolean, $tasks: Observable<TimeseriesData>[]) {
+  private fetchEntityTimeseries(dataKeys: string[], initCharts: boolean, $tasks: Observable<TimeseriesData>[], fetchLatest = true) {
     forkJoin($tasks)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
@@ -219,7 +219,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           }
           this.updateChartView();
         }
-        if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
+        if (fetchLatest && this.timewindow.selectedTab === TimewindowType.REALTIME) {
           if (!this.pollingStarted) {
             this.startPolling();
           } else {
