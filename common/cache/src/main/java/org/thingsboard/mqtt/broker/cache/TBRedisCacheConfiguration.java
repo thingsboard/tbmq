@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 @Data
 public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
-    private final CacheSpecsMap cacheSpecsMap;
+    private final CacheProperties cacheProperties;
     protected final LettuceConfig lettuceConfig;
 
     @Value("${redis.pool_config.maxTotal:128}")
@@ -93,9 +93,6 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
     @Value("${redis.pool_config.blockWhenExhausted:true}")
     private boolean blockWhenExhausted;
-
-    @Value("${cache.stats.enabled:true}")
-    private boolean cacheStatsEnabled;
 
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
@@ -145,15 +142,13 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         RedisCacheConfiguration configuration = createRedisCacheConfig(redisConversionService);
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        if (cacheSpecsMap != null) {
-            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getCacheSpecs().entrySet()) {
-                cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
-            }
+        for (Map.Entry<String, CacheSpecs> entry : cacheProperties.getCacheSpecs().entrySet()) {
+            cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
         }
 
         var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration)
                 .withInitialCacheConfigurations(cacheConfigurations).transactionAware().disableCreateOnMissingCache();
-        if (cacheStatsEnabled) {
+        if (cacheProperties.getStats().isEnabled()) {
             redisCacheManagerBuilder.enableStatistics();
         }
         return redisCacheManagerBuilder.build();

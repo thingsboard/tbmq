@@ -37,8 +37,8 @@ import java.time.Duration;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
 public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<RedisClusterConfiguration> {
 
-    public TBRedisClusterConfiguration(CacheSpecsMap cacheSpecsMap, LettuceConfig lettuceConfig) {
-        super(cacheSpecsMap, lettuceConfig);
+    public TBRedisClusterConfiguration(CacheProperties cacheProperties, LettuceConfig lettuceConfig) {
+        super(cacheProperties, lettuceConfig);
     }
 
     @Value("${redis.cluster.nodes:}")

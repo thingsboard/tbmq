@@ -16,19 +16,11 @@
 package org.thingsboard.mqtt.broker.cache;
 
 import lombok.Data;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.stereotype.Component;
 
-@Component
 @Data
-public class CacheNameResolver {
+public class CacheStats {
 
-    private final CacheManager cacheManager;
-    private final CacheProperties cacheProperties;
-
-    public Cache getCache(String cacheName) {
-        return cacheManager.getCache(cacheProperties.prefixKey(cacheName));
-    }
+    private boolean enabled;
+    private long intervalSec;
 
 }

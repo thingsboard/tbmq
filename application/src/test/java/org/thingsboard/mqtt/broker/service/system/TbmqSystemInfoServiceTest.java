@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
@@ -66,6 +67,8 @@ public class TbmqSystemInfoServiceTest {
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
     @Mock
+    private CacheProperties cacheProperties;
+    @Mock
     private HashOperations<String, Object, Object> hashOperations;
 
     @InjectMocks
@@ -77,7 +80,7 @@ public class TbmqSystemInfoServiceTest {
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate);
+        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties);
         systemInfoService.setServiceRegistryKey(SERVICE_REGISTRY_KEY);
     }
 

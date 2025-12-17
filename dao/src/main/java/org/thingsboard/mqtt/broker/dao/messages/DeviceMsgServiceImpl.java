@@ -22,6 +22,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.cache.LettuceConnectionManager;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -169,19 +170,19 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     @Value("${mqtt.persistent-session.device.persisted-messages.limit}")
     private int messagesLimit;
 
-    @Value("${cache.cache-prefix:}")
-    private String cachePrefix;
-
     private final LettuceConnectionManager connectionManager;
+    private final CacheProperties cacheProperties;
     private final ConcurrentMap<String, CompletableFuture<Void>> scriptLoadingMap;
 
-    public DeviceMsgServiceImpl(LettuceConnectionManager connectionManager) {
+    public DeviceMsgServiceImpl(LettuceConnectionManager connectionManager, CacheProperties cacheProperties) {
         this.connectionManager = connectionManager;
+        this.cacheProperties = cacheProperties;
         this.scriptLoadingMap = new ConcurrentHashMap<>();
     }
 
     private byte[] defaultTtlBytes;
     private byte[] messagesLimitBytes;
+    private String cachePrefix;
 
     @PostConstruct
     public void init() {
@@ -191,6 +192,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         try {
             defaultTtlBytes = intToBytes(defaultTtl);
             messagesLimitBytes = intToBytes(messagesLimit);
+            cachePrefix = cacheProperties.getCachePrefix();
 
             loadScript(ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
             loadScript(GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
