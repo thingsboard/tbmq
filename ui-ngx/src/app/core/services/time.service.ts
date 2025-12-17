@@ -41,7 +41,6 @@ const MIN_LIMIT = 1;
 export class TimeService {
 
   private maxDatapointsLimit = MAX_DATAPOINTS_LIMIT;
-  private syncTimer$: Observable<number> | null = null;
 
   constructor() {}
 
@@ -132,12 +131,11 @@ export class TimeService {
     const now = Date.now();
     const msIntoMinute = now % interval;
     const initialDelay = (offset - msIntoMinute + interval) % interval;
-    this.syncTimer$ = timer(initialDelay, interval)
+    return timer(initialDelay, interval)
       .pipe(shareReplay({
         bufferSize: 1,
         refCount: true
       }));
-    return this.syncTimer$;
   }
 
   private toBound(value: number, min: number, max: number, defValue: number): number {
