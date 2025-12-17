@@ -16,25 +16,28 @@
 package org.thingsboard.mqtt.broker.cache;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Configuration
+@Component
 @ConfigurationProperties(prefix = "cache")
 @Data
-public class CacheSpecsMap {
+public class CacheProperties {
 
-    private Map<String, CacheSpecs> specs;
-
-    @Value("${cache.cache-prefix:}")
+    private CacheStats stats;
     private String cachePrefix;
+    private Map<String, CacheSpecs> specs;
 
     public Map<String, CacheSpecs> getCacheSpecs() {
         return specs.entrySet().stream()
                 .collect(Collectors.toMap(entry -> cachePrefix + entry.getKey(), Map.Entry::getValue));
+    }
+
+    public String prefixKey(String raw) {
+        return StringUtils.isEmpty(cachePrefix) ? raw : cachePrefix + raw;
     }
 }

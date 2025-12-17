@@ -33,12 +33,16 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CacheSpecsMap.class, LettuceConfig.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
+@ContextConfiguration(classes = {CacheProperties.class, LettuceConfig.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "redis.connection.type=standalone",
+        "cache.stats.enabled=true",
+        "cache.stats.intervalSec=60",
+        "cache.cache-prefix=",
         "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
         "lettuce.config.shutdown-quiet-period=1",
         "lettuce.config.shutdown-timeout=10",
@@ -64,7 +68,7 @@ public class TbRedisCacheConfigurationTest {
 
     @Test
     public void givenCacheConfig_whenCacheManagerReady_thenVerifyExistedCachesWithTransactionAwareCacheDecorator() {
-        Cache mqttClientCredentialsCache = cacheManager.getCache("mqttClientCredentials");
+        Cache mqttClientCredentialsCache = cacheManager.getCache(MQTT_CLIENT_CREDENTIALS_CACHE);
         assertThat(mqttClientCredentialsCache != null).isEqualTo(true);
         assertThat(mqttClientCredentialsCache).isInstanceOf(TransactionAwareCacheDecorator.class);
     }

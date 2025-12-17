@@ -17,16 +17,18 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.runner.RunWith;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -35,41 +37,39 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = RateLimitRedisCacheServiceImpl.class)
+@TestPropertySource(properties = {
+        "cache.cache-prefix=",
+        "mqtt.sessions-limit=5",
+        "mqtt.application-clients-limit=5"
+})
 public class RateLimitRedisCacheServiceImplTest {
 
-    @Mock
+    @MockitoBean
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Mock
+    @MockitoBean
     private ValueOperations<String, Object> valueOperations;
 
-    @Mock
+    @MockitoBean
     private JedisBasedProxyManager<String> jedisBasedProxyManager;
 
-    @Mock
+    @MockitoBean
     private BucketProxy bucketProxy;
 
-    @InjectMocks
-    private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
+    @MockitoBean
+    private CacheProperties cacheProperties;
 
-    AutoCloseable autoCloseable;
+    @MockitoSpyBean
+    private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
 
     @Before
     public void setUp() {
-        autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(cacheProperties.prefixKey(anyString())).thenAnswer(inv -> inv.getArgument(0));
         rateLimitRedisCacheService.setSessionsLimit(5);
         rateLimitRedisCacheService.setApplicationClientsLimit(5);
-        setCachePrefixAndInit();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        autoCloseable.close();
-    }
-
-    private void setCachePrefixAndInit() {
-        rateLimitRedisCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
         rateLimitRedisCacheService.init();
     }
 
@@ -105,8 +105,6 @@ public class RateLimitRedisCacheServiceImplTest {
 
     @Test
     public void testDecrementSessionCount() {
-        rateLimitRedisCacheService.setSessionsLimit(5);
-
         rateLimitRedisCacheService.decrementSessionCount();
 
         verify(valueOperations, times(1)).decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
@@ -153,8 +151,6 @@ public class RateLimitRedisCacheServiceImplTest {
 
     @Test
     public void testDecrementApplicationClientsCount() {
-        rateLimitRedisCacheService.setApplicationClientsLimit(5);
-
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 
         verify(valueOperations, times(1)).decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);

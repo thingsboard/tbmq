@@ -22,10 +22,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootContextLoader;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,27 +37,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 public class RedisCacheDefaultConfigurationTest {
 
-    @MockBean
+    @MockitoBean
     private LettuceConnectionFactory lettuceConnectionFactory;
 
-    @MockBean
+    @MockitoBean
     private LettuceConnectionManager lettuceConnectionManager;
 
     @Autowired
-    TBRedisCacheConfiguration redisCacheConfiguration;
+    TBRedisCacheConfiguration<?> redisCacheConfiguration;
 
     @Test
     public void verifyTransactionAwareCacheManagerProxy() {
-        assertThat(redisCacheConfiguration.getCacheSpecsMap().getSpecs()).as("specs without prefix").isNotNull();
-        assertThat(redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs()).as("specs").isNotNull();
-        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
+        assertThat(redisCacheConfiguration.getCacheProperties().getSpecs()).as("specs without prefix").isNotNull();
+        assertThat(redisCacheConfiguration.getCacheProperties().getCacheSpecs()).as("specs").isNotNull();
+        redisCacheConfiguration.getCacheProperties().getCacheSpecs().forEach((name, cacheSpecs) -> {
             assertThat(name).as("cacheSpec name").isNotNull();
-            assertThat(name).as("cacheSpec name has prefix").startsWith(redisCacheConfiguration.getCacheSpecsMap().getCachePrefix());
+            assertThat(name).as("cacheSpec name has prefix").startsWith(redisCacheConfiguration.getCacheProperties().getCachePrefix());
             assertThat(cacheSpecs).as("cache %s specs", name).isNotNull();
         });
 
         SoftAssertions softly = new SoftAssertions();
-        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
+        redisCacheConfiguration.getCacheProperties().getCacheSpecs().forEach((name, cacheSpecs) -> {
             softly.assertThat(name).as("cache name").isNotEmpty();
             softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThanOrEqualTo(0);
         });

@@ -35,8 +35,8 @@ import java.time.Duration;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "standalone")
 public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<RedisStandaloneConfiguration> {
 
-    public TBRedisStandaloneConfiguration(CacheSpecsMap cacheSpecsMap, LettuceConfig lettuceConfig) {
-        super(cacheSpecsMap, lettuceConfig);
+    public TBRedisStandaloneConfiguration(CacheProperties cacheProperties, LettuceConfig lettuceConfig) {
+        super(cacheProperties, lettuceConfig);
     }
 
     @Value("${redis.standalone.host:localhost}")

@@ -19,7 +19,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
@@ -39,24 +38,18 @@ import java.util.concurrent.TimeUnit;
 public class TbRedisStatsLogger {
 
     private final CacheManager cacheManager;
+    private final CacheProperties cacheProperties;
 
-    @Value("${cache.stats.enabled:true}")
-    private boolean cacheStatsEnabled;
-
-    @Value("${cache.stats.intervalSec:60}")
-    private long cacheStatsInterval;
-
-    private ScheduledExecutorService scheduler = null;
+    private ScheduledExecutorService scheduler;
 
     @PostConstruct
     public void init() {
-        if (cacheStatsEnabled) {
-            if (log.isDebugEnabled()) {
-                log.debug("initializing redis cache stats scheduled job");
-            }
-            scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("redis-cache-stats"));
-            scheduler.scheduleAtFixedRate(this::printCacheStats, cacheStatsInterval, cacheStatsInterval, TimeUnit.SECONDS);
+        if (!cacheProperties.getStats().isEnabled()) {
+            return;
         }
+        long cacheStatsInterval = cacheProperties.getStats().getIntervalSec();
+        scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("redis-cache-stats"));
+        scheduler.scheduleAtFixedRate(this::printCacheStats, cacheStatsInterval, cacheStatsInterval, TimeUnit.SECONDS);
     }
 
     @PreDestroy
