@@ -56,7 +56,9 @@ export interface SharedMqttAuthProviderConfiguration {
 }
 
 
-export interface BasicMqttAuthProviderConfiguration {}
+export interface BasicMqttAuthProviderConfiguration {
+  authStrategy: MqttBasicAuthenticationStrategy;
+}
 
 export interface ScramMqttAuthProviderConfiguration {}
 
@@ -127,6 +129,28 @@ export const ClientAuthTypeTranslationMap = new Map<ClientAuthType, string>(
   [
     [ClientAuthType.CLIENT_AUTH_REQUIRED, 'authentication.client-auth-type-required'],
     [ClientAuthType.CLIENT_AUTH_REQUESTED, 'authentication.client-auth-type-requested'],
+  ]
+);
+
+export enum MqttBasicAuthenticationStrategy {
+  CLIENT_ID_AND_USERNAME = 'CLIENT_ID_AND_USERNAME',
+  CLIENT_ID = 'CLIENT_ID',
+  USERNAME = 'USERNAME',
+}
+
+export const MqttBasicAuthenticationStrategyTranslationMap = new Map<MqttBasicAuthenticationStrategy, string>(
+  [
+    [MqttBasicAuthenticationStrategy.CLIENT_ID_AND_USERNAME, 'authentication.basic-authentication-by-client-id-username'],
+    [MqttBasicAuthenticationStrategy.CLIENT_ID, 'authentication.basic-authentication-by-client-id'],
+    [MqttBasicAuthenticationStrategy.USERNAME, 'authentication.basic-authentication-by-username'],
+  ]
+);
+
+export const MqttBasicAuthenticationStrategyHintTranslationMap = new Map<MqttBasicAuthenticationStrategy, string>(
+  [
+    [MqttBasicAuthenticationStrategy.CLIENT_ID_AND_USERNAME, 'authentication.basic-authentication-by-client-id-username-hint'],
+    [MqttBasicAuthenticationStrategy.CLIENT_ID, 'authentication.basic-authentication-by-client-id-hint'],
+    [MqttBasicAuthenticationStrategy.USERNAME, 'authentication.basic-authentication-by-username-hint'],
   ]
 );
 
