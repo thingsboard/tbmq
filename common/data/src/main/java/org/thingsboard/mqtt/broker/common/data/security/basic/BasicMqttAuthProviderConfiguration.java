@@ -15,16 +15,44 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.basic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BasicMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
+
+    @JsonIgnore
+    private AuthStrategy authStrategy;
 
     @Override
     public MqttAuthProviderType getType() {
         return MqttAuthProviderType.MQTT_BASIC;
     }
 
+    public static BasicMqttAuthProviderConfiguration defaultConfiguration() {
+        var basicConfig = new BasicMqttAuthProviderConfiguration();
+        basicConfig.setAuthStrategy(AuthStrategy.CLIENT_ID_AND_USERNAME);
+        return basicConfig;
+    }
+
+    @JsonProperty("authStrategy")
+    public AuthStrategy getAuthStrategy() {
+        return authStrategy == null ? AuthStrategy.CLIENT_ID_AND_USERNAME : authStrategy;
+    }
+
+    @JsonProperty("authStrategy")
+    public void setAuthStrategy(AuthStrategy authStrategy) {
+        this.authStrategy = authStrategy;
+    }
+
+    public enum AuthStrategy {
+        CLIENT_ID,
+        USERNAME,
+        CLIENT_ID_AND_USERNAME
+    }
 }

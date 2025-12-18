@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration.AuthStrategy;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -42,4 +43,5 @@ public interface MqttAuthProviderService {
 
     Optional<MqttAuthProviderType> disableAuthProvider(UUID id);
 
+    AuthStrategy getMqttBasicProviderAuthStrategy();
 }

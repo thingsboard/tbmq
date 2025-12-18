@@ -21,15 +21,13 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
@@ -68,6 +66,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_MQTT_VERSION_CACHE;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE;
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
 @Slf4j
@@ -84,7 +84,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ApplicationRemovedEventService applicationRemovedEventService;
     private final ApplicationTopicService applicationTopicService;
     private final RateLimitCacheService rateLimitCacheService;
-    private final CacheNameResolver cacheNameResolver;
+    private final TbCacheOps cacheOps;
     private final TimeseriesService timeseriesService;
 
     private TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseProducer;
@@ -238,8 +238,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     if (clientSession.getSessionInfo().isPersistentAppClient()) {
                         rateLimitCacheService.decrementApplicationClientsCount();
                     }
-                    evictEntryFromClientSessionCredentialsCache(clientId);
-                    evictEntryFromClientMqttVersionCache(clientId);
+                    evictFromCache(clientId);
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                     removeClientLatestTs(clientId);
@@ -278,8 +277,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             saveClientSession(clientId, disconnectedClientSession);
             return false;
         }
-        evictEntryFromClientSessionCredentialsCache(clientId);
-        evictEntryFromClientMqttVersionCache(clientId);
+        evictFromCache(clientId);
         clearSessionAndSubscriptions(clientId);
         removeClientLatestTs(clientId);
         return true;
@@ -437,28 +435,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return clientSession.getSessionInfo().getSessionId();
     }
 
-    private void evictEntryFromClientSessionCredentialsCache(String clientId) {
-        try {
-            getClientSessionCredentialsCache().evictIfPresent(clientId);
-        } catch (IllegalStateException e) {
-            log.debug("[{}] Could not evict entry from client session credentials cache for clientId", clientId, e);
-        }
-    }
-
-    private void evictEntryFromClientMqttVersionCache(String clientId) {
-        try {
-            getClientMqttVersionCache().evictIfPresent(clientId);
-        } catch (IllegalStateException e) {
-            log.debug("[{}] Could not evict entry from client mqtt version cache for clientId", clientId, e);
-        }
-    }
-
-    private Cache getClientSessionCredentialsCache() {
-        return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
-    }
-
-    private Cache getClientMqttVersionCache() {
-        return cacheNameResolver.getCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE);
+    private void evictFromCache(String clientId) {
+        cacheOps.evictIfPresent(CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
+        cacheOps.evictIfPresent(CLIENT_MQTT_VERSION_CACHE, clientId);
     }
 
     @PreDestroy

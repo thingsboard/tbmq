@@ -23,7 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps.Status;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
@@ -50,7 +51,7 @@ public class ClientSessionController extends BaseController {
 
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
-    private final CacheNameResolver cacheNameResolver;
+    private final TbCacheOps cacheOps;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/client-session/remove", params = {"clientId", "sessionId"})
@@ -136,7 +137,7 @@ public class ClientSessionController extends BaseController {
     }
 
     private String getValueFromCache(String cache, String clientId) {
-        String cacheValue = cacheNameResolver.getCache(cache).get(clientId, String.class);
-        return cacheValue == null ? "Unknown" : cacheValue;
+        var lookup = cacheOps.lookup(cache, clientId, String.class);
+        return lookup.status() == Status.HIT ? lookup.value() : "Unknown";
     }
 }

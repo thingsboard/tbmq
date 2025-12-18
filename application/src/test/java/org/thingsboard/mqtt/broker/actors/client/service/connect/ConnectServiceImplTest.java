@@ -23,10 +23,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
@@ -35,7 +35,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -82,36 +82,36 @@ public class ConnectServiceImplTest {
 
     static final String SERVICE_ID = "serviceId";
 
-    @MockBean
+    @MockitoBean
     ClientMqttActorManager clientMqttActorManager;
-    @MockBean
+    @MockitoBean
     MqttMessageGenerator mqttMessageGenerator;
-    @MockBean
+    @MockitoBean
     ClientSessionEventService clientSessionEventService;
-    @MockBean
+    @MockitoBean
     KeepAliveService keepAliveService;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
+    @MockitoBean
     LastWillService lastWillService;
-    @MockBean
+    @MockitoBean
     ClientSessionCtxService clientSessionCtxService;
-    @MockBean
+    @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
-    @MockBean
+    @MockitoBean
     MqttMessageHandlerImpl messageHandler;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionCache clientSubscriptionCache;
-    @MockBean
+    @MockitoBean
     RateLimitService rateLimitService;
-    @MockBean
+    @MockitoBean
     FlowControlService flowControlService;
-    @MockBean
+    @MockitoBean
     PublishMsgValidationService publishMsgValidationService;
-    @MockBean
-    CacheNameResolver cacheNameResolver;
+    @MockitoBean
+    TbCacheOps tbCacheOps;
 
-    @SpyBean
+    @MockitoSpyBean
     ConnectServiceImpl connectService;
 
     ClientSessionCtx ctx;
@@ -149,7 +149,7 @@ public class ConnectServiceImplTest {
 
         QueuedMqttMessages queuedMqttMessages = mock(QueuedMqttMessages.class);
         when(actorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
-        when(cacheNameResolver.getCache(eq(CacheConstants.CLIENT_MQTT_VERSION_CACHE))).thenReturn(cache);
+        when(tbCacheOps.cache(eq(CacheConstants.CLIENT_MQTT_VERSION_CACHE))).thenReturn(cache);
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         PublishMsg publishMsg = PublishMsg.builder().build();

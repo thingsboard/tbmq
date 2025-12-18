@@ -61,6 +61,10 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
     }
 
     public boolean isBasicCredentials() {
-        return ClientCredentialsType.MQTT_BASIC.equals(credentialsType);
+        return ClientCredentialsType.MQTT_BASIC == credentialsType;
+    }
+
+    public boolean isSslCredentials() {
+        return ClientCredentialsType.X_509 == credentialsType;
     }
 }
