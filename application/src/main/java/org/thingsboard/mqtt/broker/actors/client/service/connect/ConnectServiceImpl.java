@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -38,7 +37,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -93,7 +92,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
     private final PublishMsgValidationService publishMsgValidationService;
-    private final CacheNameResolver cacheNameResolver;
+    private final TbCacheOps cacheOps;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -390,11 +389,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private void putIntoClientMqttVersionCache(ClientSessionCtx sessionCtx) {
-        getClientMqttVersionCache().put(sessionCtx.getClientId(), sessionCtx.getMqttVersion().name());
-    }
-
-    private Cache getClientMqttVersionCache() {
-        return cacheNameResolver.getCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE);
+        cacheOps.put(CacheConstants.CLIENT_MQTT_VERSION_CACHE, sessionCtx.getClientId(), sessionCtx.getMqttVersion().name());
     }
 
     @PreDestroy

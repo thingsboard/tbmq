@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -58,7 +58,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    private CacheNameResolver cacheNameResolver;
+    private TbCacheOps tbCacheOps;
 
     Cache mqttClientCredentialsCache;
     Cache basicCredentialsPasswordCache;
@@ -66,9 +66,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Before
     public void setUp() {
-        mqttClientCredentialsCache = cacheNameResolver.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
-        basicCredentialsPasswordCache = cacheNameResolver.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
-        sslRegexBasedCredentialsCache = cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+        mqttClientCredentialsCache = tbCacheOps.cache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+        basicCredentialsPasswordCache = tbCacheOps.cache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
+        sslRegexBasedCredentialsCache = tbCacheOps.cache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
     }
 
     @After
@@ -764,4 +764,61 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         clientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
         return clientCredentials;
     }
+
+    //    @Test
+    public void perf_negative_cache_benefit_repeated_wrong_3_ids() {
+        List<String> wrongIds = List.of(
+                ProtocolUtil.clientIdCredentialsId("wrong-1"),
+                ProtocolUtil.clientIdCredentialsId("wrong-2"),
+                ProtocolUtil.clientIdCredentialsId("wrong-3")
+        );
+
+        int warmup = 200;
+        int iters = 100_000;
+
+        tbCacheOps.invalidateSafe(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+
+        for (int i = 0; i < warmup; i++) {
+            mqttClientCredentialsService.findMatchingCredentials(wrongIds);
+        }
+
+        tbCacheOps.invalidateSafe(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+        long coldNs = timeNs(() -> mqttClientCredentialsService.findMatchingCredentials(wrongIds));
+
+        tbCacheOps.invalidateSafe(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+
+        mqttClientCredentialsService.findMatchingCredentials(wrongIds);
+
+        long steadyNs = timeNs(() -> {
+            for (int i = 0; i < iters; i++) {
+                mqttClientCredentialsService.findMatchingCredentials(wrongIds);
+            }
+        });
+
+        System.out.println("=== perf_negative_cache_benefit_repeated_wrong_3_ids ===");
+        System.out.println("Cold (1 call, cache empty): " + ms(coldNs) + " ms, " + us(coldNs) + " us");
+        System.out.println("Steady (same 3 wrong ids, " + iters + " calls, after prime): total=" +
+                ms(steadyNs) + " ms, avg=" + avgUs(steadyNs, iters) + " us/call");
+
+        tbCacheOps.invalidateSafe(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+    }
+
+    private static long timeNs(Runnable r) {
+        long start = System.nanoTime();
+        r.run();
+        return System.nanoTime() - start;
+    }
+
+    private static long ms(long ns) {
+        return TimeUnit.NANOSECONDS.toMillis(ns);
+    }
+
+    private static double us(long ns) {
+        return ns / 1_000.0;
+    }
+
+    private static double avgUs(long ns, int iters) {
+        return (ns / 1_000.0) / iters;
+    }
+
 }

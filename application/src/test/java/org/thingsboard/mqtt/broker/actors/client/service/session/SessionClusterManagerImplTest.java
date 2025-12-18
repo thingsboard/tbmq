@@ -29,7 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
@@ -89,7 +89,7 @@ public class SessionClusterManagerImplTest {
     @MockitoBean
     RateLimitCacheService rateLimitCacheService;
     @MockitoBean
-    CacheNameResolver cacheNameResolver;
+    TbCacheOps cacheOps;
     @MockitoBean
     TimeseriesService timeseriesService;
 
@@ -135,7 +135,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenPresentNonPersistentSession_whenProcessConnectionRequest_thenVerify() {
         Cache cache = mock(Cache.class);
-        when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
+        when(cacheOps.cache(anyString())).thenReturn(cache);
 
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2");
@@ -263,7 +263,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenDisconnectedSession_whenProcessClearSession_thenVerify() {
         Cache cache = mock(Cache.class);
-        when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
+        when(cacheOps.cache(anyString())).thenReturn(cache);
 
         SessionInfo sessionInfo = getSessionInfo("clientId");
         doReturn(getClientSession(false, sessionInfo)).when(clientSessionService).getClientSession(any());

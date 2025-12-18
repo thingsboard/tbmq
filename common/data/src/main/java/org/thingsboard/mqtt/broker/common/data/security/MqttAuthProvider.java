@@ -61,7 +61,7 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
         mqttAuthProvider.setType(type);
         mqttAuthProvider.setConfiguration(
                 switch (type) {
-                    case MQTT_BASIC -> new BasicMqttAuthProviderConfiguration();
+                    case MQTT_BASIC -> BasicMqttAuthProviderConfiguration.defaultConfiguration();
                     case X_509 -> SslMqttAuthProviderConfiguration.defaultConfiguration();
                     case JWT -> JwtMqttAuthProviderConfiguration.defaultConfiguration();
                     case SCRAM -> new ScramMqttAuthProviderConfiguration();
