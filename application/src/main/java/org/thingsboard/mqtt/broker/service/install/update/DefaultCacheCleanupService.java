@@ -25,6 +25,10 @@ import org.thingsboard.mqtt.broker.cache.CacheProperties;
 
 import java.util.Set;
 
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE;
+
 @RequiredArgsConstructor
 @Service
 @Profile("install")
@@ -45,6 +49,10 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
     @Override
     public void clearCache() throws Exception {
         log.info("Clearing cache ...");
+
+        clearCachesByNames(
+                Set.of(MQTT_CLIENT_CREDENTIALS_CACHE, BASIC_CREDENTIALS_PASSWORD_CACHE, SSL_REGEX_BASED_CREDENTIALS_CACHE)
+        );
 
         log.info("Successfully cleared cache!");
     }

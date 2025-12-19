@@ -35,6 +35,8 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -159,7 +161,10 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     }
 
     private RedisCacheConfiguration createRedisCacheConfig(DefaultFormattingConversionService redisConversionService) {
-        return RedisCacheConfiguration.defaultCacheConfig().withConversionService(redisConversionService);
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .withConversionService(redisConversionService);
     }
 
     @Bean

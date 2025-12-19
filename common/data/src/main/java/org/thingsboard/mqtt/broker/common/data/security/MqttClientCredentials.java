@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -60,10 +61,12 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
     }
 
+    @JsonIgnore
     public boolean isBasicCredentials() {
         return ClientCredentialsType.MQTT_BASIC == credentialsType;
     }
 
+    @JsonIgnore
     public boolean isSslCredentials() {
         return ClientCredentialsType.X_509 == credentialsType;
     }
