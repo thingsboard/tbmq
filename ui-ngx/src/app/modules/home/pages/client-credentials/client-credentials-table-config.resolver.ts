@@ -36,7 +36,7 @@ import {
   wsSystemCredentialsName
 } from '@shared/models/credentials.model';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { mergeMap, Observable, of } from 'rxjs';
+import { mergeMap, Observable, of, switchMap } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { deepClone } from '@core/utils';
 import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
@@ -55,6 +55,7 @@ import {
 } from '@home/pages/client-credentials/change-basic-password-dialog.component';
 import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
+import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 
 @Injectable()
 export class ClientCredentialsTableConfigResolver {
@@ -62,13 +63,16 @@ export class ClientCredentialsTableConfigResolver {
   clientCredentialsFilterConfig: ClientCredentialsFilterConfig = {};
   private readonly config: EntityTableConfig<ClientCredentials> = new EntityTableConfig<ClientCredentials>();
 
-  constructor(private clientCredentialsService: ClientCredentialsService,
-              private configService: ConfigService,
-              private translate: TranslateService,
-              private datePipe: DatePipe,
-              private route: ActivatedRoute,
-              private router: Router,
-              private dialog: MatDialog) {
+  constructor(
+    private clientCredentialsService: ClientCredentialsService,
+    private mqttAuthProviderService: MqttAuthProviderService,
+    private configService: ConfigService,
+    private translate: TranslateService,
+    private datePipe: DatePipe,
+    private route: ActivatedRoute,
+    private router: Router,
+    private dialog: MatDialog,
+  ) {
 
     this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
@@ -98,7 +102,21 @@ export class ClientCredentialsTableConfigResolver {
         const color = clientTypeColor.get(clientType);
         const iconColor = clientTypeValueColor.get(clientType);
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
-      })
+      }),
+      new EntityTableColumn<ClientCredentials>('warning', null, '300px',
+        (entity) => {
+          const credentialsType = entity.credentialsType;
+          if (this.showCredentialsWarning(credentialsType)) {
+            const value = this.translate.instant(credentialsWarningTranslations.get(credentialsType));
+            const icon = 'warning';
+            const backgroundColor = 'rgba(255,236,128,0)';
+            const iconColor = '#ff9a00';
+            const valueColor = 'inherit';
+            return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
+          }
+          return '';
+        }, () => null, false
+      )
     );
 
     this.config.addActionDescriptors.push(
@@ -125,28 +143,9 @@ export class ClientCredentialsTableConfigResolver {
     this.config.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
 
     this.config.loadEntity = id => this.clientCredentialsService.getClientCredentials(id);
-    this.config.saveEntity = mqttClient => this.clientCredentialsService.saveClientCredentials(mqttClient);
+    this.config.saveEntity = mqttClient => this.saveClientCredentials(mqttClient);
     this.config.deleteEntity = id => this.clientCredentialsService.deleteClientCredentials(id);
     this.config.entitiesFetchFunction = pageLink => this.fetchClientCredentials(pageLink as TimePageLink);
-
-    if (!this.config.columns.find(el => el.key === 'warning')) {
-      this.config.columns.push(
-        new EntityTableColumn<ClientCredentials>('warning', null, '300px',
-          (entity) => {
-            const credentialsType = entity.credentialsType;
-            if (this.showCredentialsWarning(credentialsType)) {
-              const value = this.translate.instant(credentialsWarningTranslations.get(credentialsType));
-              const icon = 'warning';
-              const backgroundColor = 'rgba(255,236,128,0)';
-              const iconColor = '#ff9a00';
-              const valueColor = 'inherit';
-              return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
-            }
-            return '';
-          }, () => null, false
-        )
-      );
-    }
   }
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<ClientCredentials>> {
@@ -208,15 +207,30 @@ export class ClientCredentialsTableConfigResolver {
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       autoFocus: false
     }).afterClosed().subscribe(
-      (res) => {
-        if (res) {
-          this.config.updateData();
-          if (!localStorage.getItem('notDisplayCheckAfterAddCredentials') && res.credentialsType === CredentialsType.MQTT_BASIC) {
-            this.checkConnectivity(null, res, true);
-          }
+      (credentials) => {
+        if (credentials) {
+          this.mqttAuthProviderService.displayBasicAuthProviderAlert(credentials).subscribe(() => {
+            this.config.updateData();
+            if (this.displayCheckConnectivityAfterAdd(credentials)) {
+              this.checkConnectivity(null, credentials, true);
+            }
+          });
         }
       }
     );
+  }
+
+  private displayCheckConnectivityAfterAdd(credentials: ClientCredentials): boolean {
+    return !localStorage.getItem('notDisplayCheckAfterAddCredentials') && credentials.credentialsType === CredentialsType.MQTT_BASIC;
+  }
+
+  private saveClientCredentials(clientCredentials: ClientCredentials): Observable<ClientCredentials> {
+    return this.clientCredentialsService.saveClientCredentials(clientCredentials).pipe(
+      switchMap(credentials => {
+        this.mqttAuthProviderService.displayBasicAuthProviderAlert(credentials).subscribe();
+        return of(credentials);
+      })
+    )
   }
 
   private onAction(action: EntityAction<ClientCredentials>, config: EntityTableConfig<ClientCredentials>): boolean {
