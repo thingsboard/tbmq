@@ -17,21 +17,31 @@ package org.thingsboard.mqtt.broker.cache;
 
 public class CacheConstants {
 
+    /**
+     * Managed by cacheManager
+     */
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
     public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
     public static final String SSL_REGEX_BASED_CREDENTIALS_CACHE = "sslRegexBasedCredentials";
     public static final String CLIENT_SESSION_CREDENTIALS_CACHE = "clientSessionCredentials";
     public static final String CLIENT_MQTT_VERSION_CACHE = "clientMqttVersion";
-    public static final String CLIENT_SESSIONS_LIMIT_CACHE = "clientSessionsLimit";
-    public static final String APP_CLIENTS_LIMIT_CACHE = "appClientsLimit";
 
+    /**
+     * Managed by jedisBasedProxyManager
+     */
     public static final String BUCKET_SUFFIX = "::bucket";
     public static final String DEVICE_PERSISTED_MSGS_LIMIT_CACHE = "devicePersistedMsgsLimit" + BUCKET_SUFFIX;
     public static final String TOTAL_MSGS_LIMIT_CACHE = "totalMsgsLimit" + BUCKET_SUFFIX;
 
+    /**
+     * Managed by redisTemplate
+     */
     public static final String COUNT_SUFFIX = "::count";
-    public static final String CLIENT_SESSIONS_LIMIT_CACHE_KEY = CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE + COUNT_SUFFIX;
-    public static final String APP_CLIENTS_LIMIT_CACHE_KEY = CacheConstants.APP_CLIENTS_LIMIT_CACHE + COUNT_SUFFIX;
+    public static final String CLIENT_SESSIONS_LIMIT_CACHE_KEY = "clientSessionsLimit" + COUNT_SUFFIX;
+    public static final String APP_CLIENTS_LIMIT_CACHE_KEY = "appClientsLimit" + COUNT_SUFFIX;
 
+    /**
+     * Managed by redisTemplate
+     */
     public static final String SERVICE_REGISTRY_KEY = "tbmq:service:registry";
 }
