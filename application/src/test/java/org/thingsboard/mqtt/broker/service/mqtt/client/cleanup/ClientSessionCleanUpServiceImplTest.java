@@ -18,11 +18,11 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -50,16 +50,16 @@ import static org.mockito.Mockito.when;
 })
 public class ClientSessionCleanUpServiceImplTest {
 
-    @MockBean
+    @MockitoBean
     ClientSessionCache clientSessionCache;
-    @MockBean
+    @MockitoBean
     ClientSessionEventService clientSessionEventService;
-    @MockBean
+    @MockitoBean
     DisconnectClientCommandService disconnectClientCommandService;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
 
-    @SpyBean
+    @MockitoSpyBean
     ClientSessionCleanUpServiceImpl clientSessionCleanUpService;
 
     @Test

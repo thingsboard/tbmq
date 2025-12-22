@@ -30,8 +30,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -100,55 +98,51 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     public void cleanUp() {
         log.info("Starting cleaning up expired ClientSessions.");
 
-        long currentTs = System.currentTimeMillis();
-        Map<String, ClientSessionInfo> clientSessionInfos = clientSessionCache.getAllClientSessions();
+        long now = System.currentTimeMillis();
+        String myServiceId = serviceInfoProvider.getServiceId();
 
-        List<SessionInfo> clientSessionsToRemove = new ArrayList<>();
-        for (ClientSessionInfo clientSessionInfo : clientSessionInfos.values()) {
-            if (clientSessionFromAnotherNode(clientSessionInfo)) {
+        Map<String, ClientSessionInfo> sessions = clientSessionCache.getAllClientSessions();
+
+        int removedCount = 0;
+        for (ClientSessionInfo info : sessions.values()) {
+            if (!info.getServiceId().equals(myServiceId)) {
                 continue;
             }
-            SessionInfo sessionInfo = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo);
-
-            long sessionExpiryIntervalMs;
-            if (isNotCleanSession(sessionInfo)) {
-                if (ttl > 0) {
-                    sessionExpiryIntervalMs = getSessionExpiryIntervalMs(ttl);
-                } else {
-                    continue;
-                }
-            } else {
-                sessionExpiryIntervalMs = getSessionExpiryIntervalMs(sessionInfo.safeGetSessionExpiryInterval());
+            if (info.isConnected()) {
+                continue;
             }
 
-            if (needsToBeRemoved(currentTs, clientSessionInfo, sessionExpiryIntervalMs)) {
-                clientSessionsToRemove.add(sessionInfo);
+            SessionInfo session = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info);
+            Long expiryMs = resolveSessionExpiryIntervalMs(session);
+            if (expiryMs == null) {
+                continue;
+            }
+
+            if (isExpired(info, expiryMs, now)) {
+                removedCount++;
+                clientSessionEventService.requestSessionCleanup(session);
             }
         }
 
-        log.info("Cleaning up expired {} client sessions.", clientSessionsToRemove.size());
-        for (SessionInfo sessionInfo : clientSessionsToRemove) {
-            clientSessionEventService.requestSessionCleanup(sessionInfo);
-        }
-    }
-
-    private boolean clientSessionFromAnotherNode(ClientSessionInfo clientSessionInfo) {
-        return !clientSessionInfo.getServiceId().equals(serviceInfoProvider.getServiceId());
+        log.info("Cleaning up expired {} client sessions.", removedCount);
     }
 
     boolean isNotCleanSession(SessionInfo sessionInfo) {
         return sessionInfo.isNotCleanSession();
     }
 
-    private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs) {
-        return !clientSessionInfo.isConnected() && isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs);
+    private Long resolveSessionExpiryIntervalMs(SessionInfo session) {
+        if (isNotCleanSession(session)) {
+            return ttl > 0 ? toMillis(ttl) : null;
+        }
+        return toMillis(session.safeGetSessionExpiryInterval());
     }
 
-    private boolean isExpired(ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs, long currentTs) {
-        return clientSessionInfo.getDisconnectedAt() + sessionExpiryIntervalMs < currentTs;
+    private boolean isExpired(ClientSessionInfo info, long expiryIntervalMs, long now) {
+        return info.getDisconnectedAt() + expiryIntervalMs < now;
     }
 
-    private long getSessionExpiryIntervalMs(int sessionExpiryInterval) {
-        return TimeUnit.SECONDS.toMillis(sessionExpiryInterval);
+    private long toMillis(int seconds) {
+        return TimeUnit.SECONDS.toMillis(seconds);
     }
 }
