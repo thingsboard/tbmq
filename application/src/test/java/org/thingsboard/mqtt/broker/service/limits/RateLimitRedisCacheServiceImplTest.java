@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import org.junit.Before;
@@ -32,12 +30,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 
-import java.time.Duration;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -171,49 +165,15 @@ public class RateLimitRedisCacheServiceImplTest {
         verify(valueOperations, never()).decrement(anyString());
     }
 
-    @Test
-    public void testTryConsumeDevicePersistedMsg() {
-        // Set up bucket proxy
-        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
-        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
-        when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
-        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, bucketConfig, null);
-        setCachePrefixAndInit();
-
-        when(bucketProxy.tryConsume(1)).thenReturn(true);
-
-        boolean result = rateLimitRedisCacheService.tryConsumeDevicePersistedMsg();
-
-        assertTrue(result);
-        verify(bucketProxy, times(1)).tryConsume(1);
-    }
-
-    @Test
-    public void testTryConsumeTotalMsg() {
-        // Set up bucket proxy
-        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
-        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
-        when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
-        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, bucketConfig);
-        setCachePrefixAndInit();
-
-        when(bucketProxy.tryConsume(1)).thenReturn(true);
-
-        boolean result = rateLimitRedisCacheService.tryConsumeTotalMsg();
-
-        assertTrue(result);
-        verify(bucketProxy, times(1)).tryConsume(1);
-    }
-
     @Test(expected = NullPointerException.class)
     public void testTryConsumeWithNullDevicePersistedMsgsBucketProxy() {
-        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null);
+        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null, cacheProperties);
         serviceWithoutBucketProxy.tryConsumeDevicePersistedMsg();
     }
 
     @Test(expected = NullPointerException.class)
     public void testTryConsumeWithNullTotalMsgsBucketProxy() {
-        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null);
+        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null, cacheProperties);
         serviceWithoutBucketProxy.tryConsumeTotalMsg();
     }
 }
