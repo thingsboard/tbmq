@@ -63,9 +63,7 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
     @Override
     public List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds) {
         log.trace("Trying to find credentials by credentials ids {}", credentialIds);
-        return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
-                .map(DaoUtil::getData)
-                .collect(Collectors.toList());
+        return DaoUtil.convertDataList(mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds));
     }
 
     @Override

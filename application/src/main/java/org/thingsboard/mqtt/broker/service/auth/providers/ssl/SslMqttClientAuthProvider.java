@@ -19,10 +19,9 @@ import io.netty.handler.ssl.SslHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
@@ -67,9 +66,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
-    private final CacheNameResolver cacheNameResolver;
     private final MqttAuthProviderService mqttAuthProviderService;
     private final MqttHandlerCtx mqttHandlerCtx;
+    private final TbCacheOps cacheOps;
 
     private volatile boolean enabled;
     private volatile SslMqttAuthProviderConfiguration configuration;
@@ -94,29 +93,29 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         }
         if (!authContext.isSecurePortUsed()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
-            String logErrorMsg = "[{}] " + errorMsg;
-            log.error(logErrorMsg, authContext);
+            log.error("[{}] {}", authContext, errorMsg);
             return AuthResponse.failure(errorMsg);
         }
-        log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
+        String clientId = authContext.getClientId();
+        log.trace("[{}] Authenticating client with SSL credentials", clientId);
         try {
-            ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
+            ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(clientId, authContext.getSslHandler());
             if (clientTypeSslMqttCredentials == null) {
                 String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
                 log.warn(errorMsg);
                 return AuthResponse.failure(errorMsg);
             }
-            putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
+            cacheOps.put(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId, clientTypeSslMqttCredentials.getName());
             if (log.isDebugEnabled()) {
                 String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
                 log.debug("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
-                        authContext.getClientId(), clientTypeSslMqttCredentials.getType(), protocol);
+                        clientId, clientTypeSslMqttCredentials.getType(), protocol);
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
             List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
             return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
         } catch (Exception e) {
-            log.debug("[{}] Authentication failed", authContext.getClientId(), e);
+            log.debug("[{}] Authentication failed", clientId, e);
             return AuthResponse.failure(e.getMessage());
         }
     }
@@ -172,11 +171,11 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             }
             log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
 
-            if (!sslCredentialsCacheValue.getCredentials().isEmpty()) {
-                for (var creds : sslCredentialsCacheValue.getCredentials()) {
+            List<ClientTypeSslMqttCredentials> regexCreds = sslCredentialsCacheValue.getCredentials();
+            if (!regexCreds.isEmpty()) {
+                for (var creds : regexCreds) {
                     Pattern pattern = Pattern.compile(creds.getSslMqttCredentials().getCertCnPattern());
-                    boolean found = pattern.matcher(commonName).find();
-                    if (found) {
+                    if (pattern.matcher(commonName).find()) {
                         return creds;
                     }
                 }
@@ -194,24 +193,31 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     }
 
     private SslCredentialsCacheValue getSslRegexBasedCredentials() {
-        SslCredentialsCacheValue sslCredentialsCacheValue = getFromSslRegexCache();
-        if (sslCredentialsCacheValue == null) {
-            log.debug("sslRegexBasedCredentials cache is empty");
-            List<MqttClientCredentials> sslCredentials = clientCredentialsService.findByCredentialsType(ClientCredentialsType.X_509);
-            if (sslCredentials.isEmpty()) {
-                log.debug("X_509 credentials are not found in DB");
-                return null;
-            } else {
-                sslCredentialsCacheValue = prepareSslRegexCredentialsWithValuesFromDb(sslCredentials);
-                putInSslRegexCache(sslCredentialsCacheValue);
-                return sslCredentialsCacheValue;
-            }
-        } else {
-            if (sslCredentialsCacheValue.getCredentials().isEmpty()) {
+        TbCacheOps.Lookup<SslCredentialsCacheValue> cached =
+                cacheOps.lookup(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE, ClientCredentialsType.X_509, SslCredentialsCacheValue.class);
+
+        if (cached.status() == TbCacheOps.Status.HIT) {
+            if (cached.value().getCredentials().isEmpty()) {
                 log.debug("Got empty X_509 regex based credentials list from cache");
             }
-            return sslCredentialsCacheValue;
+            return cached.value();
         }
+        if (cached.status() == TbCacheOps.Status.CACHED_NULL) {
+            log.debug("Got cached-null for X_509 regex based credentials list");
+            return null;
+        }
+
+        log.debug("sslRegexBasedCredentials cache is empty");
+        List<MqttClientCredentials> sslCredentials = clientCredentialsService.findByCredentialsType(ClientCredentialsType.X_509);
+        if (sslCredentials.isEmpty()) {
+            log.debug("X_509 credentials are not found in DB");
+            cacheOps.putNull(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE, ClientCredentialsType.X_509);
+            return null;
+        }
+
+        SslCredentialsCacheValue value = prepareSslRegexCredentialsWithValuesFromDb(sslCredentials);
+        cacheOps.put(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE, ClientCredentialsType.X_509, value);
+        return value;
     }
 
     private void checkCertValidity(String clientId, X509Certificate certificate) throws AuthenticationException {
@@ -227,9 +233,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     }
 
     private String getClientCertificateCommonName(SslHandler sslHandler) throws AuthenticationException {
-        X509Certificate[] certificates;
         try {
-            certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
+            X509Certificate[] certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
             return SslUtil.parseCommonName(certificates[0]);
         } catch (Exception e) {
             log.error(FAILED_TO_GET_CLIENT_CERT_CN.getErrorMsg(), e);
@@ -248,25 +253,4 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         return new SslCredentialsCacheValue(clientTypeSslMqttCredentialsList);
     }
 
-    private SslCredentialsCacheValue getFromSslRegexCache() {
-        Cache cache = getSslRegexCredentialsCache();
-        return JacksonUtil.fromString(cache.get(ClientCredentialsType.X_509, String.class), SslCredentialsCacheValue.class);
-    }
-
-    private void putInSslRegexCache(SslCredentialsCacheValue sslCredentialsCacheValue) {
-        Cache cache = getSslRegexCredentialsCache();
-        cache.put(ClientCredentialsType.X_509, JacksonUtil.toString(sslCredentialsCacheValue));
-    }
-
-    private Cache getSslRegexCredentialsCache() {
-        return cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
-    }
-
-    private void putIntoClientSessionCredsCache(AuthContext authContext, ClientTypeSslMqttCredentials credentials) {
-        getClientSessionCredentialsCache().put(authContext.getClientId(), credentials.getName());
-    }
-
-    private Cache getClientSessionCredentialsCache() {
-        return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
-    }
 }

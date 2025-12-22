@@ -41,6 +41,9 @@ import {
 import {
   JwtProviderFormComponent
 } from '@home/components/authentication/configuration/jwt-provider-form/jwt-provider-form.component';
+import {
+  BasicProviderFormComponent
+} from '@home/components/authentication/configuration/basic-provider-form/basic-provider-form.component';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -50,7 +53,8 @@ import {
   imports: [
     ReactiveFormsModule,
     SslProviderFormComponent,
-    JwtProviderFormComponent
+    JwtProviderFormComponent,
+    BasicProviderFormComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

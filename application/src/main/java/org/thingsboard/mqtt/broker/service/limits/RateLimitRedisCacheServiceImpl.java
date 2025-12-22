@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 
 @Slf4j
 @Service
@@ -36,10 +37,8 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     private final JedisBasedProxyManager<String> jedisBasedProxyManager;
     private final BucketConfiguration devicePersistedMsgsBucketConfiguration;
     private final BucketConfiguration totalMsgsBucketConfiguration;
+    private final CacheProperties cacheProperties;
 
-    @Value("${cache.cache-prefix:}")
-    @Setter
-    private String cachePrefix;
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
@@ -55,17 +54,19 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
                                           JedisBasedProxyManager<String> jedisBasedProxyManager,
                                           @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
-                                          @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration) {
+                                          @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration,
+                                          CacheProperties cacheProperties) {
         this.redisTemplate = redisTemplate;
         this.jedisBasedProxyManager = jedisBasedProxyManager;
         this.devicePersistedMsgsBucketConfiguration = devicePersistedMsgsBucketConfiguration;
         this.totalMsgsBucketConfiguration = totalMsgsBucketConfiguration;
+        this.cacheProperties = cacheProperties;
     }
 
     @PostConstruct
     public void init() {
-        var devicePersistedMsgsLimitCacheKey = cachePrefix + CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE;
-        var totalMsgsLimitCacheKey = cachePrefix + CacheConstants.TOTAL_MSGS_LIMIT_CACHE;
+        var devicePersistedMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE);
+        var totalMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.TOTAL_MSGS_LIMIT_CACHE);
 
         this.devicePersistedMsgsBucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
                 jedisBasedProxyManager.getProxy(devicePersistedMsgsLimitCacheKey, () -> devicePersistedMsgsBucketConfiguration);
@@ -73,10 +74,10 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
                 jedisBasedProxyManager.getProxy(totalMsgsLimitCacheKey, () -> totalMsgsBucketConfiguration);
 
         if (sessionsLimit > 0) {
-            clientSessionsLimitCacheKey = cachePrefix + CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY;
+            clientSessionsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
         }
         if (applicationClientsLimit > 0) {
-            appClientsLimitCacheKey = cachePrefix + CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY;
+            appClientsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
         }
     }
 

@@ -35,6 +35,8 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -58,7 +60,7 @@ import java.util.stream.Collectors;
 @Data
 public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
-    private final CacheSpecsMap cacheSpecsMap;
+    private final CacheProperties cacheProperties;
     protected final LettuceConfig lettuceConfig;
 
     @Value("${redis.pool_config.maxTotal:128}")
@@ -93,9 +95,6 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
     @Value("${redis.pool_config.blockWhenExhausted:true}")
     private boolean blockWhenExhausted;
-
-    @Value("${cache.stats.enabled:true}")
-    private boolean cacheStatsEnabled;
 
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
@@ -145,15 +144,13 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         RedisCacheConfiguration configuration = createRedisCacheConfig(redisConversionService);
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        if (cacheSpecsMap != null) {
-            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getCacheSpecs().entrySet()) {
-                cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
-            }
+        for (Map.Entry<String, CacheSpecs> entry : cacheProperties.getCacheSpecs().entrySet()) {
+            cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
         }
 
         var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration)
                 .withInitialCacheConfigurations(cacheConfigurations).transactionAware().disableCreateOnMissingCache();
-        if (cacheStatsEnabled) {
+        if (cacheProperties.getStats().isEnabled()) {
             redisCacheManagerBuilder.enableStatistics();
         }
         return redisCacheManagerBuilder.build();
@@ -164,7 +161,10 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     }
 
     private RedisCacheConfiguration createRedisCacheConfig(DefaultFormattingConversionService redisConversionService) {
-        return RedisCacheConfiguration.defaultCacheConfig().withConversionService(redisConversionService);
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .withConversionService(redisConversionService);
     }
 
     @Bean

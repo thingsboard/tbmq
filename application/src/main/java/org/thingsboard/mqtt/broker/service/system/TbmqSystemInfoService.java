@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
@@ -76,6 +77,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheProperties cacheProperties;
 
     private ScheduledExecutorService scheduler;
     @Setter
@@ -83,12 +85,10 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Value("${stats.system-info.persist-frequency:60}")
     private int systemInfoPersistFrequencySec;
-    @Value("${cache.cache-prefix:}")
-    private String cachePrefix;
 
     @PostConstruct
     public void init() {
-        serviceRegistryKey = cachePrefix + SERVICE_REGISTRY_KEY;
+        serviceRegistryKey = cacheProperties.prefixKey(SERVICE_REGISTRY_KEY);
         scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("tbmq-system-info-scheduler"));
         scheduler.scheduleAtFixedRate(this::saveCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
 

@@ -16,18 +16,31 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttAuthProvider, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import {
+  MqttAuthProvider,
+  MqttBasicAuthenticationStrategy,
+  ShortMqttAuthProvider,
+  MqttBasicAuthenticationStrategyTranslationMap
+} from '@shared/models/mqtt-auth-provider.model';
+import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
+import { take } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
+import { DialogService } from '@core/services/dialog.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MqttAuthProviderService {
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private translate: TranslateService,
+    private dialog: DialogService,
+  ) {
   }
 
   public saveAuthProvider(mqttClientCredentials: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {
@@ -56,5 +69,35 @@ export class MqttAuthProviderService {
     } else {
       return this.enableAuthProvider(id, config);
     }
+  }
+
+  public getBasicAuthProviderStrategy(config?: RequestConfig): Observable<MqttBasicAuthenticationStrategy> {
+    return this.http.get<MqttBasicAuthenticationStrategy>('/api/mqtt/auth/provider/basic/strategy', defaultHttpOptionsFromConfig(config));
+  }
+
+  public displayBasicAuthProviderAlert(credentials: ClientCredentials): Observable<boolean> {
+    if (credentials.credentialsType !== CredentialsType.MQTT_BASIC) {
+      return of(true);
+    }
+    return this.getBasicAuthProviderStrategy().pipe(
+      take(1),
+      switchMap(strategy => {
+        const credentialsValue = JSON.parse(credentials.credentialsValue);
+        const hasUsername = credentialsValue.userName;
+        const hasClientId = credentialsValue.clientId;
+        const displayAlert = (strategy === MqttBasicAuthenticationStrategy.CLIENT_ID && hasUsername) ||
+                                (strategy === MqttBasicAuthenticationStrategy.USERNAME && hasClientId);
+        if (!displayAlert) {
+          return of(true);
+        }
+        const name = credentials.name;
+        const activeStrategy = this.translate.instant(MqttBasicAuthenticationStrategyTranslationMap.get(strategy));
+        const inactiveStrategy = this.translate.instant(MqttBasicAuthenticationStrategyTranslationMap.get(strategy === MqttBasicAuthenticationStrategy.CLIENT_ID ? MqttBasicAuthenticationStrategy.USERNAME : MqttBasicAuthenticationStrategy.CLIENT_ID));
+        return this.dialog.alert(
+          this.translate.instant('authentication.basic-authentication-alert-title'),
+          this.translate.instant('authentication.basic-authentication-alert-text', { name, activeStrategy, inactiveStrategy })
+        );
+      })
+    );
   }
 }
