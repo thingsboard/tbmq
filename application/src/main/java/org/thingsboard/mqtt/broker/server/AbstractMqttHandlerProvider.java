@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
@@ -138,7 +137,7 @@ public abstract class AbstractMqttHandlerProvider {
             } catch (CertificateException e) {
                 String subject = extractSubjectFromChain(chain);
                 log.warn("Rejecting client with leaf cert [{}], chain size - [{}]", subject, chain != null ? chain.length : 0);
-                unauthorizedClientManager.persistClientUnauthorized(getUnauthorizedClient(subject, e));
+                unauthorizedClientManager.persistClientUnauthorized(generateUnknownClientId(subject), e.getMessage());
                 throw e;
             }
         }
@@ -147,18 +146,6 @@ public abstract class AbstractMqttHandlerProvider {
             return (chain != null && chain.length > 0)
                     ? chain[0].getSubjectX500Principal().getName()
                     : null;
-        }
-
-        private UnauthorizedClient getUnauthorizedClient(String subject, CertificateException e) {
-            return UnauthorizedClient.builder()
-                    .clientId(generateUnknownClientId(subject))
-                    .ipAddress(BrokerConstants.UNKNOWN) // can be improved later
-                    .ts(System.currentTimeMillis())
-                    .username(BrokerConstants.UNKNOWN)
-                    .passwordProvided(false)
-                    .tlsUsed(true)
-                    .reason(e.getMessage())
-                    .build();
         }
 
         private String generateUnknownClientId(String subject) {
