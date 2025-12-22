@@ -831,21 +831,6 @@ spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATE
 
 # Security parameters
 security:
-  # Since version 2.2.0, values under the 'mqtt' prefix are persisted in the database during installation or upgrade.
-  # These settings are now deprecated in this file and will be removed in the next release
-  mqtt:
-    # DEPRECATED: BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
-    # and then by 'ssl' provider if 'basic' is not successful;
-    # the latter means only one attempt is done according to the listener communication chosen (see listener.tcp/listener.ssl)
-    auth_strategy: "${SECURITY_MQTT_AUTH_STRATEGY:BOTH}"
-    basic:
-      # DEPRECATED: If enabled the server will try to authenticate client with clientId and/or username and/or password
-      enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
-    ssl:
-      # DEPRECATED: If enabled the server will try to authenticate client with client certificate chain
-      enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
-      # DEPRECATED: Skip certificate validity check for client certificates
-      skip_validity_check_for_client_cert: "${SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
   # JWT Token parameters
   jwt:
     # User JWT Token expiration time in seconds (2.5 hours)
