@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
@@ -29,6 +28,8 @@ import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientSer
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 
 @Slf4j
 @Service
@@ -59,39 +60,41 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
     @Override
     public void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx,
                                           String username, boolean passwordProvided, String reason) {
-        if (!props.isEnabled()) {
-            return;
-        }
-        UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
-                .clientId(state.getClientId())
-                .ipAddress(BytesUtil.toHostAddress(clientSessionCtx.getAddressBytes()))
-                .ts(System.currentTimeMillis())
-                .username(username)
-                .passwordProvided(passwordProvided)
-                .tlsUsed(clientSessionCtx.getSslHandler() != null)
-                .reason(reason)
-                .build();
-        persist(unauthorizedClient);
+        persist(
+                state.getClientId(),
+                BytesUtil.toHostAddress(clientSessionCtx.getAddressBytes()),
+                username,
+                passwordProvided,
+                clientSessionCtx.getSslHandler() != null,
+                reason
+        );
     }
 
     @Override
     public void persistClientUnauthorized(String clientId, String reason) {
+        persist(
+                clientId,
+                UNKNOWN, // can be improved later
+                UNKNOWN,
+                false,
+                true,
+                reason
+        );
+    }
+
+    private void persist(String clientId, String ipAddress, String username, boolean passwordProvided, boolean tlsUsed, String reason) {
         if (!props.isEnabled()) {
             return;
         }
         UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
                 .clientId(clientId)
-                .ipAddress(BrokerConstants.UNKNOWN) // can be improved later
+                .ipAddress(ipAddress)
                 .ts(System.currentTimeMillis())
-                .username(BrokerConstants.UNKNOWN)
-                .passwordProvided(false)
-                .tlsUsed(true)
+                .username(username)
+                .passwordProvided(passwordProvided)
+                .tlsUsed(tlsUsed)
                 .reason(reason)
                 .build();
-        persist(unauthorizedClient);
-    }
-
-    private void persist(UnauthorizedClient unauthorizedClient) {
         DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
                 v -> log.debug("[{}] Unauthorized Client saved successfully! {}", unauthorizedClient.getClientId(), unauthorizedClient),
                 throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable));
@@ -102,7 +105,7 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
         if (!props.isEnabled()) {
             return;
         }
-        UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder().clientId(state.getClientId()).build();
+        UnauthorizedClient unauthorizedClient = UnauthorizedClient.withClientId(state.getClientId());
         DonAsynchron.withCallback(unauthorizedClientService.remove(unauthorizedClient),
                 v -> log.debug("[{}] Unauthorized Client removed successfully!", state.getClientId()),
                 throwable -> log.warn("[{}] Failed to removed unauthorized client!", state.getClientId(), throwable));

@@ -34,4 +34,7 @@ public class UnauthorizedClient {
     private boolean tlsUsed;
     private String reason;
 
+    public static UnauthorizedClient withClientId(String clientId) {
+        return UnauthorizedClient.builder().clientId(clientId).build();
+    }
 }
