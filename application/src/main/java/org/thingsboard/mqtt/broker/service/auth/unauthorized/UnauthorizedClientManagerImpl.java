@@ -16,7 +16,9 @@
 package org.thingsboard.mqtt.broker.service.auth.unauthorized;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
@@ -35,6 +37,10 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager {
 
     private final UnauthorizedClientService unauthorizedClientService;
+
+    @Setter
+    @Value("${security.unauth-clients.enabled:true}")
+    private boolean unAuthClientsEnabled;
 
     @Override
     public void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, AuthResponse authResponse) {
@@ -80,6 +86,9 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
     }
 
     private void persist(UnauthorizedClient unauthorizedClient) {
+        if (!unAuthClientsEnabled) {
+            return;
+        }
         DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
                 v -> log.debug("[{}] Unauthorized Client saved successfully! {}", unauthorizedClient.getClientId(), unauthorizedClient),
                 throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable));
@@ -87,6 +96,9 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
 
     @Override
     public void removeClientUnauthorized(ClientActorState state) {
+        if (!unAuthClientsEnabled) {
+            return;
+        }
         UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
                 .clientId(state.getClientId())
                 .build();

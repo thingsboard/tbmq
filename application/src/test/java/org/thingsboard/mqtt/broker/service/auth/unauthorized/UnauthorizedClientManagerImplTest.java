@@ -71,6 +71,7 @@ class UnauthorizedClientManagerImplTest {
     void setup() {
         String clientId = "test-client";
         when(state.getClientId()).thenReturn(clientId);
+        unauthorizedClientManager.setUnAuthClientsEnabled(true);
     }
 
     @Test

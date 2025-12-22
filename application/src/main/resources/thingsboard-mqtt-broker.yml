@@ -854,13 +854,16 @@ security:
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
     # User JWT Token sign key
     tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:Qk1xUnloZ0VQTlF1VlNJQXZ4cWhiNWt1cVd1ZzQ5cWpENUhMSHlaYmZIM0JrZ2pPTVlhQ3N1Z0ZMUnd0SDBieg==}"
-  basic:
-    # Enable/Disable basic security options
-    enabled: "${SECURITY_BASIC_ENABLED:false}"
   # Enable/disable access to other Administrators JWT token by System Administrator
   user_token_access_enabled: "${SECURITY_USER_TOKEN_ACCESS_ENABLED:true}"
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
+  # Unauthorized Clients configuration
+  unauth-clients:
+    # Enables or disables persistence of unauthorized client connection attempts.
+    # When disabled, unauthorized clients are logged only and are not stored.
+    # When enabled, unauthorized client entries are persisted to the database
+    enabled: "${SECURITY_UNAUTH_CLIENTS_ENABLED:true}"
 
 # MQTT parameters
 mqtt:
