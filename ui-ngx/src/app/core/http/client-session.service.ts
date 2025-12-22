@@ -28,7 +28,7 @@ import {
   SessionMetricsList,
   SessionQuery
 } from '@shared/models/session.model';
-import { StatsService } from '@core/http/stats.service';
+import { TimeseriesService } from '@core/http/timeseries.service';
 import { map } from 'rxjs/operators';
 import {
   SessionsDetailsDialogComponent,
@@ -43,7 +43,7 @@ export class ClientSessionService {
 
   constructor(private http: HttpClient,
               private dialog: MatDialog,
-              private statsService: StatsService) {
+              private timeseriesService: TimeseriesService) {
   }
 
   public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
@@ -79,7 +79,7 @@ export class ClientSessionService {
   }
 
   public getSessionMetrics(clientId: string): Observable<PageData<SessionMetrics>> {
-    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true).pipe(
+    return this.timeseriesService.getLatestTimeseries(clientId, SessionMetricsList, true).pipe(
       map((metrics) => {
         const data = [];
         for (const [key, value] of Object.entries(metrics)) {
@@ -100,7 +100,7 @@ export class ClientSessionService {
   }
 
   public deleteSessionMetrics(clientId: string, config?: RequestConfig) {
-    return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
+    return this.timeseriesService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
   }
 
   public openSessionDetailsDialog($event: Event, clientId: string, data?: any): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {

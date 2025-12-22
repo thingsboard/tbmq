@@ -19,34 +19,29 @@
   <div class="tb-card-header">
     <tb-card-title-button [cardType]="cardType" [disabled]="false"></tb-card-title-button>
     <div class="flex flex-row items-center gap-2">
-      <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex === 0" (click)="chartsCarouselIndex = chartsCarouselIndex - 1"><mat-icon>keyboard_arrow_left</mat-icon></button>
-      <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex >= chartKeys?.length - items" (click)="chartsCarouselIndex = chartsCarouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
+      <button mat-icon-button class="tb-mat-24" [disabled]="carouselIndex === 0" (click)="carouselIndex = carouselIndex - 1"><mat-icon>keyboard_arrow_left</mat-icon></button>
+      <button mat-icon-button class="tb-mat-24" [disabled]="carouselIndex >= chartKeys?.length - visibleItems" (click)="carouselIndex = carouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
     </div>
   </div>
   <div class="tb-home-charts">
-    <ngx-hm-carousel #carousel
-      align="left"
-      [(ngModel)]="chartsCarouselIndex"
-      [drag-many]="true"
-      [show-num]="items"
-      [data]="chartKeys"
-      class="carousel c-accent">
+    <ngx-hm-carousel class="carousel c-accent" align="left"
+                     [(ngModel)]="carouselIndex"
+                     [drag-many]="true"
+                     [show-num]="visibleItems"
+                     [data]="chartKeys">
       <section ngx-hm-carousel-container class="content">
-        @for (chart of chartKeys; track chart) {
-          <article class="item"
-            ngx-hm-carousel-item>
-            <div class="chart-container flex flex-col">
-              <section class="flex flex-row gap-1.5 whitespace-nowrap">
-                <span>{{ chartTypeTranslationMap.get(chart) | translate }}</span>
-                <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
-                  [matTooltip]="chartTooltip(chart)">
-                  info_outline
-                </mat-icon>
-              </section>
-              <section [style]="{'width': chartWidth, 'height': chartHeight}">
-                <canvas [id]="chart+chartPage"></canvas>
-              </section>
-            </div>
+        @for (chartKey of chartKeys; track chartKey) {
+          <article class="item" ngx-hm-carousel-item>
+            <tb-chart
+              [chartKey]="chartKey"
+              [chartView]="chartView"
+              [chartHeight]="chartHeight"
+              [globalTimewindow]="timewindow"
+              [showTimewindow]="false"
+              [showLegend]="false"
+              [showFullscreen]="false"
+              [showDataSizeUnitToggle]="false"
+            />
           </article>
         }
       </section>

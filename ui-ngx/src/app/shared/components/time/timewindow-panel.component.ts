@@ -201,7 +201,6 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
   }
 
   onTimewindowTypeChange() {
-    this.timewindowForm.markAsDirty();
     const timewindowFormValue = this.timewindowForm.getRawValue();
     if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
       if (timewindowFormValue.history.historyType !== HistoryWindowType.FIXED) {
@@ -213,7 +212,7 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
           quickInterval: timewindowFormValue.history.quickInterval.startsWith('CURRENT') ?
             timewindowFormValue.history.quickInterval : timewindowFormValue.realtime.quickInterval
         });
-        setTimeout(() => this.timewindowForm.get('realtime.interval').patchValue(timewindowFormValue.history.interval));
+        this.timewindowForm.get('realtime.interval').patchValue(timewindowFormValue.history.interval);
       }
     } else {
       this.timewindowForm.get('history').patchValue({
@@ -221,7 +220,7 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
         timewindowMs: timewindowFormValue.realtime.timewindowMs,
         quickInterval: timewindowFormValue.realtime.quickInterval
       });
-      setTimeout(() => this.timewindowForm.get('history.interval').patchValue(timewindowFormValue.realtime.interval));
+      this.timewindowForm.get('history.interval').patchValue(timewindowFormValue.realtime.interval);
     }
     this.timewindowForm.patchValue({
       aggregation: {
@@ -230,6 +229,7 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
       },
       timezone: timewindowFormValue.timezone
     });
+    this.timewindowForm.markAsDirty();
   }
 
   update() {

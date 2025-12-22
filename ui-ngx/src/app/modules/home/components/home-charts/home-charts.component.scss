@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
 
 :host::ng-deep {
   .tb-card-header {
@@ -54,6 +53,7 @@
             span {
               font-size: 0.9em;
               font-weight: 500;
+              white-space: nowrap;
               color: rgba(0,0,0,0.54);
               padding-left: 6px;
             }
@@ -63,19 +63,12 @@
               height: 1em;
               width: 1em;
               line-height: 1em;
-              padding-left: 0.25em;
-              color: rgba(0,0,0,0.12);
+              color: rgba(0,0,0,0.54);
               cursor: default;
             }
 
             mat-icon:hover {
               color: rgba(0,0,0,0.38);
-            }
-
-            @media screen and (min-width: 1280px) and (max-width: 1500px) {
-              span {
-                font-size: 0.7em;
-              }
             }
           }
         }

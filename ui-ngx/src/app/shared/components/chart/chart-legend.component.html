@@ -1,0 +1,84 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section>
+  <div [class.hidden]="!isFullscreen()" class="flex-1"></div>
+  <section class="tb-time-series-chart-legend">
+    <table class="tb-time-series-chart-legend-table vertical">
+      <thead>
+      <tr>
+        <th></th>
+        @if (legendConfig().showMin === true) {
+          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Min' | translate }}</th>
+        }
+        @if (legendConfig().showMax === true) {
+          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Max' | translate }}</th>
+        }
+        @if (legendConfig().showAvg === true) {
+          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Avg' | translate }}</th>
+        }
+        @if (legendConfig().showTotal === true && !totalEntityIdOnly()) {
+          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Total' | translate }}</th>
+        }
+        @if (legendConfig().showLatest === true) {
+          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Latest' | translate }}</th>
+        }
+      </tr>
+      </thead>
+      <tbody>
+        @for (legendKey of legendKeys; track legendKey; let index = $index) {
+          <tr>
+            <th>
+              <tb-chart-legend-item
+                [legendKey]="legendKey"
+                [left]="true"
+                (legendKeyEnter)="updateLineWidth($event, 4)"
+                (legendKeyLeave)="updateLineWidth($event, 2)"
+                (toggleLegendKey)="toggleLegendKey($event)">
+              </tb-chart-legend-item>
+            </th>
+            @if (legendConfig().showMin === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'min') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showMax === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'max') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showAvg === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'avg') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showTotal === true && !legendKey.dataKey.hidden && !totalEntityIdOnly()) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'total') | safe: 'html'">
+              </td>
+            }
+            @if (legendConfig().showLatest === true && !legendKey.dataKey.hidden) {
+              <td class="tb-time-series-chart-legend-value"
+                  [innerHTML]="legendValue(index, 'latest') | safe: 'html'">
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</section>

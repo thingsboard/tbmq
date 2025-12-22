@@ -18,25 +18,30 @@ import { Component, output } from '@angular/core';
 import { FixedWindow, Timewindow } from '@shared/models/time/time.models';
 import { TranslateModule } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { CHARTS_STATE_HEALTH } from '@shared/models/chart.model';
+import { ChartKey } from '@shared/models/chart.model';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
-import { MonitoringChartComponent } from '@home/pages/monitoring/monitoring-chart.component';
+import { ChartComponent } from '@shared/components/chart/chart.component';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
-    selector: 'tb-monitoring-state-health',
-    templateUrl: './monitoring-state-health.component.html',
-    styleUrls: ['./monitoring-state-health.component.scss'],
-    imports: [MatToolbar, TimewindowComponent, FormsModule, TranslateModule, MonitoringChartComponent]
+    selector: 'tb-monitoring-charts',
+    templateUrl: './monitoring-charts.component.html',
+    styleUrls: ['./monitoring-charts.component.scss'],
+    imports: [MatToolbar, TimewindowComponent, FormsModule, TranslateModule, ChartComponent]
 })
-export class MonitoringStateHealthComponent {
+export class MonitoringChartsComponent {
 
   readonly timewindowChanged = output<FixedWindow>();
-  readonly chartTypes = CHARTS_STATE_HEALTH;
+  chartKeys: ChartKey[];
   timewindow: Timewindow;
 
-  constructor(private timeService: TimeService) {
+  constructor(
+    private timeService: TimeService,
+    private route: ActivatedRoute,
+  ) {
+    this.route.data.subscribe(data => this.chartKeys = data.charts);
     this.timewindow = this.timeService.defaultTimewindow();
   }
 }

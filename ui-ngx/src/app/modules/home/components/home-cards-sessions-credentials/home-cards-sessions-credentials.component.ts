@@ -15,15 +15,16 @@
 ///
 
 import { AfterViewInit, Component, OnDestroy, input } from '@angular/core';
-import { forkJoin, Observable, retry, Subject, timer } from 'rxjs';
-import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
+import { forkJoin, Observable, retry, Subject } from 'rxjs';
+import { shareReplay, switchMap, take, takeUntil } from 'rxjs/operators';
 import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
-import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
+import { CredentialsHomeCardConfig, HomePageTitleType, SessionsHomeCardConfig } from '@shared/models/home-page.model';
 import { HomeCardsTableComponent } from './home-cards-table.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { TimeService } from '@core/services/time.service';
 
 @Component({
     selector: 'tb-home-cards-sessions-credentials',
@@ -42,9 +43,17 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
   credentialsConfig = CredentialsHomeCardConfig;
 
   private stopPolling$ = new Subject<void>();
+  private $tasks = forkJoin([
+    this.clientSessionService.getClientSessionsStats(),
+    this.clientCredentialsService.getClientCredentialsStatsInfo()
+  ]);
 
-  constructor(private clientCredentialsService: ClientCredentialsService,
-              private clientSessionService: ClientSessionService) {
+  constructor(
+    private clientCredentialsService: ClientCredentialsService,
+    private clientSessionService: ClientSessionService,
+    private timeService: TimeService,
+  ) {
+    this.$tasks.pipe(take(1)).subscribe(data => this.update(data));
   }
 
   ngAfterViewInit(): void {
@@ -55,17 +64,18 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
     this.stopPolling$.next();
   }
 
-  startPolling() {
-    timer(0, POLLING_INTERVAL)
+  private startPolling() {
+    this.timeService.getSyncTimer()
       .pipe(
-        switchMap(() =>
-          forkJoin([
-            this.clientSessionService.getClientSessionsStats(),
-            this.clientCredentialsService.getClientCredentialsStatsInfo()
-          ])),
+        switchMap(() => this.$tasks),
         retry(),
         takeUntil(this.stopPolling$),
-        shareReplay())
-      .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);
+        shareReplay()
+      )
+      .subscribe(data => this.update(data));
+  }
+
+  private update(data: [ClientSessionStatsInfo, ClientCredentialsInfo]) {
+    [this.sessionsLatest, this.credentialsLatest] = [...data];
   }
 }

@@ -21,7 +21,7 @@ import {
   clientUserNameRandom,
   ConnectionStatus,
   ConnectionStatusLog,
-  DataSizeUnitType,
+  DataSizeUnit,
   DisconnectReasonCodes,
   MessageCounter,
   MessageCounterEmpty,
@@ -314,7 +314,7 @@ export class MqttJsClientService {
       options.properties = {
         sessionExpiryInterval: connection.configuration.sessionExpiryInterval,
         receiveMaximum: connection.configuration.receiveMax,
-        maximumPacketSize: convertDataSizeUnits(connection.configuration.maxPacketSize, connection.configuration.maxPacketSizeUnit, DataSizeUnitType.BYTE),
+        maximumPacketSize: convertDataSizeUnits(connection.configuration.maxPacketSize, connection.configuration.maxPacketSizeUnit, DataSizeUnit.BYTE),
         topicAliasMaximum: connection.configuration.topicAliasMax,
         requestResponseInformation: connection.configuration.requestResponseInfo
       };
