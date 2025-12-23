@@ -54,7 +54,7 @@ public class ActorSystemLifecycle {
     private final ClientActorConfiguration clientActorConfiguration;
     private final ClientSessionEventService clientSessionEventService;
 
-    @Value("${actors.system.disconnect-wait-timeout-ms:2000}")
+    @Value("${actors.system.disconnect-wait-timeout-ms:15000}")
     private long waitTimeoutMs;
 
     @PostConstruct
@@ -63,20 +63,28 @@ public class ActorSystemLifecycle {
         actorSystem.createDispatcher(CLIENT_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_DISPATCHER_NAME, clientActorConfiguration.getDispatcherPoolSize()));
     }
 
+    private ExecutorService initDispatcherExecutor(String dispatcherName, int poolSize) {
+        if (poolSize == 0) {
+            int cores = Runtime.getRuntime().availableProcessors();
+            poolSize = Math.max(1, cores / 2);
+        }
+        if (poolSize == 1) {
+            return Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(dispatcherName));
+        } else {
+            return ThingsBoardExecutors.newWorkStealingPool(poolSize, dispatcherName);
+        }
+    }
+
     @PreDestroy
     public void destroy() throws InterruptedException {
         notifyAboutDisconnectedClients();
     }
 
     private void notifyAboutDisconnectedClients() {
-        if (log.isTraceEnabled()) {
-            log.trace("Process notify about disconnected clients.");
-        }
+        log.trace("Process notify about disconnected clients.");
         Collection<ClientSessionCtx> clientSessionContexts = clientSessionCtxService.getAllClientSessionCtx();
         if (clientSessionContexts.isEmpty()) {
-            if (log.isTraceEnabled()) {
-                log.trace("No client sessions left to notify about disconnect.");
-            }
+            log.trace("No client sessions left to notify about disconnect.");
             return;
         }
 
@@ -100,18 +108,6 @@ public class ActorSystemLifecycle {
         }
     }
 
-    private ExecutorService initDispatcherExecutor(String dispatcherName, int poolSize) {
-        if (poolSize == 0) {
-            int cores = Runtime.getRuntime().availableProcessors();
-            poolSize = Math.max(1, cores / 2);
-        }
-        if (poolSize == 1) {
-            return Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(dispatcherName));
-        } else {
-            return ThingsBoardExecutors.newWorkStealingPool(poolSize, dispatcherName);
-        }
-    }
-
     @AllArgsConstructor
     private static class DisconnectCallback implements TbQueueCallback {
 
@@ -119,9 +115,7 @@ public class ActorSystemLifecycle {
 
         @Override
         public void onSuccess(TbQueueMsgMetadata metadata) {
-            if (log.isTraceEnabled()) {
-                log.trace("Disconnect request sent successfully: {}", metadata);
-            }
+            log.trace("Disconnect request sent successfully: {}", metadata);
             countDownLatch.countDown();
         }
 

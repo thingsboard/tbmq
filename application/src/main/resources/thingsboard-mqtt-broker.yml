@@ -640,8 +640,8 @@ actors:
     processing-metrics:
       # Enable/disable actors processing metrics
       enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
-    # Actors disconnect timeout in milliseconds
-    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
+    # Time (ms) the actor system waits during TBMQ node shutdown to process client disconnections
+    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:15000}"
   persisted-device:
     # Number of threads processing the Device actor's messages
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:8}"
