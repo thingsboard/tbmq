@@ -177,7 +177,6 @@ public class ClientActor extends ContextAwareActor {
                     case PUBACK_RESPONSE_MSG:
                         processPubAckResponseMsg((PubAckResponseMsg) msg);
                         break;
-
                     case PUBREC_RESPONSE_MSG:
                         processPubRecResponseMsg((PubRecResponseMsg) msg);
                         break;

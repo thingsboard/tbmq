@@ -86,14 +86,14 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 List<TbProtoQueueMsg<ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
                 if (msgs.isEmpty()) {
                     continue;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Going to process {} client session events", msgs.size());
-                    }
                 }
+                int size = msgs.size();
+                log.debug("Going to process {} client session events", size);
+
                 long packProcessingStart = System.nanoTime();
                 processMessages(msgs);
-                stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
+                stats.logPackProcessingTime(size, System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
+
                 consumer.commitSync();
             } catch (Exception e) {
                 if (!stopped) {
@@ -101,9 +101,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                     try {
                         Thread.sleep(pollDuration);
                     } catch (InterruptedException e2) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
-                        }
+                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
                     }
                 }
             }
