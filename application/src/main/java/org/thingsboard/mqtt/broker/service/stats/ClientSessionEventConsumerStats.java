@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.stats;
 import java.util.concurrent.TimeUnit;
 
 public interface ClientSessionEventConsumerStats {
+
     String getConsumerId();
 
     void logPackProcessingTime(int packSize, long amount, TimeUnit unit);

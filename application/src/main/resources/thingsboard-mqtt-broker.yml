@@ -308,7 +308,7 @@ queue:
     # Interval in milliseconds to poll messages from 'tbmq.client.session.event.request' topic
     poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
     # Max interval in milliseconds to process 'tbmq.client.session.event.request' messages after consuming them
-    batch-wait-timeout-ms: "${TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS:2000}"
+    batch-wait-timeout-ms: "${TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS:15000}"
   client-session-event-response:
     # Number of threads for sending event responses to session event requests
     response-sender-threads: "${TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS:8}"

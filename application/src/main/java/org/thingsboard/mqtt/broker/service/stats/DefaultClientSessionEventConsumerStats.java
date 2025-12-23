@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -25,18 +26,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class DefaultClientSessionEventConsumerStats implements ClientSessionEventConsumerStats {
+
     private static final String CONSUMER_ID_TAG = "consumerId";
 
     private final String consumerId;
-
     private final ResettableTimer packProcessingTimer;
-
     private final AtomicLong totalPackSize = new AtomicLong();
 
     public DefaultClientSessionEventConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
         String statsKey = StatsType.CLIENT_SESSION_EVENT_CONSUMER.getPrintName();
-        this.packProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
+        Timer timer = statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId);
+        this.packProcessingTimer = new ResettableTimer(timer);
     }
 
     @Override
