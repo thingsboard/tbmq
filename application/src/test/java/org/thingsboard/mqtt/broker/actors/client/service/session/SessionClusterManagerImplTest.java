@@ -118,7 +118,6 @@ public class SessionClusterManagerImplTest {
         };
         doReturn(eventResponseProducer).when(clientSessionEventQueueFactory).createEventResponseProducer(any());
         when(timeseriesService.removeAllLatestForClient(anyString())).thenReturn(Futures.immediateFuture(null));
-        sessionClusterManager.init();
     }
 
     @Test
