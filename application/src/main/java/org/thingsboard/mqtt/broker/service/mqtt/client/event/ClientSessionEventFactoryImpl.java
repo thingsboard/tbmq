@@ -17,13 +17,9 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
-
-import java.util.UUID;
 
 @Service
 public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory {
@@ -32,22 +28,15 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     public ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
-                .setEventType(ClientSessionEventType.CONNECTION_REQUEST.toString())
+                .setEventType(ClientSessionEventType.CONNECTION_REQUEST.name())
                 .build();
     }
 
     @Override
-    public ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                int sessionExpiryInterval) {
-        SessionInfo disconnectSessionInfo = SessionInfo.builder()
-                .sessionId(sessionId)
-                .clientInfo(clientInfo)
-                .serviceId(BrokerConstants.EMPTY_STR)
-                .sessionExpiryInterval(sessionExpiryInterval)
-                .build();
+    public ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo) {
         return ClientSessionEventProto.newBuilder()
-                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(disconnectSessionInfo))
-                .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.toString())
+                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.name())
                 .build();
     }
 
@@ -55,14 +44,14 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     public ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(clientSessionInfo))
-                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
+                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.name())
                 .build();
     }
 
     @Override
     public ClientSessionEventProto createApplicationTopicRemoveRequestEventProto(String clientId) {
         return ClientSessionEventProto.newBuilder()
-                .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.toString())
+                .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.name())
                 .build();
     }
 

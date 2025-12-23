@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -84,7 +85,8 @@ public class ActorSystemLifecycle {
 
         log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
         for (ClientSessionCtx sessionCtx : clientSessionContexts) {
-            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId(), -1, callback);
+            SessionInfo sessionInfo = sessionCtx.getSessionInfo().withSessionExpiryInterval(-1);
+            clientSessionEventService.notifyClientDisconnected(sessionInfo, callback);
         }
 
         boolean waitSuccessful = false;

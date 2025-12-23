@@ -16,18 +16,15 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-
-import java.util.UUID;
 
 public interface ClientSessionEventService {
 
     ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo);
 
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval, TbQueueCallback callback);
+    void notifyClientDisconnected(SessionInfo sessionInfo, TbQueueCallback callback);
 
     void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo);
 

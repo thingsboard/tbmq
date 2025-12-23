@@ -15,24 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.With;
 
 import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
 @Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
+@Data
 public class SessionInfo {
 
     private final String serviceId;
     private final UUID sessionId;
     private final boolean cleanStart;
+    @With
     private final int sessionExpiryInterval;
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;

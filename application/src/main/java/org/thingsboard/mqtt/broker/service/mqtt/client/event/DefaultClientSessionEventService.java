@@ -27,7 +27,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
@@ -110,10 +109,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval, TbQueueCallback callback) {
+    public void notifyClientDisconnected(SessionInfo sessionInfo, TbQueueCallback callback) {
         sendEvent(
-                clientInfo.getClientId(),
-                eventFactory.createDisconnectedEventProto(clientInfo, sessionId, sessionExpiryInterval),
+                sessionInfo.getClientId(),
+                eventFactory.createDisconnectedEventProto(sessionInfo),
                 false,
                 callback);
     }

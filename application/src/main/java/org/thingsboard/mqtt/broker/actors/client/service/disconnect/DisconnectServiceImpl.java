@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
@@ -128,11 +129,8 @@ public class DisconnectServiceImpl implements DisconnectService {
         log.trace("[{}] Executing notifyClientDisconnected", actorState.getClientId());
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
-            clientSessionEventService.notifyClientDisconnected(
-                    sessionCtx.getSessionInfo().getClientInfo(),
-                    actorState.getCurrentSessionId(),
-                    sessionExpiryInterval,
-                    null);
+            SessionInfo disconnectSessionInfo = sessionCtx.getSessionInfo().withSessionExpiryInterval(sessionExpiryInterval);
+            clientSessionEventService.notifyClientDisconnected(disconnectSessionInfo, null);
         } catch (Exception e) {
             log.warn("[{}][{}][{}] Failed to notify client disconnected.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), sessionExpiryInterval, e);
