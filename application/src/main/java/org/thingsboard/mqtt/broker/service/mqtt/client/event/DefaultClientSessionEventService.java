@@ -90,8 +90,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
 
     @PostConstruct
     public void init() {
-        this.eventProducer = clientSessionEventQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
-        this.eventResponseConsumer = clientSessionEventQueueFactory.createEventResponseConsumer(serviceInfoProvider.getServiceId());
+        eventProducer = clientSessionEventQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
+        eventResponseConsumer = clientSessionEventQueueFactory.createEventResponseConsumer(serviceInfoProvider.getServiceId());
         startProcessingEventResponses();
         startStaleRequestsCleanup();
     }
@@ -103,37 +103,19 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         }
 
         return sendEvent(
-                sessionInfo.getClientInfo().getClientId(),
+                sessionInfo.getClientId(),
                 eventFactory.createConnectionRequestEventProto(sessionInfo),
                 true,
                 null);
     }
 
     @Override
-    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval) {
+    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval, TbQueueCallback callback) {
         sendEvent(
                 clientInfo.getClientId(),
                 eventFactory.createDisconnectedEventProto(clientInfo, sessionId, sessionExpiryInterval),
                 false,
-                null);
-    }
-
-    @Override
-    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback) {
-        sendEvent(
-                clientInfo.getClientId(),
-                eventFactory.createDisconnectedEventProto(clientInfo, sessionId, -1),
-                false,
                 callback);
-    }
-
-    @Override
-    public void requestSessionCleanup(SessionInfo sessionInfo) {
-        sendEvent(
-                sessionInfo.getClientInfo().getClientId(),
-                eventFactory.createClearSessionRequestEventProto(sessionInfo),
-                false,
-                null);
     }
 
     @Override
@@ -164,22 +146,16 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             EventFuture eventFuture = new EventFuture(tickTs.get() + maxRequestTimeout, future);
             pendingRequests.putIfAbsent(requestId, eventFuture);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventProto.getEventType(), requestId);
-        }
+        log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventProto.getEventType(), requestId);
         TbQueueCallback tbQueueCallback = new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}][{}][{}] Request sent: {}", clientId, eventProto.getEventType(), requestId, metadata);
-                }
+                log.trace("[{}][{}][{}] Request sent: {}", clientId, eventProto.getEventType(), requestId, metadata);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}][{}][{}] Failed to send request.", clientId, eventProto.getEventType(), requestId, t);
-                }
+                log.debug("[{}][{}][{}] Failed to send request.", clientId, eventProto.getEventType(), requestId, t);
                 if (isAwaitingResponse) {
                     pendingRequests.remove(requestId);
                     future.setException(t);
@@ -204,13 +180,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             while (!stopped) {
                 try {
                     List<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseList = eventResponseConsumer.poll(pollDuration);
-                    if (!eventResponseList.isEmpty()) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Read {} event responses.", eventResponseList.size());
-                        }
-                    } else {
+                    if (eventResponseList.isEmpty()) {
                         continue;
                     }
+                    log.trace("Read {} event responses.", eventResponseList.size());
                     for (TbProtoQueueMsg<ClientSessionEventResponseProto> eventResponseMsg : eventResponseList) {
                         processEventResponse(eventResponseMsg);
                     }
@@ -229,14 +202,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             return;
         }
         UUID requestId = BytesUtil.bytesToUuid(requestIdBytes);
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Event response received: {}", requestId, eventResponseMsg);
-        }
+        log.trace("[{}] Event response received: {}", requestId, eventResponseMsg);
         EventFuture eventFuture = pendingRequests.remove(requestId);
         if (eventFuture == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Invalid or stale request.", requestId);
-            }
+            log.debug("[{}] Invalid or stale request.", requestId);
         } else {
             ConnectionResponse connectionResponse = ProtoConverter.toConnectionResponse(eventResponseMsg.getValue());
             eventFuture.future.set(connectionResponse);
@@ -245,23 +214,19 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
 
     private void processingEventResponseError(Throwable e) {
         if (stopped) {
-            if (log.isDebugEnabled()) {
-                log.debug("Ignoring error because service is stopped.", e);
-            }
+            log.debug("Ignoring error because service is stopped.", e);
             return;
         }
         log.warn("Failed to obtain event responses from queue.", e);
         try {
             Thread.sleep(pollDuration);
         } catch (InterruptedException e2) {
-            if (log.isTraceEnabled()) {
-                log.trace("Failed to wait until the server has capacity to handle new responses.", e2);
-            }
+            log.trace("Failed to wait until the server has capacity to handle new responses.", e2);
         }
     }
 
     private void startStaleRequestsCleanup() {
-        this.cleanupStaleRequestsScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("client-session-event-response-clean-up-scheduler"));
+        cleanupStaleRequestsScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("client-session-event-response-clean-up-scheduler"));
         cleanupStaleRequestsScheduler.scheduleWithFixedDelay(() -> {
             tickTs.getAndSet(System.currentTimeMillis());
             if (nextCleanupMs.get() < tickTs.get()) {
@@ -276,9 +241,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             if (eventFuture.expTime < tickTs.get()) {
                 EventFuture staleRequest = pendingRequests.remove(key);
                 if (staleRequest != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Request timeout detected, expTime [{}], tickTs [{}]", key, staleRequest.expTime, tickTs);
-                    }
+                    log.debug("[{}] Request timeout detected, expTime [{}], tickTs [{}]", key, staleRequest.expTime, tickTs);
                     staleRequest.future.setException(new TimeoutException());
                 }
             }

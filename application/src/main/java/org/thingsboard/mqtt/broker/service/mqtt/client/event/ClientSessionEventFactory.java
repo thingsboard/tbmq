@@ -27,9 +27,7 @@ public interface ClientSessionEventFactory {
     ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo);
 
     ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                     int sessionExpiryInterval);
-
-    ClientSessionEventProto createClearSessionRequestEventProto(SessionInfo sessionInfo);
+                                                         int sessionExpiryInterval);
 
     ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo);
 

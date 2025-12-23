@@ -38,7 +38,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
 
     @Override
     public ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                            int sessionExpiryInterval) {
+                                                                int sessionExpiryInterval) {
         SessionInfo disconnectSessionInfo = SessionInfo.builder()
                 .sessionId(sessionId)
                 .clientInfo(clientInfo)
@@ -48,14 +48,6 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(disconnectSessionInfo))
                 .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.toString())
-                .build();
-    }
-
-    @Override
-    public ClientSessionEventProto createClearSessionRequestEventProto(SessionInfo sessionInfo) {
-        return ClientSessionEventProto.newBuilder()
-                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
-                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
                 .build();
     }
 

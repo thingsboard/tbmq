@@ -25,7 +25,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -35,9 +34,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +47,8 @@ import static org.mockito.Mockito.when;
         "mqtt.client-session-expiry.zone=UTC"
 })
 public class ClientSessionCleanUpServiceImplTest {
+
+    private final String SERVICE_ID = "tb-broker";
 
     @MockitoBean
     ClientSessionCache clientSessionCache;
@@ -72,6 +72,7 @@ public class ClientSessionCleanUpServiceImplTest {
         ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(currentTsMinus10Secs, true, sessionExpiryInterval);
         ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(currentTsMinus10Secs, false, 0);
 
+        when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
         when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of(
                 "client1", clientSessionInfo1,
                 "client2", clientSessionInfo2,
@@ -82,30 +83,27 @@ public class ClientSessionCleanUpServiceImplTest {
                 .atMost(3, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(clientSessionCleanUpService, atLeast(1)).cleanUp());
 
-        verify(clientSessionEventService, atMost(1)).requestSessionCleanup(any());
+        verify(clientSessionEventService).requestClientSessionCleanup(eq(clientSessionInfo2));
     }
 
     @Test
     public void givenSessions_whenCheckIfNotPersistent_thenReceiveExpectedResult() {
         Assert.assertTrue(clientSessionCleanUpService.isNotCleanSession(
-                getSessionInfo(false, 0)
+                getClientSessionInfo(false, 0)
         ));
         Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getSessionInfo(false, 100)
+                getClientSessionInfo(false, 100)
         ));
         Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getSessionInfo(true, 0)
+                getClientSessionInfo(true, 0)
         ));
         Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getSessionInfo(true, 100)
+                getClientSessionInfo(true, 100)
         ));
     }
 
-    private SessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
-        return SessionInfo.builder()
-                .cleanStart(cleanStart)
-                .sessionExpiryInterval(sessionExpiryInterval)
-                .build();
+    private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
+        return getClientSessionInfo(0L, cleanStart, sessionExpiryInterval);
     }
 
     private ClientSessionInfo getClientSessionInfo(long disconnectedAt, boolean cleanStart, int sessionExpiryInterval) {
@@ -114,7 +112,7 @@ public class ClientSessionCleanUpServiceImplTest {
                 .connected(false)
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
-                .serviceId("tb-broker")
+                .serviceId(SERVICE_ID)
                 .build();
     }
 }

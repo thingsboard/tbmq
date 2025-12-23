@@ -21,14 +21,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
-import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
 import java.util.UUID;
@@ -58,7 +56,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             throw new ThingsboardException("Client is currently connected", ThingsboardErrorCode.GENERAL);
         }
         log.debug("[{}] Cleaning up client session.", clientId);
-        clientSessionEventService.requestSessionCleanup(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo));
+        clientSessionEventService.requestClientSessionCleanup(clientSessionInfo);
     }
 
     @Override
@@ -112,26 +110,25 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
                 continue;
             }
 
-            SessionInfo session = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info);
-            Long expiryMs = resolveSessionExpiryIntervalMs(session);
+            Long expiryMs = resolveSessionExpiryIntervalMs(info);
             if (expiryMs == null) {
                 continue;
             }
 
             if (isExpired(info, expiryMs, now)) {
                 removedCount++;
-                clientSessionEventService.requestSessionCleanup(session);
+                clientSessionEventService.requestClientSessionCleanup(info);
             }
         }
 
         log.info("Cleaning up expired {} client sessions.", removedCount);
     }
 
-    boolean isNotCleanSession(SessionInfo sessionInfo) {
+    boolean isNotCleanSession(ClientSessionInfo sessionInfo) {
         return sessionInfo.isNotCleanSession();
     }
 
-    private Long resolveSessionExpiryIntervalMs(SessionInfo session) {
+    private Long resolveSessionExpiryIntervalMs(ClientSessionInfo session) {
         if (isNotCleanSession(session)) {
             return ttl > 0 ? toMillis(ttl) : null;
         }

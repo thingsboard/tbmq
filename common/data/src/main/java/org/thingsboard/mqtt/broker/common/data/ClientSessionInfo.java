@@ -64,7 +64,7 @@ public class ClientSessionInfo implements EntitySessionInfo {
     }
 
     public boolean isAppClient() {
-        return ClientType.APPLICATION.equals(type);
+        return ClientType.APPLICATION == type;
     }
 
     public boolean isPersistentAppClient() {

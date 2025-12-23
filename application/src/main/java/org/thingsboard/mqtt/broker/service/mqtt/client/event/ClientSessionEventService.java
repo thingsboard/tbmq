@@ -27,11 +27,7 @@ public interface ClientSessionEventService {
 
     ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo);
 
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval);
-
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback);
-
-    void requestSessionCleanup(SessionInfo sessionInfo);
+    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval, TbQueueCallback callback);
 
     void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo);
 

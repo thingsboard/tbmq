@@ -22,9 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
@@ -64,30 +63,30 @@ public class DisconnectServiceImplTest {
 
     private static final String CLIENT_ID = "testClient";
 
-    @MockBean
+    @MockitoBean
     KeepAliveService keepAliveService;
-    @MockBean
+    @MockitoBean
     LastWillService lastWillService;
-    @MockBean
+    @MockitoBean
     ClientSessionCtxService clientSessionCtxService;
-    @MockBean
+    @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
-    @MockBean
+    @MockitoBean
     ClientSessionEventService clientSessionEventService;
-    @MockBean
+    @MockitoBean
     RateLimitService rateLimitService;
-    @MockBean
+    @MockitoBean
     MqttMessageGenerator mqttMessageGenerator;
-    @MockBean
+    @MockitoBean
     AuthorizationRuleService authorizationRuleService;
-    @MockBean
+    @MockitoBean
     FlowControlService flowControlService;
-    @MockBean
+    @MockitoBean
     RateLimitCacheService rateLimitCacheService;
-    @MockBean
+    @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
 
-    @SpyBean
+    @MockitoBean
     DisconnectServiceImpl disconnectService;
 
     ClientSessionCtx ctx;

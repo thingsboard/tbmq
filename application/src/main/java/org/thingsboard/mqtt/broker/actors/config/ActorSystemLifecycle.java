@@ -84,7 +84,7 @@ public class ActorSystemLifecycle {
 
         log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
         for (ClientSessionCtx sessionCtx : clientSessionContexts) {
-            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId(), callback);
+            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId(), -1, callback);
         }
 
         boolean waitSuccessful = false;
