@@ -104,7 +104,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     @Override
     public Map<String, ClientSessionInfo> getPersistentClientSessionInfos() {
         return clientSessionMap.entrySet().stream()
-                .filter(entry -> isPersistent(entry.getValue()))
+                .filter(entry -> entry.getValue().isPersistent())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -130,15 +130,6 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
-    public long getActiveSessionCountForNode(String serviceId) {
-        return getAllClientSessions()
-                .values()
-                .stream()
-                .filter(sessionInfo -> sessionInfo.isConnected() && sessionInfo.getServiceId().equals(serviceId))
-                .count();
-    }
-
-    @Override
     public int getClientSessionsCount() {
         return clientSessionMap == null ? 0 : clientSessionMap.size();
     }
@@ -157,7 +148,4 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         }
     }
 
-    private boolean isPersistent(ClientSessionInfo clientSessionInfo) {
-        return ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo).isPersistent();
-    }
 }

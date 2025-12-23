@@ -38,7 +38,6 @@ import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -249,8 +248,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
-        return new MqttDisconnectMsg(sessionId,
-                new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
+        return new MqttDisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_CONNECTION_FAILURE));
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {

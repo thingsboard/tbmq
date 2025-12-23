@@ -96,11 +96,6 @@ public class ActorProcessorImpl implements ActorProcessor {
             return;
         }
 
-        if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
-            tryDisconnectSameSession(state, sessionCtx);
-            return;
-        }
-
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
         AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
@@ -137,11 +132,6 @@ public class ActorProcessorImpl implements ActorProcessor {
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, null, false,
                     BLOCKED_CLIENT.getReasonLog() + result.getKey());
             sendConnectionRefusedBannedMsgAndCloseChannel(sessionCtx);
-            return;
-        }
-
-        if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
-            tryDisconnectSameSession(state, sessionCtx);
             return;
         }
 
@@ -259,15 +249,6 @@ public class ActorProcessorImpl implements ActorProcessor {
             case CLIENT_FINAL_MESSAGE_EVALUATION_ERROR -> CONNECTION_REFUSED_NOT_AUTHORIZED_5;
             default -> CONNECTION_REFUSED_UNSPECIFIED_ERROR;
         };
-    }
-
-    private void tryDisconnectSameSession(ClientActorState state, ClientSessionCtx sessionCtx) {
-        log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), sessionCtx.getSessionId());
-        if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
-            state.updateSessionState(SessionState.DISCONNECTING);
-            DisconnectReason reason = new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS, "Trying to init the same active session");
-            disconnect(state, newDisconnectMsg(state.getCurrentSessionId(), reason));
-        }
     }
 
     void sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {

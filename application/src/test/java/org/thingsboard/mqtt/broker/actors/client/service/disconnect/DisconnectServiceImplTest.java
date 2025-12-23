@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
@@ -48,7 +49,6 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -86,7 +86,7 @@ public class DisconnectServiceImplTest {
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
 
-    @MockitoBean
+    @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
 
     ClientSessionCtx ctx;
@@ -120,7 +120,7 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg, -1);
+        verify(disconnectService, never()).cleanupClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0);
         verify(disconnectService, times(1)).closeChannel(ctx);
     }
@@ -130,7 +130,7 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg, -1);
+        verify(disconnectService, times(1)).cleanupClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, -1);
         verify(disconnectService, times(1)).closeChannel(ctx);
         verify(rateLimitService, times(1)).remove(eq(CLIENT_ID));
@@ -153,36 +153,36 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
-    public void givenNonPersistentClient_whenClearClientSession_thenAllResourcesTerminationDone() {
+    public void givenNonPersistentClient_whenCleanupClientSession_thenAllResourcesTerminationDone() {
         when(sessionInfo.isPersistent()).thenReturn(false);
 
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
-        disconnectService.clearClientSession(clientActorState, disconnectMsg, -1);
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
 
         verify(queuedMqttMessages, times(1)).clear();
         verify(keepAliveService, times(1)).unregisterSession(any());
-        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), eq(-1));
+        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), eq(-1));
         verify(clientSessionCtxService, times(1)).unregisterSession(any());
     }
 
     @Test
-    public void givenPersistentClient_whenClearClientSession_thenAllResourcesTerminationDone() {
+    public void givenPersistentClient_whenCleanupClientSession_thenAllResourcesTerminationDone() {
         when(sessionInfo.isPersistent()).thenReturn(true);
 
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
-        disconnectService.clearClientSession(clientActorState, disconnectMsg, -1);
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
 
         verify(queuedMqttMessages, times(1)).clear();
         verify(keepAliveService, times(1)).unregisterSession(any());
-        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), eq(-1));
+        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), eq(-1));
         verify(clientSessionCtxService, times(1)).unregisterSession(any());
-        verify(disconnectService, times(1)).processPersistenceDisconnect(any(), any(), any());
+        verify(disconnectService, times(1)).processPersistentDisconnect(any(), any());
     }
 
     @Test
-    public void givenClient_whenProcessPersistenceDisconnect_thenExecuteCleanDisconnect() {
+    public void givenClient_whenProcessPersistentDisconnect_thenExecuteCleanDisconnect() {
         ClientInfo clientInfo = mock(ClientInfo.class);
-        disconnectService.processPersistenceDisconnect(ctx, clientInfo, UUID.randomUUID());
+        disconnectService.processPersistentDisconnect(ctx, clientInfo);
 
         verify(msgPersistenceManager, times(1)).stopProcessingPersistedMessages(any());
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());

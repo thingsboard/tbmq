@@ -155,7 +155,7 @@ public final class MqttReasonCodeResolver {
             case ON_CONNECTION_RATE_EXCEEDED -> Disconnect.CONNECTION_RATE_EXCEEDED;
             case ON_MAXIMUM_CONNECT_TIME -> Disconnect.MAXIMUM_CONNECT_TIME;
             case ON_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED -> Disconnect.WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED;
-            case ON_ERROR -> Disconnect.UNSPECIFIED_ERROR;
+            case ON_ERROR, ON_CONNECTION_FAILURE -> Disconnect.UNSPECIFIED_ERROR;
         };
     }
 }

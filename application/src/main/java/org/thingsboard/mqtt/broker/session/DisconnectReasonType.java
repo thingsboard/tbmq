@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public enum DisconnectReasonType {
 
     ON_DISCONNECT_MSG,
@@ -45,6 +48,22 @@ public enum DisconnectReasonType {
     ON_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED,
     ON_CONNECTION_RATE_EXCEEDED,
     ON_MAXIMUM_CONNECT_TIME,
-    ON_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
+    ON_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED,
+    ON_CONNECTION_FAILURE;
 
+    /** Reasons for which we should NOT send a server-initiated DISCONNECT packet. */
+    public static final Set<DisconnectReasonType> SERVER_DISCONNECT_EXCLUSIONS =
+            EnumSet.of(ON_DISCONNECT_MSG, ON_CHANNEL_CLOSED, ON_CONNECTION_FAILURE);
+
+    public boolean allowsServerDisconnect() {
+        return !SERVER_DISCONNECT_EXCLUSIONS.contains(this);
+    }
+
+    public boolean allowsLastWillOnDisconnect() {
+        return ON_DISCONNECT_MSG != this;
+    }
+
+    public boolean isNotConflictingSession() {
+        return ON_CONFLICTING_SESSIONS != this;
+    }
 }

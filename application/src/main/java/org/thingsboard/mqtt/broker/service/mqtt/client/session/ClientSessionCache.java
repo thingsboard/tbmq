@@ -30,5 +30,4 @@ public interface ClientSessionCache {
 
     Map<String, ClientSessionInfo> getAllClientSessions();
 
-    long getActiveSessionCountForNode(String serviceId);
 }

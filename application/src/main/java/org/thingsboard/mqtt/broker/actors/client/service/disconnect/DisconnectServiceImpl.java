@@ -21,10 +21,8 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionException;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -40,11 +38,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
-
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -76,45 +71,29 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
-        if (needSendDisconnectToClient(sessionCtx, reason)) {
+        if (shouldSendServerDisconnect(sessionCtx, reason)) {
             MqttReasonCodes.Disconnect code = MqttReasonCodeResolver.disconnect(reason.getType());
             sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createDisconnectMsg(code));
         }
 
-        MqttProperties properties = disconnectMsg.getProperties();
-        var sessionExpiryInterval = getSessionExpiryInterval(properties);
-
-        try {
-            clearClientSession(actorState, disconnectMsg, sessionExpiryInterval);
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to clean client session.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
-        }
-
+        var sessionExpiryInterval = getSessionExpiryInterval(disconnectMsg.getProperties());
         notifyClientDisconnected(actorState, sessionExpiryInterval);
-        rateLimitService.remove(sessionCtx.getClientId());
-        authorizationRuleService.evict(sessionCtx.getClientId());
-        flowControlService.removeFromMap(sessionCtx.getClientId());
-        tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
-        closeChannel(sessionCtx);
-
-        log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }
 
     private int getSessionExpiryInterval(MqttProperties properties) {
-        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(properties);
-        if (property != null) {
-            return property.value();
-        }
-        return -1;
+        return MqttPropertiesUtil.getSessionExpiryIntervalValue(properties);
     }
 
-    // only for mqtt 5 clients disconnect packet can be sent from server, when client did not send DISCONNECT or did not close the channel and connection was successful
-    private boolean needSendDisconnectToClient(ClientSessionCtx sessionCtx, DisconnectReason reason) {
-        if (DisconnectReasonType.ON_CHANNEL_CLOSED == reason.getType()) {
-            return false;
-        }
-        return MqttVersion.MQTT_5 == sessionCtx.getMqttVersion() && DisconnectReasonType.ON_DISCONNECT_MSG != reason.getType()
-                && !BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG.equals(reason.getMessage());
+    /**
+     * Server-initiated DISCONNECT is supported only for MQTT 5 clients.
+     * We send DISCONNECT only when:
+     * - the connection was established successfully,
+     * - the client did not explicitly send DISCONNECT,
+     * - and we are not disconnecting due to channel close.
+     */
+    private boolean shouldSendServerDisconnect(ClientSessionCtx sessionCtx, DisconnectReason reason) {
+        return MqttVersion.MQTT_5 == sessionCtx.getMqttVersion() && reason.getType().allowsServerDisconnect();
     }
 
     void closeChannel(ClientSessionCtx sessionCtx) {
@@ -137,41 +116,40 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
     }
 
-    void clearClientSession(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval) {
+    void cleanupClientSession(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
         var disconnectReasonType = disconnectMsg.getReason().getType();
 
         actorState.getQueuedMessages().clear();
 
-        UUID sessionId = sessionCtx.getSessionId();
-        keepAliveService.unregisterSession(sessionId);
-
-        boolean sendLastWill = !DisconnectReasonType.ON_DISCONNECT_MSG.equals(disconnectReasonType);
-        var newSessionCleanStart = disconnectMsg.isNewSessionCleanStart();
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill, newSessionCleanStart, sessionExpiryInterval);
-
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            processPersistenceDisconnect(sessionCtx, clientInfo, sessionId);
+            processPersistentDisconnect(sessionCtx, clientInfo);
         } else {
-            if (!DisconnectReasonType.ON_CONFLICTING_SESSIONS.equals(disconnectReasonType)) {
+            if (disconnectReasonType.isNotConflictingSession()) {
                 rateLimitCacheService.decrementSessionCount();
             }
         }
 
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());
+        keepAliveService.unregisterSession(sessionCtx.getSessionId());
+        lastWillService.removeAndExecuteLastWillIfNeeded(disconnectMsg, sessionExpiryInterval);
+
+        rateLimitService.remove(sessionCtx.getClientId());
+        authorizationRuleService.evict(sessionCtx.getClientId());
+        flowControlService.removeFromMap(sessionCtx.getClientId());
+        tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
+        closeChannel(sessionCtx);
+
+        log.debug("[{}][{}] Client disconnected", sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
-    void processPersistenceDisconnect(ClientSessionCtx sessionCtx, ClientInfo clientInfo, UUID sessionId) {
+    void processPersistentDisconnect(ClientSessionCtx sessionCtx, ClientInfo clientInfo) {
         try {
             msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
             msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
         } catch (Exception e) {
-            if (e instanceof TransactionException) {
-                log.warn("[{}][{}] Couldn't properly stop processing persisted messages and saving QoS 2 packets.", clientInfo.getClientId(), sessionId);
-            } else {
-                throw e;
-            }
+            log.warn("[{}] Failed to stop processing persisted messages and save QoS 2 packets", clientInfo.getClientId(), e);
         }
     }
 

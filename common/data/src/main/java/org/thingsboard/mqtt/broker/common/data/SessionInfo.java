@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.With;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Builder(toBuilder = true)
 @Data
+@AllArgsConstructor
 public class SessionInfo {
 
     private final String serviceId;

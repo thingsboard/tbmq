@@ -21,12 +21,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
@@ -113,6 +116,7 @@ public class DefaultLastWillServiceTest {
     }
 
     private void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean newSessionCleanStart) {
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, newSessionCleanStart, -1);
+        MqttDisconnectMsg disconnectMsg = new MqttDisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_KEEP_ALIVE), newSessionCleanStart);
+        lastWillService.removeAndExecuteLastWillIfNeeded(disconnectMsg, -1);
     }
 }

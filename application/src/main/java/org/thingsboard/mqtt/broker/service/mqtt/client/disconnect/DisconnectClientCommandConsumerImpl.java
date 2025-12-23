@@ -101,7 +101,7 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
     }
 
     private DisconnectReasonType getDisconnectReasonType(DisconnectClientCommandProto proto) {
-        return proto.hasReasonType() ? DisconnectReasonType.valueOf(proto.getReasonType()) : DisconnectReasonType.ON_CONFLICTING_SESSIONS;
+        return proto.hasReasonType() ? DisconnectReasonType.valueOf(proto.getReasonType()) : DisconnectReasonType.ON_ERROR;
     }
 
     private void initConsumer() {

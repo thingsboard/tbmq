@@ -170,22 +170,6 @@ public class ActorProcessorImplTest {
     }
 
     @Test
-    public void givenSameSession_whenOnInit_thenDisconnect() throws AuthenticationException {
-        updateSessionState(SessionState.CONNECTED);
-
-        ClientSessionCtx clientSessionCtx = getClientSessionCtx();
-        clientActorState.setClientSessionCtx(clientSessionCtx);
-
-        when(blockedClientService.checkBlocked(anyString(), anyString(), anyString())).thenReturn(BlockedClientResult.notBlocked());
-        SessionInitMsg sessionInitMsg = getSessionInitMsg(clientSessionCtx);
-        actorProcessor.onInit(clientActorState, sessionInitMsg);
-
-        assertEquals(SessionState.DISCONNECTING, clientActorState.getCurrentSessionState());
-        verify(disconnectService, times(1)).disconnect(any(), any());
-        verify(authorizationRoutingService, never()).executeAuthFlow(any());
-    }
-
-    @Test
     public void givenDisconnectedSession_whenOnInitAndCheckBlockedReturnsYes_thenClose() {
         updateSessionState(SessionState.DISCONNECTED);
 
@@ -229,7 +213,6 @@ public class ActorProcessorImplTest {
         var channelHandlerCtxMock = mock(ChannelHandlerContext.class);
         var mqttMessageMock = mock(MqttMessage.class);
 
-        when(clientSessionCtxMock.getSessionId()).thenReturn(UUID.fromString("93db435c-8059-43ae-b41f-22776404039e"));
         when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerCtxMock);
         when(clientSessionCtxMock.getHostAddress()).thenReturn("localhost");
 
@@ -252,36 +235,11 @@ public class ActorProcessorImplTest {
     }
 
     @Test
-    public void givenSameSessionId_whenOnEnhancedAuthInit_thenTryDisconnectSameSessionCalled() {
-        updateSessionState(SessionState.CONNECTED);
-
-        ClientSessionCtx clientSessionCtx = getClientSessionCtx();
-        clientActorState.setClientSessionCtx(clientSessionCtx);
-
-        when(blockedClientService.checkBlocked(eq(CLIENT_ID), eq(null), eq("127.0.0.1"))).thenReturn(BlockedClientResult.notBlocked());
-
-        EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(clientSessionCtx);
-        actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
-
-        assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.DISCONNECTING);
-
-        var mqttDisconnectMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
-        verify(disconnectService).disconnect(eq(clientActorState), mqttDisconnectMsgCaptor.capture());
-
-        MqttDisconnectMsg mqttDisconnectMsg = mqttDisconnectMsgCaptor.getValue();
-        assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_CONFLICTING_SESSIONS);
-        assertThat(mqttDisconnectMsg.getReason().getMessage()).isEqualTo("Trying to init the same active session");
-
-        verify(enhancedAuthenticationService, never()).onClientConnectMsg(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
-    }
-
-    @Test
     public void givenDisconnectedSession_whenOnEnhancedAuthInitAndChallengeFailed_thenSendConnectionRefusedNotAuthorizedErrorAndCloseChannel() {
         updateSessionState(SessionState.DISCONNECTED);
 
         ClientSessionCtx sessionCtxMock = mock(ClientSessionCtx.class);
         ChannelHandlerContext ctxMock = mock(ChannelHandlerContext.class);
-        when(sessionCtxMock.getSessionId()).thenReturn(UUID.fromString("c1bb7594-6009-48ad-bdbd-b2b2f98a08b5"));
         when(sessionCtxMock.getChannel()).thenReturn(ctxMock);
         when(sessionCtxMock.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(sessionCtxMock.getHostAddress()).thenReturn("localhost");
@@ -296,7 +254,6 @@ public class ActorProcessorImplTest {
         EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(sessionCtxMock);
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
 
-        verify(sessionCtxMock).getSessionId();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
@@ -327,7 +284,6 @@ public class ActorProcessorImplTest {
         ChannelHandlerContext channelHandlerCtxMock = mock(ChannelHandlerContext.class);
         ClientSessionCtx ctxFromEnhancedMsgMock = mock(ClientSessionCtx.class);
         when(ctxFromEnhancedMsgMock.getHostAddress()).thenReturn("localhost");
-        when(ctxFromEnhancedMsgMock.getSessionId()).thenReturn(UUID.fromString("520d28e7-20b5-4ca3-ae7d-8103409ba1b8"));
         when(ctxFromEnhancedMsgMock.getChannel()).thenReturn(channelHandlerCtxMock);
         EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(ctxFromEnhancedMsgMock);
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.util;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttProperties.IntegerProperty;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
@@ -104,6 +105,11 @@ public class MqttPropertiesUtil {
 
     public static MqttProperties.IntegerProperty getSessionExpiryIntervalProperty(MqttProperties properties) {
         return getIntegerProperty(properties, BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
+    }
+
+    public static int getSessionExpiryIntervalValue(MqttProperties properties) {
+        IntegerProperty sessionExpiryIntervalProperty = getSessionExpiryIntervalProperty(properties);
+        return sessionExpiryIntervalProperty != null ? sessionExpiryIntervalProperty.value() : -1;
     }
 
     public static MqttProperties.IntegerProperty getTopicAliasProperty(MqttProperties properties) {
