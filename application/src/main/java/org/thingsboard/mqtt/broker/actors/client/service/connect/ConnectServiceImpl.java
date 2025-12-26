@@ -175,7 +175,6 @@ public class ConnectServiceImpl implements ConnectService {
                                 sessionId,
                                 connectionResponse.isSessionPresent(),
                                 msg.getLastWillMsg(),
-                                keepAliveSeconds,
                                 msg.getProperties())
                 );
             }

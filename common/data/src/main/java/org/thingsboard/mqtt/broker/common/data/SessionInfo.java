@@ -59,6 +59,10 @@ public class SessionInfo {
         return clientInfo.getType();
     }
 
+    public int getKeepAlive() {
+        return connectionInfo.getKeepAlive();
+    }
+
     public boolean isPersistentAppClient() {
         return isAppClient() && isPersistent();
     }

@@ -385,7 +385,7 @@ public class ConnectServiceImplTest {
     }
 
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
-        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000, new MqttProperties());
+        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, new MqttProperties());
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId) {
