@@ -339,7 +339,7 @@ public class ConnectServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         String clientId = "clientId";
         MqttConnectMsg msg = getMqttConnectMsg(sessionId, clientId);
-        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0, BrokerConstants.LOCAL_ADR);
+        SessionInfo actualSessionInfo = connectService.getSessionInfo(sessionId, msg.isCleanStart(), clientId, ClientType.DEVICE, BrokerConstants.LOCAL_ADR, msg.getKeepAliveTimeSeconds(), 0);
 
         SessionInfo expectedSessionInfo = ClientSessionInfoFactory.getSessionInfo(
                 sessionId,

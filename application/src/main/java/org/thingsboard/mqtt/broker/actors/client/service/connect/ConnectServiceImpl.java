@@ -129,8 +129,16 @@ public class ConnectServiceImpl implements ConnectService {
         log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
 
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
-        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
-                sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getAddress());
+        int keepAliveSeconds = getKeepAliveSeconds(actorState, msg);
+        SessionInfo sessionInfo = getSessionInfo(
+                sessionId,
+                msg.isCleanStart(),
+                clientId,
+                sessionCtx.getClientType(),
+                sessionCtx.getAddressBytes(),
+                keepAliveSeconds,
+                sessionExpiryInterval
+        );
 
         boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg, sessionInfo);
         if (!proceedWithConnection) {
@@ -147,7 +155,6 @@ public class ConnectServiceImpl implements ConnectService {
         }
 
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));
-        int keepAliveSeconds = getKeepAliveSeconds(actorState, msg);
         keepAliveService.registerSession(clientId, sessionId, keepAliveSeconds);
 
         ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
@@ -259,14 +266,14 @@ public class ConnectServiceImpl implements ConnectService {
         }
     }
 
-    SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId,
-                               ClientType clientType, int sessionExpiryInterval, byte[] clientIpAdr) {
+    SessionInfo getSessionInfo(UUID sessionId, boolean cleanStart, String clientId,
+                               ClientType clientType, byte[] clientIpAdr, int keepAliveSeconds, int sessionExpiryInterval) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                msg.isCleanStart(),
+                cleanStart,
                 serviceInfoProvider.getServiceId(),
                 new ClientInfo(clientId, clientType, clientIpAdr),
-                ClientSessionInfoFactory.getConnectionInfo(msg.getKeepAliveTimeSeconds()),
+                ClientSessionInfoFactory.getConnectionInfo(keepAliveSeconds),
                 sessionExpiryInterval);
     }
 
@@ -331,12 +338,8 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private void createAndSendConnAckMsg(MqttConnectReturnCode code, ClientSessionCtx ctx) {
-        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
+        MqttConnAckMessage mqttConnAckMsg = mqttMessageGenerator.createMqttConnAckMsg(code);
         ctx.getChannel().writeAndFlush(mqttConnAckMsg);
-    }
-
-    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
-        return mqttMessageGenerator.createMqttConnAckMsg(code);
     }
 
     private TopicAliasCtx getTopicAliasCtx(String clientId, MqttConnectMsg msg) {
@@ -350,11 +353,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private int getSessionExpiryInterval(MqttConnectMsg msg) {
-        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(msg.getProperties());
-        if (property != null) {
-            return Math.min(property.value(), maxExpiryInterval);
-        }
-        return 0;
+        return MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(msg.getProperties(), maxExpiryInterval);
     }
 
     int getKeepAliveSeconds(ClientActorStateInfo actorState, MqttConnectMsg msg) {

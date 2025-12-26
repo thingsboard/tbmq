@@ -107,7 +107,12 @@ public class MqttPropertiesUtil {
         return getIntegerProperty(properties, BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
     }
 
-    public static int getSessionExpiryIntervalValue(MqttProperties properties) {
+    public static int getConnectSessionExpiryIntervalValue(MqttProperties properties, int maxExpiryInterval) {
+        IntegerProperty property = getSessionExpiryIntervalProperty(properties);
+        return property != null ? Math.min(property.value(), maxExpiryInterval) : 0;
+    }
+
+    public static int getDisconnectSessionExpiryIntervalValue(MqttProperties properties) {
         IntegerProperty sessionExpiryIntervalProperty = getSessionExpiryIntervalProperty(properties);
         return sessionExpiryIntervalProperty != null ? sessionExpiryIntervalProperty.value() : -1;
     }
