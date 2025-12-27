@@ -143,12 +143,12 @@ public class ClientSessionInfoFactory {
                 .build();
     }
 
-    public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo) {
+    public static SessionInfo getSessionInfo(String serviceId, String clientId, ClientType clientType) {
         return SessionInfo.builder()
                 .sessionId(UUID.randomUUID())
                 .cleanStart(true)
                 .serviceId(serviceId)
-                .clientInfo(clientInfo)
+                .clientInfo(getClientInfo(clientId, clientType))
                 .connectionInfo(defaultConnectionInfo)
                 .sessionExpiryInterval(0)
                 .build();
