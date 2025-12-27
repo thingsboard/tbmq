@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
@@ -25,22 +24,58 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.LOCAL_ADR;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_ID_HEADER;
+import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
+
 public class ClientSessionInfoFactory {
 
     public static ClientSessionInfo getClientSessionInfo(String clientId) {
-        return getClientSessionInfo(clientId, BrokerConstants.SERVICE_ID_HEADER);
+        return ClientSessionInfo.builder()
+                .keepAlive(100000)
+                .disconnectedAt(0)
+                .connectedAt(System.currentTimeMillis())
+                .type(DEVICE)
+                .clientIpAdr(LOCAL_ADR)
+                .clientId(clientId)
+                .sessionExpiryInterval(0)
+                .cleanStart(true)
+                .sessionId(UUID.randomUUID())
+                .serviceId(SERVICE_ID_HEADER)
+                .connected(true)
+                .build();
     }
 
     public static ClientSessionInfo getClientSessionInfo(String clientId, String serviceId) {
-        return getClientSessionInfo(clientId, serviceId, true);
+        return ClientSessionInfo.builder()
+                .keepAlive(100000)
+                .disconnectedAt(0)
+                .connectedAt(System.currentTimeMillis())
+                .type(DEVICE)
+                .clientIpAdr(LOCAL_ADR)
+                .clientId(clientId)
+                .sessionExpiryInterval(0)
+                .cleanStart(true)
+                .sessionId(UUID.randomUUID())
+                .serviceId(serviceId)
+                .connected(true)
+                .build();
     }
 
     public static ClientSessionInfo getClientSessionInfo(String clientId, String serviceId, boolean connected) {
-        ClientInfo clientInfo = getClientInfo(clientId);
-        ConnectionInfo connectionInfo = getConnectionInfo();
-        SessionInfo sessionInfo = getSessionInfo(serviceId, clientInfo, connectionInfo);
-        ClientSession clientSession = getClientSession(connected, sessionInfo);
-        return clientSessionToClientSessionInfo(clientSession);
+        return ClientSessionInfo.builder()
+                .keepAlive(100000)
+                .disconnectedAt(0)
+                .connectedAt(System.currentTimeMillis())
+                .type(DEVICE)
+                .clientIpAdr(LOCAL_ADR)
+                .clientId(clientId)
+                .sessionExpiryInterval(0)
+                .cleanStart(true)
+                .sessionId(UUID.randomUUID())
+                .serviceId(serviceId)
+                .connected(connected)
+                .build();
     }
 
     public static ClientSessionInfo clientSessionToClientSessionInfo(ClientSession clientSession) {
@@ -61,7 +96,19 @@ public class ClientSessionInfoFactory {
 
     public static ClientSessionInfo getClientSessionInfo(boolean connected, String serviceId, boolean cleanStart,
                                                          ClientType clientType, long connectedAt, long disconnectedAt) {
-        return getClientSessionInfo(null, connected, serviceId, cleanStart, clientType, connectedAt, disconnectedAt);
+        return ClientSessionInfo.builder()
+                .clientId(null)
+                .connected(connected)
+                .serviceId(serviceId)
+                .cleanStart(cleanStart)
+                .type(clientType)
+                .connectedAt(connectedAt)
+                .disconnectedAt(disconnectedAt)
+                .clientIpAdr(LOCAL_ADR)
+                .sessionId(UUID.randomUUID())
+                .sessionExpiryInterval(0)
+                .keepAlive(60)
+                .build();
     }
 
     public static ClientSessionInfo getClientSessionInfo(String clientId, boolean connected, String serviceId, boolean cleanStart,
@@ -74,7 +121,10 @@ public class ClientSessionInfoFactory {
                 .type(clientType)
                 .connectedAt(connectedAt)
                 .disconnectedAt(disconnectedAt)
-                .clientIpAdr(BrokerConstants.LOCAL_ADR)
+                .clientIpAdr(LOCAL_ADR)
+                .sessionId(UUID.randomUUID())
+                .sessionExpiryInterval(0)
+                .keepAlive(60)
                 .build();
     }
 
@@ -91,7 +141,11 @@ public class ClientSessionInfoFactory {
                 .sessionId(clientSessionInfo.getSessionId())
                 .cleanStart(clientSessionInfo.isCleanStart())
                 .sessionExpiryInterval(clientSessionInfo.getSessionExpiryInterval())
-                .clientInfo(getClientInfo(clientSessionInfo.getClientId(), clientSessionInfo.getType(), clientSessionInfo.getClientIpAdr()))
+                .clientInfo(
+                        getClientInfo(
+                                clientSessionInfo.getClientId(),
+                                clientSessionInfo.getType(),
+                                clientSessionInfo.getClientIpAdr()))
                 .connectionInfo(
                         getConnectionInfo(
                                 clientSessionInfo.getKeepAlive(),
@@ -101,12 +155,26 @@ public class ClientSessionInfoFactory {
     }
 
     public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
-        return getSessionInfo(true, serviceId, clientInfo, connectionInfo);
+        return SessionInfo.builder()
+                .sessionId(UUID.randomUUID())
+                .cleanStart(true)
+                .serviceId(serviceId)
+                .clientInfo(clientInfo)
+                .connectionInfo(connectionInfo)
+                .sessionExpiryInterval(0)
+                .build();
     }
 
     public static SessionInfo getSessionInfo(boolean cleanStart, String serviceId,
                                              ClientInfo clientInfo, ConnectionInfo connectionInfo) {
-        return getSessionInfo(UUID.randomUUID(), cleanStart, serviceId, clientInfo, connectionInfo, 0);
+        return SessionInfo.builder()
+                .sessionId(UUID.randomUUID())
+                .cleanStart(cleanStart)
+                .serviceId(serviceId)
+                .clientInfo(clientInfo)
+                .connectionInfo(connectionInfo)
+                .sessionExpiryInterval(0)
+                .build();
     }
 
     public static SessionInfo getSessionInfo(UUID sessionId, boolean cleanStart, String serviceId,
@@ -122,15 +190,27 @@ public class ClientSessionInfoFactory {
     }
 
     public static ConnectionInfo getConnectionInfo() {
-        return getConnectionInfo(100000);
+        return ConnectionInfo.builder()
+                .connectedAt(System.currentTimeMillis())
+                .disconnectedAt(0)
+                .keepAlive(100000)
+                .build();
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive) {
-        return getConnectionInfo(keepAlive, System.currentTimeMillis());
+        return ConnectionInfo.builder()
+                .connectedAt(System.currentTimeMillis())
+                .disconnectedAt(0)
+                .keepAlive(keepAlive)
+                .build();
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt) {
-        return getConnectionInfo(keepAlive, connectedAt, 0);
+        return ConnectionInfo.builder()
+                .connectedAt(connectedAt)
+                .disconnectedAt(0)
+                .keepAlive(keepAlive)
+                .build();
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt, long disconnectedAt) {
@@ -142,11 +222,19 @@ public class ClientSessionInfoFactory {
     }
 
     public static ClientInfo getClientInfo(String clientId) {
-        return getClientInfo(clientId, ClientType.DEVICE);
+        return ClientInfo.builder()
+                .clientId(clientId)
+                .type(DEVICE)
+                .clientIpAdr(LOCAL_ADR)
+                .build();
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
-        return getClientInfo(clientId, clientType, BrokerConstants.LOCAL_ADR);
+        return ClientInfo.builder()
+                .clientId(clientId)
+                .type(clientType)
+                .clientIpAdr(LOCAL_ADR)
+                .build();
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType, byte[] clientIpAdr) {
