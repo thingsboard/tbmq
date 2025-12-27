@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
@@ -154,7 +153,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                SessionInfo.withClientType(ClientType.APPLICATION));
+                ClientSessionInfo.withClientType(ClientType.APPLICATION));
 
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
@@ -167,7 +166,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                SessionInfo.withClientType(ClientType.APPLICATION));
+                ClientSessionInfo.withClientType(ClientType.APPLICATION));
 
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
         verify(applicationRemovedEventService).sendApplicationRemovedEvent(any());
@@ -179,7 +178,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                SessionInfo.withClientType(ClientType.DEVICE));
+                ClientSessionInfo.withClientType(ClientType.DEVICE));
 
         verify(clientSessionService).saveClientSession(any(), any(), any());
     }
@@ -308,8 +307,7 @@ public class SessionClusterManagerImplTest {
 
     private SessionInfo getSessionInfo(String clientId, ClientType clientType, boolean cleanStart) {
         ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(clientId, clientType);
-        ConnectionInfo connectionInfo = ClientSessionInfoFactory.getConnectionInfo();
-        return ClientSessionInfoFactory.getSessionInfo(cleanStart, "serviceId", clientInfo, connectionInfo);
+        return ClientSessionInfoFactory.getSessionInfo(cleanStart, "serviceId", clientInfo);
     }
 
     private ConnectionRequestInfo getConnectionRequestInfo() {

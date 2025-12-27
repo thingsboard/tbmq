@@ -220,8 +220,7 @@ public class MsgPersistenceManagerImplTest {
     private SessionInfo getSessionInfo(String clientId, ClientType clientType) {
         return ClientSessionInfoFactory.getSessionInfo(
                 SERVICE_ID,
-                ClientSessionInfoFactory.getClientInfo(clientId, clientType),
-                ClientSessionInfoFactory.getConnectionInfo());
+                ClientSessionInfoFactory.getClientInfo(clientId, clientType));
     }
 
     @Test

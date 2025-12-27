@@ -30,7 +30,7 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
 public class ClientSessionInfoFactory {
 
-    public static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
+    private static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
             .keepAlive(60)
             .disconnectedAt(0)
             .connectedAt(System.currentTimeMillis())
@@ -44,17 +44,18 @@ public class ClientSessionInfoFactory {
             .connected(true)
             .build();
 
-    public static final ConnectionInfo defaultConnectionInfo = ConnectionInfo.builder()
+    private static final ConnectionInfo defaultConnectionInfo = ConnectionInfo.builder()
             .connectedAt(System.currentTimeMillis())
             .disconnectedAt(0)
             .keepAlive(60)
             .build();
 
-    public static final ClientInfo defaultClientInfo = ClientInfo.builder()
+    private static final ClientInfo defaultClientInfo = ClientInfo.builder()
             .clientId(null)
             .type(DEVICE)
             .clientIpAdr(LOCAL_ADR)
             .build();
+
 
     public static ClientSessionInfo getClientSessionInfo(String clientId) {
         return defaultClientSessionInfo.toBuilder().clientId(clientId).build();
@@ -142,25 +143,25 @@ public class ClientSessionInfoFactory {
                 .build();
     }
 
-    public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+    public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo) {
         return SessionInfo.builder()
                 .sessionId(UUID.randomUUID())
                 .cleanStart(true)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
-                .connectionInfo(connectionInfo)
+                .connectionInfo(defaultConnectionInfo)
                 .sessionExpiryInterval(0)
                 .build();
     }
 
     public static SessionInfo getSessionInfo(boolean cleanStart, String serviceId,
-                                             ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+                                             ClientInfo clientInfo) {
         return SessionInfo.builder()
                 .sessionId(UUID.randomUUID())
                 .cleanStart(cleanStart)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
-                .connectionInfo(connectionInfo)
+                .connectionInfo(defaultConnectionInfo)
                 .sessionExpiryInterval(0)
                 .build();
     }

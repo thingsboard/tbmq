@@ -70,4 +70,11 @@ public class ClientSessionInfo implements EntitySessionInfo {
     public boolean isPersistentAppClient() {
         return isAppClient() && isPersistent();
     }
+
+    /**
+     * For tests purposes
+     */
+    public static ClientSessionInfo withClientType(ClientType clientType) {
+        return ClientSessionInfo.builder().type(clientType).build();
+    }
 }

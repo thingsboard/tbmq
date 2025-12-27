@@ -23,10 +23,8 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -37,6 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO;
 
 /**
  * Not thread-safe for the same clientId
@@ -73,11 +73,6 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback) {
-        if (!clientId.equals(clientSession.getSessionInfo().getClientInfo().getClientId())) {
-            log.error("Error saving client session. " +
-                    "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
-            throw new MqttException("Key clientId should be equals to ClientSession's clientId");
-        }
         log.trace("[{}] Saving ClientSession.", clientId);
 
         ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
@@ -98,7 +93,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }
 
     @Override

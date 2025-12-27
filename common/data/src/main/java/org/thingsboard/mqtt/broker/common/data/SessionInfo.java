@@ -71,11 +71,4 @@ public class SessionInfo {
         return ClientType.APPLICATION == clientInfo.getType();
     }
 
-    /**
-     * For tests purposes
-     */
-    public static SessionInfo withClientType(ClientType clientType) {
-        return SessionInfo.builder().clientInfo(ClientInfo.builder().type(clientType).build()).build();
-    }
-
 }
