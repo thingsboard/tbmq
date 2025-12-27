@@ -261,12 +261,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void clearPersistedMessages(ClientInfo clientInfo) {
-        genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientInfo.getClientId());
-        if (clientInfo.getType() == APPLICATION) {
-            applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
-        } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
+    public void clearPersistedMessages(String clientId, ClientType type) {
+        genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientId);
+        if (type == APPLICATION) {
+            applicationPersistenceProcessor.clearPersistedMsgs(clientId);
+        } else if (type == DEVICE) {
+            devicePersistenceProcessor.clearPersistedMsgs(clientId);
         }
     }
 

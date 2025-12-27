@@ -272,12 +272,10 @@ public class MsgPersistenceManagerImplTest {
 
     @Test
     public void testClearPersistedMessages() {
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
-        msgPersistenceManager.clearPersistedMessages(clientInfo);
+        msgPersistenceManager.clearPersistedMessages("test", ClientType.APPLICATION);
         verify(applicationPersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
-        msgPersistenceManager.clearPersistedMessages(clientInfo);
+        msgPersistenceManager.clearPersistedMessages("test", ClientType.DEVICE);
         verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
         //wantedNumberOfInvocations = 2 since we call msgPersistenceManager.clearPersistedMessages 2 times

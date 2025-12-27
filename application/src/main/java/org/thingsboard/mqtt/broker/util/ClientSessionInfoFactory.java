@@ -30,7 +30,7 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
 public class ClientSessionInfoFactory {
 
-    private static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
+    public static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
             .keepAlive(60)
             .disconnectedAt(0)
             .connectedAt(System.currentTimeMillis())
@@ -57,6 +57,10 @@ public class ClientSessionInfoFactory {
             .build();
 
 
+    public static ClientSessionInfo getClientSessionInfo() {
+        return defaultClientSessionInfo;
+    }
+
     public static ClientSessionInfo getClientSessionInfo(String clientId) {
         return defaultClientSessionInfo.toBuilder().clientId(clientId).build();
     }
@@ -65,12 +69,31 @@ public class ClientSessionInfoFactory {
         return defaultClientSessionInfo.toBuilder().clientId(clientId).serviceId(serviceId).build();
     }
 
+    public static ClientSessionInfo getClientSessionInfo(String clientId, ClientType type, boolean cleanStart) {
+        return defaultClientSessionInfo
+                .toBuilder()
+                .clientId(clientId)
+                .type(type)
+                .cleanStart(cleanStart)
+                .build();
+    }
+
     public static ClientSessionInfo getClientSessionInfo(String clientId, String serviceId, boolean connected) {
         return defaultClientSessionInfo
                 .toBuilder()
                 .clientId(clientId)
                 .serviceId(serviceId)
                 .connected(connected)
+                .build();
+    }
+
+    public static ClientSessionInfo getClientSessionInfo(boolean connected, String clientId, ClientType type, boolean cleanStart) {
+        return defaultClientSessionInfo
+                .toBuilder()
+                .connected(connected)
+                .clientId(clientId)
+                .type(type)
+                .cleanStart(cleanStart)
                 .build();
     }
 
@@ -114,6 +137,23 @@ public class ClientSessionInfoFactory {
                 .sessionId(clientSession.getSessionInfo().getSessionId())
                 .serviceId(clientSession.getSessionInfo().getServiceId())
                 .connected(clientSession.isConnected())
+                .build();
+    }
+
+    public static ClientSessionInfo sessionInfoToClientSessionInfo(SessionInfo sessionInfo) {
+        return ClientSessionInfo
+                .builder()
+                .keepAlive(sessionInfo.getKeepAlive())
+                .disconnectedAt(sessionInfo.getConnectionInfo().getDisconnectedAt())
+                .connectedAt(sessionInfo.getConnectionInfo().getConnectedAt())
+                .type(sessionInfo.getClientType())
+                .clientIpAdr(sessionInfo.getClientInfo().getClientIpAdr())
+                .clientId(sessionInfo.getClientId())
+                .sessionExpiryInterval(sessionInfo.getSessionExpiryInterval())
+                .cleanStart(sessionInfo.isCleanStart())
+                .sessionId(sessionInfo.getSessionId())
+                .serviceId(sessionInfo.getServiceId())
+                .connected(true)
                 .build();
     }
 

@@ -72,10 +72,10 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
-    public void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback) {
-        log.trace("[{}] Saving ClientSession.", clientId);
+    public void saveClientSession(ClientSessionInfo clientSessionInfo, BasicCallback callback) {
+        var clientId = clientSessionInfo.getClientId();
+        log.trace("[{}] Saving ClientSession {}", clientId, clientSessionInfo);
 
-        ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
         clientSessionMap.put(clientId, clientSessionInfo);
 
         ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
