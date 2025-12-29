@@ -83,9 +83,7 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Processing SESSION_INIT_MSG onInit {}", state.getClientId(), sessionInitMsg);
-        }
+        log.trace("[{}] Processing SESSION_INIT_MSG onInit {}", state.getClientId(), sessionInitMsg);
         ClientSessionCtx sessionCtx = sessionInitMsg.getClientSessionCtx();
 
         BlockedClientResult result = checkBlocked(state, sessionInitMsg.getUsername(), sessionCtx);
@@ -105,9 +103,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Connection is authenticated: {}", state.getClientId(), CONNECTION_ACCEPTED);
-        }
+        log.debug("[{}] Connection is authenticated: {}", state.getClientId(), CONNECTION_ACCEPTED);
 
         unauthorizedClientManager.removeClientUnauthorized(state);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
@@ -121,9 +117,7 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onEnhancedAuthInit(ClientActorState state, EnhancedAuthInitMsg enhancedAuthInitMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Processing ENHANCED_AUTH_INIT_MSG onEnhancedAuthInit {}", state.getClientId(), enhancedAuthInitMsg);
-        }
+        log.trace("[{}] Processing ENHANCED_AUTH_INIT_MSG onEnhancedAuthInit {}", state.getClientId(), enhancedAuthInitMsg);
         var sessionCtx = enhancedAuthInitMsg.getClientSessionCtx();
 
         BlockedClientResult result = checkBlocked(state, null, sessionCtx);
@@ -155,20 +149,15 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onEnhancedAuthContinue(ClientActorState state, MqttAuthMsg authMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing MQTT_AUTH_MSG onEnhancedAuthContinue {}",
-                    state.getClientId(), state.getCurrentSessionState(), authMsg);
-        }
+        log.trace("[{}][{}] Processing MQTT_AUTH_MSG onEnhancedAuthContinue {}", state.getClientId(), state.getCurrentSessionState(), authMsg);
         var sessionCtx = state.getCurrentSessionCtx();
 
         switch (state.getCurrentSessionState()) {
             case ENHANCED_AUTH_STARTED -> processAuth(state, authMsg, sessionCtx);
             case CONNECTED -> processReAuth(state, authMsg, sessionCtx);
             default -> {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
-                            state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
-                }
+                log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
+                        state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
                 resetStateToDisconnected(state);
                 sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
                 unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, null, false,
@@ -179,19 +168,14 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onEnhancedReAuth(ClientActorState state, MqttAuthMsg authMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing MqttAuthMsg onEnhancedReAuth {}",
-                    state.getClientId(), state.getCurrentSessionState(), authMsg);
-        }
+        log.trace("[{}][{}] Processing MqttAuthMsg onEnhancedReAuth {}", state.getClientId(), state.getCurrentSessionState(), authMsg);
 
         var sessionCtx = state.getCurrentSessionCtx();
 
         var reAuth = SessionState.CONNECTED.equals(state.getCurrentSessionState());
         if (!reAuth) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Session was in {} state while Actor received enhanced re-auth message, prev sessionId - {}, new sessionId - {}.",
-                        state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
-            }
+            log.debug("[{}] Session was in {} state while Actor received enhanced re-auth message, prev sessionId - {}, new sessionId - {}.",
+                    state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
             clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
                     new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR)));
             return;
@@ -268,10 +252,8 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void disconnectCurrentSession(ClientActorState state, ClientSessionCtx sessionCtx) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
-                    state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
-        }
+        log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
+                state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
         state.updateSessionState(SessionState.DISCONNECTING);
         DisconnectReason reason = new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS);
         disconnect(state, newDisconnectMsg(state.getCurrentSessionId(), reason));
@@ -321,9 +303,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     @Override
     public void onDisconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
-            }
+            log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
             return;
         }
 
