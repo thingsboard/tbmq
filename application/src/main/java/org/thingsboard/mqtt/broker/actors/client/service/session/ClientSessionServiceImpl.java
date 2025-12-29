@@ -91,7 +91,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         log.trace("[{}] Clearing ClientSession.", clientId);
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
-            log.warn("[{}] No client session found while clearing session.", clientId);
+            log.debug("[{}] No client session found while clearing session.", clientId);
         }
         clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }

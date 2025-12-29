@@ -130,12 +130,12 @@ public class BrokerInitializerTest {
 
         Map<String, ClientSessionInfo> allClientSessions = brokerInitializer.initClientSessions();
 
-        Assert.assertEquals(preparedSessions.size(), allClientSessions.size());
+        Assert.assertEquals(2, allClientSessions.size());
 
         ClientSessionInfo clientSessionInfo = getSessionForServiceId(allClientSessions);
 
         Assert.assertNotNull(clientSessionInfo);
-        Assert.assertFalse(clientSessionInfo.isConnected());
+        Assert.assertTrue(clientSessionInfo.isConnected());
         verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
         verify(clientSessionEventService).requestClientSessionCleanup(any());
         verify(integrationService).findIntegrationsCount();
@@ -162,16 +162,19 @@ public class BrokerInitializerTest {
         ClientSessionInfo clientSessionInfo3 = getSessionInfo(true, 0);
         ClientSessionInfo clientSessionInfo4 = getSessionInfo(true, 10);
 
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo1));
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo2));
-        Assert.assertTrue(brokerInitializer.isCleanSession(clientSessionInfo3));
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo4));
+        when(serviceInfoProvider.getServiceId()).thenReturn("serviceId");
+
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo1));
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo2));
+        Assert.assertTrue(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo3));
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo4));
     }
 
     private ClientSessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
         return ClientSessionInfo.builder()
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
+                .serviceId("serviceId")
                 .build();
     }
 

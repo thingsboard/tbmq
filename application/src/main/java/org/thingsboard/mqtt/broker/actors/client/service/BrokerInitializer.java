@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -114,34 +113,27 @@ public class BrokerInitializer {
         log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
         rateLimitCacheService.initSessionCount(allClientSessions.size());
 
-        Map<String, ClientSessionInfo> currentNodeSessions = filterAndDisconnectCurrentNodeSessions(allClientSessions);
-        allClientSessions.putAll(currentNodeSessions);
-
-        clientSessionService.init(allClientSessions);
-        return allClientSessions;
-    }
-
-    private Map<String, ClientSessionInfo> filterAndDisconnectCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
-        Map<String, ClientSessionInfo> currentNodeSessions = Maps.newHashMapWithExpectedSize(allClientSessions.size());
         int applicationClientsCount = 0;
-        for (Map.Entry<String, ClientSessionInfo> entry : allClientSessions.entrySet()) {
-            ClientSessionInfo clientSessionInfo = entry.getValue();
+        int removeCleanSessions = 0;
 
-            if (clientSessionInfo.isPersistentAppClient()) {
+        for (var entry : allClientSessions.entrySet()) {
+            ClientSessionInfo session = entry.getValue();
+
+            if (session.isPersistentAppClient()) {
                 applicationClientsCount++;
             }
 
-            if (sessionWasOnThisNode(clientSessionInfo)) {
-                if (isCleanSession(clientSessionInfo)) {
-                    clientSessionEventService.requestClientSessionCleanup(clientSessionInfo);
-                }
-                ClientSessionInfo disconnectedClientSession = markDisconnected(clientSessionInfo);
-                currentNodeSessions.put(entry.getKey(), disconnectedClientSession);
+            if (isCleanSessionOnThisNode(session)) {
+                clientSessionEventService.requestClientSessionCleanup(session);
+                removeCleanSessions++;
             }
         }
+
         rateLimitCacheService.initApplicationClientsCount(applicationClientsCount + getIntegrationsCount());
-        log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
-        return currentNodeSessions;
+        log.info("Sent {} requests to clean up client sessions that were on this node.", removeCleanSessions);
+
+        clientSessionService.init(allClientSessions);
+        return allClientSessions;
     }
 
     private int getIntegrationsCount() {
@@ -191,15 +183,12 @@ public class BrokerInitializer {
         }
     }
 
-    boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.isCleanSession();
+    boolean isCleanSessionOnThisNode(ClientSessionInfo session) {
+        return session.isCleanSession() && sessionWasOnThisNode(session);
     }
 
-    private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {
-        return serviceInfoProvider.getServiceId().equals(clientSessionInfo.getServiceId());
+    private boolean sessionWasOnThisNode(ClientSessionInfo session) {
+        return serviceInfoProvider.getServiceId().equals(session.getServiceId());
     }
 
-    private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.toBuilder().connected(false).build();
-    }
 }
