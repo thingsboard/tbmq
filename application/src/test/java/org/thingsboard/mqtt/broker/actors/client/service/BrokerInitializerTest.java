@@ -20,10 +20,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -31,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -70,56 +70,55 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BrokerInitializer.class)
-@TestPropertySource(properties = {
-        "mqtt.application-clients-limit=10"
-})
 public class BrokerInitializerTest {
 
-    @MockBean
+    @MockitoBean
     ClientSessionConsumer clientSessionConsumer;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionConsumer clientSubscriptionConsumer;
-    @MockBean
+    @MockitoBean
     RetainedMsgConsumer retainedMsgConsumer;
-    @MockBean
+    @MockitoBean
     BlockedClientConsumerService blockedClientConsumer;
-    @MockBean
+    @MockitoBean
     ClientSessionService clientSessionService;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionService clientSubscriptionService;
-    @MockBean
+    @MockitoBean
     RetainedMsgListenerService retainedMsgListenerService;
-    @MockBean
+    @MockitoBean
     BlockedClientService blockedClientService;
-    @MockBean
+    @MockitoBean
     ClientSessionEventService clientSessionEventService;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
+    @MockitoBean
     RateLimitCacheService rateLimitCacheService;
-    @MockBean
+    @MockitoBean
     IntegrationService integrationService;
-    @MockBean
+    @MockitoBean
+    ClientsLimitProperties clientsLimitProperties;
+    @MockitoBean
     ClientSessionEventConsumer clientSessionEventConsumer;
-    @MockBean
+    @MockitoBean
     PublishMsgConsumerService publishMsgConsumerService;
-    @MockBean
+    @MockitoBean
     DisconnectClientCommandConsumer disconnectClientCommandConsumer;
-    @MockBean
+    @MockitoBean
     DeviceMsgQueueConsumer deviceMsgQueueConsumer;
-    @MockBean
+    @MockitoBean
     BasicDownLinkConsumer basicDownLinkConsumer;
-    @MockBean
+    @MockitoBean
     PersistentDownLinkConsumer persistentDownLinkConsumer;
-    @MockBean
+    @MockitoBean
     InternodeNotificationsConsumer internodeNotificationsConsumer;
 
-    @SpyBean
+    @MockitoSpyBean
     BrokerInitializer brokerInitializer;
 
     @Before
     public void setUp() {
-
+        when(clientsLimitProperties.isApplicationClientsLimitEnabled()).thenReturn(true);
     }
 
     @Test
@@ -139,7 +138,7 @@ public class BrokerInitializerTest {
         Assert.assertFalse(clientSessionInfo.isConnected());
         verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
         verify(clientSessionEventService).requestClientSessionCleanup(any());
-        verify(integrationService).findAllIntegrations();
+        verify(integrationService).findIntegrationsCount();
     }
 
     private ClientSessionInfo getSessionForServiceId(Map<String, ClientSessionInfo> allClientSessions) {

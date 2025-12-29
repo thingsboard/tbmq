@@ -382,7 +382,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         String clientId = connectingSessionInfo.getClientId();
         String serviceId = clientSessionInfo.getServiceId();
         UUID sessionId = clientSessionInfo.getSessionId();
-        log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.",
+        log.trace("[{}] Requesting session conflict disconnect, serviceId - {}, sessionId - {}.",
                 clientId, serviceId, sessionId);
         disconnectClientCommandService.disconnectOnSessionConflict(serviceId, clientId, sessionId, connectingSessionInfo.isCleanStart());
         return finishDisconnect(clientSessionInfo, -1);

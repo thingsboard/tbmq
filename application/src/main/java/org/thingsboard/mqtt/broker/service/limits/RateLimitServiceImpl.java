@@ -19,14 +19,13 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
@@ -48,18 +47,12 @@ public class RateLimitServiceImpl implements RateLimitService {
     private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     private final ClientSessionService clientSessionService;
     private final RateLimitCacheService rateLimitCacheService;
+    private final ClientsLimitProperties clientsLimitProperties;
 
     @Getter
     private ConcurrentMap<String, TbRateLimits> incomingPublishClientLimits;
     @Getter
     private ConcurrentMap<String, TbRateLimits> outgoingPublishClientLimits;
-
-    @Value("${mqtt.sessions-limit:0}")
-    @Setter
-    private int sessionsLimit;
-    @Value("${mqtt.application-clients-limit:0}")
-    @Setter
-    private int applicationClientsLimit;
 
     @PostConstruct
     public void init() {
@@ -114,7 +107,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     @Override
     public boolean checkSessionsLimit(String clientId) {
-        if (sessionsLimit <= 0) {
+        if (clientsLimitProperties.isSessionsLimitDisabled()) {
             return true;
         }
 
@@ -125,8 +118,8 @@ public class RateLimitServiceImpl implements RateLimitService {
 
         long newSessionCount = rateLimitCacheService.incrementSessionCount();
 
-        if (newSessionCount > sessionsLimit) {
-            log.trace("Client sessions count limit detected! Allowed: {} sessions", sessionsLimit);
+        if (newSessionCount > clientsLimitProperties.getSessionsLimit()) {
+            log.trace("Client sessions count limit detected! Allowed: {} sessions", clientsLimitProperties.getSessionsLimit());
             rateLimitCacheService.decrementSessionCount();
             return false;
         }
@@ -136,14 +129,14 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     @Override
     public boolean checkIntegrationsLimit() {
-        if (applicationClientsLimit <= 0) {
+        if (clientsLimitProperties.isApplicationClientsLimitDisabled()) {
             return true;
         }
 
         long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
 
-        if (newAppClientsCount > applicationClientsLimit) {
-            log.trace("Integrations count limit detected! Allowed: {} Integrations", applicationClientsLimit);
+        if (newAppClientsCount > clientsLimitProperties.getApplicationClientsLimit()) {
+            log.trace("Integrations count limit detected! Allowed: {} Integrations", clientsLimitProperties.getApplicationClientsLimit());
             rateLimitCacheService.decrementApplicationClientsCount();
             return false;
         }
@@ -153,7 +146,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     @Override
     public boolean checkApplicationClientsLimit(SessionInfo sessionInfo) {
-        if (applicationClientsLimit <= 0) {
+        if (clientsLimitProperties.isApplicationClientsLimitDisabled()) {
             return true;
         }
         if (sessionInfo.isPersistentAppClient()) {
@@ -165,8 +158,8 @@ public class RateLimitServiceImpl implements RateLimitService {
 
             long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
 
-            if (newAppClientsCount > applicationClientsLimit) {
-                log.trace("Application clients count limit detected! Allowed: {} App clients", applicationClientsLimit);
+            if (newAppClientsCount > clientsLimitProperties.getApplicationClientsLimit()) {
+                log.trace("Application clients count limit detected! Allowed: {} App clients", clientsLimitProperties.getApplicationClientsLimit());
                 rateLimitCacheService.decrementApplicationClientsCount();
                 return false;
             }

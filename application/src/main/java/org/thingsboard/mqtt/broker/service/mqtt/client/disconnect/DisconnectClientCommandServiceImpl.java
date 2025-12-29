@@ -45,7 +45,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
 
     @PostConstruct
     public void init() {
-        this.clientDisconnectCommandProducer = disconnectClientCommandQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+        clientDisconnectCommandProducer = disconnectClientCommandQueueFactory.createProducer(serviceInfoProvider.getServiceId());
     }
 
     @Override
@@ -65,9 +65,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
         clientDisconnectCommandProducer.send(topic, null, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Disconnect command for session {} sent successfully.", clientId, sessionId);
-                }
+                log.trace("[{}] Disconnect command for session {} sent successfully.", clientId, sessionId);
             }
 
             @Override

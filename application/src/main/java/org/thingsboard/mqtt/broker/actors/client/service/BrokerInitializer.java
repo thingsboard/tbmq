@@ -17,9 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.service;
 
 import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -28,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -75,6 +74,7 @@ public class BrokerInitializer {
     private final ServiceInfoProvider serviceInfoProvider;
     private final RateLimitCacheService rateLimitCacheService;
     private final IntegrationService integrationService;
+    private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
@@ -83,10 +83,6 @@ public class BrokerInitializer {
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
     private final InternodeNotificationsConsumer internodeNotificationsConsumer;
-
-    @Value("${mqtt.application-clients-limit:0}")
-    @Setter
-    private int applicationsLimit;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(value = 1)
@@ -149,7 +145,7 @@ public class BrokerInitializer {
     }
 
     private int getIntegrationsCount() {
-        return applicationsLimit > 0 ? integrationService.findAllIntegrations().size() : 0;
+        return clientsLimitProperties.isApplicationClientsLimitEnabled() ? integrationService.findIntegrationsCount() : 0;
     }
 
     void initRetainedMessages() throws QueuePersistenceException {

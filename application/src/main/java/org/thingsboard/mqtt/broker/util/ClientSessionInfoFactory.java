@@ -30,7 +30,7 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
 public class ClientSessionInfoFactory {
 
-    public static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
+    private static final ClientSessionInfo defaultClientSessionInfo = ClientSessionInfo.builder()
             .keepAlive(60)
             .disconnectedAt(0)
             .connectedAt(System.currentTimeMillis())
