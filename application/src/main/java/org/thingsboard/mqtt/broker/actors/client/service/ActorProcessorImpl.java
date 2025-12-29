@@ -156,8 +156,10 @@ public class ActorProcessorImpl implements ActorProcessor {
             case ENHANCED_AUTH_STARTED -> processAuth(state, authMsg, sessionCtx);
             case CONNECTED -> processReAuth(state, authMsg, sessionCtx);
             default -> {
-                log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
-                        state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
+                            state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
+                }
                 resetStateToDisconnected(state);
                 sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
                 unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, null, false,
