@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider.integration;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -40,14 +38,6 @@ public class ExecutorIntegrationMsgQueueProvider implements IntegrationMsgQueueP
 
     private final IntegrationMsgQueueFactory integrationMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
-
-    @PostConstruct
-    public void init() {
-    }
-
-    @PreDestroy
-    public void destroy() {
-    }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgProducer() {
