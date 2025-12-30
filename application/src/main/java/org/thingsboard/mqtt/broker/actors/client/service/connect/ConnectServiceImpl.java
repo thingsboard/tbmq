@@ -157,7 +157,7 @@ public class ConnectServiceImpl implements ConnectService {
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));
         keepAliveService.registerSession(clientId, sessionId, keepAliveSeconds);
 
-        ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
+        ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionInfo);
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
             public void onSuccess(ConnectionResponse connectionResponse) {
