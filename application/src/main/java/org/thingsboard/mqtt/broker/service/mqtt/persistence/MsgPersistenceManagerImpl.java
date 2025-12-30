@@ -221,7 +221,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent) {
+    public void startProcessingPersistedMessages(ClientActorStateInfo actorState) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
 
@@ -229,9 +229,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
-            if (!wasPrevSessionPersistent) {
-                devicePersistenceProcessor.clearPersistedMsgs(clientSessionCtx.getClientId());
-            }
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         }
     }

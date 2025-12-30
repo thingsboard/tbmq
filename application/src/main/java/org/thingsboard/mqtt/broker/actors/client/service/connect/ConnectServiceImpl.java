@@ -204,7 +204,7 @@ public class ConnectServiceImpl implements ConnectService {
         clientSessionCtxService.registerSession(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.isSessionPresent());
+            msgPersistenceManager.startProcessingPersistedMessages(actorState);
             startProcessingSharedSubscriptionsIfPresent(sessionCtx);
         }
 

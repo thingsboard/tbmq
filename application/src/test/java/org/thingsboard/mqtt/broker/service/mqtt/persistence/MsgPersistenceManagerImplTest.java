@@ -227,13 +227,12 @@ public class MsgPersistenceManagerImplTest {
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
 
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
-        msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
+        msgPersistenceManager.startProcessingPersistedMessages(actorState);
         verify(applicationPersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(actorState));
 
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
-        msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
+        msgPersistenceManager.startProcessingPersistedMessages(actorState);
         verify(devicePersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(ctx));
-        verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
         //wantedNumberOfInvocations = 2 since we call msgPersistenceManager.startProcessingPersistedMessages 2 times
         verify(genericClientSessionCtxManager, times(2)).resendPersistedPubRelMessages(eq(ctx));

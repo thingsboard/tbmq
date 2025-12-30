@@ -159,7 +159,7 @@ public class ConnectServiceImplTest {
         verify(lastWillService, times(1)).saveLastWillMsg(any(), eq(publishMsg));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
-        verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState), eq(false));
+        verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));
         verify(queuedMqttMessages, times(1)).process(any());
     }
 

@@ -38,7 +38,7 @@ public interface MsgPersistenceManager {
 
     void processPubComp(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
+    void startProcessingPersistedMessages(ClientActorStateInfo actorState);
 
     void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
 
