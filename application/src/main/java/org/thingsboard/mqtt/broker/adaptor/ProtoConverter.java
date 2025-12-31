@@ -422,6 +422,13 @@ public class ProtoConverter {
                 .build();
     }
 
+    public static ClientSessionEventResponseProto toConnectionResponseProto(boolean success, boolean sessionPresent) {
+        return ClientSessionEventResponseProto.newBuilder()
+                .setSuccess(success)
+                .setSessionPresent(sessionPresent)
+                .build();
+    }
+
     /**
      * Client subscriptions conversion
      */

@@ -32,6 +32,9 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -50,13 +53,13 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
 
     @Override
     public void disconnectOnSessionConflict(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_CONFLICTING_SESSIONS);
+        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, ON_CLUSTER_CONFLICTING_SESSIONS);
         send(serviceId, clientId, sessionId, disconnectCommand);
     }
 
     @Override
     public void disconnectSessionOnAdminAction(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_ADMINISTRATIVE_ACTION);
+        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, ON_ADMINISTRATIVE_ACTION);
         send(serviceId, clientId, sessionId, disconnectCommand);
     }
 

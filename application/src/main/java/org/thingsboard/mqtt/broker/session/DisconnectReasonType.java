@@ -23,6 +23,7 @@ public enum DisconnectReasonType {
     ON_DISCONNECT_MSG,
     ON_DISCONNECT_AND_WILL_MSG,
     ON_CONFLICTING_SESSIONS,
+    ON_CLUSTER_CONFLICTING_SESSIONS,
     ON_ERROR,
     ON_CHANNEL_CLOSED,
     ON_RATE_LIMITS,
@@ -65,5 +66,9 @@ public enum DisconnectReasonType {
 
     public boolean isNotConflictingSession() {
         return ON_CONFLICTING_SESSIONS != this;
+    }
+
+    public boolean isNotClusterConflictingSession() {
+        return ON_CLUSTER_CONFLICTING_SESSIONS != this;
     }
 }

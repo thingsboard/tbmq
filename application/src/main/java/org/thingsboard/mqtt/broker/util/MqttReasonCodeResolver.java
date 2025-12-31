@@ -129,7 +129,7 @@ public final class MqttReasonCodeResolver {
         return switch (type) {
             case ON_DISCONNECT_MSG -> Disconnect.NORMAL_DISCONNECT;
             case ON_DISCONNECT_AND_WILL_MSG -> Disconnect.DISCONNECT_WITH_WILL_MESSAGE;
-            case ON_CONFLICTING_SESSIONS -> Disconnect.SESSION_TAKEN_OVER;
+            case ON_CONFLICTING_SESSIONS, ON_CLUSTER_CONFLICTING_SESSIONS -> Disconnect.SESSION_TAKEN_OVER;
             case ON_CHANNEL_CLOSED -> Disconnect.IMPLEMENTATION_SPECIFIC_ERROR;
             case ON_RATE_LIMITS -> Disconnect.MESSAGE_RATE_TOO_HIGH;
             case ON_KEEP_ALIVE -> Disconnect.KEEP_ALIVE_TIMEOUT;

@@ -87,7 +87,7 @@ public class TbCacheOps {
         try {
             invalidate(cacheName);
         } catch (RuntimeException e) {
-            log.warn("Cache invalidate failed. cache={}", cacheName, e);
+            log.warn("Cache invalidate failed. cache={}, detailMessage: {}", cacheName, e.getMessage());
         }
     }
 

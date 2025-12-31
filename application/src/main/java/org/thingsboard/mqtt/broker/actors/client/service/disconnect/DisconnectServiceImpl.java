@@ -41,6 +41,8 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -62,14 +64,15 @@ public class DisconnectServiceImpl implements DisconnectService {
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
         DisconnectReason reason = disconnectMsg.getReason();
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        UUID sessionId = sessionCtx.getSessionId();
 
         if (sessionCtx.getSessionInfo() == null) {
-            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionId, reason);
             closeChannel(sessionCtx);
             return;
         }
 
-        log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionId, reason);
 
         if (shouldSendServerDisconnect(sessionCtx, reason)) {
             MqttReasonCodes.Disconnect code = MqttReasonCodeResolver.disconnect(reason.getType());
@@ -77,7 +80,9 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         var sessionExpiryInterval = getSessionExpiryInterval(disconnectMsg.getProperties());
-        notifyClientDisconnected(actorState, sessionExpiryInterval);
+        if (reason.getType().isNotClusterConflictingSession()) {
+            notifyClientDisconnected(actorState, sessionExpiryInterval);
+        }
         cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }
 
