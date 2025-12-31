@@ -313,6 +313,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     void finishDisconnect(ClientSessionInfo session, int sessionExpiryInterval) {
         if (session.isPersistent()) {
             saveClientSession(markSessionDisconnected(session, sessionExpiryInterval));
+            return;
         } else {
 //            if (disconnectReasonType.isNotConflictingSession()) {
 //                rateLimitCacheService.decrementSessionCount();
