@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.HYPHEN;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -65,14 +67,14 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
 
     @Override
     public void startConsuming() {
-        this.consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
+        consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
         for (int i = 0; i < consumersCount; i++) {
             initConsumer(i);
         }
     }
 
     private void initConsumer(int consumerIndex) {
-        String consumerId = serviceInfoProvider.getServiceId() + "-" + consumerIndex;
+        String consumerId = serviceInfoProvider.getServiceId() + HYPHEN + consumerIndex;
         var eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerId);
         eventConsumers.add(eventConsumer);
         eventConsumer.subscribe();
@@ -106,7 +108,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 }
             }
         }
-        log.info("Client Session Event Consumer stopped.");
+        log.info("[{}] Client Session Event Consumer stopped.", stats.getConsumerId());
     }
 
     private void processMessages(List<TbProtoQueueMsg<ClientSessionEventProto>> msgs) {
@@ -114,19 +116,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         for (TbProtoQueueMsg<ClientSessionEventProto> msg : msgs) {
             String clientId = msg.getKey();
 
-            ClientCallback callback = new ClientCallback() {
-                @Override
-                public void onSuccess() {
-                    latch.countDown();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    log.warn("[{}] Failed to process {} msg.", clientId, msg.getValue().getEventType(), t);
-                    latch.countDown();
-                }
-            };
-
+            ClientCallback callback = new ClientSessionEventCallback(msg, latch);
             SessionClusterManagementMsg sessionClusterManagementMsg = callbackMsgFactory.createSessionClusterManagementMsg(msg, callback);
             try {
                 clientSessionEventActorManager.sendSessionClusterManagementMsg(clientId, sessionClusterManagementMsg);
@@ -148,10 +138,30 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
 
     @PreDestroy
     public void destroy() {
+        log.info("Client Session Event Consumer service is shutting down");
         stopped = true;
         eventConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Client session event consumer");
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class ClientSessionEventCallback implements ClientCallback {
+
+        private final TbProtoQueueMsg<ClientSessionEventProto> msg;
+        private final CountDownLatch latch;
+
+        @Override
+        public void onSuccess() {
+            log.debug("[{}] Successfully processed {} msg", msg.getKey(), msg.getValue().getEventType());
+            latch.countDown();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.warn("[{}] Failed to process {} msg", msg.getKey(), msg.getValue().getEventType(), t);
+            latch.countDown();
         }
     }
 }

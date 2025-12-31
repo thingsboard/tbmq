@@ -44,22 +44,25 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
     @Override
     public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<ClientSessionEventProto> msg, ClientCallback callback) {
         ClientSessionEventProto eventProto = msg.getValue();
-        SessionInfo sessionInfo;
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
-            case CONNECTION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
+            case CONNECTION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
-            case DISCONNECTION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
+            }
+            case DISCONNECTION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
                 return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval());
-            case CLEAR_SESSION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
+            }
+            case CLEAR_SESSION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
                 return new ClearSessionMsg(callback, sessionInfo.getSessionId());
-            case REMOVE_APPLICATION_TOPIC_REQUEST:
+            }
+            case REMOVE_APPLICATION_TOPIC_REQUEST -> {
                 return new RemoveApplicationTopicRequestMsg(callback);
-            default:
-                throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
+            }
+            default ->
+                    throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
         }
     }
 

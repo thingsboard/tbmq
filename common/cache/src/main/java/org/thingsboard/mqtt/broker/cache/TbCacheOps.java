@@ -79,7 +79,7 @@ public class TbCacheOps {
         try {
             evictIfPresent(cacheName, key);
         } catch (RuntimeException e) {
-            log.warn("Cache evict failed. cache={}, key={}", cacheName, key, e);
+            log.warn("Cache evict failed. cache={}, key={}, detailMessage: {}", cacheName, key, e.getMessage());
         }
     }
 
