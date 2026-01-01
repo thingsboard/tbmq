@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 @Slf4j
 @Getter
+@ToString
 public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
 
     private final UUID sessionId;

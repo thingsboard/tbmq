@@ -237,7 +237,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return;
         }
 
-        log.trace("[{}] Finishing client session disconnection [{}].", clientId, session);
+        log.trace("[{}] Finishing client session disconnection [{}].", clientId, msg);
         finishDisconnect(session, msg);
     }
 
