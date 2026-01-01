@@ -178,7 +178,7 @@
                   <input matInput formControlName="credentials">
                   <tb-edit-client-credentials-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
                                                      [disabled]="isLoading$ | async"
-                                                     [class.hidden]="entityForm.get('credentials').value === 'Unknown'"
+                                                     [class.hidden]="['Unknown', 'JWT', 'SCRAM'].includes(entityForm.get('credentials').value)"
                                                      [name]="entityForm.get('credentials').value">
                   </tb-edit-client-credentials-button>
                   <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
