@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 
@@ -30,11 +31,17 @@ public class SessionDisconnectedMsg extends CallbackMsg implements SessionCluste
 
     private final UUID sessionId;
     private final int sessionExpiryInterval;
+    private final DisconnectReasonType reasonType;
 
     public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, int sessionExpiryInterval) {
+        this(callback, sessionId, sessionExpiryInterval, DisconnectReasonType.ON_DISCONNECT_MSG);
+    }
+
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, int sessionExpiryInterval, DisconnectReasonType reasonType) {
         super(callback);
         this.sessionId = sessionId;
         this.sessionExpiryInterval = sessionExpiryInterval;
+        this.reasonType = reasonType;
     }
 
     @Override

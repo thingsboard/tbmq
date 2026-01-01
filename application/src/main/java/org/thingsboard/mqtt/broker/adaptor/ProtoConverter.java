@@ -39,7 +39,9 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientDisconnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventDetailsProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
@@ -77,6 +79,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttQosUtil;
@@ -761,4 +764,21 @@ public class ProtoConverter {
         return RegexMatchTarget.valueOf(blockedClientProto.getRegexMatchTarget().name());
     }
 
+    /**
+     * Client session event details
+     */
+
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(DisconnectReasonType reasonType) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientDisconnectInfo(toClientDisconnectInfoProto(reasonType))
+                .build();
+    }
+
+    public static ClientDisconnectInfoProto toClientDisconnectInfoProto(DisconnectReasonType reasonType) {
+        return ClientDisconnectInfoProto.newBuilder().setReasonType(reasonType.name()).build();
+    }
+
+    public static DisconnectReasonType getDisconnectReasonType(ClientSessionEventDetailsProto eventDetailsProto) {
+        return DisconnectReasonType.valueOf(eventDetailsProto.getClientDisconnectInfo().getReasonType());
+    }
 }

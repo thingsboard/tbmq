@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 @Service
 public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory {
@@ -33,9 +34,10 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     }
 
     @Override
-    public ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo) {
+    public ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo, DisconnectReasonType reasonType) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(reasonType))
                 .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.name())
                 .build();
     }

@@ -238,7 +238,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
 
         log.trace("[{}] Finishing client session disconnection [{}].", clientId, session);
-        finishDisconnect(session, msg.getSessionExpiryInterval());
+        finishDisconnect(session, msg);
     }
 
     @Override
@@ -310,14 +310,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         applicationTopicService.deleteTopic(clientId, CallbackUtil.createCallback(callback::onSuccess, callback::onFailure));
     }
 
-    void finishDisconnect(ClientSessionInfo session, int sessionExpiryInterval) {
+    void finishDisconnect(ClientSessionInfo session, SessionDisconnectedMsg msg) {
         if (session.isPersistent()) {
-            saveClientSession(markSessionDisconnected(session, sessionExpiryInterval));
+            saveClientSession(markSessionDisconnected(session, msg.getSessionExpiryInterval()));
             return;
         } else {
-//            if (disconnectReasonType.isNotConflictingSession()) {
-//                rateLimitCacheService.decrementSessionCount();
-//            }
+            if (msg.getReasonType().isNotConflictingSession()) {
+                rateLimitCacheService.decrementSessionCount();
+            }
         }
 
         fullSessionRemove(session, false);
@@ -328,10 +328,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             ClientSessionInfo disconnected = markSessionDisconnected(session, -1);
             saveClientSession(disconnected);
             return disconnected;
-        } else {
-//            if (disconnectReasonType.isNotConflictingSession()) {
-//                rateLimitCacheService.decrementSessionCount();
-//            }
         }
 
         fullSessionRemove(session, false);

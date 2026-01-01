@@ -52,7 +52,8 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
             }
             case DISCONNECTION_REQUEST -> {
                 var sessionInfo = getSessionInfo(eventProto);
-                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval());
+                var reasonType = ProtoConverter.getDisconnectReasonType(eventProto.getDetails());
+                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval(), reasonType);
             }
             case CLEAR_SESSION_REQUEST -> {
                 var sessionInfo = getSessionInfo(eventProto);

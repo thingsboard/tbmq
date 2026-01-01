@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_SERVER_SHUTTING_DOWN;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -94,7 +96,7 @@ public class ActorSystemLifecycle {
         log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
         for (ClientSessionCtx sessionCtx : clientSessionContexts) {
             SessionInfo sessionInfo = sessionCtx.getSessionInfo().withSessionExpiryInterval(-1);
-            clientSessionEventService.notifyClientDisconnected(sessionInfo, callback);
+            clientSessionEventService.notifyClientDisconnected(sessionInfo, ON_SERVER_SHUTTING_DOWN, callback);
         }
 
         boolean waitSuccessful = false;

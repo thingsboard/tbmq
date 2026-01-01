@@ -103,6 +103,15 @@ message ClientSessionInfoProto {
 message ClientSessionEventProto {
   string eventType = 1;
   SessionInfoProto sessionInfo = 2;
+  optional ClientSessionEventDetailsProto details = 3;
+}
+
+message ClientSessionEventDetailsProto {
+  ClientDisconnectInfoProto clientDisconnectInfo = 1;
+}
+
+message ClientDisconnectInfoProto {
+  optional string reasonType = 1;
 }
 
 message ClientSessionEventResponseProto {

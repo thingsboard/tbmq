@@ -55,7 +55,6 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -322,7 +321,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processSessionDisconnected(clientId, msg);
 
-        verify(sessionClusterManager, never()).finishDisconnect(any(), anyInt());
+        verify(sessionClusterManager, never()).finishDisconnect(any(), any());
         verifyNoInteractions(clientSubscriptionService, msgPersistenceManager, cacheOps);
     }
 
@@ -343,7 +342,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processSessionDisconnected(clientId, msg);
 
-        verify(sessionClusterManager, never()).finishDisconnect(any(), anyInt());
+        verify(sessionClusterManager, never()).finishDisconnect(any(), any());
         verifyNoInteractions(clientSubscriptionService, msgPersistenceManager, cacheOps);
     }
 
@@ -365,7 +364,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processSessionDisconnected(clientId, msg);
 
-        verify(sessionClusterManager, never()).finishDisconnect(any(), anyInt());
+        verify(sessionClusterManager, never()).finishDisconnect(any(), any());
         verifyNoInteractions(clientSubscriptionService, msgPersistenceManager, cacheOps);
     }
 
@@ -388,7 +387,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processSessionDisconnected(clientId, msg);
 
-        verify(sessionClusterManager).finishDisconnect(eq(stored), eq(expiry));
+        verify(sessionClusterManager).finishDisconnect(eq(stored), eq(msg));
     }
 
     // -------------------------

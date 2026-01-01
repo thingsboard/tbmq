@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.List;
 import java.util.UUID;
@@ -109,10 +110,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public void notifyClientDisconnected(SessionInfo sessionInfo, TbQueueCallback callback) {
+    public void notifyClientDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType, TbQueueCallback callback) {
         sendEvent(
                 sessionInfo.getClientId(),
-                eventFactory.createDisconnectedEventProto(sessionInfo),
+                eventFactory.createDisconnectedEventProto(sessionInfo, reasonType),
                 false,
                 callback);
     }

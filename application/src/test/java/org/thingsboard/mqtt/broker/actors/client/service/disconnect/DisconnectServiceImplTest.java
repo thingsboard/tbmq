@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -55,6 +54,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_DISCONNECT_MSG;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -81,8 +81,6 @@ public class DisconnectServiceImplTest {
     AuthorizationRuleService authorizationRuleService;
     @MockitoBean
     FlowControlService flowControlService;
-    @MockitoBean
-    RateLimitCacheService rateLimitCacheService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
 
@@ -117,21 +115,21 @@ public class DisconnectServiceImplTest {
     public void givenSessionInfoIsNull_whenDisconnectClient_thenCloseChannel() {
         when(ctx.getSessionInfo()).thenReturn(null);
 
-        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
         verify(disconnectService, never()).cleanupClientSession(clientActorState, disconnectMsg, -1);
-        verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0);
+        verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0, ON_DISCONNECT_MSG);
         verify(disconnectService, times(1)).closeChannel(ctx);
     }
 
     @Test
     public void givenSessionInfoIsNotNull_whenDisconnectClient_thenDisconnectCleanlyAndCloseChannel() {
-        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
         verify(disconnectService, times(1)).cleanupClientSession(clientActorState, disconnectMsg, -1);
-        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, -1);
+        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, -1, ON_DISCONNECT_MSG);
         verify(disconnectService, times(1)).closeChannel(ctx);
         verify(rateLimitService, times(1)).remove(eq(CLIENT_ID));
         verify(authorizationRuleService, times(1)).evict(eq(CLIENT_ID));
@@ -156,7 +154,7 @@ public class DisconnectServiceImplTest {
     public void givenNonPersistentClient_whenCleanupClientSession_thenAllResourcesTerminationDone() {
         when(sessionInfo.isPersistent()).thenReturn(false);
 
-        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
         disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
 
         verify(queuedMqttMessages, times(1)).clear();
@@ -169,7 +167,7 @@ public class DisconnectServiceImplTest {
     public void givenPersistentClient_whenCleanupClientSession_thenAllResourcesTerminationDone() {
         when(sessionInfo.isPersistent()).thenReturn(true);
 
-        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
         disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
 
         verify(queuedMqttMessages, times(1)).clear();
