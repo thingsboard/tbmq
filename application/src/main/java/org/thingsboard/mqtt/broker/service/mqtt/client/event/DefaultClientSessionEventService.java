@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.List;
@@ -97,14 +98,14 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo) {
+    public ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo) {
         if (tickSize.get() > maxPendingRequests) {
             return Futures.immediateFailedFuture(new RuntimeException("Cannot send CONNECTION_REQUEST. Pending request map is full!"));
         }
 
         return sendEvent(
                 sessionInfo.getClientId(),
-                eventFactory.createConnectionRequestEventProto(sessionInfo),
+                eventFactory.createConnectionRequestEventProto(sessionInfo, clientConnectInfo),
                 true,
                 null);
     }

@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
@@ -52,6 +53,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
@@ -101,7 +103,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processConnectionRequest(SessionInfo connectingSessionInfo, ConnectionRequestInfo requestInfo) {
+    public void processConnectionRequest(ConnectionRequestMsg msg) {
+        SessionInfo connectingSessionInfo = msg.getSessionInfo();
+        ConnectionRequestInfo requestInfo = msg.getRequestInfo();
+        ClientConnectInfo connectInfo = msg.getConnectInfo();
+
         String clientId = connectingSessionInfo.getClientId();
         UUID sessionId = connectingSessionInfo.getSessionId();
         log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionId);
@@ -120,6 +126,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
 
         currentSession = disconnectIfConflicting(currentSession, connectingSessionInfo);
+        persistClientInfoInCache(clientId, connectInfo);
         updateClientSessionOnConnect(connectingSessionInfo, requestInfo, currentSession);
     }
 
@@ -438,6 +445,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private boolean isSameSession(ClientSessionInfo currentSession, UUID incomingSessionId) {
         return currentSession != null && incomingSessionId.equals(currentSession.getSessionId());
+    }
+
+    private void persistClientInfoInCache(String clientId, ClientConnectInfo connectInfo) {
+        cacheOps.put(CLIENT_SESSION_CREDENTIALS_CACHE, clientId, connectInfo.getAuthDetails());
+        cacheOps.put(CLIENT_MQTT_VERSION_CACHE, clientId, connectInfo.getMqttVersion());
     }
 
     private void evictFromCache(String clientId) {

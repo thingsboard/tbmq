@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 
 import java.util.UUID;
 
@@ -48,7 +49,8 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
             case CONNECTION_REQUEST -> {
                 var sessionInfo = getSessionInfo(eventProto);
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
-                return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
+                ClientConnectInfo clientConnectInfo = ProtoConverter.getClientConnectInfo(eventProto.getDetails());
+                return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo, clientConnectInfo);
             }
             case DISCONNECTION_REQUEST -> {
                 var sessionInfo = getSessionInfo(eventProto);

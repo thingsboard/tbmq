@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -69,7 +70,7 @@ public class HmacJwtVerificationStrategyTest {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder().subject("alice").build();
         String jwt = createSignedJwt(claimsSet);
 
-        AuthResponse expectedResponse = AuthResponse.success(ClientType.DEVICE, null);
+        AuthResponse expectedResponse = AuthResponse.success(ClientType.DEVICE, null, MqttAuthProviderType.JWT.name());
         when(claimsValidator.validateAll(any(), any())).thenReturn(expectedResponse);
 
         AuthResponse actual = strategy.authenticateJwt(dummyContext, jwt);

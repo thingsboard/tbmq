@@ -108,10 +108,16 @@ message ClientSessionEventProto {
 
 message ClientSessionEventDetailsProto {
   ClientDisconnectInfoProto clientDisconnectInfo = 1;
+  ClientConnectInfoProto clientConnectInfo = 2;
 }
 
 message ClientDisconnectInfoProto {
   optional string reasonType = 1;
+}
+
+message ClientConnectInfoProto {
+  optional string mqttVersion = 1;
+  optional string authDetails = 2;
 }
 
 message ClientSessionEventResponseProto {

@@ -65,6 +65,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.BLOCKED_CLIENT_MSG;
+import static org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType.SCRAM;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.BLOCKED_CLIENT;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.INVALID_CLIENT_STATE_FOR_AUTH_PACKET;
 
@@ -107,6 +108,7 @@ public class ActorProcessorImpl implements ActorProcessor {
 
         unauthorizedClientManager.removeClientUnauthorized(state);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
+        sessionCtx.setAuthDetails(authResponse.getAuthDetails());
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
@@ -212,6 +214,7 @@ public class ActorProcessorImpl implements ActorProcessor {
                 NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
         sessionCtx.clearScramServer();
         sessionCtx.clearConnectMsg();
+        sessionCtx.setAuthDetails(SCRAM.name());
     }
 
     private void processReAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
@@ -223,10 +226,12 @@ public class ActorProcessorImpl implements ActorProcessor {
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
             return;
         }
+        unauthorizedClientManager.removeClientUnauthorized(state);
         sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
                 authResponse.response(), MqttReasonCodes.Auth.SUCCESS);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
         sessionCtx.clearScramServer();
+        sessionCtx.setAuthDetails(SCRAM.name());
     }
 
     private MqttConnectReturnCode getFailureReturnCode(EnhancedAuthFinalResponse authResponse) {

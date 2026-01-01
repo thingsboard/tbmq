@@ -31,6 +31,7 @@ public class AuthResponse {
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
     private final String reason;
+    private final String authDetails;
 
     public static AuthResponse failure(String reason) {
         return AuthResponse.builder().success(false).reason(reason).build();
@@ -44,8 +45,8 @@ public class AuthResponse {
         return AuthResponse.builder().success(true).clientType(ClientType.DEVICE).authRulePatterns(null).build();
     }
 
-    public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
-        return AuthResponse.builder().success(true).clientType(clientType).authRulePatterns(authRulePatterns).build();
+    public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, String authDetails) {
+        return AuthResponse.builder().success(true).clientType(clientType).authRulePatterns(authRulePatterns).authDetails(authDetails).build();
     }
 
     public boolean isFailure() {

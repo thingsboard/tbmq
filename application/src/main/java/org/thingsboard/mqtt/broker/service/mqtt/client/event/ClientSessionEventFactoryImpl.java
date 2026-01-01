@@ -20,15 +20,17 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 @Service
 public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory {
 
     @Override
-    public ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo) {
+    public ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(clientConnectInfo))
                 .setEventType(ClientSessionEventType.CONNECTION_REQUEST.name())
                 .build();
     }

@@ -18,11 +18,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 public interface ClientSessionEventFactory {
 
-    ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo);
+    ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo);
 
     ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo, DisconnectReasonType reasonType);
 

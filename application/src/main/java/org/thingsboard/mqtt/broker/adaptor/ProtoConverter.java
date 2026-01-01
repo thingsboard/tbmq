@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientConnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientDisconnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventDetailsProto;
@@ -75,6 +76,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlocked
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
@@ -774,11 +776,30 @@ public class ProtoConverter {
                 .build();
     }
 
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(ClientConnectInfo clientConnectInfo) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientConnectInfo(toClientConnectInfoProto(clientConnectInfo))
+                .build();
+    }
+
     public static ClientDisconnectInfoProto toClientDisconnectInfoProto(DisconnectReasonType reasonType) {
         return ClientDisconnectInfoProto.newBuilder().setReasonType(reasonType.name()).build();
     }
 
+    public static ClientConnectInfoProto toClientConnectInfoProto(ClientConnectInfo connectInfo) {
+        return ClientConnectInfoProto
+                .newBuilder()
+                .setMqttVersion(connectInfo.getMqttVersion())
+                .setAuthDetails(connectInfo.getAuthDetails())
+                .build();
+    }
+
     public static DisconnectReasonType getDisconnectReasonType(ClientSessionEventDetailsProto eventDetailsProto) {
         return DisconnectReasonType.valueOf(eventDetailsProto.getClientDisconnectInfo().getReasonType());
+    }
+
+    public static ClientConnectInfo getClientConnectInfo(ClientSessionEventDetailsProto eventDetailsProto) {
+        ClientConnectInfoProto clientConnectInfo = eventDetailsProto.getClientConnectInfo();
+        return new ClientConnectInfo(clientConnectInfo.getMqttVersion(), clientConnectInfo.getAuthDetails());
     }
 }

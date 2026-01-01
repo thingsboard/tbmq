@@ -26,8 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -315,7 +313,7 @@ public class JwtMqttClientAuthProviderTest {
         byte[] passwordBytes = "jwtToken".getBytes(StandardCharsets.UTF_8);
         when(authContext.getPasswordBytes()).thenReturn(passwordBytes);
 
-        AuthResponse expected = AuthResponse.success(null, null);
+        AuthResponse expected = AuthResponse.success(null, null, MqttAuthProviderType.JWT.name());
         when(verificationStrategy.authenticateJwt(any(), any())).thenReturn(expected);
 
         AuthResponse response = provider.authenticate(authContext);

@@ -36,8 +36,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -52,6 +50,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -91,7 +90,6 @@ public class ConnectServiceImpl implements ConnectService {
     private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
     private final PublishMsgValidationService publishMsgValidationService;
-    private final TbCacheOps cacheOps;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -157,7 +155,8 @@ public class ConnectServiceImpl implements ConnectService {
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));
         keepAliveService.registerSession(clientId, sessionId, keepAliveSeconds);
 
-        ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionInfo);
+        ClientConnectInfo clientConnectInfo = ClientConnectInfo.fromCtx(sessionCtx);
+        ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionInfo, clientConnectInfo);
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
             public void onSuccess(ConnectionResponse connectionResponse) {
@@ -200,7 +199,6 @@ public class ConnectServiceImpl implements ConnectService {
 
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
-        putIntoClientMqttVersionCache(sessionCtx);
         clientSessionCtxService.registerSession(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
@@ -370,10 +368,6 @@ public class ConnectServiceImpl implements ConnectService {
     int getReceiveMaxValue(MqttConnectMsg msg, ClientSessionCtx ctx) {
         return MqttVersion.MQTT_5 == ctx.getMqttVersion() ?
                 MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties()) : mqtt3xReceiveMax;
-    }
-
-    private void putIntoClientMqttVersionCache(ClientSessionCtx sessionCtx) {
-        cacheOps.put(CacheConstants.CLIENT_MQTT_VERSION_CACHE, sessionCtx.getClientId(), sessionCtx.getMqttVersion().name());
     }
 
     @PreDestroy

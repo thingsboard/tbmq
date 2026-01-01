@@ -18,12 +18,10 @@ package org.thingsboard.mqtt.broker.actors.client.service.connect;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -34,8 +32,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -108,8 +104,6 @@ public class ConnectServiceImplTest {
     FlowControlService flowControlService;
     @MockitoBean
     PublishMsgValidationService publishMsgValidationService;
-    @MockitoBean
-    TbCacheOps tbCacheOps;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -138,18 +132,12 @@ public class ConnectServiceImplTest {
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
 
-    @After
-    public void tearDown() {
-    }
-
     @Test
     public void givenConnectionAcceptedMsg_whenAcceptConnection_thenVerifyExecutions() {
         TbActorRef actorRef = mock(TbActorRef.class);
-        Cache cache = mock(Cache.class);
 
         QueuedMqttMessages queuedMqttMessages = mock(QueuedMqttMessages.class);
         when(actorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
-        when(tbCacheOps.cache(eq(CacheConstants.CLIENT_MQTT_VERSION_CACHE))).thenReturn(cache);
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         PublishMsg publishMsg = PublishMsg.builder().build();

@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.ActorStoppedException;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 
 @Slf4j
 @Getter
@@ -31,11 +32,18 @@ public class ConnectionRequestMsg extends CallbackMsg implements SessionClusterM
 
     private final SessionInfo sessionInfo;
     private final ConnectionRequestInfo requestInfo;
+    private final ClientConnectInfo connectInfo;
 
     public ConnectionRequestMsg(ClientCallback callback, SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
+        this(callback, sessionInfo, requestInfo, ClientConnectInfo.defaultInfo());
+    }
+
+    public ConnectionRequestMsg(ClientCallback callback, SessionInfo sessionInfo,
+                                ConnectionRequestInfo requestInfo, ClientConnectInfo connectInfo) {
         super(callback);
         this.sessionInfo = sessionInfo;
         this.requestInfo = requestInfo;
+        this.connectInfo = connectInfo;
     }
 
     @Override

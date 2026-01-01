@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
@@ -334,6 +335,7 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).setClientType(ClientType.DEVICE);
         verify(sessionCtxMock).clearScramServer();
         verify(sessionCtxMock).getChannel();
+        verify(sessionCtxMock).setAuthDetails(MqttAuthProviderType.SCRAM.name());
         verifyNoMoreInteractions(sessionCtxMock);
         verifyNoInteractions(clientMqttActorManager);
 
@@ -408,6 +410,7 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).getConnectMsgFromEnhancedAuth();
         verify(sessionCtxMock).clearScramServer();
         verify(sessionCtxMock).clearConnectMsg();
+        verify(sessionCtxMock).setAuthDetails(MqttAuthProviderType.SCRAM.name());
         verifyNoMoreInteractions(sessionCtxMock);
 
         verify(clientMqttActorManager).connect(eq(CLIENT_ID), any(MqttConnectMsg.class));

@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
@@ -60,6 +61,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -136,7 +138,8 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(existing);
         doReturn(existing).when(clientSessionService).getClientSessionInfo("clientId");
 
-        sessionClusterManager.processConnectionRequest(incoming, req());
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        sessionClusterManager.processConnectionRequest(connectionRequestMsg);
 
         verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
         verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(any(), any(), any(), anyBoolean());
@@ -150,11 +153,13 @@ public class SessionClusterManagerImplTest {
         ClientSessionInfo currentConnected = ClientSessionInfoFactory.getClientSessionInfo(true, "clientA", ClientType.DEVICE, false);
         doReturn(currentConnected).when(clientSessionService).getClientSessionInfo("clientA");
 
-        sessionClusterManager.processConnectionRequest(incoming, req());
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        sessionClusterManager.processConnectionRequest(connectionRequestMsg);
 
         verify(disconnectClientCommandService).disconnectOnSessionConflict(eq(currentConnected.getServiceId()),
                 eq("clientA"), eq(currentConnected.getSessionId()), eq(true));
         verify(sessionClusterManager).updateClientSessionOnConnect(eq(incoming), any(), any());
+        verify(cacheOps, times(2)).put(anyString(), anyString(), anyString());
     }
 
     // -------------------------

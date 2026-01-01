@@ -250,7 +250,7 @@ public class ClientActor extends ContextAwareActor {
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
             log.trace("[{}] Processing CONNECTION_REQUEST_MSG processConnectionRequestMsg {}", state.getClientId(), msg);
-            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
+            sessionClusterManager.processConnectionRequest(msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
