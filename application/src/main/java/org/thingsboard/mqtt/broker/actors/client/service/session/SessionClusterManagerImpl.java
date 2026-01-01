@@ -448,8 +448,16 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     private void persistClientInfoInCache(String clientId, ClientConnectInfo connectInfo) {
-        cacheOps.put(CLIENT_SESSION_CREDENTIALS_CACHE, clientId, connectInfo.getAuthDetails());
-        cacheOps.put(CLIENT_MQTT_VERSION_CACHE, clientId, connectInfo.getMqttVersion());
+        persistNullable(CLIENT_SESSION_CREDENTIALS_CACHE, clientId, connectInfo.getAuthDetails());
+        persistNullable(CLIENT_MQTT_VERSION_CACHE, clientId, connectInfo.getMqttVersion());
+    }
+
+    private void persistNullable(String cacheName, String key, String value) {
+        if (value != null) {
+            cacheOps.put(cacheName, key, value);
+        } else {
+            cacheOps.evictIfPresentSafe(cacheName, key);
+        }
     }
 
     private void evictFromCache(String clientId) {

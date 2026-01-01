@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
@@ -92,6 +93,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -787,11 +791,16 @@ public class ProtoConverter {
     }
 
     public static ClientConnectInfoProto toClientConnectInfoProto(ClientConnectInfo connectInfo) {
-        return ClientConnectInfoProto
-                .newBuilder()
-                .setMqttVersion(connectInfo.getMqttVersion())
-                .setAuthDetails(connectInfo.getAuthDetails())
-                .build();
+        var builder = ClientConnectInfoProto.newBuilder();
+        setIfNotEmpty(builder::setMqttVersion, connectInfo.getMqttVersion());
+        setIfNotEmpty(builder::setAuthDetails, connectInfo.getAuthDetails());
+        return builder.build();
+    }
+
+    private static void setIfNotEmpty(Consumer<String> setter, String value) {
+        if (StringUtils.isNotEmpty(value)) {
+            setter.accept(value);
+        }
     }
 
     public static DisconnectReasonType getDisconnectReasonType(ClientSessionEventDetailsProto eventDetailsProto) {
@@ -800,6 +809,13 @@ public class ProtoConverter {
 
     public static ClientConnectInfo getClientConnectInfo(ClientSessionEventDetailsProto eventDetailsProto) {
         ClientConnectInfoProto clientConnectInfo = eventDetailsProto.getClientConnectInfo();
-        return new ClientConnectInfo(clientConnectInfo.getMqttVersion(), clientConnectInfo.getAuthDetails());
+        return new ClientConnectInfo(
+                getIfPresent(clientConnectInfo::hasMqttVersion, clientConnectInfo::getMqttVersion),
+                getIfPresent(clientConnectInfo::hasAuthDetails, clientConnectInfo::getAuthDetails)
+        );
+    }
+
+    private static String getIfPresent(BooleanSupplier has, Supplier<String> get) {
+        return has.getAsBoolean() ? get.get() : null;
     }
 }
