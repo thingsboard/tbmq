@@ -223,7 +223,7 @@ public class ClientSessionInfoFactory {
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive) {
-        return defaultConnectionInfo.toBuilder().keepAlive(keepAlive).build();
+        return defaultConnectionInfo.toBuilder().connectedAt(System.currentTimeMillis()).keepAlive(keepAlive).build();
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt) {
