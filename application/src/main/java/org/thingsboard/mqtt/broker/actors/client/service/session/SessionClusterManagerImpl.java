@@ -50,7 +50,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
@@ -84,7 +84,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationRemovedEventService applicationRemovedEventService;
     private final ApplicationTopicService applicationTopicService;
-    private final RateLimitCacheService rateLimitCacheService;
+    private final RateLimitService rateLimitService;
     private final TbCacheOps cacheOps;
     private final TimeseriesService timeseriesService;
 
@@ -198,7 +198,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private boolean decrementAppClientsIfNeeded(ClientSessionInfo previousSession) {
         if (previousSession.isPersistentAppClient()) {
-            rateLimitCacheService.decrementApplicationClientsCount();
+            rateLimitService.decrementApplicationClientsCount();
             return true;
         }
         return false;
@@ -291,9 +291,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
 
-        rateLimitCacheService.decrementSessionCount();
+        rateLimitService.decrementSessionCount();
         if (session.isPersistentAppClient()) {
-            rateLimitCacheService.decrementApplicationClientsCount();
+            rateLimitService.decrementApplicationClientsCount();
         }
 
         fullSessionRemove(session, true);
@@ -323,7 +323,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return;
         } else {
             if (msg.getReasonType().isNotConflictingSession()) {
-                rateLimitCacheService.decrementSessionCount();
+                rateLimitService.decrementSessionCount();
             }
         }
 

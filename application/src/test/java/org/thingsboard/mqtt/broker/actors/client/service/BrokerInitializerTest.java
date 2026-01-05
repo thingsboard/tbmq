@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
@@ -93,7 +93,7 @@ public class BrokerInitializerTest {
     @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
     @MockitoBean
-    RateLimitCacheService rateLimitCacheService;
+    RateLimitService rateLimitService;
     @MockitoBean
     IntegrationService integrationService;
     @MockitoBean
@@ -136,7 +136,7 @@ public class BrokerInitializerTest {
 
         Assert.assertNotNull(clientSessionInfo);
         Assert.assertTrue(clientSessionInfo.isConnected());
-        verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
+        verify(rateLimitService).initSessionCount(preparedSessions.size());
         verify(clientSessionEventService).requestClientSessionCleanup(any());
         verify(integrationService).findIntegrationsCount();
     }

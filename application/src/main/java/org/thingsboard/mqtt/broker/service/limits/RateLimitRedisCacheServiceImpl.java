@@ -84,7 +84,10 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         boolean initialized = initCacheWithCount(clientSessionsLimitCacheKey, count);
         if (initialized) {
             log.info("Client session limit cache is initialized with count {}", count);
+            return;
         }
+        reInitCacheWithCount(clientSessionsLimitCacheKey, count);
+        log.info("Client session limit cache is re-initialized with count {}", count);
     }
 
     @Override
@@ -147,6 +150,10 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     private Boolean initCacheWithCount(String key, int count) {
         return redisTemplate.opsForValue().setIfAbsent(key, Integer.toString(count));
+    }
+
+    private void reInitCacheWithCount(String key, int count) {
+        redisTemplate.opsForValue().set(key, Integer.toString(count));
     }
 
     private Long increment(String key) {

@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
@@ -71,7 +71,7 @@ public class BrokerInitializer {
 
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final RateLimitCacheService rateLimitCacheService;
+    private final RateLimitService rateLimitService;
     private final IntegrationService integrationService;
     private final ClientsLimitProperties clientsLimitProperties;
 
@@ -111,7 +111,7 @@ public class BrokerInitializer {
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
         log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
-        rateLimitCacheService.initSessionCount(allClientSessions.size());
+        rateLimitService.initSessionCount(allClientSessions.size());
 
         int applicationClientsCount = 0;
         int removeCleanSessions = 0;
@@ -129,7 +129,7 @@ public class BrokerInitializer {
             }
         }
 
-        rateLimitCacheService.initApplicationClientsCount(applicationClientsCount + getIntegrationsCount());
+        rateLimitService.initApplicationClientsCount(applicationClientsCount + getIntegrationsCount());
         log.info("Sent {} requests to clean up client sessions that were on this node.", removeCleanSessions);
 
         clientSessionService.init(allClientSessions);
@@ -160,6 +160,7 @@ public class BrokerInitializer {
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
         internodeNotificationsConsumer.startConsuming();
+        log.info("All client-session-dependent consumers have started.");
     }
 
     void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {

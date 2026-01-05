@@ -44,7 +44,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventService;
@@ -94,7 +94,7 @@ public class SessionClusterManagerImplTest {
     @MockitoBean
     ApplicationTopicService applicationTopicService;
     @MockitoBean
-    RateLimitCacheService rateLimitCacheService;
+    RateLimitService rateLimitService;
     @MockitoBean
     TbCacheOps cacheOps;
     @MockitoBean
@@ -198,7 +198,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.updateClientSessionOnConnect(incomingDevice, req(), previousApp);
 
-        verify(rateLimitCacheService).decrementApplicationClientsCount();
+        verify(rateLimitService).decrementApplicationClientsCount();
         verify(msgPersistenceManager).clearPersistedMessages(eq("appId"), eq(ClientType.DEVICE));
         verify(applicationRemovedEventService).sendApplicationRemovedEvent(eq("appId"));
         verify(clientSessionService).saveClientSession(any(), any());

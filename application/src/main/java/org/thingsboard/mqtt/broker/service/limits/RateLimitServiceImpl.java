@@ -187,4 +187,24 @@ public class RateLimitServiceImpl implements RateLimitService {
     public boolean isTotalMsgsLimitEnabled() {
         return totalMsgsRateLimitsConfiguration.isEnabled();
     }
+
+    @Override
+    public void initSessionCount(int count) {
+        rateLimitCacheService.initSessionCount(count);
+    }
+
+    @Override
+    public void initApplicationClientsCount(int count) {
+        rateLimitCacheService.initApplicationClientsCount(count);
+    }
+
+    @Override
+    public void decrementSessionCount() {
+        rateLimitCacheService.decrementSessionCount();
+    }
+
+    @Override
+    public void decrementApplicationClientsCount() {
+        rateLimitCacheService.decrementApplicationClientsCount();
+    }
 }

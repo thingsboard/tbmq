@@ -49,4 +49,11 @@ public interface RateLimitService {
 
     boolean isTotalMsgsLimitEnabled();
 
+    void initSessionCount(int count);
+
+    void initApplicationClientsCount(int count);
+
+    void decrementSessionCount();
+
+    void decrementApplicationClientsCount();
 }

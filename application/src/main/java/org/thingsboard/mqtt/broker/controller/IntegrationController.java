@@ -125,7 +125,7 @@ public class IntegrationController extends BaseController {
         Integration integration = checkIntegrationId(toUUID(strIntegrationId));
         boolean removed = integrationService.deleteIntegration(integration);
         if (removed) {
-            rateLimitCacheService.decrementApplicationClientsCount();
+            rateLimitService.decrementApplicationClientsCount();
         }
         platformIntegrationService.processIntegrationDelete(integration, removed);
     }
