@@ -336,11 +336,19 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return;
         } else {
             if (msg.getReasonType().isNotConflictingSession()) {
-                rateLimitService.decrementSessionCount();
+                safelyDecrementSessionCount();
             }
         }
 
         fullSessionRemove(session, false);
+    }
+
+    private void safelyDecrementSessionCount() {
+        try {
+            rateLimitService.decrementSessionCount();
+        } catch (IllegalStateException e) {
+            log.debug("Could not decrement session count. Reason - {}", e.getMessage());
+        }
     }
 
     ClientSessionInfo finishOnConflictDisconnect(ClientSessionInfo session) {

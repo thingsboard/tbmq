@@ -17,4 +17,6 @@ package org.thingsboard.mqtt.broker.actors;
 
 public interface TbActorId {
 
+    String getId();
+
 }
