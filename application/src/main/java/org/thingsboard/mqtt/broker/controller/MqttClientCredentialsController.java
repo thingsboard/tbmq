@@ -38,9 +38,12 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv.BulkImportRequest;
+import org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv.BulkImportResult;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsBulkImportService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 
 import java.util.List;
@@ -52,6 +55,7 @@ import java.util.UUID;
 public class MqttClientCredentialsController extends BaseController {
 
     private final BCryptPasswordEncoder passwordEncoder;
+    private final MqttClientCredentialsBulkImportService bulkImportService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/client/credentials")
@@ -154,6 +158,12 @@ public class MqttClientCredentialsController extends BaseController {
     public MqttClientCredentials getClientCredentialsByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
         return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.findCredentialsByName(name));
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping("/mqtt/client/bulk_import")
+    public BulkImportResult<MqttClientCredentials> processMqttClientCredentialsBulkImport(@RequestBody BulkImportRequest request) throws Exception {
+        return bulkImportService.processBulkImport(request);
     }
 
     private String encodePasswordIfNotEmpty(String password) {
