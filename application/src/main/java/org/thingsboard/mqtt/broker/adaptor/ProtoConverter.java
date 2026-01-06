@@ -78,6 +78,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTa
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
@@ -97,6 +98,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
 
 @Slf4j
 public class ProtoConverter {
@@ -428,12 +431,26 @@ public class ProtoConverter {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
                 .sessionPresent(clientSessionEventResponseProto.getSessionPresent())
+                .failureReason(getClientSessionFailureReason(clientSessionEventResponseProto))
                 .build();
     }
 
-    public static ClientSessionEventResponseProto toConnectionResponseProto(boolean success, boolean sessionPresent) {
+    private static ClientSessionFailureReason getClientSessionFailureReason(ClientSessionEventResponseProto clientSessionEventResponseProto) {
+        return clientSessionEventResponseProto.hasFailureReason() ?
+                ClientSessionFailureReason.valueOf(clientSessionEventResponseProto.getFailureReason()) : SERVER_UNAVAILABLE;
+    }
+
+    public static ClientSessionEventResponseProto toFailedConnectionResponseProto(boolean sessionPresent, ClientSessionFailureReason reason) {
         return ClientSessionEventResponseProto.newBuilder()
-                .setSuccess(success)
+                .setSuccess(false)
+                .setSessionPresent(sessionPresent)
+                .setFailureReason(reason.name())
+                .build();
+    }
+
+    public static ClientSessionEventResponseProto toSuccessConnectionResponseProto(boolean sessionPresent) {
+        return ClientSessionEventResponseProto.newBuilder()
+                .setSuccess(true)
                 .setSessionPresent(sessionPresent)
                 .build();
     }
@@ -794,6 +811,7 @@ public class ProtoConverter {
         var builder = ClientConnectInfoProto.newBuilder();
         setIfNotEmpty(builder::setMqttVersion, connectInfo.getMqttVersion());
         setIfNotEmpty(builder::setAuthDetails, connectInfo.getAuthDetails());
+        builder.setConnectOnConflict(connectInfo.isConnectOnConflict());
         return builder.build();
     }
 
@@ -811,7 +829,8 @@ public class ProtoConverter {
         ClientConnectInfoProto clientConnectInfo = eventDetailsProto.getClientConnectInfo();
         return new ClientConnectInfo(
                 getIfPresent(clientConnectInfo::hasMqttVersion, clientConnectInfo::getMqttVersion),
-                getIfPresent(clientConnectInfo::hasAuthDetails, clientConnectInfo::getAuthDetails)
+                getIfPresent(clientConnectInfo::hasAuthDetails, clientConnectInfo::getAuthDetails),
+                clientConnectInfo.getConnectOnConflict()
         );
     }
 

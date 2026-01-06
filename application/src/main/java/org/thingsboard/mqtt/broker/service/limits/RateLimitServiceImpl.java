@@ -106,12 +106,11 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkSessionsLimit(String clientId) {
+    public boolean checkSessionsLimit(String clientId, ClientSessionInfo clientSessionInfo) {
         if (clientsLimitProperties.isSessionsLimitDisabled()) {
             return true;
         }
 
-        ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
         if (clientSessionInfo != null) {
             return true;
         }

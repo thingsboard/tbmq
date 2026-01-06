@@ -152,6 +152,7 @@ public class SessionClusterManagerImplTest {
 
         ClientSessionInfo currentConnected = ClientSessionInfoFactory.getClientSessionInfo(true, "clientA", ClientType.DEVICE, false);
         doReturn(currentConnected).when(clientSessionService).getClientSessionInfo("clientA");
+        when(rateLimitService.checkSessionsLimit("clientA", currentConnected)).thenReturn(true);
 
         ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);

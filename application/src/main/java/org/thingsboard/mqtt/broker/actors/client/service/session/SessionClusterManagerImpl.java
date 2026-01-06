@@ -70,6 +70,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_MQTT_VERSION_CACHE;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE;
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.QUOTA_EXCEEDED;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.UNSPECIFIED_ERROR;
 
 @Slf4j
 @Service
@@ -121,11 +124,22 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         if (isSameSession(currentSession, sessionId)) {
             log.warn("[{}][{}] Got CONNECT request from already present session.", clientId, sessionId);
-            sendConnectResponse(clientId, requestInfo, false, false);
+            var response = ProtoConverter.toFailedConnectionResponseProto(false, UNSPECIFIED_ERROR);
+            sendConnectResponse(clientId, requestInfo, response);
             return;
         }
 
-        currentSession = disconnectIfConflicting(currentSession, connectingSessionInfo);
+        if (!connectInfo.isConnectOnConflict()) {
+            boolean isAllowedConnection = rateLimitService.checkSessionsLimit(clientId, currentSession);
+            if (!isAllowedConnection) {
+                var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
+                sendConnectResponse(clientId, requestInfo, response);
+                return;
+            }
+
+            currentSession = disconnectIfConflicting(currentSession, connectingSessionInfo);
+        }
+
         persistClientInfoInCache(clientId, connectInfo);
         updateClientSessionOnConnect(connectingSessionInfo, requestInfo, currentSession);
     }
@@ -144,8 +158,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (currentSession == null) {
             ClientSessionInfo newSessionInfo = toClientSessionInfo(connectingSessionInfo);
             clientSessionService.saveClientSession(newSessionInfo, createCallback(
-                    () -> sendConnectResponse(clientId, requestInfo, true, false),
-                    t -> sendConnectResponse(clientId, requestInfo, false, false)
+                    () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
+                    t -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE))
             ));
             return;
         }
@@ -157,12 +171,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         TwoPhaseCompletion completion = cleanStart ?
                 TwoPhaseCompletion.forTwoOperations(
-                        () -> sendConnectResponse(clientId, requestInfo, true, false),
-                        () -> sendConnectResponse(clientId, requestInfo, false, false))
+                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
+                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE)))
                 :
                 TwoPhaseCompletion.forSingleOperation(
-                        () -> sendConnectResponse(clientId, requestInfo, true, true),
-                        () -> sendConnectResponse(clientId, requestInfo, false, true));
+                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(true)),
+                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(true, SERVER_UNAVAILABLE)));
 
         if (cleanStart) {
             clearSubscriptionsOnCleanStart(clientId, completion);
@@ -366,8 +380,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return ClientSessionInfoFactory.sessionInfoToClientSessionInfo(sessionInfo);
     }
 
-    private void sendConnectResponse(String clientId, ConnectionRequestInfo requestInfo, boolean success, boolean sessionPresent) {
-        ClientSessionEventResponseProto response = ProtoConverter.toConnectionResponseProto(success, sessionPresent);
+    private void sendConnectResponse(String clientId, ConnectionRequestInfo requestInfo, ClientSessionEventResponseProto response) {
         TbQueueMsgHeaders headers = createResponseHeaders(requestInfo.getRequestId());
 
         eventResponseSenderExecutor.execute(() ->

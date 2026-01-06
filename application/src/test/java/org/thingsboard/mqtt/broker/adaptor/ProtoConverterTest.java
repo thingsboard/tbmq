@@ -682,7 +682,7 @@ public class ProtoConverterTest {
 
     @Test
     public void givenClientConnectInfoWithBothFields_whenConvertToProto_thenBothPresent() {
-        ClientConnectInfo connectInfo = new ClientConnectInfo("5.0", "user:pass");
+        ClientConnectInfo connectInfo = new ClientConnectInfo("5.0", "user:pass", true);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(connectInfo);
 
@@ -690,48 +690,53 @@ public class ProtoConverterTest {
         assertEquals("5.0", proto.getMqttVersion());
         assertTrue(proto.hasAuthDetails());
         assertEquals("user:pass", proto.getAuthDetails());
+        assertTrue(proto.getConnectOnConflict());
     }
 
     @Test
     public void givenClientConnectInfoWithNullFields_whenConvertToProto_thenFieldsAbsent() {
-        ClientConnectInfo connectInfo = new ClientConnectInfo(null, null);
+        ClientConnectInfo connectInfo = new ClientConnectInfo(null, null, false);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(connectInfo);
 
         assertFalse(proto.hasMqttVersion());
         assertFalse(proto.hasAuthDetails());
+        assertFalse(proto.getConnectOnConflict());
     }
 
     @Test
     public void givenClientConnectInfoWithEmptyStrings_whenConvertToProto_thenFieldsAbsent() {
-        ClientConnectInfo connectInfo = new ClientConnectInfo("", "");
+        ClientConnectInfo connectInfo = new ClientConnectInfo("", "", false);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(connectInfo);
 
         assertFalse(proto.hasMqttVersion());
         assertFalse(proto.hasAuthDetails());
+        assertFalse(proto.getConnectOnConflict());
     }
 
     @Test
     public void givenClientConnectInfoWithOnlyMqttVersion_whenConvertToProto_thenOnlyMqttVersionPresent() {
-        ClientConnectInfo connectInfo = new ClientConnectInfo("3.1.1", null);
+        ClientConnectInfo connectInfo = new ClientConnectInfo("3.1.1", null, true);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(connectInfo);
 
         assertTrue(proto.hasMqttVersion());
         assertEquals("3.1.1", proto.getMqttVersion());
         assertFalse(proto.hasAuthDetails());
+        assertTrue(proto.getConnectOnConflict());
     }
 
     @Test
     public void givenClientConnectInfoWithOnlyAuthDetails_whenConvertToProto_thenOnlyAuthDetailsPresent() {
-        ClientConnectInfo connectInfo = new ClientConnectInfo(null, "jwt");
+        ClientConnectInfo connectInfo = new ClientConnectInfo(null, "jwt", false);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(connectInfo);
 
         assertFalse(proto.hasMqttVersion());
         assertTrue(proto.hasAuthDetails());
         assertEquals("jwt", proto.getAuthDetails());
+        assertFalse(proto.getConnectOnConflict());
     }
 
     @Test
@@ -739,6 +744,7 @@ public class ProtoConverterTest {
         ClientConnectInfoProto connectInfoProto = ClientConnectInfoProto.newBuilder()
                 .setMqttVersion("5.0")
                 .setAuthDetails("user:pass")
+                .setConnectOnConflict(true)
                 .build();
 
         ClientSessionEventDetailsProto detailsProto = ClientSessionEventDetailsProto.newBuilder()
@@ -750,6 +756,7 @@ public class ProtoConverterTest {
         assertNotNull(connectInfo);
         assertEquals("5.0", connectInfo.getMqttVersion());
         assertEquals("user:pass", connectInfo.getAuthDetails());
+        assertTrue(connectInfo.isConnectOnConflict());
     }
 
     @Test
@@ -763,6 +770,7 @@ public class ProtoConverterTest {
         assertNotNull(connectInfo);
         assertNull(connectInfo.getMqttVersion());
         assertNull(connectInfo.getAuthDetails());
+        assertFalse(connectInfo.isConnectOnConflict());
     }
 
     @Test
@@ -779,12 +787,14 @@ public class ProtoConverterTest {
 
         assertEquals("3.1.1", connectInfo.getMqttVersion());
         assertNull(connectInfo.getAuthDetails());
+        assertFalse(connectInfo.isConnectOnConflict());
     }
 
     @Test
     public void givenEventDetailsWithOnlyAuthDetailsProto_whenConvertToClientConnectInfo_thenOnlyAuthDetailsRestored() {
         ClientConnectInfoProto connectInfoProto = ClientConnectInfoProto.newBuilder()
                 .setAuthDetails("jwt")
+                .setConnectOnConflict(true)
                 .build();
 
         ClientSessionEventDetailsProto detailsProto = ClientSessionEventDetailsProto.newBuilder()
@@ -795,11 +805,12 @@ public class ProtoConverterTest {
 
         assertNull(connectInfo.getMqttVersion());
         assertEquals("jwt", connectInfo.getAuthDetails());
+        assertTrue(connectInfo.isConnectOnConflict());
     }
 
     @Test
     public void givenClientConnectInfo_whenConvertToProtoAndBack_thenRoundTripOk() {
-        ClientConnectInfo input = new ClientConnectInfo("5.0", "user:pass");
+        ClientConnectInfo input = new ClientConnectInfo("5.0", "user:pass", true);
 
         ClientConnectInfoProto proto = ProtoConverter.toClientConnectInfoProto(input);
         ClientSessionEventDetailsProto detailsProto = ClientSessionEventDetailsProto.newBuilder()
@@ -811,6 +822,7 @@ public class ProtoConverterTest {
         assertNotNull(output);
         assertEquals(input.getMqttVersion(), output.getMqttVersion());
         assertEquals(input.getAuthDetails(), output.getAuthDetails());
+        assertEquals(input.isConnectOnConflict(), output.isConnectOnConflict());
     }
 
 }

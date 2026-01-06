@@ -112,6 +112,8 @@ public class ActorProcessorImpl implements ActorProcessor {
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
+            updateClientActorState(state, SessionState.INITIALIZED_ON_CONFLICT, sessionCtx);
+            return;
         }
 
         updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);

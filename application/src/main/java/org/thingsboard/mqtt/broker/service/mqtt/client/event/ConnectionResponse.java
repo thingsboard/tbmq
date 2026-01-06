@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 
 @Getter
 @Builder
@@ -26,5 +27,6 @@ public class ConnectionResponse {
 
     private final boolean success;
     private final boolean sessionPresent;
+    private final ClientSessionFailureReason failureReason;
 
 }

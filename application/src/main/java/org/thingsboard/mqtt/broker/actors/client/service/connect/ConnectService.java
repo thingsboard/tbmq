@@ -23,7 +23,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 
 public interface ConnectService {
 
-    void startConnection(ClientActorStateInfo actorState, MqttConnectMsg connectMsg) throws MqttException;
+    void startConnection(ClientActorStateInfo actorState, MqttConnectMsg connectMsg, boolean connectOnConflict) throws MqttException;
 
     void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg, TbActorRef actorRef);
 }

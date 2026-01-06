@@ -173,7 +173,7 @@ public class RateLimitServiceImplTest {
     public void givenNoSessionsLimit_whenCheckSessionsLimit_thenSuccess() {
         when(clientsLimitProperties.isSessionsLimitDisabled()).thenReturn(true);
 
-        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID, null);
         Assert.assertTrue(result);
     }
 
@@ -183,7 +183,7 @@ public class RateLimitServiceImplTest {
         when(clientsLimitProperties.getSessionsLimit()).thenReturn(1);
         when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
-        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID, null);
         Assert.assertFalse(result);
     }
 
@@ -193,7 +193,7 @@ public class RateLimitServiceImplTest {
         when(clientsLimitProperties.getSessionsLimit()).thenReturn(5);
         when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
-        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID, null);
         Assert.assertTrue(result);
     }
 
@@ -202,9 +202,8 @@ public class RateLimitServiceImplTest {
         when(clientsLimitProperties.isSessionsLimitDisabled()).thenReturn(false);
         when(clientsLimitProperties.getSessionsLimit()).thenReturn(1);
         when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
-        when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(ClientSessionInfo.builder().build());
 
-        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID, ClientSessionInfo.builder().build());
         Assert.assertTrue(result);
     }
 

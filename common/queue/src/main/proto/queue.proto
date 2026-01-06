@@ -118,11 +118,13 @@ message ClientDisconnectInfoProto {
 message ClientConnectInfoProto {
   optional string mqttVersion = 1;
   optional string authDetails = 2;
+  optional bool connectOnConflict = 3;
 }
 
 message ClientSessionEventResponseProto {
   bool success = 1;
   bool sessionPresent = 2;
+  optional string failureReason = 3;
 }
 
 message ClientSubscriptionsProto {

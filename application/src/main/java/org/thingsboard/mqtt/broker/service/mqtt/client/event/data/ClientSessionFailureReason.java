@@ -15,24 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event.data;
 
-import io.netty.handler.codec.mqtt.MqttVersion;
-import lombok.Data;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME;
+public enum ClientSessionFailureReason {
 
-@Data
-public class ClientConnectInfo {
+    UNSPECIFIED_ERROR,
+    QUOTA_EXCEEDED,
+    SERVER_UNAVAILABLE;
 
-    private final String mqttVersion;
-    private final String authDetails;
-    private final boolean connectOnConflict;
-
-    public static ClientConnectInfo fromCtx(ClientSessionCtx ctx, boolean connectOnConflict) {
-        return new ClientConnectInfo(ctx.getMqttVersion().name(), ctx.getAuthDetails(), connectOnConflict);
-    }
-
-    public static ClientConnectInfo defaultInfo() {
-        return new ClientConnectInfo(MqttVersion.MQTT_3_1_1.name(), WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME, false);
+    public MqttConnectReturnCode toMqttReturnCode(ClientSessionCtx ctx) {
+        return switch (this) {
+            case UNSPECIFIED_ERROR -> MqttReasonCodeResolver.connectionRefusedUnspecified(ctx);
+            case QUOTA_EXCEEDED -> MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx);
+            case SERVER_UNAVAILABLE -> MqttReasonCodeResolver.connectionRefusedServerUnavailable(ctx);
+        };
     }
 }
