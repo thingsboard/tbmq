@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
@@ -28,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectI
 
 @Slf4j
 @Getter
+@ToString
 public class ConnectionRequestMsg extends CallbackMsg implements SessionClusterManagementMsg {
 
     private final SessionInfo sessionInfo;

@@ -113,7 +113,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         String clientId = connectingSessionInfo.getClientId();
         UUID sessionId = connectingSessionInfo.getSessionId();
-        log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionId);
+        log.trace("[{}] Processing connection request - {}", clientId, msg);
 
         if (isRequestTimedOut(requestInfo.getRequestTime())) {
             log.warn("[{}][{}] Connection request timed out.", clientId, requestInfo.getRequestId());
@@ -129,7 +129,15 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return;
         }
 
-        if (shouldRejectDueToQuota(connectInfo, clientId, currentSession)) {
+        if (shouldRejectDueToSessionQuota(connectInfo, clientId, currentSession)) {
+            log.warn("[{}][{}] Sessions limit exceeded", clientId, sessionId);
+            var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
+            sendConnectResponse(clientId, requestInfo, response);
+            return;
+        }
+
+        if (shouldRejectDueToAppQuota(connectInfo, connectingSessionInfo, currentSession)) {
+            log.warn("[{}][{}] Application clients limit exceeded", clientId, sessionId);
             var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
             sendConnectResponse(clientId, requestInfo, response);
             return;
@@ -352,6 +360,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     ClientSessionInfo finishOnConflictDisconnect(ClientSessionInfo session) {
+        log.trace("[{}] Finishing client session disconnection on conflict [{}].", session.getClientId(), session);
         if (session.isPersistent()) {
             ClientSessionInfo disconnected = markSessionDisconnected(session, -1);
             saveClientSession(disconnected);
@@ -467,8 +476,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return currentSession != null && incomingSessionId.equals(currentSession.getSessionId());
     }
 
-    private boolean shouldRejectDueToQuota(ClientConnectInfo connect, String clientId, ClientSessionInfo currentSession) {
+    private boolean shouldRejectDueToSessionQuota(ClientConnectInfo connect, String clientId, ClientSessionInfo currentSession) {
         return !connect.isConnectOnConflict() && !rateLimitService.checkSessionsLimit(clientId, currentSession);
+    }
+
+    private boolean shouldRejectDueToAppQuota(ClientConnectInfo connect, SessionInfo connectingSessionInfo, ClientSessionInfo currentSession) {
+        return !connect.isConnectOnConflict() && !rateLimitService.checkApplicationClientsLimit(connectingSessionInfo, currentSession);
     }
 
     private void persistClientInfoInCache(String clientId, ClientConnectInfo connectInfo) {

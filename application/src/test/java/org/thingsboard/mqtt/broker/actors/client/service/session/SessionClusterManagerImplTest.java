@@ -126,6 +126,8 @@ public class SessionClusterManagerImplTest {
         doReturn(producer).when(clientSessionEventQueueFactory).createEventResponseProducer(any());
         when(timeseriesService.removeAllLatestForClient(anyString())).thenReturn(Futures.immediateFuture(null));
         when(serviceInfoProvider.getServiceId()).thenReturn("svc");
+
+        sessionClusterManager.init();
     }
 
     // -------------------------
@@ -167,6 +169,7 @@ public class SessionClusterManagerImplTest {
         ClientSessionInfo currentConnected = ClientSessionInfoFactory.getClientSessionInfo(true, "clientA", ClientType.DEVICE, false);
         doReturn(currentConnected).when(clientSessionService).getClientSessionInfo("clientA");
         when(rateLimitService.checkSessionsLimit("clientA", currentConnected)).thenReturn(true);
+        when(rateLimitService.checkApplicationClientsLimit(incoming, currentConnected)).thenReturn(true);
 
         ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);
@@ -179,12 +182,24 @@ public class SessionClusterManagerImplTest {
 
     @Test
     public void processConnectionRequest_sessionQuotaExceeded_doesNotAllowConnection() {
-        givenCache();
         SessionInfo incoming = deviceSession("clientA", true);
 
-        ClientSessionInfo currentConnected = ClientSessionInfoFactory.getClientSessionInfo(true, "clientA", ClientType.DEVICE, false);
-        doReturn(currentConnected).when(clientSessionService).getClientSessionInfo("clientA");
-        when(rateLimitService.checkSessionsLimit("clientA", currentConnected)).thenReturn(false);
+        when(rateLimitService.checkSessionsLimit(anyString(), any())).thenReturn(false);
+
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        sessionClusterManager.processConnectionRequest(connectionRequestMsg);
+
+        verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(anyString(), anyString(), any(), anyBoolean());
+        verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
+    }
+
+    @Test
+    public void processConnectionRequest_appClientsQuotaExceeded_doesNotAllowConnection() {
+        ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.getClientSessionInfo("app", ClientType.APPLICATION, false);
+        SessionInfo incoming = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo);
+
+        when(rateLimitService.checkSessionsLimit(anyString(), any())).thenReturn(true);
+        when(rateLimitService.checkApplicationClientsLimit(any(), any())).thenReturn(false);
 
         ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);

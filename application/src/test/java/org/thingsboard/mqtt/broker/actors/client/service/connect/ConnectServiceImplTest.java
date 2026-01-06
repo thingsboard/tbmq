@@ -60,7 +60,6 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
@@ -194,19 +193,6 @@ public class ConnectServiceImplTest {
     }
 
     @Test
-    public void givenApplicationClientsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
-        when(actorState.getClientId()).thenReturn("testClient");
-        when(rateLimitService.checkApplicationClientsLimit(sessionInfo)).thenReturn(false);
-
-        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
-        Assert.assertFalse(result);
-
-        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
-        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
-    }
-
-    @Test
     public void givenLastWillMsgInvalid_whenCheckIfProceedConnection_thenConnectionRefused() {
         when(actorState.getClientId()).thenReturn("testClient");
         doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any(), any());
@@ -243,20 +229,6 @@ public class ConnectServiceImplTest {
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
-        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
-    }
-
-    @Test
-    public void givenApplicationClientsLimitMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
-        when(actorState.getClientId()).thenReturn("testClient");
-        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
-        when(rateLimitService.checkApplicationClientsLimit(sessionInfo)).thenReturn(false);
-
-        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
-        Assert.assertFalse(result);
-
-        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
     }
 

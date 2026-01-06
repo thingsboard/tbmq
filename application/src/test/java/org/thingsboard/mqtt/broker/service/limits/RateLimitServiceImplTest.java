@@ -24,7 +24,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -57,8 +56,6 @@ public class RateLimitServiceImplTest {
     DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     @MockitoBean
     TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
-    @MockitoBean
-    ClientSessionService clientSessionService;
     @MockitoBean
     RateLimitCacheService rateLimitCacheService;
     @MockitoBean
@@ -242,7 +239,7 @@ public class RateLimitServiceImplTest {
         when(clientsLimitProperties.getApplicationClientsLimit()).thenReturn(0);
 
         SessionInfo sessionInfo = SessionInfo.builder().build();
-        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo, null);
         Assert.assertTrue(result);
     }
 
@@ -252,7 +249,7 @@ public class RateLimitServiceImplTest {
         when(clientsLimitProperties.getApplicationClientsLimit()).thenReturn(1);
 
         SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).build()).cleanStart(true).build();
-        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo, null);
         Assert.assertTrue(result);
     }
 
@@ -263,7 +260,7 @@ public class RateLimitServiceImplTest {
         when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
 
         SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
-        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo, null);
         Assert.assertFalse(result);
     }
 
@@ -274,7 +271,7 @@ public class RateLimitServiceImplTest {
         when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
 
         SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
-        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo, null);
         Assert.assertTrue(result);
     }
 
@@ -286,9 +283,8 @@ public class RateLimitServiceImplTest {
 
         SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
         ClientSessionInfo clientSessionInfo = ClientSessionInfo.builder().type(ClientType.APPLICATION).cleanStart(false).build();
-        when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(clientSessionInfo);
 
-        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo, clientSessionInfo);
         Assert.assertTrue(result);
     }
 

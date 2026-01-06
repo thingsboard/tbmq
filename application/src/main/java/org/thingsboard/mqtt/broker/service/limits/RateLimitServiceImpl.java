@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
@@ -45,7 +44,6 @@ public class RateLimitServiceImpl implements RateLimitService {
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
     private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
-    private final ClientSessionService clientSessionService;
     private final RateLimitCacheService rateLimitCacheService;
     private final ClientsLimitProperties clientsLimitProperties;
 
@@ -144,13 +142,13 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkApplicationClientsLimit(SessionInfo sessionInfo) {
+    public boolean checkApplicationClientsLimit(SessionInfo sessionInfo, ClientSessionInfo clientSessionInfo) {
         if (clientsLimitProperties.isApplicationClientsLimitDisabled()) {
             return true;
         }
+
         if (sessionInfo.isPersistentAppClient()) {
 
-            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(sessionInfo.getClientId());
             if (clientSessionInfo != null && clientSessionInfo.isPersistentAppClient()) {
                 return true;
             }

@@ -285,7 +285,6 @@ public class ConnectServiceImpl implements ConnectService {
         try {
             validateClientId(ctx, msg);
             validateLastWillMessage(ctx, clientId, msg);
-            validateApplicationClientsLimit(ctx, sessionInfo);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
             createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
@@ -317,14 +316,6 @@ public class ConnectServiceImpl implements ConnectService {
                         "publish to the topic",
                         MqttReasonCodeResolver.connectionRefusedNotAuthorized(ctx));
             }
-        }
-    }
-
-    private void validateApplicationClientsLimit(ClientSessionCtx ctx, SessionInfo sessionInfo) throws ConnectionValidationException {
-        //fixme: move this check to SessionClusterManager (as for checkSessionsLimit)
-        if (!rateLimitService.checkApplicationClientsLimit(sessionInfo)) {
-            throw new ConnectionValidationException("Application clients limit exceeded",
-                    MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx));
         }
     }
 

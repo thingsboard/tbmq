@@ -17,11 +17,13 @@ package org.thingsboard.mqtt.broker.actors.client.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.util.UUID;
 
 @Getter
 @RequiredArgsConstructor
+@ToString
 public class ConnectionRequestInfo {
 
     private final UUID requestId;
