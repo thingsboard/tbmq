@@ -15,6 +15,8 @@
         "clear": "Clear",
         "ok": "OK",
         "delete": "Delete",
+        "continue": "Continue",
+        "done": "Done",
         "add": "Add",
         "yes": "Yes",
         "no": "No",
@@ -415,7 +417,33 @@
         "role": "Role"
     },
     "import": {
-        "no-file": "No file selected"
+        "column-example": "Example value data",
+        "csv-first-line-header": "First line contains column names",
+        "csv-delimiter": "CSV delimiter",
+        "column-type": {
+            "client-type": "Client type",
+            "credentials-type": "Credentials type",
+            "credentials-value": "Credentials value",
+            "column-type": "Column type",
+            "description": "Description",
+            "name": "Name"
+        },
+        "details": "Details",
+        "drop-file-csv-or": "Drag and drop a CSV file or",
+        "import-csv-invalid-format-error": "Invalid file format. Line: '{{line}}'",
+        "import-csv-number-columns-error": "A file should contain at least two columns",
+        "no-file": "No file selected",
+        "message": {
+            "create-entities": "{{count}} new entities were successfully created.",
+            "update-entities": "{{count}} entities were successfully updated.",
+            "error-entities": "There was an error creating {{count}} entities."
+        },
+        "stepper-text":{
+            "select-file": "Select a file",
+            "configuration": "Import configuration",
+            "column-type": "Select columns type",
+            "creat-entities": "Creating new entities"
+        }
     },
     "integration": {
         "integration": "Integration",
@@ -672,6 +700,8 @@
         "delete-client-credentials-title": "Are you sure you want to delete { count, plural, =1 {1 client credential} other {# client credentials} }?",
         "delete-client-credential-text": "Be careful, after the confirmation the Client Credentials will be removed and all related data will become unrecoverable.",
         "delete-client-credentials-text": "Be careful, after the confirmation all selected client credentials will be removed and all related data will become unrecoverable.",
+        "file": "Client Credentials file",
+        "import-basic": "Import Basic Credentials",
         "list-of-client-credentials": "{ count, plural, =1 {One Client Credentials} other {List of # Client Credentials} }",
         "name": "Name",
         "name-required": "Name is required.",

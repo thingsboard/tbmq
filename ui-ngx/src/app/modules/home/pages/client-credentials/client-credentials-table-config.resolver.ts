@@ -56,6 +56,7 @@ import {
 import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { HomeDialogsService } from '@home/dialogs/home-dialogs.service';
 
 @Injectable()
 export class ClientCredentialsTableConfigResolver {
@@ -72,6 +73,7 @@ export class ClientCredentialsTableConfigResolver {
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
+    private homeDialogsService: HomeDialogsService,
   ) {
 
     this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
@@ -125,6 +127,12 @@ export class ClientCredentialsTableConfigResolver {
         icon: 'add',
         isEnabled: () => true,
         onAction: ($event) => this.config.getTable().addEntity($event)
+      },
+      {
+        name: this.translate.instant('mqtt-client-credentials.import-basic'),
+        icon: 'file_upload',
+        isEnabled: () => true,
+        onAction: ($event) => this.importCredentials($event)
       }
     );
     this.config.headerActionDescriptors.push(
@@ -314,5 +322,13 @@ export class ClientCredentialsTableConfigResolver {
     return (credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
            (credentialsType === CredentialsType.X_509 && !brokerConfig.x509AuthEnabled) ||
            (credentialsType === CredentialsType.SCRAM && !brokerConfig.scramAuthEnabled);
+  }
+
+  private importCredentials($event: Event) {
+    this.homeDialogsService.importEntities(EntityType.MQTT_CLIENT_CREDENTIALS).subscribe((res) => {
+      if (res) {
+        this.config.updateData();
+      }
+    });
   }
 }
