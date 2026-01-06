@@ -33,6 +33,8 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
@@ -43,6 +45,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscripti
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.UNKNOWN;
 
 @RestController
 @RequestMapping("/api")
@@ -133,11 +137,31 @@ public class ClientSessionController extends BaseController {
         checkParameter("clientId", clientId);
         String credentialsName = getValueFromCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
         String mqttVersion = getValueFromCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE, clientId);
-        return new ClientSessionAdvancedDto(credentialsName, mqttVersion);
+        String authProvider = getAuthProvider(credentialsName);
+        return new ClientSessionAdvancedDto(credentialsName, mqttVersion, authProvider);
     }
 
     private String getValueFromCache(String cache, String clientId) {
         var lookup = cacheOps.lookup(cache, clientId, String.class);
-        return lookup.status() == Status.HIT ? lookup.value() : "Unknown";
+        return lookup.status() == Status.HIT ? lookup.value() : UNKNOWN;
     }
+
+    private String getAuthProvider(String credentialsName) {
+        if (UNKNOWN.equals(credentialsName)) {
+            return UNKNOWN;
+        }
+
+        if (isBuiltInAuthProvider(credentialsName)) {
+            return credentialsName;
+        }
+
+        MqttClientCredentials credentials = mqttClientCredentialsService.findCredentialsByName(credentialsName);
+        return credentials != null ? credentials.getCredentialsType().name() : UNKNOWN;
+    }
+
+    private boolean isBuiltInAuthProvider(String credentialsName) {
+        return MqttAuthProviderType.SCRAM.name().equals(credentialsName)
+                || MqttAuthProviderType.JWT.name().equals(credentialsName);
+    }
+
 }

@@ -22,4 +22,7 @@ public class ControllerConstants {
     public static final String INTEGRATION_ID = "integrationId";
 
     public static final String YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION = "You don't have permission to perform this operation!";
+
+    public static final String UNKNOWN = "Unknown";
+
 }
