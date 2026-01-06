@@ -133,6 +133,20 @@ public class SessionClusterManagerImplTest {
     // -------------------------
 
     @Test
+    public void processConnectionRequest_requestTimeout_doesNotUpdate() {
+        ClientSessionInfo existing = ClientSessionInfoFactory.getClientSessionInfo("clientId");
+        SessionInfo incoming = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(existing);
+        doReturn(existing).when(clientSessionService).getClientSessionInfo("clientId");
+
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, expiredReq());
+        sessionClusterManager.processConnectionRequest(connectionRequestMsg);
+
+        verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
+        verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(any(), any(), any(), anyBoolean());
+        verify(clientSessionService, never()).getClientSessionInfo("clientId");
+    }
+
+    @Test
     public void processConnectionRequest_sameSessionId_doesNotUpdate() {
         ClientSessionInfo existing = ClientSessionInfoFactory.getClientSessionInfo("clientId");
         SessionInfo incoming = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(existing);
@@ -161,6 +175,22 @@ public class SessionClusterManagerImplTest {
                 eq("clientA"), eq(currentConnected.getSessionId()), eq(true));
         verify(sessionClusterManager).updateClientSessionOnConnect(eq(incoming), any(), any());
         verify(cacheOps, times(2)).put(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    public void processConnectionRequest_sessionQuotaExceeded_doesNotAllowConnection() {
+        givenCache();
+        SessionInfo incoming = deviceSession("clientA", true);
+
+        ClientSessionInfo currentConnected = ClientSessionInfoFactory.getClientSessionInfo(true, "clientA", ClientType.DEVICE, false);
+        doReturn(currentConnected).when(clientSessionService).getClientSessionInfo("clientA");
+        when(rateLimitService.checkSessionsLimit("clientA", currentConnected)).thenReturn(false);
+
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        sessionClusterManager.processConnectionRequest(connectionRequestMsg);
+
+        verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(anyString(), anyString(), any(), anyBoolean());
+        verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
     }
 
     // -------------------------
@@ -408,6 +438,10 @@ public class SessionClusterManagerImplTest {
     private SessionInfo deviceSession(String clientId, boolean cleanStart) {
         ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(clientId, ClientType.DEVICE);
         return ClientSessionInfoFactory.getSessionInfo(cleanStart, SERVICE_ID_HEADER, clientInfo);
+    }
+
+    private ConnectionRequestInfo expiredReq() {
+        return new ConnectionRequestInfo(UUID.randomUUID(), 0, "responseTopic");
     }
 
     private ConnectionRequestInfo req() {

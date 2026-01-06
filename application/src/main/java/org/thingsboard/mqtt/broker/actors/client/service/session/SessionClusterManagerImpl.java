@@ -129,19 +129,18 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return;
         }
 
-        if (!connectInfo.isConnectOnConflict()) {
-            boolean isAllowedConnection = rateLimitService.checkSessionsLimit(clientId, currentSession);
-            if (!isAllowedConnection) {
-                var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
-                sendConnectResponse(clientId, requestInfo, response);
-                return;
-            }
-
-            currentSession = disconnectIfConflicting(currentSession, connectingSessionInfo);
+        if (shouldRejectDueToQuota(connectInfo, clientId, currentSession)) {
+            var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
+            sendConnectResponse(clientId, requestInfo, response);
+            return;
         }
 
+        ClientSessionInfo resolvedSession = connectInfo.isConnectOnConflict()
+                ? currentSession
+                : disconnectIfConflicting(currentSession, connectingSessionInfo);
+
         persistClientInfoInCache(clientId, connectInfo);
-        updateClientSessionOnConnect(connectingSessionInfo, requestInfo, currentSession);
+        updateClientSessionOnConnect(connectingSessionInfo, requestInfo, resolvedSession);
     }
 
     /**
@@ -458,6 +457,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private boolean isSameSession(ClientSessionInfo currentSession, UUID incomingSessionId) {
         return currentSession != null && incomingSessionId.equals(currentSession.getSessionId());
+    }
+
+    private boolean shouldRejectDueToQuota(ClientConnectInfo connect, String clientId, ClientSessionInfo currentSession) {
+        return !connect.isConnectOnConflict() && !rateLimitService.checkSessionsLimit(clientId, currentSession);
     }
 
     private void persistClientInfoInCache(String clientId, ClientConnectInfo connectInfo) {
