@@ -137,6 +137,7 @@ public class BrokerInitializerTest {
         Assert.assertNotNull(clientSessionInfo);
         Assert.assertTrue(clientSessionInfo.isConnected());
         verify(rateLimitService).initSessionCount(preparedSessions.size());
+        verify(rateLimitService).initApplicationClientsCount(0);
         verify(clientSessionEventService).requestClientSessionCleanup(any());
         verify(integrationService).findIntegrationsCount();
     }
