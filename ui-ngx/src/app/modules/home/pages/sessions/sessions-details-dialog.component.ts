@@ -152,11 +152,12 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private getAdditionalInfo(entity: DetailedClientSessionInfo) {
+    const unknown = UNKNOWN_AUTH_PROVIDER;
     this.clientSessionService.getClientSessionDetails(entity.clientId, {ignoreErrors: true}).subscribe(
       credentials => {
         this.entityForm.patchValue({
           credentials: credentials.credentialsName,
-          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion)
+          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || unknown
         });
         const authProvider = credentials.authProvider;
         this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(authProvider));
@@ -164,7 +165,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
         this.clientCredentialsEditButtonHidden = !editableAuthProviderTypes.includes(authProvider);
       },
       () => {
-        const unknown = UNKNOWN_AUTH_PROVIDER;
         this.entityForm.patchValue({
           credentials: unknown,
           mqttVersion: unknown
