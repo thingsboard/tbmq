@@ -156,15 +156,11 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.clientSessionService.getClientSessionDetails(entity.clientId, {ignoreErrors: true}).subscribe(
       credentials => {
         this.entityForm.patchValue({
-          credentials: credentials.credentialsName || unknown,
+          credentials: credentials.credentialsName,
           mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || unknown
         });
         const authProvider = credentials.authProvider;
-        if (authProvider === unknown) {
-          this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(unknown));
-        } else {
-          this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(authProvider));
-        }
+        this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(authProvider));
         const editableAuthProviderTypes = [MqttAuthProviderType.MQTT_BASIC, MqttAuthProviderType.X_509];
         this.clientCredentialsEditButtonHidden = !editableAuthProviderTypes.includes(authProvider);
       },
