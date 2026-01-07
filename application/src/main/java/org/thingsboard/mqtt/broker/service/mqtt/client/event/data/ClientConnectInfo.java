@@ -35,4 +35,9 @@ public class ClientConnectInfo {
     public static ClientConnectInfo defaultInfo() {
         return new ClientConnectInfo(MqttVersion.MQTT_3_1_1.name(), WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME, false);
     }
+
+    public static ClientConnectInfo emptyInfo() {
+        return new ClientConnectInfo(null, null, false);
+    }
+
 }
