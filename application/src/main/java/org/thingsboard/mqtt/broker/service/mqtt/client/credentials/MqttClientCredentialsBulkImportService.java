@@ -74,14 +74,15 @@ public class MqttClientCredentialsBulkImportService {
                 }
                 buildCredentialsValue(credentials, basicCredentials, pubAuthRulePatterns, subAuthRulePatterns);
 
-                MqttClientCredentials savedCredentials = saveOrUpdate(credentials, request.getMapping().getUpdate());
+                MqttClientCredentials savedCredentials = saveOrUpdate(credentials, false);
 
-                if (savedCredentials.getId() != null && request.getMapping().getUpdate()) {
+                /*if (savedCredentials.getId() != null && request.getMapping().getUpdate()) {
                     result.getUpdated().incrementAndGet();
                 } else {
                     result.getCreated().incrementAndGet();
-                }
+                }*/
                 result.getCreated().incrementAndGet();
+
             } catch (Exception e) {
                 log.error("Error importing MQTT credentials at line {}", i + 1, e);
                 result.getErrors().incrementAndGet();
