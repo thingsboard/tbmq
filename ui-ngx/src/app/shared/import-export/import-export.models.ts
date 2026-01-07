@@ -67,6 +67,7 @@ export interface BulkImportRequest {
   mapping: {
     columns: Array<ColumnMapping>;
     delimiter: CSVDelimiter;
+    authRulesDelimiter: CSVDelimiter;
     header: boolean;
   };
 }

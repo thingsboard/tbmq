@@ -56,6 +56,8 @@ public class MqttClientCredentialsBulkImportService {
             records.remove(0);
         }
 
+        Character authRulesDelimiter = request.getMapping().getAuthRulesDelimiter();
+
         for (int i = 0; i < records.size(); i++) {
             try {
                 List<String> record = records.get(i);
@@ -70,7 +72,7 @@ public class MqttClientCredentialsBulkImportService {
                     String value = record.get(j);
                     if (value == null || value.isEmpty()) continue;
                     setCredentialsField(credentials, basicCredentials, columnMapping.getType(), value,
-                                      pubAuthRulePatterns, subAuthRulePatterns);
+                                      pubAuthRulePatterns, subAuthRulePatterns, authRulesDelimiter);
                 }
                 buildCredentialsValue(credentials, basicCredentials, pubAuthRulePatterns, subAuthRulePatterns);
 
@@ -93,9 +95,10 @@ public class MqttClientCredentialsBulkImportService {
         return result;
     }
 
-    private void setCredentialsField(MqttClientCredentials entity, BasicMqttCredentials basicCredentials, 
+    private void setCredentialsField(MqttClientCredentials entity, BasicMqttCredentials basicCredentials,
                                    BulkImportColumnType type, String value,
-                                   List<String> pubAuthRulePatterns, List<String> subAuthRulePatterns) {
+                                   List<String> pubAuthRulePatterns, List<String> subAuthRulePatterns,
+                                   Character authRulesDelimiter) {
         ObjectNode additionalInfo = getOrCreateAdditionalInfoObj(entity);
         switch (type) {
             case NAME:
@@ -114,10 +117,10 @@ public class MqttClientCredentialsBulkImportService {
                 basicCredentials.setPassword(value);
                 break;
             case SUB_AUTH_RULE_PATTERNS:
-                subAuthRulePatterns.addAll(parsePatterns(value));
+                subAuthRulePatterns.addAll(parsePatterns(value, authRulesDelimiter));
                 break;
             case PUB_AUTH_RULE_PATTERNS:
-                pubAuthRulePatterns.addAll(parsePatterns(value));
+                pubAuthRulePatterns.addAll(parsePatterns(value, authRulesDelimiter));
                 break;
             case DESCRIPTION:
                 additionalInfo.set("description", new TextNode(value));
@@ -126,11 +129,12 @@ public class MqttClientCredentialsBulkImportService {
         entity.setAdditionalInfo(additionalInfo);
     }
 
-    private List<String> parsePatterns(String value) {
+    private List<String> parsePatterns(String value, Character delimiter) {
         if (!StringUtils.hasText(value)) {
             return List.of();
         }
-        return Arrays.stream(value.split("[,;|]"))
+        String delimiterRegex = delimiter == '|' ? "\\|" : String.valueOf(delimiter);
+        return Arrays.stream(value.split(delimiterRegex))
                 .map(String::trim)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toList());
@@ -139,8 +143,8 @@ public class MqttClientCredentialsBulkImportService {
     private void buildCredentialsValue(MqttClientCredentials entity, BasicMqttCredentials basicCredentials,
                                      List<String> pubAuthRulePatterns, List<String> subAuthRulePatterns) {
         PubSubAuthorizationRules authRules = new PubSubAuthorizationRules();
-        authRules.setPubAuthRulePatterns(pubAuthRulePatterns.isEmpty() ? List.of(".*") : pubAuthRulePatterns);
-        authRules.setSubAuthRulePatterns(subAuthRulePatterns.isEmpty() ? List.of(".*") : subAuthRulePatterns);
+        authRules.setPubAuthRulePatterns(pubAuthRulePatterns);
+        authRules.setSubAuthRulePatterns(subAuthRulePatterns);
         basicCredentials.setAuthRules(authRules);
         entity.setCredentialsValue(JacksonUtil.toString(basicCredentials));
     }

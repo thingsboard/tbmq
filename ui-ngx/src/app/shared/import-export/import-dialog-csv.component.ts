@@ -157,6 +157,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
     );
     this.importParametersFormGroup = this.fb.group({
       delim: [',', [Validators.required]],
+      authRulesDelim: [';', [Validators.required]],
       isHeader: [true, []],
     });
     this.columnTypesFormGroup = this.fb.group({
@@ -264,6 +265,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
       mapping: {
         columns: this.processingColumnsParams(),
         delimiter: this.importParametersFormGroup.get('delim').value,
+        authRulesDelimiter: this.importParametersFormGroup.get('authRulesDelim').value,
         header: this.importParametersFormGroup.get('isHeader').value,
       }
     };

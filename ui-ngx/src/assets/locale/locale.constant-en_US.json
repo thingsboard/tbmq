@@ -420,6 +420,7 @@
         "column-example": "Example value data",
         "csv-first-line-header": "First line contains column names",
         "csv-delimiter": "CSV delimiter",
+        "auth-rules-delimiter": "Auth rule patterns delimiter",
         "column-type": {
             "client-type": "Client type",
             "column-type": "Column type",

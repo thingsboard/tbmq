@@ -28,6 +28,7 @@ public class BulkImportRequest {
     public static class Mapping {
         private List<ColumnMapping> columns;
         private Character delimiter;
+        private Character authRulesDelimiter;
         private Boolean update;
         private Boolean header;
     }

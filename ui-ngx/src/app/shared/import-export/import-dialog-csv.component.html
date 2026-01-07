@@ -61,7 +61,19 @@
               <mat-label translate>import.csv-delimiter</mat-label>
               <mat-select required formControlName="delim">
                 @for (delimiter of delimiters; track delimiter) {
-                  <mat-option [value]="delimiter.key">
+                  <mat-option [value]="delimiter.key"
+                              [disabled]="delimiter.key === importParametersFormGroup.get('authRulesDelim').value">
+                    {{ delimiter.value }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field class="mat-block">
+              <mat-label translate>import.auth-rules-delimiter</mat-label>
+              <mat-select required formControlName="authRulesDelim">
+                @for (delimiter of delimiters; track delimiter) {
+                  <mat-option [value]="delimiter.key"
+                              [disabled]="delimiter.key === importParametersFormGroup.get('delim').value">
                     {{ delimiter.value }}
                   </mat-option>
                 }
