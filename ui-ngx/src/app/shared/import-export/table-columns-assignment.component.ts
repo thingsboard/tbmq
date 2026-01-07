@@ -114,8 +114,11 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
       case EntityType.MQTT_CLIENT_CREDENTIALS:
         this.columnTypes.push(
           { value: ImportEntityColumnType.clientType },
-          { value: ImportEntityColumnType.credentialsType },
-          { value: ImportEntityColumnType.credentialsValue }
+          { value: ImportEntityColumnType.clientId },
+          { value: ImportEntityColumnType.username },
+          { value: ImportEntityColumnType.password },
+          { value: ImportEntityColumnType.subAuthRulePatterns },
+          { value: ImportEntityColumnType.pubAuthRulePatterns },
         );
         break;
     }
@@ -139,23 +142,29 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
   columnsUpdated() {
     const isSelectName = this.columns.findIndex((column) => column.type === ImportEntityColumnType.name) > -1;
     const isSelectDescription = this.columns.findIndex((column) => column.type === ImportEntityColumnType.description) > -1;
-    // const hasInvalidColumn = this.columns.findIndex((column) => !this.columnValid(column)) > -1;
+    const hasInvalidColumn = this.columns.findIndex((column) => column.type === ImportEntityColumnType.unknown) > -1;
 
-    this.valid = isSelectName;
+    this.valid = isSelectName && !hasInvalidColumn;
 
     this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.name).disabled = isSelectName;
     this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.description).disabled = isSelectDescription;
 
     if (this.entityType === EntityType.MQTT_CLIENT_CREDENTIALS) {
       const isSelectClientType = this.columns.findIndex((column) => column.type === ImportEntityColumnType.clientType) > -1;
-      const isSelectCredentialsType = this.columns.findIndex((column) => column.type === ImportEntityColumnType.credentialsType) > -1;
-      const isSelectCredentialsValue = this.columns.findIndex((column) => column.type === ImportEntityColumnType.credentialsValue) > -1;
+      const isSelectClientId = this.columns.findIndex((column) => column.type === ImportEntityColumnType.clientId) > -1;
+      const isSelectUsername = this.columns.findIndex((column) => column.type === ImportEntityColumnType.username) > -1;
+      const isSelectPassword = this.columns.findIndex((column) => column.type === ImportEntityColumnType.password) > -1;
+      const isSelectSubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.subAuthRulePatterns) > -1;
+      const isSelectPubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.pubAuthRulePatterns) > -1;
 
-      this.valid = this.valid && isSelectClientType && isSelectCredentialsType && isSelectCredentialsValue;
+      this.valid = this.valid && isSelectClientType && (isSelectClientId || isSelectUsername);
 
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientType).disabled = isSelectClientType;
-      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.credentialsType).disabled = isSelectCredentialsType;
-      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.credentialsValue).disabled = isSelectCredentialsValue;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientId).disabled = isSelectClientId;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.username).disabled = isSelectUsername;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.password).disabled = isSelectPassword;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.subAuthRulePatterns).disabled = isSelectSubAuthRulePatterns;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.pubAuthRulePatterns).disabled = isSelectPubAuthRulePatterns;
     }
 
     if (this.propagateChange) {

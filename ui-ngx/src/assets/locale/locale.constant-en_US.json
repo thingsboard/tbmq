@@ -422,10 +422,13 @@
         "csv-delimiter": "CSV delimiter",
         "column-type": {
             "client-type": "Client type",
-            "credentials-type": "Credentials type",
-            "credentials-value": "Credentials value",
             "column-type": "Column type",
+            "client-id": "Client ID",
             "description": "Description",
+            "sub-auth-rule-patterns": "Subscribe auth rule patterns",
+            "pub-auth-rule-patterns": "Publish auth rule patterns",
+            "username": "Username",
+            "password": "Password",
             "name": "Name"
         },
         "details": "Details",

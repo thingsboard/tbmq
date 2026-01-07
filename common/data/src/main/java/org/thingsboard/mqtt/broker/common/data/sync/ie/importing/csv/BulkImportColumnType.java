@@ -21,9 +21,12 @@ import lombok.Getter;
 public enum BulkImportColumnType {
     NAME,
     DESCRIPTION,
-    CREDENTIALS_VALUE,
-    CREDENTIALS_TYPE,
-    CLIENT_TYPE;
+    CLIENT_TYPE,
+    CLIENT_ID,
+    USERNAME,
+    PASSWORD,
+    SUB_AUTH_RULE_PATTERNS,
+    PUB_AUTH_RULE_PATTERNS;
 
     private String key;
     private String defaultValue;

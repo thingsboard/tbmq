@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 public class BulkImportResult<E> {
     private AtomicInteger created = new AtomicInteger();
-//    private AtomicInteger updated = new AtomicInteger();
+    private AtomicInteger updated = new AtomicInteger();
     private AtomicInteger errors = new AtomicInteger();
     private Collection<String> errorsList = new ConcurrentLinkedDeque<>();
 }

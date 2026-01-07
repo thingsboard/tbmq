@@ -245,6 +245,12 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
           key: this.parseData.headers[i].toLowerCase(),
           sampleData: this.parseData.rows[0][i]
         };
+      } else {
+        columnParam = {
+          type: ImportEntityColumnType.unknown,
+          key: isHeader ? this.parseData.headers[i] : '',
+          sampleData: this.parseData.rows[0][i]
+        };
       }
       columnsParam.push(columnParam);
     }
