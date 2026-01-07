@@ -162,3 +162,5 @@ export function getProviderHelpLink(entity: ShortMqttAuthProvider): string {
   }
   return 'securitySettings';
 }
+
+export const UNKNOWN_AUTH_PROVIDER = 'Unknown' as MqttAuthProviderType;

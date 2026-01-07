@@ -174,15 +174,16 @@
                   </tb-copy-button>
                 </mat-form-field>
                 <mat-form-field class="mat-block">
-                  <mat-label translate>mqtt-client-credentials.client-credentials</mat-label>
+                  <mat-label>{{ clientCredentialsLabel() | translate }}</mat-label>
                   <input matInput formControlName="credentials">
                   <tb-edit-client-credentials-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
                                                      [disabled]="isLoading$ | async"
-                                                     [class.hidden]="['Unknown', 'JWT', 'SCRAM'].includes(entityForm.get('credentials').value)"
+                                                     [class.hidden]="clientCredentialsEditButtonHidden"
                                                      [name]="entityForm.get('credentials').value">
                   </tb-edit-client-credentials-button>
                   <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
                                   [disabled]="isLoading$ | async"
+                                  [class.hidden]="clientCredentialsEditButtonHidden"
                                   [copyText]="entityForm.get('credentials').value">
                   </tb-copy-button>
                 </mat-form-field>
@@ -233,6 +234,3 @@
     </button>
   </div>
 </form>
-
-
-

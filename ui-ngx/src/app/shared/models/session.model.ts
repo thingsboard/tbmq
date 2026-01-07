@@ -27,6 +27,7 @@ import {
 import { TimePageLink } from '@shared/models/page/page-link';
 import { TopicSubscription } from '@shared/models/ws-client.model';
 import { StatusColor, STATUS_COLOR } from '@home/models/entity/entities-table-config.models';
+import { MqttAuthProviderType, UNKNOWN_AUTH_PROVIDER } from '@shared/models/mqtt-auth-provider.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -124,7 +125,8 @@ export interface SessionFilterConfig {
 }
 
 export interface ClientSessionCredentials {
-  name: string;
+  authProvider?: MqttAuthProviderType;
+  credentialsName?: string;
   mqttVersion: MqttVersion;
 }
 
@@ -246,3 +248,14 @@ export const SessionMetricsTranslationMap = new Map<SessionMetrics, string>(
 );
 
 export const SessionMetricsList: string[] = Object.values(SessionMetrics);
+
+export const ClientCredentialsLabelTranslationMap = new Map<MqttAuthProviderType, string>(
+  [
+    [MqttAuthProviderType.MQTT_BASIC, 'mqtt-client-session.credentials-label-basic'],
+    [MqttAuthProviderType.X_509, 'mqtt-client-session.credentials-label-x509'],
+    [MqttAuthProviderType.SCRAM, 'mqtt-client-session.credentials-label-auth-provider'],
+    [MqttAuthProviderType.JWT, 'mqtt-client-session.credentials-label-auth-provider'],
+    [MqttAuthProviderType.HTTP_SERVICE, 'mqtt-client-session.credentials-label-auth-provider'],
+    [UNKNOWN_AUTH_PROVIDER, 'mqtt-client-session.credentials-label-unknown'],
+  ]
+);
