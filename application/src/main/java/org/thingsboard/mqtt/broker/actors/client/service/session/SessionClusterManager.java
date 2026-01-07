@@ -17,10 +17,9 @@ package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
-
-import java.util.UUID;
 
 public interface SessionClusterManager {
 
@@ -28,7 +27,7 @@ public interface SessionClusterManager {
 
     void processSessionDisconnected(String clientId, SessionDisconnectedMsg msg);
 
-    void processClearSession(String clientId, UUID sessionId);
+    void processClearSession(String clientId, ClearSessionMsg msg);
 
     void processRemoveApplicationTopicRequest(String clientId, ClientCallback callback);
 }

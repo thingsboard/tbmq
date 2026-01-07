@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlo
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -138,7 +139,7 @@ public class BrokerInitializerTest {
         Assert.assertTrue(clientSessionInfo.isConnected());
         verify(rateLimitService).initSessionCount(preparedSessions.size());
         verify(rateLimitService).initApplicationClientsCount(0);
-        verify(clientSessionEventService).requestClientSessionCleanup(any());
+        verify(clientSessionEventService).requestClientSessionCleanup(any(), eq(ClientCleanupInfo.FORCEFUL));
         verify(integrationService).findIntegrationsCount();
     }
 

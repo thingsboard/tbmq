@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -45,9 +46,10 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     }
 
     @Override
-    public ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
+    public ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo sessionInfo, ClientCleanupInfo cleanupInfo) {
         return ClientSessionEventProto.newBuilder()
-                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(clientSessionInfo))
+                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(cleanupInfo))
                 .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.name())
                 .build();
     }

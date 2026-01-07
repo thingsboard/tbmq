@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -303,7 +304,8 @@ public class SessionClusterManagerImplTest {
         doReturn(null).when(clientSessionService).getClientSessionInfo("c3");
         when(clientSubscriptionService.getClientSubscriptions("c3")).thenReturn(Set.of(mock(TopicSubscription.class)));
 
-        sessionClusterManager.processClearSession("c3", UUID.randomUUID());
+        ClearSessionMsg msg = new ClearSessionMsg(noopCallback(), UUID.randomUUID());
+        sessionClusterManager.processClearSession("c3", msg);
 
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("c3"), eq(null));
         verify(clientSessionService, never()).clearClientSession(any(), any());
@@ -316,10 +318,12 @@ public class SessionClusterManagerImplTest {
         doReturn(session).when(clientSessionService).getClientSessionInfo("c4");
 
         // mismatch
-        sessionClusterManager.processClearSession("c4", UUID.randomUUID());
+        ClearSessionMsg msg = new ClearSessionMsg(noopCallback(), UUID.randomUUID());
+        sessionClusterManager.processClearSession("c4", msg);
 
         // connected with matching id -> still does nothing
-        sessionClusterManager.processClearSession("c4", session.getSessionId());
+        msg = new ClearSessionMsg(noopCallback(), session.getSessionId());
+        sessionClusterManager.processClearSession("c4", msg);
 
         verify(clientSessionService, never()).clearClientSession(any(), any());
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
@@ -329,10 +333,11 @@ public class SessionClusterManagerImplTest {
     @Test
     public void processClearSession_disconnectedMatching_clearsEverything() {
         givenCache();
-        ClientSessionInfo disconnected = ClientSessionInfoFactory.getClientSessionInfo("c5", "svc", false);
+        ClientSessionInfo disconnected = ClientSessionInfoFactory.getClientSessionInfo(false, "c5", ClientType.DEVICE, false);
         doReturn(disconnected).when(clientSessionService).getClientSessionInfo("c5");
 
-        sessionClusterManager.processClearSession("c5", disconnected.getSessionId());
+        ClearSessionMsg msg = new ClearSessionMsg(noopCallback(), disconnected.getSessionId());
+        sessionClusterManager.processClearSession("c5", msg);
 
         verify(clientSessionService).clearClientSession(eq("c5"), eq(null));
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("c5"), eq(null));

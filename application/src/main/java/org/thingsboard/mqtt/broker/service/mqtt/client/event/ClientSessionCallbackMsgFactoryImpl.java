@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -60,7 +61,8 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
             }
             case CLEAR_SESSION_REQUEST -> {
                 var sessionInfo = getSessionInfo(eventProto);
-                return new ClearSessionMsg(callback, sessionInfo.getSessionId());
+                ClientCleanupInfo clientCleanupInfo = getClientCleanupInfo(eventProto);
+                return new ClearSessionMsg(callback, sessionInfo.getSessionId(), clientCleanupInfo);
             }
             case REMOVE_APPLICATION_TOPIC_REQUEST -> {
                 return new RemoveApplicationTopicRequestMsg(callback);
@@ -94,5 +96,12 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
             return ProtoConverter.getDisconnectReasonType(eventProto.getDetails());
         }
         return DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
+    }
+
+    private ClientCleanupInfo getClientCleanupInfo(ClientSessionEventProto eventProto) {
+        if (eventProto.hasDetails() && eventProto.getDetails().hasClientCleanupInfo()) {
+            return ProtoConverter.getClientCleanupInfo(eventProto.getDetails());
+        }
+        return ClientCleanupInfo.GRACEFUL;
     }
 }

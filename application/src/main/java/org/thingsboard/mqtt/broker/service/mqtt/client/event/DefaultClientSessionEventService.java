@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -120,10 +121,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo) {
+    public void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo, ClientCleanupInfo clientCleanupInfo) {
         sendEvent(
                 clientSessionInfo.getClientId(),
-                eventFactory.createClearSessionRequestEventProto(clientSessionInfo),
+                eventFactory.createClearSessionRequestEventProto(clientSessionInfo, clientCleanupInfo),
                 false,
                 null);
     }

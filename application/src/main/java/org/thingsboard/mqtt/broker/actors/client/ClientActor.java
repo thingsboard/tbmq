@@ -270,7 +270,7 @@ public class ClientActor extends ContextAwareActor {
     private void processClearSessionMsg(ClearSessionMsg msg) {
         try {
             log.trace("[{}] Processing CLEAR_SESSION_MSG processClearSessionMsg {}", state.getClientId(), msg);
-            sessionClusterManager.processClearSession(state.getClientId(), msg.getSessionId());
+            sessionClusterManager.processClearSession(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);

@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -28,7 +29,7 @@ public interface ClientSessionEventService {
 
     void notifyClientDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType, TbQueueCallback callback);
 
-    void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo);
+    void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo, ClientCleanupInfo clientCleanupInfo);
 
     void requestApplicationTopicRemoved(String clientId);
 }

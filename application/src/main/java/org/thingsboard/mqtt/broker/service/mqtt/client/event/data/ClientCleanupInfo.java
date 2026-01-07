@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.mqtt.client.event.data;
 
+import lombok.Value;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+@Value
+public class ClientCleanupInfo {
 
-import java.util.Collection;
+    boolean forceCleanup;
 
-public interface ClientSessionCtxService {
+    public static final ClientCleanupInfo FORCEFUL = new ClientCleanupInfo(true);
+    public static final ClientCleanupInfo GRACEFUL = new ClientCleanupInfo(false);
 
-    void registerSession(ClientSessionCtx clientSessionCtx);
+    private ClientCleanupInfo(boolean forceCleanup) {
+        this.forceCleanup = forceCleanup;
+    }
 
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
-
+    public static ClientCleanupInfo of(boolean forceCleanup) {
+        return forceCleanup ? FORCEFUL : GRACEFUL;
+    }
 }

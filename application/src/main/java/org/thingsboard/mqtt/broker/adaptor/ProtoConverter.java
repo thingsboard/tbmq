@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientCleanupInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientConnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientDisconnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
@@ -77,6 +78,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlocked
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -803,6 +805,12 @@ public class ProtoConverter {
                 .build();
     }
 
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(ClientCleanupInfo clientCleanupInfo) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientCleanupInfo(toClientCleanupInfoProto(clientCleanupInfo))
+                .build();
+    }
+
     public static ClientDisconnectInfoProto toClientDisconnectInfoProto(DisconnectReasonType reasonType) {
         return ClientDisconnectInfoProto.newBuilder().setReasonType(reasonType.name()).build();
     }
@@ -813,6 +821,13 @@ public class ProtoConverter {
         setIfNotEmpty(builder::setAuthDetails, connectInfo.getAuthDetails());
         builder.setConnectOnConflict(connectInfo.isConnectOnConflict());
         return builder.build();
+    }
+
+    public static ClientCleanupInfoProto toClientCleanupInfoProto(ClientCleanupInfo cleanupInfo) {
+        return ClientCleanupInfoProto
+                .newBuilder()
+                .setForceCleanup(cleanupInfo.isForceCleanup())
+                .build();
     }
 
     private static void setIfNotEmpty(Consumer<String> setter, String value) {
@@ -832,6 +847,10 @@ public class ProtoConverter {
                 getIfPresent(clientConnectInfo::hasAuthDetails, clientConnectInfo::getAuthDetails),
                 clientConnectInfo.getConnectOnConflict()
         );
+    }
+
+    public static ClientCleanupInfo getClientCleanupInfo(ClientSessionEventDetailsProto eventDetailsProto) {
+        return ClientCleanupInfo.of(eventDetailsProto.getClientCleanupInfo().getForceCleanup());
     }
 
     private static String getIfPresent(BooleanSupplier has, Supplier<String> get) {

@@ -53,8 +53,6 @@ public class SessionDisconnectedMsg extends CallbackMsg implements SessionCluste
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
-        }
+        log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }

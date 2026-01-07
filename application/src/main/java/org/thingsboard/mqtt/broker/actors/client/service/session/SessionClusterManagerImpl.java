@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -52,7 +53,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventService;
@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_MQTT_VERSION_CACHE;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE;
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType.CLEAR_SESSION_REQUEST;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.QUOTA_EXCEEDED;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.UNSPECIFIED_ERROR;
@@ -270,9 +271,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processClearSession(String clientId, UUID sessionId) {
+    public void processClearSession(String clientId, ClearSessionMsg msg) {
         try {
+            log.trace("[{}] Processing CLEAR_SESSION_REQUEST_MSG {}", clientId, msg);
             ClientSessionInfo session = getClientSessionInfo(clientId);
+            UUID sessionId = msg.getSessionId();
 
             if (session == null) {
                 clearSubscriptionsIfLeftoversExist(clientId);
@@ -280,21 +283,19 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             }
 
             if (!sessionId.equals(session.getSessionId())) {
-                log.info("[{}][{}] Ignoring {} for session - {}.",
-                        clientId, session.getSessionId(), ClientSessionEventType.CLEAR_SESSION_REQUEST, sessionId);
+                log.info("[{}][{}] Ignoring {} for session - {}", clientId, session.getSessionId(), CLEAR_SESSION_REQUEST, sessionId);
                 return;
             }
 
-            if (session.isConnected()) {
-                log.info("[{}][{}] Session is connected now, ignoring {}.",
-                        clientId, session.getSessionId(), ClientSessionEventType.CLEAR_SESSION_REQUEST);
+            if (session.isConnected() && !msg.getCleanupInfo().isForceCleanup()) {
+                log.info("[{}][{}] Session is connected now, ignoring {}", clientId, sessionId, CLEAR_SESSION_REQUEST);
                 return;
             }
 
             clearDisconnectedSessionData(session);
 
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to clear session", clientId, sessionId, e);
+            log.warn("[{}] Failed to clear session {}", clientId, msg, e);
         }
     }
 
@@ -438,7 +439,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private void fullSessionRemove(ClientSessionInfo session, boolean shouldClearPersistedMessages) {
         String clientId = session.getClientId();
         clearSessionAndSubscriptions(clientId);
-        if (shouldClearPersistedMessages) {
+        if (shouldClearPersistedMessages && session.isPersistent()) {
             clearPersistedMessages(clientId, session.getType());
         }
         removeClientLatestTs(clientId);
