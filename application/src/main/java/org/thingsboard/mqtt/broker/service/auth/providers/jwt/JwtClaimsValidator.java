@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import static org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType.JWT;
+
 @Data
 @Slf4j
 public class JwtClaimsValidator {
@@ -65,7 +67,7 @@ public class JwtClaimsValidator {
         }
         ClientType clientType = resolveClientType(claims);
         AuthRulePatterns rulePatterns = resolveAuthRulePatterns(claims);
-        return AuthResponse.success(clientType, List.of(rulePatterns));
+        return AuthResponse.success(clientType, List.of(rulePatterns), JWT.name());
     }
 
     private ClientType resolveClientType(JWTClaimsSet claims) throws ParseException {

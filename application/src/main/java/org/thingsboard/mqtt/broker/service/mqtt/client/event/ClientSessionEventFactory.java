@@ -15,23 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
-
-import java.util.UUID;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 public interface ClientSessionEventFactory {
 
-    ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo);
+    ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo);
 
-    ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                     int sessionExpiryInterval);
+    ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo, DisconnectReasonType reasonType);
 
-    ClientSessionEventProto createClearSessionRequestEventProto(SessionInfo sessionInfo);
-
-    ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo);
+    ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo sessionInfo, ClientCleanupInfo cleanupInfo);
 
     ClientSessionEventProto createApplicationTopicRemoveRequestEventProto(String clientId);
 }

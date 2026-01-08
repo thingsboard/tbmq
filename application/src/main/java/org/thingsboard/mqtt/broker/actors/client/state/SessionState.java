@@ -21,7 +21,9 @@ import java.util.Set;
 public enum SessionState {
 
     INITIALIZED,
+    INITIALIZED_ON_CONFLICT,
     ENHANCED_AUTH_STARTED,
+    ENHANCED_AUTH_STARTED_ON_CONFLICT, //todo: use correctly with @dshvaika
     CONNECTING,
     CONNECTED,
     DISCONNECTING,
@@ -33,4 +35,18 @@ public enum SessionState {
             SessionState.CONNECTED,
             SessionState.CHANNEL_NON_WRITABLE
     );
+
+    public static final EnumSet<SessionState> CONNECT_PROCESSABLE_STATES = EnumSet.of(INITIALIZED, INITIALIZED_ON_CONFLICT);
+
+    public boolean isConnectProcessable() {
+        return CONNECT_PROCESSABLE_STATES.contains(this);
+    }
+
+    public boolean isConnectNotProcessable() {
+        return !isConnectProcessable();
+    }
+
+    public boolean isConnectOnConflict() {
+        return this == INITIALIZED_ON_CONFLICT;
+    }
 }

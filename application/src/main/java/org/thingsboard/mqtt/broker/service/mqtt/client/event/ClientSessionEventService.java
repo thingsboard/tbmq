@@ -16,24 +16,20 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-
-import java.util.UUID;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 public interface ClientSessionEventService {
 
-    ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo);
+    ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo);
 
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval);
+    void notifyClientDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType, TbQueueCallback callback);
 
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback);
-
-    void requestSessionCleanup(SessionInfo sessionInfo);
-
-    void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo);
+    void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo, ClientCleanupInfo clientCleanupInfo);
 
     void requestApplicationTopicRemoved(String clientId);
 }

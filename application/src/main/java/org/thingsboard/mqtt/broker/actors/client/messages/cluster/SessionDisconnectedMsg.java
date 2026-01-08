@@ -16,25 +16,34 @@
 package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
+@ToString
 public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
 
     private final UUID sessionId;
     private final int sessionExpiryInterval;
+    private final DisconnectReasonType reasonType;
 
     public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, int sessionExpiryInterval) {
+        this(callback, sessionId, sessionExpiryInterval, DisconnectReasonType.ON_DISCONNECT_MSG);
+    }
+
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, int sessionExpiryInterval, DisconnectReasonType reasonType) {
         super(callback);
         this.sessionId = sessionId;
         this.sessionExpiryInterval = sessionExpiryInterval;
+        this.reasonType = reasonType;
     }
 
     @Override
@@ -44,8 +53,6 @@ public class SessionDisconnectedMsg extends CallbackMsg implements SessionCluste
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
-        }
+        log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }

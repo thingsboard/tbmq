@@ -15,11 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -28,16 +25,18 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -73,8 +72,9 @@ public class BrokerInitializer {
 
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final RateLimitCacheService rateLimitCacheService;
+    private final RateLimitService rateLimitService;
     private final IntegrationService integrationService;
+    private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
@@ -83,10 +83,6 @@ public class BrokerInitializer {
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
     private final InternodeNotificationsConsumer internodeNotificationsConsumer;
-
-    @Value("${mqtt.application-clients-limit:0}")
-    @Setter
-    private int applicationsLimit;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(value = 1)
@@ -116,40 +112,33 @@ public class BrokerInitializer {
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
         log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
-        rateLimitCacheService.initSessionCount(allClientSessions.size());
+        rateLimitService.initSessionCount(allClientSessions.size());
 
-        Map<String, ClientSessionInfo> currentNodeSessions = filterAndDisconnectCurrentNodeSessions(allClientSessions);
-        allClientSessions.putAll(currentNodeSessions);
+        int applicationClientsCount = 0;
+        int removeCleanSessions = 0;
+
+        for (var entry : allClientSessions.entrySet()) {
+            ClientSessionInfo session = entry.getValue();
+
+            if (session.isPersistentAppClient()) {
+                applicationClientsCount++;
+            }
+
+            if (isCleanSessionOnThisNode(session)) {
+                clientSessionEventService.requestClientSessionCleanup(session, ClientCleanupInfo.FORCEFUL);
+                removeCleanSessions++;
+            }
+        }
+
+        rateLimitService.initApplicationClientsCount(applicationClientsCount + getIntegrationsCount());
+        log.info("Sent {} requests to clean up client sessions that were on this node.", removeCleanSessions);
 
         clientSessionService.init(allClientSessions);
         return allClientSessions;
     }
 
-    private Map<String, ClientSessionInfo> filterAndDisconnectCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
-        Map<String, ClientSessionInfo> currentNodeSessions = Maps.newHashMapWithExpectedSize(allClientSessions.size());
-        int applicationClientsCount = 0;
-        for (Map.Entry<String, ClientSessionInfo> entry : allClientSessions.entrySet()) {
-            ClientSessionInfo clientSessionInfo = entry.getValue();
-
-            if (clientSessionInfo.isPersistentAppClient()) {
-                applicationClientsCount++;
-            }
-
-            if (sessionWasOnThisNode(clientSessionInfo)) {
-                if (isCleanSession(clientSessionInfo)) {
-                    clientSessionEventService.requestClientSessionCleanup(clientSessionInfo);
-                }
-                ClientSessionInfo disconnectedClientSession = markDisconnected(clientSessionInfo);
-                currentNodeSessions.put(entry.getKey(), disconnectedClientSession);
-            }
-        }
-        rateLimitCacheService.initApplicationClientsCount(applicationClientsCount + getIntegrationsCount());
-        log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
-        return currentNodeSessions;
-    }
-
     private int getIntegrationsCount() {
-        return applicationsLimit > 0 ? integrationService.findAllIntegrations().size() : 0;
+        return clientsLimitProperties.isApplicationClientsLimitEnabled() ? integrationService.findIntegrationsCount() : 0;
     }
 
     void initRetainedMessages() throws QueuePersistenceException {
@@ -172,6 +161,7 @@ public class BrokerInitializer {
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
         internodeNotificationsConsumer.startConsuming();
+        log.info("All client-session-dependent consumers have started.");
     }
 
     void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
@@ -195,15 +185,12 @@ public class BrokerInitializer {
         }
     }
 
-    boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.isCleanSession();
+    boolean isCleanSessionOnThisNode(ClientSessionInfo session) {
+        return session.isCleanSession() && sessionOnThisNode(session);
     }
 
-    private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {
-        return serviceInfoProvider.getServiceId().equals(clientSessionInfo.getServiceId());
+    private boolean sessionOnThisNode(ClientSessionInfo session) {
+        return serviceInfoProvider.getServiceId().equals(session.getServiceId());
     }
 
-    private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.toBuilder().connected(false).build();
-    }
 }

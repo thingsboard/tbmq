@@ -93,7 +93,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         }
         if (!authContext.isSecurePortUsed()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
-            log.error("[{}] {}", authContext, errorMsg);
+            log.warn("[{}] {}", authContext, errorMsg);
             return AuthResponse.failure(errorMsg);
         }
         String clientId = authContext.getClientId();
@@ -105,7 +105,6 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                 log.warn(errorMsg);
                 return AuthResponse.failure(errorMsg);
             }
-            cacheOps.put(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId, clientTypeSslMqttCredentials.getName());
             if (log.isDebugEnabled()) {
                 String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
                 log.debug("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
@@ -113,7 +112,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
             List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
-            return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
+            return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
             return AuthResponse.failure(e.getMessage());

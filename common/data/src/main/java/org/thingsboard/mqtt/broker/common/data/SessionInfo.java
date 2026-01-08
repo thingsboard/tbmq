@@ -17,22 +17,20 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.With;
 
 import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
 @Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
+@Data
+@AllArgsConstructor
 public class SessionInfo {
 
     private final String serviceId;
     private final UUID sessionId;
     private final boolean cleanStart;
+    @With
     private final int sessionExpiryInterval;
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;
@@ -61,19 +59,16 @@ public class SessionInfo {
         return clientInfo.getType();
     }
 
+    public int getKeepAlive() {
+        return connectionInfo.getKeepAlive();
+    }
+
     public boolean isPersistentAppClient() {
         return isAppClient() && isPersistent();
     }
 
     public boolean isAppClient() {
         return ClientType.APPLICATION == clientInfo.getType();
-    }
-
-    /**
-     * For tests purposes
-     */
-    public static SessionInfo withClientType(ClientType clientType) {
-        return SessionInfo.builder().clientInfo(ClientInfo.builder().type(clientType).build()).build();
     }
 
 }

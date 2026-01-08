@@ -37,9 +37,14 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
 
 @Slf4j
 public final class MqttReasonCodeResolver {
+
+    public static MqttConnectReturnCode connectionRefusedUnspecified(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_UNSPECIFIED_ERROR : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
 
     public static MqttConnectReturnCode connectionRefusedBanned(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_BANNED : CONNECTION_REFUSED_NOT_AUTHORIZED;
@@ -63,10 +68,6 @@ public final class MqttReasonCodeResolver {
 
     public static MqttConnectReturnCode connectionRefusedTopicNameInvalid(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_TOPIC_NAME_INVALID : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
-    }
-
-    public static PubComp packetIdNotFound(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? PubComp.PACKET_IDENTIFIER_NOT_FOUND : null;
     }
 
     public static PubAck pubAckSuccess(ClientSessionCtx ctx) {
@@ -113,6 +114,10 @@ public final class MqttReasonCodeResolver {
         return PubRec.UNSPECIFIED_ERROR;
     }
 
+    public static PubComp packetIdNotFound(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? PubComp.PACKET_IDENTIFIER_NOT_FOUND : null;
+    }
+
     public static SubAck notAuthorizedSubscribe(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.NOT_AUTHORIZED : failure();
     }
@@ -129,7 +134,7 @@ public final class MqttReasonCodeResolver {
         return switch (type) {
             case ON_DISCONNECT_MSG -> Disconnect.NORMAL_DISCONNECT;
             case ON_DISCONNECT_AND_WILL_MSG -> Disconnect.DISCONNECT_WITH_WILL_MESSAGE;
-            case ON_CONFLICTING_SESSIONS -> Disconnect.SESSION_TAKEN_OVER;
+            case ON_CONFLICTING_SESSIONS, ON_CLUSTER_CONFLICTING_SESSIONS -> Disconnect.SESSION_TAKEN_OVER;
             case ON_CHANNEL_CLOSED -> Disconnect.IMPLEMENTATION_SPECIFIC_ERROR;
             case ON_RATE_LIMITS -> Disconnect.MESSAGE_RATE_TOO_HIGH;
             case ON_KEEP_ALIVE -> Disconnect.KEEP_ALIVE_TIMEOUT;
@@ -155,7 +160,7 @@ public final class MqttReasonCodeResolver {
             case ON_CONNECTION_RATE_EXCEEDED -> Disconnect.CONNECTION_RATE_EXCEEDED;
             case ON_MAXIMUM_CONNECT_TIME -> Disconnect.MAXIMUM_CONNECT_TIME;
             case ON_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED -> Disconnect.WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED;
-            case ON_ERROR -> Disconnect.UNSPECIFIED_ERROR;
+            case ON_ERROR, ON_CONNECTION_FAILURE -> Disconnect.UNSPECIFIED_ERROR;
         };
     }
 }

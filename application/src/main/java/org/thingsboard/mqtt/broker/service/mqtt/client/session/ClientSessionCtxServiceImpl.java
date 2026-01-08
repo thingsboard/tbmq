@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,10 +79,18 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
     }
 
     @Override
+    public boolean hasSession(String clientId) {
+        if (isTraceEnabled) {
+            log.trace("Executing hasSession: {}", clientId);
+        }
+        return clientContextMap.get(clientId) != null;
+    }
+
+    @Override
     public Collection<ClientSessionCtx> getAllClientSessionCtx() {
         if (isTraceEnabled) {
             log.trace("Executing getAllClientSessionCtx");
         }
-        return clientContextMap.values();
+        return new ArrayList<>(clientContextMap.values());
     }
 }

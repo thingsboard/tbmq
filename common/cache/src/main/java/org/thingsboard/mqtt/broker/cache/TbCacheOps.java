@@ -79,7 +79,7 @@ public class TbCacheOps {
         try {
             evictIfPresent(cacheName, key);
         } catch (RuntimeException e) {
-            log.warn("Cache evict failed. cache={}, key={}", cacheName, key, e);
+            log.debug("Cache evict failed. cache={}, key={}, detailMessage: {}", cacheName, key, e.getMessage());
         }
     }
 
@@ -87,7 +87,7 @@ public class TbCacheOps {
         try {
             invalidate(cacheName);
         } catch (RuntimeException e) {
-            log.warn("Cache invalidate failed. cache={}", cacheName, e);
+            log.debug("Cache invalidate failed. cache={}, detailMessage: {}", cacheName, e.getMessage());
         }
     }
 

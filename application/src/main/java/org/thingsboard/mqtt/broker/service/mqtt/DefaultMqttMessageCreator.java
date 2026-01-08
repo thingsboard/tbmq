@@ -123,7 +123,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         if (assignedClientId != null) {
             MqttPropertiesUtil.addAssignedClientIdToProps(properties, assignedClientId);
         }
-        MqttPropertiesUtil.addKeepAliveTimeToProps(properties, msg.getKeepAliveTimeSeconds());
+        MqttPropertiesUtil.addKeepAliveTimeToProps(properties, sessionCtx.getSessionInfo().getKeepAlive());
         MqttPropertiesUtil.addSubsIdentifierAvailableToProps(properties);
         MqttPropertiesUtil.addMaxPacketSizeToProps(properties, getMaxPayloadSizeByProtocol(sessionCtx.getInitializerName()));
         MqttPropertiesUtil.addSessionExpiryIntervalToProps(properties, sessionExpiryInterval);

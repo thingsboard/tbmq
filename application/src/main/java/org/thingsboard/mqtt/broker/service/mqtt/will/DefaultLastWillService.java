@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -73,10 +74,8 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Saving last will msg, topic - [{}]",
-                    sessionInfo.getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
-        }
+        log.trace("[{}][{}] Saving last will msg, topic - [{}]",
+                sessionInfo.getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientId(), sessionId);
@@ -86,26 +85,29 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg,
-                                                 boolean newSessionCleanStart, int sessionExpiryInterval) {
+    public void removeAndExecuteLastWillIfNeeded(MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval) {
+        UUID sessionId = disconnectMsg.getSessionId();
+        boolean sendMsg = disconnectMsg.getReason().getType().allowsLastWillOnDisconnect();
+        var newSessionCleanStart = disconnectMsg.isNewSessionCleanStart();
+
         MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
         if (lastWillMsgWithSessionInfo == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] No last will msg found", sessionId);
-            }
+            log.trace("[{}] No last will msg found", sessionId);
             return;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("[{}][{}] Removing last will msg, sendMsg - {}", lastWillMsgWithSessionInfo.getClientId(), sessionId, sendMsg);
-        }
+        log.debug("[{}][{}] Removing last will msg, sendMsg - {}", lastWillMsgWithSessionInfo.getClientId(), sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
-            int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
-            if (!newSessionCleanStart && willDelay > 0) {
-                return;
+            try {
+                int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
+                if (!newSessionCleanStart && willDelay > 0) {
+                    return;
+                }
+                scheduleLastWill(lastWillMsgWithSessionInfo, willDelay);
+            } catch (Exception e) {
+                log.warn("[{}] Failed to send last will msg", lastWillMsgWithSessionInfo.getClientId(), e);
             }
-            scheduleLastWill(lastWillMsgWithSessionInfo, willDelay);
         }
     }
 
@@ -160,9 +162,7 @@ public class DefaultLastWillService implements LastWillService {
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("[{}][{}] Successfully acknowledged last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId());
-                        }
+                        log.trace("[{}][{}] Successfully acknowledged last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId());
                     }
 
                     @Override

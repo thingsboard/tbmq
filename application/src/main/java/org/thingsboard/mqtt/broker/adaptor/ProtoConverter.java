@@ -35,11 +35,16 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientCleanupInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientConnectInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientDisconnectInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventDetailsProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
@@ -73,10 +78,14 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlocked
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttQosUtil;
@@ -87,7 +96,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
 
 @Slf4j
 public class ProtoConverter {
@@ -419,6 +433,27 @@ public class ProtoConverter {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
                 .sessionPresent(clientSessionEventResponseProto.getSessionPresent())
+                .failureReason(getClientSessionFailureReason(clientSessionEventResponseProto))
+                .build();
+    }
+
+    private static ClientSessionFailureReason getClientSessionFailureReason(ClientSessionEventResponseProto clientSessionEventResponseProto) {
+        return clientSessionEventResponseProto.hasFailureReason() ?
+                ClientSessionFailureReason.valueOf(clientSessionEventResponseProto.getFailureReason()) : SERVER_UNAVAILABLE;
+    }
+
+    public static ClientSessionEventResponseProto toFailedConnectionResponseProto(boolean sessionPresent, ClientSessionFailureReason reason) {
+        return ClientSessionEventResponseProto.newBuilder()
+                .setSuccess(false)
+                .setSessionPresent(sessionPresent)
+                .setFailureReason(reason.name())
+                .build();
+    }
+
+    public static ClientSessionEventResponseProto toSuccessConnectionResponseProto(boolean sessionPresent) {
+        return ClientSessionEventResponseProto.newBuilder()
+                .setSuccess(true)
+                .setSessionPresent(sessionPresent)
                 .build();
     }
 
@@ -754,4 +789,71 @@ public class ProtoConverter {
         return RegexMatchTarget.valueOf(blockedClientProto.getRegexMatchTarget().name());
     }
 
+    /**
+     * Client session event details
+     */
+
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(DisconnectReasonType reasonType) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientDisconnectInfo(toClientDisconnectInfoProto(reasonType))
+                .build();
+    }
+
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(ClientConnectInfo clientConnectInfo) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientConnectInfo(toClientConnectInfoProto(clientConnectInfo))
+                .build();
+    }
+
+    public static ClientSessionEventDetailsProto toClientSessionEventDetailsProto(ClientCleanupInfo clientCleanupInfo) {
+        return ClientSessionEventDetailsProto.newBuilder()
+                .setClientCleanupInfo(toClientCleanupInfoProto(clientCleanupInfo))
+                .build();
+    }
+
+    public static ClientDisconnectInfoProto toClientDisconnectInfoProto(DisconnectReasonType reasonType) {
+        return ClientDisconnectInfoProto.newBuilder().setReasonType(reasonType.name()).build();
+    }
+
+    public static ClientConnectInfoProto toClientConnectInfoProto(ClientConnectInfo connectInfo) {
+        var builder = ClientConnectInfoProto.newBuilder();
+        setIfNotEmpty(builder::setMqttVersion, connectInfo.getMqttVersion());
+        setIfNotEmpty(builder::setAuthDetails, connectInfo.getAuthDetails());
+        builder.setConnectOnConflict(connectInfo.isConnectOnConflict());
+        return builder.build();
+    }
+
+    public static ClientCleanupInfoProto toClientCleanupInfoProto(ClientCleanupInfo cleanupInfo) {
+        return ClientCleanupInfoProto
+                .newBuilder()
+                .setForceCleanup(cleanupInfo.isForceCleanup())
+                .build();
+    }
+
+    private static void setIfNotEmpty(Consumer<String> setter, String value) {
+        if (StringUtils.isNotEmpty(value)) {
+            setter.accept(value);
+        }
+    }
+
+    public static DisconnectReasonType getDisconnectReasonType(ClientSessionEventDetailsProto eventDetailsProto) {
+        return DisconnectReasonType.valueOf(eventDetailsProto.getClientDisconnectInfo().getReasonType());
+    }
+
+    public static ClientConnectInfo getClientConnectInfo(ClientSessionEventDetailsProto eventDetailsProto) {
+        ClientConnectInfoProto clientConnectInfo = eventDetailsProto.getClientConnectInfo();
+        return new ClientConnectInfo(
+                getIfPresent(clientConnectInfo::hasMqttVersion, clientConnectInfo::getMqttVersion),
+                getIfPresent(clientConnectInfo::hasAuthDetails, clientConnectInfo::getAuthDetails),
+                clientConnectInfo.getConnectOnConflict()
+        );
+    }
+
+    public static ClientCleanupInfo getClientCleanupInfo(ClientSessionEventDetailsProto eventDetailsProto) {
+        return ClientCleanupInfo.of(eventDetailsProto.getClientCleanupInfo().getForceCleanup());
+    }
+
+    private static String getIfPresent(BooleanSupplier has, Supplier<String> get) {
+        return has.getAsBoolean() ? get.get() : null;
+    }
 }

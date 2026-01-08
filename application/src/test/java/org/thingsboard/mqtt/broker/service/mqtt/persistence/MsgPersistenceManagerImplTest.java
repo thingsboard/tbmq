@@ -218,10 +218,7 @@ public class MsgPersistenceManagerImplTest {
     }
 
     private SessionInfo getSessionInfo(String clientId, ClientType clientType) {
-        return ClientSessionInfoFactory.getSessionInfo(
-                SERVICE_ID,
-                ClientSessionInfoFactory.getClientInfo(clientId, clientType),
-                ClientSessionInfoFactory.getConnectionInfo());
+        return ClientSessionInfoFactory.getSessionInfo(SERVICE_ID, clientId, clientType);
     }
 
     @Test
@@ -230,13 +227,12 @@ public class MsgPersistenceManagerImplTest {
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
 
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
-        msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
+        msgPersistenceManager.startProcessingPersistedMessages(actorState);
         verify(applicationPersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(actorState));
 
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
-        msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
+        msgPersistenceManager.startProcessingPersistedMessages(actorState);
         verify(devicePersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(ctx));
-        verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
         //wantedNumberOfInvocations = 2 since we call msgPersistenceManager.startProcessingPersistedMessages 2 times
         verify(genericClientSessionCtxManager, times(2)).resendPersistedPubRelMessages(eq(ctx));
@@ -275,12 +271,10 @@ public class MsgPersistenceManagerImplTest {
 
     @Test
     public void testClearPersistedMessages() {
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
-        msgPersistenceManager.clearPersistedMessages(clientInfo);
+        msgPersistenceManager.clearPersistedMessages("test", ClientType.APPLICATION);
         verify(applicationPersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
-        msgPersistenceManager.clearPersistedMessages(clientInfo);
+        msgPersistenceManager.clearPersistedMessages("test", ClientType.DEVICE);
         verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
 
         //wantedNumberOfInvocations = 2 since we call msgPersistenceManager.clearPersistedMessages 2 times

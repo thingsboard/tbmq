@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.thingsboard.mqtt.broker.util.MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue;
+
 @Slf4j
 public class NettyMqttConverter {
 
@@ -145,8 +147,8 @@ public class NettyMqttConverter {
             var variableHeader = (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader();
 
             properties = variableHeader.properties();
-            int sessionExpiryInterval = getSessionExpiryInterval(properties);
-            if (ctx.getSessionInfo().getSessionExpiryInterval() == 0 && sessionExpiryInterval != 0) {
+            int sessionExpiryInterval = getDisconnectSessionExpiryIntervalValue(properties);
+            if (ctx.getSessionInfo().getSessionExpiryInterval() == 0 && sessionExpiryInterval > 0) {
                 // It is a Protocol Error to set a non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client
                 // if the Session Expiry Interval in the CONNECT packet was zero
                 return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR));
@@ -158,14 +160,6 @@ public class NettyMqttConverter {
             }
         }
         return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG), properties);
-    }
-
-    private static int getSessionExpiryInterval(MqttProperties properties) {
-        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(properties);
-        if (property != null) {
-            return property.value();
-        }
-        return 0;
     }
 
     private static DisconnectReason getDisconnectReason(DisconnectReasonType reasonType) {

@@ -82,6 +82,12 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
+    public int findIntegrationsCount() {
+        log.trace("Executing findIntegrationsCount");
+        return findAllIntegrations().size();
+    }
+
+    @Override
     public PageData<Integration> findIntegrations(PageLink pageLink) {
         log.trace("Executing findIntegrations, pageLink [{}]", pageLink);
         validatePageLink(pageLink);

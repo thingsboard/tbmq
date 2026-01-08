@@ -17,60 +17,47 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
-
-import java.util.UUID;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 @Service
 public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory {
 
     @Override
-    public ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo) {
+    public ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo, ClientConnectInfo clientConnectInfo) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
-                .setEventType(ClientSessionEventType.CONNECTION_REQUEST.toString())
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(clientConnectInfo))
+                .setEventType(ClientSessionEventType.CONNECTION_REQUEST.name())
                 .build();
     }
 
     @Override
-    public ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                            int sessionExpiryInterval) {
-        SessionInfo disconnectSessionInfo = SessionInfo.builder()
-                .sessionId(sessionId)
-                .clientInfo(clientInfo)
-                .serviceId(BrokerConstants.EMPTY_STR)
-                .sessionExpiryInterval(sessionExpiryInterval)
-                .build();
-        return ClientSessionEventProto.newBuilder()
-                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(disconnectSessionInfo))
-                .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.toString())
-                .build();
-    }
-
-    @Override
-    public ClientSessionEventProto createClearSessionRequestEventProto(SessionInfo sessionInfo) {
+    public ClientSessionEventProto createDisconnectedEventProto(SessionInfo sessionInfo, DisconnectReasonType reasonType) {
         return ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
-                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(reasonType))
+                .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.name())
                 .build();
     }
 
     @Override
-    public ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
+    public ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo sessionInfo, ClientCleanupInfo cleanupInfo) {
         return ClientSessionEventProto.newBuilder()
-                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(clientSessionInfo))
-                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
+                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setDetails(ProtoConverter.toClientSessionEventDetailsProto(cleanupInfo))
+                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.name())
                 .build();
     }
 
     @Override
     public ClientSessionEventProto createApplicationTopicRemoveRequestEventProto(String clientId) {
         return ClientSessionEventProto.newBuilder()
-                .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.toString())
+                .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.name())
                 .build();
     }
 

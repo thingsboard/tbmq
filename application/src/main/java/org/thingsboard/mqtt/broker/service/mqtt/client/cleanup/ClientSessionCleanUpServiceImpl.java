@@ -21,18 +21,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
 
 @Slf4j
 @Service
@@ -40,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpService {
 
     private final ClientSessionCache clientSessionCache;
+    private final ClientSessionCtxService clientSessionCtxService;
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -58,7 +62,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             throw new ThingsboardException("Client is currently connected", ThingsboardErrorCode.GENERAL);
         }
         log.debug("[{}] Cleaning up client session.", clientId);
-        clientSessionEventService.requestSessionCleanup(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo));
+        clientSessionEventService.requestClientSessionCleanup(clientSessionInfo, ClientCleanupInfo.GRACEFUL);
     }
 
     @Override
@@ -90,8 +94,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     }
 
     private boolean differentSession(UUID sessionId, ClientSessionInfo clientSessionInfo) {
-        UUID currentSessionId = clientSessionInfo.getSessionId();
-        return !sessionId.equals(currentSessionId);
+        return !sessionId.equals(clientSessionInfo.getSessionId());
     }
 
     @Scheduled(cron = "${mqtt.client-session-expiry.cron}", zone = "${mqtt.client-session-expiry.zone}")
@@ -104,34 +107,67 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         Map<String, ClientSessionInfo> sessions = clientSessionCache.getAllClientSessions();
 
         int removedCount = 0;
+        int fixedGhostCount = 0;
+
         for (ClientSessionInfo info : sessions.values()) {
             if (!info.getServiceId().equals(myServiceId)) {
                 continue;
             }
+
             if (info.isConnected()) {
-                continue;
-            }
+                boolean stateFixed = tryFixGhostSessionState(info);
+                if (stateFixed) {
+                    fixedGhostCount++;
+                }
+            } else {
+                Long expiryMs = resolveSessionExpiryIntervalMs(info);
+                if (expiryMs == null) {
+                    continue;
+                }
 
-            SessionInfo session = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info);
-            Long expiryMs = resolveSessionExpiryIntervalMs(session);
-            if (expiryMs == null) {
-                continue;
-            }
-
-            if (isExpired(info, expiryMs, now)) {
-                removedCount++;
-                clientSessionEventService.requestSessionCleanup(session);
+                boolean removed = tryCleanupDisconnectedSession(info, expiryMs, now);
+                if (removed) {
+                    removedCount++;
+                }
             }
         }
 
-        log.info("Cleaning up expired {} client sessions.", removedCount);
+        if (removedCount > 0 || fixedGhostCount > 0) {
+            log.info("Session Cleanup Report: Removed [{}] expired, Fixed [{}] ghost sessions.", removedCount, fixedGhostCount);
+        } else {
+            log.info("No expired or ghost client sessions found.");
+        }
     }
 
-    boolean isNotCleanSession(SessionInfo sessionInfo) {
+    private boolean tryFixGhostSessionState(ClientSessionInfo info) {
+        if (clientSessionCtxService.hasSession(info.getClientId())) {
+            return false;
+        }
+
+        log.info("[{}][{}] Ghost session detected (No physical connection). Marking as Disconnected.",
+                info.getClientId(), info.getSessionId());
+        clientSessionEventService.notifyClientDisconnected(
+                ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info),
+                ON_ADMINISTRATIVE_ACTION,
+                null
+        );
+
+        return true;
+    }
+
+    private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long expiryMs, long now) {
+        if (isExpired(info, expiryMs, now)) {
+            clientSessionEventService.requestClientSessionCleanup(info, ClientCleanupInfo.GRACEFUL);
+            return true;
+        }
+        return false;
+    }
+
+    boolean isNotCleanSession(ClientSessionInfo sessionInfo) {
         return sessionInfo.isNotCleanSession();
     }
 
-    private Long resolveSessionExpiryIntervalMs(SessionInfo session) {
+    private Long resolveSessionExpiryIntervalMs(ClientSessionInfo session) {
         if (isNotCleanSession(session)) {
             return ttl > 0 ? toMillis(ttl) : null;
         }

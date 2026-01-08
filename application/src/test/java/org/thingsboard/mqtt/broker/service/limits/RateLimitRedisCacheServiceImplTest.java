@@ -23,27 +23,21 @@ import org.junit.runner.RunWith;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = RateLimitRedisCacheServiceImpl.class)
-@TestPropertySource(properties = {
-        "cache.cache-prefix=",
-        "mqtt.sessions-limit=5",
-        "mqtt.application-clients-limit=5"
-})
 public class RateLimitRedisCacheServiceImplTest {
 
     @MockitoBean
@@ -61,6 +55,9 @@ public class RateLimitRedisCacheServiceImplTest {
     @MockitoBean
     private CacheProperties cacheProperties;
 
+    @MockitoBean
+    private ClientsLimitProperties clientsLimitProperties;
+
     @MockitoSpyBean
     private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
 
@@ -68,8 +65,8 @@ public class RateLimitRedisCacheServiceImplTest {
     public void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(cacheProperties.prefixKey(anyString())).thenAnswer(inv -> inv.getArgument(0));
-        rateLimitRedisCacheService.setSessionsLimit(5);
-        rateLimitRedisCacheService.setApplicationClientsLimit(5);
+        when(clientsLimitProperties.isSessionsLimitEnabled()).thenReturn(true);
+        when(clientsLimitProperties.isApplicationClientsLimitEnabled()).thenReturn(true);
         rateLimitRedisCacheService.init();
     }
 
@@ -80,12 +77,12 @@ public class RateLimitRedisCacheServiceImplTest {
 
         rateLimitRedisCacheService.initSessionCount(count);
 
-        verify(valueOperations, times(1)).setIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
+        verify(valueOperations).setIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
     }
 
     @Test
     public void testInitSessionCountWhenSessionsLimitIsZero() {
-        rateLimitRedisCacheService.setSessionsLimit(0);
+        when(clientsLimitProperties.isSessionsLimitDisabled()).thenReturn(true);
         int count = 5;
 
         rateLimitRedisCacheService.initSessionCount(count);
@@ -100,19 +97,19 @@ public class RateLimitRedisCacheServiceImplTest {
         long newCount = rateLimitRedisCacheService.incrementSessionCount();
 
         assertEquals(6L, newCount);
-        verify(valueOperations, times(1)).increment(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        verify(valueOperations).increment(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
     }
 
     @Test
     public void testDecrementSessionCount() {
         rateLimitRedisCacheService.decrementSessionCount();
 
-        verify(valueOperations, times(1)).decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        verify(valueOperations).decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
     }
 
     @Test
     public void testDecrementSessionCountWhenSessionsLimitIsZero() {
-        rateLimitRedisCacheService.setSessionsLimit(0);
+        when(clientsLimitProperties.isSessionsLimitDisabled()).thenReturn(true);
 
         rateLimitRedisCacheService.decrementSessionCount();
 
@@ -126,12 +123,12 @@ public class RateLimitRedisCacheServiceImplTest {
 
         rateLimitRedisCacheService.initApplicationClientsCount(count);
 
-        verify(valueOperations, times(1)).setIfAbsent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, Integer.toString(count));
+        verify(valueOperations).setIfAbsent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, Integer.toString(count));
     }
 
     @Test
     public void testInitApplicationClientsCountWhenClientsLimitIsZero() {
-        rateLimitRedisCacheService.setApplicationClientsLimit(0);
+        when(clientsLimitProperties.isApplicationClientsLimitDisabled()).thenReturn(true);
         int count = 5;
 
         rateLimitRedisCacheService.initApplicationClientsCount(count);
@@ -146,19 +143,19 @@ public class RateLimitRedisCacheServiceImplTest {
         long newCount = rateLimitRedisCacheService.incrementApplicationClientsCount();
 
         assertEquals(6L, newCount);
-        verify(valueOperations, times(1)).increment(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        verify(valueOperations).increment(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
     @Test
     public void testDecrementApplicationClientsCount() {
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 
-        verify(valueOperations, times(1)).decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        verify(valueOperations).decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
     @Test
     public void testDecrementApplicationClientsCountWhenClientsLimitIsZero() {
-        rateLimitRedisCacheService.setApplicationClientsLimit(0);
+        when(clientsLimitProperties.isApplicationClientsLimitDisabled()).thenReturn(true);
 
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 

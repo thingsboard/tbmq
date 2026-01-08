@@ -15,16 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-
-import java.util.UUID;
 
 public interface LastWillService {
 
     void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg);
 
-    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean newSessionCleanStart, int sessionExpiryInterval);
+    void removeAndExecuteLastWillIfNeeded(MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval);
 
     void cancelLastWillDelayIfScheduled(String clientId);
 }

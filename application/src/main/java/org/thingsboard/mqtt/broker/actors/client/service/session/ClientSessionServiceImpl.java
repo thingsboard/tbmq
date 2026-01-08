@@ -23,10 +23,8 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -37,6 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO;
 
 /**
  * Not thread-safe for the same clientId
@@ -72,15 +72,10 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
-    public void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback) {
-        if (!clientId.equals(clientSession.getSessionInfo().getClientInfo().getClientId())) {
-            log.error("Error saving client session. " +
-                    "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
-            throw new MqttException("Key clientId should be equals to ClientSession's clientId");
-        }
-        log.trace("[{}] Saving ClientSession.", clientId);
+    public void saveClientSession(ClientSessionInfo clientSessionInfo, BasicCallback callback) {
+        var clientId = clientSessionInfo.getClientId();
+        log.trace("[{}] Saving ClientSession {}", clientId, clientSessionInfo);
 
-        ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
         clientSessionMap.put(clientId, clientSessionInfo);
 
         ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
@@ -96,15 +91,15 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         log.trace("[{}] Clearing ClientSession.", clientId);
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
-            log.warn("[{}] No client session found while clearing session.", clientId);
+            log.debug("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }
 
     @Override
     public Map<String, ClientSessionInfo> getPersistentClientSessionInfos() {
         return clientSessionMap.entrySet().stream()
-                .filter(entry -> isPersistent(entry.getValue()))
+                .filter(entry -> entry.getValue().isPersistent())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -130,15 +125,6 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
-    public long getActiveSessionCountForNode(String serviceId) {
-        return getAllClientSessions()
-                .values()
-                .stream()
-                .filter(sessionInfo -> sessionInfo.isConnected() && sessionInfo.getServiceId().equals(serviceId))
-                .count();
-    }
-
-    @Override
     public int getClientSessionsCount() {
         return clientSessionMap == null ? 0 : clientSessionMap.size();
     }
@@ -157,7 +143,4 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         }
     }
 
-    private boolean isPersistent(ClientSessionInfo clientSessionInfo) {
-        return ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo).isPersistent();
-    }
 }

@@ -86,7 +86,7 @@ public class DefaultMqttMessageCreatorTest {
         given(topicAliasCtx.getMaxTopicAlias()).willReturn(1);
 
         // test
-        ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, 0, MqttProperties.NO_PROPERTIES);
+        ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, MqttProperties.NO_PROPERTIES);
         MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
 
         Assert.assertNull(msg.variableHeader().properties().getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));

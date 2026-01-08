@@ -28,6 +28,8 @@ public interface ClientSessionCtxService {
 
     ClientSessionCtx getClientSessionCtx(String clientId);
 
+    boolean hasSession(String clientId);
+
     Collection<ClientSessionCtx> getAllClientSessionCtx();
 
 }

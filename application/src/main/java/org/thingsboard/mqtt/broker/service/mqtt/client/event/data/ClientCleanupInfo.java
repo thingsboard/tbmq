@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors;
+package org.thingsboard.mqtt.broker.service.mqtt.client.event.data;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-import java.util.Objects;
+@Value
+public class ClientCleanupInfo {
 
-@Getter
-@RequiredArgsConstructor
-public class TbStringActorId implements TbActorId {
+    boolean forceCleanup;
 
-    private final String id;
+    public static final ClientCleanupInfo FORCEFUL = new ClientCleanupInfo(true);
+    public static final ClientCleanupInfo GRACEFUL = new ClientCleanupInfo(false);
 
-    @Override
-    public String toString() {
-        return id;
+    private ClientCleanupInfo(boolean forceCleanup) {
+        this.forceCleanup = forceCleanup;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TbStringActorId that = (TbStringActorId) o;
-        return id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public static ClientCleanupInfo of(boolean forceCleanup) {
+        return forceCleanup ? FORCEFUL : GRACEFUL;
     }
 }

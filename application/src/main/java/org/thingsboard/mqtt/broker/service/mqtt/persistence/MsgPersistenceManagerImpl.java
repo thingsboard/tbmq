@@ -221,7 +221,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent) {
+    public void startProcessingPersistedMessages(ClientActorStateInfo actorState) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
 
@@ -229,9 +229,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
-            if (!wasPrevSessionPersistent) {
-                devicePersistenceProcessor.clearPersistedMsgs(clientSessionCtx.getClientId());
-            }
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         }
     }
@@ -261,12 +258,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void clearPersistedMessages(ClientInfo clientInfo) {
-        genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientInfo.getClientId());
-        if (clientInfo.getType() == APPLICATION) {
-            applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
-        } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
+    public void clearPersistedMessages(String clientId, ClientType type) {
+        genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientId);
+        if (type == APPLICATION) {
+            applicationPersistenceProcessor.clearPersistedMsgs(clientId);
+        } else if (type == DEVICE) {
+            devicePersistenceProcessor.clearPersistedMsgs(clientId);
         }
     }
 

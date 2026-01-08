@@ -640,8 +640,8 @@ actors:
     processing-metrics:
       # Enable/disable actors processing metrics
       enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
-    # Actors disconnect timeout in milliseconds
-    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
+    # Time (ms) the actor system waits during TBMQ node shutdown to process client disconnections
+    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:15000}"
   persisted-device:
     # Number of threads processing the Device actor's messages
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:8}"
@@ -886,19 +886,19 @@ mqtt:
     # Max value in seconds allowed by the server for keep-alive that can be used by clients. Defaults to 10 minutes, used for MQTT v5 clients
     max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"
   topic:
-    # Maximum number of segments in topics. If it's too large, processing of topics with too much segments can lead to errors. 0 means limitation is disabled
+    # Maximum number of segments in topics. If it's too large, processing of topics with too many segments can lead to errors. 0 means limitation is disabled
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}"
-    # Max count of topic aliases per connection. 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
+    # Max count of topic aliases per connection. 0 indicates that the Broker does not accept any Topic Aliases for all connections, meaning the 'Topic Alias' feature is disabled
     alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"
-    # Minimal required topic name length that Broker publishes to client that can be replaced with topic alias
-    # (e.g. if topic has more than 50 chars - it can be replaced with alias)
+    # Minimal required topic name length that Broker publishes to the client that can be replaced with topic alias
+    # (e.g., if the topic has more than 50 chars - it can be replaced with alias)
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   shared-subscriptions:
-    # Processing strategy type - how messages are split between clients in shared subscription. Supported types: ROUND_ROBIN
+    # Processing strategy type - how messages are split between clients in a shared subscription. Supported types: ROUND_ROBIN
     processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}"
   subscription-trie:
     # Maximum pause in milliseconds for clearing subscription storage from empty nodes.
-    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail
+    # If a wait is unsuccessful the subscribing clients will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
     # Cron job to schedule clearing of empty subscription nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
@@ -906,7 +906,7 @@ mqtt:
     clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
   retain-msg-trie:
     # Maximum pause in milliseconds for clearing retain msg storage from empty nodes.
-    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail
+    # If a wait is unsuccessful retain messages processing will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_RETAIN_MSG_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
     # Cron job to schedule clearing of empty retain msg nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"

@@ -14,8 +14,9 @@
 /// limitations under the License.
 ///
 
-import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, signal } from '@angular/core';
 import {
+  ClientCredentialsLabelTranslationMap,
   ConnectionState,
   connectionStateColor,
   DetailedClientSessionInfo,
@@ -43,10 +44,13 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
-import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
+import {
+  EditClientCredentialsButtonComponent
+} from '@shared/components/button/edit-client-credentials-button.component';
 import { SubscriptionsComponent } from '../../components/session-subscriptions/subscriptions.component';
 import { SessionMetricsComponent } from '../../components/session-metrics/session-metrics.component';
 import { saveTopicsToLocalStorage } from '@core/utils';
+import { MqttAuthProviderType, UNKNOWN_AUTH_PROVIDER } from '@shared/models/mqtt-auth-provider.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -69,6 +73,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   clientCredentials = '';
+  clientCredentialsLabel = signal<string>('mqtt-client-session.credentials-label-auth-provider');
+  clientCredentialsEditButtonHidden = true;
   selectedTab = this.data.selectedTab || 0;
   loadedTabs: boolean[] = [(this.selectedTab === 0), (this.selectedTab === 1), (this.selectedTab === 2)];
 
@@ -145,20 +151,25 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
   }
 
-  getAdditionalInfo(entity: DetailedClientSessionInfo) {
-    const result = 'Unknown';
+  private getAdditionalInfo(entity: DetailedClientSessionInfo) {
+    const unknown = UNKNOWN_AUTH_PROVIDER;
     this.clientSessionService.getClientSessionDetails(entity.clientId, {ignoreErrors: true}).subscribe(
       credentials => {
         this.entityForm.patchValue({
-          credentials: credentials.name || result,
-          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || result
+          credentials: credentials.credentialsName,
+          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || unknown
         });
+        const authProvider = credentials.authProvider;
+        this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(authProvider));
+        const editableAuthProviderTypes = [MqttAuthProviderType.MQTT_BASIC, MqttAuthProviderType.X_509];
+        this.clientCredentialsEditButtonHidden = !editableAuthProviderTypes.includes(authProvider);
       },
       () => {
         this.entityForm.patchValue({
-          credentials: result,
-          mqttVersion: result
+          credentials: unknown,
+          mqttVersion: unknown
         });
+        this.clientCredentialsLabel.set(ClientCredentialsLabelTranslationMap.get(unknown));
       }
     );
   }

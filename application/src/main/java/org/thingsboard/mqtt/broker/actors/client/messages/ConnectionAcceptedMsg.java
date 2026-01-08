@@ -29,15 +29,13 @@ public class ConnectionAcceptedMsg extends SessionDependentMsg {
 
     private final boolean sessionPresent;
     private final PublishMsg lastWillMsg;
-    private final int keepAliveTimeSeconds;
     private final MqttProperties properties;
 
-    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent, PublishMsg lastWillMsg,
-                                 int keepAliveTimeSeconds, MqttProperties properties) {
+    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent,
+                                 PublishMsg lastWillMsg, MqttProperties properties) {
         super(sessionId);
         this.sessionPresent = sessionPresent;
         this.lastWillMsg = lastWillMsg;
-        this.keepAliveTimeSeconds = keepAliveTimeSeconds;
         this.properties = properties;
     }
 

@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE;
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE;
 
 @Slf4j
 @Service
@@ -89,11 +88,10 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
                 return AuthResponse.failure(basicAuthResponse.getErrorMsg());
             }
             MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
-            cacheOps.put(CLIENT_SESSION_CREDENTIALS_CACHE, clientId, basicCredentials.getName());
             log.debug("[{}] Authenticated as {} with username {}", clientId, basicCredentials.getClientType(), username);
             BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
             AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
-            return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
+            return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns), basicCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
             return AuthResponse.failure(e.getMessage());

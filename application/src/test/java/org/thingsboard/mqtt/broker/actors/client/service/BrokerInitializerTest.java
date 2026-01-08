@@ -20,10 +20,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -31,10 +30,11 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlo
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -70,56 +71,55 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BrokerInitializer.class)
-@TestPropertySource(properties = {
-        "mqtt.application-clients-limit=10"
-})
 public class BrokerInitializerTest {
 
-    @MockBean
+    @MockitoBean
     ClientSessionConsumer clientSessionConsumer;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionConsumer clientSubscriptionConsumer;
-    @MockBean
+    @MockitoBean
     RetainedMsgConsumer retainedMsgConsumer;
-    @MockBean
+    @MockitoBean
     BlockedClientConsumerService blockedClientConsumer;
-    @MockBean
+    @MockitoBean
     ClientSessionService clientSessionService;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionService clientSubscriptionService;
-    @MockBean
+    @MockitoBean
     RetainedMsgListenerService retainedMsgListenerService;
-    @MockBean
+    @MockitoBean
     BlockedClientService blockedClientService;
-    @MockBean
+    @MockitoBean
     ClientSessionEventService clientSessionEventService;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
-    RateLimitCacheService rateLimitCacheService;
-    @MockBean
+    @MockitoBean
+    RateLimitService rateLimitService;
+    @MockitoBean
     IntegrationService integrationService;
-    @MockBean
+    @MockitoBean
+    ClientsLimitProperties clientsLimitProperties;
+    @MockitoBean
     ClientSessionEventConsumer clientSessionEventConsumer;
-    @MockBean
+    @MockitoBean
     PublishMsgConsumerService publishMsgConsumerService;
-    @MockBean
+    @MockitoBean
     DisconnectClientCommandConsumer disconnectClientCommandConsumer;
-    @MockBean
+    @MockitoBean
     DeviceMsgQueueConsumer deviceMsgQueueConsumer;
-    @MockBean
+    @MockitoBean
     BasicDownLinkConsumer basicDownLinkConsumer;
-    @MockBean
+    @MockitoBean
     PersistentDownLinkConsumer persistentDownLinkConsumer;
-    @MockBean
+    @MockitoBean
     InternodeNotificationsConsumer internodeNotificationsConsumer;
 
-    @SpyBean
+    @MockitoSpyBean
     BrokerInitializer brokerInitializer;
 
     @Before
     public void setUp() {
-
+        when(clientsLimitProperties.isApplicationClientsLimitEnabled()).thenReturn(true);
     }
 
     @Test
@@ -131,15 +131,16 @@ public class BrokerInitializerTest {
 
         Map<String, ClientSessionInfo> allClientSessions = brokerInitializer.initClientSessions();
 
-        Assert.assertEquals(preparedSessions.size(), allClientSessions.size());
+        Assert.assertEquals(2, allClientSessions.size());
 
         ClientSessionInfo clientSessionInfo = getSessionForServiceId(allClientSessions);
 
         Assert.assertNotNull(clientSessionInfo);
-        Assert.assertFalse(clientSessionInfo.isConnected());
-        verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
-        verify(clientSessionEventService).requestClientSessionCleanup(any());
-        verify(integrationService).findAllIntegrations();
+        Assert.assertTrue(clientSessionInfo.isConnected());
+        verify(rateLimitService).initSessionCount(preparedSessions.size());
+        verify(rateLimitService).initApplicationClientsCount(0);
+        verify(clientSessionEventService).requestClientSessionCleanup(any(), eq(ClientCleanupInfo.FORCEFUL));
+        verify(integrationService).findIntegrationsCount();
     }
 
     private ClientSessionInfo getSessionForServiceId(Map<String, ClientSessionInfo> allClientSessions) {
@@ -163,16 +164,19 @@ public class BrokerInitializerTest {
         ClientSessionInfo clientSessionInfo3 = getSessionInfo(true, 0);
         ClientSessionInfo clientSessionInfo4 = getSessionInfo(true, 10);
 
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo1));
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo2));
-        Assert.assertTrue(brokerInitializer.isCleanSession(clientSessionInfo3));
-        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo4));
+        when(serviceInfoProvider.getServiceId()).thenReturn("serviceId");
+
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo1));
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo2));
+        Assert.assertTrue(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo3));
+        Assert.assertFalse(brokerInitializer.isCleanSessionOnThisNode(clientSessionInfo4));
     }
 
     private ClientSessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
         return ClientSessionInfo.builder()
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
+                .serviceId("serviceId")
                 .build();
     }
 

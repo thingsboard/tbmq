@@ -20,7 +20,8 @@ import lombok.Data;
 @Data
 public class ClientSessionAdvancedDto {
 
-    private final String name;
+    private final String credentialsName;
     private final String mqttVersion;
+    private final String authProvider;
 
 }

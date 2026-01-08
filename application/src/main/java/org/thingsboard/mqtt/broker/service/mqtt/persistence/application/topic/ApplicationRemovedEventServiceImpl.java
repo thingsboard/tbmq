@@ -41,31 +41,23 @@ public class ApplicationRemovedEventServiceImpl implements ApplicationRemovedEve
 
     @PostConstruct
     public void init() {
-        this.eventProducer = applicationRemovedEventQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
+        eventProducer = applicationRemovedEventQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
     }
 
     @Override
     public void sendApplicationRemovedEvent(String clientId) {
-        ApplicationRemovedEventProto eventProto = ApplicationRemovedEventProto.newBuilder()
-                .setClientId(clientId)
-                .build();
+        log.trace("[{}] Sending application removed event.", clientId);
 
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Sending application removed event.", clientId);
-        }
+        var eventProto = ApplicationRemovedEventProto.newBuilder().setClientId(clientId).build();
         eventProducer.send(new TbProtoQueueMsg<>(serviceInfoProvider.getServiceId(), eventProto), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Event sent: {}", clientId, metadata);
-                }
+                log.trace("[{}] Event sent: {}", clientId, metadata);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Failed to send event", clientId, t);
-                }
+                log.debug("[{}] Failed to send event", clientId, t);
             }
         });
     }
@@ -79,7 +71,7 @@ public class ApplicationRemovedEventServiceImpl implements ApplicationRemovedEve
             eventProducer.stop();
 
             stopWatch.stop();
-            log.info("Cluster Event producer stopped for {} ms.", stopWatch.getTime());
+            log.info("App Removed Event producer stopped within {} ms.", stopWatch.getTime());
         }
     }
 }

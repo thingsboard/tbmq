@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.controller;
+package org.thingsboard.mqtt.broker.service.mqtt.client.event.data;
 
-public class ControllerConstants {
+import lombok.Data;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-    public static final String USER_ID = "userId";
-    public static final String ENTITY_ID = "entityId";
-    public static final String INTEGRATION_ID = "integrationId";
+@Data
+public class ClientDisconnectInfo {
 
-    public static final String YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION = "You don't have permission to perform this operation!";
-
-    public static final String UNKNOWN = "Unknown";
+    private final DisconnectReasonType reasonType;
 
 }

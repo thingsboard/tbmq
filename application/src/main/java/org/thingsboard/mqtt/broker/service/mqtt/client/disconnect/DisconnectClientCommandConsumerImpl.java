@@ -90,18 +90,18 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
 
     private void processClientDisconnect(TbProtoQueueMsg<DisconnectClientCommandProto> msg) {
         String clientId = msg.getKey();
-        DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
+        var disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
         boolean newSessionCleanStart = disconnectClientCommandProto.getNewSessionCleanStart();
-        DisconnectReasonType disconnectReasonType = getDisconnectReasonType(disconnectClientCommandProto);
+        var type = getDisconnectReasonType(disconnectClientCommandProto);
         clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                 sessionId,
-                new DisconnectReason(disconnectReasonType),
+                new DisconnectReason(type),
                 newSessionCleanStart));
     }
 
     private DisconnectReasonType getDisconnectReasonType(DisconnectClientCommandProto proto) {
-        return proto.hasReasonType() ? DisconnectReasonType.valueOf(proto.getReasonType()) : DisconnectReasonType.ON_CONFLICTING_SESSIONS;
+        return proto.hasReasonType() ? DisconnectReasonType.valueOf(proto.getReasonType()) : DisconnectReasonType.ON_ERROR;
     }
 
     private void initConsumer() {

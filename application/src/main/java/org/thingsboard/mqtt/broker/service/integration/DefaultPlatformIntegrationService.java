@@ -22,8 +22,6 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -68,14 +66,6 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     private final ServiceInfoProvider serviceInfoProvider;
     private final IntegrationCleanupServiceImpl integrationCleanupService;
     private final SystemInfoService systemInfoService;
-
-    @PostConstruct
-    public void init() {
-    }
-
-    @PreDestroy
-    public void destroy() {
-    }
 
     @Override
     public void processIntegrationUpdate(Integration integration, boolean created) {

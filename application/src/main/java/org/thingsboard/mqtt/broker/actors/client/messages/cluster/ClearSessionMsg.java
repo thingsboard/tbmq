@@ -16,23 +16,32 @@
 package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
+@ToString
 public class ClearSessionMsg extends CallbackMsg implements SessionClusterManagementMsg {
 
     private final UUID sessionId;
+    private final ClientCleanupInfo cleanupInfo;
 
     public ClearSessionMsg(ClientCallback callback, UUID sessionId) {
+        this(callback, sessionId, ClientCleanupInfo.GRACEFUL);
+    }
+
+    public ClearSessionMsg(ClientCallback callback, UUID sessionId, ClientCleanupInfo cleanupInfo) {
         super(callback);
         this.sessionId = sessionId;
+        this.cleanupInfo = cleanupInfo;
     }
 
     @Override
@@ -42,8 +51,6 @@ public class ClearSessionMsg extends CallbackMsg implements SessionClusterManage
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
-        }
+        log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }

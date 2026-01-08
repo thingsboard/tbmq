@@ -250,7 +250,7 @@ public class ClientActor extends ContextAwareActor {
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
             log.trace("[{}] Processing CONNECTION_REQUEST_MSG processConnectionRequestMsg {}", state.getClientId(), msg);
-            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
+            sessionClusterManager.processConnectionRequest(msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
@@ -270,7 +270,7 @@ public class ClientActor extends ContextAwareActor {
     private void processClearSessionMsg(ClearSessionMsg msg) {
         try {
             log.trace("[{}] Processing CLEAR_SESSION_MSG processClearSessionMsg {}", state.getClientId(), msg);
-            sessionClusterManager.processClearSession(state.getClientId(), msg.getSessionId());
+            sessionClusterManager.processClearSession(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
@@ -331,9 +331,10 @@ public class ClientActor extends ContextAwareActor {
             return;
         }
 
-        if (state.getCurrentSessionState() != SessionState.INITIALIZED) {
-            log.warn("[{}][{}] Msg {} can only be processed in {} state, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    msg.getMsgType(), SessionState.INITIALIZED, state.getCurrentSessionState());
+        var currentState = state.getCurrentSessionState();
+        if (currentState.isConnectNotProcessable()) {
+            log.warn("[{}][{}] Msg {} can only be processed in {} states, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), SessionState.CONNECT_PROCESSABLE_STATES, currentState);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
             return;
@@ -341,7 +342,7 @@ public class ClientActor extends ContextAwareActor {
 
         try {
             state.updateSessionState(SessionState.CONNECTING);
-            connectService.startConnection(state, msg);
+            connectService.startConnection(state, msg, currentState.isConnectOnConflict());
         } catch (Exception e) {
             log.error("[{}][{}] Failed to process {}.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,

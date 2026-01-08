@@ -58,6 +58,7 @@ public class ClientSessionCtx implements SessionContext {
     private volatile MqttConnectMessage connectMsgFromEnhancedAuth;
     private volatile String authMethod;
     private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
+    private volatile String authDetails;
 
     private ChannelHandlerContext channel;
 

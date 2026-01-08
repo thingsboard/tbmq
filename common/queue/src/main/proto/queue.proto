@@ -103,11 +103,33 @@ message ClientSessionInfoProto {
 message ClientSessionEventProto {
   string eventType = 1;
   SessionInfoProto sessionInfo = 2;
+  optional ClientSessionEventDetailsProto details = 3;
+}
+
+message ClientSessionEventDetailsProto {
+  ClientDisconnectInfoProto clientDisconnectInfo = 1;
+  ClientConnectInfoProto clientConnectInfo = 2;
+  ClientCleanupInfoProto clientCleanupInfo = 3;
+}
+
+message ClientDisconnectInfoProto {
+  optional string reasonType = 1;
+}
+
+message ClientConnectInfoProto {
+  optional string mqttVersion = 1;
+  optional string authDetails = 2;
+  optional bool connectOnConflict = 3;
+}
+
+message ClientCleanupInfoProto {
+  optional bool forceCleanup = 1;
 }
 
 message ClientSessionEventResponseProto {
   bool success = 1;
   bool sessionPresent = 2;
+  optional string failureReason = 3;
 }
 
 message ClientSubscriptionsProto {

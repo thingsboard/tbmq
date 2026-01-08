@@ -53,10 +53,8 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
                     && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
                 keepAliveInfoMap.remove(sessionId);
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
-                            keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
-                }
+                log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
+                        keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
                 clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), new MqttDisconnectMsg(sessionId,
                         new DisconnectReason(DisconnectReasonType.ON_KEEP_ALIVE, "Client was inactive too long")));
             }
@@ -75,18 +73,14 @@ public class KeepAliveServiceImpl implements KeepAliveService {
 
     @Override
     public void registerSession(String clientId, UUID sessionId, int keepAliveSeconds) throws MqttException {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
-        }
+        log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
         keepAliveInfoMap.put(sessionId, new KeepAliveInfo(clientId, keepAliveSeconds,
                 new AtomicLong(System.currentTimeMillis())));
     }
 
     @Override
     public void unregisterSession(UUID sessionId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Unregistering keep-alive session", sessionId);
-        }
+        log.trace("[{}] Unregistering keep-alive session", sessionId);
         keepAliveInfoMap.remove(sessionId);
     }
 

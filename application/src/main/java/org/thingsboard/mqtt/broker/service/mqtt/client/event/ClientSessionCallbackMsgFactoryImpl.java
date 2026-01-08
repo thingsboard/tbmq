@@ -28,6 +28,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 
@@ -44,22 +47,28 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
     @Override
     public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<ClientSessionEventProto> msg, ClientCallback callback) {
         ClientSessionEventProto eventProto = msg.getValue();
-        SessionInfo sessionInfo;
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
-            case CONNECTION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
+            case CONNECTION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
-                return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
-            case DISCONNECTION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
-                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval());
-            case CLEAR_SESSION_REQUEST:
-                sessionInfo = getSessionInfo(eventProto);
-                return new ClearSessionMsg(callback, sessionInfo.getSessionId());
-            case REMOVE_APPLICATION_TOPIC_REQUEST:
+                ClientConnectInfo clientConnectInfo = getClientConnectInfo(eventProto);
+                return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo, clientConnectInfo);
+            }
+            case DISCONNECTION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
+                var reasonType = getClientDisconnectReasonType(eventProto);
+                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval(), reasonType);
+            }
+            case CLEAR_SESSION_REQUEST -> {
+                var sessionInfo = getSessionInfo(eventProto);
+                ClientCleanupInfo clientCleanupInfo = getClientCleanupInfo(eventProto);
+                return new ClearSessionMsg(callback, sessionInfo.getSessionId(), clientCleanupInfo);
+            }
+            case REMOVE_APPLICATION_TOPIC_REQUEST -> {
                 return new RemoveApplicationTopicRequestMsg(callback);
-            default:
-                throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
+            }
+            default ->
+                    throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
         }
     }
 
@@ -73,5 +82,26 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
         UUID requestId = bytesToUuid(requestHeaders.get(REQUEST_ID_HEADER));
         String responseTopic = bytesToString(requestHeaders.get(RESPONSE_TOPIC_HEADER));
         return new ConnectionRequestInfo(requestId, requestTime, responseTopic);
+    }
+
+    private ClientConnectInfo getClientConnectInfo(ClientSessionEventProto eventProto) {
+        if (eventProto.hasDetails() && eventProto.getDetails().hasClientConnectInfo()) {
+            return ProtoConverter.getClientConnectInfo(eventProto.getDetails());
+        }
+        return ClientConnectInfo.emptyInfo();
+    }
+
+    private DisconnectReasonType getClientDisconnectReasonType(ClientSessionEventProto eventProto) {
+        if (eventProto.hasDetails() && eventProto.getDetails().hasClientDisconnectInfo()) {
+            return ProtoConverter.getDisconnectReasonType(eventProto.getDetails());
+        }
+        return DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
+    }
+
+    private ClientCleanupInfo getClientCleanupInfo(ClientSessionEventProto eventProto) {
+        if (eventProto.hasDetails() && eventProto.getDetails().hasClientCleanupInfo()) {
+            return ProtoConverter.getClientCleanupInfo(eventProto.getDetails());
+        }
+        return ClientCleanupInfo.GRACEFUL;
     }
 }

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
@@ -37,7 +38,7 @@ public interface MsgPersistenceManager {
 
     void processPubComp(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
+    void startProcessingPersistedMessages(ClientActorStateInfo actorState);
 
     void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
 
@@ -45,5 +46,5 @@ public interface MsgPersistenceManager {
 
     void stopProcessingPersistedMessages(ClientInfo clientInfo);
 
-    void clearPersistedMessages(ClientInfo clientInfo);
+    void clearPersistedMessages(String clientId, ClientType type);
 }

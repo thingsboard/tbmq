@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.queue.integration;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,10 +44,6 @@ public class IntegrationUplinkNotificationsServiceImpl implements IntegrationUpl
     @PostConstruct
     public void init() {
         this.uplinkNotificationsProducer = uplinkQueueProvider.getIeUplinkNotificationsProducer();
-    }
-
-    @PreDestroy
-    public void destroy() {
     }
 
     @Override

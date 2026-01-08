@@ -36,6 +36,8 @@ public interface IntegrationService {
 
     List<Integration> findAllIntegrations();
 
+    int findIntegrationsCount();
+
     PageData<Integration> findIntegrations(PageLink pageLink);
 
     boolean deleteIntegration(Integration integration);
