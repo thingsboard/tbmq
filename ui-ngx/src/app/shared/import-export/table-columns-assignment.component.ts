@@ -157,7 +157,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
       const isSelectSubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.subAuthRulePatterns) > -1;
       const isSelectPubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.pubAuthRulePatterns) > -1;
 
-      this.valid = this.valid && isSelectClientType && (isSelectClientId || isSelectUsername);
+      this.valid = this.valid && (isSelectClientId || isSelectUsername);
 
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientType).disabled = isSelectClientType;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientId).disabled = isSelectClientId;
