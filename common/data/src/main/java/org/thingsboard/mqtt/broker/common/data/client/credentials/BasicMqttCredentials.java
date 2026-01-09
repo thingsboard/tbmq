@@ -41,7 +41,7 @@ public class BasicMqttCredentials implements SinglePubSubAuthRulesAware {
     }
 
     public static BasicMqttCredentials newInstance(String userName) {
-        return new BasicMqttCredentials(null, userName, null, PubSubAuthorizationRules.newInstance(List.of(".*")));
+        return new BasicMqttCredentials(null, userName, null, PubSubAuthorizationRules.defaultInstance());
     }
 
 }

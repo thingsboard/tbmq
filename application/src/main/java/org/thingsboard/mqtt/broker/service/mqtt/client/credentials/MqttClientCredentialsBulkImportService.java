@@ -18,28 +18,40 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.credentials;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.HasAdditionalInfo;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportResult;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv.BulkImportColumnType;
-import org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv.BulkImportRequest;
-import org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv.BulkImportResult;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.util.CsvUtils;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -49,87 +61,128 @@ public class MqttClientCredentialsBulkImportService {
     private final MqttClientCredentialsService credentialsService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public BulkImportResult<MqttClientCredentials> processBulkImport(BulkImportRequest request) throws Exception {
-        List<List<String>> records = CsvUtils.parseCsv(request.getFile(), request.getMapping().getDelimiter());
+    private ExecutorService executor;
+
+    @PostConstruct
+    private void initExecutor() {
+        executor = ThingsBoardExecutors.newLimitedTasksExecutor(Runtime.getRuntime().availableProcessors(), 100_000, "bulk-import");
+    }
+
+    @PreDestroy
+    private void shutdownExecutor() {
+        if (executor != null) {
+            ThingsBoardExecutors.shutdownAndAwaitTermination(executor, "Bulk import executor");
+        }
+    }
+
+    public final BulkImportResult<MqttClientCredentials> processBulkImport(BulkImportRequest request) throws Exception {
+        List<EntityData> entitiesData = parseData(request);
+
         BulkImportResult<MqttClientCredentials> result = new BulkImportResult<>();
-        if (request.getMapping().getHeader() && !records.isEmpty()) {
-            records.remove(0);
-        }
+        CountDownLatch completionLatch = new CountDownLatch(entitiesData.size());
+
         Character authRulesDelimiter = request.getMapping().getAuthRulesDelimiter();
-        for (int i = 0; i < records.size(); i++) {
-            int lineNumber = i + (request.getMapping().getHeader() ? 2 : 1);
-            try {
-                List<String> record = records.get(i);
-                String name = getValueByColumnType(request, record, BulkImportColumnType.NAME);
-                if (!StringUtils.hasText(name)) {
-                    throw new IllegalArgumentException("Credential name is missing in CSV");
-                }
-                MqttClientCredentials existing = credentialsService.findCredentialsByName(name);
-                MqttClientCredentials credentials;
-                BasicMqttCredentials basicCredentials;
-                boolean isUpdate = false;
-                if (existing != null) {
-                    credentials = existing;
-                    basicCredentials = JacksonUtil.fromString(credentials.getCredentialsValue(), BasicMqttCredentials.class);
-                    if (basicCredentials == null) basicCredentials = new BasicMqttCredentials();
-                    isUpdate = true;
-                } else {
-                    credentials = new MqttClientCredentials();
-                    credentials.setName(name);
-                    basicCredentials = new BasicMqttCredentials();
-                }
-                credentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-                for (int j = 0; j < request.getMapping().getColumns().size(); j++) {
-                    if (j >= record.size()) break;
-                    var columnMapping = request.getMapping().getColumns().get(j);
-                    String value = record.get(j);
-                    overwriteCredentialsField(credentials, basicCredentials, columnMapping.getType(), value, authRulesDelimiter);
-                }
-                credentials.setCredentialsValue(JacksonUtil.toString(basicCredentials));
-                credentialsService.saveCredentials(credentials);
-                if (isUpdate) {
-                    result.getUpdated().incrementAndGet();
-                } else {
-                    result.getCreated().incrementAndGet();
-                }
-            } catch (Exception e) {
-                log.error("Error importing MQTT credentials at line {}", lineNumber, e);
-                result.getErrors().incrementAndGet();
-                result.getErrorsList().add(String.format("Line %d: %s", lineNumber, e.getMessage()));
-            }
-        }
+
+        entitiesData.forEach(entityData -> DonAsynchron.submit(() -> saveEntity(entityData.getFields(), authRulesDelimiter),
+                importedEntityInfo -> {
+                    if (importedEntityInfo.isUpdated()) {
+                        log.debug("Updated MQTT credentials [{}] at line {}", importedEntityInfo.getEntity(), entityData.getLineNumber());
+                        result.getUpdated().incrementAndGet();
+                    } else {
+                        log.debug("Created MQTT credentials [{}] at line {}", importedEntityInfo.getEntity(), entityData.getLineNumber());
+                        result.getCreated().incrementAndGet();
+                    }
+                    completionLatch.countDown();
+                },
+                throwable -> {
+                    log.debug("Error importing MQTT credentials at line {}", entityData.getLineNumber(), throwable);
+                    result.getErrors().incrementAndGet();
+                    result.getErrorsList().add(String.format("Line %d: %s", entityData.getLineNumber(), ExceptionUtils.getRootCauseMessage(throwable)));
+                    completionLatch.countDown();
+                },
+                executor));
+
+        completionLatch.await();
         return result;
     }
 
-    private void overwriteCredentialsField(MqttClientCredentials entity, BasicMqttCredentials basic,
-                                           BulkImportColumnType type, String value, Character delimiter) {
-        ObjectNode additionalInfo = getOrCreateAdditionalInfoObj(entity);
-        String processedValue = StringUtils.hasText(value) ? value.trim() : null;
-        switch (type) {
-            case CLIENT_TYPE -> entity.setClientType(processedValue != null ? ClientType.valueOf(processedValue.toUpperCase()) : null);
-            case CLIENT_ID -> basic.setClientId(processedValue);
-            case USERNAME -> basic.setUserName(processedValue);
-            case PASSWORD -> basic.setPassword(processedValue != null ? passwordEncoder.encode(processedValue) : null);
-            case SUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, processedValue, true, delimiter);
-            case PUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, processedValue, false, delimiter);
-            case DESCRIPTION -> {
-                if (processedValue != null) {
-                    additionalInfo.set("description", new TextNode(processedValue));
-                } else {
-                    additionalInfo.remove("description");
-                }
-            }
+    private List<EntityData> parseData(BulkImportRequest request) throws Exception {
+        List<List<String>> records = CsvUtils.parseCsv(request.getFile(), request.getMapping().getDelimiter());
+        AtomicInteger linesCounter = new AtomicInteger(0);
+
+        if (request.getMapping().getHeader()) {
+            records.remove(0);
+            linesCounter.incrementAndGet();
         }
-        entity.setAdditionalInfo(additionalInfo);
+
+        List<BulkImportRequest.ColumnMapping> columnsMappings = request.getMapping().getColumns();
+        return records.stream()
+                .map(record -> {
+                    EntityData entityData = new EntityData();
+                    Stream.iterate(0, i -> i < record.size(), i -> i + 1)
+                            .map(i -> Map.entry(columnsMappings.get(i), record.get(i)))
+                            .filter(entry -> entry.getKey().getType().isAuthRules() || StringUtils.isNotEmpty(entry.getValue()))
+                            .forEach(entry -> entityData.getFields().put(entry.getKey().getType(), entry.getValue()));
+                    entityData.setLineNumber(linesCounter.incrementAndGet());
+                    return entityData;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private ImportedEntityInfo<MqttClientCredentials> saveEntity(Map<BulkImportColumnType, String> fields,
+                                                                 Character authRulesDelimiter) {
+        ImportedEntityInfo<MqttClientCredentials> importedEntityInfo = new ImportedEntityInfo<>();
+
+        MqttClientCredentials entity = findOrCreateEntity(fields.get(BulkImportColumnType.NAME));
+        BasicMqttCredentials basicCredentials;
+        if (entity.getId() != null) {
+
+            if (entity.getCredentialsType() != ClientCredentialsType.MQTT_BASIC) {
+                throw new IllegalArgumentException(String.format("Credentials with name '%s' already exists and it's not MQTT Basic credentials", entity.getName()));
+            }
+
+            importedEntityInfo.setUpdated(true);
+
+            basicCredentials = JacksonUtil.fromString(entity.getCredentialsValue(), BasicMqttCredentials.class);
+        } else {
+            entity.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+
+            basicCredentials = new BasicMqttCredentials();
+            basicCredentials.setAuthRules(PubSubAuthorizationRules.defaultInstance());
+        }
+
+        setEntityFields(entity, basicCredentials, fields, authRulesDelimiter);
+
+        MqttClientCredentials savedEntity = saveEntity(entity);
+
+        importedEntityInfo.setEntity(savedEntity);
+        return importedEntityInfo;
+    }
+
+    private void setEntityFields(MqttClientCredentials entity,
+                                 BasicMqttCredentials basic,
+                                 Map<BulkImportColumnType, String> fields,
+                                 Character delimiter) {
+        ObjectNode additionalInfo = getOrCreateAdditionalInfoObj(entity);
+        fields.forEach((columnType, value) -> {
+            switch (columnType) {
+                case NAME -> entity.setName(value);
+                case CLIENT_TYPE -> entity.setClientType(ClientType.valueOf(value.toUpperCase()));
+                case CLIENT_ID -> basic.setClientId(value);
+                case USERNAME -> basic.setUserName(value);
+                case PASSWORD -> basic.setPassword(passwordEncoder.encode(value));
+                case SUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, value, true, delimiter);
+                case PUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, value, false, delimiter);
+                case DESCRIPTION -> additionalInfo.set("description", new TextNode(value));
+            }
+            entity.setAdditionalInfo(additionalInfo);
+        });
+        entity.setCredentialsValue(JacksonUtil.toString(basic));
     }
 
     private void overwriteAuthRules(BasicMqttCredentials basic, String value, boolean isSub, Character delimiter) {
         PubSubAuthorizationRules authRules = basic.getAuthRules();
-        if (authRules == null) {
-            authRules = new PubSubAuthorizationRules();
-            basic.setAuthRules(authRules);
-        }
-        if (value == null) {
+        if (StringUtils.isEmpty(value)) {
             if (isSub) {
                 authRules.setSubAuthRulePatterns(null);
             } else {
@@ -146,7 +199,6 @@ public class MqttClientCredentialsBulkImportService {
     }
 
     private List<String> parsePatterns(String value, Character delimiter) {
-        if (!StringUtils.hasText(value)) return List.of();
         String delimiterRegex = Pattern.quote(String.valueOf(delimiter));
         return Arrays.stream(value.split(delimiterRegex))
                 .map(String::trim)
@@ -154,17 +206,25 @@ public class MqttClientCredentialsBulkImportService {
                 .collect(Collectors.toList());
     }
 
-    private String getValueByColumnType(BulkImportRequest request, List<String> record, BulkImportColumnType type) {
-        for (int j = 0; j < request.getMapping().getColumns().size(); j++) {
-            if (request.getMapping().getColumns().get(j).getType() == type && j < record.size()) {
-                return record.get(j);
-            }
-        }
-        return null;
-    }
-
     private ObjectNode getOrCreateAdditionalInfoObj(HasAdditionalInfo entity) {
         return entity.getAdditionalInfo() == null || entity.getAdditionalInfo().isNull() ?
                 JacksonUtil.newObjectNode() : (ObjectNode) entity.getAdditionalInfo();
+    }
+
+    private MqttClientCredentials findOrCreateEntity(String name) {
+        MqttClientCredentials credentialsByName = credentialsService.findCredentialsByName(name);
+        return credentialsByName == null ? new MqttClientCredentials() : credentialsByName;
+    }
+
+    private MqttClientCredentials saveEntity(MqttClientCredentials credentials) {
+        return credentialsService.saveCredentials(credentials);
+    }
+
+    @Data
+    protected static class EntityData {
+
+        private final Map<BulkImportColumnType, String> fields = new LinkedHashMap<>();
+        private int lineNumber;
+
     }
 }

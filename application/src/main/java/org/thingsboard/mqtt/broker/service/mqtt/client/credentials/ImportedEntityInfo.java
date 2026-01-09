@@ -13,30 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv;
+package org.thingsboard.mqtt.broker.service.mqtt.client.credentials;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class BulkImportRequest {
-    private String file;
-    private Mapping mapping;
+public class ImportedEntityInfo<E> {
 
-    @Data
-    public static class Mapping {
-        private List<ColumnMapping> columns;
-        private Character delimiter;
-        private Character authRulesDelimiter;
-        private Boolean update;
-        private Boolean header;
-    }
-
-    @Data
-    public static class ColumnMapping {
-        private BulkImportColumnType type;
-        private String key;
-    }
+    private E entity;
+    private boolean isUpdated;
 
 }

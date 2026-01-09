@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PUB_SUB_AUTH_RULES_ALLOW_ALL;
+
 @Data
 public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration, SinglePubSubAuthRulesAware {
 
@@ -81,7 +83,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     public static JwtMqttAuthProviderConfiguration defaultConfiguration() {
         var jwtConfig = new JwtMqttAuthProviderConfiguration();
-        jwtConfig.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(".*")));
+        jwtConfig.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(PUB_SUB_AUTH_RULES_ALLOW_ALL)));
         jwtConfig.setDefaultClientType(ClientType.DEVICE);
         jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());
         return jwtConfig;

@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.sync.ie.importing.csv;
+package org.thingsboard.mqtt.broker.common.data.importing.csv;
 
-import lombok.Data;
+import lombok.Getter;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicInteger;
+@Getter
+public enum BulkImportColumnType {
+    NAME,
+    DESCRIPTION,
+    CLIENT_TYPE,
+    CLIENT_ID,
+    USERNAME,
+    PASSWORD,
+    SUB_AUTH_RULE_PATTERNS,
+    PUB_AUTH_RULE_PATTERNS;
 
-@Data
-public class BulkImportResult<E> {
-    private AtomicInteger created = new AtomicInteger();
-    private AtomicInteger updated = new AtomicInteger();
-    private AtomicInteger errors = new AtomicInteger();
-    private Collection<String> errorsList = new ConcurrentLinkedDeque<>();
+    public boolean isAuthRules() {
+        return this == SUB_AUTH_RULE_PATTERNS || this == PUB_AUTH_RULE_PATTERNS;
+    }
 }
