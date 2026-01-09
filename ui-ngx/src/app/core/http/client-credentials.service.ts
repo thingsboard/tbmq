@@ -68,6 +68,6 @@ export class ClientCredentialsService {
   }
 
   public bulkImportCredentials(entitiesData: BulkImportRequest, config?: RequestConfig): Observable<BulkImportResult> {
-    return this.http.post<BulkImportResult>('/api/mqtt/client/bulk_import', entitiesData, defaultHttpOptionsFromConfig(config));
+    return this.http.post<BulkImportResult>('/api/mqtt/client/credentials/bulk_import', entitiesData, defaultHttpOptionsFromConfig(config));
   }
 }

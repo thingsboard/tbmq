@@ -161,7 +161,7 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @PostMapping("/mqtt/client/bulk_import")
+    @PostMapping("/mqtt/client/credentials/bulk_import")
     public BulkImportResult<MqttClientCredentials> processMqttClientCredentialsBulkImport(@RequestBody BulkImportRequest request) throws Exception {
         return bulkImportService.processBulkImport(request);
     }
