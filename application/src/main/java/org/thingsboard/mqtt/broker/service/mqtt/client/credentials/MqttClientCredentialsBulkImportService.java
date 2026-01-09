@@ -144,6 +144,9 @@ public class MqttClientCredentialsBulkImportService {
             importedEntityInfo.setUpdated(true);
 
             basicCredentials = JacksonUtil.fromString(entity.getCredentialsValue(), BasicMqttCredentials.class);
+            if (StringUtils.isNotEmpty(basicCredentials.getPassword()) && fields.containsKey(BulkImportColumnType.PASSWORD)) {
+                throw new IllegalArgumentException(String.format("['%s'] It is not allowed to change the credentials' password", entity.getName()));
+            }
         } else {
             entity.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
 
