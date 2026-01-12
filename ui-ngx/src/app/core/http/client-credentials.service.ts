@@ -21,6 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { ClientCredentialsInfo, ClientCredentials, ClientCredentialsQuery } from '@shared/models/credentials.model';
+import { BulkImportRequest, BulkImportResult } from '@shared/import-export/import-export.models';
 
 @Injectable({
   providedIn: 'root'
@@ -64,5 +65,9 @@ export class ClientCredentialsService {
 
   public getClientCredentialsByName(name: string, config?: RequestConfig): Observable<ClientCredentials> {
     return this.http.get<ClientCredentials>(`/api/mqtt/client/credentials?name=${name}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public bulkImportCredentials(entitiesData: BulkImportRequest, config?: RequestConfig): Observable<BulkImportResult> {
+    return this.http.post<BulkImportResult>('/api/mqtt/client/credentials/bulk_import', entitiesData, defaultHttpOptionsFromConfig(config));
   }
 }

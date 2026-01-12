@@ -24,6 +24,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PUB_SUB_AUTH_RULES_ALLOW_ALL;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,5 +41,9 @@ public class PubSubAuthorizationRules implements Serializable {
 
     public static PubSubAuthorizationRules newInstance(List<String> authRules) {
         return new PubSubAuthorizationRules(authRules, authRules);
+    }
+
+    public static PubSubAuthorizationRules defaultInstance() {
+        return newInstance(List.of(PUB_SUB_AUTH_RULES_ALLOW_ALL));
     }
 }
