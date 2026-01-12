@@ -16,12 +16,13 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.TbProperty;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.common.TbKafkaCommonSettings;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Collections;
@@ -32,14 +33,12 @@ import java.util.Properties;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "queue.kafka")
-@Slf4j
 public class TbKafkaConsumerSettings {
+
+    private final TbKafkaCommonSettings commonSettings;
 
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
-
-    @Value("${queue.kafka.default.consumer.max-poll-records}")
-    private int maxPollRecords;
 
     @Value("${queue.kafka.default.consumer.partition-assignment-strategy}")
     private String partitionAssignmentStrategy;
@@ -49,6 +48,9 @@ public class TbKafkaConsumerSettings {
 
     @Value("${queue.kafka.default.consumer.max-poll-interval-ms}")
     private int maxPollIntervalMs;
+
+    @Value("${queue.kafka.default.consumer.max-poll-records}")
+    private int maxPollRecords;
 
     @Value("${queue.kafka.default.consumer.max-partition-fetch-bytes}")
     private int maxPartitionFetchBytes;
@@ -61,8 +63,17 @@ public class TbKafkaConsumerSettings {
 
     private Map<String, List<TbProperty>> consumerPropertiesPerTopic = Collections.emptyMap();
 
+    @Autowired
+    public TbKafkaConsumerSettings(TbKafkaCommonSettings commonSettings) {
+        this.commonSettings = commonSettings;
+    }
+
     public Properties toProps(String topic, String customProperties) {
         Properties props = new Properties();
+
+        props.putAll(QueueUtil.getConfigs(commonSettings.getCommonConfig()));
+        props.putAll(QueueUtil.getConfigs(commonSettings.getCommonConsumerConfig()));
+
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, partitionAssignmentStrategy);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeoutMs);
@@ -71,9 +82,9 @@ public class TbKafkaConsumerSettings {
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
         props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatIntervalMs);
-        if (customProperties != null) {
-            props.putAll(QueueUtil.getConfigs(customProperties));
-        }
+
+        props.putAll(QueueUtil.getConfigs(customProperties));
+
         consumerPropertiesPerTopic
                 .getOrDefault(topic, Collections.emptyList())
                 .forEach(kv -> props.put(kv.getKey(), kv.getValue()));
