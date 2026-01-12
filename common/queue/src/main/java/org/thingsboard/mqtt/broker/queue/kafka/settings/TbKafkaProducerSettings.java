@@ -17,10 +17,8 @@ package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.Setter;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.common.TbKafkaCommonSettings;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Properties;
@@ -28,8 +26,6 @@ import java.util.Properties;
 @Setter
 @Component
 public class TbKafkaProducerSettings {
-
-    private final TbKafkaCommonSettings commonSettings;
 
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
@@ -52,26 +48,18 @@ public class TbKafkaProducerSettings {
     @Value("${queue.kafka.default.producer.compression-type:none}")
     private String compressionType;
 
-    @Autowired
-    public TbKafkaProducerSettings(TbKafkaCommonSettings commonSettings) {
-        this.commonSettings = commonSettings;
-    }
-
     public Properties toProps(String customProperties) {
         Properties props = new Properties();
-
-        props.putAll(QueueUtil.getConfigs(commonSettings.getCommonConfig()));
-        props.putAll(QueueUtil.getConfigs(commonSettings.getCommonProducerConfig()));
-
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        props.put(ProducerConfig.ACKS_CONFIG, acks);
         props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.ACKS_CONFIG, acks);
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, batchSize);
         props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMs);
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
         props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, compressionType);
-
-        props.putAll(QueueUtil.getConfigs(customProperties));
+        if (customProperties != null) {
+            props.putAll(QueueUtil.getConfigs(customProperties));
+        }
         return props;
     }
 }
