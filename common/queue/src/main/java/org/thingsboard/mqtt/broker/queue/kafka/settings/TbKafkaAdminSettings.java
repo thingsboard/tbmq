@@ -18,8 +18,10 @@ package org.thingsboard.mqtt.broker.queue.kafka.settings;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.common.TbKafkaCommonSettings;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Properties;
@@ -28,6 +30,8 @@ import java.util.Properties;
 @Getter
 @Component
 public class TbKafkaAdminSettings {
+
+    private final TbKafkaCommonSettings commonSettings;
 
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
@@ -47,9 +51,17 @@ public class TbKafkaAdminSettings {
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
 
+    @Autowired
+    public TbKafkaAdminSettings(TbKafkaCommonSettings commonSettings) {
+        this.commonSettings = commonSettings;
+    }
+
     public Properties toProps() {
         Properties props = new Properties();
+
+        props.putAll(QueueUtil.getConfigs(commonSettings.getCommonConfig()));
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+
         if (config != null) {
             props.putAll(QueueUtil.getConfigs(config));
         }
