@@ -38,6 +38,13 @@
         [isEdit]="isEdit()">
       </tb-jwt-provider-config-form>
     }
+    @case (MqttAuthProviderType.HTTP_SERVICE) {
+      <tb-http-provider-config-form
+        formControlName="configuration"
+        [provider]="provider()"
+        [isEdit]="isEdit()">
+      </tb-http-provider-config-form>
+    }
     @default {}
   }
 </section>

@@ -16,7 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { ClientType } from '@shared/models/client.model';
-import { BasicCredentials, CertPemCredentials, Credentials } from '@shared/models/integration.models';
+import { BasicCredentials, CertPemCredentials, Credentials, HttpRequestType } from '@shared/models/integration.models';
 import { AuthRules } from '@shared/models/credentials.model';
 
 export enum MqttAuthProviderType {
@@ -38,11 +38,14 @@ export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, 
 );
 
 export interface MqttAuthProvider extends ShortMqttAuthProvider {
-  configuration: (BasicMqttAuthProviderConfiguration |
-                 ScramMqttAuthProviderConfiguration |
-                 SslMqttAuthProviderConfiguration |
-                 JwtMqttAuthProviderConfiguration) &
-                 SharedMqttAuthProviderConfiguration;
+  configuration: SharedMqttAuthProviderConfiguration &
+    (
+      BasicMqttAuthProviderConfiguration |
+      ScramMqttAuthProviderConfiguration |
+      SslMqttAuthProviderConfiguration |
+      HttpMqttAuthProviderConfiguration |
+      JwtMqttAuthProviderConfiguration
+    );
   additionalInfo: any;
 }
 
@@ -64,6 +67,19 @@ export interface ScramMqttAuthProviderConfiguration {}
 
 export interface SslMqttAuthProviderConfiguration {
   skipValidityCheckForClientCert: boolean;
+}
+
+export interface HttpMqttAuthProviderConfiguration {
+  restEndpointUrl: string;
+  requestMethod: HttpRequestType;
+  credentials: Credentials;
+  headers: {[key: string]: string} | null;
+  body: string;
+  defaultClientType: ClientType;
+  authRules: AuthRules;
+  readTimeoutMs: number;
+  maxInMemoryBufferSizeInKb: number;
+  maxParallelRequestsCount: number;
 }
 
 export interface JwtMqttAuthProviderConfiguration {

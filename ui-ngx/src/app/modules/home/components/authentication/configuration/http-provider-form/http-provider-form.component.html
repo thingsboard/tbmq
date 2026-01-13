@@ -1,0 +1,205 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="httpProviderConfigForm">
+  <mat-form-field class="mat-block" appearance="outline">
+    <mat-label translate>integration.endpoint-url</mat-label>
+    <input matInput formControlName="restEndpointUrl" required>
+    <tb-copy-button matSuffix
+                    [class.!hidden]="!httpProviderConfigForm.get('restEndpointUrl')?.value?.length"
+                    [copyText]="httpProviderConfigForm.get('restEndpointUrl')?.value">
+    </tb-copy-button>
+    <mat-icon matSuffix
+              matTooltipClass="tb-error-tooltip"
+              matTooltip="{{ 'integration.endpoint-url-required' | translate }}"
+              [class.!hidden]="!httpProviderConfigForm.get('restEndpointUrl').hasError('required')"
+              class="tb-error">
+      warning
+    </mat-icon>
+    <mat-icon matSuffix
+              matTooltipClass="tb-error-tooltip"
+              matTooltip="{{ 'integration.white-space-only' | translate }}"
+              [class.!hidden]="!httpProviderConfigForm.get('restEndpointUrl').hasError('onlyWhitespace')"
+              class="tb-error">
+      warning
+    </mat-icon>
+  </mat-form-field>
+  <mat-form-field class="mat-block" appearance="outline">
+    <mat-label translate>integration.request-method</mat-label>
+    <mat-select formControlName="requestMethod">
+      @for (requestType of httpRequestTypes; track requestType) {
+        <mat-option [value]="requestType">
+          {{ requestType }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <section class="mb-4 flex flex-col gap-3">
+    <tb-integration-credentials formControlName="credentials" [passwordOptional]="false"
+                                [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
+                                                           IntegrationCredentialType.Basic,
+                                                           IntegrationCredentialType.CertPEM]">
+    </tb-integration-credentials>
+    <section class="security-setting mat-padding">
+      <p translate>integration.headers</p>
+      <tb-key-val-map
+        formControlName="headers"
+        class="security-setting-content"
+        noDataText="integration.no-headers-filter"
+        addText="key-val.add-header"
+        keyLabel="integration.header"
+        singlePredefinedKey="Content-Type"
+        singlePredefinedValue="application/json">
+      </tb-key-val-map>
+    </section>
+
+    <section class="security-setting mat-padding">
+      <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>authentication.body</p>
+      <tb-json-object-edit
+        formControlName="body"
+        [fullscreenHidden]="true"
+        [marginLeft]="false"
+        [jsonRequired]="false"
+        [fillHeight]="false">
+      </tb-json-object-edit>
+    </section>
+  </section>
+  <section class="security-setting mat-padding">
+    <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>
+      authentication.client-type-default</p>
+    <mat-form-field class="mt-3 flex flex-1" subscriptSizing="dynamic">
+      <mat-select required formControlName="defaultClientType">
+        @for (clientType of clientTypes; track clientType) {
+          <mat-option [value]="clientType">
+            {{ clientTypeTranslationMap.get(clientType) | translate }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </section>
+  <section class="security-setting mat-padding">
+    <div class="flex flex-1 flex-col" formGroupName="authRules">
+      <p class="mb-3" translate>authentication.authorization-default</p>
+      <section class="mb-2">
+        <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
+        <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+      </section>
+      <mat-form-field class="mat-block">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+        <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
+          @for (rule of pubRulesSet; track rule) {
+            <mat-chip-row
+              [value]="rule"
+              [editable]="isEdit()"
+              (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
+              [removable]="isEdit()"
+              (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+              {{ rule }}
+              @if (isEdit()) {
+                <button matChipRemove aria-label="'remove' + rule">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-chip-row>
+          }
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 [matChipInputFor]="chipListPub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+        </mat-chip-grid>
+        <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+          warning
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+        <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
+          @for (rule of subRulesSet; track rule) {
+            <mat-chip-row
+              [value]="rule"
+              [editable]="isEdit()"
+              (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
+              [removable]="isEdit()"
+              (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+              {{ rule }}
+              @if (isEdit()) {
+                <button matChipRemove aria-label="'remove' + rule">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-chip-row>
+          }
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 [matChipInputFor]="chipListSub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+        </mat-chip-grid>
+        <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+          warning
+        </mat-icon>
+      </mat-form-field>
+    </div>
+  </section>
+  <mat-expansion-panel class="configuration-panel">
+    <mat-expansion-panel-header>
+      <mat-panel-description class="flex items-stretch justify-end" translate>
+        integration.advanced-settings
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <ng-template matExpansionPanelContent>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.read-timeout</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="readTimeoutMs">
+        <mat-icon matSuffix matTooltip="{{ 'integration.read-timeout-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.max-parallel-requests-count</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="maxParallelRequestsCount">
+        <mat-icon matSuffix matTooltip="{{ 'integration.max-parallel-requests-count-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.max-response-size</mat-label>
+        <input type="text" min="1" [max]="MemoryBufferSizeInKbLimit" inputmode="numeric" pattern="[0-9]*" matInput formControlName="maxInMemoryBufferSizeInKb">
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'integration.memory-buffer-size-range' | translate: { max: MemoryBufferSizeInKbLimit } }}"
+                  [class.!hidden]="!(httpProviderConfigForm?.get('maxInMemoryBufferSizeInKb').hasError('min') || httpProviderConfigForm?.get('maxInMemoryBufferSizeInKb').hasError('max'))"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'integration.memory-buffer-size-required' | translate }}"
+                  [class.!hidden]="!httpProviderConfigForm?.get('maxInMemoryBufferSizeInKb').hasError('required')"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix matTooltip="{{ 'integration.max-response-size-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+    </ng-template>
+  </mat-expansion-panel>
+</section>

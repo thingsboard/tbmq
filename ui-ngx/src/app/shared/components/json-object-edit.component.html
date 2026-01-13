@@ -36,14 +36,15 @@
         {{'js-func.mini' | translate }}
       </button>
     }
-    <button mat-icon-button class="tb-mat-32" (click)="fullscreen = !fullscreen"
+    <button mat-icon-button class="tb-mat-32" (click)="fullscreen = !fullscreen" [class.hidden]="fullscreenHidden"
       matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
       matTooltipPosition="above">
       <mat-icon class="material-icons">{{ fullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
     </button>
   </div>
   <div id="tb-json-panel" tb-toast toastTarget="{{toastTargetId}}"
-    class="tb-json-object-panel flex flex-col">
+       [style.marginLeft]="marginLeft() ? '15px' : '0px'"
+       class="tb-json-object-panel flex flex-col">
     <div #jsonEditor id="tb-json-input" [style]="editorStyle()" [class.fill-height]="fillHeight()"></div>
   </div>
 </div>

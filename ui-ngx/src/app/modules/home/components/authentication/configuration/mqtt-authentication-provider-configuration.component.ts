@@ -44,6 +44,9 @@ import {
 import {
   BasicProviderFormComponent
 } from '@home/components/authentication/configuration/basic-provider-form/basic-provider-form.component';
+import {
+  HttpProviderFormComponent
+} from '@home/components/authentication/configuration/http-provider-form/http-provider-form.component';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -55,6 +58,7 @@ import {
     SslProviderFormComponent,
     JwtProviderFormComponent,
     BasicProviderFormComponent,
+    HttpProviderFormComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
