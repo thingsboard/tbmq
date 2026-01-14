@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
-import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
@@ -139,7 +138,7 @@ public class AppController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/consumer-group")
-    @ApiOperation(value = "Delete Kafka Consumer Group", hidden = true)
+    @io.swagger.v3.oas.annotations.Operation(hidden = true)
     public void deleteKafkaConsumerGroup(@RequestParam String groupId) throws Exception {
         checkParameter("groupId", groupId);
         tbQueueAdmin.deleteConsumerGroup(groupId);

@@ -51,7 +51,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
-import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
@@ -155,7 +154,7 @@ public class TimeseriesController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @ApiOperation(value = "Save entity timeseries", hidden = true)
+    @io.swagger.v3.oas.annotations.Operation(hidden = true)
     @PostMapping(value = "/{entityId}/save")
     public DeferredResult<ResponseEntity> saveEntityTimeseries(
             @PathVariable("entityId") String entityId,
