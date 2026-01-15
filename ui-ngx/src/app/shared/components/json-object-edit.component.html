@@ -29,14 +29,12 @@
         mat-button class="tidy" (click)="beautifyJSON()">
         {{'js-func.tidy' | translate }}
       </button>
-    }
-    @if (!readonly() && !disabled()) {
       <button type="button"
         mat-button class="tidy" (click)="minifyJSON()">
         {{'js-func.mini' | translate }}
       </button>
     }
-    <button mat-icon-button class="tb-mat-32" (click)="fullscreen = !fullscreen" [class.hidden]="fullscreenHidden"
+    <button mat-icon-button class="tb-mat-32" (click)="fullscreen = !fullscreen" [class.hidden]="fullscreenHidden()"
       matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
       matTooltipPosition="above">
       <mat-icon class="material-icons">{{ fullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>

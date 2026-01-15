@@ -35,7 +35,8 @@ import {
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
 import {
   MqttAuthProvider,
-  BasicMqttAuthProviderConfiguration
+  BasicMqttAuthProviderConfiguration,
+  HttpMqttAuthProviderConfiguration
 } from '@shared/models/mqtt-auth-provider.model';
 import { MatFormField, MatInput, MatLabel, MatSuffix } from '@angular/material/input';
 import { MatOption } from '@angular/material/core';
@@ -68,7 +69,6 @@ import {
 } from '@angular/material/chips';
 import { AuthRulePatternsType } from '@shared/models/credentials.model';
 import { JsonObjectEditComponent } from '@shared/components/json-object-edit.component';
-import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 
 @Component({
   selector: 'tb-http-provider-config-form',
@@ -97,7 +97,6 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatChipGrid,
     MatChipRemove,
     JsonObjectEditComponent,
-    HintTooltipIconComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -115,7 +114,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   readonly provider = input<MqttAuthProvider>();
   readonly isEdit = input<boolean>();
 
-  readonly httpRequestTypes = Object.keys(HttpRequestType);
+  readonly httpRequestTypes = Object.keys(HttpRequestType).filter(key => [HttpRequestType.POST, HttpRequestType.GET].includes(key as HttpRequestType));
   readonly IntegrationCredentialType = IntegrationCredentialType;
   readonly MemoryBufferSizeInKbLimit = 25000;
   readonly ClientType = ClientType;
@@ -158,8 +157,16 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
       .subscribe(() => this.updateModels(this.httpProviderConfigForm.getRawValue()));
   }
 
-  writeValue(value: MqttAuthProvider) {
+  writeValue(value: HttpMqttAuthProviderConfiguration) {
     if (isDefinedAndNotNull(value)) {
+      this.clearRuleSets();
+      if (value.authRules) {
+        for (const rule of Object.keys(value.authRules)) {
+          if (value.authRules[rule]?.length) {
+            value.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
+          }
+        }
+      }
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
     } else {
       this.propagateChangePending = true;
@@ -265,6 +272,22 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
         break;
       case AuthRulePatternsType.SUBSCRIBE:
         this.httpProviderConfigForm.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
+    }
+  }
+
+  private clearRuleSets() {
+    this.pubRulesSet.clear();
+    this.subRulesSet.clear();
+  }
+
+  private addValueToAuthRulesSet(type: string, value: string) {
+    switch (type) {
+      case 'subAuthRulePatterns':
+        this.subRulesSet.add(value);
+        break;
+      case 'pubAuthRulePatterns':
+        this.pubRulesSet.add(value);
         break;
     }
   }
