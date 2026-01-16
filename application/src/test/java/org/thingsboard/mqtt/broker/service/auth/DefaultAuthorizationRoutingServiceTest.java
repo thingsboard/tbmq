@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
@@ -53,6 +54,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
     @Mock
     private JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
+
+    @Mock
+    private HttpMqttClientAuthProvider httpMqttClientAuthProvider;
 
     @Mock
     private AuthContext authContext;
@@ -172,6 +176,7 @@ public class DefaultAuthorizationRoutingServiceTest {
         given(basicMqttClientAuthProvider.isEnabled()).willReturn(false);
         given(sslMqttClientAuthProvider.isEnabled()).willReturn(false);
         given(jwtMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(httpMqttClientAuthProvider.isEnabled()).willReturn(false);
 
         // when
         AuthResponse result = service.executeAuthFlow(authContext);
