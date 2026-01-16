@@ -29,8 +29,9 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType.HTTP;
 
@@ -65,11 +66,11 @@ public class DefaultDataUpdateService implements DataUpdateService {
         if (mqttAuthSettings == null) {
             throw new RuntimeException("MQTT auth settings are null.");
         }
-        List<MqttAuthProviderType> newPriorities = new ArrayList<>(mqttAuthSettings.getPriorities());
+        Set<MqttAuthProviderType> newPriorities = new HashSet<>(mqttAuthSettings.getPriorities());
         newPriorities.add(HTTP);
 
         MqttAuthSettings newMqttAuthSettings = new MqttAuthSettings();
-        newMqttAuthSettings.setPriorities(newPriorities);
+        newMqttAuthSettings.setPriorities(new ArrayList<>(newPriorities));
         settings.setJsonValue(JacksonUtil.valueToTree(newMqttAuthSettings));
 
         adminSettingsService.saveAdminSettings(settings);
