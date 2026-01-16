@@ -79,31 +79,6 @@ export interface BulkImportResult {
   errorsList: Array<string>;
 }
 
-export interface FileType {
-  mimeType: string;
-  extension: string;
-}
-
-export const TEXT_TYPE: FileType = {
-  mimeType: 'text/plain',
-  extension: 'txt'
-};
-
-export const JSON_TYPE: FileType = {
-  mimeType: 'text/json',
-  extension: 'json'
-};
-
-export const ZIP_TYPE: FileType = {
-  mimeType: 'application/zip',
-  extension: 'zip'
-};
-
-export const CSV_TYPE: FileType = {
-  mimeType: 'text/csv',
-  extension: 'csv'
-};
-
 export function convertCSVToJson(csvdata: string, config: CsvToJsonConfig,
                                  onError: (messageId: string, params?: any) => void): CsvToJsonResult | number {
   config = config || {};
