@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.BaseDataWithAdditionalInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
@@ -55,6 +56,10 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
         return defaultAuthProvider(MqttAuthProviderType.SCRAM, enabled);
     }
 
+    public static MqttAuthProvider defaultHttpAuthProvider(boolean enabled) {
+        return defaultAuthProvider(MqttAuthProviderType.HTTP, enabled);
+    }
+
     public static MqttAuthProvider defaultAuthProvider(MqttAuthProviderType type, boolean enabled) {
         MqttAuthProvider mqttAuthProvider = new MqttAuthProvider();
         mqttAuthProvider.setEnabled(enabled);
@@ -65,6 +70,7 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
                     case X_509 -> SslMqttAuthProviderConfiguration.defaultConfiguration();
                     case JWT -> JwtMqttAuthProviderConfiguration.defaultConfiguration();
                     case SCRAM -> new ScramMqttAuthProviderConfiguration();
+                    case HTTP -> HttpMqttAuthProviderConfiguration.defaultConfiguration();
                 });
         mqttAuthProvider.setAdditionalInfo(getAdditionalInfo(type));
         return mqttAuthProvider;
@@ -84,6 +90,8 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
             case JWT -> "Authenticates clients using a signed JWT passed in the password field of the CONNECT packet";
             case SCRAM ->
                     "Performs a secure challenge-response using hashed credentials to authenticate without sending the actual password (MQTT 5.0 only)";
+            case HTTP ->
+                    "Authenticates clients via an external HTTP service using the clientId, username, and password";
         };
     }
 

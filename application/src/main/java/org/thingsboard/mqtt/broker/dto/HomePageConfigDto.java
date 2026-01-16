@@ -26,6 +26,7 @@ public class HomePageConfigDto {
     private boolean x509AuthEnabled;
     private boolean scramAuthEnabled;
     private boolean jwtAuthEnabled;
+    private boolean httpAuthEnabled;
     private int tcpPort;
     private int tlsPort;
     private int wsPort;

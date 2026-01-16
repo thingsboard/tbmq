@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
@@ -43,6 +44,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
     private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
+    private final HttpMqttClientAuthProvider httpMqttClientAuthProvider;
 
     private final AdminSettingsService adminSettingsService;
 
@@ -77,6 +79,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
         for (MqttAuthProviderType providerType : priorities) {
             AuthResponse response = switch (providerType) {
+                case HTTP -> httpMqttClientAuthProvider.authenticate(authContext);
                 case JWT -> jwtMqttClientAuthProvider.authenticate(authContext);
                 case MQTT_BASIC -> basicMqttClientAuthProvider.authenticate(authContext);
                 case X_509 -> sslMqttClientAuthProvider.authenticate(authContext);
@@ -94,7 +97,8 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private boolean defaultProvidersEnabled() {
         return basicMqttClientAuthProvider.isEnabled() ||
                 sslMqttClientAuthProvider.isEnabled() ||
-                jwtMqttClientAuthProvider.isEnabled();
+                jwtMqttClientAuthProvider.isEnabled() ||
+                httpMqttClientAuthProvider.isEnabled();
     }
 
     private void addFailureReason(AuthContext authContext, AuthResponse response, String authType, List<String> failureReasons) {

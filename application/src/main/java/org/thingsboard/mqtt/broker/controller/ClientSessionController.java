@@ -160,8 +160,7 @@ public class ClientSessionController extends BaseController {
     }
 
     private boolean isBuiltInAuthProvider(String credentialsName) {
-        return MqttAuthProviderType.SCRAM.name().equals(credentialsName)
-                || MqttAuthProviderType.JWT.name().equals(credentialsName);
+        return MqttAuthProviderType.isBuiltInAuthProvider(credentialsName);
     }
 
 }
