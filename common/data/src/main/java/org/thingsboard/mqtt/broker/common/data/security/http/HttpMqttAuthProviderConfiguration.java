@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.http;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,12 +39,25 @@ import java.util.Map;
 @AllArgsConstructor
 public class HttpMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration, SinglePubSubAuthRulesAware {
 
+    private static final String REQUEST_BODY = """
+            {
+              "clientId": "${clientId}",
+              "username": "${username}",
+              "password": "${password}"
+            }""";
+
+
     @NoXss
+    @NotBlank
     private String restEndpointUrl;
     @NoXss
+    @NotBlank
     private String requestMethod;
     private ClientCredentials credentials;
     private Map<String, String> headers;
+    @NoXss
+    @NotBlank
+    private String requestBody;
     private int readTimeoutMs;
     private int maxParallelRequestsCount;
     private int maxInMemoryBufferSizeInKb;
@@ -73,6 +87,7 @@ public class HttpMqttAuthProviderConfiguration implements MqttAuthProviderConfig
                 .requestMethod("POST")
                 .credentials(new AnonymousCredentials())
                 .headers(Map.of("Content-Type", "application/json"))
+                .requestBody(REQUEST_BODY)
                 .readTimeoutMs(5000)
                 .maxParallelRequestsCount(100)
                 .maxInMemoryBufferSizeInKb(256)

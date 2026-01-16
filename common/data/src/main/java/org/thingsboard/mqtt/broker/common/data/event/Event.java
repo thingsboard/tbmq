@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.common.data.event;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
@@ -25,8 +24,6 @@ import java.util.UUID;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public abstract class Event extends BaseData {
-
-    protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     protected UUID entityId;
     protected final String serviceId;
@@ -46,7 +43,7 @@ public abstract class Event extends BaseData {
         eventInfo.setType(getType().getName());
         eventInfo.setId(id);
         eventInfo.setCreatedTime(createdTime);
-        eventInfo.setBody(OBJECT_MAPPER.createObjectNode().put("server", serviceId));
+        eventInfo.setBody(mapper.createObjectNode().put("server", serviceId));
         return eventInfo;
     }
 
