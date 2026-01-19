@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,8 +36,10 @@ public class PubSubAuthorizationRules implements Serializable {
     private static final long serialVersionUID = 3397996560278384778L;
 
     @NoXss
+    @JsonAlias("pub")
     private List<String> pubAuthRulePatterns;
     @NoXss
+    @JsonAlias("sub")
     private List<String> subAuthRulePatterns;
 
     public static PubSubAuthorizationRules newInstance(List<String> authRules) {

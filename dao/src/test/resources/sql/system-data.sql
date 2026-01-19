@@ -76,4 +76,29 @@ VALUES
 }'::jsonb, '{}'),
 
 -- SCRAM
-('3a7ffd44-eb9c-4334-951d-a8bb3cb4804f', 1748975222000, false, 'SCRAM', '{"type": "SCRAM"}'::jsonb, '{}');
+('3a7ffd44-eb9c-4334-951d-a8bb3cb4804f', 1748975222000, false, 'SCRAM', '{"type": "SCRAM"}'::jsonb, '{}'),
+
+-- HTTP
+(
+  '7d5b83a2-9f31-4e4b-8e1c-5d9f0c2a4b6e',1748975222000, false, 'HTTP', '{
+    "type": "HTTP",
+    "restEndpointUrl": "http://localhost:8080/auth",
+    "requestMethod": "POST",
+    "requestBody": "{\n  \"clientId\": \"${clientId}\",\n  \"username\": \"${username}\",\n  \"password\": \"${password}\"\n}",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "credentials": {
+      "type": "anonymous"
+    },
+    "readTimeoutMs": 5000,
+    "maxParallelRequestsCount": 100,
+    "maxInMemoryBufferSizeInKb": 256,
+    "defaultClientType": "DEVICE",
+    "authRules": {
+      "pub": [],
+      "sub": []
+    }
+  }'::jsonb,
+  '{}'
+);

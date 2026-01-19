@@ -15,27 +15,44 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import io.netty.handler.ssl.SslHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpAuthCallback;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthStatus;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
+import org.thingsboard.mqtt.broker.util.SslUtil;
 
-import java.util.List;
-import java.util.regex.Pattern;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PUB_SUB_AUTH_RULES_ALLOW_ALL;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.EMPTY_STR;
 import static org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType.HTTP;
 
 @Slf4j
@@ -48,18 +65,20 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
 
     private volatile HttpMqttAuthProviderConfiguration configuration;
     private volatile AuthRulePatterns authRulePatterns;
-    //    private volatile TbHttpClient httpClient;
-    private volatile String httpClient;
+    private volatile HttpAuthClient client;
 
     @SneakyThrows
     @PostConstruct
     public void init() {
         MqttAuthProvider httpAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.HTTP)
                 .orElseThrow(() -> new IllegalStateException("Failed to initialize HTTP service authentication provider! Provider is missing in the DB!"));
-        this.configuration = (HttpMqttAuthProviderConfiguration) httpAuthProvider.getConfiguration();
-        this.authRulePatterns = authorizationRuleService.parseAuthorizationRule(configuration);
+        configuration = (HttpMqttAuthProviderConfiguration) httpAuthProvider.getConfiguration();
+        authRulePatterns = authorizationRuleService.parseAuthorizationRule(configuration);
+        client = httpAuthProvider.isEnabled() ? initClient(configuration) : null;
+    }
 
-//        tbHttpClient = new TbHttpClient(config, context, metadataTemplate);
+    private HttpAuthClient initClient(HttpMqttAuthProviderConfiguration config) {
+        return new HttpAuthClient(config);
     }
 
     @PreDestroy
@@ -69,55 +88,183 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        if (httpClient == null) {
+        if (client == null) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.HTTP);
         }
         log.trace("[{}] Authenticating client using HTTP service provider...", authContext.getClientId());
-        byte[] passwordBytes = authContext.getPasswordBytes();
         try {
-            return AuthResponse.success(ClientType.DEVICE, List.of(AuthRulePatterns.newInstance(List.of(Pattern.compile(PUB_SUB_AUTH_RULES_ALLOW_ALL)))), HTTP.name());
-//            return httpClient.processMessage(authContext, new String(passwordBytes, StandardCharsets.UTF_8));
+            CountDownLatch latch = new CountDownLatch(1);
+
+            AtomicReference<AuthResponse> response = new AtomicReference<>();
+            HttpAuthCallback callback = CallbackUtil.createHttpCallback(result -> {
+
+                response.set(getAuthResponse(result));
+                latch.countDown();
+
+            }, throwable -> {
+                response.set(AuthResponse.skip(throwable.getMessage()));
+                latch.countDown();
+            });
+
+            String requestBody = getRequestBody(authContext);
+            client.processMessage(requestBody, callback);
+
+            latch.await();
+            return response.get();
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", authContext.getClientId(), e);
-            return AuthResponse.failure(e.getMessage());
+            return AuthResponse.skip(e.getMessage());
         }
+    }
+
+    private String getRequestBody(AuthContext authContext) {
+        String requestBody = configuration.getRequestBody();
+
+        String commonName = getClientCertificateCommonName(authContext.getSslHandler());
+        String clientId = authContext.getClientId();
+        String username = authContext.getUsername() != null ? authContext.getUsername() : EMPTY_STR;
+        String password = authContext.getPasswordBytes() != null ?
+                new String(authContext.getPasswordBytes(), StandardCharsets.UTF_8) : EMPTY_STR;
+
+        if (requestBody != null) {
+            requestBody = requestBody
+                    .replace("${commonName}", commonName)
+                    .replace("${clientId}", clientId)
+                    .replace("${username}", username)
+                    .replace("${password}", password);
+        }
+        return requestBody;
     }
 
     @SneakyThrows
     @Override
-    public void onProviderUpdate(boolean enabled, HttpMqttAuthProviderConfiguration configuration) {
-        this.configuration = configuration;
-        this.authRulePatterns = authorizationRuleService.parseAuthorizationRule(configuration);
+    public void onProviderUpdate(boolean enabled, HttpMqttAuthProviderConfiguration config) {
+        if (client != null) {
+            client.destroy();
+        }
+        configuration = config;
+        authRulePatterns = authorizationRuleService.parseAuthorizationRule(config);
+        client = enabled ? initClient(configuration) : null;
     }
 
     @Override
     public void enable() {
-
+        if (client != null) {
+            return;
+        }
+        if (configuration == null || authRulePatterns == null) {
+            throw new IllegalStateException("Cannot enable HTTP provider! Provider configuration or authorization rules are missing!");
+        }
+        client = initClient(configuration);
     }
 
     @Override
     public void disable() {
-//        if (tbHttpClient != null) {
-//            tbHttpClient.destroy();
-//        }
+        if (client != null) {
+            client.destroy();
+            client = null;
+        }
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return client != null;
     }
 
-//    @Override
-//    public void doCheckConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
-//        try {
-//            tbHttpClient = new TbHttpClient(getClientConfiguration(integration, HttpIntegrationConfig.class), ctx, null);
-//            tbHttpClient.checkConnection();
-//        } catch (Exception e) {
-//            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
-//        } finally {
-//            if (tbHttpClient != null) {
-//                tbHttpClient.destroy();
-//            }
-//        }
-//    }
+    public ListenableFuture<Void> checkConnection(MqttAuthProvider authProvider) throws ThingsboardException {
+        HttpAuthClient client = null;
+        try {
+            SettableFuture<Void> result = SettableFuture.create();
+
+            client = initClient((HttpMqttAuthProviderConfiguration) authProvider.getConfiguration());
+            client.checkConnection(CallbackUtil.createHttpCallback(v -> result.set(null), result::setException));
+
+            return result;
+        } catch (Exception e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+        } finally {
+            if (client != null) {
+                client.destroy();
+            }
+        }
+    }
+
+    private String getClientCertificateCommonName(SslHandler sslHandler) {
+        if (sslHandler == null) {
+            return EMPTY_STR;
+        }
+        try {
+            X509Certificate[] certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
+            return SslUtil.parseCommonName(certificates[0]);
+        } catch (Exception e) {
+            log.warn("Failed to get client certificate CN from SSL handler.", e);
+            return EMPTY_STR;
+        }
+    }
+
+
+    private AuthResponse getAuthResponse(ResponseEntity<JsonNode> responseEntity) {
+        JsonNode responseBody = responseEntity.getBody();
+
+        if (responseBody == null || responseBody.isNull()) {
+            log.debug("Empty response body received. Using default configuration.");
+            return AuthResponse.success(configuration.getDefaultClientType(), Collections.singletonList(authRulePatterns), HTTP.name());
+        }
+
+        try {
+            HttpAuthResponseDto authResponseDto = JacksonUtil.convertValue(responseBody, HttpAuthResponseDto.class);
+
+            AuthStatus status = parseStatus(authResponseDto.getResult());
+
+            if (status == AuthStatus.FAILURE) {
+                return AuthResponse.failure("FAILURE");
+            }
+
+            if (status == AuthStatus.SKIPPED) {
+                return AuthResponse.skip("SKIPPED");
+            }
+
+            ClientType finalClientType = parseClientType(authResponseDto.getClientType());
+            AuthRulePatterns authRulePatterns = parseAuthRules(authResponseDto.getAuthRules());
+
+            return AuthResponse.success(finalClientType, Collections.singletonList(authRulePatterns), HTTP.name());
+
+        } catch (Exception e) {
+            log.warn("Failed to parse HTTP auth response body: {}", responseBody, e);
+            return AuthResponse.skip(e.getMessage());
+        }
+    }
+
+    private AuthStatus parseStatus(String result) {
+        if (result == null) {
+            return AuthStatus.SUCCESS;
+        }
+        try {
+            return AuthStatus.valueOf(result.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown auth result status: {}. Defaulting to SKIPPED.", result);
+            return AuthStatus.SKIPPED;
+        }
+    }
+
+    private ClientType parseClientType(String type) {
+        if (StringUtils.isBlank(type)) {
+            return configuration.getDefaultClientType();
+        }
+        try {
+            return ClientType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown client type in response: {}. Falling back to default.", type);
+            return configuration.getDefaultClientType();
+        }
+    }
+
+    private AuthRulePatterns parseAuthRules(PubSubAuthorizationRules authRules) {
+        if (authRules != null) {
+            return authorizationRuleService.parsePubSubAuthorizationRule(authRules);
+        }
+        return authRulePatterns;
+
+    }
+
 }

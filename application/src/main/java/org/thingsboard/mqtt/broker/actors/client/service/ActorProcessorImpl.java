@@ -98,7 +98,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
         AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
-        if (!authResponse.isSuccess()) {
+        if (authResponse.notSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionInitMsg, authResponse.getReason());
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);

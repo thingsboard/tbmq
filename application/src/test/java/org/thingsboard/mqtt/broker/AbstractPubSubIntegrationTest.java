@@ -225,6 +225,8 @@ public abstract class AbstractPubSubIntegrationTest {
                     mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider(false).getConfiguration());
             case SCRAM ->
                     mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider(false).getConfiguration());
+            case HTTP ->
+                    mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultHttpAuthProvider(false).getConfiguration());
         }
         mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
     }

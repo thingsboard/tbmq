@@ -63,7 +63,7 @@ public class JwtClaimsValidatorTest {
         JwtClaimsValidator validator = new JwtClaimsValidator(configuration, authRulePatterns);
         AuthResponse response = validator.validateAll(authContext, claims);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).isEqualTo("JWT token is expired.");
     }
 
@@ -75,7 +75,7 @@ public class JwtClaimsValidatorTest {
         JwtClaimsValidator validator = new JwtClaimsValidator(configuration, authRulePatterns);
         AuthResponse response = validator.validateAll(authContext, claims);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).isEqualTo("JWT token not valid yet.");
     }
 
@@ -92,7 +92,7 @@ public class JwtClaimsValidatorTest {
         JwtClaimsValidator validator = new JwtClaimsValidator(configuration, authRulePatterns);
         AuthResponse response = validator.validateAll(authContext, claims);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).contains("Failed to validate JWT auth claims");
     }
 
@@ -109,7 +109,7 @@ public class JwtClaimsValidatorTest {
         JwtClaimsValidator validator = new JwtClaimsValidator(configuration, authRulePatterns);
         AuthResponse response = validator.validateAll(authContext, claims);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).contains("Failed to validate JWT auth claims");
     }
 

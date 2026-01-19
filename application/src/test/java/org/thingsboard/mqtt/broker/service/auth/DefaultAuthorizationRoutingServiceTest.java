@@ -198,11 +198,11 @@ public class DefaultAuthorizationRoutingServiceTest {
         given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
 
         given(basicMqttClientAuthProvider.authenticate(authContext))
-                .willReturn(AuthResponse.failure("basic failed"));
+                .willReturn(AuthResponse.skip("basic failed"));
         given(sslMqttClientAuthProvider.authenticate(authContext))
-                .willReturn(AuthResponse.failure("ssl failed"));
+                .willReturn(AuthResponse.skip("ssl failed"));
         given(jwtMqttClientAuthProvider.authenticate(authContext))
-                .willReturn(AuthResponse.failure("jwt failed"));
+                .willReturn(AuthResponse.skip("jwt failed"));
 
         // when
         AuthResponse result = service.executeAuthFlow(authContext);

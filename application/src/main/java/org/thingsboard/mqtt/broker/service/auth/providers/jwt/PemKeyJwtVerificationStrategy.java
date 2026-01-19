@@ -47,7 +47,7 @@ public class PemKeyJwtVerificationStrategy implements JwtVerificationStrategy {
     public AuthResponse authenticateJwt(AuthContext authContext, String jwt) throws Exception {
         SignedJWT signedJWT = SignedJWT.parse(jwt);
         if (!signedJWT.verify(verifier)) {
-            return AuthResponse.failure("JWT signature validation failed.");
+            return AuthResponse.skip("JWT signature validation failed.");
         }
         JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
         return claimsValidator.validateAll(authContext, claims);

@@ -90,6 +90,9 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
                 return response;
             }
             addFailureReason(authContext, response, providerType.getDisplayName(), failureReasons);
+            if (response.isFailure()) {
+                break;
+            }
         }
         return getFinalFailureAuthResponse(authContext, failureReasons);
     }

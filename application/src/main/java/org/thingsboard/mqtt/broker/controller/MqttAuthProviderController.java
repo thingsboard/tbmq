@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,22 +28,31 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration.AuthStrategy;
+import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
+import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class MqttAuthProviderController extends BaseController {
+
+    private final HttpMqttClientAuthProvider httpMqttClientAuthProvider;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/auth/provider")
-    public MqttAuthProvider saveAuthProvider(@RequestBody MqttAuthProvider authProvider) throws ThingsboardException {
+    public MqttAuthProvider saveAuthProvider(@Valid @RequestBody MqttAuthProvider authProvider) throws ThingsboardException {
         return checkNotNull(mqttAuthProviderManagerService.saveAuthProvider(authProvider));
     }
 
@@ -90,6 +101,24 @@ public class MqttAuthProviderController extends BaseController {
     @GetMapping(value = "/mqtt/auth/provider/basic/strategy")
     public AuthStrategy getBasicAuthProviderStrategy() {
         return mqttAuthProviderService.getMqttBasicProviderAuthStrategy();
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping(value = "/mqtt/auth/provider/http/check")
+    public void checkHttpAuthProviderConnection(@RequestBody MqttAuthProvider authProvider) throws Exception {
+        checkNotNull(authProvider);
+        if (authProvider.getType() != MqttAuthProviderType.HTTP) {
+            throw new ThingsboardException("Auth provider type is not HTTP!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+        try {
+            try {
+                httpMqttClientAuthProvider.checkConnection(authProvider).get(30, TimeUnit.SECONDS);
+            } catch (ExecutionException e) {
+                throwRealCause(e);
+            }
+        } catch (TimeoutException e) {
+            throw new ThingsboardRuntimeException("Timeout to process the request!", ThingsboardErrorCode.GENERAL);
+        }
     }
 
 }

@@ -27,29 +27,41 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class AuthResponse {
 
-    private final boolean success;
+    private final AuthStatus status;
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
     private final String reason;
     private final String authDetails;
 
+    public static AuthResponse skip(String reason) {
+        return AuthResponse.builder().status(AuthStatus.SKIPPED).reason(reason).build();
+    }
+
     public static AuthResponse failure(String reason) {
-        return AuthResponse.builder().success(false).reason(reason).build();
+        return AuthResponse.builder().status(AuthStatus.FAILURE).reason(reason).build();
     }
 
     public static AuthResponse providerDisabled(MqttAuthProviderType providerType) {
-        return AuthResponse.builder().success(false).reason(providerType.getDisplayName() + " authentication is disabled!").build();
+        return AuthResponse.builder().status(AuthStatus.SKIPPED).reason(providerType.getDisplayName() + " authentication is disabled!").build();
     }
 
     public static AuthResponse defaultAuthResponse() {
-        return AuthResponse.builder().success(true).clientType(ClientType.DEVICE).authRulePatterns(null).build();
+        return AuthResponse.builder().status(AuthStatus.SUCCESS).clientType(ClientType.DEVICE).authRulePatterns(null).build();
     }
 
     public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, String authDetails) {
-        return AuthResponse.builder().success(true).clientType(clientType).authRulePatterns(authRulePatterns).authDetails(authDetails).build();
+        return AuthResponse.builder().status(AuthStatus.SUCCESS).clientType(clientType).authRulePatterns(authRulePatterns).authDetails(authDetails).build();
+    }
+
+    public boolean isSuccess() {
+        return status == AuthStatus.SUCCESS;
     }
 
     public boolean isFailure() {
-        return !success;
+        return status == AuthStatus.FAILURE;
+    }
+
+    public boolean notSuccess() {
+        return status != AuthStatus.SUCCESS;
     }
 }

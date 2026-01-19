@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data.security;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.BaseDataWithAdditionalInfo;
@@ -38,6 +39,7 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
     private boolean enabled;
 
     private MqttAuthProviderType type;
+    @Valid
     private MqttAuthProviderConfiguration configuration;
 
     public static MqttAuthProvider defaultBasicAuthProvider(boolean enabled) {

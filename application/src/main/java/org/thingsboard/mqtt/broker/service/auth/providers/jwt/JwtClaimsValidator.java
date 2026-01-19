@@ -57,13 +57,13 @@ public class JwtClaimsValidator {
         Date notBeforeTime = claims.getNotBeforeTime();
 
         if (expirationTime != null && now.after(expirationTime)) {
-            return AuthResponse.failure("JWT token is expired.");
+            return AuthResponse.skip("JWT token is expired.");
         }
         if (notBeforeTime != null && now.before(notBeforeTime)) {
-            return AuthResponse.failure("JWT token not valid yet.");
+            return AuthResponse.skip("JWT token not valid yet.");
         }
         if (!validateAuthClaims(authContext, claims)) {
-            return AuthResponse.failure("Failed to validate JWT auth claims.");
+            return AuthResponse.skip("Failed to validate JWT auth claims.");
         }
         ClientType clientType = resolveClientType(claims);
         AuthRulePatterns rulePatterns = resolveAuthRulePatterns(claims);

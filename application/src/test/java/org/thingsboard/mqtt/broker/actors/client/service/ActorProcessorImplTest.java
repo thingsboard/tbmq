@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthStatus;
 import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -582,7 +583,8 @@ public class ActorProcessorImplTest {
     }
 
     private AuthResponse getAuthResponse(boolean success) {
-        return AuthResponse.builder().success(success).clientType(ClientType.APPLICATION).authRulePatterns(getAuthorizationRules()).build();
+        AuthStatus authStatus = success ? AuthStatus.SUCCESS : AuthStatus.FAILURE;
+        return AuthResponse.builder().status(authStatus).clientType(ClientType.APPLICATION).authRulePatterns(getAuthorizationRules()).build();
     }
 
     private List<AuthRulePatterns> getAuthorizationRules() {
