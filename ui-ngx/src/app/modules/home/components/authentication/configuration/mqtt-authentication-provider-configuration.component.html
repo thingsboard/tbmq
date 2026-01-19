@@ -44,7 +44,16 @@
         [provider]="provider()"
         [isEdit]="isEdit()">
       </tb-http-provider-config-form>
+      <ng-container *ngTemplateOutlet="checkConnection"></ng-container>
     }
     @default {}
   }
 </section>
+
+<ng-template #checkConnection>
+  <button style="margin-bottom: 8px"
+          mat-stroked-button color="primary"
+          (click)="onConnectionCheck()">
+    {{ 'integration.check-connection' | translate }}
+  </button>
+</ng-template>

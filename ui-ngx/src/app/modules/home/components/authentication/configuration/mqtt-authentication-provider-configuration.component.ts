@@ -47,6 +47,10 @@ import {
 import {
   HttpProviderFormComponent
 } from '@home/components/authentication/configuration/http-provider-form/http-provider-form.component';
+import { MatButton } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
+import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -59,6 +63,9 @@ import {
     JwtProviderFormComponent,
     BasicProviderFormComponent,
     HttpProviderFormComponent,
+    MatButton,
+    TranslateModule,
+    NgTemplateOutlet,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -84,7 +91,10 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
 
-  constructor(private fb: UntypedFormBuilder) {
+  constructor(
+    private fb: UntypedFormBuilder,
+    private mqttAuthProviderService: MqttAuthProviderService,
+  ) {
     this.providerForm = this.fb.group({
       configuration: [null, Validators.required]
     });
@@ -125,5 +135,13 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
     return this.providerForm.valid ? null : {
       providerConfiguration: {valid: false}
     };
+  }
+
+  onConnectionCheck() {
+    switch (this.providerType()) {
+      case MqttAuthProviderType.HTTP:
+        // this.mqttAuthProviderService.checkConnection().subscribe();
+        break;
+    }
   }
 }
