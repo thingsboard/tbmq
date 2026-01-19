@@ -201,7 +201,7 @@
         "jwks-refresh-interval-hint": "How often the broker refreshes public keys from the JWKS endpoint to detect key changes like rotations.",
         "type": "Type",
         "type-jwt": "JWT",
-        "type-http-service": "HTTP service",
+        "type-http": "HTTP",
         "skip-cert-validity-check": "Skip certificate validity check for client certificates",
         "secret": "Secret",
         "secret-hint": "Secret in HMAC-based symmetric algorithm is used for both signing and verifying JWT signatures. Supported all JWT-standard HMAC algorithms: HS256, HS384, and HS512.",
@@ -1037,6 +1037,7 @@
         "ws-listener-max-payload-size": "WS Listener Max Payload Size",
         "wss-listener-max-payload-size": "WSS Listener Max Payload Size",
         "jwt-auth": "JWT Authentication",
+        "http-auth": "HTTP Authentication",
         "scram-auth": "SCRAM Authentication",
         "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
     },

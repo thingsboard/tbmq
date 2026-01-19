@@ -24,7 +24,7 @@ export enum MqttAuthProviderType {
   X_509 = 'X_509',
   SCRAM = 'SCRAM',
   JWT = 'JWT',
-  HTTP_SERVICE = 'HTTP_SERVICE'
+  HTTP = 'HTTP'
 }
 
 export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, string>(
@@ -33,7 +33,7 @@ export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, 
     [MqttAuthProviderType.X_509, 'mqtt-client-credentials.type-ssl'],
     [MqttAuthProviderType.SCRAM, 'mqtt-client-credentials.type-scram'],
     [MqttAuthProviderType.JWT, 'authentication.type-jwt'],
-    [MqttAuthProviderType.HTTP_SERVICE, 'authentication.type-http-service'],
+    [MqttAuthProviderType.HTTP, 'authentication.type-http'],
   ]
 );
 
@@ -74,7 +74,7 @@ export interface HttpMqttAuthProviderConfiguration {
   requestMethod: HttpRequestType;
   credentials: Credentials;
   headers: {[key: string]: string} | null;
-  body: string;
+  requestBody: string;
   defaultClientType: ClientType;
   authRules: AuthRules;
   readTimeoutMs: number;
@@ -132,7 +132,7 @@ export const mqttAuthProviderTypeHelpLinkMap = new Map<MqttAuthProviderType, str
     [MqttAuthProviderType.X_509, 'providerX509'],
     [MqttAuthProviderType.SCRAM, 'providerScram'],
     [MqttAuthProviderType.JWT, 'providerJwt'],
-    [MqttAuthProviderType.HTTP_SERVICE, 'providerHttp'],
+    [MqttAuthProviderType.HTTP, 'providerHttp'],
   ]
 );
 

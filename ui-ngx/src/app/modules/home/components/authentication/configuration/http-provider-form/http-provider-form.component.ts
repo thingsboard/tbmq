@@ -130,7 +130,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
     requestMethod: [HttpRequestType.POST],
     headers: [{'Content-Type': 'application/json'}, Validators.required],
-    body: [null, []],
+    requestBody: [null, []],
     credentials: [{ type: IntegrationCredentialType.Anonymous }],
     defaultClientType: [null, [Validators.required]],
     authRules: this.fb.group({
@@ -167,6 +167,13 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
           }
         }
       }
+      if (value.requestBody && typeof value.requestBody === 'string') {
+        try {
+          value.requestBody = JSON.parse(value.requestBody);
+        } catch (e) {
+          console.error('Failed to parse requestBody as JSON', e);
+        }
+      }
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
     } else {
       this.propagateChangePending = true;
@@ -200,7 +207,10 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     };
   }
 
-  private updateModels(value: BasicMqttAuthProviderConfiguration) {
+  private updateModels(value: HttpMqttAuthProviderConfiguration) {
+    if (value.requestBody && typeof value.requestBody === 'object') {
+      value.requestBody = JSON.stringify(value.requestBody);
+    }
     this.propagateChange(value);
   }
 

@@ -190,23 +190,6 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
     };
   }
 
-  validateOnSubmit(): void {
-    if (!this.disabled() && !this.readonly()) {
-      this.cleanupJsonErrors();
-      if (!this.objectValid) {
-        this.store.dispatch(new ActionNotificationShow(
-          {
-            message: this.validationError,
-            type: 'error',
-            target: this.toastTargetId,
-            verticalPosition: 'bottom',
-            horizontalPosition: 'left'
-          }));
-        this.errorShowed = true;
-      }
-    }
-  }
-
   cleanupJsonErrors(): void {
     if (this.errorShowed) {
       this.store.dispatch(new ActionNotificationHide(
