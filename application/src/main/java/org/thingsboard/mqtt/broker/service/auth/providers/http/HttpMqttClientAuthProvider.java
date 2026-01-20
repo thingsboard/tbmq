@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.auth.providers.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.handler.ssl.SslHandler;
 import jakarta.annotation.PostConstruct;
@@ -28,8 +27,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpAuthCallback;
@@ -50,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.EMPTY_STR;
@@ -171,7 +169,7 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
         return client != null;
     }
 
-    public ListenableFuture<Void> checkConnection(MqttAuthProvider authProvider) throws ThingsboardException {
+    public void checkConnection(MqttAuthProvider authProvider) throws Exception {
         HttpAuthClient client = null;
         try {
             SettableFuture<Void> result = SettableFuture.create();
@@ -179,9 +177,7 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
             client = initClient((HttpMqttAuthProviderConfiguration) authProvider.getConfiguration());
             client.checkConnection(CallbackUtil.createHttpCallback(v -> result.set(null), result::setException));
 
-            return result;
-        } catch (Exception e) {
-            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+            result.get(15, TimeUnit.SECONDS);
         } finally {
             if (client != null) {
                 client.destroy();

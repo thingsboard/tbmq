@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.netty.handler.timeout.ReadTimeoutException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,8 +40,6 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @RestController
@@ -111,13 +110,14 @@ public class MqttAuthProviderController extends BaseController {
             throw new ThingsboardException("Auth provider type is not HTTP!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
         try {
-            try {
-                httpMqttClientAuthProvider.checkConnection(authProvider).get(30, TimeUnit.SECONDS);
-            } catch (ExecutionException e) {
-                throwRealCause(e);
-            }
+            httpMqttClientAuthProvider.checkConnection(authProvider);
         } catch (TimeoutException e) {
-            throw new ThingsboardRuntimeException("Timeout to process the request!", ThingsboardErrorCode.GENERAL);
+            throw new ThingsboardRuntimeException("Timeout (15s) to process the request!", ThingsboardErrorCode.GENERAL);
+        } catch (Exception e) {
+            if (e.getCause() instanceof ReadTimeoutException || e.getCause().getCause() instanceof ReadTimeoutException) {
+                throw new ThingsboardRuntimeException("HTTP client read timeout exception", ThingsboardErrorCode.GENERAL);
+            }
+            throw new ThingsboardRuntimeException(e.getMessage(), ThingsboardErrorCode.GENERAL);
         }
     }
 
