@@ -24,12 +24,15 @@ import {
   MqttAuthProvider,
   MqttBasicAuthenticationStrategy,
   ShortMqttAuthProvider,
-  MqttBasicAuthenticationStrategyTranslationMap
+  MqttBasicAuthenticationStrategyTranslationMap,
+  MqttAuthProviderType,
+  HttpMqttAuthProviderConfiguration
 } from '@shared/models/mqtt-auth-provider.model';
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { take } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
+import { stringifyObject } from '@core/utils';
 
 @Injectable({
   providedIn: 'root'
@@ -43,8 +46,9 @@ export class MqttAuthProviderService {
   ) {
   }
 
-  public saveAuthProvider(mqttClientCredentials: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {
-    return this.http.post<MqttAuthProvider>('/api/mqtt/auth/provider', mqttClientCredentials, defaultHttpOptionsFromConfig(config));
+  public saveAuthProvider(provider: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {
+    const payload = this.preparePayload(provider);
+    return this.http.post<MqttAuthProvider>('/api/mqtt/auth/provider', payload, defaultHttpOptionsFromConfig(config));
   }
 
   public getAuthProviders(pageLink: PageLink, config?: RequestConfig): Observable<PageData<ShortMqttAuthProvider>> {
@@ -100,4 +104,28 @@ export class MqttAuthProviderService {
       })
     );
   }
+
+  public checkAuthProviderConnection(provider: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {
+    switch (provider.type) {
+      case MqttAuthProviderType.HTTP:
+        return this.checkHttpAuthProviderConnection(provider, config);
+    }
+    return;
+  }
+
+  private checkHttpAuthProviderConnection(provider: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {
+    const payload = this.preparePayload(provider);
+    return this.http.post<MqttAuthProvider>('/api/mqtt/auth/provider/http/check', payload, defaultHttpOptionsFromConfig(config));
+  }
+
+  private preparePayload(provider: MqttAuthProvider): MqttAuthProvider {
+    switch (provider.type) {
+      case MqttAuthProviderType.HTTP:
+        const config = provider.configuration as HttpMqttAuthProviderConfiguration;
+        config.requestBody = stringifyObject(config.requestBody);
+        break;
+    }
+    return provider;
+  }
+
 }

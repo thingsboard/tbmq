@@ -14,23 +14,17 @@
 /// limitations under the License.
 ///
 
-import {
-  Component,
-  forwardRef,
-  OnDestroy,
-  ViewEncapsulation,
-  input,
-  model
-} from '@angular/core';
+import { Component, forwardRef, input, model, OnDestroy, ViewEncapsulation } from '@angular/core';
 import {
   ControlValueAccessor,
-  UntypedFormBuilder,
-  UntypedFormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
+  ReactiveFormsModule,
+  UntypedFormBuilder,
+  UntypedFormGroup,
   ValidationErrors,
   Validator,
-  Validators, ReactiveFormsModule
+  Validators
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -138,10 +132,10 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
   }
 
   onConnectionCheck() {
-    switch (this.providerType()) {
-      case MqttAuthProviderType.HTTP:
-        // this.mqttAuthProviderService.checkConnection().subscribe();
-        break;
-    }
+    this.provider().configuration = {
+      ...this.provider().configuration,
+      ...this.providerForm.getRawValue().configuration
+    };
+    this.mqttAuthProviderService.checkAuthProviderConnection(this.provider()).subscribe();
   }
 }

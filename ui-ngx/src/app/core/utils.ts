@@ -214,6 +214,13 @@ export function stringToBase64(value: string): string {
     }));
 }
 
+export function stringifyObject(obj: any): string {
+  if (obj && typeof obj === 'object') {
+    return JSON.stringify(obj);
+  }
+  return obj;
+}
+
 const scrollRegex = /(auto|scroll)/;
 
 function parentNodes(node: Node, nodes: Node[]): Node[] {

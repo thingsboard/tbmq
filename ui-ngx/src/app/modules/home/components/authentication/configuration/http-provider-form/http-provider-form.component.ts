@@ -35,7 +35,6 @@ import {
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
 import {
   MqttAuthProvider,
-  BasicMqttAuthProviderConfiguration,
   HttpMqttAuthProviderConfiguration
 } from '@shared/models/mqtt-auth-provider.model';
 import { MatFormField, MatInput, MatLabel, MatSuffix } from '@angular/material/input';
@@ -208,9 +207,6 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   }
 
   private updateModels(value: HttpMqttAuthProviderConfiguration) {
-    if (value.requestBody && typeof value.requestBody === 'object') {
-      value.requestBody = JSON.stringify(value.requestBody);
-    }
     this.propagateChange(value);
   }
 

@@ -52,6 +52,7 @@
 
 <ng-template #checkConnection>
   <button style="margin-bottom: 8px"
+          [disabled]="providerForm.invalid"
           mat-stroked-button color="primary"
           (click)="onConnectionCheck()">
     {{ 'integration.check-connection' | translate }}
