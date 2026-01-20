@@ -261,7 +261,11 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
 
     private AuthRulePatterns parseAuthRules(PubSubAuthorizationRules authRules) {
         if (authRules != null) {
-            return authorizationRuleService.parsePubSubAuthorizationRule(authRules);
+            try {
+                return authorizationRuleService.parsePubSubAuthorizationRule(authRules);
+            } catch (Exception e) {
+                log.warn("Failed to parse auth rules from response: {}", authRules, e);
+            }
         }
         return authRulePatterns;
 
