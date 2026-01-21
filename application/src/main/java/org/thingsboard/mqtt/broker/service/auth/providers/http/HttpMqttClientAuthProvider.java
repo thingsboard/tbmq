@@ -204,7 +204,7 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
 
         if (responseBody == null || responseBody.isNull()) {
             log.debug("[{}] Empty response body received. Using default configuration.", clientId);
-            return AuthResponse.success(configuration.getDefaultClientType(), Collections.singletonList(authRulePatterns), HTTP.name());
+            return success(configuration.getDefaultClientType(), authRulePatterns);
         }
 
         try {
@@ -223,12 +223,16 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
             ClientType finalClientType = parseClientType(clientId, authResponseDto.getClientType());
             AuthRulePatterns authRulePatterns = parseAuthRules(clientId, authResponseDto.getAuthRules());
 
-            return AuthResponse.success(finalClientType, Collections.singletonList(authRulePatterns), HTTP.name());
+            return success(finalClientType, authRulePatterns);
 
         } catch (Exception e) {
             log.warn("[{}] Failed to parse HTTP auth response body: {}", clientId, responseBody, e);
             return AuthResponse.skip(e.getMessage());
         }
+    }
+
+    private AuthResponse success(ClientType type, AuthRulePatterns authRules) {
+        return AuthResponse.success(type, Collections.singletonList(authRules), HTTP.name());
     }
 
     private AuthStatus parseStatus(String clientId, String result) {
