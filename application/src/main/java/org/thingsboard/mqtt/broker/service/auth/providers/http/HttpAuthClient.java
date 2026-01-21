@@ -120,14 +120,7 @@ public class HttpAuthClient {
 
     private int getPoolMaxConnections() {
         String poolMaxConnectionsEnv = System.getenv("TB_HTTP_AUTH_CLIENT_POOL_MAX_CONNECTIONS");
-
-        int poolMaxConnections;
-        if (poolMaxConnectionsEnv != null) {
-            poolMaxConnections = Integer.parseInt(poolMaxConnectionsEnv);
-        } else {
-            poolMaxConnections = ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
-        }
-        return poolMaxConnections;
+        return poolMaxConnectionsEnv != null ? Integer.parseInt(poolMaxConnectionsEnv) : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
     }
 
     private void validateMaxInMemoryBufferSize(HttpMqttAuthProviderConfiguration config) {
