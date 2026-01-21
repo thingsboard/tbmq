@@ -124,14 +124,11 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
         String password = authContext.getPasswordBytes() != null ?
                 new String(authContext.getPasswordBytes(), StandardCharsets.UTF_8) : EMPTY_STR;
 
-        if (requestBody != null) {
-            requestBody = requestBody
-                    .replace("${commonName}", commonName)
-                    .replace("${clientId}", clientId)
-                    .replace("${username}", username)
-                    .replace("${password}", password);
-        }
-        return requestBody;
+        return requestBody
+                .replace("${commonName}", commonName)
+                .replace("${clientId}", clientId)
+                .replace("${username}", username)
+                .replace("${password}", password);
     }
 
     @SneakyThrows

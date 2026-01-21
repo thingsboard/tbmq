@@ -30,6 +30,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
@@ -173,23 +175,23 @@ public class HttpAuthClient {
 
     private URI buildUriWithQueryParams(String jsonBody) {
         try {
-            Map<String, Object> params = JacksonUtil.convertValue(jsonBody, new TypeReference<>() {
+            Map<String, String> params = JacksonUtil.fromString(jsonBody, new TypeReference<>() {
             });
-            if (params == null) {
-                return uri;
-            }
-
-            UriComponentsBuilder builder = UriComponentsBuilder.fromUri(uri);
-            params.forEach((key, value) -> {
-                if (value != null) {
-                    builder.queryParam(key, value.toString());
-                }
-            });
-            return builder.build().toUri();
+            return UriComponentsBuilder.fromUri(uri)
+                    .queryParams(toMultiValueMap(params))
+                    .build()
+                    .encode(StandardCharsets.UTF_8)
+                    .toUri();
         } catch (Exception e) {
             log.warn("Failed to parse request body as JSON for GET query parameters: {}", jsonBody);
             return uri;
         }
+    }
+
+    private MultiValueMap<String, String> toMultiValueMap(Map<String, String> params) {
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>(params.size());
+        params.forEach(map::add);
+        return map;
     }
 
     private void processResponse(ResponseEntity<JsonNode> response) {
