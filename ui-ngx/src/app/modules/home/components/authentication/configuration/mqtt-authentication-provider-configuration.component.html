@@ -44,17 +44,14 @@
         [provider]="provider()"
         [isEdit]="isEdit()">
       </tb-http-provider-config-form>
-      <ng-container *ngTemplateOutlet="checkConnection"></ng-container>
     }
     @default {}
   }
+  @if (this.displayCheckConnectionProviders.includes(providerType())) {
+    <button mat-stroked-button color="primary"
+            [disabled]="providerForm.invalid"
+            (click)="onConnectionCheck()">
+      {{ 'integration.check-connection' | translate }}
+    </button>
+  }
 </section>
-
-<ng-template #checkConnection>
-  <button style="margin-bottom: 8px"
-          [disabled]="providerForm.invalid"
-          mat-stroked-button color="primary"
-          (click)="onConnectionCheck()">
-    {{ 'integration.check-connection' | translate }}
-  </button>
-</ng-template>

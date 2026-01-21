@@ -110,7 +110,6 @@ export class MqttAuthProviderService {
       case MqttAuthProviderType.HTTP:
         return this.checkHttpAuthProviderConnection(provider, config);
     }
-    return;
   }
 
   private checkHttpAuthProviderConnection(provider: MqttAuthProvider, config?: RequestConfig): Observable<MqttAuthProvider> {

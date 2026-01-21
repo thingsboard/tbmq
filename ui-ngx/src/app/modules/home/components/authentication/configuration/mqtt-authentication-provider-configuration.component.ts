@@ -42,9 +42,11 @@ import {
   HttpProviderFormComponent
 } from '@home/components/authentication/configuration/http-provider-form/http-provider-form.component';
 import { MatButton } from '@angular/material/button';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
-import { NgTemplateOutlet } from '@angular/common';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -59,7 +61,6 @@ import { NgTemplateOutlet } from '@angular/common';
     HttpProviderFormComponent,
     MatButton,
     TranslateModule,
-    NgTemplateOutlet,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -82,12 +83,16 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
   readonly isEdit = input<boolean>();
   disabled = model<boolean>();
 
+  readonly displayCheckConnectionProviders = [MqttAuthProviderType.HTTP];
+
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
 
   constructor(
     private fb: UntypedFormBuilder,
     private mqttAuthProviderService: MqttAuthProviderService,
+    private store: Store<AppState>,
+    private translate: TranslateService,
   ) {
     this.providerForm = this.fb.group({
       configuration: [null, Validators.required]
@@ -136,6 +141,29 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
       ...this.provider().configuration,
       ...this.providerForm.getRawValue().configuration
     };
-    this.mqttAuthProviderService.checkAuthProviderConnection(this.provider()).subscribe();
+    this.mqttAuthProviderService.checkAuthProviderConnection(this.provider(), {ignoreErrors: true}).subscribe(
+      () => {
+        this.store.dispatch(new ActionNotificationShow(
+          {
+            message: this.translate.instant('integration.check-success'),
+            type: 'success',
+            duration: 5000,
+            verticalPosition: 'bottom',
+            horizontalPosition: 'right',
+          }
+        ));
+      },
+      error => {
+        this.store.dispatch(new ActionNotificationShow(
+          {
+            message: error.error.message,
+            type: 'error',
+            duration: 5000,
+            verticalPosition: 'bottom',
+            horizontalPosition: 'right',
+          }
+        ));
+      }
+    );
   }
 }

@@ -68,9 +68,10 @@
       <p translate>authentication.body</p>
       <div class="tb-hint" [innerHtml]="'authentication.body-hint' | translate"></div>
       <tb-json-object-edit formControlName="requestBody"
+                           label="{{ 'value.json-value' | translate }}"
                            [fullscreenHidden]="true"
                            [marginLeft]="false"
-                           [jsonRequired]="false"
+                           [jsonRequired]="true"
                            [fillHeight]="false"
       />
     </section>
