@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration">
+<section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration" tb-toast toastTarget="providerRoot">
   @switch (providerType()) {
     @case (MqttAuthProviderType.MQTT_BASIC) {
       <tb-basic-provider-config-form

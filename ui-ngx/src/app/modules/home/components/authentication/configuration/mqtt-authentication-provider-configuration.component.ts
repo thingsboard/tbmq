@@ -47,6 +47,7 @@ import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
+import { ToastDirective } from '@shared/components/toast.directive';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -61,6 +62,7 @@ import { AppState } from '@core/core.state';
     HttpProviderFormComponent,
     MatButton,
     TranslateModule,
+    ToastDirective,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -150,6 +152,7 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
             duration: 5000,
             verticalPosition: 'bottom',
             horizontalPosition: 'right',
+            target: 'providerRoot'
           }
         ));
       },
@@ -158,9 +161,9 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
           {
             message: error.error.message,
             type: 'error',
-            duration: 5000,
             verticalPosition: 'bottom',
             horizontalPosition: 'right',
+            target: 'providerRoot'
           }
         ));
       }
