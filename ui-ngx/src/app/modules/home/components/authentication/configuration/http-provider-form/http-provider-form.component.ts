@@ -68,6 +68,7 @@ import {
 } from '@angular/material/chips';
 import { AuthRulePatternsType } from '@shared/models/credentials.model';
 import { JsonObjectEditComponent } from '@shared/components/json-object-edit.component';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'tb-http-provider-config-form',
@@ -96,6 +97,7 @@ import { JsonObjectEditComponent } from '@shared/components/json-object-edit.com
     MatChipGrid,
     MatChipRemove,
     JsonObjectEditComponent,
+    JsonPipe,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -124,6 +126,15 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
 
   pubRulesSet = new Set<string>();
   subRulesSet = new Set<string>();
+
+  readonly expectedResponse = {
+    result: "success",
+    clientType: "application",
+    authRules: {
+      pub: ["telemetry/.*", "alerts/.*"],
+      sub: ["commands/.*"]
+    }
+  };
 
   readonly httpProviderConfigForm = this.fb.group({
     restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
