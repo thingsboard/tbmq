@@ -75,13 +75,13 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
         client = httpAuthProvider.isEnabled() ? initClient(configuration) : null;
     }
 
-    private HttpAuthClient initClient(HttpMqttAuthProviderConfiguration config) {
-        return new HttpAuthClient(config);
-    }
-
     @PreDestroy
     public void destroy() {
         disable();
+    }
+
+    private HttpAuthClient initClient(HttpMqttAuthProviderConfiguration config) {
+        return new HttpAuthClient(config);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
             AtomicReference<AuthResponse> response = new AtomicReference<>();
             HttpAuthCallback callback = CallbackUtil.createHttpCallback(result -> {
 
-                response.set(getAuthResponse(result));
+                response.set(getAuthResponse(authContext.getClientId(), result));
                 latch.countDown();
 
             }, throwable -> {
@@ -105,8 +105,11 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
             });
 
             String requestBody = getRequestBody(authContext);
-            client.processMessage(requestBody, callback);
-
+            if (client != null) {
+                client.processMessage(authContext.getClientId(), requestBody, callback);
+            } else {
+                throw new RuntimeException("HTTP client is destroyed. Please check your configuration!");
+            }
             latch.await();
             return response.get();
         } catch (Exception e) {
@@ -196,68 +199,68 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
     }
 
 
-    private AuthResponse getAuthResponse(ResponseEntity<JsonNode> responseEntity) {
+    private AuthResponse getAuthResponse(String clientId, ResponseEntity<JsonNode> responseEntity) {
         JsonNode responseBody = responseEntity.getBody();
 
         if (responseBody == null || responseBody.isNull()) {
-            log.debug("Empty response body received. Using default configuration.");
+            log.debug("[{}] Empty response body received. Using default configuration.", clientId);
             return AuthResponse.success(configuration.getDefaultClientType(), Collections.singletonList(authRulePatterns), HTTP.name());
         }
 
         try {
             HttpAuthResponseDto authResponseDto = JacksonUtil.convertValue(responseBody, HttpAuthResponseDto.class);
 
-            AuthStatus status = parseStatus(authResponseDto.getResult());
+            AuthStatus status = parseStatus(clientId, authResponseDto.getResult());
 
             if (status == AuthStatus.FAILURE) {
-                return AuthResponse.failure("FAILURE");
+                return AuthResponse.failure("Authentication explicitly denied by the external HTTP service.");
             }
 
             if (status == AuthStatus.SKIPPED) {
-                return AuthResponse.skip("SKIPPED");
+                return AuthResponse.skip("HTTP service skipped authentication; attempting next available provider.");
             }
 
-            ClientType finalClientType = parseClientType(authResponseDto.getClientType());
-            AuthRulePatterns authRulePatterns = parseAuthRules(authResponseDto.getAuthRules());
+            ClientType finalClientType = parseClientType(clientId, authResponseDto.getClientType());
+            AuthRulePatterns authRulePatterns = parseAuthRules(clientId, authResponseDto.getAuthRules());
 
             return AuthResponse.success(finalClientType, Collections.singletonList(authRulePatterns), HTTP.name());
 
         } catch (Exception e) {
-            log.warn("Failed to parse HTTP auth response body: {}", responseBody, e);
+            log.warn("[{}] Failed to parse HTTP auth response body: {}", clientId, responseBody, e);
             return AuthResponse.skip(e.getMessage());
         }
     }
 
-    private AuthStatus parseStatus(String result) {
+    private AuthStatus parseStatus(String clientId, String result) {
         if (result == null) {
             return AuthStatus.SUCCESS;
         }
         try {
             return AuthStatus.valueOf(result.toUpperCase());
         } catch (IllegalArgumentException e) {
-            log.warn("Unknown auth result status: {}. Defaulting to SKIPPED.", result);
+            log.warn("[{}] Unknown auth result status: {}. Defaulting to SKIPPED.", clientId, result);
             return AuthStatus.SKIPPED;
         }
     }
 
-    private ClientType parseClientType(String type) {
+    private ClientType parseClientType(String clientId, String type) {
         if (StringUtils.isBlank(type)) {
             return configuration.getDefaultClientType();
         }
         try {
             return ClientType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
-            log.warn("Unknown client type in response: {}. Falling back to default.", type);
+            log.warn("[{}] Unknown client type in response: {}. Falling back to default.", clientId, type);
             return configuration.getDefaultClientType();
         }
     }
 
-    private AuthRulePatterns parseAuthRules(PubSubAuthorizationRules authRules) {
+    private AuthRulePatterns parseAuthRules(String clientId, PubSubAuthorizationRules authRules) {
         if (authRules != null) {
             try {
                 return authorizationRuleService.parsePubSubAuthorizationRule(authRules);
             } catch (Exception e) {
-                log.warn("Failed to parse auth rules from response: {}", authRules, e);
+                log.warn("[{}] Failed to parse auth rules from response: {}", clientId, authRules, e);
             }
         }
         return authRulePatterns;

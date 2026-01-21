@@ -68,6 +68,7 @@ public class HttpAuthClient {
     private static final String ERROR = "error";
     private static final String CAUSE = "cause";
     private static final String ERROR_BODY = "error_body";
+    private static final String TEST_CLIENT_ID = "checkConnection";
 
     private static final String MAX_IN_MEMORY_BUFFER_SIZE_IN_KB = "tb.http.auth.maxInMemoryBufferSizeInKb";
 
@@ -139,15 +140,15 @@ public class HttpAuthClient {
         }
     }
 
-    public void processMessage(String requestBody, HttpAuthCallback callback) {
+    public void processMessage(String clientId, String requestBody, HttpAuthCallback callback) {
         try {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
-                log.warn("HTTP auth provider timeout during waiting for reply!");
+                log.warn("[{}] HTTP auth provider timeout during waiting for reply!", clientId);
                 callback.onFailure(new RuntimeException("Timeout during waiting for reply!"));
             }
 
             HttpMethod method = HttpMethod.valueOf(config.getRequestMethod());
-            URI finalUri = HttpMethod.GET.equals(method) ? buildUriWithQueryParams(requestBody) : uri;
+            URI finalUri = HttpMethod.GET.equals(method) ? buildUriWithQueryParams(clientId, requestBody) : uri;
 
             RequestBodySpec request = webClient
                     .method(method)
@@ -159,14 +160,14 @@ public class HttpAuthClient {
                 request.body(BodyInserters.fromValue(requestBody));
             }
 
-            processRequest(request, callback);
+            processRequest(clientId, request, callback);
         } catch (InterruptedException e) {
-            log.warn("HTTP auth provider client interrupted while trying to acquire the lock", e);
+            log.warn("[{}] HTTP auth provider client interrupted while trying to acquire the lock", clientId, e);
             callback.onFailure(e);
         }
     }
 
-    private URI buildUriWithQueryParams(String jsonBody) {
+    private URI buildUriWithQueryParams(String clientId, String jsonBody) {
         try {
             Map<String, String> params = JacksonUtil.fromString(jsonBody, new TypeReference<>() {
             });
@@ -176,7 +177,7 @@ public class HttpAuthClient {
                     .encode(StandardCharsets.UTF_8)
                     .toUri();
         } catch (Exception e) {
-            log.warn("Failed to parse request body as JSON for GET query parameters: {}", jsonBody);
+            log.warn("[{}] Failed to parse request body as JSON for GET query parameters: {}", clientId, jsonBody);
             return uri;
         }
     }
@@ -202,7 +203,7 @@ public class HttpAuthClient {
         }
     }
 
-    private ObjectNode processFailureResponse(ResponseEntity<JsonNode> response) {
+    private ObjectNode processFailureResponse(String clientId, ResponseEntity<JsonNode> response) {
         ObjectNode result = JacksonUtil.newObjectNode();
         ObjectNode metadata = JacksonUtil.newObjectNode();
         result.set("metadata", metadata);
@@ -213,11 +214,11 @@ public class HttpAuthClient {
         result.put(STATUS_REASON, httpStatus.getReasonPhrase());
         result.set(ERROR_BODY, response.getBody());
         headersToMetaData(response.getHeaders(), metadata::put);
-        log.warn("HTTP auth provider processFailureResponse {}", result);
+        log.warn("[{}] HTTP auth provider processFailureResponse {}", clientId, result);
         return result;
     }
 
-    private void processException(Throwable e) {
+    private void processException(String clientId, Throwable e) {
         ObjectNode result = JacksonUtil.newObjectNode();
         result.put(ERROR, e.getClass() + ": " + e.getMessage());
         if (e instanceof WebClientResponseException restClientResponseException) {
@@ -226,10 +227,10 @@ public class HttpAuthClient {
             result.put(ERROR_BODY, restClientResponseException.getResponseBodyAsString());
         } else if (e.getCause() instanceof ReadTimeoutException) {
             result.put(CAUSE, "ReadTimeoutException");
-            log.warn("HTTP auth provider processException {}", result);
+            log.warn("[{}] HTTP auth provider processException {}", clientId, result);
             return;
         }
-        log.warn("HTTP auth provider processException {}", result, e);
+        log.warn("[{}] HTTP auth provider processException {}", clientId, result, e);
     }
 
     void headersToMetaData(Map<String, List<String>> headers, BiConsumer<String, String> consumer) {
@@ -269,14 +270,14 @@ public class HttpAuthClient {
                     .uri(uri)
                     .headers(this::prepareHeaders);
 
-            processRequest(request, callback);
+            processRequest(TEST_CLIENT_ID, request, callback);
         } catch (InterruptedException e) {
             log.warn("HTTP auth provider client interrupted while trying to acquire the lock on check connection", e);
             callback.onFailure(e);
         }
     }
 
-    private void processRequest(RequestBodySpec request, HttpAuthCallback callback) {
+    private void processRequest(String clientId, RequestBodySpec request, HttpAuthCallback callback) {
         request
                 .retrieve()
                 .toEntity(JsonNode.class)
@@ -289,7 +290,7 @@ public class HttpAuthClient {
                         processResponse(responseEntity);
                         callback.onSuccess(responseEntity);
                     } else {
-                        ObjectNode result = processFailureResponse(responseEntity);
+                        ObjectNode result = processFailureResponse(clientId, responseEntity);
                         callback.onFailure(new RuntimeException(JacksonUtil.toString(result)));
                     }
                 }, throwable -> {
@@ -297,7 +298,7 @@ public class HttpAuthClient {
                         semaphore.release();
                     }
 
-                    processException(throwable);
+                    processException(clientId, throwable);
                     callback.onFailure(throwable);
                 });
     }
