@@ -17,35 +17,15 @@
 -->
 <div class="tb-home-overview flex flex-row lt-lg:flex-col">
   <div class="flex max-w-70% flex-col gap-3 pr-3 lt-lg:max-w-100% lt-lg:pb-3 lt-lg:pr-0">
-    @defer {
-      <tb-home-charts></tb-home-charts>
-    }
-    <div class="flex flex-1 flex-col gap-3">
-      @defer {
-        <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-      }
-      <div class="flex flex-1 flex-row gap-3 xs:flex-col">
-        @defer {
-          <tb-card-config class="tb-home-card"></tb-card-config>
-        }
-        @defer {
-          <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
-        }
-      </div>
-    </div>
-    @defer {
-      <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
-    }
+    <tb-home-charts></tb-home-charts>
+    <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
+    <tb-kafka-tables-tab-group class="flex-1 min-h-0"></tb-kafka-tables-tab-group>
   </div>
   <div class="flex max-w-30% flex-1 flex-col gap-3 lt-lg:max-w-100%">
-    @defer {
-      <tb-getting-started class="tb-home-card xs:!hidden"></tb-getting-started>
-    }
-    @defer {
-      <tb-quick-links class="tb-home-card lt-lg:!hidden"></tb-quick-links>
-    }
-    @defer {
-      <tb-version-card class="tb-home-card"></tb-version-card>
-    }
+    <tb-card-config class="tb-home-card"></tb-card-config>
+    <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
+<!--        <tb-getting-started class="tb-home-card xs:!hidden"></tb-getting-started>-->
+<!--    <tb-quick-links class="tb-home-card lt-lg:!hidden"></tb-quick-links>-->
+    <tb-version-card class="tb-home-card"></tb-version-card>
   </div>
 </div>

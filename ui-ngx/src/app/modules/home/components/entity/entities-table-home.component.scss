@@ -16,10 +16,24 @@
 @import 'constants';
 
 :host {
-  flex-direction: column;
+  display: block;
+  height: 100%;
+  width: 100%;
+
+  .table-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
 
   .mat-table-toolbar-container {
     height: 45px;
+  }
+
+  .table-scroll-area {
+    flex: 1;
+    overflow: auto;
   }
 
   @media #{$mat-xs} {
