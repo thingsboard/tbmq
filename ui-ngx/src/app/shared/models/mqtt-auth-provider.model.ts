@@ -16,7 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { ClientType } from '@shared/models/client.model';
-import { BasicCredentials, CertPemCredentials, Credentials } from '@shared/models/integration.models';
+import { BasicCredentials, CertPemCredentials, Credentials, HttpRequestType } from '@shared/models/integration.models';
 import { AuthRules } from '@shared/models/credentials.model';
 
 export enum MqttAuthProviderType {
@@ -24,7 +24,7 @@ export enum MqttAuthProviderType {
   X_509 = 'X_509',
   SCRAM = 'SCRAM',
   JWT = 'JWT',
-  HTTP_SERVICE = 'HTTP_SERVICE'
+  HTTP = 'HTTP'
 }
 
 export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, string>(
@@ -33,16 +33,19 @@ export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, 
     [MqttAuthProviderType.X_509, 'mqtt-client-credentials.type-ssl'],
     [MqttAuthProviderType.SCRAM, 'mqtt-client-credentials.type-scram'],
     [MqttAuthProviderType.JWT, 'authentication.type-jwt'],
-    [MqttAuthProviderType.HTTP_SERVICE, 'authentication.type-http-service'],
+    [MqttAuthProviderType.HTTP, 'authentication.type-http'],
   ]
 );
 
 export interface MqttAuthProvider extends ShortMqttAuthProvider {
-  configuration: (BasicMqttAuthProviderConfiguration |
-                 ScramMqttAuthProviderConfiguration |
-                 SslMqttAuthProviderConfiguration |
-                 JwtMqttAuthProviderConfiguration) &
-                 SharedMqttAuthProviderConfiguration;
+  configuration: SharedMqttAuthProviderConfiguration &
+    (
+      BasicMqttAuthProviderConfiguration |
+      ScramMqttAuthProviderConfiguration |
+      SslMqttAuthProviderConfiguration |
+      HttpMqttAuthProviderConfiguration |
+      JwtMqttAuthProviderConfiguration
+    );
   additionalInfo: any;
 }
 
@@ -64,6 +67,19 @@ export interface ScramMqttAuthProviderConfiguration {}
 
 export interface SslMqttAuthProviderConfiguration {
   skipValidityCheckForClientCert: boolean;
+}
+
+export interface HttpMqttAuthProviderConfiguration {
+  restEndpointUrl: string;
+  requestMethod: HttpRequestType;
+  credentials: Credentials;
+  headers: {[key: string]: string} | null;
+  requestBody: string;
+  defaultClientType: ClientType;
+  authRules: AuthRules;
+  readTimeoutMs: number;
+  maxInMemoryBufferSizeInKb: number;
+  maxParallelRequestsCount: number;
 }
 
 export interface JwtMqttAuthProviderConfiguration {
@@ -116,7 +132,7 @@ export const mqttAuthProviderTypeHelpLinkMap = new Map<MqttAuthProviderType, str
     [MqttAuthProviderType.X_509, 'providerX509'],
     [MqttAuthProviderType.SCRAM, 'providerScram'],
     [MqttAuthProviderType.JWT, 'providerJwt'],
-    [MqttAuthProviderType.HTTP_SERVICE, 'providerHttp'],
+    [MqttAuthProviderType.HTTP, 'providerHttp'],
   ]
 );
 

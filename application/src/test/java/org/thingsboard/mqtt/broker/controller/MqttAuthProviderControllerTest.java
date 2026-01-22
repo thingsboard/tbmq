@@ -168,12 +168,13 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
             }
         } while (pageData.hasNext());
 
-        assertThat(loadedShortMqttAuthProviders.size()).isEqualTo(4);
+        assertThat(loadedShortMqttAuthProviders.size()).isEqualTo(5);
 
         assertThat(loadedShortMqttAuthProviders).contains(MqttAuthProviderUtil.toShortMqttAuthProvider(getMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC)));
         assertThat(loadedShortMqttAuthProviders).contains(MqttAuthProviderUtil.toShortMqttAuthProvider(getMqttAuthProvider(MqttAuthProviderType.JWT)));
         assertThat(loadedShortMqttAuthProviders).contains(MqttAuthProviderUtil.toShortMqttAuthProvider(getMqttAuthProvider(MqttAuthProviderType.X_509)));
         assertThat(loadedShortMqttAuthProviders).contains(MqttAuthProviderUtil.toShortMqttAuthProvider(getMqttAuthProvider(MqttAuthProviderType.SCRAM)));
+        assertThat(loadedShortMqttAuthProviders).contains(MqttAuthProviderUtil.toShortMqttAuthProvider(getMqttAuthProvider(MqttAuthProviderType.HTTP)));
     }
 
     @Test

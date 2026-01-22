@@ -255,7 +255,7 @@ export const ClientCredentialsLabelTranslationMap = new Map<MqttAuthProviderType
     [MqttAuthProviderType.X_509, 'mqtt-client-session.credentials-label-x509'],
     [MqttAuthProviderType.SCRAM, 'mqtt-client-session.credentials-label-auth-provider'],
     [MqttAuthProviderType.JWT, 'mqtt-client-session.credentials-label-auth-provider'],
-    [MqttAuthProviderType.HTTP_SERVICE, 'mqtt-client-session.credentials-label-auth-provider'],
+    [MqttAuthProviderType.HTTP, 'mqtt-client-session.credentials-label-auth-provider'],
     [UNKNOWN_AUTH_PROVIDER, 'mqtt-client-session.credentials-label-unknown'],
   ]
 );

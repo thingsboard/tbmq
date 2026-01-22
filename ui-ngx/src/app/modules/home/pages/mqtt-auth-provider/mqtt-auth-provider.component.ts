@@ -24,7 +24,6 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
 import {
-  JwtMqttAuthProviderConfiguration,
   MqttAuthProvider,
   MqttAuthProviderType,
   mqttAuthProviderTypeTranslationMap
@@ -80,9 +79,6 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
   }
 
   prepareFormValue(formValue: MqttAuthProvider): MqttAuthProvider {
-    if (formValue.type === MqttAuthProviderType.JWT) {
-      formValue = this.prepareJwtForm(formValue);
-    }
     formValue.configuration.type = formValue.type;
     return super.prepareFormValue(formValue);
   }
@@ -94,13 +90,5 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
       configuration: entity.configuration,
       additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}
     });
-  }
-
-  private prepareJwtForm(formValue: MqttAuthProvider): MqttAuthProvider {
-    const configuration = formValue.configuration as JwtMqttAuthProviderConfiguration;
-    // configuration.jwtVerifierConfiguration.jwtVerifierType = configuration.jwtVerifierType;
-    // configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = configuration.jwtVerifierConfiguration.algorithm;
-    formValue.configuration = configuration;
-    return formValue;
   }
 }

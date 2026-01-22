@@ -97,13 +97,13 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
         log.trace("[{}] Authenticating client using JWT provider...", authContext.getClientId());
         byte[] passwordBytes = authContext.getPasswordBytes();
         if (passwordBytes == null) {
-            return AuthResponse.failure("Failed to fetch JWT authentication token from password.");
+            return AuthResponse.skip("Failed to fetch JWT authentication token from password.");
         }
         try {
             return verificationStrategy.authenticateJwt(authContext, new String(passwordBytes, StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", authContext.getClientId(), e);
-            return AuthResponse.failure(e.getMessage());
+            return AuthResponse.skip(e.getMessage());
         }
     }
 

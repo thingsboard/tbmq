@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 
@@ -49,6 +51,9 @@ public class MqttAuthProviderNotificationManagerImplTest {
 
     @Mock
     private EnhancedAuthenticationService enhancedAuthenticationService;
+
+    @Mock
+    private HttpMqttClientAuthProvider httpProvider;
 
     @InjectMocks
     private MqttAuthProviderNotificationManagerImpl manager;
@@ -244,6 +249,54 @@ public class MqttAuthProviderNotificationManagerImplTest {
 
         // then
         then(enhancedAuthenticationService).should().onProviderUpdate(true, mockedConfiguration);
+    }
+
+    @Test
+    public void shouldEnableHttpProvider() {
+        // given
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
+                .setProviderType(MqttAuthProviderTypeProto.HTTP)
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(httpProvider).should().enable();
+    }
+
+    @Test
+    public void shouldDisableHttpProvider() {
+        // given
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
+                .setProviderType(MqttAuthProviderTypeProto.HTTP)
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(httpProvider).should().disable();
+    }
+
+    @Test
+    public void shouldUpdateHttpProvider() {
+        // given
+        var mockedConfiguration = new HttpMqttAuthProviderConfiguration();
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
+                .setProviderType(MqttAuthProviderTypeProto.HTTP)
+                .setEnabled(true)
+                .setConfiguration(JacksonUtil.toString(mockedConfiguration))
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(httpProvider).should().onProviderUpdate(true, mockedConfiguration);
     }
 
 }

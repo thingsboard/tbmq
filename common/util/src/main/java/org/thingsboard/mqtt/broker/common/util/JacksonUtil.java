@@ -48,6 +48,14 @@ public class JacksonUtil {
         }
     }
 
+    public static <T> T fromString(String string, TypeReference<T> toValueTypeRef) {
+        try {
+            return OBJECT_MAPPER.readValue(string, toValueTypeRef);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("The given string value cannot be converted to " + toValueTypeRef + ": " + string, e);
+        }
+    }
+
     public static <T> T fromString(String string, Class<T> clazz) {
         try {
             return string != null ? OBJECT_MAPPER.readValue(string, clazz) : null;

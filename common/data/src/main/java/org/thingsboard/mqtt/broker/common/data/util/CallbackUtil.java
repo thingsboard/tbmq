@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.data.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.http.ResponseEntity;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpAuthCallback;
 
 import java.util.function.Consumer;
 
@@ -37,6 +40,24 @@ public class CallbackUtil {
             public void onSuccess() {
                 if (onSuccess != null) {
                     onSuccess.run();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (onFailure != null) {
+                    onFailure.accept(t);
+                }
+            }
+        };
+    }
+
+    public static HttpAuthCallback createHttpCallback(Consumer<ResponseEntity<JsonNode>> onSuccess, Consumer<Throwable> onFailure) {
+        return new HttpAuthCallback() {
+            @Override
+            public void onSuccess(ResponseEntity<JsonNode> result) {
+                if (onSuccess != null) {
+                    onSuccess.accept(result);
                 }
             }
 

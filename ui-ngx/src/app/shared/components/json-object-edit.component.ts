@@ -78,6 +78,8 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
   disabled = model<boolean>();
   readonly label = input<string>();
   readonly fillHeight = input<boolean>();
+  readonly fullscreenHidden = input<boolean>(false);
+  readonly marginLeft = input<boolean>(true);
 
   readonly editorStyle = input<{
       [klass: string]: any;
@@ -186,23 +188,6 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
         valid: false,
       },
     };
-  }
-
-  validateOnSubmit(): void {
-    if (!this.disabled() && !this.readonly()) {
-      this.cleanupJsonErrors();
-      if (!this.objectValid) {
-        this.store.dispatch(new ActionNotificationShow(
-          {
-            message: this.validationError,
-            type: 'error',
-            target: this.toastTargetId,
-            verticalPosition: 'bottom',
-            horizontalPosition: 'left'
-          }));
-        this.errorShowed = true;
-      }
-    }
   }
 
   cleanupJsonErrors(): void {

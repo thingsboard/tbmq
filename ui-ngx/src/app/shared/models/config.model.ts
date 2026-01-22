@@ -66,6 +66,7 @@ export enum ConfigParams {
   existsX509Credentials = 'existsX509Credentials',
   existsScramCredentials = 'existsScramCredentials',
   allowKafkaTopicDeletion = 'allowKafkaTopicDeletion',
+  httpAuthEnabled = 'httpAuthEnabled',
 }
 
 export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
@@ -87,6 +88,7 @@ export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size'],
     [ConfigParams.jwtAuthEnabled, 'config.jwt-auth'],
     [ConfigParams.allowKafkaTopicDeletion, 'config.allow-kafka-topic-deletion'],
+    [ConfigParams.httpAuthEnabled, 'config.http-auth'],
   ]
 );
 
@@ -103,6 +105,7 @@ export const ConfigParamAuthProviderTypeMap = new Map<ConfigParams, MqttAuthProv
     [ConfigParams.x509AuthEnabled, MqttAuthProviderType.X_509],
     [ConfigParams.jwtAuthEnabled, MqttAuthProviderType.JWT],
     [ConfigParams.scramAuthEnabled, MqttAuthProviderType.SCRAM],
+    [ConfigParams.httpAuthEnabled, MqttAuthProviderType.HTTP],
   ]
 );
 

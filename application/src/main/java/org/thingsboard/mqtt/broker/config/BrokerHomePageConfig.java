@@ -84,6 +84,7 @@ public class BrokerHomePageConfig {
                 .x509AuthEnabled(enabledTypes.contains(MqttAuthProviderType.X_509))
                 .scramAuthEnabled(enabledTypes.contains(MqttAuthProviderType.SCRAM))
                 .jwtAuthEnabled(enabledTypes.contains(MqttAuthProviderType.JWT))
+                .httpAuthEnabled(enabledTypes.contains(MqttAuthProviderType.HTTP))
                 .tcpPort(getTcpPort(connectivityInfoMap))
                 .tlsPort(getTlsPort(connectivityInfoMap))
                 .wsPort(getWsPort(connectivityInfoMap))

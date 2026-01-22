@@ -82,7 +82,7 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
         List<? extends Key> keys = selector.selectJWSKeys(header, null);
 
         if (keys.isEmpty()) {
-            return AuthResponse.failure("No matching key found in JWKS for JWT verification.");
+            return AuthResponse.skip("No matching key found in JWKS for JWT verification.");
         }
 
         for (Key key : keys) {
@@ -92,7 +92,7 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
             }
         }
 
-        return AuthResponse.failure("JWT signature validation failed.");
+        return AuthResponse.skip("JWT signature validation failed.");
     }
 
     @Override

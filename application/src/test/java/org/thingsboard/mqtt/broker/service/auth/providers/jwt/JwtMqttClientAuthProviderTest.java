@@ -289,7 +289,7 @@ public class JwtMqttClientAuthProviderTest {
     public void testAuthenticateReturnsProviderDisabledIfStrategyIsNull() {
         AuthResponse response = provider.authenticate(authContext);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).isEqualTo(MqttAuthProviderType.JWT + " authentication is disabled!");
     }
 
@@ -301,7 +301,7 @@ public class JwtMqttClientAuthProviderTest {
 
         AuthResponse response = provider.authenticate(authContext);
 
-        assertThat(response.isFailure()).isTrue();
+        assertThat(response.notSuccess()).isTrue();
         assertThat(response.getReason()).isEqualTo("Failed to fetch JWT authentication token from password.");
         verify(verificationStrategy, never()).authenticateJwt(any(), any());
     }

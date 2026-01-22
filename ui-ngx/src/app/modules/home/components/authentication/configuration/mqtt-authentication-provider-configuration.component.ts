@@ -14,23 +14,17 @@
 /// limitations under the License.
 ///
 
-import {
-  Component,
-  forwardRef,
-  OnDestroy,
-  ViewEncapsulation,
-  input,
-  model
-} from '@angular/core';
+import { Component, forwardRef, input, model, OnDestroy, ViewEncapsulation } from '@angular/core';
 import {
   ControlValueAccessor,
-  UntypedFormBuilder,
-  UntypedFormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
+  ReactiveFormsModule,
+  UntypedFormBuilder,
+  UntypedFormGroup,
   ValidationErrors,
   Validator,
-  Validators, ReactiveFormsModule
+  Validators
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -44,6 +38,16 @@ import {
 import {
   BasicProviderFormComponent
 } from '@home/components/authentication/configuration/basic-provider-form/basic-provider-form.component';
+import {
+  HttpProviderFormComponent
+} from '@home/components/authentication/configuration/http-provider-form/http-provider-form.component';
+import { MatButton } from '@angular/material/button';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { ToastDirective } from '@shared/components/toast.directive';
 
 @Component({
   selector: 'tb-mqtt-authentication-provider-configuration',
@@ -55,6 +59,10 @@ import {
     SslProviderFormComponent,
     JwtProviderFormComponent,
     BasicProviderFormComponent,
+    HttpProviderFormComponent,
+    MatButton,
+    TranslateModule,
+    ToastDirective,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -77,10 +85,17 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
   readonly isEdit = input<boolean>();
   disabled = model<boolean>();
 
+  readonly displayCheckConnectionProviders = [MqttAuthProviderType.HTTP];
+
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
 
-  constructor(private fb: UntypedFormBuilder) {
+  constructor(
+    private fb: UntypedFormBuilder,
+    private mqttAuthProviderService: MqttAuthProviderService,
+    private store: Store<AppState>,
+    private translate: TranslateService,
+  ) {
     this.providerForm = this.fb.group({
       configuration: [null, Validators.required]
     });
@@ -121,5 +136,37 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
     return this.providerForm.valid ? null : {
       providerConfiguration: {valid: false}
     };
+  }
+
+  onConnectionCheck() {
+    this.provider().configuration = {
+      ...this.provider().configuration,
+      ...this.providerForm.getRawValue().configuration
+    };
+    this.mqttAuthProviderService.checkAuthProviderConnection(this.provider(), {ignoreErrors: true}).subscribe(
+      () => {
+        this.store.dispatch(new ActionNotificationShow(
+          {
+            message: this.translate.instant('integration.check-success'),
+            type: 'success',
+            duration: 5000,
+            verticalPosition: 'bottom',
+            horizontalPosition: 'right',
+            target: 'providerRoot'
+          }
+        ));
+      },
+      error => {
+        this.store.dispatch(new ActionNotificationShow(
+          {
+            message: error.error.message,
+            type: 'error',
+            verticalPosition: 'bottom',
+            horizontalPosition: 'right',
+            target: 'providerRoot'
+          }
+        ));
+      }
+    );
   }
 }

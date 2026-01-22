@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration">
+<section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration" tb-toast toastTarget="providerRoot">
   @switch (providerType()) {
     @case (MqttAuthProviderType.MQTT_BASIC) {
       <tb-basic-provider-config-form
@@ -38,6 +38,20 @@
         [isEdit]="isEdit()">
       </tb-jwt-provider-config-form>
     }
+    @case (MqttAuthProviderType.HTTP) {
+      <tb-http-provider-config-form
+        formControlName="configuration"
+        [provider]="provider()"
+        [isEdit]="isEdit()">
+      </tb-http-provider-config-form>
+    }
     @default {}
+  }
+  @if (this.displayCheckConnectionProviders.includes(providerType())) {
+    <button mat-stroked-button color="primary"
+            [disabled]="providerForm.invalid"
+            (click)="onConnectionCheck()">
+      {{ 'integration.check-connection' | translate }}
+    </button>
   }
 </section>

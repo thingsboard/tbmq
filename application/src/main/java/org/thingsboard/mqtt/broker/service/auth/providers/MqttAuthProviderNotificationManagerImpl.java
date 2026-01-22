@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 
@@ -39,6 +41,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
     private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
     private final EnhancedAuthenticationService enhancedAuthenticationService;
+    private final HttpMqttClientAuthProvider httpMqttClientAuthProvider;
 
     @Override
     public void handleProviderNotification(MqttAuthProviderProto notification) {
@@ -56,6 +59,8 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
                             JacksonUtil.fromString(notification.getConfiguration(), JwtMqttAuthProviderConfiguration.class));
                     case SCRAM -> enhancedAuthenticationService.onProviderUpdate(enabled,
                             JacksonUtil.fromString(notification.getConfiguration(), ScramMqttAuthProviderConfiguration.class));
+                    case HTTP -> httpMqttClientAuthProvider.onProviderUpdate(enabled,
+                            JacksonUtil.fromString(notification.getConfiguration(), HttpMqttAuthProviderConfiguration.class));
                 }
 
             }
@@ -65,6 +70,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
                     case X_509 -> sslMqttClientAuthProvider.disable();
                     case JWT -> jwtMqttClientAuthProvider.disable();
                     case SCRAM -> enhancedAuthenticationService.disable();
+                    case HTTP -> httpMqttClientAuthProvider.disable();
                 }
             }
             case PROVIDER_ENABLED -> {
@@ -73,6 +79,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
                     case X_509 -> sslMqttClientAuthProvider.enable();
                     case JWT -> jwtMqttClientAuthProvider.enable();
                     case SCRAM -> enhancedAuthenticationService.enable();
+                    case HTTP -> httpMqttClientAuthProvider.enable();
                 }
             }
         }

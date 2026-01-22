@@ -94,7 +94,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         if (!authContext.isSecurePortUsed()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             log.warn("[{}] {}", authContext, errorMsg);
-            return AuthResponse.failure(errorMsg);
+            return AuthResponse.skip(errorMsg);
         }
         String clientId = authContext.getClientId();
         log.trace("[{}] Authenticating client with SSL credentials", clientId);
@@ -103,7 +103,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             if (clientTypeSslMqttCredentials == null) {
                 String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
                 log.warn(errorMsg);
-                return AuthResponse.failure(errorMsg);
+                return AuthResponse.skip(errorMsg);
             }
             if (log.isDebugEnabled()) {
                 String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
@@ -115,7 +115,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
-            return AuthResponse.failure(e.getMessage());
+            return AuthResponse.skip(e.getMessage());
         }
     }
 

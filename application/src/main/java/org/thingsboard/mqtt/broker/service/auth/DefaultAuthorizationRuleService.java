@@ -81,7 +81,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
         if (credentials == null) {
             throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
         }
-        return newAuthRulePatterns(credentials.getAuthRules());
+        return parsePubSubAuthorizationRule(credentials.getAuthRules());
     }
 
     private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName) {
@@ -99,7 +99,8 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                         .collect(Collectors.toList());
     }
 
-    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules) {
+    @Override
+    public AuthRulePatterns parsePubSubAuthorizationRule(PubSubAuthorizationRules pubSubAuthRules) {
         return new AuthRulePatterns(
                 compilePatterns(pubSubAuthRules.getPubAuthRulePatterns()),
                 compilePatterns(pubSubAuthRules.getSubAuthRulePatterns()));

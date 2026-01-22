@@ -85,7 +85,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
             BasicAuthResponse basicAuthResponse = authWithBasicCredentials(clientId, username, authContext.getPasswordBytes());
             if (basicAuthResponse.isFailure()) {
                 log.warn(basicAuthResponse.getErrorMsg());
-                return AuthResponse.failure(basicAuthResponse.getErrorMsg());
+                return AuthResponse.skip(basicAuthResponse.getErrorMsg());
             }
             MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
             log.debug("[{}] Authenticated as {} with username {}", clientId, basicCredentials.getClientType(), username);
@@ -94,7 +94,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
             return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns), basicCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
-            return AuthResponse.failure(e.getMessage());
+            return AuthResponse.skip(e.getMessage());
         }
     }
 

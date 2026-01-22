@@ -26,7 +26,11 @@ import java.util.stream.Collectors;
 @Getter
 public enum MqttAuthProviderType {
 
-    MQTT_BASIC(0, "MQTT Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT"), SCRAM(3, "SCRAM");
+    MQTT_BASIC(0, "MQTT Basic"),
+    X_509(1, "X.509 Certificate chain"),
+    JWT(2, "JWT"),
+    SCRAM(3, "SCRAM"),
+    HTTP(4, "HTTP Service");
 
     private final int protoNumber;
     private final String displayName;
@@ -47,4 +51,9 @@ public enum MqttAuthProviderType {
             .filter(type -> type != MqttAuthProviderType.SCRAM)
             .toList();
 
+    public static boolean isBuiltInAuthProvider(String name) {
+        return MqttAuthProviderType.SCRAM.name().equals(name)
+                || MqttAuthProviderType.JWT.name().equals(name)
+                || MqttAuthProviderType.HTTP.name().equals(name);
+    }
 }
