@@ -112,6 +112,12 @@ public class MqttSubscribeHandler {
         for (TopicSubscription subscription : topicSubscriptions) {
             var topic = subscription.getTopicFilter();
 
+            if (!authorizationRuleService.isAllowRootMultiLvlWildcardSub() && topic.equals(BrokerConstants.MULTI_LEVEL_WILDCARD)) {
+                log.warn("[{}] Not allowed to subscribe to the root multi level wildcard topic {}", ctx.getClientId(), topic);
+                codes.add(MqttReasonCodeResolver.implementationSpecificError(ctx));
+                continue;
+            }
+
             if (isSharedSubscriptionWithNoLocal(subscription)) {
                 log.warn("[{}] It is a Protocol Error to set the NoLocal option to true on a Shared Subscription.", ctx.getClientId());
                 disconnectClient(ctx);
