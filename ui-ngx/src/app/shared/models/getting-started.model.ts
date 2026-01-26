@@ -111,6 +111,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   },
   {
     img: '/assets/getting-started/troubleshooting.svg',
+    title: 'Blocked Clients',
+    url: HelpLinks.linksMap.blockedClient
+  },
+  {
+    img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
     url: HelpLinks.linksMap.troubleshooting
   },
@@ -131,6 +136,11 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
     img: '/assets/getting-started/qos.svg',
     title: 'Quality of Service (QoS)',
     url: HelpLinks.linksMap.qos
+  },
+  {
+    img: '/assets/getting-started/troubleshooting.svg',
+    title: 'Clean & Persistent Sessions',
+    url: HelpLinks.linksMap.cleanPersistentSessions
   },
   {
     img: '/assets/getting-started/keep-alive.svg',

@@ -25,7 +25,7 @@
     <div class="tb-form-panel no-border no-padding">
       <div class="info-container flex flex-col gap-4">
         <span class="content info" translate>getting-started.guide.info-text</span>
-        <a class="content read-more" href="https://thingsboard.io/docs/mqtt-broker" translate>action.read-more</a>
+        <a class="content read-more" [href]="readMore" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
         <section class="flex flex-row gap-2">
           @for (action of actions; track action) {

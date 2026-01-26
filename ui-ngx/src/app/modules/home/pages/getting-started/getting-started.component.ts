@@ -30,6 +30,7 @@ import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/m
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatButton } from '@angular/material/button';
+import { docsPath, helpBaseUrl } from '@shared/models/constants';
 
 @Component({
     selector: 'tb-getting-started',
@@ -46,6 +47,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   docs = gettingStartedDocs;
   actions = gettingStartedActions;
   features = gettingStartedFeatures;
+  readMore = helpBaseUrl + docsPath;
 
   constructor(private configService: ConfigService,
               private router: Router,
