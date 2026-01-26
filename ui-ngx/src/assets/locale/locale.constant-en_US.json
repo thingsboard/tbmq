@@ -388,7 +388,10 @@
         "new-password-again": "New password again",
         "password-link-sent-message": "Reset link has been sent",
         "email": "Email",
-        "error": "Login error"
+        "error": "Login error",
+        "sign-in": "Sign in",
+        "sign-in-to-your-account": "Sign in to your account",
+        "sign-in-with": "Sign in with {{name}}"
     },
     "profile": {
         "profile": "Profile",
