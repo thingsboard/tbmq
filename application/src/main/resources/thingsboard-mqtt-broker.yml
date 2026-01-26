@@ -902,6 +902,16 @@ mqtt:
     # Minimal required topic name length that Broker publishes to the client that can be replaced with topic alias
     # (e.g., if the topic has more than 50 chars - it can be replaced with alias)
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
+  subscription:
+    # Controls whether clients are permitted to subscribe to the root multi-level wildcard "#".
+    # If set to 'true' (default):
+    #   Clients can subscribe to "#", receiving a copy of EVERY message published to the broker.
+    #   This is useful for debugging or firehose-style monitoring services.
+    # If set to 'false':
+    #   Clients are explicitly denied permission to subscribe to the exact topic "#".
+    #   They can still subscribe to specific paths (e.g., "sensors/#") or individual topics.
+    #   Recommended for production to prevent accidental or malicious data leakage
+    allow-root-multi-level-wildcard: "${MQTT_SUBSCRIPTION_ROOT_MULTI_LVL_WILDCARD:true}"
   shared-subscriptions:
     # Processing strategy type - how messages are split between clients in a shared subscription. Supported types: ROUND_ROBIN
     processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}"

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.auth;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
@@ -47,6 +48,9 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFail
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
 
     private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
+
+    @Value("${mqtt.subscription.allow-root-multi-level-wildcard:true}")
+    private boolean allowRootMultiLvlWildcardSub;
 
     @Override
     public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {

@@ -36,4 +36,7 @@ public interface AuthorizationRuleService {
     boolean isSubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns);
 
     void evict(String clientId);
+
+    boolean isAllowRootMultiLvlWildcardSub();
+
 }
