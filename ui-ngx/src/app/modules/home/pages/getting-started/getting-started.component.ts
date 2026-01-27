@@ -30,13 +30,14 @@ import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/m
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatButton } from '@angular/material/button';
+import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
 
 @Component({
     selector: 'tb-getting-started',
     templateUrl: './getting-started.component.html',
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton, GettingStartedHomeComponent]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 
