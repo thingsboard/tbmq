@@ -21,7 +21,6 @@ import {
   gettingStartedDocs,
   gettingStartedFeatures,
   gettingStartedGuides,
-  GettingStartedLink
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
@@ -30,13 +29,14 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { MatButton } from '@angular/material/button';
 import { docsPath, helpBaseUrl } from '@shared/models/constants';
+import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
 
 @Component({
     selector: 'tb-getting-started',
     templateUrl: './getting-started.component.html',
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton, GettingStartedHomeComponent]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 
