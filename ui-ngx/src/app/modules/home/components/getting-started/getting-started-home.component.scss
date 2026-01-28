@@ -16,8 +16,6 @@
 @import 'constants';
 
 :host::ng-deep {
-  display: flex;
-  flex: 1 0 0;
 
   .mat-expansion-panel-body {
     padding: 0 22px 16px;
