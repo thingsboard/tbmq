@@ -48,6 +48,12 @@
     justify-content: flex-start;
     align-items: center;
 
+    a {
+      border-bottom: none;
+      color: inherit;
+      font-weight: inherit;
+    }
+
     .guide {
       display: flex;
       flex-direction: column;

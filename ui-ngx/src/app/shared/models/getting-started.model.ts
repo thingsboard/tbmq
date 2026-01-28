@@ -191,6 +191,18 @@ export const gettingStartedActions: GettingStartedLink[] = [
     url: 'https://github.com/thingsboard/tbmq'
   },
   {
+    title: 'home.rest-api',
+    url: window.location.origin + '/swagger-ui.html'
+  },
+  {
+    title: 'home.integration-with-thingsboard',
+    url: HelpLinks.linksMap.connectToThingsBoard
+  },
+  {
+    title: 'home.performance-tests',
+    url: HelpLinks.linksMap.perfTest100m
+  },
+  {
     title: 'getting-started.guide.docs',
     url: HelpLinks.linksMap.gettingStarted
   },

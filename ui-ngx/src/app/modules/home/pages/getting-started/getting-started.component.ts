@@ -16,7 +16,6 @@
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, AfterViewInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
-import { Router } from '@angular/router';
 import {
   gettingStartedActions,
   gettingStartedDocs,
@@ -50,7 +49,6 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   readMore = helpBaseUrl + docsPath;
 
   constructor(private configService: ConfigService,
-              private router: Router,
               private cd: ChangeDetectorRef,
               public fb: UntypedFormBuilder) {
   }
@@ -69,13 +67,5 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
     if (tbMainContentElement) {
       animatedScroll(tbMainContentElement, 0, 0);
     }
-  }
-
-  navigate(guide: GettingStartedLink) {
-    this.router.navigateByUrl(guide.url);
-  }
-
-  navigateNewTab(guide: GettingStartedLink) {
-    window.open(guide.url, '_blank');
   }
 }

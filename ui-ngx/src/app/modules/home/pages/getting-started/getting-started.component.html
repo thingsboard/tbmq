@@ -27,13 +27,15 @@
         <span class="content info" translate>getting-started.guide.info-text</span>
         <a class="content read-more" [href]="readMore" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
-        <section class="flex flex-row gap-2">
+        <div class="guides-container gap-2">
           @for (action of actions; track action) {
-            <button mat-stroked-button color="primary" (click)="navigateNewTab(action)">
-              <span translate>{{action.title}}</span>
-            </button>
+            <a [href]="action.url" target="_blank">
+              <button mat-stroked-button color="primary">
+                <span translate>{{action.title}}</span>
+              </button>
+            </a>
           }
-        </section>
+        </div>
       </div>
     </div>
   </mat-card-content>
@@ -50,14 +52,13 @@
       <span class="content info" translate>getting-started.guide.guide-text</span>
       <div class="guides-container">
         @for (guide of guides; track guide) {
-          <div class="flex flex-col items-center gap-2"
-               (click)="navigate(guide)">
-            <div class="guide">
+          <a class="flex flex-col items-center gap-2" [href]="guide.url">
+            <div class="guide" >
               <img [src]="guide.img" [alt]="guide.subtitle">
               <span translate>{{guide.subtitle}}</span>
             </div>
             <span style="font-weight: 500" translate>{{guide.title}}</span>
-          </div>
+          </a>
         }
       </div>
     </div>
@@ -75,13 +76,12 @@
       <span class="content info" translate>getting-started.guide.docs-text</span>
       <div class="guides-container">
         @for (guide of docs; track guide) {
-          <div class="flex flex-col items-center gap-2"
-            (click)="navigateNewTab(guide)">
+          <a class="flex flex-col items-center gap-2" [href]="guide.url" target="_blank">
             <div class="guide">
               <img [src]="guide.img" [alt]="guide.title">
               <span class="doc-title" translate>{{guide.title}}</span>
             </div>
-          </div>
+          </a>
         }
       </div>
     </div>
@@ -99,13 +99,12 @@
       <span class="content info" translate>getting-started.guide.mqtt-features-text</span>
       <div class="guides-container">
         @for (guide of features; track guide) {
-          <div class="flex flex-col items-center gap-2"
-            (click)="navigateNewTab(guide)">
+          <a class="flex flex-col items-center gap-2" [href]="guide.url" target="_blank">
             <div class="guide">
               <img [src]="guide.img" [alt]="guide.title">
               <span class="doc-title" translate>{{guide.title}}</span>
             </div>
-          </div>
+          </a>
         }
       </div>
     </div>
