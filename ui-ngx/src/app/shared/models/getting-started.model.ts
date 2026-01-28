@@ -111,6 +111,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   },
   {
     img: '/assets/getting-started/troubleshooting.svg',
+    title: 'Blocked Clients',
+    url: HelpLinks.linksMap.blockedClient
+  },
+  {
+    img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
     url: HelpLinks.linksMap.troubleshooting
   },
@@ -131,6 +136,11 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
     img: '/assets/getting-started/qos.svg',
     title: 'Quality of Service (QoS)',
     url: HelpLinks.linksMap.qos
+  },
+  {
+    img: '/assets/getting-started/troubleshooting.svg',
+    title: 'Clean & Persistent Sessions',
+    url: HelpLinks.linksMap.cleanPersistentSessions
   },
   {
     img: '/assets/getting-started/keep-alive.svg',
@@ -179,6 +189,18 @@ export const gettingStartedActions: GettingStartedLink[] = [
   {
     title: 'getting-started.guide.github',
     url: 'https://github.com/thingsboard/tbmq'
+  },
+  {
+    title: 'home.rest-api',
+    url: window.location.origin + '/swagger-ui.html'
+  },
+  {
+    title: 'home.integration-with-thingsboard',
+    url: HelpLinks.linksMap.connectToThingsBoard
+  },
+  {
+    title: 'home.performance-tests',
+    url: HelpLinks.linksMap.perfTest100m
   },
   {
     title: 'getting-started.guide.docs',

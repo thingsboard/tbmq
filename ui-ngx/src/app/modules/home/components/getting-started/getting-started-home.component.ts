@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -42,9 +42,10 @@ import { AsyncPipe } from '@angular/common';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 @Component({
-    selector: 'tb-getting-started',
+    selector: 'tb-getting-started-home',
     templateUrl: './getting-started-home.component.html',
     styleUrls: ['./getting-started-home.component.scss'],
     providers: [
@@ -56,6 +57,10 @@ import { MatIcon } from '@angular/material/icon';
     imports: [CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
+
+  @Input()
+  @coerceBoolean()
+  hideTitle = true;
 
   cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);

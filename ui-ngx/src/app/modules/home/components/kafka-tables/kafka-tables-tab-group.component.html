@@ -15,27 +15,25 @@
     limitations under the License.
 
 -->
-<section>
-  <div class="tabs-toolbar">
-    <tb-toggle-header #kafkaTable [value]="KafkaTable.TOPICS" useSelectOnMdLg="false">
-      <tb-toggle-option [value]="KafkaTable.TOPICS">
-        {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
-      </tb-toggle-option>
-      <tb-toggle-option [value]="KafkaTable.CONSUMER_GROUPS">
-        {{ kafkaTableTranslationMap.get(KafkaTable.CONSUMER_GROUPS) | translate }}
-      </tb-toggle-option>
-    </tb-toggle-header>
-  </div>
-  @switch (kafkaTable.value) {
-    @case (KafkaTable.TOPICS) {
-      <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig" [cardType]="homePageTitleType.KAFKA_TOPICS"></tb-entities-table-home>
-      </div>
-    }
-    @case (KafkaTable.CONSUMER_GROUPS) {
-      <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig" [cardType]="homePageTitleType.KAFKA_CONSUMER_GROUPS"></tb-entities-table-home>
-      </div>
-    }
+<div class="tabs-toolbar">
+  <tb-toggle-header #kafkaTable [value]="KafkaTable.TOPICS" useSelectOnMdLg="false">
+    <tb-toggle-option [value]="KafkaTable.TOPICS">
+      {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
+    </tb-toggle-option>
+    <tb-toggle-option [value]="KafkaTable.CONSUMER_GROUPS">
+      {{ kafkaTableTranslationMap.get(KafkaTable.CONSUMER_GROUPS) | translate }}
+    </tb-toggle-option>
+  </tb-toggle-header>
+</div>
+@switch (kafkaTable.value) {
+  @case (KafkaTable.TOPICS) {
+    <div class="tb-home-card-container tb-home-padding tb-kafka-table">
+      <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig" [cardType]="homePageTitleType.KAFKA_TOPICS"></tb-entities-table-home>
+    </div>
   }
-</section>
+  @case (KafkaTable.CONSUMER_GROUPS) {
+    <div class="tb-home-card-container tb-home-padding tb-kafka-table">
+      <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig" [cardType]="homePageTitleType.KAFKA_CONSUMER_GROUPS"></tb-entities-table-home>
+    </div>
+  }
+}

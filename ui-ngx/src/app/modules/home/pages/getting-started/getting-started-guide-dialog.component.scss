@@ -13,38 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
-
 :host {
-  display: flex;
-  flex: 1 1 0;
-  .tb-login-content {
-    background-color: #eee;
-    --mdc-elevated-card-container-elevation: none;
-    .tb-login-form {
-      @media #{$mat-gt-xs} {
-        width: 480px !important;
-      }
+  height: 100%;
+  max-height: 100vh;
 
-      .forgot-password {
-        padding: 1em 0 0 0;
-        .tb-reset-password {
-          padding: 0 6px;
-        }
-      }
+  .guides-container {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    width: 600px;
+    height: 50vh;
 
-      .tb-action-button{
-        padding: 20px 0 16px;
-      }
-    }
-
-    .title {
-      font-size: 20px;
-      line-height: 24px;
-      letter-spacing: .1px;
-      text-align: center;
-      margin-bottom: 4px;
+    p {
+      font-size: 16px
     }
   }
 }
 
+:host-context(.mat-mdc-dialog-container) {
+  .tb-dialog-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+  }
+}

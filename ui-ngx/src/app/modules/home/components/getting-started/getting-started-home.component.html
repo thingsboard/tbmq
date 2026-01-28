@@ -16,7 +16,7 @@
 
 -->
 <div class="tb-home-card-container tb-home-padding">
-  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+  <tb-card-title-button [cardType]="cardType" [disabled]="true" [class.hidden]="hideTitle"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
     @for (step of steps | async; track step; let index = $index) {
       <ng-container class="tb-active">

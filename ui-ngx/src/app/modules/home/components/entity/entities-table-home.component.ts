@@ -592,6 +592,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   private calcDefaultPageSize(): number {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 15 : 5;
+    return 20;
+    // return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 15 : 5;
   }
 }
