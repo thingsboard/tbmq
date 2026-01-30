@@ -62,7 +62,7 @@ export const HelpLinks = {
     users: helpBaseUrl + docsPath + '/user-guide/ui/users',
     clientCredentials: helpBaseUrl + docsPath + '/user-guide/ui/mqtt-client-credentials',
     sessions: helpBaseUrl + docsPath + '/user-guide/ui/sessions',
-    sharedSubscriptions: helpBaseUrl + docsPath + '/user-guide/ui/shared-subscriptions',
+    sharedSubscriptions: helpBaseUrl + docsPath + '/user-guide/shared-subscriptions',
     connection: helpBaseUrl + docsPath + '/user-guide/ui/websocket-client',
     unauthorizedClient: helpBaseUrl + docsPath + '/user-guide/ui/unauthorized-clients',
     integrations: helpBaseUrl + docsPath + '/integrations',
