@@ -130,12 +130,18 @@ export class AppComponent {
           isAuthenticated,
           authState
         }
-      });
+      }).afterClosed()
+        .subscribe(() => {
+            this.gettingStartedGuide();
+          }
+        );
     } else {
       const url = this.authService.defaultUrl(isAuthenticated, authState);
       this.zone.run(() => {
         this.router.navigateByUrl(url);
-        this.gettingStartedGuide(isAuthenticated);
+        if (isAuthenticated) {
+          this.gettingStartedGuide();
+        }
       });
     }
   }
@@ -144,8 +150,8 @@ export class AppComponent {
     return authState?.userDetails?.additionalInfo?.isPasswordChanged === false;
   }
 
-  private gettingStartedGuide(isAuthenticated: boolean) {
-    if (isAuthenticated && !localStorage.getItem('notDisplayGettingStartedGuide')) {
+  private gettingStartedGuide() {
+    if (!localStorage.getItem('notDisplayGettingStartedGuide')) {
       this.dialog.open<GettingStartedGuideDialogComponent>(
         GettingStartedGuideDialogComponent, {
           disableClose: true,

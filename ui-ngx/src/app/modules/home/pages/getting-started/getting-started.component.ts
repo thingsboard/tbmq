@@ -17,10 +17,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, AfterViewInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import {
-  gettingStartedActions,
+  gettingStartedActionsDeveloper,
+  gettingStartedActionsProduct,
   gettingStartedDocs,
   gettingStartedFeatures,
-  gettingStartedGuides,
+  gettingStartedGuides
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
@@ -44,7 +45,8 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
 
   guides = gettingStartedGuides;
   docs = gettingStartedDocs;
-  actions = gettingStartedActions;
+  actionsDeveloper = gettingStartedActionsDeveloper;
+  actionsProduct = gettingStartedActionsProduct;
   features = gettingStartedFeatures;
   readMore = helpBaseUrl + docsPath;
 

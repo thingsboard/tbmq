@@ -23,6 +23,17 @@ import { HttpClient } from '@angular/common/http';
 })
 export class InstructionsService {
 
+  private STEP_TITLE_MAP: Record<string, string> = {
+    'client-app': 'getting-started.step-client-app',
+    'client-device': 'getting-started.step-client-dev',
+    'subscribe': 'getting-started.step-subscribe',
+    'publish': 'getting-started.step-publish',
+    'session': 'getting-started.step-session',
+    'enable-basic-auth': 'getting-started.step-enable-basic-auth',
+  };
+
+  private isDemoCloud = false;
+
   constructor(
     private http: HttpClient
   ) {
@@ -33,39 +44,23 @@ export class InstructionsService {
   }
 
   public setInstructionsList(basicAuthEnabled: boolean): Observable<Array<any>> {
-    const steps = [
-      {
-        id: 'client-app',
-        title: 'getting-started.step-client-app'
-      },
-      {
-        id: 'client-device',
-        title: 'getting-started.step-client-dev'
-      },
-      {
-        id: 'subscribe',
-        title: 'getting-started.step-subscribe'
-      },
-      {
-        id: 'publish',
-        title: 'getting-started.step-publish'
-      },
-      {
-        id: 'session',
-        title: 'getting-started.step-session'
-      }
-    ];
+    const basicSteps = ['subscribe', 'publish', 'session'];
+    const defaultSteps = ['client-app', 'client-device', ...basicSteps];
+    const stepsList = this.isDemoCloud ? basicSteps : defaultSteps;
     if (!basicAuthEnabled) {
-      steps.unshift(
-        {
-            id: 'enable-basic-auth',
-            title: 'getting-started.step-enable-basic-auth'
-          }
-        );
+      stepsList.unshift('enable-basic-auth');
     }
+    const steps = this.getStepsByIds(stepsList);
     // @ts-ignore
     steps.map((el, index) => el.position = index + 1);
     return of(steps);
+  }
+
+  private getStepsByIds(ids: string[]): { id: string; title: string }[] {
+    return ids.map(id => ({
+      id: id,
+      title: this.STEP_TITLE_MAP[id]
+    }));
   }
 
 }

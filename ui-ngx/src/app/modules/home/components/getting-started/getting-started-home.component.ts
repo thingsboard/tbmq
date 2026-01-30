@@ -67,7 +67,6 @@ export class GettingStartedHomeComponent implements OnInit {
   stepsData: Array<any> = [];
   data: string;
   selectedStep = 0;
-
   configParams = this.configService.brokerConfig;
 
   constructor(private instructionsService: InstructionsService,
@@ -83,12 +82,8 @@ export class GettingStartedHomeComponent implements OnInit {
     this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
     this.steps.subscribe((res) => {
       this.stepsData = res;
+      this.getStep(res[0].id);
     });
-    if (basicAuthEnabled) {
-      this.init('client-app');
-    } else {
-      this.init('enable-basic-auth');
-    }
   }
 
   selectStep(event: any) {
@@ -171,9 +166,5 @@ export class GettingStartedHomeComponent implements OnInit {
     this.instructionsService.getInstruction(id).subscribe(data =>
       this.data = data
     );
-  }
-
-  private init(id: string) {
-    this.getStep(id);
   }
 }

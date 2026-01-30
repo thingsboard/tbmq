@@ -19,12 +19,9 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
-import { MatDialogActions, MatDialogContent, MatDialogRef } from '@angular/material/dialog';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatDialogRef } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { AsyncPipe } from '@angular/common';
+import { MatButton } from '@angular/material/button';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
 import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
@@ -33,7 +30,7 @@ import { GettingStartedHomeComponent } from '@home/components/getting-started/ge
   selector: 'tb-getting-started-guide-dialog',
   templateUrl: './getting-started-guide-dialog.component.html',
   styleUrls: ['./getting-started-guide-dialog.component.scss'],
-  imports: [MatToolbar, TranslateModule, MatIconButton, MatIcon, MatDialogContent, MatDialogActions, MatSlideToggle, FormsModule, MatButton, AsyncPipe, GettingStartedHomeComponent]
+  imports: [TranslateModule, MatSlideToggle, FormsModule, MatButton, GettingStartedHomeComponent]
 })
 export class GettingStartedGuideDialogComponent extends DialogComponent<GettingStartedGuideDialogComponent> implements OnDestroy {
 

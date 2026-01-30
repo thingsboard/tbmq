@@ -101,6 +101,7 @@ export const HelpLinks = {
     architecture: helpBaseUrl + docsPath + '/architecture',
     pricing: helpBaseUrl + '/pricing/?section=tbmq-options&product=tbmq-ce',
     cleanPersistentSessions: helpBaseUrl + docsPath + '/user-guide/clean-persistent-sessions',
+    releases: 'https://github.com/thingsboard/tbmq/releases'
   }
 };
 

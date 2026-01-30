@@ -177,37 +177,40 @@ export interface GettingStartedLink {
   subtitle?: string;
 }
 
-export const gettingStartedActions: GettingStartedLink[] = [
+export const gettingStartedActionsDeveloper: GettingStartedLink[] = [
   {
-    title: 'getting-started.guide.releases',
-    url: 'https://github.com/thingsboard/tbmq/releases'
-  },
-  {
-    title: 'getting-started.guide.support',
-    url: HelpLinks.linksMap.help
-  },
-  {
-    title: 'getting-started.guide.github',
-    url: 'https://github.com/thingsboard/tbmq'
+    title: 'getting-started.guide.docs',
+    url: HelpLinks.linksMap.gettingStarted
   },
   {
     title: 'home.rest-api',
     url: window.location.origin + '/swagger-ui.html'
   },
   {
-    title: 'home.integration-with-thingsboard',
-    url: HelpLinks.linksMap.connectToThingsBoard
+    title: 'getting-started.guide.github',
+    url: 'https://github.com/thingsboard/tbmq'
   },
+  {
+    title: 'getting-started.guide.releases',
+    url: HelpLinks.linksMap.releases
+  },
+]
+
+export const gettingStartedActionsProduct: GettingStartedLink[] = [
   {
     title: 'home.performance-tests',
     url: HelpLinks.linksMap.perfTest100m
   },
   {
-    title: 'getting-started.guide.docs',
-    url: HelpLinks.linksMap.gettingStarted
+    title: 'home.integration-with-thingsboard',
+    url: HelpLinks.linksMap.connectToThingsBoard
   },
   {
     title: 'getting-started.guide.pricing',
     url: HelpLinks.linksMap.pricing
+  },
+  {
+    title: 'getting-started.guide.support',
+    url: HelpLinks.linksMap.help
   }
 ]

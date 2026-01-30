@@ -28,7 +28,16 @@
         <a class="content read-more" [href]="readMore" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
         <div class="guides-container gap-2">
-          @for (action of actions; track action) {
+          @for (action of actionsDeveloper; track action) {
+            <a [href]="action.url" target="_blank">
+              <button mat-stroked-button color="primary">
+                <span translate>{{action.title}}</span>
+              </button>
+            </a>
+          }
+        </div>
+        <div class="guides-container gap-2">
+          @for (action of actionsProduct; track action) {
             <a [href]="action.url" target="_blank">
               <button mat-stroked-button color="primary">
                 <span translate>{{action.title}}</span>
