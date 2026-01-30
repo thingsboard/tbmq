@@ -35,6 +35,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterOutlet } from '@angular/router';
 import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
 import { AuthState } from '@core/auth/auth.models';
+import { GettingStartedGuideDialogComponent } from '@home/pages/getting-started/getting-started-guide-dialog.component';
 
 @Component({
     selector: 'tb-root',
@@ -129,17 +130,36 @@ export class AppComponent {
           isAuthenticated,
           authState
         }
-      });
+      }).afterClosed()
+        .subscribe(() => {
+            this.gettingStartedGuide();
+          }
+        );
     } else {
       const url = this.authService.defaultUrl(isAuthenticated, authState);
       this.zone.run(() => {
         this.router.navigateByUrl(url);
+        if (isAuthenticated) {
+          this.gettingStartedGuide();
+        }
       });
     }
   }
 
   private userHasDefaultPassword(authState: AuthState): boolean {
     return authState?.userDetails?.additionalInfo?.isPasswordChanged === false;
+  }
+
+  private gettingStartedGuide() {
+    if (!localStorage.getItem('notDisplayGettingStartedGuide')) {
+      this.dialog.open<GettingStartedGuideDialogComponent>(
+        GettingStartedGuideDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+        })
+        .afterClosed()
+        .subscribe();
+    }
   }
 
 }

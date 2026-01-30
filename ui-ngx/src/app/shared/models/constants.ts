@@ -62,7 +62,7 @@ export const HelpLinks = {
     users: helpBaseUrl + docsPath + '/user-guide/ui/users',
     clientCredentials: helpBaseUrl + docsPath + '/user-guide/ui/mqtt-client-credentials',
     sessions: helpBaseUrl + docsPath + '/user-guide/ui/sessions',
-    sharedSubscriptions: helpBaseUrl + docsPath + '/user-guide/ui/shared-subscriptions',
+    sharedSubscriptions: helpBaseUrl + docsPath + '/user-guide/shared-subscriptions',
     connection: helpBaseUrl + docsPath + '/user-guide/ui/websocket-client',
     unauthorizedClient: helpBaseUrl + docsPath + '/user-guide/ui/unauthorized-clients',
     integrations: helpBaseUrl + docsPath + '/integrations',
@@ -100,6 +100,8 @@ export const HelpLinks = {
     configuration: helpBaseUrl + docsPath + '/install/config',
     architecture: helpBaseUrl + docsPath + '/architecture',
     pricing: helpBaseUrl + '/pricing/?section=tbmq-options&product=tbmq-ce',
+    cleanPersistentSessions: helpBaseUrl + docsPath + '/user-guide/clean-persistent-sessions',
+    releases: 'https://github.com/thingsboard/tbmq/releases'
   }
 };
 

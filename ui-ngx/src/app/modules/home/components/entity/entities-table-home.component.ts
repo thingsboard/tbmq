@@ -225,7 +225,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.displayPagination = entitiesTableConfigValue.displayPagination;
     this.hidePageSize = this.breakpointObserver.observe(MediaBreakpoints['xs']).pipe(map(({matches}) => matches));
     this.defaultPageSize = this.calcDefaultPageSize();
-    this.pageSizeOptions = [5, 10, 15, 20];
+    this.pageSizeOptions = [10, 20, 30, 40];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = entitiesTableConfigValue.dataSource(this.dataLoaded.bind(this));
@@ -583,15 +583,11 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     return res;
   }
 
-  calcTableHeight(): string {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
-  }
-
   navigate() {
     this.router.navigate([this.homePageTitleResources.get(this.cardType()).link]);
   }
 
   private calcDefaultPageSize(): number {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 15 : 5;
+    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 30 : 20;
   }
 }

@@ -16,13 +16,12 @@
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, AfterViewInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
-import { Router } from '@angular/router';
 import {
-  gettingStartedActions,
+  gettingStartedActionsDeveloper,
+  gettingStartedActionsProduct,
   gettingStartedDocs,
   gettingStartedFeatures,
-  gettingStartedGuides,
-  GettingStartedLink
+  gettingStartedGuides
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
@@ -30,13 +29,15 @@ import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/m
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatButton } from '@angular/material/button';
+import { docsPath, helpBaseUrl } from '@shared/models/constants';
+import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
 
 @Component({
     selector: 'tb-getting-started',
     templateUrl: './getting-started.component.html',
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton, GettingStartedHomeComponent]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 
@@ -44,11 +45,12 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
 
   guides = gettingStartedGuides;
   docs = gettingStartedDocs;
-  actions = gettingStartedActions;
+  actionsDeveloper = gettingStartedActionsDeveloper;
+  actionsProduct = gettingStartedActionsProduct;
   features = gettingStartedFeatures;
+  readMore = helpBaseUrl + docsPath;
 
   constructor(private configService: ConfigService,
-              private router: Router,
               private cd: ChangeDetectorRef,
               public fb: UntypedFormBuilder) {
   }
@@ -67,13 +69,5 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
     if (tbMainContentElement) {
       animatedScroll(tbMainContentElement, 0, 0);
     }
-  }
-
-  navigate(guide: GettingStartedLink) {
-    this.router.navigateByUrl(guide.url);
-  }
-
-  navigateNewTab(guide: GettingStartedLink) {
-    window.open(guide.url, '_blank');
   }
 }

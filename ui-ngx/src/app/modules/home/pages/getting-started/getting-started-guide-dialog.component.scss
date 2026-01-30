@@ -1,0 +1,110 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import 'constants';
+
+.welcome-dialog {
+  @media #{$mat-gt-sm} {
+    max-width: 900px;
+  }
+
+  @media #{$mat-gt-xs} {
+    max-height: 90vh;
+  }
+
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 80vh;
+
+  .welcome-bg {
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--tb-primary-500);
+      opacity: 0.2;
+    }
+  }
+
+  .welcome-img {
+    position: relative;
+    width: 100%;
+    height: 232px;
+    min-height: 232px;
+    background-image: url(/assets/getting-started-banner.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .welcome-container {
+    padding: 40px 40px 24px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+    .welcome-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+
+      .request-feature-title {
+        font-size: 28px;
+        line-height: 36px;
+      }
+
+      .get-started-title {
+        font-size: 20px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 24px;
+        color: rgba(0, 0, 0, 0.87);
+      }
+    }
+  }
+
+}
+
+:host {
+  height: 100%;
+  max-height: 100vh;
+
+  .guides-container {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    width: 600px;
+    height: 50vh;
+
+    p {
+      font-size: 16px
+    }
+  }
+}
+
+:host-context(.mat-mdc-dialog-container) {
+  .tb-dialog-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+  }
+}

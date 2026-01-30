@@ -110,6 +110,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     url: HelpLinks.linksMap.unauthorizedClient
   },
   {
+    img: '/assets/getting-started/blocked-clients.svg',
+    title: 'Blocked Clients',
+    url: HelpLinks.linksMap.blockedClient
+  },
+  {
     img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
     url: HelpLinks.linksMap.troubleshooting
@@ -131,6 +136,11 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
     img: '/assets/getting-started/qos.svg',
     title: 'Quality of Service (QoS)',
     url: HelpLinks.linksMap.qos
+  },
+  {
+    img: '/assets/getting-started/clean-persistent-sessions.svg',
+    title: 'Clean & Persistent Sessions',
+    url: HelpLinks.linksMap.cleanPersistentSessions
   },
   {
     img: '/assets/getting-started/keep-alive.svg',
@@ -167,25 +177,40 @@ export interface GettingStartedLink {
   subtitle?: string;
 }
 
-export const gettingStartedActions: GettingStartedLink[] = [
+export const gettingStartedActionsDeveloper: GettingStartedLink[] = [
   {
-    title: 'getting-started.guide.releases',
-    url: 'https://github.com/thingsboard/tbmq/releases'
+    title: 'getting-started.guide.docs',
+    url: HelpLinks.linksMap.gettingStarted
   },
   {
-    title: 'getting-started.guide.support',
-    url: HelpLinks.linksMap.help
+    title: 'home.rest-api',
+    url: window.location.origin + '/swagger-ui.html'
   },
   {
     title: 'getting-started.guide.github',
     url: 'https://github.com/thingsboard/tbmq'
   },
   {
-    title: 'getting-started.guide.docs',
-    url: HelpLinks.linksMap.gettingStarted
+    title: 'getting-started.guide.releases',
+    url: HelpLinks.linksMap.releases
+  },
+]
+
+export const gettingStartedActionsProduct: GettingStartedLink[] = [
+  {
+    title: 'home.performance-tests',
+    url: HelpLinks.linksMap.perfTest100m
+  },
+  {
+    title: 'home.integration-with-thingsboard',
+    url: HelpLinks.linksMap.connectToThingsBoard
   },
   {
     title: 'getting-started.guide.pricing',
     url: HelpLinks.linksMap.pricing
+  },
+  {
+    title: 'getting-started.guide.support',
+    url: HelpLinks.linksMap.help
   }
 ]

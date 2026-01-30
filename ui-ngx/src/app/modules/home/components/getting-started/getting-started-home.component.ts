@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -42,9 +42,10 @@ import { AsyncPipe } from '@angular/common';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 @Component({
-    selector: 'tb-getting-started',
+    selector: 'tb-getting-started-home',
     templateUrl: './getting-started-home.component.html',
     styleUrls: ['./getting-started-home.component.scss'],
     providers: [
@@ -57,12 +58,15 @@ import { MatIcon } from '@angular/material/icon';
 })
 export class GettingStartedHomeComponent implements OnInit {
 
+  @Input()
+  @coerceBoolean()
+  hideTitle = true;
+
   cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);
   stepsData: Array<any> = [];
   data: string;
   selectedStep = 0;
-
   configParams = this.configService.brokerConfig;
 
   constructor(private instructionsService: InstructionsService,
@@ -78,12 +82,8 @@ export class GettingStartedHomeComponent implements OnInit {
     this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
     this.steps.subscribe((res) => {
       this.stepsData = res;
+      this.getStep(res[0].id);
     });
-    if (basicAuthEnabled) {
-      this.init('client-app');
-    } else {
-      this.init('enable-basic-auth');
-    }
   }
 
   selectStep(event: any) {
@@ -166,9 +166,5 @@ export class GettingStartedHomeComponent implements OnInit {
     this.instructionsService.getInstruction(id).subscribe(data =>
       this.data = data
     );
-  }
-
-  private init(id: string) {
-    this.getStep(id);
   }
 }

@@ -14,19 +14,47 @@
 /// limitations under the License.
 ///
 
-import {Component} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { RouterLink, UrlTree } from '@angular/router';
+import { AuthService } from '@core/http/auth.service';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
+import { getCurrentAuthState } from '@core/auth/auth.selectors';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
-    selector: 'tb-logo',
-    templateUrl: './logo.component.html',
-    styleUrls: ['./logo.component.scss']
+  selector: 'tb-logo',
+  templateUrl: './logo.component.html',
+  imports: [
+    RouterLink,
+    NgTemplateOutlet
+  ],
+  styleUrls: ['./logo.component.scss']
 })
-export class LogoComponent {
+export class LogoComponent implements OnInit {
 
-  logo = 'assets/mqtt_logo_white.svg';
+  @Input()
+  src: string = 'assets/mqtt_logo_white.svg';
 
-  gotoTbmq(): void {
-    window.open('https://thingsboard.io/docs/mqtt-broker/', '_blank');
+  @Input()
+  link: string | UrlTree;
+
+  @Input()
+  target: string = null;
+
+  isExternal = false;
+
+  constructor(private authService: AuthService,
+              private store: Store<AppState>) {
   }
 
+  ngOnInit() {
+    if (!this.link) {
+      const authState = getCurrentAuthState(this.store);
+      this.link = this.authService.defaultUrl(true, authState);
+    }
+    if (typeof this.link === 'string' && this.link.startsWith('http')) {
+      this.isExternal = true;
+    }
+  }
 }
