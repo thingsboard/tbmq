@@ -39,12 +39,13 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
 import { RouterOutlet } from '@angular/router';
 import { GithubBadgeComponent } from '@home/components/github-badge/github-badge.component';
+import { LogoComponent } from '@shared/components/logo.component';
 
 @Component({
     selector: 'tb-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, GithubBadgeComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, GithubBadgeComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe, LogoComponent]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
