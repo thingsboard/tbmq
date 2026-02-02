@@ -14,23 +14,22 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
-import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {TranslateService} from '@ngx-translate/core';
-import {ConfirmDialogComponent} from '@shared/components/dialog/confirm-dialog.component';
-import {AlertDialogComponent} from '@shared/components/dialog/alert-dialog.component';
-import {AuthService} from '@core/http/auth.service';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { TranslateService } from '@ngx-translate/core';
+import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
+import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
+import { AuthService } from '@core/http/auth.service';
 import {
   ColorPickerDialogComponent,
   ColorPickerDialogData, ColorPickerDialogResult
 } from '@shared/components/dialog/color-picker-dialog.component';
+import { GettingStartedGuideDialogComponent } from '@home/pages/getting-started/getting-started-guide-dialog.component';
 
-@Injectable(
-  {
+@Injectable({
     providedIn: 'root'
-  }
-)
+})
 export class DialogService {
 
   constructor(
@@ -102,4 +101,15 @@ export class DialogService {
       }).afterClosed();
   }
 
+  gettingStarted() {
+    if (!localStorage.getItem('notDisplayGettingStartedGuide')) {
+      this.dialog.open<GettingStartedGuideDialogComponent>(
+        GettingStartedGuideDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+        })
+        .afterClosed()
+        .subscribe();
+    }
+  }
 }

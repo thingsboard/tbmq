@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnDestroy, OnInit, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
@@ -23,7 +23,6 @@ import { AppState } from '@core/core.state';
 import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
-import { WINDOW } from '@core/services/window.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActiveComponentService } from '@core/services/active-component.service';
@@ -40,6 +39,7 @@ import { ToastDirective } from '@shared/components/toast.directive';
 import { RouterOutlet } from '@angular/router';
 import { GithubBadgeComponent } from '@home/components/github-badge/github-badge.component';
 import { LogoComponent } from '@shared/components/logo.component';
+import { DialogService } from '@core/services/dialog.service';
 
 @Component({
     selector: 'tb-home',
@@ -63,10 +63,12 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(protected store: Store<AppState>,
-              @Inject(WINDOW) private window: Window,
-              private activeComponentService: ActiveComponentService,
-              public breakpointObserver: BreakpointObserver) {
+  constructor(
+    protected store: Store<AppState>,
+    private activeComponentService: ActiveComponentService,
+    public breakpointObserver: BreakpointObserver,
+    private dialogService: DialogService,
+  ) {
     super(store);
   }
 
@@ -89,6 +91,7 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
         }
       );
     this.toggleFullscreenOnF11();
+    this.dialogService.gettingStarted();
   }
 
   ngOnDestroy() {
