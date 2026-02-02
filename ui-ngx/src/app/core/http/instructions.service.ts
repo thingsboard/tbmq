@@ -32,10 +32,8 @@ export class InstructionsService {
     'enable-basic-auth': 'getting-started.step-enable-basic-auth',
   };
 
-  private isDemoCloud = false;
-
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
   ) {
   }
 
@@ -44,22 +42,19 @@ export class InstructionsService {
   }
 
   public setInstructionsList(basicAuthEnabled: boolean): Observable<Array<any>> {
-    const basicSteps = ['subscribe', 'publish', 'session'];
-    const defaultSteps = ['client-app', 'client-device', ...basicSteps];
-    const stepsList = this.isDemoCloud ? basicSteps : defaultSteps;
+    const stepsList = ['client-app', 'client-device', 'subscribe', 'publish', 'session'];
     if (!basicAuthEnabled) {
       stepsList.unshift('enable-basic-auth');
     }
     const steps = this.getStepsByIds(stepsList);
-    // @ts-ignore
-    steps.map((el, index) => el.position = index + 1);
     return of(steps);
   }
 
   private getStepsByIds(ids: string[]): { id: string; title: string }[] {
-    return ids.map(id => ({
+    return ids.map((id, index) => ({
       id: id,
-      title: this.STEP_TITLE_MAP[id]
+      title: this.STEP_TITLE_MAP[id],
+      position: index + 1,
     }));
   }
 
