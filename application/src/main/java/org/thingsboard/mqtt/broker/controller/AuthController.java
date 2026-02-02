@@ -86,6 +86,7 @@ public class AuthController extends BaseController {
             mailService.sendResetPasswordEmailAsync(resetUrl, email);
         } catch (Exception e) {
             log.warn("Error occurred", e);
+            throw e;
         }
     }
 
