@@ -32,42 +32,33 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Service
 @Slf4j
 public class AdminSettingsServiceImpl implements AdminSettingsService {
 
     private final AdminSettingsDao adminSettingsDao;
 
-
     public AdminSettingsServiceImpl(AdminSettingsDao adminSettingsDao) {
         this.adminSettingsDao = adminSettingsDao;
     }
 
-
     @Override
     public AdminSettings findAdminSettingsById(UUID adminSettingsId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findAdminSettingsById [{}]", adminSettingsId);
-        }
+        log.trace("Executing findAdminSettingsById [{}]", adminSettingsId);
         Validator.validateId(adminSettingsId, "Incorrect adminSettingsId " + adminSettingsId);
         return adminSettingsDao.findById(adminSettingsId);
     }
 
     @Override
     public AdminSettings findAdminSettingsByKey(String key) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findAdminSettingsByKey [{}]", key);
-        }
+        log.trace("Executing findAdminSettingsByKey [{}]", key);
         Validator.validateString(key, "Incorrect key " + key);
         return adminSettingsDao.findByKey(key);
     }
 
     @Override
     public AdminSettings saveAdminSettings(AdminSettings adminSettings) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveAdminSettings [{}]", adminSettings);
-        }
+        log.trace("Executing saveAdminSettings [{}]", adminSettings);
         adminSettingsDataValidator.validate(adminSettings);
         if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey()) && !adminSettings.getJsonValue().has("password")) {
             AdminSettings mailSettings = findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey());
@@ -80,9 +71,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
 
     @Override
     public void deleteAdminSettingsByKey(String key) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteAdminSettings, key [{}]", key);
-        }
+        log.trace("Executing deleteAdminSettings, key [{}]", key);
         Validator.validateString(key, "Incorrect key " + key);
         adminSettingsDao.removeByKey(key);
     }

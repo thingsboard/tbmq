@@ -21,7 +21,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -34,6 +36,8 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsUtil;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
@@ -59,6 +63,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     private final UserService userService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final TopicValidationService topicValidationService;
+    private final AdminSettingsService adminSettingsService;
 
     @Override
     public WebSocketConnection saveWebSocketConnection(WebSocketConnection connection) {
@@ -182,8 +187,11 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     }
 
     private WebSocketConnectionConfiguration getWebSocketConnectionConfiguration(UUID clientCredentialsId) {
+        AdminSettings connectivity = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
+        String url = AdminSettingsUtil.constructWsConnectionUrl(connectivity);
+
         WebSocketConnectionConfiguration configuration = new WebSocketConnectionConfiguration();
-        configuration.setUrl("ws://localhost:8084/mqtt");
+        configuration.setUrl(url);
         configuration.setClientCredentialsId(clientCredentialsId);
         configuration.setClientId("tbmq_" + RandomStringUtils.randomAlphanumeric(8));
         configuration.setUsername(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME);
