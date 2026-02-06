@@ -179,6 +179,10 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm.get('subscriptions').updateValueAndValidity();
   }
 
+  updateSession() {
+    this.clientSessionService.getDetailedClientSessionInfo(this.entity.clientId).subscribe(session => this.updateFormsValues(session));
+  }
+
   private onSave(): void {
     this.clientSessionService.updateShortClientSessionInfo(this.entity)
       .subscribe((session) => {

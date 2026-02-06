@@ -58,6 +58,13 @@
             <span translate>mqtt-client-session.remove-session</span>
           </button>
           <tb-copy-content-button [title]="'mqtt-client-session.copy-session-id'" [cbContent]="entity?.sessionId"></tb-copy-content-button>
+          <span class="flex-1"></span>
+          <button mat-icon-button type="button" (click)="updateSession()"
+                  style="color: rgba(0,0,0,0.54)"
+                  matTooltip="{{'action.refresh' | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon class="material-icons">refresh</mat-icon>
+          </button>
         </div>
         <div class="session-details-content">
           @if (showAppClientShouldBePersistentWarning) {
