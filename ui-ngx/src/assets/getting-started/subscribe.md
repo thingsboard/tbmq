@@ -3,7 +3,3 @@ client to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitt
 Please copy and paste the following code into a terminal tab:
 
 <br>
-
-```bash
-mosquitto_sub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/+ -i tbmq -u tbmq_app -P tbmq_app -c -v{:copy-code}
-```

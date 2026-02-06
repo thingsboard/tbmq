@@ -49,6 +49,9 @@
                 </button>
               </section>
             }
+            @if (step.id === 'subscribe') {
+              <tb-markdown [data]=subscribeStepCommand usePlainMarkdown containerClass="tb-command-code"></tb-markdown>
+            }
           </div>
         </mat-step>
       </ng-container>

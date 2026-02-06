@@ -43,6 +43,7 @@ import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { clientIdRandom } from '@shared/models/ws-client.model';
 
 @Component({
     selector: 'tb-getting-started-home',
@@ -68,6 +69,13 @@ export class GettingStartedHomeComponent implements OnInit {
   data: string;
   selectedStep = 0;
   configParams = this.configService.brokerConfig;
+
+  private randomClientId = clientIdRandom();
+  subscribeStepCommand = `
+    \`\`\`bash
+    mosquitto_sub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/+ -i ${this.randomClientId} -u tbmq_app -P tbmq_app -c -v{:copy-code}
+    \`\`\`
+  `;
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
@@ -157,7 +165,7 @@ export class GettingStartedHomeComponent implements OnInit {
     this.router.navigate(['/sessions'], {queryParams: {
         connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
         clientTypeList: [ClientType.APPLICATION],
-        clientId: 'tbmq',
+        clientId: this.randomClientId,
         openSession: true
       }});
   }

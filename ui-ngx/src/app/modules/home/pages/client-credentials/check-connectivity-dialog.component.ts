@@ -36,6 +36,7 @@ import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { clientIdRandom } from '@shared/models/ws-client.model';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;
@@ -261,7 +262,7 @@ export class CheckConnectivityDialogComponent extends
       return credentialsValue.clientId;
     }
     if (clientType === ClientType.APPLICATION) {
-      return 'tbmq_' + (Math.random().toString(36).slice(2, 7));
+      return clientIdRandom();
     }
     return null;
   }
