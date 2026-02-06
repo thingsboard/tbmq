@@ -162,12 +162,20 @@ export class GettingStartedHomeComponent implements OnInit {
   }
 
   openSessions() {
-    this.router.navigate(['/sessions'], {queryParams: {
-        connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
-        clientTypeList: [ClientType.APPLICATION],
-        clientId: this.randomClientId,
-        openSession: true
-      }});
+    const targetRoute = '/sessions';
+    const queryParams = {
+      connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
+      clientTypeList: [ClientType.APPLICATION],
+      clientId: this.randomClientId,
+      openSession: true
+    };
+    if (this.router.url.startsWith(targetRoute)) {
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+        this.router.navigate([targetRoute], { queryParams });
+      });
+    } else {
+      this.router.navigate([targetRoute], { queryParams });
+    }
   }
 
   private getStep(id: string) {
