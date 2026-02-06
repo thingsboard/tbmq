@@ -35,6 +35,8 @@ public class DefaultTopicValidationService implements TopicValidationService {
 
     @Value("${mqtt.topic.max-segments-count}")
     private int maxSegmentsCount;
+    @Value("${mqtt.subscription.allow-root-multi-level-wildcard:true}")
+    private boolean allowRootMultiLvlWildcardSub;
 
     @Override
     public void validateTopic(String topic) {
@@ -55,6 +57,13 @@ public class DefaultTopicValidationService implements TopicValidationService {
 
         validateMultiLevelWildcard(topicFilter);
         validateSingleLevelWildcard(topicFilter);
+        validateRootMultiLvlWildcardUsage(topicFilter);
+    }
+
+    private void validateRootMultiLvlWildcardUsage(String topicFilter) {
+        if (topicFilter.equals(MULTI_LEVEL_WILDCARD) && !allowRootMultiLvlWildcardSub) {
+            throw new DataValidationException("Multi-level wildcard is forbidden for root topic filter");
+        }
     }
 
     private void validateSingleLevelWildcard(String topicFilter) {

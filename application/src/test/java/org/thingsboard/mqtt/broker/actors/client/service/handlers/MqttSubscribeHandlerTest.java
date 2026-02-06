@@ -405,13 +405,13 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenMultiLvlRootSub_whenCollectMqttReasonCodes_thenReturnExpectedResult() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
-        when(authorizationRuleService.isAllowRootMultiLvlWildcardSub()).thenReturn(false);
+        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("#"));
 
         List<TopicSubscription> topicSubscriptions = List.of(getTopicSubscription(BrokerConstants.MULTI_LEVEL_WILDCARD, 1));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCodes.SubAck.IMPLEMENTATION_SPECIFIC_ERROR), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR), reasonCodes);
     }
 
     @Test

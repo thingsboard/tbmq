@@ -37,6 +37,4 @@ public interface AuthorizationRuleService {
 
     void evict(String clientId);
 
-    boolean isAllowRootMultiLvlWildcardSub();
-
 }
