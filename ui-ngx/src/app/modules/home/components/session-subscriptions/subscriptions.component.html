@@ -16,9 +16,17 @@
 
 -->
 <div class="container">
-  <section>
-    <span translate>mqtt-client-session.subscriptions</span>
-    <span> ({{ subscriptionsFormArray()?.length }})</span>
+  <section class="flex flex-row items-center justify-between">
+    <section>
+      <span translate>mqtt-client-session.subscriptions</span>
+      <span> ({{ subscriptionsFormArray()?.length }})</span>
+    </section>
+    <button mat-icon-button type="button" (click)="updateSubscriptions()"
+            style="color: rgba(0,0,0,0.54)"
+            matTooltip="{{'action.refresh' | translate}}"
+            matTooltipPosition="above">
+      <mat-icon class="material-icons">refresh</mat-icon>
+    </button>
   </section>
   @if (subscriptionsFormArray().controls?.length) {
     <section class="flex flex-col gap-2.5">

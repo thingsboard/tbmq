@@ -209,7 +209,7 @@
         </ng-template>
       }
       <ng-template #subscriptions>
-        <tb-session-subscriptions formControlName="subscriptions"></tb-session-subscriptions>
+        <tb-session-subscriptions formControlName="subscriptions" (refreshSession)="updateSession()"></tb-session-subscriptions>
       </ng-template>
     </mat-tab>
     <mat-tab [label]="'mqtt-client-session.metrics' | translate">

@@ -219,6 +219,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm.patchValue({subscriptions: entity.subscriptions});
     this.entityForm.patchValue({cleanStart: entity.cleanStart});
     this.entityForm.patchValue({subscriptionsCount: entity.subscriptions.length});
+    this.entityForm.markAsPristine({emitEvent: false});
   }
 
   private closeDialog(): void {

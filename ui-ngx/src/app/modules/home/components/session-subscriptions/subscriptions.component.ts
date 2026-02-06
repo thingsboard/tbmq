@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, OnInit, OnDestroy, model } from '@angular/core';
+import { Component, forwardRef, OnInit, OnDestroy, model, output } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -65,6 +65,7 @@ import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/mat
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
   disabled = model<boolean>();
+  refreshSession = output<void>();
 
   topicListFormGroup: UntypedFormGroup;
   filteredTopics = [];
@@ -160,6 +161,10 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
     setTimeout(() => {
       this.filteredTopics = null;
     }, 100);
+  }
+
+  updateSubscriptions() {
+    this.refreshSession.emit();
   }
 
   private subscribeTopicValueChanges(control: FormGroup) {
