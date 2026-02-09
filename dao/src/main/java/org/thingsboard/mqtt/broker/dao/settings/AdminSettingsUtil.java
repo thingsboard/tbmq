@@ -38,20 +38,24 @@ public class AdminSettingsUtil {
 
     public static String constructWsConnectionUrl(AdminSettings connectivity) {
         Map<String, ConnectivityInfo> connectivityMap = convertConnectivitySettings(connectivity);
-        ConnectivityInfo connectivityInfo = connectivityMap.get(BrokerConstants.WS_CONNECTIVITY);
-        if (connectivityInfo != null) {
-            String host = connectivityInfo.getHost();
-            if (StringUtils.isEmpty(host)) {
-                host = "localhost";
-            }
 
-            String port = connectivityInfo.getPort();
-            if (StringUtils.isEmpty(port)) {
-                port = "8084";
-            }
-            return "ws://" + host + BrokerConstants.COLON + port + BrokerConstants.WS_PATH;
+        ConnectivityInfo wssInfo = connectivityMap.get(BrokerConstants.WSS_CONNECTIVITY);
+        if (wssInfo != null && wssInfo.isEnabled()) {
+            return buildWsUrl("wss", wssInfo, "localhost", "8085");
         }
+
+        ConnectivityInfo wsInfo = connectivityMap.get(BrokerConstants.WS_CONNECTIVITY);
+        if (wsInfo != null && wsInfo.isEnabled()) {
+            return buildWsUrl("ws", wsInfo, "localhost", "8084");
+        }
+
         return "ws://localhost:8084/mqtt";
+    }
+
+    private static String buildWsUrl(String scheme, ConnectivityInfo info, String defaultHost, String defaultPort) {
+        String host = StringUtils.isEmpty(info.getHost()) ? defaultHost : info.getHost();
+        String port = StringUtils.isEmpty(info.getPort()) ? defaultPort : info.getPort();
+        return scheme + "://" + host + BrokerConstants.COLON + port + BrokerConstants.WS_PATH;
     }
 
 }
