@@ -491,8 +491,8 @@ export class AuthService {
     this.setUserFromJwtToken(null, null, true);
   }
 
-  public getUserPasswordPolicy() {
-    return this.http.get<UserPasswordPolicy>(`/api/noauth/userPasswordPolicy`, defaultHttpOptions());
+  public getUserPasswordPolicy(config?: RequestConfig) {
+    return this.http.get<UserPasswordPolicy>(`/api/noauth/userPasswordPolicy`, defaultHttpOptionsFromConfig(config));
   }
 
 }

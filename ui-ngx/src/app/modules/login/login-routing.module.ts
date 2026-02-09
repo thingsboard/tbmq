@@ -17,6 +17,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from '@core/guards/auth.guard';
+import { passwordPolicyResolver } from '@shared/components/dialog/password-policy-resolver';
 
 const routes: Routes = [
   {
@@ -44,6 +45,9 @@ const routes: Routes = [
       title: 'login.reset-password',
       module: 'public'
     },
+    resolve: {
+      passwordPolicy: passwordPolicyResolver,
+    },
     canActivate: [AuthGuard]
   },
   {
@@ -53,6 +57,9 @@ const routes: Routes = [
       title: 'login.reset-password',
       module: 'public',
       expiredPassword: true
+    },
+    resolve: {
+      passwordPolicy: passwordPolicyResolver,
     },
     canActivate: [AuthGuard]
   },

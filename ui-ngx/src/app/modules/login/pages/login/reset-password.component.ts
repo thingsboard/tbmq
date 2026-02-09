@@ -33,6 +33,12 @@ import { MatIcon } from '@angular/material/icon';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
+import { passwordStrengthValidator } from '@shared/models/password.models';
+import { UserPasswordPolicy } from '@shared/models/settings.models';
+import {
+  PasswordRequirementsTooltipComponent
+} from '@shared/components/dialog/password-requirements-tooltip.component';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
   selector: 'tb-reset-password',
@@ -56,7 +62,9 @@ import { MatButton } from '@angular/material/button';
     RouterLink,
     TranslateModule,
     MatSuffix,
-    MatPrefix
+    MatPrefix,
+    PasswordRequirementsTooltipComponent,
+    CdkOverlayOrigin
   ],
   styleUrls: ['./reset-password.component.scss']
 })
@@ -72,6 +80,8 @@ export class ResetPasswordComponent extends PageComponent implements OnInit, OnD
     newPassword2: ['']
   });
 
+  passwordPolicy: UserPasswordPolicy;
+
   constructor(protected store: Store<AppState>,
               private route: ActivatedRoute,
               private router: Router,
@@ -79,6 +89,10 @@ export class ResetPasswordComponent extends PageComponent implements OnInit, OnD
               private translate: TranslateService,
               public fb: UntypedFormBuilder) {
     super(store);
+    this.passwordPolicy = this.route.snapshot.data['passwordPolicy'];
+    if (this.passwordPolicy) {
+      this.resetPassword.get('newPassword').addValidators(passwordStrengthValidator(this.passwordPolicy));
+    }
   }
 
   ngOnInit() {
