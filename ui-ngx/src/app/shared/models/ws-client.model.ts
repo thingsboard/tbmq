@@ -36,6 +36,7 @@ export type MqttJsProtocolVersion = 3 | 4 | 5;
 export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
 export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
 export const WebSocketConnectionsLimit = 100;
+export const WebSocketSubscriptionsLimit = 1024;
 
 export interface ConnectionStatusLog {
   createdTime?: number;

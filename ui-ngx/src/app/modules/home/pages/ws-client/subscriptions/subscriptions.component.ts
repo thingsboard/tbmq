@@ -79,7 +79,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   fetchSubcriptions(connection: WebSocketConnection) {
     this.webSocketSubscriptionService.getWebSocketSubscriptions(connection.id)
       .pipe(map(res => {
-        this.subscriptions = res;
+        this.subscriptions = res?.data;
       }))
       .subscribe();
   }

@@ -18,7 +18,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '@core/http/http-utils';
-import { WebSocketSubscription } from '@shared/models/ws-client.model';
+import { WebSocketSubscription, WebSocketSubscriptionsLimit } from '@shared/models/ws-client.model';
+import { PageLink } from '@shared/models/page/page-link';
+import { Direction } from '@shared/models/page/sort-order';
+import { PageData } from '@shared/models/page/page-data';
 
 @Injectable({
   providedIn: 'root'
@@ -32,8 +35,9 @@ export class WebSocketSubscriptionService {
     return this.http.post<WebSocketSubscription>('/api/ws/subscription', subscription, defaultHttpOptionsFromConfig(config));
   }
 
-  public getWebSocketSubscriptions(webSocketConnectionId: string, config?: RequestConfig): Observable<WebSocketSubscription[]> {
-    return this.http.get<WebSocketSubscription[]>(`/api/ws/subscription?webSocketConnectionId=${webSocketConnectionId}`, defaultHttpOptionsFromConfig(config));
+  public getWebSocketSubscriptions(webSocketConnectionId: string, config?: RequestConfig): Observable<PageData<WebSocketSubscription>> {
+    const pageLink = new PageLink(WebSocketSubscriptionsLimit, 0, null, { property: 'createdTime', direction: Direction.DESC });
+    return this.http.get<PageData<WebSocketSubscription>>(`/api/ws/subscription${pageLink.toQuery()}&webSocketConnectionId=${webSocketConnectionId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getWebSocketSubscriptionById(webSocketSubscriptionId: string, config?: RequestConfig): Observable<WebSocketSubscription> {
