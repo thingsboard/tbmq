@@ -67,9 +67,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
 
     @Override
     public WebSocketConnection saveWebSocketConnection(WebSocketConnection connection) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveWebSocketConnection [{}]", connection);
-        }
+        log.trace("Executing saveWebSocketConnection [{}]", connection);
         webSocketConnectionValidator.validate(connection);
         try {
             return webSocketConnectionDao.save(connection);
@@ -87,9 +85,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     @Override
     @Transactional
     public WebSocketConnection saveDefaultWebSocketConnection(UUID userId, UUID clientCredentialsId) throws ThingsboardException {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveDefaultWebSocketConnection [{}][{}]", userId, clientCredentialsId);
-        }
+        log.trace("Executing saveDefaultWebSocketConnection [{}][{}]", userId, clientCredentialsId);
         if (clientCredentialsId == null) {
             MqttClientCredentials systemWebSocketCredentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
             if (systemWebSocketCredentials == null) {
@@ -111,9 +107,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
 
     @Override
     public PageData<WebSocketConnectionDto> getWebSocketConnections(UUID userId, PageLink pageLink) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing getWebSocketConnections, pageLink [{}]", userId, pageLink);
-        }
+        log.trace("[{}] Executing getWebSocketConnections, pageLink [{}]", userId, pageLink);
         validatePageLink(pageLink);
         return toShortWebSocketConnectionPageData(webSocketConnectionDao.findAll(userId, pageLink));
     }
@@ -127,25 +121,19 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
 
     @Override
     public Optional<WebSocketConnection> getWebSocketConnectionById(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getWebSocketConnectionById [{}]", id);
-        }
+        log.trace("Executing getWebSocketConnectionById [{}]", id);
         return Optional.ofNullable(webSocketConnectionDao.findById(id));
     }
 
     @Override
     public WebSocketConnection findWebSocketConnectionByName(UUID userId, String name) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing findWebSocketConnectionByName [{}]", userId, name);
-        }
+        log.trace("[{}] Executing findWebSocketConnectionByName [{}]", userId, name);
         return webSocketConnectionDao.findByUserIdAndName(userId, name);
     }
 
     @Override
     public boolean deleteWebSocketConnection(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteWebSocketConnection [{}]", id);
-        }
+        log.trace("Executing deleteWebSocketConnection [{}]", id);
         return webSocketConnectionDao.removeById(id);
     }
 
