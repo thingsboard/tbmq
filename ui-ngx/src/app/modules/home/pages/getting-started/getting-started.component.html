@@ -75,7 +75,7 @@
       <span class="content info" translate>getting-started.guide.guide-text</span>
       <div class="guides-container">
         @for (guide of guides; track guide) {
-          <a class="flex flex-col items-center gap-2" [href]="guide.url">
+          <a class="flex flex-col items-center gap-2" [routerLink]="guide.url">
             <div class="guide" >
               <img [src]="guide.img" [alt]="guide.subtitle">
               <span translate>{{guide.subtitle}}</span>

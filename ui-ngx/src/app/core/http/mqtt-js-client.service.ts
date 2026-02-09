@@ -505,7 +505,7 @@ export class MqttJsClientService {
       webSocketSubscriptions => {
         const subscriptions = [];
         for (let i = 0; i < webSocketSubscriptions?.data?.length; i++) {
-          const subscription = webSocketSubscriptions[i];
+          const subscription = webSocketSubscriptions.data[i];
           const topic = subscription.configuration.topicFilter;
           const options = this.subscriptionOptions(subscription);
           subscriptions.push(subscription);
