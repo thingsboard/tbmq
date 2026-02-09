@@ -1038,7 +1038,7 @@
         "credentials-added": "凭据添加成功",
         "open-sessions": "会话详情",
         "guide": {
-            "javascript-title": "Javascript",
+            "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
             "python-title": "Python",
             "python-subtitle": "Paho Python",

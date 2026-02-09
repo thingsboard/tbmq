@@ -1104,7 +1104,7 @@
         "credentials-added": "Credentials added successfully",
         "open-sessions": "Session Details",
         "guide": {
-            "javascript-title": "Javascript",
+            "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
             "python-title": "Python",
             "python-subtitle": "Paho Python",

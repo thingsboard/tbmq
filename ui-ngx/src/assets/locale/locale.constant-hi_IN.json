@@ -1038,7 +1038,7 @@
         "credentials-added": "क्रेडेंशियल्स सफलतापूर्वक जोड़े गए",
         "open-sessions": "सत्र विवरण",
         "guide": {
-            "javascript-title": "Javascript",
+            "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
             "python-title": "Python",
             "python-subtitle": "Paho Python",

@@ -1038,7 +1038,7 @@
         "credentials-added": "Credenciales agregadas correctamente",
         "open-sessions": "Detalles de sesión",
         "guide": {
-            "javascript-title": "Javascript",
+            "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
             "python-title": "Python",
             "python-subtitle": "Paho Python",
