@@ -15,14 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.dao.ws;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.dao.model.WebSocketSubscriptionEntity;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface WebSocketSubscriptionRepository extends JpaRepository<WebSocketSubscriptionEntity, UUID> {
 
-    List<WebSocketSubscriptionEntity> findAllByWebSocketConnectionId(UUID webSocketConnectionId);
-
+    @Query("SELECT w FROM WebSocketSubscriptionEntity w WHERE w.webSocketConnectionId = :webSocketConnectionId")
+    Page<WebSocketSubscriptionEntity> findAllByWebSocketConnectionId(@Param("webSocketConnectionId") UUID webSocketConnectionId,
+                                                                     @Param("textSearch") String textSearch,
+                                                                     Pageable pageable);
 }

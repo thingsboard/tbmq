@@ -22,6 +22,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
@@ -78,8 +80,9 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        List<WebSocketSubscription> subscriptions = webSocketSubscriptionService.getWebSocketSubscriptions(savedWebSocketConnection.getId());
-        for (var subscription : subscriptions) {
+        PageData<WebSocketSubscription> subscriptions = webSocketSubscriptionService.getWebSocketSubscriptions(
+                savedWebSocketConnection.getId(), new PageLink(1000, 0));
+        for (var subscription : subscriptions.getData()) {
             webSocketSubscriptionService.deleteWebSocketSubscription(subscription.getId());
         }
 
@@ -154,7 +157,9 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
             webSocketSubscriptions.add(savedWebSocketSubscription);
         }
 
-        List<WebSocketSubscription> loadedWebSocketSubscriptions = webSocketSubscriptionService.getWebSocketSubscriptions(savedWebSocketConnection.getId());
+        PageData<WebSocketSubscription> pageData = webSocketSubscriptionService.getWebSocketSubscriptions(
+                savedWebSocketConnection.getId(), new PageLink(1000, 0));
+        List<WebSocketSubscription> loadedWebSocketSubscriptions = pageData.getData();
 
         webSocketSubscriptions.sort(idComparator);
         loadedWebSocketSubscriptions.sort(idComparator);
@@ -164,8 +169,9 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         loadedWebSocketSubscriptions.forEach(wss ->
                 webSocketSubscriptionService.deleteWebSocketSubscription(wss.getId()));
 
-        loadedWebSocketSubscriptions = webSocketSubscriptionService.getWebSocketSubscriptions(savedWebSocketConnection.getId());
-        Assert.assertTrue(loadedWebSocketSubscriptions.isEmpty());
+        pageData = webSocketSubscriptionService.getWebSocketSubscriptions(
+                savedWebSocketConnection.getId(), new PageLink(1000, 0));
+        Assert.assertTrue(pageData.getData().isEmpty());
     }
 
     @Test

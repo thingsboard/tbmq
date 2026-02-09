@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,10 +47,16 @@ public class WebSocketSubscriptionController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"webSocketConnectionId"})
-    public List<WebSocketSubscription> getWebSocketSubscriptions(@RequestParam String webSocketConnectionId) throws ThingsboardException {
+    @GetMapping(value = "", params = {"webSocketConnectionId", "pageSize", "page"})
+    public PageData<WebSocketSubscription> getWebSocketSubscriptions(@RequestParam String webSocketConnectionId,
+                                                                     @RequestParam int pageSize,
+                                                                     @RequestParam int page,
+                                                                     @RequestParam(required = false) String textSearch,
+                                                                     @RequestParam(required = false) String sortProperty,
+                                                                     @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         checkParameter("webSocketConnectionId", webSocketConnectionId);
-        return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptions(toUUID(webSocketConnectionId)));
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptions(toUUID(webSocketConnectionId), pageLink));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

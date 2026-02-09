@@ -18,12 +18,14 @@ package org.thingsboard.mqtt.broker.dao.ws;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.WebSocketSubscriptionEntity;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Component
@@ -45,8 +47,10 @@ public class WebSocketSubscriptionDaoImpl
     }
 
     @Override
-    public List<WebSocketSubscription> findAllByWebSocketConnectionId(UUID webSocketConnectionId) {
-        return DaoUtil.convertDataList(webSocketSubscriptionRepository.findAllByWebSocketConnectionId(webSocketConnectionId));
+    public PageData<WebSocketSubscription> findAllByWebSocketConnectionId(UUID webSocketConnectionId, PageLink pageLink) {
+        return DaoUtil.toPageData(webSocketSubscriptionRepository.findAllByWebSocketConnectionId(webSocketConnectionId,
+                Objects.toString(pageLink.getTextSearch(), ""),
+                DaoUtil.toPageable(pageLink)));
     }
 
 }

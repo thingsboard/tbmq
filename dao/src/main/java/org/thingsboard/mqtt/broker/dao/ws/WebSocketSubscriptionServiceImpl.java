@@ -19,13 +19,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,18 +43,14 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
 
     @Override
     public WebSocketSubscription saveWebSocketSubscription(WebSocketSubscription subscription) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveWebSocketSubscription [{}]", subscription);
-        }
+        log.trace("Executing saveWebSocketSubscription [{}]", subscription);
         webSocketSubscriptionValidator.validate(subscription);
         return webSocketSubscriptionDao.save(subscription);
     }
 
     @Override
     public WebSocketSubscription saveDefaultWebSocketSubscription(UUID webSocketConnectionId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveDefaultWebSocketSubscription [{}]", webSocketConnectionId);
-        }
+        log.trace("Executing saveDefaultWebSocketSubscription [{}]", webSocketConnectionId);
         WebSocketSubscription subscription = new WebSocketSubscription();
         subscription.setWebSocketConnectionId(webSocketConnectionId);
         subscription.setConfiguration(getWebSocketSubscriptionConfiguration());
@@ -61,27 +58,21 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
     }
 
     @Override
-    public List<WebSocketSubscription> getWebSocketSubscriptions(UUID webSocketConnectionId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getWebSocketSubscriptions, webSocketConnectionId [{}]", webSocketConnectionId);
-        }
+    public PageData<WebSocketSubscription> getWebSocketSubscriptions(UUID webSocketConnectionId, PageLink pageLink) {
+        log.trace("Executing getWebSocketSubscriptions, webSocketConnectionId [{}], pageLink {}", webSocketConnectionId, pageLink);
         validateId(webSocketConnectionId, "Incorrect webSocketConnectionId " + webSocketConnectionId);
-        return webSocketSubscriptionDao.findAllByWebSocketConnectionId(webSocketConnectionId);
+        return webSocketSubscriptionDao.findAllByWebSocketConnectionId(webSocketConnectionId, pageLink);
     }
 
     @Override
     public Optional<WebSocketSubscription> getWebSocketSubscriptionById(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getWebSocketSubscriptionById [{}]", id);
-        }
+        log.trace("Executing getWebSocketSubscriptionById [{}]", id);
         return Optional.ofNullable(webSocketSubscriptionDao.findById(id));
     }
 
     @Override
     public boolean deleteWebSocketSubscription(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteWebSocketSubscription [{}]", id);
-        }
+        log.trace("Executing deleteWebSocketSubscription [{}]", id);
         return webSocketSubscriptionDao.removeById(id);
     }
 

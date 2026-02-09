@@ -15,14 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.dao.ws;
 
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface WebSocketSubscriptionDao extends Dao<WebSocketSubscription> {
 
-    List<WebSocketSubscription> findAllByWebSocketConnectionId(UUID webSocketConnectionId);
+    PageData<WebSocketSubscription> findAllByWebSocketConnectionId(UUID webSocketConnectionId, PageLink pageLink);
 
 }

@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.ws;
 
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,7 +28,7 @@ public interface WebSocketSubscriptionService {
 
     WebSocketSubscription saveDefaultWebSocketSubscription(UUID webSocketConnectionId);
 
-    List<WebSocketSubscription> getWebSocketSubscriptions(UUID webSocketConnectionId);
+    PageData<WebSocketSubscription> getWebSocketSubscriptions(UUID webSocketConnectionId, PageLink pageLink);
 
     Optional<WebSocketSubscription> getWebSocketSubscriptionById(UUID id);
 
