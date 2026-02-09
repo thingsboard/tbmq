@@ -1,4 +1,4 @@
-### Javascript
+### JavaScript
 In this guide, we present an illustrative example of using a JavaScript library **MQTT.js** 
 to establish a connection to the TBMQ broker, subscribe to a topic and publish a message.
 
