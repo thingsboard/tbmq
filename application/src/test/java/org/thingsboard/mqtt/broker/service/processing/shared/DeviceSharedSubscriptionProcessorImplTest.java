@@ -18,9 +18,9 @@ package org.thingsboard.mqtt.broker.service.processing.shared;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
@@ -44,14 +44,14 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = DeviceSharedSubscriptionProcessorImpl.class)
 public class DeviceSharedSubscriptionProcessorImplTest {
 
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
+    @MockitoBean
     SharedSubscriptionProcessingStrategyFactory strategyFactory;
-    @MockBean
+    @MockitoBean
     ClientSessionCtxService clientSessionCtxService;
 
-    @SpyBean
+    @MockitoSpyBean
     DeviceSharedSubscriptionProcessorImpl processor;
 
     ClientSessionInfo clientSessionInfo;

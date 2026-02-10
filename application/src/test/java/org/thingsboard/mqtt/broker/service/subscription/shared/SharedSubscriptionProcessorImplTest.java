@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,10 +26,10 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientInfo;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getConnectionInfo;
@@ -103,9 +102,37 @@ public class SharedSubscriptionProcessorImplTest {
 
         List<Subscription> subscriptions = getSubscriptions(clientSession1, clientSession2, clientSession3);
 
-        Iterator<Subscription> iterator = Iterables.cycle(subscriptions).iterator();
-        Subscription subscription = subscriptionProcessor.getOneSubscription(iterator);
+        AtomicInteger counter = new AtomicInteger(0);
+        Subscription subscription = subscriptionProcessor.getOneSubscription(subscriptions, counter);
         Assert.assertEquals(sessionId3, subscription.getClientSessionInfo().getSessionId());
+    }
+
+    @Test
+    public void testGetOneSubscriptionAllDisconnected() {
+        UUID sessionId1 = UUID.randomUUID();
+        UUID sessionId2 = UUID.randomUUID();
+
+        SessionInfo expectedSessionInfo1 = getSessionInfo(sessionId1, "clientId1");
+        SessionInfo expectedSessionInfo2 = getSessionInfo(sessionId2, "clientId2");
+
+        ClientSession clientSession1 = new ClientSession(false, expectedSessionInfo1);
+        ClientSession clientSession2 = new ClientSession(false, expectedSessionInfo2);
+
+        List<Subscription> subscriptions = List.of(
+                Subscription.newInstance("topic1", 1, clientSession1),
+                Subscription.newInstance("topic2", 2, clientSession2)
+        );
+
+        AtomicInteger counter = new AtomicInteger(0);
+        Subscription subscription = subscriptionProcessor.getOneSubscription(subscriptions, counter);
+        Assert.assertNull(subscription);
+    }
+
+    @Test
+    public void testGetOneSubscriptionEmptyList() {
+        AtomicInteger counter = new AtomicInteger(0);
+        Subscription subscription = subscriptionProcessor.getOneSubscription(List.of(), counter);
+        Assert.assertNull(subscription);
     }
 
     private List<Subscription> getSubscriptions(ClientSession clientSession1, ClientSession clientSession2, ClientSession clientSession3) {

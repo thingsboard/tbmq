@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.ArrayList;
@@ -66,7 +67,10 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
     private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptions, int qos) {
         List<Subscription> result = new ArrayList<>(sharedSubscriptions.size());
         for (SharedSubscription sharedSubscription : sharedSubscriptions) {
-            result.add(getSubscription(sharedSubscription, qos));
+            Subscription subscription = getSubscription(sharedSubscription, qos);
+            if (subscription != null) {
+                result.add(subscription);
+            }
         }
         return result;
     }
@@ -74,24 +78,53 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
     private Subscription getSubscription(SharedSubscription sharedSubscription, int qos) {
         Subscription anyActive = findAnyConnectedSubscription(sharedSubscription.getSubscriptions());
         if (anyActive == null) {
-            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getTopicSharedSubscription());
-            return createDummySubscription(sharedSubscription, qos);
+            if (hasAnyPersistentSubscription(sharedSubscription.getSubscriptions())) {
+                log.info("[{}] No active subscription found for shared subscription - falling back to persistent disconnected subscriber",
+                        sharedSubscription.getTopicSharedSubscription());
+                return createDummySubscription(sharedSubscription, qos);
+            }
+            log.debug("[{}] No active or persistent subscription found for shared subscription - skipping message",
+                    sharedSubscription.getTopicSharedSubscription());
+            return null;
         } else {
             SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
-            return strategy.analyze(sharedSubscription);
+            Subscription result = strategy.analyze(sharedSubscription);
+            if (result == null) {
+                if (hasAnyPersistentSubscription(sharedSubscription.getSubscriptions())) {
+                    log.info("[{}] No connected subscription found during round-robin processing - falling back to persistent disconnected subscriber",
+                            sharedSubscription.getTopicSharedSubscription());
+                    return createDummySubscription(sharedSubscription, qos);
+                }
+                log.debug("[{}] No connected or persistent subscription found during round-robin processing - skipping message",
+                        sharedSubscription.getTopicSharedSubscription());
+                return null;
+            }
+            return result;
         }
+    }
+
+    boolean hasAnyPersistentSubscription(List<Subscription> subscriptions) {
+        for (Subscription subscription : subscriptions) {
+            if (!subscription.getClientSessionInfo().isConnected() && subscription.getClientSessionInfo().isPersistent()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     Subscription findAnyConnectedSubscription(List<Subscription> subscriptions) {
         if (CollectionUtils.isEmpty(subscriptions)) {
             return null;
         }
-        return subscriptions
-                .stream()
-                .filter(subscription -> subscription.getClientSessionInfo().isConnected())
-                .filter(subscription -> clientSessionCtxService.getClientSessionCtx(subscription.getClientId()).isWritable())
-                .findAny()
-                .orElse(null);
+        for (Subscription subscription : subscriptions) {
+            if (subscription.getClientSessionInfo().isConnected()) {
+                ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(subscription.getClientId());
+                if (clientSessionCtx != null && clientSessionCtx.isWritable()) {
+                    return subscription;
+                }
+            }
+        }
+        return null;
     }
 
     private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {

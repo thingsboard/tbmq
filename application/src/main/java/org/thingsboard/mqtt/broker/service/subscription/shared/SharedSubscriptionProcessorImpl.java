@@ -15,73 +15,62 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import com.google.common.collect.Iterables;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProcessor {
 
-    private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptionIterator> sharedSubscriptionIteratorsMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptionState> sharedSubscriptionStatesMap = new ConcurrentHashMap<>();
 
     @Override
     public Subscription processRoundRobin(SharedSubscription sharedSubscription) {
         TopicSharedSubscription key = sharedSubscription.getTopicSharedSubscription();
-        Iterator<Subscription> iterator = getIterator(key, sharedSubscription);
-        return getOneSubscription(iterator);
+        List<Subscription> subscriptions = sharedSubscription.getSubscriptions();
+        AtomicInteger counter = getCounter(key, sharedSubscription);
+        return getOneSubscription(subscriptions, counter);
     }
 
     @Override
     public void unsubscribe(TopicSharedSubscription topicSharedSubscription) {
-        sharedSubscriptionIteratorsMap.remove(topicSharedSubscription);
+        sharedSubscriptionStatesMap.remove(topicSharedSubscription);
     }
 
-    private Iterator<Subscription> getIterator(TopicSharedSubscription key, SharedSubscription sharedSubscription) {
-        if (sharedSubscriptionIteratorsMap.containsKey(key)) {
-            SharedSubscriptionIterator subscriptionIterator = sharedSubscriptionIteratorsMap.get(key);
-            if (subscriptionIterator.getSharedSubscription().equals(sharedSubscription)) {
-                return subscriptionIterator.getIterator();
-            } else {
-                return createIteratorAndPutToMap(key, sharedSubscription);
+    private AtomicInteger getCounter(TopicSharedSubscription key, SharedSubscription sharedSubscription) {
+        return sharedSubscriptionStatesMap.compute(key, (k, existing) -> {
+            if (existing == null || !existing.getSharedSubscription().equals(sharedSubscription)) {
+                return new SharedSubscriptionState(sharedSubscription, new AtomicInteger(0));
             }
-        } else {
-            return createIteratorAndPutToMap(key, sharedSubscription);
-        }
+            return existing;
+        }).getCounter();
     }
 
-    private Iterator<Subscription> createIteratorAndPutToMap(TopicSharedSubscription key, SharedSubscription sharedSubscription) {
-        Iterator<Subscription> iterator = createIterator(sharedSubscription.getSubscriptions());
-        sharedSubscriptionIteratorsMap.put(key, new SharedSubscriptionIterator(sharedSubscription, iterator));
-        return iterator;
-    }
-
-    Iterator<Subscription> createIterator(List<Subscription> subscriptions) {
-        return Iterables.cycle(subscriptions).iterator();
-    }
-
-    Subscription getOneSubscription(Iterator<Subscription> iterator) {
-        while (true) {
-            Subscription next = iterator.next();
-            if (next.getClientSessionInfo().isConnected()) {
-                return next;
+    Subscription getOneSubscription(List<Subscription> subscriptions, AtomicInteger counter) {
+        int size = subscriptions.size();
+        for (int i = 0; i < size; i++) {
+            int index = Math.floorMod(counter.getAndIncrement(), size);
+            Subscription subscription = subscriptions.get(index);
+            if (subscription.getClientSessionInfo().isConnected()) {
+                return subscription;
             }
         }
+        return null;
     }
 
     @Data
     @RequiredArgsConstructor
-    static class SharedSubscriptionIterator {
+    static class SharedSubscriptionState {
         private final SharedSubscription sharedSubscription;
-        private final Iterator<Subscription> iterator;
+        private final AtomicInteger counter;
     }
 }
