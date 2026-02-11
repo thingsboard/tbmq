@@ -21,7 +21,6 @@ import { HttpClient } from '@angular/common/http';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { Event, EventType, FilterEventBody } from '@shared/models/event.models';
-import { EntityType } from '@shared/models/entity-type.models';
 
 @Injectable({
   providedIn: 'root'

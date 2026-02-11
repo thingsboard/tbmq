@@ -172,13 +172,13 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
     this.columns = [];
     this.columns.push(
       new DateEntityTableColumn<Event>('createdTime', 'event.event-time', this.datePipe, '120px', 'yyyy-MM-dd HH:mm:ss.SSS'),
-      new EntityTableColumn<Event>('server', 'event.server', undefined,
+      new EntityTableColumn<Event>('server', 'event.server', '50%',
         (entity) => entity.body.server, entity => ({}), false)
     );
     switch (this.eventType) {
       case EventType.ERROR:
         this.columns.push(
-        new EntityTableColumn<Event>('method', 'event.method', '100%',
+        new EntityTableColumn<Event>('method', 'event.method', '50%',
           (entity) => entity.body.method, entity => ({}), false),
         new EntityActionTableColumn<Event>('error', 'event.error',
           {
@@ -192,9 +192,9 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
         break;
       case EventType.LC_EVENT:
         this.columns.push(
-          new EntityTableColumn<Event>('method', 'event.event', '50%',
+          new EntityTableColumn<Event>('method', 'event.event', '25%',
             (entity) => entity.body.event, entity => ({}), false),
-          new EntityTableColumn<Event>('status', 'event.status', '50%',
+          new EntityTableColumn<Event>('status', 'event.status', '25%',
             (entity) =>
               this.translate.instant(entity.body.success ? 'event.success' : 'event.failed'), entity => ({}), false),
           new EntityActionTableColumn<Event>('error', 'event.error',
@@ -209,13 +209,13 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
         break;
       case EventType.STATS:
         this.columns.push(
-          new EntityTableColumn<Event>('messagesProcessed', 'event.messages-processed', '50%',
+          new EntityTableColumn<Event>('messagesProcessed', 'event.messages-processed', '25%',
             (entity) => entity.body.messagesProcessed + '',
             () => ({}),
             false,
             () => ({}), () => undefined, true
           ),
-          new EntityTableColumn<Event>('errorsOccurred', 'event.errors-occurred', '50%',
+          new EntityTableColumn<Event>('errorsOccurred', 'event.errors-occurred', '25%',
             (entity) => entity.body.errorsOccurred + '',
             () => ({}),
             false,
