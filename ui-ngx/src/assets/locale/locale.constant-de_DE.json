@@ -16,6 +16,9 @@
         "add": "Hinzufügen",
         "yes": "Ja",
         "no": "Nein",
+        "got-it": "Verstanden!",
+        "continue": "Weiter",
+        "done": "Fertig",
         "update": "Aktualisieren",
         "remove": "Entfernen",
         "select": "Auswählen",
@@ -38,7 +41,7 @@
         "on-copied": "Kopiert",
         "skip": "Überspringen",
         "clear": "Löschen",
-        "copy-code": "Zum Kopieren klicken",
+        "copy-code": "Kopieren",
         "copy-id": "ID kopieren",
         "reset": "Zurücksetzen",
         "open": "Öffnen",
@@ -1027,16 +1030,7 @@
     },
     "getting-started": {
         "getting-started": "Erste Schritte",
-        "step-subscribe": "Zum Topic subscriben",
-        "step-publish": "Message publizieren",
-        "step-session": "Session-Details anzeigen",
-        "step-client-dev": "Device Credentials hinzufügen",
-        "step-client-app": "Application Credentials hinzufügen",
-        "step-enable-basic-auth": "Basic Authentication aktivieren",
-        "add-dev-credentials": "Device Credentials hinzufügen",
-        "add-app-credentials": "Application Credentials hinzufügen",
         "credentials-added": "Credentials wurden erfolgreich hinzugefügt",
-        "open-sessions": "Session-Details",
         "guide": {
             "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
@@ -1063,7 +1057,39 @@
             "docs-title": "Grundlagen von TBMQ",
             "docs-text": "Lesen Sie die Dokumentation, um Artikel über die Grundlagen von TBMQ und MQTT zu entdecken.",
             "mqtt-features-title": "MQTT-Funktionen",
-            "mqtt-features-text": "Entdecken Sie die zentralen MQTT-Funktionen mit TBMQ."
+            "mqtt-features-text": "Entdecken Sie die zentralen MQTT-Funktionen mit TBMQ.",
+            "quick-start-guide-title": "Schnellstartanleitung",
+            "quick-start-guide-text": "Folgen Sie dieser Anleitung, um Credentials hinzuzufügen, ein Topic zu abonnieren, eine Testnachricht zu veröffentlichen und eine erfolgreiche Verbindung zu überprüfen.",
+            "getting-started-dialog-title": "Erste Schritte mit TBMQ!",
+            "getting-started-dialog-text": "Sie nutzen jetzt TBMQ, einen kampferprobten MQTT Broker, der für absolute Fehlertoleranz und extrem niedrige Latenz entwickelt wurde und sicherstellt, dass Ihre Daten in jeder Phase Ihres Wachstums dauerhaft erhalten bleiben.",
+            "getting-started-dialog-guide": "Richten Sie Ihren ersten Client ein und validieren Sie Live-Messaging in Sekunden."
+        },
+        "step": {
+            "step-1": {
+                "title": "Basic Authentication aktivieren",
+                "text": "Um dieser Anleitung zu folgen, muss <b>Basic Authentication</b> aktiviert sein.\nSie können diese im Abschnitt <b>Broker</b> Einstellungen auf dieser Seite oder auf der Seite <a href=\"/authentication/providers\">Authentication Providers</a> aktivieren."
+            },
+            "step-2": {
+                "title": "Application Credentials hinzufügen",
+                "text": "Lassen Sie uns Credentials hinzufügen, um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client zu verbinden.\nDiese Credentials werden verwendet, um Nachrichten zu abonnieren, die von anderen MQTT Clients veröffentlicht werden.\n\nUm fortzufahren, klicken Sie bitte unten auf die Schaltfläche <b>Add Application Credentials</b> und bestätigen Sie die Aktion durch Klicken auf <b>Add</b>.\n"
+            },
+            "step-3": {
+                "title": "Device Credentials hinzufügen",
+                "text": "Lassen Sie uns nun Credentials hinzufügen, um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client zu verbinden.\nDies ermöglicht das Veröffentlichen von Nachrichten an <b>TBMQ</b>.\nBitte klicken Sie auf die Schaltfläche <b>Add Device Credentials</b>.\n"
+            },
+            "step-4": {
+                "title": "Topic abonnieren",
+                "text": "Um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nfür das MQTT Topic `tbmq/demo/+` zu abonnieren, verwenden wir den MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nBitte kopieren Sie den folgenden Code und fügen Sie ihn in einen Terminal-Tab ein:"
+            },
+            "step-5": {
+                "title": "Nachricht veröffentlichen",
+                "text": "Um eine Nachricht vom <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nan das Topic `tbmq/demo/topic` zu veröffentlichen, öffnen Sie einen neuen Tab im Terminal und fügen Sie den folgenden Befehl ein:",
+                "after-command": "Sobald Sie diesen Befehl ausführen, sollten Sie die veröffentlichte Nachricht im Terminal-Tab des abonnierten Clients sehen."
+            },
+            "step-6": {
+                "title": "Sitzungsdetails",
+                "text": "Um detaillierte Informationen über den abonnierten Client zu erhalten, klicken Sie bitte auf die Schaltfläche unten."
+            }
         }
     },
     "value": {

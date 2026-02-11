@@ -1,6 +1,6 @@
 ### Mosquitto
 
-This guide contains example of using an open-source command-line MQTT client library [Eclipse Mosquitto](https://mosquitto.org/).
+This guide contains example of using an open-source command-line MQTT client library <a target="_blank" href="https://mosquitto.org">Eclipse Mosquitto</a>.
 The **mosquitto_pub** tool is used to publish messages to an MQTT topic, while the **mosquitto_sub** command is used to subscribe to 
 MQTT topics and receive messages.
 

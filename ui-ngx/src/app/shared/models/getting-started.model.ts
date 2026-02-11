@@ -214,3 +214,113 @@ export const gettingStartedActionsProduct: GettingStartedLink[] = [
     url: HelpLinks.linksMap.help
   }
 ]
+
+export enum GettingStartedStepId {
+  BASIC_AUTH = 'BASIC_AUTH',
+  CLIENT_APP = 'CLIENT_APP',
+  CLIENT_DEVICE = 'CLIENT_DEVICE',
+  SUBSCRIBE = 'SUBSCRIBE',
+  PUBLISH = 'PUBLISH',
+  SESSION = 'SESSION',
+}
+
+export enum GettingStartedButtonAction {
+  ADD_APP_CREDENTIALS = 'add-app-credentials',
+  ADD_DEVICE_CREDENTIALS = 'add-device-credentials',
+  OPEN_SESSIONS = 'open-sessions'
+}
+
+export interface GettingStartedStepButton {
+  action: GettingStartedButtonAction;
+  icon: string;
+  labelKey: string;
+}
+
+export interface GettingStartedStepCommand {
+  template: string;
+  afterTextKey?: string;
+}
+
+export interface GettingStartedStep {
+  id: GettingStartedStepId;
+  titleKey: string;
+  textKey: string;
+  button?: GettingStartedStepButton;
+  command?: GettingStartedStepCommand;
+}
+
+export const gettingStartedStepCommands = {
+  [GettingStartedStepId.SUBSCRIBE]: (randomClientId: string, mqttHost: string, mqttPort: string) => `
+    \`\`\`bash
+    mosquitto_sub -d -q 1 -h ${mqttHost} -p ${mqttPort} -t tbmq/demo/+ -i ${randomClientId} -u tbmq_app -P tbmq_app -c -v{:copy-code}
+    \`\`\`
+  `,
+  [GettingStartedStepId.PUBLISH]: (mqttHost: string, mqttPort: string) => `
+    \`\`\`bash
+    mosquitto_pub -d -q 1 -h ${mqttHost} -p ${mqttPort} -t tbmq/demo/topic -u tbmq_dev -P tbmq_dev -m "Hello World"{:copy-code}
+    \`\`\`
+  `
+};
+
+export const gettingStartedStepsConfig: GettingStartedStep[] = [
+  {
+    id: GettingStartedStepId.BASIC_AUTH,
+    titleKey: 'getting-started.step.step-1.title',
+    textKey: 'getting-started.step.step-1.text'
+  },
+  {
+    id: GettingStartedStepId.CLIENT_APP,
+    titleKey: 'getting-started.step.step-2.title',
+    textKey: 'getting-started.step.step-2.text',
+    button: {
+      action: GettingStartedButtonAction.ADD_APP_CREDENTIALS,
+      icon: 'desktop_mac',
+      labelKey: 'getting-started.step.step-2.title'
+    }
+  },
+  {
+    id: GettingStartedStepId.CLIENT_DEVICE,
+    titleKey: 'getting-started.step.step-3.title',
+    textKey: 'getting-started.step.step-3.text',
+    button: {
+      action: GettingStartedButtonAction.ADD_DEVICE_CREDENTIALS,
+      icon: 'devices_other',
+      labelKey: 'getting-started.step.step-3.title'
+    }
+  },
+  {
+    id: GettingStartedStepId.SUBSCRIBE,
+    titleKey: 'getting-started.step.step-4.title',
+    textKey: 'getting-started.step.step-4.text',
+    command: {
+      template: GettingStartedStepId.SUBSCRIBE
+    }
+  },
+  {
+    id: GettingStartedStepId.PUBLISH,
+    titleKey: 'getting-started.step.step-5.title',
+    textKey: 'getting-started.step.step-5.text',
+    command: {
+      template: GettingStartedStepId.PUBLISH,
+      afterTextKey: 'getting-started.step.step-5.after-command'
+    }
+  },
+  {
+    id: GettingStartedStepId.SESSION,
+    titleKey: 'getting-started.step.step-6.title',
+    textKey: 'getting-started.step.step-6.text',
+    button: {
+      action: GettingStartedButtonAction.OPEN_SESSIONS,
+      icon: 'mdi:book-multiple',
+      labelKey: 'getting-started.step.step-6.title'
+    }
+  }
+];
+
+export function getGettingStartedSteps(basicAuthEnabled: boolean): GettingStartedStep[] {
+  if (basicAuthEnabled) {
+    return gettingStartedStepsConfig.filter(step => step.id !== GettingStartedStepId.BASIC_AUTH);
+  }
+  return gettingStartedStepsConfig;
+}
+

@@ -15,8 +15,6 @@
 ///
 
 import { Component, Input, OnInit } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
@@ -38,12 +36,18 @@ import { ConnectionState } from '@shared/models/session.model';
 import { ConfigService } from '@core/http/config.service';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatStepper, MatStep, MatStepLabel } from '@angular/material/stepper';
-import { AsyncPipe } from '@angular/common';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { clientIdRandom } from '@shared/models/ws-client.model';
+import {
+  GettingStartedStep,
+  GettingStartedButtonAction,
+  GettingStartedStepId,
+  getGettingStartedSteps,
+  gettingStartedStepCommands
+} from '@shared/models/getting-started.model';
 
 @Component({
     selector: 'tb-getting-started-home',
@@ -55,7 +59,7 @@ import { clientIdRandom } from '@shared/models/ws-client.model';
             useValue: { displayDefaultIndicatorType: false }
         }
     ],
-    imports: [CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
+    imports: [CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
 
@@ -64,21 +68,13 @@ export class GettingStartedHomeComponent implements OnInit {
   hideTitle = true;
 
   cardType = HomePageTitleType.GETTING_STARTED;
-  steps: Observable<Array<any>> = of([]);
-  stepsData: Array<any> = [];
-  data: string;
+  steps: GettingStartedStep[] = [];
   selectedStep = 0;
   configParams = this.configService.brokerConfig;
 
   private randomClientId = clientIdRandom();
-  subscribeStepCommand = `
-    \`\`\`bash
-    mosquitto_sub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/+ -i ${this.randomClientId} -u tbmq_app -P tbmq_app -c -v{:copy-code}
-    \`\`\`
-  `;
 
-  constructor(private instructionsService: InstructionsService,
-              private dialog: MatDialog,
+  constructor(private dialog: MatDialog,
               private translate: TranslateService,
               private store: Store<AppState>,
               private configService: ConfigService,
@@ -87,26 +83,49 @@ export class GettingStartedHomeComponent implements OnInit {
 
   ngOnInit() {
     const basicAuthEnabled = this.configParams.basicAuthEnabled;
-    this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
-    this.steps.subscribe((res) => {
-      this.stepsData = res;
-      this.getStep(res[0].id);
-    });
+    this.steps = getGettingStartedSteps(basicAuthEnabled);
   }
 
   selectStep(event: any) {
     this.selectedStep = event.selectedIndex;
-    this.getStep(this.stepsData[event.selectedIndex].id);
   }
 
-  addClientCredentials(type: string) {
+  getStepCommand(stepId: GettingStartedStepId): string {
+    const mqttHost = '{:mqttHost}';
+    const mqttPort = '{:mqttPort}';
+
+    switch (stepId) {
+      case GettingStartedStepId.SUBSCRIBE:
+        return gettingStartedStepCommands[GettingStartedStepId.SUBSCRIBE](this.randomClientId, mqttHost, mqttPort);
+      case GettingStartedStepId.PUBLISH:
+        return gettingStartedStepCommands[GettingStartedStepId.PUBLISH](mqttHost, mqttPort);
+      default:
+        return '';
+    }
+  }
+
+  handleButtonAction(action: GettingStartedButtonAction) {
+    switch (action) {
+      case GettingStartedButtonAction.ADD_APP_CREDENTIALS:
+        this.addClientCredentials(action);
+        break;
+      case GettingStartedButtonAction.ADD_DEVICE_CREDENTIALS:
+        this.addClientCredentials(action);
+        break;
+      case GettingStartedButtonAction.OPEN_SESSIONS:
+        this.openSessions();
+        break;
+    }
+  }
+
+  addClientCredentials(stepType: GettingStartedButtonAction) {
     const config = new EntityTableConfig<ClientCredentials>();
     config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     config.entityComponent = ClientCredentialsComponent;
     config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     config.addDialogStyle = {width: 'fit-content'};
-    if (type === 'dev') {
+    if (stepType === GettingStartedButtonAction.ADD_DEVICE_CREDENTIALS) {
       config.demoData = {
         name: 'TBMQ Device Demo',
         clientType: ClientType.DEVICE,
@@ -120,7 +139,7 @@ export class GettingStartedHomeComponent implements OnInit {
           }
         })
       };
-    } else if (type === 'app') {
+    } else if (stepType === GettingStartedButtonAction.ADD_APP_CREDENTIALS) {
       config.demoData = {
         name: 'TBMQ Application Demo',
         clientType: ClientType.APPLICATION,
@@ -161,7 +180,7 @@ export class GettingStartedHomeComponent implements OnInit {
     );
   }
 
-  openSessions() {
+  private openSessions() {
     const targetRoute = '/sessions';
     const queryParams = {
       connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
@@ -176,11 +195,5 @@ export class GettingStartedHomeComponent implements OnInit {
     } else {
       this.router.navigate([targetRoute], { queryParams });
     }
-  }
-
-  private getStep(id: string) {
-    this.instructionsService.getInstruction(id).subscribe(data =>
-      this.data = data
-    );
   }
 }

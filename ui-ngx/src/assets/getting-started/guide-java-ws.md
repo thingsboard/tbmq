@@ -96,4 +96,4 @@ Received message for topic: tbmq/demo/topic with payload: Hello, TBMQ!
 
 #### See also
 
-For more details and advanced usage, refer to the Eclipse Paho client [documentation on GitHub](https://github.com/eclipse/paho.mqtt.java).
+For more details and advanced usage, refer to the <a target="_blank" href="https://github.com/eclipse/paho.mqtt.java">Eclipse Paho client documentation on GitHub</a>.

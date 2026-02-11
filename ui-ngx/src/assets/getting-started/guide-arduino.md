@@ -1,28 +1,28 @@
 ### Arduino
-[Arduino](https://en.wikipedia.org/wiki/Arduino) is an open-source prototyping platform based on easy-to-use hardware and software.
-Arduino boards are able to read inputs from sensor or buttons, process it and turn it into an output. The applications in this samples that are running on Arduino are developed using [Arduino IDE](https://www.arduino.cc/en/Main/Software).
+<a target="_blank" href="https://en.wikipedia.org/wiki/Arduino">Arduino</a> is an open-source prototyping platform based on easy-to-use hardware and software.
+Arduino boards are able to read inputs from sensor or buttons, process it and turn it into an output. The applications in this samples that are running on Arduino are developed using <a target="_blank" href="https://www.arduino.cc/en/Main/Software">Arduino IDE</a>.
 
 In this guide to establish MQTT communication between clients and TBMQ broker we will use an Arduino-based library - PubSubClient.
 The MQTT client will connect to the broker, subscribe to a topic and publish a message.
 
-The Arduino source code was developed using [Arduino IDE](https://www.arduino.cc/en/software).
+The Arduino source code was developed using <a target="_blank" href="https://www.arduino.cc/en/software">Arduino IDE</a>.
 
 ##### Prerequisites
 
 In order to start programming you will need Arduino IDE installed and all related software.
 
 ###### Step 1. Arduino UNO and Arduino IDE setup
-Download and install [Arduino IDE](https://www.arduino.cc/en/Main/Software).
+Download and install <a target="_blank" href="https://www.arduino.cc/en/Main/Software">Arduino IDE</a>.
 
-To learn how to connect your Uno board to the computer and upload your first sketch please follow this [guide](https://www.arduino.cc/en/Guide/ArduinoUno).
+To learn how to connect your Uno board to the computer and upload your first sketch please follow this <a target="_blank" href="https://www.arduino.cc/en/Guide/ArduinoUno">guide</a>.
 
 ###### Step 2. Install Arduino libraries
 
 Open Arduino IDE and go to **Sketch -> Include Library -> Manage Libraries**.
 Find and install the following libraries:
 
-- [PubSubClient by Nick O'Leary](http://pubsubclient.knolleary.net/).
-- [ArduinoJson by Benoit Blanchon](https://github.com/bblanchon/ArduinoJson)
+- <a target="_blank" href="http://pubsubclient.knolleary.net/">PubSubClient by Nick O'Leary</a>.
+- <a target="_blank" href="https://github.com/bblanchon/ArduinoJson">ArduinoJson by Benoit Blanchon</a>
 
 **Note** that this tutorial was tested with the following versions of the libraries:
 
@@ -125,5 +125,5 @@ When the application is running you can select `Arduino/Genuino Uno` port in Ard
 
 ##### See also
 
-- [Arduino wiki](https://en.wikipedia.org/wiki/Arduino)
-- [Official page](https://www.arduino.cc/en/Main/ArduinoBoardUno)
+- <a target="_blank" href="https://en.wikipedia.org/wiki/Arduino">Arduino wiki</a>
+- <a target="_blank" href="https://www.arduino.cc/en/Main/ArduinoBoardUno">Official page</a>

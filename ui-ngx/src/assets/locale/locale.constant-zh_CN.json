@@ -18,6 +18,9 @@
         "add": "新增",
         "yes": "是",
         "no": "否",
+        "got-it": "知道了！",
+        "continue": "继续",
+        "done": "完成",
         "update": "更新",
         "remove": "移除",
         "select": "选择",
@@ -1027,16 +1030,7 @@
     },
     "getting-started": {
         "getting-started": "快速开始",
-        "step-subscribe": "订阅 Topic",
-        "step-publish": "发布消息",
-        "step-session": "查看会话详情",
-        "step-client-dev": "添加 Device 凭据",
-        "step-client-app": "添加 Application 凭据",
-        "step-enable-basic-auth": "启用 Basic Authentication",
-        "add-dev-credentials": "添加 Device 凭据",
-        "add-app-credentials": "添加 Application 凭据",
         "credentials-added": "凭据添加成功",
-        "open-sessions": "会话详情",
         "guide": {
             "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
@@ -1063,7 +1057,39 @@
             "docs-title": "TBMQ 基础",
             "docs-text": "浏览文档，了解 TBMQ 与 MQTT 基础。",
             "mqtt-features-title": "MQTT 功能",
-            "mqtt-features-text": "探索 TBMQ 的核心 MQTT 功能。"
+            "mqtt-features-text": "探索 TBMQ 的核心 MQTT 功能。",
+            "quick-start-guide-title": "快速入门指南",
+            "quick-start-guide-text": "按照本指南添加 Credentials，订阅 Topic，发布测试消息，并验证连接是否成功。",
+            "getting-started-dialog-title": "开始使用 TBMQ！",
+            "getting-started-dialog-text": "您现在由 TBMQ 提供支持，这是一个经过实战考验的 MQTT Broker，专为绝对的容错能力和超低延迟而设计，确保您的数据在增长的每个阶段都保持持久性。",
+            "getting-started-dialog-guide": "配置您的第一个 Client 并在几秒钟内验证实时消息传递。"
+        },
+        "step": {
+            "step-1": {
+                "title": "启用 Basic Authentication",
+                "text": "要遵循本指南，必须启用 <b>Basic Authentication</b>。\n您可以在此页面的 <b>Broker</b> 设置部分或 <a href=\"/authentication/providers\">Authentication Providers</a> 页面上启用它。"
+            },
+            "step-2": {
+                "title": "添加 Application Credentials",
+                "text": "让我们添加 Credentials 以连接 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client。\n这些 Credentials 将用于订阅从其他 MQTT Clients 发布的消息。\n\n要继续，请点击下方的 <b>Add Application Credentials</b> 按钮，并通过点击 <b>Add</b> 按钮确认操作。\n"
+            },
+            "step-3": {
+                "title": "添加 Device Credentials",
+                "text": "现在让我们添加 Credentials 以连接 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client。\n这将允许向 <b>TBMQ</b> 发布消息。\n请点击 <b>Add Device Credentials</b> 按钮。\n"
+            },
+            "step-4": {
+                "title": "订阅 Topic",
+                "text": "要将 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\n订阅到 MQTT Topic `tbmq/demo/+`，我们将使用 <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a> MQTT Client。\n请复制并将以下代码粘贴到终端选项卡中："
+            },
+            "step-5": {
+                "title": "发布消息",
+                "text": "要从 <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\n向 Topic `tbmq/demo/topic` 发布消息，请在终端中打开一个新选项卡并粘贴以下命令：",
+                "after-command": "运行此命令后，您应该会在已订阅 Client 的终端选项卡中看到发布的消息。"
+            },
+            "step-6": {
+                "title": "会话详情",
+                "text": "要访问有关已订阅 Client 的详细信息，请点击下方的按钮。"
+            }
         }
     },
     "value": {

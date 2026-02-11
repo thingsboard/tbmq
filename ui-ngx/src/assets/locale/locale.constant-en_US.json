@@ -1093,16 +1093,7 @@
     },
     "getting-started": {
         "getting-started": "Getting Started",
-        "step-subscribe": "Subscribe to Topic",
-        "step-publish": "Publish Message",
-        "step-session": "View Session Details",
-        "step-client-dev": "Add Device Credentials",
-        "step-client-app": "Add Application Credentials",
-        "step-enable-basic-auth": "Enable Basic Authentication",
-        "add-dev-credentials": "Add Device Credentials",
-        "add-app-credentials": "Add Application Credentials",
         "credentials-added": "Credentials added successfully",
-        "open-sessions": "Session Details",
         "guide": {
             "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
@@ -1135,6 +1126,33 @@
             "docs-text": "Browse the documentation to explore articles on the fundamentals of TBMQ and MQTT.",
             "mqtt-features-title": "MQTT features",
             "mqtt-features-text": "Explore the core MQTT features with TBMQ."
+        },
+        "step": {
+            "step-1": {
+                "title": "Enable Basic Authentication",
+                "text": "To follow this guide, <b>Basic Authentication</b> must be enabled.\nYou can enable it in the <b>Broker Settings</b> section on this page, or on the <a href=\"/authentication/providers\">Authentication Providers</a> page."
+            },
+            "step-2": {
+                "title": "Add Application Credentials",
+                "text": "Let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> client.\nThese credentials will be utilized to subscribe to the messages published from other MQTT clients.\n\nTo proceed, please click on the <b>Add Application Credentials</b> button below and confirm the action by clicking on the <b>Add</b> button.\n"
+            },
+            "step-3": {
+                "title": "Add Device Credentials",
+                "text": "Now let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> client.\nThis will allow publishing messages to the <b>TBMQ</b>.\nPlease click on the button <b>Add Device Credentials</b>.\n"
+            },
+            "step-4": {
+                "title": "Subscribe to Topic",
+                "text": "To subscribe <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> \nclient to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a> MQTT client.\nPlease copy and paste the following code into a terminal tab:"
+            },
+            "step-5": {
+                "title": "Publish Message",
+                "text": "To publish a message from the <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> \nclient to the topic `tbmq/demo/topic` open a new tab in the terminal and paste the following command:",
+                "after-command": "Once you run this command, you should see the published message in the terminal tab of the subscribed client."
+            },
+            "step-6": {
+                "title": "Session Details",
+                "text": "To access detailed information about the subscribed client, please click on the button below."
+            }
         }
     },
     "value": {

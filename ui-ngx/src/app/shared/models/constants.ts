@@ -94,6 +94,7 @@ export const HelpLinks = {
     troubleshooting: helpBaseUrl + docsPath + '/troubleshooting',
     monitoring: helpBaseUrl + docsPath + '/user-guide/ui/monitoring',
     monitoringKafkaBrokers: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/#kafka-brokers',
+    monitoringConfig: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/#config',
     clientType: helpBaseUrl + docsPath + '/user-guide/mqtt-client-type',
     connectToThingsBoard: helpBaseUrl + docsPath + '/user-guide/integrations/how-to-connect-thingsboard-to-tbmq',
     perfTest100m: helpBaseUrl + docsPath + '/reference/100m-connections-performance-test',

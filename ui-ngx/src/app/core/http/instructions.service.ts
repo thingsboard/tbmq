@@ -15,22 +15,13 @@
 ///
 
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InstructionsService {
-
-  private STEP_TITLE_MAP: Record<string, string> = {
-    'client-app': 'getting-started.step-client-app',
-    'client-device': 'getting-started.step-client-dev',
-    'subscribe': 'getting-started.step-subscribe',
-    'publish': 'getting-started.step-publish',
-    'session': 'getting-started.step-session',
-    'enable-basic-auth': 'getting-started.step-enable-basic-auth',
-  };
 
   constructor(
     private http: HttpClient,
@@ -40,22 +31,4 @@ export class InstructionsService {
   public getInstruction(id: string): Observable<string> {
     return this.http.get(`/assets/getting-started/${id}.md`, { responseType: 'text' });
   }
-
-  public setInstructionsList(basicAuthEnabled: boolean): Observable<Array<any>> {
-    const stepsList = ['client-app', 'client-device', 'subscribe', 'publish', 'session'];
-    if (!basicAuthEnabled) {
-      stepsList.unshift('enable-basic-auth');
-    }
-    const steps = this.getStepsByIds(stepsList);
-    return of(steps);
-  }
-
-  private getStepsByIds(ids: string[]): { id: string; title: string }[] {
-    return ids.map((id, index) => ({
-      id: id,
-      title: this.STEP_TITLE_MAP[id],
-      position: index + 1,
-    }));
-  }
-
 }

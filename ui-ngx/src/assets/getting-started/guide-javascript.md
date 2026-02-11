@@ -78,7 +78,7 @@ client.on('packetsend', (packet) => { console.log('Packet send cmd: ', packet.cm
 {:copy-code}
 ```
 
-To run this JavaScript application you may use [Node.js](https://nodejs.org/en/download/package-manager/):
+To run this JavaScript application you may use <a target="_blank" href="https://nodejs.org/en/download/package-manager/">Node.js</a>:
 
 ```bash
 node tbmq_js_example.js
@@ -101,6 +101,6 @@ Packet send cmd:  puback
 ```
 
 #### See also
-On the official MQTT.js [GitHub page](https://github.com/mqttjs/MQTT.js) you can find detailed information about using JavaScript library, including its extensive features and usage examples.
+On the official MQTT.js <a target="_blank" href="https://github.com/mqttjs/MQTT.js">GitHub page</a> you can find detailed information about using JavaScript library, including its extensive features and usage examples.
 
-Additionally, might be useful our guide on [MQTT over WebSocket](https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/), featuring an example of using the aforementioned library with the [TBMQ WebSocket Client](/ws-client).
+Additionally, might be useful our guide on <a target="_blank" href="https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/">MQTT over WebSocket</a>, featuring an example of using the aforementioned library with the <a target="_blank" href="/ws-client">TBMQ WebSocket Client</a>.

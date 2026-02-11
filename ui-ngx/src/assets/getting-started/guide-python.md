@@ -5,10 +5,10 @@ Using it, you will learn how to connect an MQTT client, subscribe to a topic, pu
 
 ##### Prerequisites
 In order to run the Python code please make sure you have installed:
-* [python3](https://www.python.org/downloads)
-* [paho-mqtt](https://github.com/eclipse/paho.mqtt.python)
+* <a target="_blank" href="https://www.python.org/downloads">python3</a>
+* <a target="_blank" href="https://github.com/eclipse/paho.mqtt.python">paho-mqtt</a>
 
-This guide was developed by using Python v3.10.12 and the new Paho-MQTT 2.1.0 version (which contains some breaking [changes](https://github.com/eclipse/paho.mqtt.python/blob/master/docs/migrations.rst) comparing to older 1.X version). 
+This guide was developed by using Python v3.10.12 and the new Paho-MQTT 2.1.0 version (which contains some breaking <a target="_blank" href="https://github.com/eclipse/paho.mqtt.python/blob/master/docs/migrations.rst">changes</a> comparing to older 1.X version). 
 
 Use the next commands to check your Python and Paho versions:
 
@@ -107,4 +107,4 @@ Received message 'Hello, TBMQ!' on topic sensors/temperature
 ```
 
 #### See also
-The full documenation on Paho MQTT Python Client [API](https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html).
+The full documenation on Paho MQTT Python Client <a target="_blank" href="https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html">API</a>.

@@ -18,6 +18,9 @@
         "add": "Agregar",
         "yes": "Sí",
         "no": "No",
+        "got-it": "¡Entendido!",
+        "continue": "Continuar",
+        "done": "Hecho",
         "update": "Actualizar",
         "remove": "Quitar",
         "select": "Seleccionar",
@@ -1027,16 +1030,7 @@
     },
     "getting-started": {
         "getting-started": "Primeros pasos",
-        "step-subscribe": "Suscribirse a Topic",
-        "step-publish": "Publicar mensaje",
-        "step-session": "Ver detalles de sesión",
-        "step-client-dev": "Agregar credenciales de Device",
-        "step-client-app": "Agregar credenciales de Application",
-        "step-enable-basic-auth": "Habilitar Basic Authentication",
-        "add-dev-credentials": "Agregar credenciales de Device",
-        "add-app-credentials": "Agregar credenciales de Application",
         "credentials-added": "Credenciales agregadas correctamente",
-        "open-sessions": "Detalles de sesión",
         "guide": {
             "javascript-title": "JavaScript",
             "javascript-subtitle": "MQTT.js",
@@ -1063,7 +1057,39 @@
             "docs-title": "Fundamentos de TBMQ",
             "docs-text": "Explora la documentación sobre fundamentos de TBMQ y MQTT.",
             "mqtt-features-title": "Funciones de MQTT",
-            "mqtt-features-text": "Explora las funciones principales de MQTT con TBMQ."
+            "mqtt-features-text": "Explora las funciones principales de MQTT con TBMQ.",
+            "quick-start-guide-title": "Guía de inicio rápido",
+            "quick-start-guide-text": "Siga esta guía para añadir Credentials, suscribirse a un Topic, publicar un mensaje de prueba y verificar una conexión exitosa.",
+            "getting-started-dialog-title": "¡Comenzando con TBMQ!",
+            "getting-started-dialog-text": "Ahora está impulsado por TBMQ, un MQTT Broker probado en batalla, diseñado para una tolerancia a fallos absoluta y una latencia ultrabaja, asegurando que sus datos permanezcan duraderos en cada etapa de su crecimiento.",
+            "getting-started-dialog-guide": "Provisione su primer Client y valide la mensajería en vivo en segundos."
+        },
+        "step": {
+            "step-1": {
+                "title": "Habilitar Basic Authentication",
+                "text": "Para seguir esta guía, debe estar habilitada la <b>Basic Authentication</b>.\nPuede habilitarla en la sección de configuración del <b>Broker</b> de esta página o en la página de <a href=\"/authentication/providers\">Authentication Providers</a>."
+            },
+            "step-2": {
+                "title": "Añadir Application Credentials",
+                "text": "Vamos a añadir Credentials para conectar el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client.\nEstas Credentials se utilizarán para suscribirse a los mensajes publicados por otros MQTT Clients.\n\nPara continuar, haga clic en el botón <b>Add Application Credentials</b> a continuación y confirme la acción haciendo clic en el botón <b>Add</b>.\n"
+            },
+            "step-3": {
+                "title": "Añadir Device Credentials",
+                "text": "Ahora vamos a añadir Credentials para conectar el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client.\nEsto permitirá publicar mensajes en <b>TBMQ</b>.\nPor favor, haga clic en el botón <b>Add Device Credentials</b>.\n"
+            },
+            "step-4": {
+                "title": "Suscribirse al Topic",
+                "text": "Para suscribir el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nal MQTT Topic `tbmq/demo/+`, utilizaremos el MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nPor favor, copie y pegue el siguiente código en una pestaña de la terminal:"
+            },
+            "step-5": {
+                "title": "Publicar mensaje",
+                "text": "Para publicar un mensaje desde el <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nal Topic `tbmq/demo/topic`, abra una nueva pestaña en la terminal y pegue el siguiente comando:",
+                "after-command": "Una vez ejecute este comando, debería ver el mensaje publicado en la pestaña de la terminal del Client suscrito."
+            },
+            "step-6": {
+                "title": "Detalles de la sesión",
+                "text": "Para acceder a información detallada sobre el Client suscrito, haga clic en el botón de abajo."
+            }
         }
     },
     "value": {
