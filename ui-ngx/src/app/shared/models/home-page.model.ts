@@ -74,7 +74,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'home.config',
         tooltip: 'home.config',
-        docsLink: 'monitoring'
+        docsLink: 'monitoringConfig'
       }
     ],
     [
