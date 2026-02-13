@@ -24,7 +24,7 @@
   <mat-card-content>
     <div class="tb-form-panel no-border no-padding">
       <div class="info-container flex flex-col gap-4">
-        <span class="content info" translate>getting-started.guide.info-text</span>
+        <span class="content info" [innerHTML]="'getting-started.guide.info-text' | translate"></span>
         <a class="content read-more" [href]="readMore" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
         <div class="guides-container gap-2">
