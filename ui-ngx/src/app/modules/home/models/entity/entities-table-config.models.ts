@@ -175,6 +175,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultCursor = false;
   searchEnabled = true;
   addEnabled = true;
+  addAsTextButton = true;
   entitiesDeleteEnabled = true;
   detailsPanelEnabled = true;
   hideDetailsTabsOnEdit = true;

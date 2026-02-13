@@ -693,7 +693,7 @@
         "type-device": "Device"
     },
     "mqtt-client-credentials": {
-        "add-client-credentials": "Add Client Credentials",
+        "add-client-credentials": "Add client credentials",
         "authentication-authorization": "Authentication and Authorization",
         "add-authorization-rules": "Add authorization rule",
         "add-authorization-rule-prompt": "Please add authorization rule",
@@ -873,7 +873,7 @@
         "filter-title": "Filter"
     },
     "shared-subscription": {
-        "add": "Add Application Shared Subscription",
+        "add": "Add Application shared subscription",
         "application-shared-subscriptions": "Application Entities",
         "create-kafka-topics": "Sync Kafka Topics",
         "create-kafka-topics-title": "Create Kafka Topics for all Application Shared Subscriptions?",
