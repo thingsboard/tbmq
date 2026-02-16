@@ -28,13 +28,6 @@
       </div>
     </div>
   </mat-card-header>
-  @if (isLoading$ | async) {
-    <mat-progress-bar color="warn" mode="indeterminate">
-    </mat-progress-bar>
-  }
-  @if (!(isLoading$ | async)) {
-    <div style="height: 4px;"></div>
-  }
   <mat-card-content style="padding-top: 16px;">
     <form [formGroup]="profile" (ngSubmit)="save()">
       <fieldset [disabled]="isLoading$ | async">
