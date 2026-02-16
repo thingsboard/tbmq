@@ -20,7 +20,7 @@ TBMQ is fully compliant with the MQTT v3.1, v3.1.1 and v5.0 protocols, deliverin
 
 ## 🖥️ Try Live Demo
 
-**Experience the full observability and control of TBMQ Professional Edition (PE) instantly.** 
+Experience the full observability and control of TBMQ Professional Edition (PE) instantly.
 Validate your IoT fleet against our high-performance **public MQTT broker**. Visualize real-time throughput, explore the advanced management UI, and test seamless connectivity—**zero infrastructure required**.
 
 **MQTT Connection Details:**
