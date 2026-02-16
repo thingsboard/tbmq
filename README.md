@@ -12,7 +12,7 @@
 <br>
 <div align="center">
  
-💡 [Get started](https://thingsboard.io/docs/mqtt-broker/getting-started/)&ensp;•&ensp;🌐 [Website](https://thingsboard.io/products/mqtt-broker/)&ensp;•&ensp;📚 [Documentation](https://thingsboard.io/docs/mqtt-broker/)&ensp;•&ensp;📔 [Blog](https://thingsboard.io/blog/)&ensp;•&ensp;🕸️ [Slack](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ)&ensp;•&ensp;🔗 [LinkedIn](https://www.linkedin.com/company/thingsboard/posts/?feedView=all)
+🖥️ [Live Demo](https://demo.tbmq.io/signup)&ensp;•&ensp;💡 [Get started](https://thingsboard.io/docs/mqtt-broker/getting-started/)&ensp;•&ensp;🌐 [Website](https://thingsboard.io/products/mqtt-broker/)&ensp;•&ensp;📚 [Documentation](https://thingsboard.io/docs/mqtt-broker/)&ensp;•&ensp;🔗 [Slack](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ)
 
 </div>
 
