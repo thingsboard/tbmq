@@ -21,7 +21,7 @@ TBMQ is fully compliant with the MQTT v3.1, v3.1.1 and v5.0 protocols, deliverin
 ## 🖥️ Try Live Demo
 
 **Experience the full observability and control of TBMQ Professional Edition (PE) instantly.** 
-Connect your devices to our **Free Public MQTT Broker** to visualize real-time throughput, explore the advanced management UI, and test seamless MQTT connectivity—zero infrastructure required.
+Validate your IoT fleet against our high-performance **public MQTT broker**. Visualize real-time throughput, explore the advanced management UI, and test seamless connectivity—**zero infrastructure required**.
 
 **MQTT Connection Details:**
 
@@ -31,12 +31,13 @@ Connect your devices to our **Free Public MQTT Broker** to visualize real-time t
 | **TCP Port**     | `1883`          |
 | **TLS/SSL Port** | `8883`          |
 | **WSS Port**     | `443`           |
+| **WSS Path**     | `/mqtt`         |
 | **Username**     | `demo`          |
 | **Password**     | *(leave empty)* |
 
-> **ℹ️ Sandbox Limitations:** The [public demo](https://demo.tbmq.io/) provides **read-only access** to the TBMQ PE features. 
+> **ℹ️ Sandbox Limitations:** The **[Live Dashboard](https://demo.tbmq.io/)** provides **read-only access** to TBMQ PE features. 
 > While you can monitor active sessions and throughput in real-time, configuration is locked.
-> To deploy a fully configurable cluster with administrative rights, **[start a self-hosted PE trial](https://thingsboard.io/docs/pe/mqtt-broker/install/installation-options/)**.
+> To deploy a fully configurable cluster with administrative rights, **[Install TBMQ PE](https://thingsboard.io/docs/pe/mqtt-broker/install/installation-options/)**.
 
 ## 🚀 Installation options
 TBMQ offers flexible installation options tailored for both development and large-scale production environments:
