@@ -353,7 +353,48 @@
         "mqtt-client-type": "MQTT client type",
         "performance-tests": "Performance tests",
         "retained-messages": "Retained messages",
-        "shared-subscriptions": "Shared subscriptions"
+        "shared-subscriptions": "Shared subscriptions",
+        "getting-started": {
+            "welcome-title": "Willkommen bei TBMQ Demo Cloud",
+            "welcome-description": "Erkunden Sie TBMQ - ein skalierbarer MQTT-Broker, der Millionen von Verbindungen unterstützt.",
+            "quick-start": "Schnellstart",
+            "quick-start-description": "Anleitung & Beispiele",
+            "quick-start-tooltip": "Schnellstart öffnen",
+            "add-credentials": "Anmeldedaten hinzufügen",
+            "add-credentials-description": "Geräte verbinden",
+            "add-credentials-tooltip": "Anmeldedaten erstellen"
+        },
+        "network-settings": {
+            "title": "Netzwerkeinstellungen",
+            "parameter": "Parameter",
+            "port": "Port",
+            "status": "Status",
+            "host": "Host",
+            "tcp": "TCP",
+            "tls": "TLS",
+            "ws": "WS",
+            "wss": "WSS",
+            "active": "Aktiv",
+            "enabled": "Aktiviert",
+            "disabled": "Deaktiviert"
+        },
+        "broker-settings": {
+            "title": "Broker-Einstellungen",
+            "authentication": "Authentifizierung",
+            "advanced": "Erweitert",
+            "basic-auth": "Basis-Authentifizierung",
+            "x509-auth": "X.509-Zertifikatskette",
+            "scram-auth": "SCRAM-Authentifizierung",
+            "jwt-auth": "JWT-Authentifizierung",
+            "http-auth": "HTTP-Authentifizierung",
+            "tcp-max-payload": "TCP Max. Nutzlastgröße",
+            "tls-max-payload": "TLS Max. Nutzlastgröße",
+            "ws-max-payload": "WS Max. Nutzlastgröße",
+            "wss-max-payload": "WSS Max. Nutzlastgröße",
+            "kafka-topic-deletion": "Kafka-Topic-Löschung",
+            "allowed": "Erlaubt",
+            "not-allowed": "Nicht erlaubt"
+        }
     },
     "login": {
         "login": "Login",
@@ -587,7 +628,27 @@
     },
     "monitoring": {
         "monitoring": "Überwachung",
+        "state-health": "Status & Zustand",
+        "traffic-performance": "Traffic & Leistung",
         "max-allowed-timeseries": "Bitte begrenzen Sie die Auswahl des Zeitbereichs. Die aktuelle Anfrage hat das maximale Limit von 50k Datenpunkten überschritten.",
+        "chart": {
+            "incoming-messages": "Eingehende Nachrichtenrate",
+            "incoming-messages-tooltip": "Misst die Rate der von MQTT-Clients an den Broker veröffentlichten Nachrichten",
+            "outgoing-messages": "Ausgehende Zustellungsrate",
+            "outgoing-messages-tooltip": "Misst die Rate der vom Broker an Abonnenten zugestellten Nachrichten",
+            "dropped-messages": "Anzahl verworfener Nachrichten",
+            "dropped-messages-tooltip": "Zählt die Gesamtzahl der Nachrichten, die der Broker nicht verarbeiten oder zustellen kann. Gründe sind mangelndes Abonnenteninteresse (keine passenden Abonnements), Ressourcenbeschränkungen (volle Warteschlangen, Speicherlimits) oder Durchsatzbegrenzungen",
+            "sessions": "Sitzungen",
+            "sessions-tooltip": "Verfolgt die Gesamtzahl der aktiven Client-Verbindungen und getrennten persistenten Sitzungsdatensätze, die vom Broker verwaltet werden",
+            "subscriptions": "Abonnements",
+            "subscriptions-tooltip": "Verfolgt die Gesamtzahl aller Topic-Filter-Einträge, die vom Broker für verbundene und getrennte persistente Clients verwaltet werden",
+            "inbound-payload-traffic": "Eingehender Payload-Traffic",
+            "inbound-payload-traffic-tooltip": "Misst die Gesamtgröße in Bytes des vom Broker von Publishern empfangenen Nachrichteninhalts. Diese Metrik schließt den gesamten MQTT-Protokoll-Overhead (Header, Bestätigungen, Kontrollpakete) aus",
+            "outbound-payload-traffic": "Ausgehender Payload-Traffic",
+            "outbound-payload-traffic-tooltip": "Misst die Gesamtgröße in Bytes des vom Broker an Abonnenten zugestellten Nachrichteninhalts. Diese Metrik schließt den gesamten MQTT-Protokoll-Overhead (Header, Bestätigungen, Kontrollpakete) aus",
+            "retained-messages": "Anzahl gespeicherter Nachrichten",
+            "retained-messages-tooltip": "Verfolgt die Gesamtzahl der vom Broker gespeicherten Retained Messages. Diese Metrik repräsentiert die Anzahl eindeutiger Topics mit einem \"zuletzt bekannten Zustand\", der persistenten Speicher verbraucht und sofort an neue passende Abonnenten zugestellt wird"
+        },
         "stats": "Broker Stats",
         "resource-usage": {
             "resource-usage": "Resource Usage",

@@ -1,0 +1,85 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 150px;
+  overflow-y: auto;
+
+  .network-table {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .network-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.12);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.54);
+    text-transform: uppercase;
+  }
+
+  .network-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+    height: 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  .network-col-name {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.87);
+    font-weight: 500;
+  }
+
+  .network-col-port {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .network-col-status {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+
+    &.status-enabled {
+      color: #4caf50;
+    }
+
+    &.status-disabled {
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+}

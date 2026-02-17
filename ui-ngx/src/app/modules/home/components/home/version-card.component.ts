@@ -24,7 +24,7 @@ import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-    selector: 'tb-version-card',
+    selector: 'tb-home-version',
     templateUrl: './version-card.component.html',
     styleUrls: ['./version-card.component.scss'],
     imports: [CardTitleButtonComponent, TranslateModule, NgTemplateOutlet, MatButton, MatTooltip]

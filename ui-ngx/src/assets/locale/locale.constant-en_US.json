@@ -371,7 +371,48 @@
         "mqtt-client-type": "MQTT client type",
         "performance-tests": "Performance tests",
         "retained-messages": "Retained messages",
-        "shared-subscriptions": "Shared subscriptions"
+        "shared-subscriptions": "Shared subscriptions",
+        "getting-started": {
+            "welcome-title": "Welcome to TBMQ Demo Cloud",
+            "welcome-description": "Explore TBMQ - a scalable MQTT broker supporting millions of connections.",
+            "quick-start": "Quick Start",
+            "quick-start-description": "Guide & examples",
+            "quick-start-tooltip": "Open Getting Started",
+            "add-credentials": "Add Credentials",
+            "add-credentials-description": "Connect devices",
+            "add-credentials-tooltip": "Create Credentials"
+        },
+        "network-settings": {
+            "title": "Network Settings",
+            "parameter": "Parameter",
+            "port": "Port",
+            "status": "Status",
+            "host": "Host",
+            "tcp": "TCP",
+            "tls": "TLS",
+            "ws": "WS",
+            "wss": "WSS",
+            "active": "Active",
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "broker-settings": {
+            "title": "Broker Settings",
+            "authentication": "Authentication",
+            "advanced": "Advanced",
+            "basic-auth": "Basic Authentication",
+            "x509-auth": "X.509 Certificate Chain",
+            "scram-auth": "SCRAM Authentication",
+            "jwt-auth": "JWT Authentication",
+            "http-auth": "HTTP Authentication",
+            "tcp-max-payload": "TCP Max Payload Size",
+            "tls-max-payload": "TLS Max Payload Size",
+            "ws-max-payload": "WS Max Payload Size",
+            "wss-max-payload": "WSS Max Payload Size",
+            "kafka-topic-deletion": "Kafka Topic Deletion",
+            "allowed": "Allowed",
+            "not-allowed": "Not Allowed"
+        }
     },
     "login": {
         "login": "Login",
@@ -1045,7 +1086,15 @@
         "jwt-auth": "JWT Authentication",
         "http-auth": "HTTP Authentication",
         "scram-auth": "SCRAM Authentication",
-        "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
+        "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config",
+        "click-to-expand": "Click to expand",
+        "group": {
+            "authentication": "Authentication Methods",
+            "tcp-listener": "MQTT TCP Listener",
+            "tls-listener": "MQTT TLS Listener",
+            "websocket-listeners": "WebSocket Listeners",
+            "advanced": "Advanced Settings"
+        }
     },
     "kafka": {
         "address": "Address",

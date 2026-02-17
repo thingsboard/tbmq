@@ -353,7 +353,48 @@
         "mqtt-client-type": "Tipo de cliente MQTT",
         "performance-tests": "Pruebas de rendimiento",
         "retained-messages": "Retained messages",
-        "shared-subscriptions": "Shared subscriptions"
+        "shared-subscriptions": "Shared subscriptions",
+        "getting-started": {
+            "welcome-title": "Bienvenido a TBMQ Demo Cloud",
+            "welcome-description": "Explore TBMQ - un broker MQTT escalable que soporta millones de conexiones.",
+            "quick-start": "Inicio Rápido",
+            "quick-start-description": "Guía y ejemplos",
+            "quick-start-tooltip": "Abrir Inicio Rápido",
+            "add-credentials": "Agregar Credenciales",
+            "add-credentials-description": "Conectar dispositivos",
+            "add-credentials-tooltip": "Crear Credenciales"
+        },
+        "network-settings": {
+            "title": "Configuración de Red",
+            "parameter": "Parámetro",
+            "port": "Puerto",
+            "status": "Estado",
+            "host": "Host",
+            "tcp": "TCP",
+            "tls": "TLS",
+            "ws": "WS",
+            "wss": "WSS",
+            "active": "Activo",
+            "enabled": "Habilitado",
+            "disabled": "Deshabilitado"
+        },
+        "broker-settings": {
+            "title": "Configuración del Broker",
+            "authentication": "Autenticación",
+            "advanced": "Avanzado",
+            "basic-auth": "Autenticación Básica",
+            "x509-auth": "Cadena de Certificados X.509",
+            "scram-auth": "Autenticación SCRAM",
+            "jwt-auth": "Autenticación JWT",
+            "http-auth": "Autenticación HTTP",
+            "tcp-max-payload": "Tamaño Máximo de Carga TCP",
+            "tls-max-payload": "Tamaño Máximo de Carga TLS",
+            "ws-max-payload": "Tamaño Máximo de Carga WS",
+            "wss-max-payload": "Tamaño Máximo de Carga WSS",
+            "kafka-topic-deletion": "Eliminación de Topics Kafka",
+            "allowed": "Permitido",
+            "not-allowed": "No Permitido"
+        }
     },
     "login": {
         "login": "Iniciar sesión",
@@ -587,8 +628,28 @@
     },
     "monitoring": {
         "monitoring": "Monitoreo",
+        "state-health": "Estado y Salud",
+        "traffic-performance": "Tráfico y Rendimiento",
         "stats": "Estadísticas del broker",
         "max-allowed-timeseries": "Reduce el rango temporal. La solicitud excede el límite máximo de 50k puntos.",
+        "chart": {
+            "incoming-messages": "Tasa de mensajes entrantes",
+            "incoming-messages-tooltip": "Mide la tasa de mensajes publicados al broker por clientes MQTT",
+            "outgoing-messages": "Tasa de entrega saliente",
+            "outgoing-messages-tooltip": "Mide la tasa de mensajes entregados desde el broker a los suscriptores",
+            "dropped-messages": "Cantidad de mensajes descartados",
+            "dropped-messages-tooltip": "Cuenta el número total de mensajes que el broker no puede procesar o entregar. Las razones incluyen falta de interés del suscriptor (sin suscripciones coincidentes), limitaciones de recursos (colas llenas, límites de almacenamiento) o aplicación de límite de tasa",
+            "sessions": "Sesiones",
+            "sessions-tooltip": "Rastrea el conteo total de conexiones activas de clientes y registros de sesiones persistentes desconectadas administrados por el broker",
+            "subscriptions": "Suscripciones",
+            "subscriptions-tooltip": "Rastrea el conteo agregado de todas las entradas de filtros de temas mantenidas por el broker para clientes persistentes conectados y desconectados",
+            "inbound-payload-traffic": "Tráfico de carga útil entrante",
+            "inbound-payload-traffic-tooltip": "Mide el tamaño total en bytes del contenido del mensaje recibido por el broker de los publicadores. Esta métrica excluye toda la sobrecarga del protocolo MQTT (encabezados, confirmaciones, paquetes de control)",
+            "outbound-payload-traffic": "Tráfico de carga útil saliente",
+            "outbound-payload-traffic-tooltip": "Mide el tamaño total en bytes del contenido del mensaje entregado por el broker a los suscriptores. Esta métrica excluye toda la sobrecarga del protocolo MQTT (encabezados, confirmaciones, paquetes de control)",
+            "retained-messages": "Cantidad de mensajes retenidos",
+            "retained-messages-tooltip": "Rastrea el conteo total de mensajes retenidos actualmente almacenados por el broker. Esta métrica representa el número de temas únicos que contienen un valor de \"último estado conocido\", que consume almacenamiento persistente y se entrega inmediatamente a nuevos suscriptores coincidentes"
+        },
         "resource-usage": {
             "resource-usage": "Uso de recursos",
             "no-resource-usage-text": "No se encontraron recursos",

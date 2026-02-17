@@ -15,15 +15,24 @@
     limitations under the License.
 
 -->
-<div class="tb-home-overview flex flex-row lt-lg:flex-col">
-  <div class="flex max-w-70% flex-col gap-3 pr-3 lt-lg:max-w-100% lt-lg:pb-3 lt-lg:pr-0">
-    <tb-home-charts></tb-home-charts>
-    <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-    <tb-kafka-tables-tab-group class="flex-1 min-h-0"></tb-kafka-tables-tab-group>
+<div class="tb-home-overview">
+  <div class="flex gap-3 lt-lg:flex-col">
+    <tb-home-welcome class="tb-home-card"></tb-home-welcome>
+    <tb-home-network-settings class="tb-home-card"></tb-home-network-settings>
+    <tb-home-advanced-settings class="tb-home-card"></tb-home-advanced-settings>
   </div>
-  <div class="flex max-w-30% flex-1 flex-col gap-3 lt-lg:max-w-100%">
-    <tb-card-config class="tb-home-card"></tb-card-config>
-    <tb-kafka-brokers-table class="tb-home-card max-h-40 overflow-auto"></tb-kafka-brokers-table>
-    <tb-version-card class="tb-home-card"></tb-version-card>
+  <div class="flex gap-3">
+    <tb-home-charts class="tb-home-card flex-1"></tb-home-charts>
+  </div>
+  <div class="flex gap-3 lt-lg:flex-col">
+    <tb-home-summary-panel class="tb-home-card flex-1"
+                           [entities$]="sessions$"
+                           [cardType]="cardTypeSession"
+                           [config]="sessionConfig"/>
+    <tb-home-summary-panel class="tb-home-card flex-1"
+                           [entities$]="credentials$"
+                           [cardType]="cardTypeCredentials"
+                           [config]="credentialsConfig"/>
+    <tb-home-version class="tb-home-card flex-1"></tb-home-version>
   </div>
 </div>

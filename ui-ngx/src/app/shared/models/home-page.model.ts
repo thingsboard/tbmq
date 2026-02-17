@@ -31,7 +31,9 @@ export enum HomePageTitleType {
   KAFKA_CONSUMER_GROUPS = 'KAFKA_CONSUMER_GROUPS',
   QUICK_LINKS = 'QUICK_LINKS',
   VERSION = 'VERSION',
-  GETTING_STARTED = 'GETTING_STARTED'
+  GETTING_STARTED = 'GETTING_STARTED',
+  NETWORK_CONFIG = 'NETWORK_CONFIG',
+  AUTH_CONFIG = 'AUTH_CONFIG',
 }
 
 export interface HomePageTitle {
@@ -75,6 +77,22 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'home.config',
         tooltip: 'home.config',
         docsLink: 'monitoringConfig'
+      }
+    ],
+    [
+      HomePageTitleType.NETWORK_CONFIG,
+      {
+        label: 'home.network-settings.title',
+        tooltip: 'home.network-settings.title',
+        docsLink: 'monitoringConfig'
+      }
+    ],
+    [
+      HomePageTitleType.AUTH_CONFIG,
+      {
+        label: 'home.broker-settings.title',
+        tooltip: 'home.broker-settings.title',
+        // docsLink: 'monitoringConfig'
       }
     ],
     [
