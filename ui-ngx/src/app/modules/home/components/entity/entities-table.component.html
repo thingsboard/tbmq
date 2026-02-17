@@ -323,7 +323,7 @@
                           [disabled]="isLoading$ | async"
                           [class.!hidden]="!actionDescriptor.isEnabled(entity)"
                           (click)="actionDescriptor.onAction($event, entity)">
-                          <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+                          <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.iconFunction ? actionDescriptor.iconFunction(entity) : actionDescriptor.icon}}</tb-icon>
                           <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
                         </button>
                       }
