@@ -20,7 +20,7 @@
   min-height: 150px;
 
   .auth-toggle {
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 
   .auth-section {
@@ -48,7 +48,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: center;
-    min-height: 32px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 
     &:last-child {
