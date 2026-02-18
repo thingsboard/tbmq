@@ -355,7 +355,7 @@
         "retained-messages": "Retained messages",
         "shared-subscriptions": "Shared subscriptions",
         "getting-started": {
-            "welcome-title": "Willkommen bei TBMQ Demo Cloud",
+            "welcome-title": "Willkommen bei TBMQ",
             "welcome-description": "Erkunden Sie TBMQ - ein skalierbarer MQTT-Broker, der Millionen von Verbindungen unterstützt.",
             "quick-start": "Schnellstart",
             "quick-start-description": "Anleitung & Beispiele",
@@ -378,8 +378,18 @@
             "enabled": "Aktiviert",
             "disabled": "Deaktiviert"
         },
+        "connection-details": {
+            "title": "Verbindungsdetails",
+            "parameter": "Parameter",
+            "value": "Wert",
+            "broker-host": "Broker-Host",
+            "ca-certificate": "CA-Zertifikat",
+            "download": "Herunterladen"
+        },
         "broker-settings": {
             "title": "Broker-Einstellungen",
+            "parameter": "Parameter",
+            "value": "Wert",
             "authentication": "Authentifizierung",
             "advanced": "Erweitert",
             "basic-auth": "Basis-Authentifizierung",

@@ -15,18 +15,15 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container tb-home-padding flex-col justify-between">
-  <div class="flex flex-col gap-1">
-    <h2 class="m-0 text-base font-medium">
-      {{ 'home.getting-started.welcome-title' | translate }}
-    </h2>
-    <p class="m-0 text-xs">
-      {{ 'home.getting-started.welcome-description' | translate }}
-    </p>
-  </div>
-  <div class="flex flex-col gap-2">
-    <button class="welcome-action-card-compact" (click)="openGettingStartedGuide()">
-      <mat-icon class="welcome-card-icon-small">menu_book</mat-icon>
+<div class="tb-home-card-container tb-home-padding flex-col justify-between gap-2">
+  <p class="title m-0">
+    {{ 'home.getting-started.welcome-title' | translate }}
+  </p>
+  <div class="flex gap-4">
+    <button class="welcome-action-card-compact quick-start" (click)="openGettingStartedGuide()">
+      <section class="icon-container flex items-center justify-center">
+        <mat-icon class="material-icons" color="primary">rocket_launch</mat-icon>
+      </section>
       <div class="welcome-card-content-compact">
         <span class="welcome-card-title-compact">{{ 'home.getting-started.quick-start' | translate }}</span>
         <span class="welcome-card-desc-compact">{{ 'home.getting-started.quick-start-description' | translate }}</span>
@@ -34,13 +31,15 @@
       <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
     </button>
 
-    <button class="welcome-action-card-compact" (click)="createCredentials()">
-      <mat-icon class="welcome-card-icon-small">vpn_key</mat-icon>
+    <button class="welcome-action-card-compact add-credentials" (click)="createCredentials()">
+      <section class="icon-container flex items-center justify-center">
+        <mat-icon svgIcon="mdi:shield-lock" color="primary"></mat-icon>
+      </section>
       <div class="welcome-card-content-compact">
         <span class="welcome-card-title-compact">{{ 'home.getting-started.add-credentials' | translate }}</span>
         <span class="welcome-card-desc-compact">{{ 'home.getting-started.add-credentials-description' | translate }}</span>
       </div>
-      <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
+      <mat-icon class="welcome-card-arrow" color="primary">arrow_forward</mat-icon>
     </button>
   </div>
 </div>

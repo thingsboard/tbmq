@@ -27,12 +27,13 @@ import { NetworkSettingsComponent } from '@home/components/home/network-settings
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { SummaryPanelComponent } from '@home/components/home/summary-panel.component';
+import { ConnectionDetailsComponent } from '@home/components/home/connection-details.component';
 
 @Component({
     selector: 'tb-home-overview',
     templateUrl: './home-overview.component.html',
     styleUrls: ['./home-overview.component.scss'],
-    imports: [ChartsComponent, VersionCardComponent, AdvancedSettingsComponent, WelcomeComponent, SummaryPanelComponent, NetworkSettingsComponent, SummaryPanelComponent]
+    imports: [ChartsComponent, VersionCardComponent, AdvancedSettingsComponent, WelcomeComponent, SummaryPanelComponent, NetworkSettingsComponent, SummaryPanelComponent, ConnectionDetailsComponent]
 })
 export class HomeOverviewComponent extends PageComponent {
 

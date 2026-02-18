@@ -19,9 +19,9 @@
   <tb-card-title-button [cardType]="cardType" [disabled]="true" [title]="'home.network-settings.title' | translate"></tb-card-title-button>
   <div class="network-table">
     <div class="network-header">
-      <span class="network-col-name">{{ 'home.network-settings.parameter' | translate }}</span>
-      <span class="network-col-port">{{ 'home.network-settings.port' | translate }}</span>
-      <span class="network-col-status">{{ 'home.network-settings.status' | translate }}</span>
+      <span>{{ 'home.network-settings.listener' | translate }}</span>
+      <span>{{ 'home.network-settings.port' | translate }}</span>
+      <span>{{ 'home.network-settings.status' | translate }}</span>
     </div>
     @for (param of networkParams; track param.label) {
       <div class="network-row">

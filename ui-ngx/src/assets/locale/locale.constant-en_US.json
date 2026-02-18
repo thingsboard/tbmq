@@ -373,7 +373,7 @@
         "retained-messages": "Retained messages",
         "shared-subscriptions": "Shared subscriptions",
         "getting-started": {
-            "welcome-title": "Welcome to TBMQ Demo Cloud",
+            "welcome-title": "Welcome to TBMQ",
             "welcome-description": "Explore TBMQ - a scalable MQTT broker supporting millions of connections.",
             "quick-start": "Quick Start",
             "quick-start-description": "Guide & examples",
@@ -384,7 +384,7 @@
         },
         "network-settings": {
             "title": "Network Settings",
-            "parameter": "Parameter",
+            "listener": "Listener",
             "port": "Port",
             "status": "Status",
             "host": "Host",
@@ -396,8 +396,18 @@
             "enabled": "Enabled",
             "disabled": "Disabled"
         },
+        "connection-details": {
+            "title": "Connection Details",
+            "parameter": "Parameter",
+            "value": "Value",
+            "broker-host": "Broker host",
+            "ca-certificate": "CA certificate",
+            "download": "Download"
+        },
         "broker-settings": {
             "title": "Broker Settings",
+            "parameter": "Parameter",
+            "value": "Value",
             "authentication": "Authentication",
             "advanced": "Advanced",
             "basic-auth": "Basic Authentication",

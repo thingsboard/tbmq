@@ -20,6 +20,12 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+
+    .title {
+      font-size: 14px;
+      font-weight: 500;
+    }
   }
 
   .tb-home-padding {
@@ -45,8 +51,7 @@
 
     &:hover {
       border-color: rgba(0, 0, 0, 0.2);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      background-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
     &:focus-visible {
@@ -60,19 +65,37 @@
       padding: 16px 12px;
       gap: 8px;
     }
-  }
 
-  .welcome-card-icon-small {
-    color: $tb-primary-color;
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
+    &.quick-start {
+      background: $tb-primary-color;
+      padding: 6px;
 
-    @media #{$mat-lt-md} {
-      font-size: 32px;
-      width: 32px;
-      height: 32px;
+      .welcome-card-title-compact, .welcome-card-desc-compact, .welcome-card-arrow {
+        color: white;
+      }
+
+      .icon-container {
+        border-radius: 8px;
+        background: white;
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    &.add-credentials {
+      padding: 6px;
+      border: 1px solid $tb-primary-color;
+
+      .welcome-card-title-compact, .welcome-card-desc-compact {
+        color: black;
+      }
+
+      .icon-container {
+        border-radius: 8px;
+        background: $tb-hue3-color;
+        width: 40px;
+        height: 40px;
+      }
     }
   }
 
@@ -99,10 +122,12 @@
     gap: 2px;
     flex: 1;
     min-width: 0;
+    justify-content: space-around;
+    height: 100%;
   }
 
   .welcome-card-title-compact {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
     white-space: nowrap;

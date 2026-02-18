@@ -17,9 +17,12 @@
 -->
 <div class="tb-home-overview">
   <div class="flex gap-3 lt-lg:flex-col">
-    <tb-home-welcome class="tb-home-card"></tb-home-welcome>
-    <tb-home-network-settings class="tb-home-card"></tb-home-network-settings>
-    <tb-home-advanced-settings class="tb-home-card"></tb-home-advanced-settings>
+    <section class="flex flex-1 flex-col gap-3">
+      <tb-home-welcome class="tb-home-card"></tb-home-welcome>
+      <tb-home-connection-details class="tb-home-card flex-1"></tb-home-connection-details>
+    </section>
+    <tb-home-network-settings class="tb-home-card flex-1"></tb-home-network-settings>
+    <tb-home-advanced-settings class="tb-home-card flex-1"></tb-home-advanced-settings>
   </div>
   <div class="flex gap-3">
     <tb-home-charts class="tb-home-card flex-1"></tb-home-charts>

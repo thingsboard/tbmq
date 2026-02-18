@@ -25,12 +25,13 @@ import { ClientCredentialsComponent } from '@home/pages/client-credentials/clien
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { ClientCredentialsWizardDialogComponent } from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
   selector: 'tb-home-welcome',
   templateUrl: './welcome.component.html',
   styleUrls: ['./welcome.component.scss'],
-  imports: [MatIcon, TranslateModule],
+  imports: [MatIcon, TranslateModule, TbIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WelcomeComponent {
@@ -45,6 +46,7 @@ export class WelcomeComponent {
   }
 
   createCredentials() {
+    this.router.navigate(['authentication', 'client-credentials']);
     const config = new EntityTableConfig<ClientCredentials>();
     config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     config.entityComponent = ClientCredentialsComponent;

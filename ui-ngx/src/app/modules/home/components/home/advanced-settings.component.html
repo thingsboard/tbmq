@@ -26,34 +26,67 @@
 
   @if (viewMode === 'authentication') {
     <div class="auth-section">
+      <div class="auth-header">
+        <span>{{ 'home.broker-settings.parameter' | translate }}</span>
+        <span>{{ 'home.broker-settings.value' | translate }}</span>
+      </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.basic-auth' | translate }}</span>
-        <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.MQTT_BASIC"
-                          (ngModelChange)="switchAuthProvider(AuthParamsType.MQTT_BASIC)"></mat-slide-toggle>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.MQTT_BASIC"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.MQTT_BASIC)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.MQTT_BASIC" [class.status-disabled]="!authParams.MQTT_BASIC">
+            {{ (authParams.MQTT_BASIC ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
       </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.x509-auth' | translate }}</span>
-        <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.X_509"
-                          (ngModelChange)="switchAuthProvider(AuthParamsType.X_509)"></mat-slide-toggle>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.X_509"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.X_509)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.X_509" [class.status-disabled]="!authParams.X_509">
+            {{ (authParams.X_509 ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
       </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.scram-auth' | translate }}</span>
-        <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.SCRAM"
-                          (ngModelChange)="switchAuthProvider(AuthParamsType.SCRAM)"></mat-slide-toggle>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.SCRAM"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.SCRAM)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.SCRAM" [class.status-disabled]="!authParams.SCRAM">
+            {{ (authParams.SCRAM ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
       </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.jwt-auth' | translate }}</span>
-        <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.JWT"
-                          (ngModelChange)="switchAuthProvider(AuthParamsType.JWT)"></mat-slide-toggle>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.JWT"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.JWT)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.JWT" [class.status-disabled]="!authParams.JWT">
+            {{ (authParams.JWT ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
       </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.http-auth' | translate }}</span>
-        <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.HTTP"
-                          (ngModelChange)="switchAuthProvider(AuthParamsType.HTTP)"></mat-slide-toggle>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.HTTP"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.HTTP)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.HTTP" [class.status-disabled]="!authParams.HTTP">
+            {{ (authParams.HTTP ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
       </div>
     </div>
   } @else {
     <div class="auth-section">
+      <div class="auth-header">
+        <span>{{ 'home.broker-settings.parameter' | translate }}</span>
+        <span>{{ 'home.broker-settings.value' | translate }}</span>
+      </div>
       <div class="auth-row">
         <span class="auth-label">{{ 'home.broker-settings.tcp-max-payload' | translate }}</span>
         <span class="auth-value">{{ advancedParams[AdvancedParamsType.tcpMaxPayloadSize] }}</span>

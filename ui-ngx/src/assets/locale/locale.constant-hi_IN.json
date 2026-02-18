@@ -355,7 +355,7 @@
         "retained-messages": "Retained messages",
         "shared-subscriptions": "Shared subscriptions",
         "getting-started": {
-            "welcome-title": "TBMQ डेमो क्लाउड में आपका स्वागत है",
+            "welcome-title": "TBMQ में आपका स्वागत है",
             "welcome-description": "TBMQ का अन्वेषण करें - एक स्केलेबल MQTT ब्रोकर जो लाखों कनेक्शन का समर्थन करता है।",
             "quick-start": "त्वरित आरंभ",
             "quick-start-description": "गाइड और उदाहरण",
@@ -378,8 +378,18 @@
             "enabled": "सक्षम",
             "disabled": "अक्षम"
         },
+        "connection-details": {
+            "title": "कनेक्शन विवरण",
+            "parameter": "पैरामीटर",
+            "value": "मान",
+            "broker-host": "ब्रोकर होस्ट",
+            "ca-certificate": "CA प्रमाणपत्र",
+            "download": "डाउनलोड करें"
+        },
         "broker-settings": {
             "title": "ब्रोकर सेटिंग्स",
+            "parameter": "पैरामीटर",
+            "value": "मान",
             "authentication": "प्रमाणीकरण",
             "advanced": "उन्नत",
             "basic-auth": "बेसिक प्रमाणीकरण",

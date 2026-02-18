@@ -33,6 +33,7 @@ export enum HomePageTitleType {
   VERSION = 'VERSION',
   GETTING_STARTED = 'GETTING_STARTED',
   NETWORK_CONFIG = 'NETWORK_CONFIG',
+  CONNECTION_DETAILS = 'CONNECTION_DETAILS',
   AUTH_CONFIG = 'AUTH_CONFIG',
 }
 
@@ -85,6 +86,14 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         label: 'home.network-settings.title',
         tooltip: 'home.network-settings.title',
         docsLink: 'monitoringConfig'
+      }
+    ],
+    [
+      HomePageTitleType.CONNECTION_DETAILS,
+      {
+        label: 'home.connection-details.title',
+        tooltip: 'home.connection-details.title',
+        // docsLink: 'monitoringConfig'
       }
     ],
     [

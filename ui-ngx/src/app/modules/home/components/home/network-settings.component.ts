@@ -19,7 +19,6 @@ import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
-import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 
 interface NetworkParam {
@@ -34,7 +33,7 @@ interface NetworkParam {
   selector: 'tb-home-network-settings',
   templateUrl: './network-settings.component.html',
   styleUrls: ['./network-settings.component.scss'],
-  imports: [CardTitleButtonComponent, CopyButtonComponent, MatIcon, TranslateModule]
+  imports: [CardTitleButtonComponent, CopyButtonComponent, TranslateModule]
 })
 export class NetworkSettingsComponent implements OnInit {
 
@@ -45,10 +44,8 @@ export class NetworkSettingsComponent implements OnInit {
 
   ngOnInit() {
     const config = this.configService.brokerConfig;
-    const host = window.location.hostname;
 
     this.networkParams = [
-      { label: 'home.network-settings.host', port: host, status: 'home.network-settings.active', statusKey: 'active', copyable: true },
       { label: 'home.network-settings.tcp', port: config.tcpPort, status: config.tcpListenerEnabled ? 'home.network-settings.enabled' : 'home.network-settings.disabled', statusKey: config.tcpListenerEnabled ? 'enabled' : 'disabled', copyable: config.tcpListenerEnabled },
       { label: 'home.network-settings.tls', port: config.tlsPort, status: config.tlsListenerEnabled ? 'home.network-settings.enabled' : 'home.network-settings.disabled', statusKey: config.tlsListenerEnabled ? 'enabled' : 'disabled', copyable: config.tlsListenerEnabled },
       { label: 'home.network-settings.ws', port: config.wsPort, status: config.wsListenerEnabled ? 'home.network-settings.enabled' : 'home.network-settings.disabled', statusKey: config.wsListenerEnabled ? 'enabled' : 'disabled', copyable: config.wsListenerEnabled },

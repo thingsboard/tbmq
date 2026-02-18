@@ -1,0 +1,50 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-home-card-container tb-home-padding flex flex-col">
+  <tb-card-title-button [cardType]="cardType" [disabled]="true" [title]="'home.connection-details.title' | translate"></tb-card-title-button>
+  <div class="host-table">
+    <div class="host-header">
+      <span>{{ 'home.connection-details.parameter' | translate }}</span>
+      <span>{{ 'home.connection-details.value' | translate }}</span>
+    </div>
+    @for (param of hostParams; track param.label) {
+      <div class="host-row">
+        <span class="host-col-name">{{ param.label | translate }}</span>
+        <span class="host-col-value">
+          @if (param.type === 'text') {
+            {{ param.value }}
+          } @else {
+            {{ param.value | translate }}
+          }
+          @if (param.copyable) {
+            <tb-copy-button
+              [containerStyle]="{padding: 0}"
+              [copyText]="param.value"
+              [buttonClass]="{'tb-mat-12': true}">
+            </tb-copy-button>
+          }
+          @if (param.type === 'download') {
+            <button mat-icon-button class="tb-mat-16 material-icons" (click)="downloadCaCertificate()">
+              <mat-icon>download</mat-icon>
+            </button>
+          }
+        </span>
+      </div>
+    }
+  </div>
+</div>

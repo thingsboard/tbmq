@@ -355,7 +355,7 @@
         "retained-messages": "Retained messages",
         "shared-subscriptions": "Shared subscriptions",
         "getting-started": {
-            "welcome-title": "欢迎使用 TBMQ 演示云",
+            "welcome-title": "欢迎使用 TBMQ",
             "welcome-description": "探索 TBMQ - 一个支持数百万连接的可扩展 MQTT 代理。",
             "quick-start": "快速入门",
             "quick-start-description": "指南和示例",
@@ -378,8 +378,18 @@
             "enabled": "已启用",
             "disabled": "已禁用"
         },
+        "connection-details": {
+            "title": "连接详情",
+            "parameter": "参数",
+            "value": "值",
+            "broker-host": "代理主机",
+            "ca-certificate": "CA证书",
+            "download": "下载"
+        },
         "broker-settings": {
             "title": "代理设置",
+            "parameter": "参数",
+            "value": "值",
             "authentication": "认证",
             "advanced": "高级",
             "basic-auth": "基本认证",

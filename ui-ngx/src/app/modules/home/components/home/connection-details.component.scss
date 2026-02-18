@@ -15,20 +15,23 @@
  */
 
 :host {
-  display: flex;
-  flex: 1;
-  min-height: 150px;
   overflow-y: auto;
 
-  .network-table {
+  .title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .host-table {
     width: 100%;
     display: flex;
     flex-direction: column;
+    flex: 1;
   }
 
-  .network-header {
+  .host-header {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
     gap: 8px;
     padding: 8px 0;
     border-bottom: 2px solid rgba(0, 0, 0, 0.12);
@@ -40,9 +43,9 @@
     }
   }
 
-  .network-row {
+  .host-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
     gap: 8px;
     align-items: center;
     min-height: 32px;
@@ -58,38 +61,23 @@
     }
   }
 
-  .network-col-name {
+  .host-col-name {
     color: rgba(0, 0, 0, 0.87);
     padding: 4px 16px 4px 0;
   }
 
-  .network-col-port {
+  .host-col-value {
     color: rgba(0, 0, 0, 0.54);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    word-break: break-all;
     padding: 4px 16px 4px 0;
   }
 
-  .network-col-status {
-    font-size: 14px;
-    padding: 4px;
-    display: inline-flex;
+  .host-col-action {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    width: fit-content;
-    min-width: 70px;
-    height: 20px;
-
-    &.status-enabled {
-      background-color: rgba(76, 175, 80, 0.1);
-      color: #4caf50;
-    }
-
-    &.status-disabled {
-      background-color: rgba(0, 0, 0, 0.05);
-      color: rgba(0, 0, 0, 0.38);
-    }
+    gap: 4px;
   }
 }
