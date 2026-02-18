@@ -223,8 +223,8 @@ function processCode(code: string): CodeContext {
     if (code.includes('{:wssHost}')) {
       context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.host);
     }
-    if (code.includes('{:wssHost}')) {
-      context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.port.toString());
+    if (code.includes('{:wssPort}')) {
+      context.code = context.code.replace('{:wssPort}', connectivitySettings.wss.port.toString());
     }
     context.code = context.code.substring(0, context.code.length - copyCodeBlock.length);
     context.copyCode = true;
