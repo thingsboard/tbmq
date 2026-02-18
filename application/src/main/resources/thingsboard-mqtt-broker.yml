@@ -1047,6 +1047,15 @@ mqtt:
       # Time to Live for expired blocked clients. After this time, the expired blocked client is removed completely. Value set in minutes. Default value corresponds to one week
       ttl: "${BLOCKED_CLIENT_CLEANUP_TTL_MINUTES:10080}"
 
+# Connectivity properties
+device:
+  connectivity:
+    mqtts:
+      # Path to the MQTT root CA certificate file
+      pem_cert_file: "${MQTTS_CA_CERT:cafile.pem}"
+      # Defines the filename for the downloaded MQTT root CA certificate
+      pem_cert_file_name: "${MQTTS_CA_CERT_NAME:tbmq-ca-cert.pem}"
+
 # Cache parameters
 cache:
   stats:
