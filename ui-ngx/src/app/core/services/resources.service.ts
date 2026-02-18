@@ -21,6 +21,8 @@ import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import { selectIsAuthenticated } from '@core/auth/auth.selectors';
 import { AppState } from '@core/core.state';
+import { RequestConfig } from '@core/http/http-utils';
+import { map } from 'rxjs/operators';
 
 export interface ModulesWithFactories {
     modules: Type<any>[];
@@ -66,6 +68,37 @@ export class ResourcesService {
             }
         );
         return subject.asObservable();
+    }
+
+    public downloadResource(downloadUrl: string, config?: RequestConfig): Observable<any> {
+      return this.http.get(downloadUrl, {...config, ...{
+          responseType: 'arraybuffer',
+          observe: 'response'
+        }}).pipe(
+        map((response) => {
+          const headers = response.headers;
+          const filename = headers.get('x-filename');
+          const contentType = headers.get('content-type');
+          const linkElement = document.createElement('a');
+          try {
+            const blob = new Blob([response.body], {type: contentType});
+            const url = URL.createObjectURL(blob);
+            linkElement.setAttribute('href', url);
+            linkElement.setAttribute('download', filename);
+            const clickEvent = new MouseEvent('click',
+              {
+                view: window,
+                bubbles: true,
+                cancelable: false
+              }
+            );
+            linkElement.dispatchEvent(clickEvent);
+            return null;
+          } catch (e) {
+            throw e;
+          }
+        })
+      );
     }
 
     private clearModulesCache() {

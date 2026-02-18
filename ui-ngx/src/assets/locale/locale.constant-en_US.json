@@ -402,7 +402,9 @@
             "value": "Value",
             "broker-host": "Broker host",
             "ca-certificate": "CA certificate",
-            "download": "Download"
+            "download": "Download",
+            "not-configured": "Not configured",
+            "ca-certificate-hint": "To enable secure MQTT connections, configure TLS and set MQTTS_CA_CERT with your certificate.\n\nThis can be:\n- Root CA certificate (for certificate chains)\n- Self-signed certificate\n\nClients will use this certificate to validate secure connections to the broker"
         },
         "broker-settings": {
             "title": "Broker Settings",
@@ -506,7 +508,7 @@
             "update-entities": "{{count}} entities were successfully updated.",
             "error-entities": "There was an error creating {{count}} entities."
         },
-        "stepper-text":{
+        "stepper-text": {
             "select-file": "Select a file",
             "configuration": "Import configuration",
             "column-type": "Select columns type",

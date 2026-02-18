@@ -384,7 +384,9 @@
             "value": "Valor",
             "broker-host": "Host del broker",
             "ca-certificate": "Certificado CA",
-            "download": "Descargar"
+            "download": "Descargar",
+            "not-configured": "No configurado",
+            "ca-certificate-hint": "Para habilitar conexiones MQTT seguras, configure TLS y establezca MQTTS_CA_CERT con su certificado.\n\nEsto puede ser:\n- Certificado CA raíz (para cadenas de certificados)\n- Certificado autofirmado\n\nLos clientes usarán este certificado para validar conexiones seguras al broker"
         },
         "broker-settings": {
             "title": "Configuración del Broker",

@@ -26,8 +26,15 @@
       <div class="host-row">
         <span class="host-col-name">{{ param.label | translate }}</span>
         <span class="host-col-value">
-          @if (param.type === 'text') {
-            {{ param.value }}
+          @if (param.type === 'not-configured') {
+            <span class="not-configured-label"
+                  [matTooltip]="'home.connection-details.ca-certificate-hint' | translate"
+                  matTooltipPosition="right">
+              {{ param.value | translate }}
+              <button mat-icon-button class="tb-mat-16 material-icons" (click)="gotoDocs()">
+                <mat-icon>help_outline</mat-icon>
+              </button>
+            </span>
           } @else {
             {{ param.value | translate }}
           }

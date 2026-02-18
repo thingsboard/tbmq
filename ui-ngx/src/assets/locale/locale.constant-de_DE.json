@@ -384,7 +384,9 @@
             "value": "Wert",
             "broker-host": "Broker-Host",
             "ca-certificate": "CA-Zertifikat",
-            "download": "Herunterladen"
+            "download": "Herunterladen",
+            "not-configured": "Nicht konfiguriert",
+            "ca-certificate-hint": "Um sichere MQTT-Verbindungen zu aktivieren, konfigurieren Sie TLS und setzen Sie MQTTS_CA_CERT mit Ihrem Zertifikat.\n\nDies kann sein:\n- Root-CA-Zertifikat (für Zertifikatsketten)\n- Selbstsigniertes Zertifikat\n\nClients verwenden dieses Zertifikat, um sichere Verbindungen zum Broker zu validieren"
         },
         "broker-settings": {
             "title": "Broker-Einstellungen",

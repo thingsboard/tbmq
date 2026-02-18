@@ -70,6 +70,7 @@ export const HelpLinks = {
     integrationMqtt: helpBaseUrl + docsPath + '/integrations/mqtt',
     integrationKafka: helpBaseUrl + docsPath + '/integrations/kafka',
     mqttAuthSettings: helpBaseUrl + docsPath + '/security/authentication',
+    mqttsSettings: helpBaseUrl + docsPath + '/security/mqtts',
     oauth2Settings: helpBaseUrl + docsPath + '/security/oauth-2-support',
     oauth2Apple: 'https://developer.apple.com/sign-in-with-apple/get-started',
     oauth2Facebook: 'https://developers.facebook.com/docs/facebook-login/web#logindialog',

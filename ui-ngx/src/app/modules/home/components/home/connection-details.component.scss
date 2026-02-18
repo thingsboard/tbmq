@@ -79,4 +79,16 @@
     align-items: center;
     gap: 4px;
   }
+
+  .not-configured-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .info-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
 }

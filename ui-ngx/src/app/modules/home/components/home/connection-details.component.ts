@@ -15,18 +15,21 @@
 ///
 
 import { Component, OnInit } from '@angular/core';
-import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { SettingsService } from '@core/http/settings.service';
+import { HelpLinks } from '@shared/models/constants';
+import { ConfigService } from '@core/http/config.service';
 
 interface HostParam {
   label: string;
   value: string;
-  type: 'text' | 'download';
+  type: 'text' | 'download' | 'not-configured';
   copyable?: boolean;
 }
 
@@ -34,26 +37,42 @@ interface HostParam {
   selector: 'tb-home-connection-details',
   templateUrl: './connection-details.component.html',
   styleUrls: ['./connection-details.component.scss'],
-  imports: [CardTitleButtonComponent, CopyButtonComponent, TranslateModule, MatIconModule, MatButtonModule]
+  imports: [CardTitleButtonComponent, CopyButtonComponent, TranslateModule, MatIconModule, MatButtonModule, MatTooltipModule]
 })
 export class ConnectionDetailsComponent implements OnInit {
 
   cardType = HomePageTitleType.CONNECTION_DETAILS;
   hostParams: HostParam[] = [];
+  caCertConfigured = false;
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private settingsService: SettingsService,
+    private configService: ConfigService,
+  ) {}
 
   ngOnInit() {
-    const host = window.location.hostname;
-
-    this.hostParams = [
-      { label: 'home.connection-details.broker-host', value: host, type: 'text', copyable: true },
-      { label: 'home.connection-details.ca-certificate', value: 'home.connection-details.download', type: 'download', copyable: false }
-    ];
+    const host = this.settingsService.connectivitySettings.mqtt.host;
+    this.configService.caCertificateConfigured().subscribe(
+      (configured) => {
+        this.caCertConfigured = configured;
+        this.hostParams = [
+          { label: 'home.connection-details.broker-host', value: host, type: 'text', copyable: true },
+          {
+            label: 'home.connection-details.ca-certificate',
+            value: configured ? 'home.connection-details.download' : 'home.connection-details.not-configured',
+            type: configured ? 'download' : 'not-configured',
+            copyable: false
+          }
+        ];
+      }
+    );
   }
 
   downloadCaCertificate() {
-    // TODO: Implement CA certificate download
-    console.log('Download CA certificate');
+    this.configService.downloadCaCertificate().subscribe();
+  }
+
+  gotoDocs() {
+    window.open(HelpLinks.linksMap.mqttsSettings, '_blank');
   }
 }

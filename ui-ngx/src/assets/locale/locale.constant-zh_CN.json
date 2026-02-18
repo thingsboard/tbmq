@@ -353,58 +353,7 @@
         "mqtt-client-type": "MQTT 客户端类型",
         "performance-tests": "性能测试",
         "retained-messages": "Retained messages",
-        "shared-subscriptions": "Shared subscriptions",
-        "getting-started": {
-            "welcome-title": "欢迎使用 TBMQ",
-            "welcome-description": "探索 TBMQ - 一个支持数百万连接的可扩展 MQTT 代理。",
-            "quick-start": "快速入门",
-            "quick-start-description": "指南和示例",
-            "quick-start-tooltip": "打开快速入门",
-            "add-credentials": "添加凭据",
-            "add-credentials-description": "连接设备",
-            "add-credentials-tooltip": "创建凭据"
-        },
-        "network-settings": {
-            "title": "网络设置",
-            "parameter": "参数",
-            "port": "端口",
-            "status": "状态",
-            "host": "主机",
-            "tcp": "TCP",
-            "tls": "TLS",
-            "ws": "WS",
-            "wss": "WSS",
-            "active": "活动",
-            "enabled": "已启用",
-            "disabled": "已禁用"
-        },
-        "connection-details": {
-            "title": "连接详情",
-            "parameter": "参数",
-            "value": "值",
-            "broker-host": "代理主机",
-            "ca-certificate": "CA证书",
-            "download": "下载"
-        },
-        "broker-settings": {
-            "title": "代理设置",
-            "parameter": "参数",
-            "value": "值",
-            "authentication": "认证",
-            "advanced": "高级",
-            "basic-auth": "基本认证",
-            "x509-auth": "X.509 证书链",
-            "scram-auth": "SCRAM 认证",
-            "jwt-auth": "JWT 认证",
-            "http-auth": "HTTP 认证",
-            "tcp-max-payload": "TCP 最大负载大小",
-            "tls-max-payload": "TLS 最大负载大小",
-            "ws-max-payload": "WS 最大负载大小",
-            "wss-max-payload": "WSS 最大负载大小",
-            "kafka-topic-deletion": "Kafka 主题删除",
-            "allowed": "允许",
-            "not-allowed": "不允许"
-        }
+        "shared-subscriptions": "Shared subscriptions"
     },
     "login": {
         "login": "登录",
@@ -638,28 +587,8 @@
     },
     "monitoring": {
         "monitoring": "监控",
-        "state-health": "状态与健康",
-        "traffic-performance": "流量与性能",
         "stats": "Broker 统计",
         "max-allowed-timeseries": "请缩小时间范围。当前请求超过 5 万数据点上限。",
-        "chart": {
-            "incoming-messages": "入站消息速率",
-            "incoming-messages-tooltip": "测量 MQTT 客户端发布到代理的消息速率",
-            "outgoing-messages": "出站传递速率",
-            "outgoing-messages-tooltip": "测量从代理传递到订阅者的消息速率",
-            "dropped-messages": "丢弃消息计数",
-            "dropped-messages-tooltip": "统计代理无法处理或传递的消息总数。原因包括缺乏订阅者兴趣（无匹配订阅）、资源限制（队列已满、存储限制）或速率限制执行",
-            "sessions": "会话",
-            "sessions-tooltip": "跟踪代理管理的活动客户端连接和断开的持久会话记录的总数",
-            "subscriptions": "订阅",
-            "subscriptions-tooltip": "跟踪代理为已连接和断开的持久客户端维护的所有主题过滤器条目的总数",
-            "inbound-payload-traffic": "入站有效负载流量",
-            "inbound-payload-traffic-tooltip": "测量代理从发布者接收的消息内容的总字节大小。此指标不包括所有 MQTT 协议开销（标头、确认、控制数据包）",
-            "outbound-payload-traffic": "出站有效负载流量",
-            "outbound-payload-traffic-tooltip": "测量代理向订阅者传递的消息内容的总字节大小。此指标不包括所有 MQTT 协议开销（标头、确认、控制数据包）",
-            "retained-messages": "保留消息计数",
-            "retained-messages-tooltip": "跟踪代理当前存储的保留消息总数。此指标表示持有"最后已知状态"值的唯一主题数量，它消耗持久存储并立即传递给新的匹配订阅者"
-        },
         "resource-usage": {
             "resource-usage": "资源使用",
             "no-resource-usage-text": "未找到资源",

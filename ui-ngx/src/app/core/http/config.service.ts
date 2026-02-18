@@ -20,6 +20,7 @@ import { mergeMap, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { BrokerConfig, BrokerConfigTableParam, SystemVersionInfo } from '@shared/models/config.model';
 import { PageData } from '@shared/models/page/page-data';
+import { ResourcesService } from '@core/services/resources.service';
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +29,10 @@ export class ConfigService {
 
   brokerConfig: BrokerConfig;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private resourcesService: ResourcesService,
+  ) {
   }
 
   public getBrokerConfigPageData(): Observable<PageData<BrokerConfigTableParam>> {
@@ -62,6 +66,15 @@ export class ConfigService {
         return of(brokerConfig);
       })
     );
+  }
+
+  public downloadCaCertificate(): Observable<object> {
+    return this.resourcesService.downloadResource('/api/device-connectivity/mqtts/certificate/download');
+  }
+
+  public caCertificateConfigured(config?: RequestConfig): Observable<boolean> {
+    return this.http.get<boolean>('/api/device-connectivity/mqtts/certificate/configured',
+      defaultHttpOptionsFromConfig(config));
   }
 
   private getBrokerConfig(config?: RequestConfig): Observable<BrokerConfig> {
