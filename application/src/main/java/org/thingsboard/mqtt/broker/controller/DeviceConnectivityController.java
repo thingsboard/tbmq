@@ -38,12 +38,16 @@ public class DeviceConnectivityController extends BaseController {
 
     private final DeviceConnectivityService deviceConnectivityService;
 
+    @GetMapping(value = "/device-connectivity/mqtts/certificate/configured")
+    public boolean caCertificateConfigured() {
+        return deviceConnectivityService.getRootCaCertFile("mqtts") != null;
+    }
 
     @ApiOperation(value = "Download CA certificate using file path defined in device.connectivity properties (downloadRootCaCertificate)", notes = "Download root CA certificate.")
     @GetMapping(value = "/device-connectivity/mqtts/certificate/download")
     public ResponseEntity<Resource> downloadCaCertificate() throws ThingsboardException, IOException {
         var pemCert =
-                checkNotNull(deviceConnectivityService.getPemCertFile("mqtts"), "mqtts root CA cert file is not found!");
+                checkNotNull(deviceConnectivityService.getRootCaCertFile("mqtts"), "mqtts root CA cert file is not found!");
         String rootCaCertFileName = deviceConnectivityService.getMqttsRootCaCertFileName();
 
         return ResponseEntity.ok()

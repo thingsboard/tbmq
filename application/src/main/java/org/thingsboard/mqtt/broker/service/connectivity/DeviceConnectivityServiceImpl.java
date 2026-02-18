@@ -50,7 +50,7 @@ public class DeviceConnectivityServiceImpl implements DeviceConnectivityService 
     }
 
     @Override
-    public Resource getPemCertFile(String protocol) {
+    public Resource getRootCaCertFile(String protocol) {
         return rootCaCert;
     }
 
