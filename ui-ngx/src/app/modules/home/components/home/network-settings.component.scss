@@ -31,9 +31,8 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
     padding: 8px 0;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.12);
+    border-bottom: 1px solid rgba(228, 229, 231, 1);
     font-size: 12px;
-    font-weight: 500;
 
     > span {
       color: rgba(0, 0, 0, 0.38);
@@ -45,8 +44,8 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
     align-items: center;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 14px;
+    min-height: 32px;
 
     &:last-child {
       border-bottom: none;
