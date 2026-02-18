@@ -38,6 +38,7 @@ public class DeviceConnectivityController extends BaseController {
 
     private final DeviceConnectivityService deviceConnectivityService;
 
+    @ApiOperation(value = "Checks if the Root CA certificate file path is defined in the configuration", notes = "Check if Root CA certificate is configured.")
     @GetMapping(value = "/device-connectivity/mqtts/certificate/configured")
     public boolean caCertificateConfigured() {
         return deviceConnectivityService.getRootCaCertFile("mqtts") != null;
