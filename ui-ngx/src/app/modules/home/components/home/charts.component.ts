@@ -50,7 +50,9 @@ export class ChartsComponent implements OnInit {
   chartHeight: number;
   timewindow: Timewindow;
 
-  constructor(private timeService: TimeService) {
+  constructor(
+    private timeService: TimeService,
+  ) {
   }
 
   ngOnInit() {
@@ -67,7 +69,7 @@ export class ChartsComponent implements OnInit {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
       const width = (containerWidth / 5) - 16;
-      this.chartHeight = Math.round(width * 0.5);
+      // this.chartHeight = Math.round(width * 0.5);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
