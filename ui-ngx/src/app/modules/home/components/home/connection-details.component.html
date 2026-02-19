@@ -29,12 +29,15 @@
           @if (param.type === 'not-configured') {
             <span class="not-configured-label"
                   [matTooltip]="'home.connection-details.ca-certificate-hint' | translate"
-                  matTooltipPosition="right">
+                  matTooltipPosition="below">
               {{ param.value | translate }}
-              <button mat-icon-button class="tb-mat-16 material-icons" (click)="gotoDocs()">
+            </span>
+            <button mat-icon-button class="tb-mat-16 material-icons"
+                    [matTooltip]="'help.goto-docs' | translate"
+                    matTooltipPosition="below"
+                    (click)="gotoDocs()">
                 <mat-icon>help_outline</mat-icon>
               </button>
-            </span>
           } @else {
             {{ param.value | translate }}
           }
@@ -42,11 +45,15 @@
             <tb-copy-button
               [containerStyle]="{padding: 0}"
               [copyText]="param.value"
-              [buttonClass]="{'tb-mat-16': true}">
+              [buttonClass]="{'tb-mat-16': true}"
+              color="primary">
             </tb-copy-button>
           }
           @if (param.type === 'download') {
-            <button mat-icon-button class="tb-mat-16 material-icons" (click)="downloadCaCertificate()">
+            <button mat-icon-button
+                    class="tb-mat-16 material-icons"
+                    color="primary"
+                    (click)="downloadCaCertificate()">
               <mat-icon>download</mat-icon>
             </button>
           }

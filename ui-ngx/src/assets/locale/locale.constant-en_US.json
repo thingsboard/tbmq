@@ -413,7 +413,7 @@
             "authentication": "Authentication",
             "advanced": "Advanced",
             "basic-auth": "Basic authentication",
-            "x509-auth": "X.509 Certificate Chain",
+            "x509-auth": "X.509 Certificate Chain authentication",
             "scram-auth": "SCRAM authentication",
             "jwt-auth": "JWT authentication",
             "http-auth": "HTTP authentication",
@@ -421,7 +421,7 @@
             "tls-max-payload": "TLS max payload size",
             "ws-max-payload": "WS max payload size",
             "wss-max-payload": "WSS max payload size",
-            "kafka-topic-deletion": "Kafka Topic deletion",
+            "kafka-topic-deletion": "Kafka topic deletion",
             "allowed": "Allowed",
             "not-allowed": "Not Allowed"
         }
@@ -1078,7 +1078,7 @@
         "no-updates": "Version is up to date."
     },
     "config": {
-        "allow-kafka-topic-deletion": "Kafka Topic Deletion",
+        "allow-kafka-topic-deletion": "Kafka topic deletion",
         "key": "Key",
         "value": "Value",
         "port-mqtt": "TCP Port",
