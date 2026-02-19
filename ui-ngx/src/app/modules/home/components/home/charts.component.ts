@@ -68,8 +68,8 @@ export class ChartsComponent implements OnInit {
   private onResize() {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
-      const width = (containerWidth / 5) - 16;
-      // this.chartHeight = Math.round(width * 0.5);
+      const width = (containerWidth / 5);
+      this.chartHeight = Math.round(width * 0.5);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
