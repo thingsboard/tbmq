@@ -16,18 +16,18 @@
 @import 'constants';
 
 :host {
-  display: flex;
+/*  display: flex;
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  overflow: auto;
+  overflow: auto;*/
 
   .charts-container {
     min-height: 0;
     height: 100%;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    //display: flex;
+    //flex-direction: column;
 
     .charts-header {
       display: flex;

@@ -21,7 +21,7 @@ import { ChartKey } from '@shared/models/chart.model';
   selector: 'tb-chart-canvas',
   templateUrl: './chart-canvas.component.html',
   host: {
-    '[style.height]': 'containerHeight()'
+    // '[style.height]': 'containerHeight()'
   }
 })
 export class ChartCanvasComponent {
