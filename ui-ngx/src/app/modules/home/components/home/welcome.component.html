@@ -1,0 +1,51 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-home-card-container tb-home-padding flex-col justify-between gap-2">
+  <p class="title m-0">
+    {{ 'home.getting-started.welcome-title' | translate }}
+  </p>
+  <div class="flex gap-4">
+    <button class="welcome-action-card-compact"
+            [class.action-filled]="!guideVisited"
+            [class.action-outlined]="guideVisited"
+            (click)="openGettingStartedGuide()">
+      <section class="icon-container flex items-center justify-center">
+        <mat-icon class="material-icons" color="primary">rocket_launch</mat-icon>
+      </section>
+      <div class="welcome-card-content-compact">
+        <span class="welcome-card-title-compact">{{ 'home.getting-started.quick-start' | translate }}</span>
+        <span class="welcome-card-desc-compact">{{ 'home.getting-started.quick-start-description' | translate }}</span>
+      </div>
+      <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
+    </button>
+
+    <button class="welcome-action-card-compact"
+            [class.action-filled]="!credentialsVisited"
+            [class.action-outlined]="credentialsVisited"
+            (click)="createCredentials()">
+      <section class="icon-container flex items-center justify-center">
+        <mat-icon svgIcon="mdi:shield-lock" color="primary"></mat-icon>
+      </section>
+      <div class="welcome-card-content-compact">
+        <span class="welcome-card-title-compact">{{ 'home.getting-started.add-credentials' | translate }}</span>
+        <span class="welcome-card-desc-compact">{{ 'home.getting-started.add-credentials-description' | translate }}</span>
+      </div>
+      <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
+    </button>
+  </div>
+</div>

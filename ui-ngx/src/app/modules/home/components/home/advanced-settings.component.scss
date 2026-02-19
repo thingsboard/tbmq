@@ -1,0 +1,107 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 150px;
+
+  .auth-toggle {
+    margin-bottom: 0;
+  }
+
+  .auth-section {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(228, 229, 231, 1);
+    font-size: 12px;
+
+    > span {
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+
+  .auth-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    min-height: 32px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  .auth-label {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.87);
+    padding: 4px 16px 4px 0;
+  }
+
+  .auth-value {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    padding: 4px 16px 4px 0;
+  }
+
+  .auth-toggle-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px;
+  }
+
+  .auth-status {
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    min-width: 70px;
+    height: 20px;
+    padding: 0 8px;
+
+    &.status-enabled {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
+    }
+
+    &.status-disabled {
+      background-color: rgba(0, 0, 0, 0.05);
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+}
+
+:host ::ng-deep {
+  .small-toggle {
+    transform: scale(0.8);
+    transform-origin: right center;
+  }
+}

@@ -1,0 +1,112 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-home-card-container tb-home-padding flex !flex-1">
+  <section class="flex justify-between">
+    <tb-card-title-button [cardType]="cardType" [disabled]="true" [title]="'home.broker-settings.title' | translate"></tb-card-title-button>
+    <tb-toggle-header [(value)]="viewMode" class="auth-toggle" useSelectOnMdLg="false">
+      <tb-toggle-option value="authentication">{{ 'home.broker-settings.authentication' | translate }}</tb-toggle-option>
+      <tb-toggle-option value="advanced">{{ 'home.broker-settings.advanced' | translate }}</tb-toggle-option>
+    </tb-toggle-header>
+  </section>
+
+  @if (viewMode === 'authentication') {
+    <div class="auth-section">
+      <div class="auth-header">
+        <span>{{ 'home.broker-settings.parameter' | translate }}</span>
+        <span>{{ 'home.broker-settings.value' | translate }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.basic-auth' | translate }}</span>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.MQTT_BASIC"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.MQTT_BASIC)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.MQTT_BASIC" [class.status-disabled]="!authParams.MQTT_BASIC">
+            {{ (authParams.MQTT_BASIC ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.x509-auth' | translate }}</span>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.X_509"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.X_509)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.X_509" [class.status-disabled]="!authParams.X_509">
+            {{ (authParams.X_509 ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.scram-auth' | translate }}</span>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.SCRAM"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.SCRAM)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.SCRAM" [class.status-disabled]="!authParams.SCRAM">
+            {{ (authParams.SCRAM ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.jwt-auth' | translate }}</span>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.JWT"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.JWT)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.JWT" [class.status-disabled]="!authParams.JWT">
+            {{ (authParams.JWT ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.http-auth' | translate }}</span>
+        <div class="auth-toggle-status">
+          <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams.HTTP"
+                            (ngModelChange)="switchAuthProvider(AuthParamsType.HTTP)"></mat-slide-toggle>
+          <span class="auth-status" [class.status-enabled]="authParams.HTTP" [class.status-disabled]="!authParams.HTTP">
+            {{ (authParams.HTTP ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
+          </span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="auth-section">
+      <div class="auth-header">
+        <span>{{ 'home.broker-settings.parameter' | translate }}</span>
+        <span>{{ 'home.broker-settings.value' | translate }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.tcp-max-payload' | translate }}</span>
+        <span class="auth-value">{{ advancedParams[AdvancedParamsType.tcpMaxPayloadSize] }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.tls-max-payload' | translate }}</span>
+        <span class="auth-value">{{ advancedParams[AdvancedParamsType.tlsMaxPayloadSize] }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.ws-max-payload' | translate }}</span>
+        <span class="auth-value">{{ advancedParams[AdvancedParamsType.wsMaxPayloadSize] }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.wss-max-payload' | translate }}</span>
+        <span class="auth-value">{{ advancedParams[AdvancedParamsType.wssMaxPayloadSize] }}</span>
+      </div>
+      <div class="auth-row">
+        <span class="auth-label">{{ 'home.broker-settings.kafka-topic-deletion' | translate }}</span>
+        <span class="auth-value">{{ (advancedParams[AdvancedParamsType.allowKafkaTopicDeletion] ? 'home.broker-settings.allowed' : 'home.broker-settings.not-allowed') | translate }}</span>
+      </div>
+    </div>
+  }
+</div>

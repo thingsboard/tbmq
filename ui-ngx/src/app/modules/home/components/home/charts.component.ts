@@ -18,36 +18,41 @@ import { Component, ElementRef, OnInit, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { ChartView, CHARTS_HOME } from '@shared/models/chart.model';
+import { ChartView, ChartKey } from '@shared/models/chart.model';
 import { HOME_CHARTS_DURATION, HomePageTitleType } from '@shared/models/home-page.model';
-import { ResizeObserver } from '@juggle/resize-observer';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from '@shared/components/chart/chart.component';
 
 @Component({
   selector: 'tb-home-charts',
-  templateUrl: './home-charts.component.html',
-  styleUrls: ['./home-charts.component.scss'],
-  imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, TranslateModule, ChartComponent]
+  templateUrl: './charts.component.html',
+  styleUrls: ['./charts.component.scss'],
+  imports: [CardTitleButtonComponent, FormsModule, TranslateModule, ChartComponent]
 })
-export class HomeChartsComponent implements OnInit {
+export class ChartsComponent implements OnInit {
 
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
   readonly cardType = HomePageTitleType.MONITORING;
-  readonly chartKeys = CHARTS_HOME;
+  readonly chartKeys = [
+    ChartKey.sessions,
+    ChartKey.incomingMsgs,
+    ChartKey.outgoingMsgs,
+    ChartKey.droppedMsgs,
+    ChartKey.inboundPayloadTraffic,
+    ChartKey.outboundPayloadTraffic,
+    ChartKey.subscriptions,
+    ChartKey.retainedMsgs
+  ];
   readonly chartView = ChartView.compact;
 
-  carouselIndex = 0;
-  visibleItems = 5;
   chartHeight: number;
   timewindow: Timewindow;
 
-  constructor(private timeService: TimeService) {
+  constructor(
+    private timeService: TimeService,
+  ) {
   }
 
   ngOnInit() {
@@ -61,15 +66,11 @@ export class HomeChartsComponent implements OnInit {
   }
 
   private onResize() {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const containerWidth = entries[0].contentRect.width;
-      let width = (containerWidth / 5) - 16;
-      this.visibleItems = 5;
-      if (containerWidth < 500 || window.innerHeight > window.innerWidth) { // mobile or portrait
-        width = containerWidth / 2;
-        this.visibleItems = 2;
-      }
-      this.chartHeight = Math.round(width * 0.5);
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const { width: w } = entry.contentRect;
+      const br = 1800;
+      const correlation = w > br ? ((w - br) / 10000) + 1.5 : 1;
+      this.chartHeight = Math.round((w / 10) * correlation);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

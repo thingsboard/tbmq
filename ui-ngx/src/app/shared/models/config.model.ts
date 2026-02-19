@@ -28,6 +28,7 @@ export interface BrokerConfig {
   x509AuthEnabled: boolean;
   scramAuthEnabled: boolean;
   jwtAuthEnabled: boolean;
+  httpAuthEnabled: boolean;
   wsPort: number;
   wssPort: number;
   wsListenerEnabled: boolean;

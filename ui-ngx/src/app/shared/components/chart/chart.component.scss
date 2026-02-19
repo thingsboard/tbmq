@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 :host {
-  .chart-container {
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+  background: #fff;
+  border-radius: 8px;
 }

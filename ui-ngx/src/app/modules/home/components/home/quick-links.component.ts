@@ -23,7 +23,7 @@ import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-    selector: 'tb-quick-links',
+    selector: 'tb-home-quick-links',
     templateUrl: './quick-links.component.html',
     styleUrls: ['./quick-links.component.scss'],
     imports: [CardTitleButtonComponent, TbIconComponent, AsyncPipe, TranslateModule]
