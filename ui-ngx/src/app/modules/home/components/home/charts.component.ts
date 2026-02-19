@@ -68,8 +68,8 @@ export class ChartsComponent implements OnInit {
   private onResize() {
     const resizeObserver = new ResizeObserver(([entry]) => {
       const { width: w } = entry.contentRect;
-      const br = 1800;
-      const correlation = w > br ? ((w - br) / 10000) + 1.5 : 1;
+      const br = 1700;
+      const correlation = w > br ? ((w - br) / 10000) + 1.4 : 1;
       this.chartHeight = Math.round((w / 10) * correlation);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
