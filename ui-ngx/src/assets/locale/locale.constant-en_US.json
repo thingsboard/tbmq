@@ -1130,7 +1130,7 @@
         "list-of-consumer-groups": "{ count, plural, =1 {One consumer group} other {List of # consumer groups} }",
         "consumer-group": "Kafka consumer group",
         "consumer-groups": "Kafka consumer groups",
-        "consumer-groups-title": "consumer groups",
+        "consumer-groups-title": "Consumer groups",
         "no-kafka-topic-text": "No Kafka topics found",
         "search-topic": "Search by name",
         "search-consumer-group": "Search by ID",
