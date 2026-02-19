@@ -960,7 +960,7 @@
         "topic-filter": "Topic Filter",
         "topic-filter-required": "Topic Filter is required.",
         "shared-subscription": "Application Shared Subscription",
-        "shared-subscriptions": "Shared Subscriptions",
+        "shared-subscriptions": "Shared subscriptions",
         "groups": "Groups",
         "client": "Client",
         "client-ids": "Clients",
@@ -968,7 +968,7 @@
     },
     "retained-message": {
         "retained-message": "Retained Message",
-        "retained-messages": "Retained Messages",
+        "retained-messages": "Retained messages",
         "add": "Add retained message",
         "no-retained-messages-text": "No retained messages found",
         "delete-retained-message-title": "Are you sure you want to delete the retained message '{{topic}}'?",
@@ -1230,7 +1230,7 @@
         "key-required": "Key is required."
     },
     "ws-client": {
-        "ws-client": "WebSocket Client",
+        "ws-client": "WebSocket client",
         "ws-client-settings": "WebSocket Client settings",
         "show-logs": "Log MQTT client activity",
         "show-logs-hint": "If enabled, MQTT client logs for events (such as connect, reconnect, message, error, etc.) will be displayed in your browser console.",

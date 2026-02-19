@@ -36,7 +36,7 @@ import { TranslateModule } from '@ngx-translate/core';
 export class WelcomeComponent {
 
   guideVisited = !!localStorage.getItem('tbmq_welcome_guide_visited');
-  credentialsVisited = !!localStorage.getItem('tbmq_welcome_credentials_visited');
+  credentialsVisited = true; //!!localStorage.getItem('tbmq_welcome_credentials_visited');
 
   constructor(
     private router: Router,
@@ -50,7 +50,7 @@ export class WelcomeComponent {
   }
 
   createCredentials() {
-    localStorage.setItem('tbmq_welcome_credentials_visited', 'true');
+    // localStorage.setItem('tbmq_welcome_credentials_visited', 'true');
     this.credentialsVisited = true;
     this.router.navigate(['authentication', 'client-credentials']);
     const config = new EntityTableConfig<ClientCredentials>();

@@ -66,10 +66,11 @@ export class ChartsComponent implements OnInit {
   }
 
   private onResize() {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const containerWidth = entries[0].contentRect.width;
-      const width = (containerWidth / 5);
-      this.chartHeight = Math.round(width * 0.5);
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const { width: w } = entry.contentRect;
+      const br = 1800;
+      const correlation = w > br ? ((w - br) / 10000) + 1.5 : 1;
+      this.chartHeight = Math.round((w / 10) * correlation);
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
