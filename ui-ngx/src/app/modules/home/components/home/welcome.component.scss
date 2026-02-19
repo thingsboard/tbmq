@@ -66,7 +66,7 @@
       gap: 8px;
     }
 
-    &.quick-start {
+    &.action-filled {
       background: $tb-primary-color;
       padding: 6px;
 
@@ -82,7 +82,7 @@
       }
     }
 
-    &.add-credentials {
+    &.action-outlined {
       padding: 6px;
       border: 1px solid $tb-primary-color;
 

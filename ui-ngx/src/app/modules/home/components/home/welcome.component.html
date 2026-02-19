@@ -20,7 +20,10 @@
     {{ 'home.getting-started.welcome-title' | translate }}
   </p>
   <div class="flex gap-4">
-    <button class="welcome-action-card-compact quick-start" (click)="openGettingStartedGuide()">
+    <button class="welcome-action-card-compact"
+            [class.action-filled]="!guideVisited"
+            [class.action-outlined]="guideVisited"
+            (click)="openGettingStartedGuide()">
       <section class="icon-container flex items-center justify-center">
         <mat-icon class="material-icons" color="primary">rocket_launch</mat-icon>
       </section>
@@ -31,7 +34,10 @@
       <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
     </button>
 
-    <button class="welcome-action-card-compact add-credentials" (click)="createCredentials()">
+    <button class="welcome-action-card-compact"
+            [class.action-filled]="!credentialsVisited"
+            [class.action-outlined]="credentialsVisited"
+            (click)="createCredentials()">
       <section class="icon-container flex items-center justify-center">
         <mat-icon svgIcon="mdi:shield-lock" color="primary"></mat-icon>
       </section>
@@ -39,7 +45,7 @@
         <span class="welcome-card-title-compact">{{ 'home.getting-started.add-credentials' | translate }}</span>
         <span class="welcome-card-desc-compact">{{ 'home.getting-started.add-credentials-description' | translate }}</span>
       </div>
-      <mat-icon class="welcome-card-arrow" color="primary">arrow_forward</mat-icon>
+      <mat-icon class="welcome-card-arrow">arrow_forward</mat-icon>
     </button>
   </div>
 </div>

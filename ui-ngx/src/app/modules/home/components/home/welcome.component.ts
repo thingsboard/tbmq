@@ -25,16 +25,18 @@ import { ClientCredentialsComponent } from '@home/pages/client-credentials/clien
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { ClientCredentialsWizardDialogComponent } from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { TranslateModule } from '@ngx-translate/core';
-import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
   selector: 'tb-home-welcome',
   templateUrl: './welcome.component.html',
   styleUrls: ['./welcome.component.scss'],
-  imports: [MatIcon, TranslateModule, TbIconComponent],
+  imports: [MatIcon, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WelcomeComponent {
+
+  guideVisited = !!localStorage.getItem('tbmq_welcome_guide_visited');
+  credentialsVisited = !!localStorage.getItem('tbmq_welcome_credentials_visited');
 
   constructor(
     private router: Router,
@@ -42,10 +44,14 @@ export class WelcomeComponent {
   ) {}
 
   openGettingStartedGuide() {
+    localStorage.setItem('tbmq_welcome_guide_visited', 'true');
+    this.guideVisited = true;
     this.router.navigate(['/getting-started']);
   }
 
   createCredentials() {
+    localStorage.setItem('tbmq_welcome_credentials_visited', 'true');
+    this.credentialsVisited = true;
     this.router.navigate(['authentication', 'client-credentials']);
     const config = new EntityTableConfig<ClientCredentials>();
     config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
