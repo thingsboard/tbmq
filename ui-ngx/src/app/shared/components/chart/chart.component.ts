@@ -279,6 +279,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       pointHoverBorderColor: color,
       pointRadius: 0,
       clip: 5,
+      tension: 0.1,
     };
   }
 
