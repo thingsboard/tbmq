@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.dto.MqttListenerName;
+import org.thingsboard.mqtt.broker.service.entity.app.TbAppService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
@@ -52,6 +53,7 @@ public class AppController extends BaseController {
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
     private final BrokerHomePageConfig brokerHomePageConfig;
     private final SystemInfoService systemInfoService;
+    private final TbAppService tbAppService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/remove-topics")
@@ -141,7 +143,7 @@ public class AppController extends BaseController {
     @io.swagger.v3.oas.annotations.Operation(hidden = true)
     public void deleteKafkaConsumerGroup(@RequestParam String groupId) throws Exception {
         checkParameter("groupId", groupId);
-        tbQueueAdmin.deleteConsumerGroup(groupId);
+        tbAppService.deleteKafkaConsumerGroup(groupId, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -180,6 +182,6 @@ public class AppController extends BaseController {
     @DeleteMapping(value = "/service/info")
     public void removeServiceInfo(@RequestParam String serviceId) throws ThingsboardException {
         checkParameter("serviceId", serviceId);
-        systemInfoService.removeServiceInfo(serviceId);
+        tbAppService.deleteServiceInfo(serviceId, getCurrentUser());
     }
 }
