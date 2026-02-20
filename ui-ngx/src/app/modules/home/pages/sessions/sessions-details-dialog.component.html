@@ -68,10 +68,13 @@
         </div>
         <div class="session-details-content">
           @if (showAppClientShouldBePersistentWarning) {
-            <section class="tb-warning flex items-center gap-1">
-              <span>{{'mqtt-client-session.should-be-persistent' | translate}}</span>
-              <mat-icon class="material-icons" [matTooltip]="'mqtt-client-session.should-be-persistent-tip' | translate" matTooltipPosition="right">info</mat-icon>
-            </section>
+            <div class="tb-form-hint tb-primary-fill insecure-warning mb-2 flex items-center gap-2">
+              <mat-icon [matTooltip]="'mqtt-client-session.should-be-persistent-tip' | translate"
+                        matTooltipPosition="right">
+                warning
+              </mat-icon>
+              <span [innerHTML]="'mqtt-client-session.should-be-persistent' | translate"></span>
+            </div>
           }
           <fieldset class="fields-group">
             <legend class="group-title">{{ 'mqtt-client-session.connection-info' | translate }}</legend>

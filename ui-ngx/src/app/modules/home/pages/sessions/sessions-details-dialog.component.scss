@@ -16,18 +16,17 @@
 :host {
   form {
     .session-details-content {
-      padding-top: 16px;
+      padding: 16px 0 8px 0;
 
-      .tb-warning {
-        background: rgb(255, 244, 229);
-        border-radius: 4px;
-        padding: 16px;
-        margin: 0;
-        color: rgb(102, 60, 0);
-      }
+      .insecure-warning {
+        .mat-icon {
+          z-index: 10;
+          color: #FAA405;
+        }
 
-      span {
-        color: rgba(0,0,0,0.54);
+        span {
+          font-size: 13px;
+        }
       }
     }
 
