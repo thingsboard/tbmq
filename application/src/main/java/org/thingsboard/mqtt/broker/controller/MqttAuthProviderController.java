@@ -38,8 +38,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration.AuthStrategy;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.entity.mqttauth.TbMqttAuthProviderService;
 
-import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 @RestController
@@ -48,29 +48,28 @@ import java.util.concurrent.TimeoutException;
 public class MqttAuthProviderController extends BaseController {
 
     private final HttpMqttClientAuthProvider httpMqttClientAuthProvider;
+    private final TbMqttAuthProviderService tbMqttAuthProviderService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/auth/provider")
     public MqttAuthProvider saveAuthProvider(@Valid @RequestBody MqttAuthProvider authProvider) throws ThingsboardException {
-        return checkNotNull(mqttAuthProviderManagerService.saveAuthProvider(authProvider));
+        return checkNotNull(tbMqttAuthProviderService.save(authProvider, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/auth/provider/{authProviderId}/enable")
     @ResponseStatus(HttpStatus.OK)
     public void enableAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
-        UUID uuid = toUUID(strAuthProviderId);
-        checkAuthProviderId(uuid);
-        mqttAuthProviderManagerService.enableAuthProvider(uuid);
+        MqttAuthProvider authProvider = checkAuthProviderId(toUUID(strAuthProviderId));
+        tbMqttAuthProviderService.enable(authProvider, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/auth/provider/{authProviderId}/disable")
     @ResponseStatus(HttpStatus.OK)
     public void disableAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
-        UUID uuid = toUUID(strAuthProviderId);
-        checkAuthProviderId(uuid);
-        mqttAuthProviderManagerService.disableAuthProvider(uuid);
+        MqttAuthProvider authProvider = checkAuthProviderId(toUUID(strAuthProviderId));
+        tbMqttAuthProviderService.disable(authProvider, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

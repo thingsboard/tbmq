@@ -24,8 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -34,9 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.ClientIdSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionDto;
-import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
+import org.thingsboard.mqtt.broker.service.entity.subscription.TbSubscriptionService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionPageService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionQuery;
@@ -49,9 +45,8 @@ import java.util.Set;
 @RequestMapping("/api/subscription")
 public class SubscriptionController extends BaseController {
 
-    private final SubscriptionService subscriptionService;
+    private final TbSubscriptionService tbSubscriptionService;
     private final ClientSubscriptionCache clientSubscriptionCache;
-    private final ClientSubscriptionAdminService subscriptionAdminService;
     private final ClientSubscriptionPageService clientSubscriptionPageService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -60,18 +55,14 @@ public class SubscriptionController extends BaseController {
         checkNotNull(clientIdSubscriptionInfoDto);
         checkNotNull(clientIdSubscriptionInfoDto.getSubscriptions());
 
-        subscriptionAdminService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), clientIdSubscriptionInfoDto.getSubscriptions());
+        tbSubscriptionService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), clientIdSubscriptionInfoDto.getSubscriptions(), getCurrentUser());
         return clientIdSubscriptionInfoDto;
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/topic-trie/clear")
-    public void clearEmptySubscriptionNodes() {
-        try {
-            subscriptionService.clearEmptyTopicNodes();
-        } catch (SubscriptionTrieClearException e) {
-            throw new ThingsboardRuntimeException(e.getMessage(), ThingsboardErrorCode.GENERAL);
-        }
+    public void clearEmptySubscriptionNodes() throws ThingsboardException {
+        tbSubscriptionService.clearEmptyNodes(getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

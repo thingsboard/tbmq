@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
+import org.thingsboard.mqtt.broker.service.entity.blockedclient.TbBlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientQuery;
@@ -45,12 +46,13 @@ import java.util.Set;
 public class BlockedClientController extends BaseController {
 
     private final BlockedClientPageService blockedClientPageService;
+    private final TbBlockedClientService tbBlockedClientService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public BlockedClientDto saveBlockedClient(@Valid @RequestBody BlockedClient blockedClient) throws ThingsboardException {
         checkNotNull(blockedClient);
-        return blockedClientService.addBlockedClientAndPersist(blockedClient);
+        return tbBlockedClientService.save(blockedClient, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -60,12 +62,12 @@ public class BlockedClientController extends BaseController {
                                     @RequestParam(required = false) RegexMatchTarget regexMatchTarget) throws ThingsboardException {
         String key = BlockedClientKeyUtil.generateKey(type, value, regexMatchTarget);
         BlockedClient blockedClient = checkBlockedClient(type, key);
-        blockedClientService.removeBlockedClientAndPersist(blockedClient);
+        tbBlockedClientService.delete(blockedClient, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/ttl")
-    public int getBlockedClientsTimeToLive() {
+    public int getBlockedClientsTimeToLive() throws ThingsboardException {
         return blockedClientService.getBlockedClientCleanupTtl();
     }
 

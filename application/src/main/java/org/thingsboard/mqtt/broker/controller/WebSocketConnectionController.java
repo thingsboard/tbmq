@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.service.entity.ws.TbWebSocketConnectionService;
 
 import java.util.UUID;
 
@@ -40,11 +41,12 @@ import java.util.UUID;
 public class WebSocketConnectionController extends BaseController {
 
     private final WebSocketConnectionService webSocketConnectionService;
+    private final TbWebSocketConnectionService tbWebSocketConnectionService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public WebSocketConnection saveWebSocketConnection(@RequestBody WebSocketConnection connection) throws ThingsboardException {
-        return checkNotNull(webSocketConnectionService.saveWebSocketConnection(connection));
+        return checkNotNull(tbWebSocketConnectionService.save(connection, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -77,10 +79,8 @@ public class WebSocketConnectionController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/{id}")
     public void deleteWebSocketConnection(@PathVariable String id) throws ThingsboardException {
-        WebSocketConnection webSocketConnection = checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
-        clientSessionCleanUpService.disconnectClientSession(webSocketConnection.getConfiguration().getClientId());
-
-        webSocketConnectionService.deleteWebSocketConnection(toUUID(id));
+        WebSocketConnection connection = checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
+        tbWebSocketConnectionService.delete(connection, getCurrentUser());
     }
 
 }

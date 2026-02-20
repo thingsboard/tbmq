@@ -23,7 +23,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,15 +46,14 @@ import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsData;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
+import org.thingsboard.mqtt.broker.service.entity.timeseries.TbTimeseriesService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,6 +69,7 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_
 public class TimeseriesController extends BaseController {
 
     private final TimeseriesService timeseriesService;
+    private final TbTimeseriesService tbTimeseriesService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/latest")
@@ -79,7 +78,6 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         checkParameter(ENTITY_ID, entityId);
-
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
         ListenableFuture<List<TsKvEntry>> future;
         if (StringUtils.isEmpty(keysStr)) {
@@ -98,33 +96,8 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(required = false) boolean deleteClientSessionCachedStats) throws ThingsboardException {
         checkParameter(ENTITY_ID, entityId);
-
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
-        ListenableFuture<Collection<String>> future;
-
-        if (StringUtils.isEmpty(keysStr)) {
-            future = timeseriesService.removeAllLatest(entityId);
-        } else {
-            future = Futures.transform(timeseriesService.removeLatestKeys(entityId, toKeysList(keysStr)),
-                    list -> list.stream().map(TsKvLatestRemovingResult::getKey).collect(Collectors.toList()),
-                    MoreExecutors.directExecutor());
-        }
-        Futures.addCallback(future, new FutureCallback<>() {
-            @Override
-            public void onSuccess(Collection<String> keys) {
-                log.debug("[{}] Successfully deleted latest time series {}", entityId, keys);
-                if (deleteClientSessionCachedStats) {
-                    clientSessionStatsService.broadcastCleanupClientSessionStatsRequest(entityId);
-                }
-                result.setResult(new ResponseEntity<>(HttpStatus.OK));
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                log.warn("[{}] Failed to delete latest time series", entityId, t);
-                result.setResult(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        }, MoreExecutors.directExecutor());
+        tbTimeseriesService.deleteLatestTimeseries(entityId, keysStr, deleteClientSessionCachedStats, getCurrentUser(), result);
         return result;
     }
 
@@ -141,7 +114,6 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "orderBy", defaultValue = BrokerConstants.DESC_ORDER) String orderBy,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         checkParameter(ENTITY_ID, entityId);
-
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
         // If interval is 0, convert this to a NONE aggregation, which is probably what the user really wanted
@@ -158,19 +130,14 @@ public class TimeseriesController extends BaseController {
     @PostMapping(value = "/{entityId}/save")
     public DeferredResult<ResponseEntity> saveEntityTimeseries(
             @PathVariable("entityId") String entityId,
-            @RequestBody String requestBody) {
-        return saveTimeseries(entityId, requestBody);
-    }
-
-    private DeferredResult<ResponseEntity> saveTimeseries(String entityId, String requestBody) {
-        DeferredResult<ResponseEntity> result = new DeferredResult<>();
-        Map<Long, List<KvEntry>> telemetryRequest;
+            @RequestBody String requestBody) throws ThingsboardException {
         JsonElement telemetryJson;
         try {
             telemetryJson = JsonParser.parseString(requestBody);
         } catch (Exception e) {
             return getImmediateDeferredResult("Unable to parse timeseries payload: Invalid JSON body!");
         }
+        Map<Long, List<KvEntry>> telemetryRequest;
         try {
             telemetryRequest = JsonConverter.convertToTelemetry(telemetryJson, System.currentTimeMillis());
         } catch (Exception e) {
@@ -185,18 +152,8 @@ public class TimeseriesController extends BaseController {
         if (entries.isEmpty()) {
             return getImmediateDeferredResult("No timeseries data found in request body!");
         }
-        ListenableFuture<Void> save = timeseriesService.save(entityId, entries);
-        Futures.addCallback(save, new FutureCallback<>() {
-            @Override
-            public void onSuccess(@Nullable Void unused) {
-                result.setResult(new ResponseEntity<>(HttpStatus.OK));
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                result.setResult(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        }, MoreExecutors.directExecutor());
+        DeferredResult<ResponseEntity> result = new DeferredResult<>();
+        tbTimeseriesService.saveEntityTimeseries(entityId, entries, getCurrentUser(), result);
         return result;
     }
 
@@ -209,11 +166,6 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "startTs", required = false) Long startTs,
             @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
         checkParameter(ENTITY_ID, entityId);
-        return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
-    }
-
-    private DeferredResult<ResponseEntity> deleteTimeseries(String entityId, String keysStr, boolean deleteAllDataForKeys,
-                                                            Long startTs, Long endTs) throws ThingsboardException {
         List<String> keys = toKeysList(keysStr);
         if (keys.isEmpty()) {
             return getImmediateDeferredResult("Empty keys: " + keysStr);
@@ -232,26 +184,12 @@ public class TimeseriesController extends BaseController {
                 deleteToTs = endTs;
             }
         }
-
-        DeferredResult<ResponseEntity> result = new DeferredResult<>();
-
         List<TsKvQuery> deleteTsKvQueries = new ArrayList<>();
         for (String key : keys) {
             deleteTsKvQueries.add(new BaseTsKvQuery(key, deleteFromTs, deleteToTs));
         }
-
-        ListenableFuture<List<Void>> future = timeseriesService.remove(entityId, deleteTsKvQueries);
-        Futures.addCallback(future, new FutureCallback<>() {
-            @Override
-            public void onSuccess(@Nullable List<Void> res) {
-                result.setResult(new ResponseEntity<>(HttpStatus.OK));
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                result.setResult(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        }, MoreExecutors.directExecutor());
+        DeferredResult<ResponseEntity> result = new DeferredResult<>();
+        tbTimeseriesService.deleteEntityTimeseries(entityId, deleteTsKvQueries, getCurrentUser(), result);
         return result;
     }
 

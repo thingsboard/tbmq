@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
-import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
+import org.thingsboard.mqtt.broker.service.entity.integration.TbIntegrationService;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +49,7 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.INTEGRA
 public class IntegrationController extends BaseController {
 
     private final IntegrationManagerService integrationManagerService;
-    private final PlatformIntegrationService platformIntegrationService;
+    private final TbIntegrationService tbIntegrationService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/integration/{integrationId}")
@@ -75,9 +75,7 @@ public class IntegrationController extends BaseController {
             throw new ThingsboardException("Integrations limit exceeded", ThingsboardErrorCode.GENERAL);
         }
 
-        Integration result = checkNotNull(integrationService.saveIntegration(integration));
-        platformIntegrationService.processIntegrationUpdate(result, created);
-        return result;
+        return checkNotNull(tbIntegrationService.save(integration, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -114,7 +112,7 @@ public class IntegrationController extends BaseController {
     public void restartIntegration(@PathVariable(INTEGRATION_ID) String strIntegrationId) throws Exception {
         checkParameter(INTEGRATION_ID, strIntegrationId);
         Integration integration = checkIntegrationId(toUUID(strIntegrationId));
-        platformIntegrationService.processIntegrationRestart(integration);
+        tbIntegrationService.restart(integration, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -123,11 +121,7 @@ public class IntegrationController extends BaseController {
     public void deleteIntegration(@PathVariable(INTEGRATION_ID) String strIntegrationId) throws Exception {
         checkParameter(INTEGRATION_ID, strIntegrationId);
         Integration integration = checkIntegrationId(toUUID(strIntegrationId));
-        boolean removed = integrationService.deleteIntegration(integration);
-        if (removed) {
-            rateLimitService.decrementApplicationClientsCount();
-        }
-        platformIntegrationService.processIntegrationDelete(integration, removed);
+        tbIntegrationService.delete(integration, getCurrentUser());
     }
 
 }
