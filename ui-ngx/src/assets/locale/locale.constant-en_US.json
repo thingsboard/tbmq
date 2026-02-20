@@ -977,7 +977,7 @@
         "delete-retained-messages-text": "Be careful, after the confirmation all selected retained messages will be removed and all related data will become unrecoverable.",
         "clear-empty-retained-message-nodes": "Clear empty retained message nodes",
         "clear-empty-retained-message-nodes-title": "Clear empty retained message nodes?",
-        "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message nodes</a>.",
+        "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation, all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message nodes</a> will be cleared.",
         "details": "Retained Message Details",
         "search": "Search by topic",
         "selected-retained-messages": "{ count, plural, =1 {1 Retained message} other {# Retained messages} } selected",
@@ -1372,7 +1372,7 @@
     "subscription": {
         "add-subscription": "Add Subscription",
         "clear-empty-subscription-nodes": "Clear empty subscription nodes",
-        "clear-empty-subscription-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>subscription</a> nodes.",
+        "clear-empty-subscription-nodes-text": "Be careful, after the confirmation, all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>subscription</a> nodes will be cleared.",
         "clear-empty-subscription-nodes-title": "Clear empty subscription nodes?",
         "color": "Color",
         "copy-topic": "Copy topic filter",

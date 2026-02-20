@@ -72,6 +72,10 @@ export class ConfigService {
     return this.resourcesService.downloadResource('/api/device-connectivity/mqtts/certificate/download');
   }
 
+  public getCaCertificateName(config?: RequestConfig): Observable<string> {
+    return this.http.get('/api/device-connectivity/mqtts/certificate/name', { responseType: 'text' });
+  }
+
   public caCertificateConfigured(config?: RequestConfig): Observable<boolean> {
     return this.http.get<boolean>('/api/device-connectivity/mqtts/certificate/configured',
       defaultHttpOptionsFromConfig(config));

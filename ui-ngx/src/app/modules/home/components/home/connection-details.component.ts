@@ -25,6 +25,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { SettingsService } from '@core/http/settings.service';
 import { HelpLinks } from '@shared/models/constants';
 import { ConfigService } from '@core/http/config.service';
+import { forkJoin } from 'rxjs';
 
 interface HostParam {
   label: string;
@@ -52,19 +53,22 @@ export class ConnectionDetailsComponent implements OnInit {
 
   ngOnInit() {
     const host = this.settingsService.connectivitySettings.mqtt.host;
-    this.configService.caCertificateConfigured().subscribe(
-      (configured) => {
+    forkJoin([
+      this.configService.caCertificateConfigured(),
+      this.configService.getCaCertificateName(),
+    ]).subscribe(
+      (([configured, name]) => {
         this.caCertConfigured = configured;
         this.hostParams = [
           { label: 'home.connection-details.broker-host', value: host, type: 'text', copyable: true },
           {
             label: 'home.connection-details.ca-certificate',
-            value: configured ? 'home.connection-details.download' : 'home.connection-details.not-configured',
+            value: configured ? name : 'home.connection-details.not-configured',
             type: configured ? 'download' : 'not-configured',
             copyable: false
           }
         ];
-      }
+      })
     );
   }
 
