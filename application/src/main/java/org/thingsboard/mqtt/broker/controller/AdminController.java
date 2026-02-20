@@ -37,17 +37,14 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
+import org.thingsboard.mqtt.broker.service.entity.admin.TbAdminService;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
-import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
-import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,11 +58,10 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.YOU_DON
 @RequestMapping("/api/admin")
 public class AdminController extends BaseController {
 
-    private final AdminService adminService;
+    private final TbAdminService tbAdminService;
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
     private final WebSocketConnectionService webSocketConnectionService;
-    private final SystemSettingsNotificationService systemSettingsNotificationService;
 
     @Value("${security.user_token_access_enabled:true}")
     private boolean userTokenAccessEnabled;
@@ -73,7 +69,8 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
-        return filterSensitiveUserData(adminService.createAdmin(adminDto, true));
+        SecurityUser currentUser = getCurrentUser();
+        return filterSensitiveUserData(tbAdminService.save(adminDto, currentUser));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -90,19 +87,10 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/settings")
     public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
-        AdminSettings savedAdminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
-        SysAdminSettingType.parse(savedAdminSettings.getKey()).ifPresent(type -> {
-            switch (type) {
-                case MAIL -> {
-                    mailService.updateMailConfiguration();
-                    ((ObjectNode) savedAdminSettings.getJsonValue()).remove("password");
-                }
-                case MQTT_AUTHORIZATION -> {
-                    var mqttAuthSettings = JacksonUtil.convertValue(savedAdminSettings.getJsonValue(), MqttAuthSettings.class);
-                    systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
-                }
-            }
-        });
+        AdminSettings savedAdminSettings = checkNotNull(tbAdminService.saveAdminSettings(adminSettings, getCurrentUser()));
+        if (savedAdminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
+            ((ObjectNode) savedAdminSettings.getJsonValue()).remove("password");
+        }
         return savedAdminSettings;
     }
 
@@ -136,12 +124,12 @@ public class AdminController extends BaseController {
         if (getCurrentUser().getId().equals(userId)) {
             throw new ThingsboardException("It is not allowed to delete its own user!", ThingsboardErrorCode.PERMISSION_DENIED);
         }
-        checkUserId(userId);
+        User user = checkUserId(userId);
 
         List<WebSocketConnectionDto> webSocketConnections = getWebSocketConnections(userId);
         webSocketConnections.forEach(wsConn -> clientSessionCleanUpService.disconnectClientSession(wsConn.getClientId()));
 
-        userService.deleteUser(userId);
+        tbAdminService.delete(user, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -168,7 +156,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/securitySettings")
     public SecuritySettings saveSecuritySettings(@RequestBody SecuritySettings securitySettings) throws ThingsboardException {
-        return checkNotNull(systemSecurityService.saveSecuritySettings(securitySettings));
+        return checkNotNull(tbAdminService.saveSecuritySettings(securitySettings, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
