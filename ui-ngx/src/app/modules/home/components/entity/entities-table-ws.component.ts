@@ -392,7 +392,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
         return res !== null ? res : undefined;
       }
     }
-    return '*'; // fix for matTooltip bug appearance
+    return undefined;
   }
 
   cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
