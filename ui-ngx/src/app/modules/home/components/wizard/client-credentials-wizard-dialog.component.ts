@@ -124,6 +124,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
     this.clientCredentialsWizardFormGroup.get('credentialsType').valueChanges.subscribe(
       (type) => {
         this.authenticationFormGroup.patchValue({credentialsValue: null}, {emitEvent:false});
+        this.authenticationFormGroup.markAsUntouched();
       }
     );
   }
