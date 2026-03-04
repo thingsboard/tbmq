@@ -46,7 +46,7 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     @Override
-    public void clearPersistedMsgs(String clientId) {
+    public void clearPersistedMessages(String clientId) {
         deviceActorManager.notifyRemovePersistedMessages(clientId);
     }
 

@@ -35,4 +35,8 @@ public interface TbQueueConsumer<T extends TbQueueMsg> {
 
     String getConsumerGroupId();
 
+    default void pause() {}
+
+    default void resume() {}
+
 }

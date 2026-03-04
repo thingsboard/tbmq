@@ -51,6 +51,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public void subscribe() {
+        doEnsureTopicExists(topic);
         consumerLock.lock();
         try {
             doSubscribe(topic);
@@ -62,6 +63,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public void subscribe(ConsumerRebalanceListener listener) {
+        doEnsureTopicExists(topic);
         consumerLock.lock();
         try {
             doSubscribe(topic, listener);
@@ -73,6 +75,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public void assignPartition(int partition) {
+        doEnsureTopicExists(topic);
         consumerLock.lock();
         try {
             doAssignPartition(topic, partition);
@@ -84,6 +87,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public void assignAllPartitions() {
+        doEnsureTopicExists(topic);
         consumerLock.lock();
         try {
             doAssignAllPartitions(topic);
@@ -137,6 +141,9 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         List<R> records;
         consumerLock.lock();
         try {
+            if (stopped) {
+                return Collections.emptyList();
+            }
             records = doPoll(durationInMillis);
         } finally {
             consumerLock.unlock();
@@ -257,6 +264,9 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         } finally {
             consumerLock.unlock();
         }
+    }
+
+    protected void doEnsureTopicExists(String topic) {
     }
 
     abstract protected List<R> doPoll(long durationInMillis);
