@@ -49,4 +49,8 @@ public enum SessionState {
     public boolean isConnectOnConflict() {
         return this == INITIALIZED_ON_CONFLICT;
     }
+
+    public boolean isMqttProcessable() {
+        return MQTT_PROCESSABLE_STATES.contains(this);
+    }
 }

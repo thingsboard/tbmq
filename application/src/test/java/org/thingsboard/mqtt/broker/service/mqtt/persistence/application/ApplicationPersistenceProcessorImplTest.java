@@ -15,25 +15,27 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import com.google.common.util.concurrent.Futures;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
+import com.google.common.collect.Sets;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
@@ -41,95 +43,454 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.App
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = ApplicationPersistenceProcessorImpl.class)
-@TestPropertySource(properties = {
-        "queue.application-persisted-msg.poll-interval=100",
-        "queue.application-persisted-msg.pack-processing-timeout=2000"
-})
-@Slf4j
-public class ApplicationPersistenceProcessorImplTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-    @MockitoBean
-    ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
-    @MockitoBean
-    ApplicationSubmitStrategyFactory submitStrategyFactory;
-    @MockitoBean
-    ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    @MockitoBean
-    MqttMsgDeliveryService mqttMsgDeliveryService;
-    @MockitoBean
-    TbQueueAdmin queueAdmin;
-    @MockitoBean
-    StatsManager statsManager;
-    @MockitoBean
-    ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
-    @MockitoBean
-    ClientMqttActorManager clientMqttActorManager;
-    @MockitoBean
-    ServiceInfoProvider serviceInfoProvider;
-    @MockitoBean
-    ClientLogger clientLogger;
-    @MockitoBean
-    ApplicationTopicService applicationTopicService;
-    @MockitoBean
-    ApplicationClientHelperService appClientHelperService;
-    @MockitoBean
-    AppMsgDeliveryStrategy appMsgDeliveryStrategy;
+@ExtendWith(MockitoExtension.class)
+class ApplicationPersistenceProcessorImplTest {
 
-    @MockitoSpyBean
-    ApplicationPersistenceProcessorImpl applicationPersistenceProcessor;
+    @Mock ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
+    @Mock ApplicationSubmitStrategyFactory submitStrategyFactory;
+    @Mock ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
+    @Mock MqttMsgDeliveryService mqttMsgDeliveryService;
+    @Mock TbQueueAdmin queueAdmin;
+    @Mock StatsManager statsManager;
+    @Mock ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
+    @Mock ClientMqttActorManager clientMqttActorManager;
+    @Mock ServiceInfoProvider serviceInfoProvider;
+    @Mock ClientLogger clientLogger;
+    @Mock ApplicationTopicService applicationTopicService;
+    @Mock ApplicationClientHelperService appClientHelperService;
+    @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
 
-    @Before
-    public void setUp() throws Exception {
+    @InjectMocks
+    ApplicationPersistenceProcessorImpl processor;
 
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(processor, "pollDuration", 100L);
+        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
+        ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
     }
 
     @Test
-    public void testCollectCancelledJobs() {
-        Set<TopicSharedSubscription> subscriptionTopicFilters = Set.of(
-                newSharedSubscriptionTopicFilter("test/1"),
-                newSharedSubscriptionTopicFilter("test/2"),
-                newSharedSubscriptionTopicFilter("test/3")
+    void isProcessorActive_whenThreadInterrupted_returnsFalseAndPreservesInterruptFlag() {
+        Thread.currentThread().interrupt();
+        try {
+            boolean active = invokeIsProcessorActive();
+            assertThat(active).isFalse();
+            assertThat(Thread.currentThread().isInterrupted())
+                    .as("isProcessorActive() must not clear the thread interrupt flag")
+                    .isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void isProcessorActive_whenNotStoppedAndNotInterrupted_returnsTrue() {
+        assertThat(invokeIsProcessorActive()).isTrue();
+    }
+
+    @Test
+    void isProcessorActive_whenStoppedFlagSet_returnsFalse() {
+        ReflectionTestUtils.setField(processor, "stopped", true);
+        assertThat(invokeIsProcessorActive()).isFalse();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void destroy_closesSharedSubscriptionConsumers() {
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(processor, "persistedMsgsConsumerExecutor", mockExecutor);
+        ReflectionTestUtils.setField(processor, "sharedSubsMsgsConsumerExecutor", mockExecutor);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer1 =
+                mock(TbQueueControlledOffsetConsumer.class);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer2 =
+                mock(TbQueueControlledOffsetConsumer.class);
+
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>
+                innerMap = new ConcurrentHashMap<>();
+        innerMap.put(subscription("shared/topic/1"), consumer1);
+        innerMap.put(subscription("shared/topic/2"), consumer2);
+        sharedSubscriptionConsumers().put("client1", innerMap);
+
+        processor.destroy();
+
+        // OLD code would fail here; NEW code closes both consumers
+        verify(consumer1).unsubscribeAndClose();
+        verify(consumer2).unsubscribeAndClose();
+    }
+
+    @Test
+    void destroy_cancelsFuturesInProcessingJobs() {
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(processor, "persistedMsgsConsumerExecutor", mockExecutor);
+        ReflectionTestUtils.setField(processor, "sharedSubsMsgsConsumerExecutor", mockExecutor);
+
+        Future<?> sharedFuture = mock(Future.class);
+        ApplicationSharedSubscriptionJob job =
+                new ApplicationSharedSubscriptionJob(subscription("shared/topic"), sharedFuture, false);
+        sharedSubscriptionsProcessingJobs().put("client1", new ArrayList<>(List.of(job)));
+
+        Future<?> mainFuture = mock(Future.class);
+        processingFutures().put("client1", mainFuture);
+
+        processor.destroy();
+
+        verify(sharedFuture).cancel(false);
+        verify(mainFuture).cancel(false);
+    }
+
+    @Test
+    void processPubAck_whenMainContextHandlesPacket_doesNotQuerySharedContexts() {
+        ApplicationPackProcessingCtx mainCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(mainCtx).onPubAck(42);
+        packProcessingCtxMap().put("client1", mainCtx);
+
+        processor.processPubAck("client1", 42);
+
+        verify(mainCtx).onPubAck(42);
+        assertThat(sharedSubscriptionsPackProcessingCtxMap()).doesNotContainKey("client1");
+    }
+
+    @Test
+    void processPubAck_whenNoMainContext_queriesSharedContexts() {
+        ApplicationPackProcessingCtx sharedCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(sharedCtx).onPubAck(99);
+
+        Set<ApplicationSharedSubscriptionCtx> contexts = Sets.newConcurrentHashSet();
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/topic"), sharedCtx));
+        sharedSubscriptionsPackProcessingCtxMap().put("client1", contexts);
+
+        processor.processPubAck("client1", 99);
+
+        verify(sharedCtx).onPubAck(99);
+    }
+
+    @Test
+    void processPubAck_whenMainContextDoesNotHandlePacket_fallsBackToSharedContexts() {
+        ApplicationPackProcessingCtx mainCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(false).when(mainCtx).onPubAck(42);
+        packProcessingCtxMap().put("client1", mainCtx);
+
+        ApplicationPackProcessingCtx sharedCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(sharedCtx).onPubAck(42);
+        Set<ApplicationSharedSubscriptionCtx> contexts = Sets.newConcurrentHashSet();
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/topic"), sharedCtx));
+        sharedSubscriptionsPackProcessingCtxMap().put("client1", contexts);
+
+        processor.processPubAck("client1", 42);
+
+        verify(mainCtx).onPubAck(42);
+        verify(sharedCtx).onPubAck(42);
+    }
+
+    @Test
+    void processPubAck_whenFirstSharedContextHandlesPacket_doesNotQueryRemainingSharedContexts() {
+        ApplicationPackProcessingCtx sharedCtx1 = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(sharedCtx1).onPubAck(42);
+        ApplicationPackProcessingCtx sharedCtx2 = spy(new ApplicationPackProcessingCtx("client1"));
+
+        // Put both in the set — ctx1 handles it, ctx2 must not be queried
+        Set<ApplicationSharedSubscriptionCtx> contexts = Sets.newConcurrentHashSet();
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/a"), sharedCtx1));
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/b"), sharedCtx2));
+        sharedSubscriptionsPackProcessingCtxMap().put("client1", contexts);
+
+        processor.processPubAck("client1", 42);
+
+        verify(sharedCtx1).onPubAck(42);
+        // sharedCtx2 is never queried once ctx1 handles the packet
+        verify(sharedCtx2, never()).onPubAck(42);
+    }
+
+    @Test
+    void processPubComp_whenMainContextHandlesPacket_doesNotQuerySharedContexts() {
+        ApplicationPackProcessingCtx mainCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(mainCtx).onPubComp(7);
+        packProcessingCtxMap().put("client1", mainCtx);
+
+        processor.processPubComp("client1", 7);
+
+        verify(mainCtx).onPubComp(7);
+        assertThat(sharedSubscriptionsPackProcessingCtxMap()).doesNotContainKey("client1");
+    }
+
+    @Test
+    void processPubComp_whenMainContextDoesNotHandlePacket_fallsBackToSharedContexts() {
+        ApplicationPackProcessingCtx mainCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(false).when(mainCtx).onPubComp(7);
+        packProcessingCtxMap().put("client1", mainCtx);
+
+        ApplicationPackProcessingCtx sharedCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(sharedCtx).onPubComp(7);
+        Set<ApplicationSharedSubscriptionCtx> contexts = Sets.newConcurrentHashSet();
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/topic"), sharedCtx));
+        sharedSubscriptionsPackProcessingCtxMap().put("client1", contexts);
+
+        processor.processPubComp("client1", 7);
+
+        verify(mainCtx).onPubComp(7);
+        verify(sharedCtx).onPubComp(7);
+    }
+
+    @Test
+    void processPubComp_whenNoMainContext_queriesSharedContexts() {
+        ApplicationPackProcessingCtx sharedCtx = spy(new ApplicationPackProcessingCtx("client1"));
+        doReturn(true).when(sharedCtx).onPubComp(7);
+
+        Set<ApplicationSharedSubscriptionCtx> contexts = Sets.newConcurrentHashSet();
+        contexts.add(new ApplicationSharedSubscriptionCtx(subscription("shared/topic"), sharedCtx));
+        sharedSubscriptionsPackProcessingCtxMap().put("client1", contexts);
+
+        processor.processPubComp("client1", 7);
+
+        verify(sharedCtx).onPubComp(7);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void stopProcessingSharedSubscriptions_closesOnlyMatchingConsumers() {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumerToClose =
+                mock(TbQueueControlledOffsetConsumer.class);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumerToKeep =
+                mock(TbQueueControlledOffsetConsumer.class);
+
+        TopicSharedSubscription subToRemove = subscription("remove/me");
+        TopicSharedSubscription subToKeep = subscription("keep/me");
+
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>
+                innerMap = new ConcurrentHashMap<>();
+        innerMap.put(subToRemove, consumerToClose);
+        innerMap.put(subToKeep, consumerToKeep);
+        sharedSubscriptionConsumers().put("client1", innerMap);
+
+        processor.stopProcessingSharedSubscriptions(clientSessionCtx("client1"), Set.of(subToRemove));
+
+        verify(consumerToClose).unsubscribeAndClose();
+        verify(consumerToKeep, never()).unsubscribeAndClose();
+        assertThat(innerMap)
+                .containsKey(subToKeep)
+                .doesNotContainKey(subToRemove);
+    }
+
+    @Test
+    void stopProcessingSharedSubscriptions_withEmptySubscriptionsSet_doesNothing() {
+        assertThatNoException().isThrownBy(() ->
+                processor.stopProcessingSharedSubscriptions(clientSessionCtx("client1"), Set.of()));
+    }
+
+    @Test
+    void startProcessingSharedSubscriptions_withEmptySubscriptionsSet_doesNothing() {
+        assertThatNoException().isThrownBy(() ->
+                processor.startProcessingSharedSubscriptions(clientSessionCtx("client1"), Set.of()));
+        assertThat(sharedSubscriptionsProcessingJobs()).doesNotContainKey("client1");
+    }
+
+    @Test
+    void stopProcessingPersistedMessages_cancelsFutureAndClearsApplicationProcessorStats() {
+        Future<?> mockFuture = mock(Future.class);
+        processingFutures().put("client1", mockFuture);
+
+        processor.stopProcessingPersistedMessages("client1");
+
+        verify(mockFuture).cancel(false);
+        verify(statsManager).clearApplicationProcessorStats("client1");
+    }
+
+    @Test
+    void stopProcessingPersistedMessages_interruptsSharedSubscriptionJobs() {
+        Future<?> sharedFuture = mock(Future.class);
+        ApplicationSharedSubscriptionJob job =
+                new ApplicationSharedSubscriptionJob(subscription("shared/topic"), sharedFuture, false);
+        sharedSubscriptionsProcessingJobs().put("client1", new ArrayList<>(List.of(job)));
+
+        Future<?> mainFuture = mock(Future.class);
+        processingFutures().put("client1", mainFuture);
+
+        processor.stopProcessingPersistedMessages("client1");
+
+        assertThat(job.isInterrupted()).isTrue();
+        verify(sharedFuture).cancel(false);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void stopProcessingPersistedMessages_closesSharedSubscriptionConsumers() {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer =
+                mock(TbQueueControlledOffsetConsumer.class);
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>
+                innerMap = new ConcurrentHashMap<>();
+        innerMap.put(subscription("shared/topic"), consumer);
+        sharedSubscriptionConsumers().put("client1", innerMap);
+
+        Future<?> mainFuture = mock(Future.class);
+        processingFutures().put("client1", mainFuture);
+
+        processor.stopProcessingPersistedMessages("client1");
+
+        verify(consumer).unsubscribeAndClose();
+        assertThat(sharedSubscriptionConsumers()).doesNotContainKey("client1");
+    }
+
+    @Test
+    void stopProcessingPersistedMessages_removesClientFromPersistedMsgCtxMap() {
+        Future<?> mainFuture = mock(Future.class);
+        processingFutures().put("client1", mainFuture);
+
+        processor.stopProcessingPersistedMessages("client1");
+
+        @SuppressWarnings("unchecked")
+        ConcurrentMap<String, ?> persistedMsgCtxMap =
+                (ConcurrentMap<String, ?>) ReflectionTestUtils.getField(processor, "persistedMsgCtxMap");
+        assertThat(persistedMsgCtxMap).doesNotContainKey("client1");
+    }
+
+    @Test
+    void cancelAndCollectJobs_returnsOnlyJobsMatchingSubscriptions() {
+        Set<TopicSharedSubscription> subscriptions = Set.of(
+                subscription("test/1"),
+                subscription("test/3")
         );
-        List<ApplicationSharedSubscriptionJob> jobs = new ArrayList<>(Arrays.asList(
-                newApplicationSharedSubscriptionJob("test/1"),
-                newApplicationSharedSubscriptionJob("test/2"),
-                newApplicationSharedSubscriptionJob("test/3"),
-                newApplicationSharedSubscriptionJob("test/4"),
-                newApplicationSharedSubscriptionJob("test/5")
-        ));
-        List<ApplicationSharedSubscriptionJob> cancelledJobs =
-                applicationPersistenceProcessor.collectCancelledJobs(subscriptionTopicFilters, "client", jobs);
+        ApplicationSharedSubscriptionJob job1 = jobWithFuture("test/1");
+        ApplicationSharedSubscriptionJob job2 = jobWithFuture("test/2"); // not in subscriptions
+        ApplicationSharedSubscriptionJob job3 = jobWithFuture("test/3");
+        List<ApplicationSharedSubscriptionJob> jobs = new ArrayList<>(List.of(job1, job2, job3));
 
-        Assert.assertEquals(3, cancelledJobs.size());
-        cancelledJobs.forEach(job -> Assert.assertTrue(job.isInterrupted()));
+        List<ApplicationSharedSubscriptionJob> cancelled =
+                processor.cancelAndCollectJobs(subscriptions, "client1", jobs);
 
-        List<TopicSharedSubscription> cancelledSubscriptions = cancelledJobs.stream()
-                .map(ApplicationSharedSubscriptionJob::getSubscription)
-                .toList();
-        Assert.assertTrue(cancelledSubscriptions.containsAll(
-                List.of(newSharedSubscriptionTopicFilter("test/1"),
-                        newSharedSubscriptionTopicFilter("test/2"),
-                        newSharedSubscriptionTopicFilter("test/3"))
-        ));
-
-        jobs.removeAll(cancelledJobs);
-        jobs.forEach(job -> Assert.assertFalse(job.isInterrupted()));
-        Assert.assertEquals(2, jobs.size());
+        assertThat(cancelled).hasSize(2).contains(job1, job3).doesNotContain(job2);
+        assertThat(job1.isInterrupted()).isTrue();
+        assertThat(job3.isInterrupted()).isTrue();
+        assertThat(job2.isInterrupted()).isFalse();
     }
 
-    private ApplicationSharedSubscriptionJob newApplicationSharedSubscriptionJob(String topicFilter) {
-        return new ApplicationSharedSubscriptionJob(newSharedSubscriptionTopicFilter(topicFilter), Futures.immediateFuture(null), false);
+    @Test
+    void cancelAndCollectJobs_withNullFutureOnJob_doesNotThrowNpe() {
+        ApplicationSharedSubscriptionJob jobWithNullFuture =
+                new ApplicationSharedSubscriptionJob(subscription("test/1"), null, false);
+        List<ApplicationSharedSubscriptionJob> jobs = new ArrayList<>(List.of(jobWithNullFuture));
+
+        assertThatNoException()
+                .as("cancelJob() must not NPE when job.getFuture() is null")
+                .isThrownBy(() ->
+                        processor.cancelAndCollectJobs(Set.of(subscription("test/1")), "client1", jobs));
+
+        assertThat(jobWithNullFuture.isInterrupted()).isTrue();
     }
 
-    private TopicSharedSubscription newSharedSubscriptionTopicFilter(String topicFilter) {
+    @Test
+    void cancelAndCollectJobs_clearsSharedStatsForEachCancelledJob() {
+        Set<TopicSharedSubscription> subscriptions = Set.of(
+                subscription("test/1"),
+                subscription("test/2")
+        );
+        List<ApplicationSharedSubscriptionJob> jobs = new ArrayList<>(List.of(
+                jobWithFuture("test/1"),
+                jobWithFuture("test/2"),
+                jobWithFuture("test/3") // not in subscriptions — must NOT be cleared
+        ));
+
+        processor.cancelAndCollectJobs(subscriptions, "client1", jobs);
+
+        verify(statsManager, times(2))
+                .clearSharedApplicationProcessorStats(eq("client1"), any(TopicSharedSubscription.class));
+        verify(statsManager, never())
+                .clearSharedApplicationProcessorStats(eq("client1"), eq(subscription("test/3")));
+    }
+
+    @Test
+    void cancelAndCollectJobs_withNoMatchingSubscriptions_returnsEmptyList() {
+        List<ApplicationSharedSubscriptionJob> jobs = new ArrayList<>(List.of(
+                jobWithFuture("test/1"),
+                jobWithFuture("test/2")
+        ));
+
+        List<ApplicationSharedSubscriptionJob> cancelled =
+                processor.cancelAndCollectJobs(Set.of(subscription("test/99")), "client1", jobs);
+
+        assertThat(cancelled).isEmpty();
+        jobs.forEach(j -> assertThat(j.isInterrupted()).isFalse());
+    }
+
+    // ===== Helpers =====
+
+    private boolean invokeIsProcessorActive() {
+        try {
+            var method = ApplicationPersistenceProcessorImpl.class.getDeclaredMethod("isProcessorActive");
+            method.setAccessible(true);
+            return (Boolean) method.invoke(processor);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, ApplicationPackProcessingCtx> packProcessingCtxMap() {
+        return (ConcurrentMap<String, ApplicationPackProcessingCtx>)
+                ReflectionTestUtils.getField(processor, "packProcessingCtxMap");
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, Set<ApplicationSharedSubscriptionCtx>> sharedSubscriptionsPackProcessingCtxMap() {
+        return (ConcurrentMap<String, Set<ApplicationSharedSubscriptionCtx>>)
+                ReflectionTestUtils.getField(processor, "sharedSubscriptionsPackProcessingCtxMap");
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, ConcurrentMap<TopicSharedSubscription,
+            TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>> sharedSubscriptionConsumers() {
+        return (ConcurrentMap<String, ConcurrentMap<TopicSharedSubscription,
+                TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>>)
+                ReflectionTestUtils.getField(processor, "sharedSubscriptionConsumers");
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, List<ApplicationSharedSubscriptionJob>> sharedSubscriptionsProcessingJobs() {
+        return (ConcurrentMap<String, List<ApplicationSharedSubscriptionJob>>)
+                ReflectionTestUtils.getField(processor, "sharedSubscriptionsProcessingJobs");
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, Future<?>> processingFutures() {
+        return (ConcurrentMap<String, Future<?>>)
+                ReflectionTestUtils.getField(processor, "processingFutures");
+    }
+
+    private TopicSharedSubscription subscription(String topicFilter) {
         return new TopicSharedSubscription(topicFilter, null);
+    }
+
+    private ApplicationSharedSubscriptionJob jobWithFuture(String topicFilter) {
+        return new ApplicationSharedSubscriptionJob(subscription(topicFilter), mock(Future.class), false);
+    }
+
+    private ClientSessionCtx clientSessionCtx(String clientId) {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        lenient().when(ctx.getClientId()).thenReturn(clientId);
+        return ctx;
     }
 }

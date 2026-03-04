@@ -38,10 +38,15 @@ import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
@@ -68,16 +73,31 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
     private ClientMqttActorManager clientMqttActorManager;
     @Autowired
     private ClientSubscriptionService clientSubscriptionService;
+    @Autowired
+    private ClientSessionService clientSessionService;
+    @Autowired
+    private ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    @Autowired
+    private ApplicationTopicService applicationTopicService;
 
     private MqttClientCredentials applicationCredentials;
     private MqttClientCredentials defaultCredentials;
     private String appClientId;
+    private ApplicationSharedSubscription sharedSubscription;
 
     @Before
     public void beforeTest() throws Exception {
         appClientId = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(appClientId, null));
         defaultCredentials = credentialsService.saveSystemWebSocketCredentials();
+
+        ApplicationSharedSubscription sub = new ApplicationSharedSubscription();
+        sub.setName("backpressureGroup");
+        sub.setTopicFilter("shared/backpressure/topic");
+        sub.setPartitions(3);
+        sharedSubscription = applicationSharedSubscriptionService.saveSharedSubscription(sub);
+        applicationTopicService.createSharedTopic(sharedSubscription);
+
         enableBasicProvider();
     }
 
@@ -85,6 +105,14 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
     public void clear() throws Exception {
         credentialsService.deleteCredentials(applicationCredentials.getId());
         credentialsService.deleteCredentials(defaultCredentials.getId());
+
+        clientSubscriptionService.clearSubscriptionsAndPersist(appClientId);
+        clientSessionService.clearClientSession(appClientId, CallbackUtil.EMPTY);
+
+        if (sharedSubscription != null) {
+            applicationTopicService.deleteSharedTopic(sharedSubscription);
+            applicationSharedSubscriptionService.deleteSharedSubscription(sharedSubscription.getId());
+        }
     }
 
     @Test
@@ -139,7 +167,64 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
 
         subscriber.disconnect();
 
-        //todo: change to "isEqualTo" once the App logic is corrected
+        assertThat(counter).hasValueGreaterThanOrEqualTo(msgCount);
+    }
+
+    @Test
+    public void testAppClientSharedSubsBackpressure() throws Throwable {
+        int msgCount = 50;
+        CountDownLatch latch = new CountDownLatch(msgCount);
+
+        String topic = "shared/backpressure/topic";
+        String sharedSubsTopic = "$share/backpressureGroup/" + topic;
+
+        MqttClientConfig subscriberConfig = new MqttClientConfig();
+        subscriberConfig.setCleanSession(false);
+        subscriberConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
+        subscriberConfig.setClientId(appClientId);
+
+        AtomicInteger counter = new AtomicInteger();
+        MqttHandler mqttHandler = (t, payload) -> {
+            log.debug("[{}] Received shared subs msg: {}", t, counter.incrementAndGet());
+            latch.countDown();
+            return Futures.immediateVoidFuture();
+        };
+
+        MqttClient subscriber = MqttClient.create(subscriberConfig, mqttHandler, externalExecutorService);
+        subscriber.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        subscriber.on(sharedSubsTopic, mqttHandler, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(() -> clientSubscriptionService.getClientSharedSubscriptions(appClientId).size() == 1);
+
+        org.eclipse.paho.mqttv5.client.MqttClient publisher =
+                new org.eclipse.paho.mqttv5.client.MqttClient(SERVER_URI + mqttPort, "sharedSubsBackpressurePublisher");
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setUserName("tbmq_websockets_username");
+        publisher.connect(options);
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(publisher::isConnected);
+
+        for (int i = 0; i < msgCount; i++) {
+            if (i == msgCount / 2) {
+                clientMqttActorManager.notifyChannelNonWritable(appClientId, NonWritableChannelMsg.DEFAULT);
+            }
+            publisher.publish(topic, PAYLOAD, 1, false);
+        }
+
+        publisher.disconnect();
+        publisher.close();
+
+        clientMqttActorManager.notifyChannelWritable(appClientId, WritableChannelMsg.DEFAULT);
+
+        boolean await = latch.await(30, TimeUnit.SECONDS);
+        assertThat(await).isTrue();
+
+        subscriber.disconnect();
+
         assertThat(counter).hasValueGreaterThanOrEqualTo(msgCount);
     }
 
