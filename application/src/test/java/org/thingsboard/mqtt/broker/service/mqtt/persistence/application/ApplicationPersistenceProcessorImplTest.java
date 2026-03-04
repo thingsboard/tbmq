@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
@@ -64,7 +65,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationPersistenceProcessorImplTest {
@@ -155,7 +155,7 @@ class ApplicationPersistenceProcessorImplTest {
         sharedProcessingJobs().put("client1", new ArrayList<>(List.of(job)));
 
         Future<?> mainFuture = mock(Future.class);
-        mainProcessingFutures().put("client1", mainFuture);
+        mainProcessingStates().put("client1", new ApplicationMainProcessingState(null, mainFuture));
 
         processor.destroy();
 
@@ -312,7 +312,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Test
     void stopProcessingPersistedMessages_cancelsFutureAndClearsApplicationProcessorStats() {
         Future<?> mockFuture = mock(Future.class);
-        mainProcessingFutures().put("client1", mockFuture);
+        mainProcessingStates().put("client1", new ApplicationMainProcessingState(null, mockFuture));
 
         processor.stopProcessingPersistedMessages("client1");
 
@@ -328,7 +328,7 @@ class ApplicationPersistenceProcessorImplTest {
         sharedProcessingJobs().put("client1", new ArrayList<>(List.of(job)));
 
         Future<?> mainFuture = mock(Future.class);
-        mainProcessingFutures().put("client1", mainFuture);
+        mainProcessingStates().put("client1", new ApplicationMainProcessingState(null, mainFuture));
 
         processor.stopProcessingPersistedMessages("client1");
 
@@ -347,7 +347,7 @@ class ApplicationPersistenceProcessorImplTest {
         sharedSubscriptionConsumers().put("client1", innerMap);
 
         Future<?> mainFuture = mock(Future.class);
-        mainProcessingFutures().put("client1", mainFuture);
+        mainProcessingStates().put("client1", new ApplicationMainProcessingState(null, mainFuture));
 
         processor.stopProcessingPersistedMessages("client1");
 
@@ -358,7 +358,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Test
     void stopProcessingPersistedMessages_removesClientFromPersistedMsgCtxMap() {
         Future<?> mainFuture = mock(Future.class);
-        mainProcessingFutures().put("client1", mainFuture);
+        mainProcessingStates().put("client1", new ApplicationMainProcessingState(null, mainFuture));
 
         processor.stopProcessingPersistedMessages("client1");
 
@@ -475,9 +475,9 @@ class ApplicationPersistenceProcessorImplTest {
     }
 
     @SuppressWarnings("unchecked")
-    private ConcurrentMap<String, Future<?>> mainProcessingFutures() {
-        return (ConcurrentMap<String, Future<?>>)
-                ReflectionTestUtils.getField(processor, "mainProcessingFutures");
+    private ConcurrentMap<String, ApplicationMainProcessingState> mainProcessingStates() {
+        return (ConcurrentMap<String, ApplicationMainProcessingState>)
+                ReflectionTestUtils.getField(processor, "mainProcessingStates");
     }
 
     private TopicSharedSubscription subscription(String topicFilter) {

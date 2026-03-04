@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueue
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
@@ -87,8 +88,7 @@ import java.util.stream.Collectors;
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
     private final ConcurrentMap<String, ApplicationPackProcessingCtx> mainPackProcessingCtxMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Future<?>> mainProcessingFutures = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> mainConsumers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ApplicationMainProcessingState> mainProcessingStates = new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, ApplicationPersistedMsgCtx> persistedMsgCtxMap = new ConcurrentHashMap<>();
 
@@ -126,7 +126,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @PostConstruct
     public void init() {
-        statsManager.registerActiveApplicationProcessorsStats(mainProcessingFutures);
+        statsManager.registerActiveApplicationProcessorsStats(mainProcessingStates);
         statsManager.registerActiveSharedApplicationProcessorsStats(sharedProcessingJobs);
         persistedMessageConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-persisted-msg-consumers");
         sharedSubscriptionConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-shared-subs-msg-consumers");
@@ -140,8 +140,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         sharedProcessingJobs.forEach((clientId, jobs) -> jobs.forEach(this::cancelJob));
         sharedSubscriptionConsumers.forEach((clientId, consumers) ->
                 consumers.values().forEach(TbQueueConsumer::unsubscribeAndClose));
-        mainProcessingFutures.forEach((clientId, future) -> {
-            future.cancel(false);
+        mainProcessingStates.forEach((clientId, state) -> {
+            Future<?> future = state.getFuture();
+            if (future != null) {
+                future.cancel(false);
+            }
             log.info("[{}] Saving processing context before shutting down", clientId);
             ApplicationPackProcessingCtx processingContext = mergePackProcessingContexts(clientId);
             try {
@@ -157,16 +160,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        Future<?> existingFuture = mainProcessingFutures.get(clientId);
-        if (existingFuture != null && !existingFuture.isDone()) {
-            log.warn("[{}] Processing already active, skipping duplicate start", clientId);
-            return;
+        ApplicationMainProcessingState existingState = mainProcessingStates.get(clientId);
+        if (existingState != null) {
+            Future<?> existingFuture = existingState.getFuture();
+            if (existingFuture != null && !existingFuture.isDone()) {
+                log.warn("[{}] Processing already active, skipping duplicate start", clientId);
+                return;
+            }
         }
         String clientTopic = applicationTopicService.createTopic(clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing", clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId, clientTopic);
-        mainConsumers.put(clientId, consumer);
+        ApplicationMainProcessingState state = new ApplicationMainProcessingState(consumer, null);
+        mainProcessingStates.put(clientId, state);
         Future<?> future = persistedMessageConsumerExecutor.submit(() -> {
             try {
                 processPersistedMessages(consumer, clientState);
@@ -175,10 +182,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 disconnectClient(clientId, clientState);
             } finally {
                 consumer.unsubscribeAndClose();
-                mainConsumers.remove(clientId);
+                mainProcessingStates.remove(clientId, state);
             }
         });
-        mainProcessingFutures.put(clientId, future);
+        state.setFuture(future);
     }
 
     @Override
@@ -334,7 +341,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     public void processChannelWritable(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
         log.trace("[{}] Channel is writable", clientId);
-        if (mainConsumers.containsKey(clientId)) {
+        if (mainProcessingStates.containsKey(clientId)) {
             resumeMainConsumer(clientId);
         } else {
             log.warn("[{}] Client is not active during channel writable event. Start processing", clientId);
@@ -733,10 +740,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void resumeMainConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = mainConsumers.get(clientId);
-        if (mainConsumer != null) {
+        ApplicationMainProcessingState state = mainProcessingStates.get(clientId);
+        if (state != null) {
             log.trace("[{}] Resuming main consumer", clientId);
-            mainConsumer.resume();
+            state.getConsumer().resume();
         }
     }
 
@@ -749,10 +756,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void pauseAllConsumers(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = mainConsumers.get(clientId);
-        if (mainConsumer != null) {
+        ApplicationMainProcessingState state = mainProcessingStates.get(clientId);
+        if (state != null) {
             log.trace("[{}] Pausing main consumer", clientId);
-            mainConsumer.pause();
+            state.getConsumer().pause();
         }
         var sharedSubsToConsumerMap = sharedSubscriptionConsumers.get(clientId);
         if (!CollectionUtils.isEmpty(sharedSubsToConsumerMap)) {
@@ -762,13 +769,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void cancelMainProcessing(String clientId) {
-        mainConsumers.remove(clientId);
-        Future<?> processingFuture = mainProcessingFutures.remove(clientId);
-        if (processingFuture == null) {
-            log.warn("[{}] No main processing future found for client", clientId);
+        ApplicationMainProcessingState state = mainProcessingStates.remove(clientId);
+        if (state == null) {
+            log.warn("[{}] No main processing state found for client", clientId);
         } else {
             try {
-                processingFuture.cancel(false);
+                Future<?> processingFuture = state.getFuture();
+                if (processingFuture != null) {
+                    processingFuture.cancel(false);
+                }
                 statsManager.clearApplicationProcessorStats(clientId);
             } catch (Exception e) {
                 log.warn("[{}] Failed to cancel main processing future", clientId, e);
