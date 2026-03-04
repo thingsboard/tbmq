@@ -86,14 +86,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
-    private final ConcurrentMap<String, ApplicationPackProcessingCtx> packProcessingCtxMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> consumers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ApplicationPackProcessingCtx> mainPackProcessingCtxMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Future<?>> mainProcessingFutures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> mainConsumers = new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, ApplicationPersistedMsgCtx> persistedMsgCtxMap = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Set<ApplicationSharedSubscriptionCtx>> sharedSubscriptionsPackProcessingCtxMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, List<ApplicationSharedSubscriptionJob>> sharedSubscriptionsProcessingJobs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<ApplicationSharedSubscriptionCtx>> sharedPackProcessingCtxMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<ApplicationSharedSubscriptionJob>> sharedProcessingJobs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>>
             sharedSubscriptionConsumers = new ConcurrentHashMap<>();
 
@@ -121,28 +121,28 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private boolean validateSharedTopicFilter;
 
     private volatile boolean stopped = false;
-    private ExecutorService persistedMsgsConsumerExecutor;
-    private ExecutorService sharedSubsMsgsConsumerExecutor;
+    private ExecutorService persistedMessageConsumerExecutor;
+    private ExecutorService sharedSubscriptionConsumerExecutor;
 
     @PostConstruct
     public void init() {
-        statsManager.registerActiveApplicationProcessorsStats(processingFutures);
-        statsManager.registerActiveSharedApplicationProcessorsStats(sharedSubscriptionsProcessingJobs);
-        persistedMsgsConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-persisted-msg-consumers");
-        sharedSubsMsgsConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-shared-subs-msg-consumers");
+        statsManager.registerActiveApplicationProcessorsStats(mainProcessingFutures);
+        statsManager.registerActiveSharedApplicationProcessorsStats(sharedProcessingJobs);
+        persistedMessageConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-persisted-msg-consumers");
+        sharedSubscriptionConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-shared-subs-msg-consumers");
     }
 
     @Override
     public void processPubAck(String clientId, int packetId) {
-        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
                 log.debug("[{}] Cannot find main processing context for client on PubAck. PacketId - {}", clientId, packetId);
             }
             processPubAckInSharedCtx(clientId, packetId, "[{}] Cannot find processing contexts for client on PubAck. PacketId - {}.");
         } else {
-            var ack = processingContext.onPubAck(packetId);
-            if (ack) {
+            var handled = processingContext.onPubAck(packetId);
+            if (handled) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubAck packet [{}] processed successfully from main context", clientId, packetId);
                 }
@@ -153,7 +153,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void processPubAckInSharedCtx(String clientId, int packetId, String format) {
-        Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientId);
+        Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientId);
         if (CollectionUtils.isEmpty(contexts)) {
             log.warn(format, clientId, packetId);
             return;
@@ -172,7 +172,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
         String clientId = clientSessionCtx.getClientId();
-        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
                 log.debug("[{}] Cannot find main processing context for client on PubRec. PacketId - {}", clientId, packetId);
@@ -180,8 +180,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             processPubRecInSharedCtx(clientSessionCtx, packetId,
                     "[{}] Cannot find processing contexts for client on PubRec. PacketId - {}", true);
         } else {
-            var ack = processingContext.onPubRec(packetId, true);
-            if (ack) {
+            var handled = processingContext.onPubRec(packetId, true);
+            if (handled) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubRec packet [{}] processed successfully from main context", clientId, packetId);
                 }
@@ -195,7 +195,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubRecNoPubRelDelivery(ClientSessionCtx clientSessionCtx, int packetId) {
         String clientId = clientSessionCtx.getClientId();
-        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
                 log.debug("[{}] Cannot find main processing context for client on PubRec no PubRel delivery. PacketId - {}", clientId, packetId);
@@ -203,8 +203,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             processPubRecInSharedCtx(clientSessionCtx, packetId,
                     "[{}] Cannot find processing contexts for client on PubRec no PubRel delivery. PacketId - {}", false);
         } else {
-            var ack = processingContext.onPubRec(packetId, false);
-            if (ack) {
+            var handled = processingContext.onPubRec(packetId, false);
+            if (handled) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubRec no PubRel delivery packet [{}] processed successfully from main context", clientId, packetId);
                 }
@@ -216,7 +216,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void processPubRecInSharedCtx(ClientSessionCtx clientSessionCtx, int packetId, String format, boolean sendPubRelMsg) {
-        Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientSessionCtx.getClientId());
+        Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientSessionCtx.getClientId());
         if (CollectionUtils.isEmpty(contexts)) {
             log.warn(format, clientSessionCtx.getClientId(), packetId);
             if (sendPubRelMsg) {
@@ -240,15 +240,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubComp(String clientId, int packetId) {
-        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
                 log.debug("[{}] Cannot find main processing context for client on PubComp. PacketId - {}", clientId, packetId);
             }
             processPubCompInSharedCtx(clientId, packetId, "[{}] Cannot find processing contexts for client on PubComp. PacketId - {}.");
         } else {
-            var ack = processingContext.onPubComp(packetId);
-            if (ack) {
+            var handled = processingContext.onPubComp(packetId);
+            if (handled) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubComp packet [{}] processed successfully from main context", clientId, packetId);
                 }
@@ -259,7 +259,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void processPubCompInSharedCtx(String clientId, int packetId, String format) {
-        Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientId);
+        Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientId);
         if (CollectionUtils.isEmpty(contexts)) {
             log.warn(format, clientId, packetId);
             return;
@@ -279,8 +279,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     public void processChannelWritable(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
         log.trace("[{}] Channel is writable", clientId);
-        if (consumers.containsKey(clientId)) {
-            log.debug("[{}] Resuming consumers", clientId);
+        if (mainConsumers.containsKey(clientId)) {
             resumeMainConsumer(clientId);
         } else {
             log.warn("[{}] Client is not active during channel writable event. Start processing", clientId);
@@ -290,7 +289,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void resumeMainConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = consumers.get(clientId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = mainConsumers.get(clientId);
         if (mainConsumer != null) {
             log.debug("[{}] Resuming main consumer", clientId);
             mainConsumer.resume();
@@ -308,11 +307,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processChannelNonWritable(String clientId) {
         log.trace("[{}] Channel is not writable, pausing consumers", clientId);
-        pauseProcessingConsumers(clientId);
+        pauseAllConsumers(clientId);
     }
 
-    private void pauseProcessingConsumers(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = consumers.get(clientId);
+    private void pauseAllConsumers(String clientId) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mainConsumer = mainConsumers.get(clientId);
         if (mainConsumer != null) {
             log.debug("[{}] Pausing main consumer", clientId);
             mainConsumer.pause();
@@ -341,10 +340,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 continue;
             }
             ApplicationSharedSubscriptionJob job = new ApplicationSharedSubscriptionJob(subscription, null, false);
-            Future<?> future = sharedSubsMsgsConsumerExecutor.submit(
+            Future<?> future = sharedSubscriptionConsumerExecutor.submit(
                     () -> processSharedSubscriptionMessages(job, consumer, clientSessionCtx, persistedMsgCtx, subscription));
             job.setFuture(future);
-            sharedSubscriptionsProcessingJobs
+            sharedProcessingJobs
                     .computeIfAbsent(clientId, s -> new CopyOnWriteArrayList<>())
                     .add(job);
         }
@@ -393,7 +392,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         long packStart = System.nanoTime();
 
         ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
-        List<PersistedMsg> messagesToDeliver = getMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, subscription);
+        List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, subscription);
         submitStrategy.init(messagesToDeliver);
 
         if (isDebugEnabled) {
@@ -402,19 +401,19 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
-            ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
+            ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
-            cachePackProcessingCtx(clientId, subscription, ctx);
+            updateSharedPackProcessingCtx(clientId, subscription, ctx);
 
-            process(submitStrategy, clientSessionCtx);
+            deliverMessages(submitStrategy, clientSessionCtx);
 
             if (isJobActive(job)) {
                 log.debug("[{}] Awaiting shared subs pack to be acknowledged", clientId);
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
                 break;
             }
         }
@@ -426,18 +425,18 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return newPubRelMsgCtx;
     }
 
-    private List<PersistedMsg> getMessagesToDeliver(ApplicationPubRelMsgCtx applicationPubRelMsgCtx,
+    private List<PersistedMsg> buildMessagesToDeliver(ApplicationPubRelMsgCtx applicationPubRelMsgCtx,
                                                     ClientSessionCtx clientSessionCtx,
                                                     ApplicationPersistedMsgCtx persistedMsgCtx,
                                                     List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
                                                     TopicSharedSubscription subscription) {
         List<PersistedPubRelMsg> pubRelMessagesToDeliver = applicationPubRelMsgCtx.toSortedPubRelMessagesToDeliver();
-        List<PersistedPublishMsg> publishMessagesToDeliver = toPublishMessagesToDeliver(
+        List<PersistedPublishMsg> publishMessagesToDeliver = buildPublishMessagesToDeliver(
                 clientSessionCtx, persistedMsgCtx, publishProtoMessages, subscription);
-        return collectMessagesToDeliver(pubRelMessagesToDeliver, publishMessagesToDeliver);
+        return mergeMessagesToDeliver(pubRelMessagesToDeliver, publishMessagesToDeliver);
     }
 
-    private boolean analyzeIfProcessingDone(String clientId,
+    private boolean tryCommitPack(String clientId,
                                             TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                             ApplicationProcessorStats stats,
                                             ApplicationSubmitStrategy submitStrategy,
@@ -463,16 +462,16 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return false;
     }
 
-    private void cachePackProcessingCtx(String clientId,
+    private void updateSharedPackProcessingCtx(String clientId,
                                         TopicSharedSubscription subscription,
                                         ApplicationPackProcessingCtx packProcessingCtx) {
         Set<ApplicationSharedSubscriptionCtx> contexts =
-                sharedSubscriptionsPackProcessingCtxMap.computeIfAbsent(clientId, s -> Sets.newConcurrentHashSet());
+                sharedPackProcessingCtxMap.computeIfAbsent(clientId, s -> Sets.newConcurrentHashSet());
         contexts.removeIf(ctx -> ctx.getSubscription().equals(subscription));
         contexts.add(new ApplicationSharedSubscriptionCtx(subscription, packProcessingCtx));
     }
 
-    private ApplicationPackProcessingCtx newPackProcessingCtx(ApplicationSubmitStrategy submitStrategy,
+    private ApplicationPackProcessingCtx createPackProcessingCtx(ApplicationSubmitStrategy submitStrategy,
                                                               ApplicationPubRelMsgCtx applicationPubRelMsgCtx,
                                                               ApplicationProcessorStats stats) {
         return new ApplicationPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
@@ -512,7 +511,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        Future<?> existingFuture = processingFutures.get(clientId);
+        Future<?> existingFuture = mainProcessingFutures.get(clientId);
         if (existingFuture != null && !existingFuture.isDone()) {
             log.warn("[{}] Processing already active, skipping duplicate start", clientId);
             return;
@@ -521,8 +520,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing", clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId, clientTopic);
-        consumers.put(clientId, consumer);
-        Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
+        mainConsumers.put(clientId, consumer);
+        Future<?> future = persistedMessageConsumerExecutor.submit(() -> {
             try {
                 processPersistedMessages(consumer, clientState);
             } catch (Exception e) {
@@ -530,10 +529,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 disconnectClient(clientId, clientState);
             } finally {
                 consumer.unsubscribeAndClose();
-                consumers.remove(clientId);
+                mainConsumers.remove(clientId);
             }
         });
-        processingFutures.put(clientId, future);
+        mainProcessingFutures.put(clientId, future);
     }
 
     private void disconnectClient(String clientId, ClientActorStateInfo clientState) {
@@ -554,7 +553,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         cancelSharedSubscriptionProcessing(clientId);
         stopSharedSubscriptionConsumers(clientId);
 
-        ApplicationPackProcessingCtx processingContext = collectPackProcessingCtx(clientId);
+        ApplicationPackProcessingCtx processingContext = mergePackProcessingContexts(clientId);
         unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
         persistedMsgCtxMap.remove(clientId);
     }
@@ -568,7 +567,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void cancelSharedSubscriptionProcessing(String clientId) {
-        List<ApplicationSharedSubscriptionJob> jobs = sharedSubscriptionsProcessingJobs.remove(clientId);
+        List<ApplicationSharedSubscriptionJob> jobs = sharedProcessingJobs.remove(clientId);
         if (CollectionUtils.isEmpty(jobs)) {
             log.debug("[{}] Cannot find shared processing futures for client", clientId);
         } else {
@@ -582,8 +581,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void cancelMainProcessing(String clientId) {
-        consumers.remove(clientId);
-        Future<?> processingFuture = processingFutures.remove(clientId);
+        mainConsumers.remove(clientId);
+        Future<?> processingFuture = mainProcessingFutures.remove(clientId);
         if (processingFuture == null) {
             log.warn("[{}] Cannot find processing future for client", clientId);
         } else {
@@ -596,12 +595,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private ApplicationPackProcessingCtx collectPackProcessingCtx(String clientId) {
-        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.remove(clientId);
+    private ApplicationPackProcessingCtx mergePackProcessingContexts(String clientId) {
+        ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.remove(clientId);
         if (processingContext == null) {
             processingContext = new ApplicationPackProcessingCtx(clientId);
         }
-        Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.remove(clientId);
+        Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.remove(clientId);
         if (!CollectionUtils.isEmpty(contexts)) {
             for (ApplicationSharedSubscriptionCtx ctx : contexts) {
                 processingContext.getPublishPendingMsgMap().putAll(ctx.getPackProcessingCtx().getPublishPendingMsgMap());
@@ -639,14 +638,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void removeSharedSubscriptionContexts(Set<TopicSharedSubscription> subscriptions, String clientId) {
-        Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientId);
+        Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientId);
         if (!CollectionUtils.isEmpty(contexts)) {
             contexts.removeIf(ctx -> subscriptions.contains(ctx.getSubscription()));
         }
     }
 
     private void stopAndRemoveSharedSubscriptionJobs(Set<TopicSharedSubscription> subscriptions, String clientId) {
-        List<ApplicationSharedSubscriptionJob> jobs = sharedSubscriptionsProcessingJobs.get(clientId);
+        List<ApplicationSharedSubscriptionJob> jobs = sharedProcessingJobs.get(clientId);
         if (!CollectionUtils.isEmpty(jobs)) {
             try {
                 jobs.removeAll(cancelAndCollectJobs(subscriptions, clientId, jobs));
@@ -681,7 +680,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void clearPersistedMsgs(String clientId) {
+    public void clearPersistedMessages(String clientId) {
         clientLogger.logEvent(clientId, this.getClass(), "Clearing persisted messages");
         String applicationConsumerGroup = appClientHelperService.getAppConsumerGroup(clientId);
         log.debug("[{}] Clearing consumer group {} for application", clientId, applicationConsumerGroup);
@@ -738,7 +737,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // TODO: make consistent with logic for DEVICES
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
-        ApplicationPubRelMsgCtx pubRelMsgCtx = persistedMsgCtxToPubRelMsgCtx(persistedMsgCtx);
+        ApplicationPubRelMsgCtx pubRelMsgCtx = buildPubRelMsgCtx(persistedMsgCtx);
 
         while (isClientSessionActive(sessionId, clientState)) {
             try {
@@ -769,24 +768,24 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         long packStart = System.nanoTime();
 
         ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
-        List<PersistedMsg> messagesToDeliver = getMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, null);
+        List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, null);
         submitStrategy.init(messagesToDeliver);
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
-            ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
+            ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
-            packProcessingCtxMap.put(clientId, ctx);
+            mainPackProcessingCtxMap.put(clientId, ctx);
 
-            process(submitStrategy, clientSessionCtx);
+            deliverMessages(submitStrategy, clientSessionCtx);
 
             if (isClientSessionActive(sessionId, clientState)) {
                 log.debug("[{}] Awaiting pack to be acknowledged", clientId);
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
                 break;
             }
         }
@@ -798,15 +797,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return newPubRelMsgCtx;
     }
 
-    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx) {
+    private void deliverMessages(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx) {
         appMsgDeliveryStrategy.process(submitStrategy, clientSessionCtx);
     }
 
-    private int getQos(TopicSharedSubscription subscription, int publishMsgQos) {
+    private int resolveQos(TopicSharedSubscription subscription, int publishMsgQos) {
         return subscription == null ? publishMsgQos : MqttQosUtil.downgradeQos(subscription, publishMsgQos);
     }
 
-    private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
+    private List<PersistedMsg> mergeMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
                                                         List<PersistedPublishMsg> publishMessagesToDeliver) {
         List<PersistedMsg> messagesToDeliver = new ArrayList<>(publishMessagesToDeliver.size());
         if (!CollectionUtils.isEmpty(pubRelMessagesToDeliver)) {
@@ -818,7 +817,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return messagesToDeliver;
     }
 
-    private ApplicationPubRelMsgCtx persistedMsgCtxToPubRelMsgCtx(ApplicationPersistedMsgCtx persistedMsgCtx) {
+    private ApplicationPubRelMsgCtx buildPubRelMsgCtx(ApplicationPersistedMsgCtx persistedMsgCtx) {
         return new ApplicationPubRelMsgCtx(
                 persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
                         .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
@@ -826,7 +825,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         );
     }
 
-    private List<PersistedPublishMsg> toPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
+    private List<PersistedPublishMsg> buildPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
                                                                  ApplicationPersistedMsgCtx persistedMsgCtx,
                                                                  List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
                                                                  TopicSharedSubscription subscription) {
@@ -841,7 +840,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
             boolean isDup = msgPacketId != null;
-            int qos = getQos(subscription, msg.getValue().getQos());
+            int qos = resolveQos(subscription, msg.getValue().getQos());
             int subscriptionId = subscription == null ? -1 : subscription.getSubscriptionId();
 
             PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(msg.getValue(), packetId, qos, isDup, subscriptionId);
@@ -881,21 +880,21 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @PreDestroy
     public void destroy() {
         stopped = true;
-        sharedSubscriptionsProcessingJobs.forEach((clientId, jobs) -> jobs.forEach(this::cancelJob));
+        sharedProcessingJobs.forEach((clientId, jobs) -> jobs.forEach(this::cancelJob));
         sharedSubscriptionConsumers.forEach((clientId, consumers) ->
                 consumers.values().forEach(TbQueueConsumer::unsubscribeAndClose));
-        processingFutures.forEach((clientId, future) -> {
+        mainProcessingFutures.forEach((clientId, future) -> {
             future.cancel(false);
             log.info("[{}] Saving processing context before shutting down", clientId);
-            ApplicationPackProcessingCtx processingContext = collectPackProcessingCtx(clientId);
+            ApplicationPackProcessingCtx processingContext = mergePackProcessingContexts(clientId);
             try {
                 unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
             } catch (Exception e) {
                 log.warn("[{}] Failed to save APPLICATION context", clientId);
             }
         });
-        ThingsBoardExecutors.shutdownAndAwaitTermination(persistedMsgsConsumerExecutor, "Application consumers'");
-        ThingsBoardExecutors.shutdownAndAwaitTermination(sharedSubsMsgsConsumerExecutor, "Application shared subs consumers'");
+        ThingsBoardExecutors.shutdownAndAwaitTermination(persistedMessageConsumerExecutor, "Application mainConsumers'");
+        ThingsBoardExecutors.shutdownAndAwaitTermination(sharedSubscriptionConsumerExecutor, "Application shared subs consumers'");
     }
 
 }

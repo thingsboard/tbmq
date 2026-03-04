@@ -46,8 +46,8 @@ public class DevicePersistenceProcessorImplTest {
     }
 
     @Test
-    public void clearPersistedMsgsTest() {
-        devicePersistenceProcessor.clearPersistedMsgs(clientId);
+    public void clearPersistedMessagesTest() {
+        devicePersistenceProcessor.clearPersistedMessages(clientId);
 
         verify(deviceActorManager).notifyRemovePersistedMessages(eq(clientId));
     }
