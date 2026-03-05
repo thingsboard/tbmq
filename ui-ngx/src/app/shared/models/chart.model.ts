@@ -370,19 +370,6 @@ function pageChartConfig(type: ChartView): object {
           legend: {
             display: false
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const chartType = context.dataset.chartType;
-                const value = context.parsed.y || 0;
-                let label = `${context.dataset.label}: ${value}`;
-                if (chartType === ChartKey.inboundPayloadTraffic || chartType === ChartKey.outboundPayloadTraffic) {
-                  label += ' ' + DataSizeUnitTranslationMap.get(DataSizeUnit.BYTE);
-                }
-                return label;
-              }
-            }
-          }
         }
       }
     }

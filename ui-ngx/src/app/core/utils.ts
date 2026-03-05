@@ -165,6 +165,13 @@ export const formatNumberValue = (value: any, dec?: number): number | undefined 
   }
 }
 
+export const formatLargeNumber = (value: any): string => {
+  if (isDefinedAndNotNull(value) && isNumeric(value)) {
+    return Number(value).toLocaleString('en-US');
+  }
+  return value;
+}
+
 export function objectValues(obj: any): any[] {
   return Object.keys(obj).map(e => obj[e]);
 }

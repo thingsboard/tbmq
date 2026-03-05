@@ -55,7 +55,7 @@ import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
-import { convertDataSizeUnits } from '@core/utils';
+import { convertDataSizeUnits, formatLargeNumber } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -206,13 +206,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           this.initCharts(data);
         } else {
           if (this.totalEntityIdOnly()) {
-            this.chart.data.datasets[0].data = data[0][this.chartKey()];
+            this.chart.data.datasets[0].data = this.toCurrentUnit(data[0][this.chartKey()]);
           } else {
             for (let i = 0; i < dataKeys.length; i++) {
               const dataKey = dataKeys[i];
               const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
               if (datasetIndex > -1) {
-                this.chart.data.datasets[datasetIndex].data = data[i][this.chartKey()];
+                this.chart.data.datasets[datasetIndex].data = this.toCurrentUnit(data[i][this.chartKey()]);
               }
             }
           }
@@ -252,11 +252,14 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private setListeners(ctx: HTMLCanvasElement) {
-    if (this.chartHasDataSize()) {
-      this.chart.options.plugins.tooltip.callbacks.label = (context) => {
-        const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
-        return `${value} ${this.dataSizeUnitTranslations.get(this.dataSizeUnit())}`;
+    this.chart.options.plugins.tooltip.callbacks.label = (context) => {
+      const hasData = (context.dataset.data as any[]).some(d => d.value > 0);
+      if (!hasData) {
+        return null;
       }
+      const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
+      const unit = this.chartHasDataSize() ? ` ${this.dataSizeUnitTranslations.get(this.dataSizeUnit())}` : '';
+      return `${context.dataset.label}: ${formatLargeNumber(value)}${unit}`;
     }
     ctx.addEventListener('dblclick', () => {
       this.chart.resetZoom();
@@ -264,7 +267,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     });
   }
 
-  private getDataset(dataset: any[], i: number, dataKey: string): ChartDataset {
+  private getDataset(dataset: any[], i: number, dataKey: string): Partial<ChartDataset> {
     const color = getColor(this.chartKey(), i);
     return {
       label: dataKey,
@@ -307,13 +310,27 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
   }
 
+  private toCurrentUnit(data: TsValue[]): TsValue[] {
+    if (!this.chartHasDataSize() || this.dataSizeUnit() === DataSizeUnit.BYTE) {
+      return data;
+    }
+    return data.map(el => ({
+      value: convertDataSizeUnits(el.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
+      ts: el.ts
+    }));
+  }
+
   private prepareData(data: TimeseriesData[]) {
-    if (this.chartHasDataSize() && data[0]?.[this.chartKey()]?.length) {
-      const tsValue = data[0][this.chartKey()][0];
-      data[0][this.chartKey()][0] = {
-        value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
-        ts: tsValue.ts
-      } as TsValue;
+    if (this.chartHasDataSize()) {
+      for (const brokerData of data) {
+        if (brokerData?.[this.chartKey()]?.length) {
+          const tsValue = brokerData[this.chartKey()][0];
+          brokerData[this.chartKey()][0] = {
+            value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
+            ts: tsValue.ts
+          } as TsValue;
+        }
+      }
     }
   }
 
