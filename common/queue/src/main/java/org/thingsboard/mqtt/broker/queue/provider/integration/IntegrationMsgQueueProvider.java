@@ -26,7 +26,7 @@ public interface IntegrationMsgQueueProvider {
 
     TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getNewIeMsgConsumer(String topic, String consumerGroupId, String integrationId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId);
 
     Map<String, String> getTopicConfigs();
 

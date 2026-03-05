@@ -109,6 +109,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         unauthorizedClientManager.removeClientUnauthorized(state);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
         sessionCtx.setAuthDetails(authResponse.getAuthDetails());
+        sessionCtx.setClientCertCn(authResponse.getClientCertCn());
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);

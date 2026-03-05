@@ -73,14 +73,14 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
+    public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
         log.trace("[{}][{}] Saving last will msg, topic - [{}]",
                 sessionInfo.getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientId(), sessionId);
             }
-            return new MsgWithSessionInfo(publishMsg, sessionInfo);
+            return new MsgWithSessionInfo(publishMsg, sessionInfo, clientCertCn);
         });
     }
 
@@ -149,7 +149,7 @@ public class DefaultLastWillService implements LastWillService {
         if (publishMsg.isRetained()) {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
-        persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg);
+        persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getClientCertCn());
         delayedLastWillFuturesMap.remove(getClientId(lastWillMsgWithSessionInfo));
     }
 
@@ -157,8 +157,8 @@ public class DefaultLastWillService implements LastWillService {
         return lastWillMsgWithSessionInfo.getClientId();
     }
 
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        msgDispatcherService.persistPublishMsg(sessionInfo, publishMsg,
+    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
+        msgDispatcherService.persistPublishMsg(sessionInfo, publishMsg, clientCertCn,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -178,6 +178,7 @@ public class DefaultLastWillService implements LastWillService {
 
         private final PublishMsg publishMsg;
         private final SessionInfo sessionInfo;
+        private final String clientCertCn;
 
         private String getClientId() {
             return sessionInfo.getClientId();

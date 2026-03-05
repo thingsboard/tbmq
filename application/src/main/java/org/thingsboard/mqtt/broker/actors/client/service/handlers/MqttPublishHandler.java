@@ -219,7 +219,7 @@ public class MqttPublishHandler {
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
+        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn(), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 callbackProcessor.submit(() -> {

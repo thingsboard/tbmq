@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface MsgDispatcherService {
 
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback);
+    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback);
 
     void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
 
