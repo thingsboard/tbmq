@@ -403,6 +403,7 @@
             "tls-max-payload": "Tamaño Máximo de Carga TLS",
             "ws-max-payload": "Tamaño Máximo de Carga WS",
             "wss-max-payload": "Tamaño Máximo de Carga WSS",
+            "stats-collection-interval": "Intervalo de recopilación de estadísticas",
             "kafka-topic-deletion": "Eliminación de Topics Kafka",
             "allowed": "Permitido",
             "not-allowed": "No Permitido"

@@ -87,26 +87,32 @@
         <span>{{ 'home.broker-settings.parameter' | translate }}</span>
         <span>{{ 'home.broker-settings.value' | translate }}</span>
       </div>
-      <div class="auth-row">
-        <span class="auth-label">{{ 'home.broker-settings.tcp-max-payload' | translate }}</span>
-        <span class="auth-value">{{ advancedParams[AdvancedParamsType.tcpMaxPayloadSize] }}</span>
-      </div>
-      <div class="auth-row">
-        <span class="auth-label">{{ 'home.broker-settings.tls-max-payload' | translate }}</span>
-        <span class="auth-value">{{ advancedParams[AdvancedParamsType.tlsMaxPayloadSize] }}</span>
-      </div>
-      <div class="auth-row">
-        <span class="auth-label">{{ 'home.broker-settings.ws-max-payload' | translate }}</span>
-        <span class="auth-value">{{ advancedParams[AdvancedParamsType.wsMaxPayloadSize] }}</span>
-      </div>
-      <div class="auth-row">
-        <span class="auth-label">{{ 'home.broker-settings.wss-max-payload' | translate }}</span>
-        <span class="auth-value">{{ advancedParams[AdvancedParamsType.wssMaxPayloadSize] }}</span>
-      </div>
-      <div class="auth-row">
-        <span class="auth-label">{{ 'home.broker-settings.kafka-topic-deletion' | translate }}</span>
-        <span class="auth-value">{{ (advancedParams[AdvancedParamsType.allowKafkaTopicDeletion] ? 'home.broker-settings.allowed' : 'home.broker-settings.not-allowed') | translate }}</span>
-      </div>
+      <section class="auth-section scrolling">
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.tcp-max-payload' | translate }}</span>
+          <span class="auth-value">{{ advancedParams[AdvancedParamsType.tcpMaxPayloadSize] }}</span>
+        </div>
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.tls-max-payload' | translate }}</span>
+          <span class="auth-value">{{ advancedParams[AdvancedParamsType.tlsMaxPayloadSize] }}</span>
+        </div>
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.ws-max-payload' | translate }}</span>
+          <span class="auth-value">{{ advancedParams[AdvancedParamsType.wsMaxPayloadSize] }}</span>
+        </div>
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.wss-max-payload' | translate }}</span>
+          <span class="auth-value">{{ advancedParams[AdvancedParamsType.wssMaxPayloadSize] }}</span>
+        </div>
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.stats-collection-interval' | translate }}</span>
+          <span class="auth-value">{{ advancedParams[AdvancedParamsType.statsCollectionInterval] }}</span>
+        </div>
+        <div class="auth-row">
+          <span class="auth-label">{{ 'home.broker-settings.kafka-topic-deletion' | translate }}</span>
+          <span class="auth-value">{{ (advancedParams[AdvancedParamsType.allowKafkaTopicDeletion] ? 'home.broker-settings.allowed' : 'home.broker-settings.not-allowed') | translate }}</span>
+        </div>
+      </section>
     </div>
   }
 </div>

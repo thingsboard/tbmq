@@ -55,6 +55,7 @@ export class AdvancedSettingsComponent implements OnInit {
     [ConfigParams.tlsMaxPayloadSize]: '',
     [ConfigParams.wsMaxPayloadSize]: '',
     [ConfigParams.wssMaxPayloadSize]: '',
+    [ConfigParams.statsCollectionInterval]: '',
     [ConfigParams.allowKafkaTopicDeletion]: false
   };
 
@@ -79,6 +80,7 @@ export class AdvancedSettingsComponent implements OnInit {
       [ConfigParams.tlsMaxPayloadSize]: formatBytes(config.tlsMaxPayloadSize),
       [ConfigParams.wsMaxPayloadSize]: formatBytes(config.wsMaxPayloadSize),
       [ConfigParams.wssMaxPayloadSize]: formatBytes(config.wssMaxPayloadSize),
+      [ConfigParams.statsCollectionInterval]: `${config.statsCollectionInterval} min`,
       [ConfigParams.allowKafkaTopicDeletion]: config.allowKafkaTopicDeletion
     };
   }

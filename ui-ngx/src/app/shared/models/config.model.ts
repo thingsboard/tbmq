@@ -68,6 +68,7 @@ export enum ConfigParams {
   existsX509Credentials = 'existsX509Credentials',
   existsScramCredentials = 'existsScramCredentials',
   allowKafkaTopicDeletion = 'allowKafkaTopicDeletion',
+  statsCollectionInterval = 'statsCollectionInterval',
   httpAuthEnabled = 'httpAuthEnabled',
 }
 
