@@ -39,6 +39,7 @@ export interface BrokerConfig {
   existsX509Credentials: boolean;
   existsScramCredentials: boolean;
   allowKafkaTopicDeletion: boolean;
+  statsCollectionInterval: number;
 }
 
 export interface BrokerConfigTableParam extends BaseData {

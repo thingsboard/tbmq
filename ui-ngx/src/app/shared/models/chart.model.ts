@@ -16,7 +16,6 @@
 
 import _ from 'lodash';
 import { Tooltip } from 'chart.js';
-import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
