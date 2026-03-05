@@ -105,34 +105,29 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    protected void doSubscribe(String topic) {
+    protected void doEnsureTopicExists(String topic) {
         if (createTopicIfNotExists) {
             admin.createTopicIfNotExists(topic, topicConfigs);
         }
+    }
+
+    @Override
+    protected void doSubscribe(String topic) {
         consumer.subscribe(Collections.singletonList(topic));
     }
 
     @Override
     protected void doSubscribe(String topic, ConsumerRebalanceListener listener) {
-        if (createTopicIfNotExists) {
-            admin.createTopicIfNotExists(topic, topicConfigs);
-        }
         consumer.subscribe(Collections.singletonList(topic), listener);
     }
 
     @Override
     protected void doAssignPartition(String topic, int partition) {
-        if (createTopicIfNotExists) {
-            admin.createTopicIfNotExists(topic, topicConfigs);
-        }
         consumer.assign(Collections.singletonList(newTopicPartition(topic, partition)));
     }
 
     @Override
     protected void doAssignAllPartitions(String topic) {
-        if (createTopicIfNotExists) {
-            admin.createTopicIfNotExists(topic, topicConfigs);
-        }
         int numberOfPartitions = admin.getNumberOfPartitions(topic);
         List<TopicPartition> allTopicPartitions = new ArrayList<>();
         for (int i = 0; i < numberOfPartitions; i++) {
@@ -192,23 +187,23 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    public Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions) {
+    protected Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions) {
         return consumer.endOffsets(partitions);
     }
 
     @Override
-    public long doGetEndOffset(String topic, int partition) {
+    protected long doGetEndOffset(String topic, int partition) {
         TopicPartition topicPartition = newTopicPartition(topic, partition);
         return consumer.endOffsets(Collections.singletonList(topicPartition)).getOrDefault(topicPartition, 0L);
     }
 
     @Override
-    public long doGetPosition(String topic, int partition) {
+    protected long doGetPosition(String topic, int partition) {
         return consumer.position(newTopicPartition(topic, partition));
     }
 
     @Override
-    public Optional<Long> doGetCommittedOffset(String topic, int partition) {
+    protected Optional<Long> doGetCommittedOffset(String topic, int partition) {
         TopicPartition topicPartition = newTopicPartition(topic, partition);
         return Optional.ofNullable(
                 consumer.committed(Collections.singleton(topicPartition)).get(topicPartition)
@@ -226,12 +221,32 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
 
     @Override
-    public void doSeekToTheBeginning() {
+    protected void doSeekToTheBeginning() {
         consumer.seekToBeginning(Collections.emptyList());
     }
 
     @Override
     protected void doSeekToTheBeginning(Collection<TopicPartition> partitions) {
         consumer.seekToBeginning(partitions);
+    }
+
+    @Override
+    public void pause() {
+        consumerLock.lock();
+        try {
+            consumer.pause(consumer.assignment());
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public void resume() {
+        consumerLock.lock();
+        try {
+            consumer.resume(consumer.assignment());
+        } finally {
+            consumerLock.unlock();
+        }
     }
 }

@@ -31,7 +31,7 @@ public interface ApplicationPersistenceProcessor {
 
     void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
 
-    void clearPersistedMsgs(String clientId);
+    void clearPersistedMessages(String clientId);
 
     void processPubAck(String clientId, int packetId);
 
