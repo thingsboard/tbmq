@@ -111,6 +111,10 @@ public class ProtoConverter {
      */
 
     public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg) {
+        return convertToPublishMsgProto(sessionInfo, publishMsg, null);
+    }
+
+    public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg.getProperties());
         PublishMsgProto.Builder builder = PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
@@ -126,6 +130,9 @@ public class ProtoConverter {
         MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(publishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
+        }
+        if (clientCertCn != null) {
+            builder.setClientCertCn(clientCertCn);
         }
 
         return builder.build();

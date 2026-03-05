@@ -112,7 +112,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
             List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
-            return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName());
+            return AuthResponse.sslSuccess(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName(), clientCommonName);
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
             return AuthResponse.skip(e.getMessage());

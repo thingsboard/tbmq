@@ -45,7 +45,7 @@ public class ExecutorIntegrationMsgQueueProvider implements IntegrationMsgQueueP
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getNewIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
         return integrationMsgQueueFactory.createConsumer(topic, consumerGroupId, getConsumerId(integrationId));
     }
 

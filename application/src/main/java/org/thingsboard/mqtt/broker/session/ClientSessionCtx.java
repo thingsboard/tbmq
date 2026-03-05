@@ -59,6 +59,7 @@ public class ClientSessionCtx implements SessionContext {
     private volatile String authMethod;
     private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
     private volatile String authDetails;
+    private volatile String clientCertCn;
 
     private ChannelHandlerContext channel;
 

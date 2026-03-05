@@ -60,7 +60,7 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getNewIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
         throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
     }
 

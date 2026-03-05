@@ -172,6 +172,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.put("tbmqIeNode", context.getServiceId());
         request.put("tbmqNode", msg.getTbmqNode());
         request.put("ts", msg.getTimestamp());
+        if (publishMsgProto.hasClientCertCn()) {
+            request.put("clientCertCn", publishMsgProto.getClientCertCn());
+        }
         request.set("props", IntegrationProtoConverter.fromProto(publishMsgProto.getUserPropertiesList()));
         request.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
 
