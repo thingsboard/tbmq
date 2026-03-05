@@ -17,16 +17,17 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 import java.util.concurrent.Future;
 
 @Data
 @AllArgsConstructor
-public class ApplicationSharedSubscriptionJob {
+public class ApplicationMainProcessingState {
 
-    private final TopicSharedSubscription subscription;
+    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer;
     private volatile Future<?> future;
-    private volatile boolean interrupted;
 
 }

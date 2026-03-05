@@ -28,7 +28,7 @@ public interface DevicePersistenceProcessor {
 
     void stopProcessingPersistedMessages(String clientId);
 
-    void clearPersistedMsgs(String clientId);
+    void clearPersistedMessages(String clientId);
 
     void processPubAck(String clientId, int packetId);
 
