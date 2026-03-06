@@ -57,7 +57,7 @@ export class ChartToolbarComponent {
   chartTooltip(type: ChartKey): string {
     const base = this.translate.instant(ChartDataKeyTooltipTranslationMap.get(type));
     const unit = this.intervalUnit();
-    return unit.length ? `${base} (${unit})` : base;
+    return unit.length ? `${base}, ${unit}` : base;
   }
 
   onFullscreenChange() {
