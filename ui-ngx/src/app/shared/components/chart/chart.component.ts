@@ -54,7 +54,10 @@ import { Store } from '@ngrx/store';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
+import {
+  DataSizeUnit,
+  DataSizeUnitLongTranslationMap,
+} from '@shared/models/ws-client.model';
 import { convertDataSizeUnits, formatLargeNumber } from '@core/utils';
 import { ConfigService } from '@core/http/config.service';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
@@ -101,14 +104,15 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     if (CHARTS_TOTAL_ENTITY_ID_ONLY.includes(this.chartKey())) {
       return '';
     }
-    const prefix = this.chartHasDataSize() ? this.dataSizeUnitTranslations.get(this.dataSizeUnit()) : 'msg';
+    const prefix = this.chartHasDataSize() ? DataSizeUnitLongTranslationMap.get(this.dataSizeUnit()) : 'msg';
     const interval = this.configService.brokerConfig.statsCollectionInterval;
-    const minStr = this.translate.instant('timewindow.short.minutes', {minutes: interval}).trim();
-    return `${prefix}/${minStr}`;
+    const minStr = interval === 1
+      ? this.translate.instant('timewindow.short.minutes', {minutes: ''}).trim()
+      : this.translate.instant('timewindow.short.minutes', {minutes: interval}).trim();
+    return `${prefix} / ${minStr}`;
   });
 
   chart: Chart<'line', TsValue[]>;
-  dataSizeUnitTranslations = DataSizeUnitTranslationMap;
   timewindow = this.timeService.defaultTimewindow();
   ChartView = ChartView;
   isLoading = false;
