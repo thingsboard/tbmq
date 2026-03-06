@@ -103,11 +103,7 @@ public abstract class BaseController {
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
-    @Autowired
     protected MqttAuthProviderService mqttAuthProviderService;
-    @Autowired
-    protected ClientSessionStatsService clientSessionStatsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
