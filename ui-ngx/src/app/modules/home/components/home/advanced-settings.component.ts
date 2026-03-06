@@ -39,8 +39,23 @@ export class AdvancedSettingsComponent implements OnInit {
   cardType = HomePageTitleType.AUTH_CONFIG;
   viewMode = 'authentication';
   authProviders: ShortMqttAuthProvider[];
-  AuthParamsType = MqttAuthProviderType;
-  AdvancedParamsType = ConfigParams;
+
+  readonly authRows: { type: MqttAuthProviderType; labelKey: string }[] = [
+    { type: MqttAuthProviderType.MQTT_BASIC, labelKey: 'home.broker-settings.basic-auth' },
+    { type: MqttAuthProviderType.X_509,      labelKey: 'home.broker-settings.x509-auth' },
+    { type: MqttAuthProviderType.SCRAM,      labelKey: 'home.broker-settings.scram-auth' },
+    { type: MqttAuthProviderType.JWT,        labelKey: 'home.broker-settings.jwt-auth' },
+    { type: MqttAuthProviderType.HTTP,       labelKey: 'home.broker-settings.http-auth' },
+  ];
+
+  readonly advancedRows: { key: ConfigParams; labelKey: string; isBoolean?: boolean }[] = [
+    { key: ConfigParams.tcpMaxPayloadSize,       labelKey: 'home.broker-settings.tcp-max-payload' },
+    { key: ConfigParams.tlsMaxPayloadSize,       labelKey: 'home.broker-settings.tls-max-payload' },
+    { key: ConfigParams.wsMaxPayloadSize,        labelKey: 'home.broker-settings.ws-max-payload' },
+    { key: ConfigParams.wssMaxPayloadSize,       labelKey: 'home.broker-settings.wss-max-payload' },
+    { key: ConfigParams.statsCollectionInterval, labelKey: 'home.broker-settings.stats-collection-interval' },
+    { key: ConfigParams.allowKafkaTopicDeletion, labelKey: 'home.broker-settings.kafka-topic-deletion', isBoolean: true },
+  ];
 
   authParams = {
     [MqttAuthProviderType.MQTT_BASIC]: false,
