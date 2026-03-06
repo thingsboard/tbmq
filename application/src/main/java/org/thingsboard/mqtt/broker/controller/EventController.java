@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
+import org.thingsboard.mqtt.broker.service.entity.event.TbEventService;
 
 import java.util.UUID;
 
@@ -45,6 +46,7 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_
 public class EventController extends BaseController {
 
     private final EventService eventService;
+    private final TbEventService tbEventService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/{eventType}")
@@ -91,8 +93,7 @@ public class EventController extends BaseController {
                             @RequestBody EventFilter eventFilter) throws ThingsboardException {
         checkParameter("EntityId", strEntityId);
         UUID entityId = toUUID(strEntityId);
-
-        eventService.removeEvents(entityId, eventFilter, startTime, endTime);
+        tbEventService.clearEvents(entityId, eventFilter, startTime, endTime, getCurrentUser());
     }
 
     private EventType resolveEventType(String eventType) throws ThingsboardException {

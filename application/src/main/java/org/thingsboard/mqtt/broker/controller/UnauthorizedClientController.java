@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.service.entity.unauthorizedclient.TbUnauthorizedClientService;
 
 import java.util.List;
 
@@ -35,6 +36,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/unauthorized/client")
 public class UnauthorizedClientController extends BaseController {
+
+    private final TbUnauthorizedClientService tbUnauthorizedClientService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "", params = {"pageSize", "page"})
@@ -58,13 +61,13 @@ public class UnauthorizedClientController extends BaseController {
     @DeleteMapping(value = "", params = {"clientId"})
     public void deleteUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
         UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
-        unauthorizedClientService.deleteUnauthorizedClient(unauthorizedClient.getClientId());
+        tbUnauthorizedClientService.delete(unauthorizedClient, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "")
-    public void deleteAllUnauthorizedClients() {
-        unauthorizedClientService.deleteAllUnauthorizedClients();
+    public void deleteAllUnauthorizedClients() throws ThingsboardException {
+        tbUnauthorizedClientService.deleteAll(getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

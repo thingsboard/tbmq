@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.service.entity.clientsession.TbClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 
@@ -56,6 +57,7 @@ public class ClientSessionController extends BaseController {
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
     private final TbCacheOps cacheOps;
+    private final TbClientSessionService tbClientSessionService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/client-session/remove", params = {"clientId", "sessionId"})
@@ -63,7 +65,7 @@ public class ClientSessionController extends BaseController {
                                     @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
         checkParameter("clientId", clientId);
         checkParameter("sessionId", sessionIdStr);
-        clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
+        tbClientSessionService.removeClientSession(clientId, toUUID(sessionIdStr), getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -72,7 +74,7 @@ public class ClientSessionController extends BaseController {
                                         @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
         checkParameter("clientId", clientId);
         checkParameter("sessionId", sessionIdStr);
-        clientSessionCleanUpService.disconnectClientSession(clientId, toUUID(sessionIdStr));
+        tbClientSessionService.disconnectClientSession(clientId, toUUID(sessionIdStr), getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

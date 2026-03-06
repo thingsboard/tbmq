@@ -103,11 +103,7 @@ public abstract class BaseController {
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
-    @Autowired
     protected MqttAuthProviderService mqttAuthProviderService;
-    @Autowired
-    protected ClientSessionStatsService clientSessionStatsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
@@ -239,7 +235,7 @@ public abstract class BaseController {
     }
 
     void checkParameter(String name, String param) throws ThingsboardException {
-        if (StringUtils.isEmpty(param)) {
+        if (StringUtils.isEmpty(param.trim())) {
             throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
     }

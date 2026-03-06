@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,16 +27,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
-
-import java.util.function.Consumer;
+import org.thingsboard.mqtt.broker.service.entity.appsharedsub.TbAppSharedSubscriptionService;
 
 @RestController
 @RequiredArgsConstructor
@@ -46,33 +41,14 @@ import java.util.function.Consumer;
 public class AppSharedSubscriptionController extends BaseController {
 
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
-    private final ApplicationTopicService applicationTopicService;
     private final TopicValidationService topicValidationService;
-
-    @Value("${queue.kafka.enable-topic-deletion:true}")
-    private boolean enableTopicDeletion;
+    private final TbAppSharedSubscriptionService tbAppSharedSubscriptionService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public ApplicationSharedSubscription saveSharedSubscription(@RequestBody ApplicationSharedSubscription sharedSubscription) throws ThingsboardException {
         topicValidationService.validateTopicFilter(sharedSubscription.getTopicFilter());
-
-        ApplicationSharedSubscription applicationSharedSubscription =
-                checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
-        if (sharedSubscription.getId() == null) {
-            createKafkaTopic(applicationSharedSubscription);
-        }
-        return applicationSharedSubscription;
-    }
-
-    private void createKafkaTopic(ApplicationSharedSubscription subscription) throws ThingsboardException {
-        try {
-            applicationTopicService.createSharedTopic(subscription);
-        } catch (Exception e) {
-            log.error("Failed to create shared Kafka topic", e);
-            applicationSharedSubscriptionService.deleteSharedSubscription(subscription.getId());
-            throw new ThingsboardException(e, ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-        }
+        return tbAppSharedSubscriptionService.save(sharedSubscription, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -103,45 +79,21 @@ public class AppSharedSubscriptionController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/{id}")
     public void deleteSharedSubscription(@PathVariable String id) throws ThingsboardException {
-        ApplicationSharedSubscription sharedSubscription = getSharedSubscriptionById(id);
-        boolean removed = applicationSharedSubscriptionService.deleteSharedSubscription(sharedSubscription.getId());
-        if (removed && enableTopicDeletion) {
-            applicationTopicService.deleteSharedTopic(sharedSubscription);
-        }
+        ApplicationSharedSubscription sharedSubscription = checkNotNull(
+                applicationSharedSubscriptionService.getSharedSubscriptionById(toUUID(id)).orElse(null));
+        tbAppSharedSubscriptionService.delete(sharedSubscription, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/createTopics")
-    public void createKafkaTopicsForAppSharedSubscriptions() {
-        processAppSharedSubsRequest(applicationTopicService::createSharedTopic, "create");
+    public void createKafkaTopicsForAppSharedSubscriptions() throws ThingsboardException {
+        tbAppSharedSubscriptionService.createKafkaTopics(getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/deleteTopics")
-    public void deleteKafkaTopicsForAppSharedSubscriptions() {
-        if (!enableTopicDeletion) {
-            log.debug("Cannot delete topics due to TB_KAFKA_ENABLE_TOPIC_DELETION is set to false");
-            return;
-        }
-        processAppSharedSubsRequest(applicationTopicService::deleteSharedTopic, "delete");
-    }
-
-    private void processAppSharedSubsRequest(Consumer<ApplicationSharedSubscription> consumer, String request) {
-        PageLink pageLink = new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE);
-        PageData<ApplicationSharedSubscription> pageData;
-        do {
-            pageData = applicationSharedSubscriptionService.getSharedSubscriptions(pageLink);
-            pageData.getData().forEach(sharedSubscription -> {
-                try {
-                    consumer.accept(sharedSubscription);
-                } catch (Exception e) {
-                    log.error("Failed to {} kafka topic for shared subscription {}", request, sharedSubscription, e);
-                }
-            });
-            if (pageData.hasNext()) {
-                pageLink = pageLink.nextPageLink();
-            }
-        } while (pageData.hasNext());
+    public void deleteKafkaTopicsForAppSharedSubscriptions() throws ThingsboardException {
+        tbAppSharedSubscriptionService.deleteKafkaTopics(getCurrentUser());
     }
 
 }

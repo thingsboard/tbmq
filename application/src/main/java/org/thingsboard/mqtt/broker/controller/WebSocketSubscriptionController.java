@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
+import org.thingsboard.mqtt.broker.service.entity.ws.TbWebSocketSubscriptionService;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,11 +40,12 @@ import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 public class WebSocketSubscriptionController extends BaseController {
 
     private final WebSocketSubscriptionService webSocketSubscriptionService;
+    private final TbWebSocketSubscriptionService tbWebSocketSubscriptionService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public WebSocketSubscription saveWebSocketSubscription(@RequestBody WebSocketSubscription subscription) throws ThingsboardException {
-        return checkNotNull(webSocketSubscriptionService.saveWebSocketSubscription(subscription));
+        return checkNotNull(tbWebSocketSubscriptionService.save(subscription, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -70,7 +72,8 @@ public class WebSocketSubscriptionController extends BaseController {
     @DeleteMapping(value = "/{id}")
     public void deleteWebSocketSubscription(@PathVariable String id) throws ThingsboardException {
         checkParameter("id", id);
-        webSocketSubscriptionService.deleteWebSocketSubscription(toUUID(id));
+        WebSocketSubscription subscription = checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptionById(toUUID(id)).orElse(null));
+        tbWebSocketSubscriptionService.delete(subscription, getCurrentUser());
     }
 
 }

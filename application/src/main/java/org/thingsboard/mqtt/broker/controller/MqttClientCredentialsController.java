@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.service.entity.credentials.TbMqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsBulkImportService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 
@@ -56,6 +57,7 @@ public class MqttClientCredentialsController extends BaseController {
 
     private final BCryptPasswordEncoder passwordEncoder;
     private final MqttClientCredentialsBulkImportService bulkImportService;
+    private final TbMqttClientCredentialsService tbMqttClientCredentialsService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/client/credentials")
@@ -73,7 +75,7 @@ public class MqttClientCredentialsController extends BaseController {
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
 
-        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
+        return sanitizeSensitiveMqttCredsData(tbMqttClientCredentialsService.save(mqttClientCredentials, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -101,7 +103,7 @@ public class MqttClientCredentialsController extends BaseController {
         if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
             throw new ThingsboardException("System WebSocket MQTT client credentials can not be deleted!", ThingsboardErrorCode.PERMISSION_DENIED);
         }
-        mqttClientCredentialsService.deleteCredentials(uuid);
+        tbMqttClientCredentialsService.delete(mqttClientCredentials, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -122,7 +124,7 @@ public class MqttClientCredentialsController extends BaseController {
         basicMqttCredentials.setPassword(encodePasswordIfNotEmpty(changePasswordRequest.getNewPassword()));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
 
-        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
+        return sanitizeSensitiveMqttCredsData(tbMqttClientCredentialsService.save(mqttClientCredentials, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -143,7 +145,6 @@ public class MqttClientCredentialsController extends BaseController {
                                                                  @RequestParam(required = false) String username,
                                                                  @RequestParam(required = false) String clientId,
                                                                  @RequestParam(required = false) String certificateCn) throws ThingsboardException {
-
         List<ClientType> clientTypes = parseEnumList(ClientType.class, clientTypeList);
         List<ClientCredentialsType> credentialsTypes = parseEnumList(ClientCredentialsType.class, credentialsTypeList);
         PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
@@ -163,7 +164,7 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping("/mqtt/client/credentials/bulk_import")
     public BulkImportResult<MqttClientCredentials> processMqttClientCredentialsBulkImport(@RequestBody BulkImportRequest request) throws Exception {
-        return bulkImportService.processBulkImport(request);
+        return bulkImportService.processBulkImport(request, getCurrentUser());
     }
 
     private String encodePasswordIfNotEmpty(String password) {

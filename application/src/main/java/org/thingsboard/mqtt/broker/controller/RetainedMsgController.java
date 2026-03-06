@@ -22,17 +22,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
-import org.thingsboard.mqtt.broker.exception.RetainMsgTrieClearException;
-import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
+import org.thingsboard.mqtt.broker.service.entity.retainedmsg.TbRetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgPageService;
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 
 import java.util.Set;
 
@@ -41,17 +38,13 @@ import java.util.Set;
 @RequestMapping("/api/retained-msg")
 public class RetainedMsgController extends BaseController {
 
-    private final RetainedMsgService retainedMsgService;
+    private final TbRetainedMsgService tbRetainedMsgService;
     private final RetainedMsgPageService retainedMsgPageService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/topic-trie/clear")
-    public void clearEmptyRetainedMsgNodes() {
-        try {
-            retainedMsgService.clearEmptyTopicNodes();
-        } catch (RetainMsgTrieClearException e) {
-            throw new ThingsboardRuntimeException(e.getMessage(), ThingsboardErrorCode.GENERAL);
-        }
+    public void clearEmptyRetainedMsgNodes() throws ThingsboardException {
+        tbRetainedMsgService.clearEmptyNodes(getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -65,7 +58,7 @@ public class RetainedMsgController extends BaseController {
     @DeleteMapping(value = "", params = {"topicName"})
     public void deleteRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         checkRetainedMsg(topicName);
-        retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
+        tbRetainedMsgService.delete(topicName, getCurrentUser());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

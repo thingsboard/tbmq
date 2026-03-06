@@ -27,6 +27,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.HasAdditionalInfo;
+import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
@@ -39,6 +40,7 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.entity.credentials.TbMqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.util.CsvUtils;
 
 import java.util.Arrays;
@@ -59,6 +61,7 @@ public class MqttClientCredentialsBulkImportService {
 
     private final MqttClientCredentialsService credentialsService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final TbMqttClientCredentialsService tbMqttClientCredentialsService;
 
     private ExecutorService executor;
 
@@ -74,7 +77,7 @@ public class MqttClientCredentialsBulkImportService {
         }
     }
 
-    public final BulkImportResult<MqttClientCredentials> processBulkImport(BulkImportRequest request) throws Exception {
+    public final BulkImportResult<MqttClientCredentials> processBulkImport(BulkImportRequest request, User currentUser) throws Exception {
         List<EntityData> entitiesData = parseData(request);
 
         BulkImportResult<MqttClientCredentials> result = new BulkImportResult<>();
@@ -82,7 +85,7 @@ public class MqttClientCredentialsBulkImportService {
 
         Character authRulesDelimiter = request.getMapping().getAuthRulesDelimiter();
 
-        entitiesData.forEach(entityData -> DonAsynchron.submit(() -> saveEntity(entityData.getFields(), authRulesDelimiter),
+        entitiesData.forEach(entityData -> DonAsynchron.submit(() -> saveEntity(entityData.getFields(), authRulesDelimiter, currentUser),
                 importedEntityInfo -> {
                     if (importedEntityInfo.isUpdated()) {
                         log.debug("Updated MQTT credentials [{}] at line {}", importedEntityInfo.getEntity(), entityData.getLineNumber());
@@ -129,7 +132,8 @@ public class MqttClientCredentialsBulkImportService {
     }
 
     private ImportedEntityInfo<MqttClientCredentials> saveEntity(Map<BulkImportColumnType, String> fields,
-                                                                 Character authRulesDelimiter) {
+                                                                 Character authRulesDelimiter,
+                                                                 User currentUser) {
         ImportedEntityInfo<MqttClientCredentials> importedEntityInfo = new ImportedEntityInfo<>();
 
         MqttClientCredentials entity = findOrCreateEntity(fields.get(BulkImportColumnType.NAME));
@@ -155,7 +159,7 @@ public class MqttClientCredentialsBulkImportService {
 
         setEntityFields(entity, basicCredentials, fields, authRulesDelimiter);
 
-        MqttClientCredentials savedEntity = saveEntity(entity);
+        MqttClientCredentials savedEntity = tbMqttClientCredentialsService.save(entity, currentUser);
 
         importedEntityInfo.setEntity(savedEntity);
         return importedEntityInfo;
@@ -216,10 +220,6 @@ public class MqttClientCredentialsBulkImportService {
     private MqttClientCredentials findOrCreateEntity(String name) {
         MqttClientCredentials credentialsByName = credentialsService.findCredentialsByName(name);
         return credentialsByName == null ? new MqttClientCredentials() : credentialsByName;
-    }
-
-    private MqttClientCredentials saveEntity(MqttClientCredentials credentials) {
-        return credentialsService.saveCredentials(credentials);
     }
 
     @Data
