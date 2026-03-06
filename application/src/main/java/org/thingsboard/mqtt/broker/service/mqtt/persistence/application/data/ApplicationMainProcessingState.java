@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-public interface MsgDispatcherService {
+import java.util.concurrent.Future;
 
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback);
+@Data
+@AllArgsConstructor
+public class ApplicationMainProcessingState {
 
-    void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
+    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer;
+    private volatile Future<?> future;
 
 }

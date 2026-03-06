@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface LastWillService {
 
-    void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg);
+    void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn);
 
     void removeAndExecuteLastWillIfNeeded(MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval);
 

@@ -173,7 +173,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createConsumer(String integrationId, String topic) {
         return integrationMsgQueueProvider
-                .getNewIeMsgConsumer(
+                .getIeMsgConsumer(
                         topic,
                         integrationTopicService.getConsumerGroup(integrationId),
                         integrationId);

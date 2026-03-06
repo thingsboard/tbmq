@@ -75,6 +75,7 @@ public class BrokerHomePageConfig {
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final AdminSettingsService adminSettingsService;
     private final MqttAuthProviderService mqttAuthProviderService;
+    private final HistoricalDataReportProperties historicalDataReportProperties;
 
     public HomePageConfigDto getConfig() {
         Map<String, ConnectivityInfo> connectivityInfoMap = getConnectivityInfoMap();
@@ -101,6 +102,7 @@ public class BrokerHomePageConfig {
                 .existsX509Credentials(existsX509Credentials())
                 .existsScramCredentials(existsScramCredentials())
                 .allowKafkaTopicDeletion(enableKafkaTopicDeletion)
+                .statsCollectionInterval(historicalDataReportProperties.getInterval())
                 .build();
     }
 

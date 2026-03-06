@@ -29,7 +29,4 @@ public class ApplicationSharedSubscriptionJob {
     private volatile Future<?> future;
     private volatile boolean interrupted;
 
-    public boolean interrupted() {
-        return this.isInterrupted();
-    }
 }

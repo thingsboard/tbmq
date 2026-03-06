@@ -103,7 +103,7 @@ public class DefaultLastWillServiceTest {
     }
 
     private void saveLastWillMsg() {
-        lastWillService.saveLastWillMsg(sessionInfo, getPublishMsg());
+        lastWillService.saveLastWillMsg(sessionInfo, getPublishMsg(), null);
     }
 
     private PublishMsg getPublishMsg() {

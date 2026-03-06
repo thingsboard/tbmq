@@ -144,7 +144,7 @@ public class ConnectServiceImplTest {
         ConnectionAcceptedMsg connectionAcceptedMsg = getConnectionAcceptedMsg(publishMsg);
         connectService.acceptConnection(actorState, connectionAcceptedMsg, actorRef);
 
-        verify(lastWillService, times(1)).saveLastWillMsg(any(), eq(publishMsg));
+        verify(lastWillService, times(1)).saveLastWillMsg(any(), eq(publishMsg), any());
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
         verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));

@@ -32,6 +32,7 @@ public class AuthResponse {
     private final List<AuthRulePatterns> authRulePatterns;
     private final String reason;
     private final String authDetails;
+    private final String clientCertCn;
 
     public static AuthResponse skip(String reason) {
         return AuthResponse.builder().status(AuthStatus.SKIPPED).reason(reason).build();
@@ -50,7 +51,15 @@ public class AuthResponse {
     }
 
     public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, String authDetails) {
-        return AuthResponse.builder().status(AuthStatus.SUCCESS).clientType(clientType).authRulePatterns(authRulePatterns).authDetails(authDetails).build();
+        return prepareSuccessResponse(clientType, authRulePatterns, authDetails).build();
+    }
+
+    public static AuthResponse sslSuccess(ClientType clientType, List<AuthRulePatterns> authRulePatterns, String authDetails, String certCn) {
+        return prepareSuccessResponse(clientType, authRulePatterns, authDetails).clientCertCn(certCn).build();
+    }
+
+    private static AuthResponseBuilder prepareSuccessResponse(ClientType clientType, List<AuthRulePatterns> authRulePatterns, String authDetails) {
+        return AuthResponse.builder().status(AuthStatus.SUCCESS).clientType(clientType).authRulePatterns(authRulePatterns).authDetails(authDetails);
     }
 
     public boolean isSuccess() {

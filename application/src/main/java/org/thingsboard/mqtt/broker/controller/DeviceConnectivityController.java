@@ -44,6 +44,12 @@ public class DeviceConnectivityController extends BaseController {
         return deviceConnectivityService.getRootCaCertFile("mqtts") != null;
     }
 
+    @ApiOperation(value = "Get the Root CA certificate file name defined in the configuration", notes = "Get the Root CA certificate name.")
+    @GetMapping(value = "/device-connectivity/mqtts/certificate/name")
+    public String getCaCertificateName() {
+        return deviceConnectivityService.getMqttsRootCaCertFileName();
+    }
+
     @ApiOperation(value = "Download CA certificate using file path defined in device.connectivity properties (downloadRootCaCertificate)", notes = "Download root CA certificate.")
     @GetMapping(value = "/device-connectivity/mqtts/certificate/download")
     public ResponseEntity<Resource> downloadCaCertificate() throws ThingsboardException, IOException {
