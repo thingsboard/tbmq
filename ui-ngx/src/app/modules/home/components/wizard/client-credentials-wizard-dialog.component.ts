@@ -124,7 +124,6 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
     this.clientCredentialsWizardFormGroup.get('credentialsType').valueChanges.subscribe(
       (type) => {
         this.authenticationFormGroup.patchValue({credentialsValue: null}, {emitEvent:false});
-        this.authenticationFormGroup.markAsUntouched();
       }
     );
   }
@@ -204,5 +203,11 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   changeStep($event: StepperSelectionEvent): void {
     this.selectedIndex = $event.selectedIndex;
     this.showNext = this.selectedIndex !== this.maxStepperIndex;
+    if (!this.showNext) {
+      const authStep = this.addClientCredentialsWizardStepper()?.steps?.last;
+      if (authStep) {
+        authStep.interacted = false;
+      }
+    }
   }
 }
