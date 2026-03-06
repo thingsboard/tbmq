@@ -16,7 +16,6 @@
 
 import _ from 'lodash';
 import { Tooltip } from 'chart.js';
-import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -370,19 +369,6 @@ function pageChartConfig(type: ChartView): object {
           legend: {
             display: false
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const chartType = context.dataset.chartType;
-                const value = context.parsed.y || 0;
-                let label = `${context.dataset.label}: ${value}`;
-                if (chartType === ChartKey.inboundPayloadTraffic || chartType === ChartKey.outboundPayloadTraffic) {
-                  label += ' ' + DataSizeUnitTranslationMap.get(DataSizeUnit.BYTE);
-                }
-                return label;
-              }
-            }
-          }
         }
       }
     }

@@ -40,6 +40,7 @@ export class ChartToolbarComponent {
   readonly showTimewindow = input<boolean>(true);
   readonly showDataSizeUnitToggle = input<boolean>(true);
   readonly showFullscreen = input<boolean>(true);
+  readonly intervalUnit = input<string>('');
 
   readonly fullscreenChange = output<boolean>();
   readonly timewindowChange = output<Timewindow>();
@@ -54,7 +55,9 @@ export class ChartToolbarComponent {
   constructor(private translate: TranslateService) {}
 
   chartTooltip(type: ChartKey): string {
-    return this.translate.instant(ChartDataKeyTooltipTranslationMap.get(type));
+    const base = this.translate.instant(ChartDataKeyTooltipTranslationMap.get(type));
+    const unit = this.intervalUnit();
+    return unit.length ? `${base}, ${unit}` : base;
   }
 
   onFullscreenChange() {

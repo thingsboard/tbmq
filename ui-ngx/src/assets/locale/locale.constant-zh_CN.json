@@ -963,6 +963,7 @@
         "no-updates": "已是最新版本。"
     },
     "config": {
+        "stats-collection-interval": "统计收集间隔",
         "allow-kafka-topic-deletion": "Kafka Topic 删除",
         "key": "Key",
         "value": "值",

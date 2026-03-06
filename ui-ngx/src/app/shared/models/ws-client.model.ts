@@ -400,6 +400,12 @@ export const DataSizeUnitTranslationMap = new Map<string, string>([
     [DataSizeUnit.MEGABYTE, 'MB'],
     [DataSizeUnit.GIGABYTE, 'GB']
   ]);
+export const DataSizeUnitLongTranslationMap = new Map<string, string>([
+  [DataSizeUnit.BYTE, 'bytes'],
+  [DataSizeUnit.KILOBYTE, 'KB'],
+  [DataSizeUnit.MEGABYTE, 'MB'],
+  [DataSizeUnit.GIGABYTE, 'GB']
+]);
 export const TimeUnitTypeTranslationMap = new Map<string, string>([
     [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
     [WebSocketTimeUnit.SECONDS, 'timeunit.seconds'],

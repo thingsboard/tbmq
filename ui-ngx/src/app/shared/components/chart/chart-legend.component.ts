@@ -33,6 +33,7 @@ import {
   calculateMax,
   calculateMin,
   calculateTotal,
+  formatLargeNumber,
 } from '@core/utils';
 import { getColor } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
@@ -108,12 +109,14 @@ export class ChartLegendComponent implements OnInit, OnChanges {
     }
   }
 
-  legendValue(index: number, type: string): number {
+  legendValue(index: number, type: string): string {
+    let value: number;
     if (this.totalEntityIdOnly()) {
-      return this.legendData[0]?.[type];
+      value = this.legendData[0]?.[type];
     } else {
-      return this.legendData[index]?.[type];
+      value = this.legendData[index]?.[type];
     }
+    return formatLargeNumber(value);
   }
 
   updateLegend(): void {

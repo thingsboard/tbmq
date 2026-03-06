@@ -15,7 +15,7 @@
 ///
 
 import { Component, output } from '@angular/core';
-import { FixedWindow, Timewindow } from '@shared/models/time/time.models';
+import { FixedWindow, HOUR, Timewindow } from '@shared/models/time/time.models';
 import { TranslateModule } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { ChartKey } from '@shared/models/chart.model';
@@ -24,6 +24,8 @@ import { TimewindowComponent } from '@shared/components/time/timewindow.componen
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from '@shared/components/chart/chart.component';
 import { ActivatedRoute } from '@angular/router';
+import { ConfigService } from '@core/http/config.service';
+import { HOME_CHARTS_DURATION } from '@shared/models/home-page.model';
 
 @Component({
     selector: 'tb-monitoring-charts',
@@ -40,8 +42,13 @@ export class MonitoringChartsComponent {
   constructor(
     private timeService: TimeService,
     private route: ActivatedRoute,
+    private configService: ConfigService,
   ) {
     this.route.data.subscribe(data => this.chartKeys = data.charts);
     this.timewindow = this.timeService.defaultTimewindow();
+    const statsCollectionInterval = this.configService.brokerConfig.statsCollectionInterval;
+    if (statsCollectionInterval > 6) { // > 1H
+      this.timewindow.realtime.timewindowMs = Math.ceil(statsCollectionInterval * HOME_CHARTS_DURATION / HOUR) * HOUR;
+    }
   }
 }
