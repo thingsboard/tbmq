@@ -21,7 +21,7 @@ import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
 import { PageLink } from '@shared/models/page/page-link';
@@ -61,7 +61,8 @@ export class AdvancedSettingsComponent implements OnInit {
 
   constructor(
     private configService: ConfigService,
-    private mqttAuthProviderService: MqttAuthProviderService
+    private mqttAuthProviderService: MqttAuthProviderService,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {
@@ -80,7 +81,7 @@ export class AdvancedSettingsComponent implements OnInit {
       [ConfigParams.tlsMaxPayloadSize]: formatBytes(config.tlsMaxPayloadSize),
       [ConfigParams.wsMaxPayloadSize]: formatBytes(config.wsMaxPayloadSize),
       [ConfigParams.wssMaxPayloadSize]: formatBytes(config.wssMaxPayloadSize),
-      [ConfigParams.statsCollectionInterval]: `${config.statsCollectionInterval} min`,
+      [ConfigParams.statsCollectionInterval]: this.translate.instant('timewindow.short.minutes', {minutes: config.statsCollectionInterval}).trim(),
       [ConfigParams.allowKafkaTopicDeletion]: config.allowKafkaTopicDeletion
     };
   }
