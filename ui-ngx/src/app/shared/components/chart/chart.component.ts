@@ -268,7 +268,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   private setListeners(ctx: HTMLCanvasElement) {
     this.chart.options.plugins.tooltip.callbacks.label = (context) => {
-      if (this.chartView() === ChartView.detailed && !this.totalEntityIdOnly()) {
+      if (this.chartView() === ChartView.detailed && this.entityIds().length !== 1) {
         const hasData = (context.dataset.data as any[]).some(d => d.value > 0);
         if (!hasData) {
           return null;
