@@ -21,7 +21,7 @@ import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
 import { PageLink } from '@shared/models/page/page-link';
@@ -39,8 +39,23 @@ export class AdvancedSettingsComponent implements OnInit {
   cardType = HomePageTitleType.AUTH_CONFIG;
   viewMode = 'authentication';
   authProviders: ShortMqttAuthProvider[];
-  AuthParamsType = MqttAuthProviderType;
-  AdvancedParamsType = ConfigParams;
+
+  readonly authRows: { type: MqttAuthProviderType; labelKey: string }[] = [
+    { type: MqttAuthProviderType.MQTT_BASIC, labelKey: 'home.broker-settings.basic-auth' },
+    { type: MqttAuthProviderType.X_509,      labelKey: 'home.broker-settings.x509-auth' },
+    { type: MqttAuthProviderType.SCRAM,      labelKey: 'home.broker-settings.scram-auth' },
+    { type: MqttAuthProviderType.JWT,        labelKey: 'home.broker-settings.jwt-auth' },
+    { type: MqttAuthProviderType.HTTP,       labelKey: 'home.broker-settings.http-auth' },
+  ];
+
+  readonly advancedRows: { key: ConfigParams; labelKey: string; isBoolean?: boolean }[] = [
+    { key: ConfigParams.tcpMaxPayloadSize,       labelKey: 'home.broker-settings.tcp-max-payload' },
+    { key: ConfigParams.tlsMaxPayloadSize,       labelKey: 'home.broker-settings.tls-max-payload' },
+    { key: ConfigParams.wsMaxPayloadSize,        labelKey: 'home.broker-settings.ws-max-payload' },
+    { key: ConfigParams.wssMaxPayloadSize,       labelKey: 'home.broker-settings.wss-max-payload' },
+    { key: ConfigParams.statsCollectionInterval, labelKey: 'home.broker-settings.stats-collection-interval' },
+    { key: ConfigParams.allowKafkaTopicDeletion, labelKey: 'home.broker-settings.kafka-topic-deletion', isBoolean: true },
+  ];
 
   authParams = {
     [MqttAuthProviderType.MQTT_BASIC]: false,
@@ -55,12 +70,14 @@ export class AdvancedSettingsComponent implements OnInit {
     [ConfigParams.tlsMaxPayloadSize]: '',
     [ConfigParams.wsMaxPayloadSize]: '',
     [ConfigParams.wssMaxPayloadSize]: '',
+    [ConfigParams.statsCollectionInterval]: '',
     [ConfigParams.allowKafkaTopicDeletion]: false
   };
 
   constructor(
     private configService: ConfigService,
-    private mqttAuthProviderService: MqttAuthProviderService
+    private mqttAuthProviderService: MqttAuthProviderService,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {
@@ -79,6 +96,7 @@ export class AdvancedSettingsComponent implements OnInit {
       [ConfigParams.tlsMaxPayloadSize]: formatBytes(config.tlsMaxPayloadSize),
       [ConfigParams.wsMaxPayloadSize]: formatBytes(config.wsMaxPayloadSize),
       [ConfigParams.wssMaxPayloadSize]: formatBytes(config.wssMaxPayloadSize),
+      [ConfigParams.statsCollectionInterval]: this.translate.instant('timewindow.short.minutes', {minutes: config.statsCollectionInterval}).trim(),
       [ConfigParams.allowKafkaTopicDeletion]: config.allowKafkaTopicDeletion
     };
   }

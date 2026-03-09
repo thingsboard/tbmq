@@ -421,6 +421,7 @@
             "tls-max-payload": "TLS max payload size",
             "ws-max-payload": "WS max payload size",
             "wss-max-payload": "WSS max payload size",
+            "stats-collection-interval": "Statistics collection interval",
             "kafka-topic-deletion": "Kafka topic deletion",
             "allowed": "Allowed",
             "not-allowed": "Not Allowed"

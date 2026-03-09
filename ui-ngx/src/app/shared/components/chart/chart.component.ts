@@ -54,8 +54,12 @@ import { Store } from '@ngrx/store';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DataSizeUnit, DataSizeUnitTranslationMap } from '@shared/models/ws-client.model';
-import { convertDataSizeUnits } from '@core/utils';
+import {
+  DataSizeUnit,
+  DataSizeUnitLongTranslationMap,
+} from '@shared/models/ws-client.model';
+import { convertDataSizeUnits, formatLargeNumber } from '@core/utils';
+import { ConfigService } from '@core/http/config.service';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -96,9 +100,19 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   readonly visibleEntityIds = model<string[]>([TOTAL_ENTITY_ID]);
   readonly chartHasDataSize = computed(() => this.chartKey() === ChartKey.inboundPayloadTraffic || this.chartKey() === ChartKey.outboundPayloadTraffic);
   readonly dataSizeUnit = signal<DataSizeUnit>(DataSizeUnit.BYTE);
+  readonly chartIntervalUnit = computed<string>(() => {
+    if (CHARTS_TOTAL_ENTITY_ID_ONLY.includes(this.chartKey())) {
+      return '';
+    }
+    const prefix = this.chartHasDataSize() ? DataSizeUnitLongTranslationMap.get(this.dataSizeUnit()) : 'msg';
+    const interval = this.configService.brokerConfig.statsCollectionInterval;
+    const minStr = interval === 1
+      ? this.translate.instant('timewindow.short.minutes', {minutes: ''}).trim()
+      : this.translate.instant('timewindow.short.minutes', {minutes: interval}).trim();
+    return `${prefix} / ${minStr}`;
+  });
 
   chart: Chart<'line', TsValue[]>;
-  dataSizeUnitTranslations = DataSizeUnitTranslationMap;
   timewindow = this.timeService.defaultTimewindow();
   ChartView = ChartView;
   isLoading = false;
@@ -111,7 +125,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
               private translate: TranslateService,
               private timeService: TimeService,
               private timeseriesService: TimeseriesService,
-              private route: ActivatedRoute) {
+              private route: ActivatedRoute,
+              private configService: ConfigService) {
   }
 
   ngOnInit() {
@@ -206,13 +221,13 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           this.initCharts(data);
         } else {
           if (this.totalEntityIdOnly()) {
-            this.chart.data.datasets[0].data = data[0][this.chartKey()];
+            this.chart.data.datasets[0].data = this.toCurrentUnit(data[0][this.chartKey()]);
           } else {
             for (let i = 0; i < dataKeys.length; i++) {
               const dataKey = dataKeys[i];
               const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
               if (datasetIndex > -1) {
-                this.chart.data.datasets[datasetIndex].data = data[i][this.chartKey()];
+                this.chart.data.datasets[datasetIndex].data = this.toCurrentUnit(data[i][this.chartKey()]);
               }
             }
           }
@@ -252,11 +267,16 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private setListeners(ctx: HTMLCanvasElement) {
-    if (this.chartHasDataSize()) {
-      this.chart.options.plugins.tooltip.callbacks.label = (context) => {
-        const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
-        return `${value} ${this.dataSizeUnitTranslations.get(this.dataSizeUnit())}`;
+    this.chart.options.plugins.tooltip.callbacks.label = (context) => {
+      if (this.chartView() === ChartView.detailed && this.entityIds().length !== 1) {
+        const hasData = (context.dataset.data as any[]).some(d => d.value > 0);
+        if (!hasData) {
+          return null;
+        }
       }
+      const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
+      const unit = this.chartIntervalUnit() ? ` ${this.chartIntervalUnit()}` : '';
+      return `${context.dataset.label}: ${formatLargeNumber(value)}${unit}`;
     }
     ctx.addEventListener('dblclick', () => {
       this.chart.resetZoom();
@@ -264,7 +284,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     });
   }
 
-  private getDataset(dataset: any[], i: number, dataKey: string): ChartDataset {
+  private getDataset(dataset: any[], i: number, dataKey: string): Partial<ChartDataset> {
     const color = getColor(this.chartKey(), i);
     return {
       label: dataKey,
@@ -307,13 +327,27 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
   }
 
+  private toCurrentUnit(data: TsValue[]): TsValue[] {
+    if (!this.chartHasDataSize() || this.dataSizeUnit() === DataSizeUnit.BYTE) {
+      return data;
+    }
+    return data.map(el => ({
+      value: convertDataSizeUnits(el.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
+      ts: el.ts
+    }));
+  }
+
   private prepareData(data: TimeseriesData[]) {
-    if (this.chartHasDataSize() && data[0]?.[this.chartKey()]?.length) {
-      const tsValue = data[0][this.chartKey()][0];
-      data[0][this.chartKey()][0] = {
-        value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
-        ts: tsValue.ts
-      } as TsValue;
+    if (this.chartHasDataSize()) {
+      for (const brokerData of data) {
+        if (brokerData?.[this.chartKey()]?.length) {
+          const tsValue = brokerData[this.chartKey()][0];
+          brokerData[this.chartKey()][0] = {
+            value: convertDataSizeUnits(tsValue.value, DataSizeUnit.BYTE, this.dataSizeUnit()),
+            ts: tsValue.ts
+          } as TsValue;
+        }
+      }
     }
   }
 
@@ -330,7 +364,6 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
             this.chart.data.datasets[0].data.unshift(latestValue);
-            this.chart.data.datasets[0].data.pop();
           }
         }
       } else {
@@ -341,7 +374,6 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           const chartLatestValue = chartData[0];
           if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
             this.chart.data.datasets[datasetIndex].data.unshift(latestValue);
-            this.chart.data.datasets[datasetIndex].data.pop();
           }
         }
       }

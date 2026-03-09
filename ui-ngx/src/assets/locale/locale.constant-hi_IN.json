@@ -403,6 +403,7 @@
             "tls-max-payload": "TLS अधिकतम पेलोड आकार",
             "ws-max-payload": "WS अधिकतम पेलोड आकार",
             "wss-max-payload": "WSS अधिकतम पेलोड आकार",
+            "stats-collection-interval": "सांख्यिकी संग्रह अंतराल",
             "kafka-topic-deletion": "Kafka टॉपिक डिलीशन",
             "allowed": "अनुमत",
             "not-allowed": "अनुमत नहीं"

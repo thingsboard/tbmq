@@ -403,6 +403,7 @@
             "tls-max-payload": "TLS Max. Nutzlastgröße",
             "ws-max-payload": "WS Max. Nutzlastgröße",
             "wss-max-payload": "WSS Max. Nutzlastgröße",
+            "stats-collection-interval": "Statistikerfassungsintervall",
             "kafka-topic-deletion": "Kafka-Topic-Löschung",
             "allowed": "Erlaubt",
             "not-allowed": "Nicht erlaubt"

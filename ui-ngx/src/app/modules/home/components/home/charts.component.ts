@@ -23,6 +23,7 @@ import { HOME_CHARTS_DURATION, HomePageTitleType } from '@shared/models/home-pag
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from '@shared/components/chart/chart.component';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-home-charts',
@@ -52,6 +53,7 @@ export class ChartsComponent implements OnInit {
 
   constructor(
     private timeService: TimeService,
+    private configService: ConfigService,
   ) {
   }
 
@@ -62,7 +64,7 @@ export class ChartsComponent implements OnInit {
 
   private setTimewindow() {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.timewindow.realtime.timewindowMs = HOME_CHARTS_DURATION;
+    this.timewindow.realtime.timewindowMs = HOME_CHARTS_DURATION * this.configService.brokerConfig.statsCollectionInterval;
   }
 
   private onResize() {
