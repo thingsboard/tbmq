@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -61,6 +62,7 @@ import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS) //fixme
 @ContextConfiguration(classes = AppSharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -127,6 +129,15 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         credentialsService.deleteCredentials(applicationCredentials4.getId());
         credentialsService.deleteCredentials(deviceCredentials.getId());
 
+        clientSubscriptionService.clearSubscriptionsAndPersist("test_sub_client1");
+        clientSubscriptionService.clearSubscriptionsAndPersist("test_sub_client2");
+        clientSubscriptionService.clearSubscriptionsAndPersist("test_sub_client3");
+        clientSubscriptionService.clearSubscriptionsAndPersist("test_sub_client4");
+        clientSessionService.clearClientSession("test_sub_client1", CallbackUtil.EMPTY);
+        clientSessionService.clearClientSession("test_sub_client2", CallbackUtil.EMPTY);
+        clientSessionService.clearClientSession("test_sub_client3", CallbackUtil.EMPTY);
+        clientSessionService.clearClientSession("test_sub_client4", CallbackUtil.EMPTY);
+
         applicationTopicService.deleteSharedTopic(applicationSharedSubscription);
         applicationSharedSubscriptionService.deleteSharedSubscription(applicationSharedSubscription.getId());
     }
@@ -188,34 +199,42 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
-        //sub
-        MqttClient shareSubClient1 = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        MqttClient shareSubClient2 = getClient("test_sub_client2", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttClient shareSubClient1 = null;
+        MqttClient shareSubClient2 = null;
+        MqttClient pubClient = null;
+        try {
+            //sub
+            shareSubClient1 = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+            shareSubClient2 = getClient("test_sub_client2", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
+            shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
+            shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
 
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            Set<TopicSharedSubscription> clientSubscriptions1 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client1");
-            Set<TopicSharedSubscription> clientSubscriptions2 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client2");
-            return clientSubscriptions1.size() == 1 && clientSubscriptions2.size() == 1;
-        });
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+                Set<TopicSharedSubscription> clientSubscriptions1 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client1");
+                Set<TopicSharedSubscription> clientSubscriptions2 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client2");
+                return clientSubscriptions1.size() == 1 && clientSubscriptions2.size() == 1;
+            });
+            // Allow Kafka consumer group join and partition assignment to complete before publishing
+            Thread.sleep(3000);
 
-        //pub
-        MqttClient pubClient = getPubClient();
-        sendPublishPackets(pubClient, pubQos);
+            //pub
+            pubClient = getPubClient();
+            sendPublishPackets(pubClient, pubQos);
 
-        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+            boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+            log.debug("The result of awaiting is: [{}]", await);
+            assertTrue(await);
 
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
-
-        //disconnect clients
-        disconnectClient(pubClient);
-
-        disconnectWithCleanSession(shareSubClient1);
-        disconnectWithCleanSession(shareSubClient2);
+            //asserts
+            assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+        } finally {
+            if (pubClient != null) {
+                try { disconnectClient(pubClient); } catch (Exception ignored) {}
+            }
+            try { disconnectWithCleanSession(shareSubClient1); } catch (Exception ignored) {}
+            try { disconnectWithCleanSession(shareSubClient2); } catch (Exception ignored) {}
+        }
     }
 
     @Test
@@ -223,41 +242,54 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
         AtomicInteger shareSubClientReceivedMessages = new AtomicInteger();
 
-        //sub
-        MqttClient shareSubClient = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClientReceivedMessages), false);
-        shareSubClient.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClientReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
-        Awaitility
-                .await()
-                .atMost(5, TimeUnit.SECONDS)
-                .until(() -> clientSubscriptionService.getClientSubscriptionsCount() == 1);
+        MqttClient shareSubClient = null;
+        MqttClient pubClient = null;
+        try {
+            //sub
+            shareSubClient = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClientReceivedMessages), false);
+            shareSubClient.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClientReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
+            Awaitility
+                    .await()
+                    .atMost(5, TimeUnit.SECONDS)
+                    .until(() -> clientSubscriptionService.getClientSharedSubscriptions("test_sub_client1").size() == 1);
 
-        //disconnect
-        shareSubClient.disconnect();
-        Awaitility
-                .await()
-                .atMost(5, TimeUnit.SECONDS)
-                .until(() -> clientSessionService.getClientSessionInfo(shareSubClient.getClientConfig().getClientId()).isDisconnected());
+            //disconnect
+            shareSubClient.disconnect();
+            Awaitility
+                    .await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .until(() -> {
+                        var sessionInfo = clientSessionService.getClientSessionInfo("test_sub_client1");
+                        return sessionInfo == null || sessionInfo.isDisconnected();
+                    });
 
-        shareSubClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        Awaitility
-                .await()
-                .atMost(5, TimeUnit.SECONDS)
-                .until(() -> clientSessionService.getClientSessionInfo(shareSubClient.getClientConfig().getClientId()).isConnected());
+            shareSubClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+            Awaitility
+                    .await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .until(() -> {
+                        var sessionInfo = clientSessionService.getClientSessionInfo("test_sub_client1");
+                        return sessionInfo != null && sessionInfo.isConnected();
+                    });
+            // Allow Kafka consumer group join and partition assignment to complete before publishing
+            Thread.sleep(3000);
 
-        //pub
-        MqttClient pubClient = getPubClient();
-        sendPublishPackets(pubClient);
+            //pub
+            pubClient = getPubClient();
+            sendPublishPackets(pubClient);
 
-        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+            boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+            log.debug("The result of awaiting is: [{}]", await);
+            assertTrue(await);
 
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT, shareSubClientReceivedMessages.get());
-
-        //disconnect clients
-        disconnectClient(pubClient);
-
-        disconnectWithCleanSession(shareSubClient);
+            //asserts
+            assertEquals(TOTAL_MSG_COUNT, shareSubClientReceivedMessages.get());
+        } finally {
+            if (pubClient != null) {
+                try { disconnectClient(pubClient); } catch (Exception ignored) {}
+            }
+            try { disconnectWithCleanSession(shareSubClient); } catch (Exception ignored) {}
+        }
     }
 
     @Test
@@ -267,28 +299,42 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
-        //sub
-        MqttClient shareSubClient1 = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        MqttClient shareSubClient2 = getClient("test_sub_client2", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttClient shareSubClient1 = null;
+        MqttClient shareSubClient2 = null;
+        MqttClient pubClient = null;
+        try {
+            //sub
+            shareSubClient1 = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+            shareSubClient2 = getClient("test_sub_client2", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
+            shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
+            shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
 
-        //pub
-        MqttClient pubClient = getPubClient();
-        sendPublishPackets(pubClient);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+                Set<TopicSharedSubscription> clientSubscriptions1 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client1");
+                Set<TopicSharedSubscription> clientSubscriptions2 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client2");
+                return clientSubscriptions1.size() == 1 && clientSubscriptions2.size() == 1;
+            });
+            // Allow Kafka consumer group join and partition assignment to complete before publishing
+            Thread.sleep(3000);
 
-        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+            //pub
+            pubClient = getPubClient();
+            sendPublishPackets(pubClient);
 
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+            boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+            log.debug("The result of awaiting is: [{}]", await);
+            assertTrue(await);
 
-        //disconnect clients
-        disconnectClient(pubClient);
-
-        disconnectWithCleanSession(shareSubClient1);
-        disconnectWithCleanSession(shareSubClient2);
+            //asserts
+            assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+        } finally {
+            if (pubClient != null) {
+                try { disconnectClient(pubClient); } catch (Exception ignored) {}
+            }
+            try { disconnectWithCleanSession(shareSubClient1); } catch (Exception ignored) {}
+            try { disconnectWithCleanSession(shareSubClient2); } catch (Exception ignored) {}
+        }
     }
 
     @Test
@@ -298,51 +344,66 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
-        //sub
         MqttHandlerImpl client1Handler = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
         MqttHandlerImpl client2Handler = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
 
-        MqttClient shareSubClient1 = getClient("test_sub_client3", client1Handler, false);
-        MqttClient shareSubClient2 = getClient("test_sub_client4", client2Handler, false);
+        MqttClient shareSubClient1 = null;
+        MqttClient shareSubClient2 = null;
+        MqttClient pubClient = null;
+        try {
+            //sub
+            shareSubClient1 = getClient("test_sub_client3", client1Handler, false);
+            shareSubClient2 = getClient("test_sub_client4", client2Handler, false);
 
-        shareSubClient1.on("$share/g1/test/+", client1Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", client2Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
+            shareSubClient1.on("$share/g1/test/+", client1Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
+            shareSubClient2.on("$share/g1/test/+", client2Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
 
-        //pub
-        MqttClient pubClient = getPubClient();
-        sendPublishPackets(pubClient);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+                Set<TopicSharedSubscription> clientSubscriptions1 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client3");
+                Set<TopicSharedSubscription> clientSubscriptions2 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client4");
+                return clientSubscriptions1.size() == 1 && clientSubscriptions2.size() == 1;
+            });
+            // Allow Kafka consumer group join and partition assignment to complete before publishing
+            Thread.sleep(3000);
 
-        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+            //pub
+            pubClient = getPubClient();
+            sendPublishPackets(pubClient);
 
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+            boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+            log.debug("The result of awaiting is: [{}]", await);
+            assertTrue(await);
 
-        //unsub
-        shareSubClient2.off("$share/g1/test/+").get(5, TimeUnit.SECONDS);
+            //asserts
+            assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
 
-        Set<TopicSubscription> client1Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client3");
-        assertEquals(1, client1Subscriptions.size());
-        Set<TopicSubscription> client2Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client4");
-        assertTrue(client2Subscriptions.isEmpty());
+            //unsub
+            shareSubClient2.off("$share/g1/test/+").get(5, TimeUnit.SECONDS);
 
-        receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
-        client1Handler.updateLatch(receivedResponses);
+            Set<TopicSubscription> client1Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client3");
+            assertEquals(1, client1Subscriptions.size());
+            Set<TopicSubscription> client2Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client4");
+            assertTrue(client2Subscriptions.isEmpty());
 
-        //pub
-        sendPublishPackets(pubClient);
+            receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+            client1Handler.updateLatch(receivedResponses);
 
-        await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+            //pub
+            sendPublishPackets(pubClient);
 
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT * 2, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+            await = receivedResponses.await(10, TimeUnit.SECONDS);
+            log.debug("The result of awaiting is: [{}]", await);
+            assertTrue(await);
 
-        //disconnect clients
-        disconnectClient(pubClient);
-
-        disconnectWithCleanSession(shareSubClient1);
-        disconnectWithCleanSession(shareSubClient2);
+            //asserts
+            assertEquals(TOTAL_MSG_COUNT * 2, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+        } finally {
+            if (pubClient != null) {
+                try { disconnectClient(pubClient); } catch (Exception ignored) {}
+            }
+            try { disconnectWithCleanSession(shareSubClient1); } catch (Exception ignored) {}
+            try { disconnectWithCleanSession(shareSubClient2); } catch (Exception ignored) {}
+        }
     }
 
     private void sendPublishPackets(MqttClient pubClient) throws Exception {
@@ -356,7 +417,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
                             Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)),
                             qos)
                     .get(5, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
     }
 
