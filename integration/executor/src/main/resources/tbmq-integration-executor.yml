@@ -16,148 +16,151 @@
 
 # HTTP server parameters
 server:
-  # HTTP Server bind address
+  # HTTP Server bind address.
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
-  # HTTP Server bind port
+  # HTTP Server bind port.
   port: "${HTTP_BIND_PORT:8082}"
 
 # Kafka parameters
 queue:
   integration-downlink:
-    # Interval in milliseconds to poll messages from 'tbmq.ie.downlink' topics
+    # Poll interval for messages from 'tbmq.ie.downlink' topics (in ms).
     poll-interval: "${TB_IE_DOWNLINK_POLL_INTERVAL:1000}"
   integration-msg:
-    # Interval in milliseconds to poll messages from 'tbmq.msg.ie' topics
+    # Poll interval for messages from 'tbmq.msg.ie' topics (in ms).
     poll-interval: "${TB_IE_MSG_POLL_INTERVAL:1000}"
-    # Timeout in milliseconds for processing the pack of messages
+    # Timeout for processing a pack of messages (in ms).
     pack-processing-timeout: "${TB_IE_MSG_PACK_PROCESSING_TIMEOUT:30000}"
     ack-strategy:
-      # Processing strategy for 'tbmq.msg.ie' topics. Can be: SKIP_ALL, RETRY_ALL
+      # Processing strategy for 'tbmq.msg.ie' topics. Accepted values: SKIP_ALL, RETRY_ALL.
       type: "${TB_IE_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}"
-      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      # Number of retries. Use 0 for unlimited. Applies to the RETRY_ALL strategy.
       retries: "${TB_IE_MSG_ACK_STRATEGY_RETRIES:5}"
-      # Time in seconds to wait in consumer thread before retries
+      # Time to wait in the consumer thread before retrying (in s).
       pause-between-retries: "${TB_IE_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
 
   kafka:
-    # List of kafka bootstrap servers used to establish connection
+    # List of Kafka bootstrap servers used to establish connection.
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
-    # Controls whether TBMQ is allowed to delete Kafka topics that were created for
-    # Integrations.
-    # When set to 'true', TBMQ may automatically remove topics during cleanup
-    # (for example, when the Integration is deleted).
-    # When set to 'false', TBMQ will skip topic deletions and simply stop using them.
-    # This helps prevent accidental data loss in production environments
+    # Enables or disables deletion of Kafka topics created for Integrations. When true, TBMQ may automatically
+    # remove topics during cleanup (e.g., when an Integration is deleted). When false, TBMQ skips topic deletion
+    # and simply stops using them, preventing accidental data loss in production environments.
     enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
-      # Defines the base Kafka properties applied to admins, all producers and consumers, making it the ideal place for shared connection and security settings.
-      # Format is key:value;key:value. Important: If a property value contains a semicolon (common in sasl.jaas.config), you must escape it with a backslash (e.g., ...username="user"\;password="pass"\;) to prevent parsing errors
+      # Base Kafka properties applied to admins, all producers and consumers, making it the ideal place for shared
+      # connection and security settings. Format is key:value;key:value. If a property value contains a semicolon
+      # (common in sasl.jaas.config), escape it with a backslash (e.g., ...username="user"\;password="pass"\;).
       config: "${TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG:}"
       consumer:
-        # Defines additional Kafka properties specific only to consumers, which are merged with the global defaults - TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict).
-        # Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;
+        # Additional Kafka properties specific only to consumers, merged with the global defaults —
+        # TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict).
+        # Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;.
         config: "${TB_KAFKA_DEFAULT_CONSUMER_CONFIG:}"
-        # A list of class names or class types, ordered by preference, of supported partition assignment strategies that the client will use to distribute partition ownership amongst consumer instances when group management is used
+        # List of partition assignment strategy class names or types, ordered by preference, used to distribute
+        # partition ownership amongst consumer instances when group management is used.
         partition-assignment-strategy: "${TB_KAFKA_DEFAULT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:org.apache.kafka.clients.consumer.StickyAssignor}"
-        # The timeout in milliseconds used to detect client failures when using Kafka's group management facility
+        # Timeout for detecting client failures when using Kafka's group management facility (in ms).
         session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:10000}"
-        # The maximum delay in milliseconds between invocations of poll() when using consumer group management
+        # Maximum delay between invocations of poll() when using consumer group management (in ms).
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
-        # The maximum number of records returned in a single call to poll()
+        # Maximum number of records returned in a single call to poll().
         max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:2000}"
-        # The maximum amount of data in bytes per-partition the server will return
+        # Maximum amount of data per partition the server will return (in bytes).
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
-        # The maximum amount of data in bytes the server should return for a fetch request
+        # Maximum amount of data the server should return for a fetch request (in bytes).
         fetch-max-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_FETCH_MAX_BYTES:134217728}"
-        # The expected time between heartbeats to the consumer coordinator when using Kafka’s group management facilities.
-        # Heartbeats are used to ensure that the consumer’s session stays active and to facilitate rebalancing when new consumers join or leave the group.
-        # The value must be set lower than TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS, but typically should be set no higher than 1/3 of that value.
-        # It can be adjusted even lower to control the expected time for normal rebalances. Value in milliseconds. Default is 3 sec
+        # Expected time between heartbeats to the consumer coordinator when using Kafka's group management facilities.
+        # Heartbeats ensure the consumer's session stays active and facilitate rebalancing when consumers join or leave.
+        # Must be set lower than TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS, but typically no higher than 1/3 of that value.
+        # Can be adjusted lower to control the expected time for normal rebalances (in ms). Defaults to 3 s.
         heartbeat-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_HEARTBEAT_INTERVAL_MS:3000}"
       producer:
-        # Defines additional Kafka properties specific only to producers, which are merged with the global defaults - TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict).
-        # Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;
+        # Additional Kafka properties specific only to producers, merged with the global defaults —
+        # TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict).
+        # Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;.
         config: "${TB_KAFKA_DEFAULT_PRODUCER_CONFIG:}"
-        # The number of acknowledgments the producer requires the leader to have received before considering a request complete
+        # Number of acknowledgments the producer requires the leader to have received before considering a request complete.
         acks: "${TB_KAFKA_DEFAULT_PRODUCER_ACKS:1}"
-        # Setting a value greater than zero will cause the client to resend any record whose send fails with a potentially transient error
+        # Number of retries for records whose send fails with a potentially transient error.
         retries: "${TB_KAFKA_DEFAULT_PRODUCER_RETRIES:1}"
-        # The producer will attempt to batch records together into fewer requests whenever multiple records are being sent to the same partition. Size in bytes
+        # Batch size for grouping records sent to the same partition (in bytes).
         batch-size: "${TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE:16384}"
-        # The producer groups together any records that arrive in between request transmissions into a single batched request, set in milliseconds
+        # Delay for grouping records arriving between request transmissions into a batched request (in ms).
         linger-ms: "${TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS:5}"
-        # The total bytes of memory the producer can use to buffer records waiting to be sent to the server
+        # Total memory the producer can use to buffer records waiting to be sent to the server (in bytes).
         buffer-memory: "${TB_KAFKA_DEFAULT_PRODUCER_BUFFER_MEMORY:33554432}"
-        # The compression type for all data generated by the producer. Valid values are `none`, `gzip`, `snappy`, `lz4`, or `zstd`
+        # Compression type for all data generated by the producer. Accepted values: none, gzip, snappy, lz4, zstd.
         compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}"
     admin:
-      # List of configs separated by semicolon used for admin kafka client creation, which are merged with the global defaults - TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict)
+      # Additional configs separated by semicolon for the admin Kafka client, merged with the global defaults —
+      # TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG (overriding them if keys conflict).
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
-      # Kafka Admin client command timeout (in seconds). Applies to operations like describeCluster, listTopics, etc
+      # Kafka Admin client command timeout (in s). Applies to operations like describeCluster, listTopics, etc.
       command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
-      # Kafka topics cache TTL (in milliseconds). Defines how long the list of topics is kept in memory before reloading from Kafka. Default is 5 minutes
+      # Kafka topics cache TTL (in ms). Defines how long the list of topics is kept in memory before reloading from Kafka. Defaults to 5 minutes.
       topics-cache-ttl-ms: "${TB_KAFKA_ADMIN_TOPICS_CACHE_TTL_MS:300000}"
     consumer-stats:
-      # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
+      # Enables or disables printing of consumer group lag between consumer offsets and the latest Kafka topic offsets.
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
-      # Statistics printing interval in milliseconds for Kafka's consumer-groups stats
+      # Print interval for Kafka consumer group statistics (in ms).
       print-interval-ms: "${TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS:60000}"
-      # Time to wait in milliseconds for the stats-loading requests to Kafka to finish
+      # Time to wait for stats-loading requests to Kafka to finish (in ms).
       kafka-response-timeout-ms: "${TB_KAFKA_CONSUMER_STATS_RESPONSE_TIMEOUT_MS:1000}"
-      # List of configs separated by semicolon used for kafka stats consumer, which are merged with the consumer defaults - TB_KAFKA_DEFAULT_CONSUMER_CONFIG (overriding them if keys conflict)
+      # Additional configs separated by semicolon for the Kafka stats consumer, merged with the consumer defaults —
+      # TB_KAFKA_DEFAULT_CONSUMER_CONFIG (overriding them if keys conflict).
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
     integration-downlink:
-      # Prefix for topics for sending integration configurations and validation requests from tbmq to integration executors
+      # Prefix for topics used to send integration configurations and validation requests from TBMQ to integration executors.
       topic-prefix: "${TB_KAFKA_IE_DOWNLINK_TOPIC_PREFIX:tbmq.ie.downlink}"
       http:
-        # Kafka topic properties separated by semicolon for `tbmq.ie.downlink.http` topic
+        # Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.http` topic.
         topic-properties: "${TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
-        # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.downlink.http` topic
+        # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.http` topic.
         additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_HTTP_ADDITIONAL_CONSUMER_CONFIG:}"
-        # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.http` topic
+        # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.http` topic.
         additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_HTTP_ADDITIONAL_PRODUCER_CONFIG:}"
       kafka:
-        # Kafka topic properties separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        # Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.kafka` topic.
         topic-properties: "${TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
-        # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.kafka` topic.
         additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_CONSUMER_CONFIG:}"
-        # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.kafka` topic.
         additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_PRODUCER_CONFIG:}"
       mqtt:
-        # Kafka topic properties separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        # Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.mqtt` topic.
         topic-properties: "${TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
-        # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.mqtt` topic.
         additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_MQTT_ADDITIONAL_CONSUMER_CONFIG:}"
-        # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.mqtt` topic.
         additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_MQTT_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-uplink:
-      # Topic for sending messages/events from integration executors to tbmq
+      # Topic for sending messages and events from integration executors to TBMQ.
       topic: "${TB_KAFKA_IE_UPLINK_TOPIC:tbmq.ie.uplink}"
-      # Kafka topic properties separated by semicolon for `tbmq.ie.uplink` topic
+      # Kafka topic properties separated by semicolon for the `tbmq.ie.uplink` topic.
       topic-properties: "${TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
-      # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.uplink` topic
+      # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.uplink` topic.
       additional-consumer-config: "${TB_KAFKA_IE_UPLINK_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs separated by semicolon for `tbmq.ie.uplink` topic
+      # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.uplink` topic.
       additional-producer-config: "${TB_KAFKA_IE_UPLINK_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-uplink-notifications:
-      # Prefix for topics for sending notifications or replies from integration executors to specific tbmq node
+      # Prefix for topics used to send notifications or replies from integration executors to specific TBMQ nodes.
       topic-prefix: "${TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PREFIX:tbmq.ie.uplink.notifications}"
-      # Kafka topic properties separated by semicolon for `tbmq.ie.uplink.notifications` topics
+      # Kafka topic properties separated by semicolon for the `tbmq.ie.uplink.notifications` topics.
       topic-properties: "${TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.uplink.notifications` topic
+      # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.uplink.notifications` topic.
       additional-consumer-config: "${TB_KAFKA_IE_UPLINK_NOTIF_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs separated by semicolon for `tbmq.ie.uplink.notifications` topic
+      # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.uplink.notifications` topic.
       additional-producer-config: "${TB_KAFKA_IE_UPLINK_NOTIF_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-msg:
-      # Kafka topic properties separated by semicolon for `tbmq.msg.ie` topics
+      # Kafka topic properties separated by semicolon for the `tbmq.msg.ie` topics.
       topic-properties: "${TB_KAFKA_IE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.ie` topics
+      # Additional Kafka consumer configs separated by semicolon for the `tbmq.msg.ie` topics.
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
-      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
+      # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.ie` topics.
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
-    # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
+    # Common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string, meaning no prefix is applied.
     kafka-prefix: "${TB_KAFKA_PREFIX:}"
-    # Custom consumer configuration per Kafka topic
+    # Custom consumer configuration per Kafka topic.
     consumer-properties-per-topic:
       tbmq.msg.app.test_client:
 #        - key: max.poll.records
@@ -165,104 +168,102 @@ queue:
 
 # Service parameters
 service:
-  # Microservice type. Allowed value: tbmq-integration-executor
+  # Microservice type. Accepted values: tbmq-integration-executor.
   type: "${TB_SERVICE_TYPE:tbmq-integration-executor}"
-  # Unique id for this service (autogenerated if empty)
+  # Unique ID for this service. Autogenerated if empty.
   id: "${TB_SERVICE_ID:}"
   integrations:
-    # Allow to enable integration on microservice integration executor.
-    # Allowed values: HTTP, KAFKA, MQTT. By default, ALL
+    # Enables or disables specific integration types on this executor.
+    # Accepted values: HTTP, KAFKA, MQTT. Defaults to ALL.
     supported: "${TB_SERVICE_INTEGRATIONS_SUPPORTED:ALL}"
-    # List of integrations to exclude from processing on service/microservice integration executor.
-    # Allowed values: HTTP, KAFKA, MQTT. By default, NONE
+    # List of integration types to exclude from processing on this executor.
+    # Accepted values: HTTP, KAFKA, MQTT. Defaults to NONE.
     excluded: "${TB_SERVICE_INTEGRATIONS_EXCLUDED:NONE}"
 
 # Integration common parameters
 integrations:
   statistics:
-    # Enable/disable integrations statistics
+    # Enables or disables integration statistics.
     enabled: "${INTEGRATIONS_STATISTICS_ENABLED:true}"
-    # Integration statistic persistence frequency in milliseconds
+    # Persistence frequency for integration statistics (in ms).
     persist-frequency: "${INTEGRATIONS_STATISTICS_PERSIST_FREQUENCY:3600000}"
   init:
-    # Maximum connection timeout allowed for integrations in seconds. Any greater user defined timeout will be reduced down to this limit
+    # Maximum connection timeout allowed for integrations (in s). Any greater user-defined timeout will be reduced to this limit.
     connection-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_TIMEOUT_SEC:15}"
-    # Connection check timeout for API request in seconds
+    # Timeout for API connection check requests (in s).
     connection-check-api-request-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_CHECK_API_REQUEST_TIMEOUT_SEC:20}"
   reinit:
-    # Enable/disable integrations hot reinitialization. This process is done for integrations with state 'FAILED'
+    # Enables or disables hot reinitialization of integrations in 'FAILED' state.
     enabled: "${INTEGRATIONS_REINIT_ENABLED:true}"
-    # Checking interval in milliseconds for reinit integrations. Defaults to 5 minutes
+    # Reinitialization check interval for failed integrations (in ms). Defaults to 5 minutes.
     frequency: "${INTEGRATIONS_REINIT_FREQUENCY_MS:300000}"
   destroy:
-    # The duration (in milliseconds) to wait during each iteration of the graceful shutdown process for integrations to terminate properly.
-    # Default value is set to 1 seconds
+    # Duration to wait during each graceful shutdown iteration for integrations to terminate properly (in ms). Defaults to 1 s.
     graceful-timeout-ms: "${INTEGRATIONS_DESTROY_TIMEOUT_MS:1000}"
-    # The number of iterations to attempt a graceful shutdown before forcefully stopping the process
+    # Number of graceful shutdown iterations before forcefully stopping the process.
     count: "${INTEGRATIONS_DESTROY_COUNT:10}"
-    # The maximum duration (in milliseconds) to wait before forcefully stopping the application if the graceful shutdown process has not started or exceeds the allowed time
+    # Maximum duration to wait before forcefully stopping the application if graceful shutdown has not started or exceeded the allowed time (in ms).
     forced-shutdown-timeout-ms: "${INTEGRATIONS_DESTROY_FORCED_SHUTDOWN_TIMEOUT_MS:15000}"
-  # Enable/disable integrations local network hosts
+  # Enables or disables access to local network hosts from integrations.
   allow-local-network-hosts: "${INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS:true}"
   uplink:
-    # Number of threads in the pool to process callbacks of uplink events to tbmq nodes
+    # Number of threads in the pool to process callbacks of uplink events to TBMQ nodes.
     callback-threads-count: "${INTEGRATIONS_UPLINK_THREADS:4}"
   manage:
-    # Number of threads in the pool to process lifecycle events (CREATE/UPDATE/DELETE) of integrations
+    # Number of threads in the pool to process lifecycle events (CREATE/UPDATE/DELETE) of integrations.
     lifecycle-threads-count: "${INTEGRATIONS_MANAGE_LIFECYCLE_THREADS:4}"
-    # Number of threads in the pool to process integration validation requests
+    # Number of threads in the pool to process integration validation requests.
     command-threads-count: "${INTEGRATIONS_MANAGE_COMMAND_THREADS:4}"
   external:
-    # Number of threads in the pool dedicated to handling external operations, such as producing messages to Kafka topics
+    # Number of threads in the pool dedicated to handling external operations, such as producing messages to Kafka topics.
     threads-count: "${INTEGRATIONS_EXTERNAL_THREADS:10}"
   netty:
-    # Netty shared worker group threads count. Defaults to 0 meaning the threads count is number of availableProcessors * 2.
-    # Used to send messages to external MQTT brokers using MQTT bridge (integration)
+    # Number of threads in the Netty shared worker group. Defaults to 0, which sets the count to availableProcessors * 2.
+    # Used to send messages to external MQTT brokers using MQTT bridge (integration).
     threads-count: "${INTEGRATIONS_NETTY_SHARED_GROUP_THREADS:0}"
 
 # Management parameters
 management:
   health:
     diskspace:
-      # Enable/disable disk space health check
+      # Enables or disables disk space health check.
       enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
   endpoint:
     health:
-      # Controls whether health endpoint shows full component details (e.g., Redis, DB, TBMQ).
-      # Options:
-      # - 'never': always hide details (default if security is enabled).
-      # - 'when-authorized': show details only to authenticated users.
-      # - 'always': always include full health details in the response
+      # Controls whether the health endpoint shows full component details (e.g., Redis, DB, TBMQ).
+      # Accepted values:
+      #   never: always hide details (default if security is enabled).
+      #   when-authorized: show details only to authenticated users.
+      #   always: always include full health details in the response.
       show-details: "${HEALTH_SHOW_DETAILS:never}"
   endpoints:
     web:
       exposure:
-        # Specify which Actuator endpoints should be exposed via HTTP.
-        # Use 'health,info' to expose only basic health and information endpoints.
-        # For exposing Prometheus metrics, update this to include 'prometheus' in the list (e.g., 'health,info,prometheus')
+        # Actuator endpoints exposed via HTTP. Use 'health,info' to expose only basic health and information endpoints.
+        # To expose Prometheus metrics, include 'prometheus' in the list (e.g., 'health,info,prometheus').
         include: "${METRICS_ENDPOINTS_EXPOSE:health,info,prometheus}"
 
 # Statistics parameters
 stats:
   ie:
-    # Enable/disable stats printing to the logs
+    # Enables or disables stats printing to the logs.
     enabled: "${STATS_IE_ENABLED:true}"
-    # Period in milliseconds to print stats. Default value corresponds to 1 minute
+    # Print interval for integration executor statistics (in ms). Defaults to 1 minute.
     print-interval-ms: "${STATS_IE_PRINT_INTERVAL_MS:60000}"
   timer:
-    # Metrics percentiles returned by actuator for timer metrics. List of comma-separated (,) double values
+    # Metrics percentiles returned by actuator for timer metrics. List of comma-separated double values.
     percentiles: "${STATS_TIMER_PERCENTILES:0.5}"
   system-info:
-    # Persist frequency of system info (CPU, memory usage, etc.) in seconds
+    # Persistence frequency of system info such as CPU and memory usage (in s).
     persist-frequency: "${STATS_SYSTEM_INFO_PERSIST_FREQUENCY_SEC:60}"
 
 # Event configuration parameters
 event:
   error:
     rate-limits:
-      # If true rate limits will be active
+      # Enables or disables event error rate limiting.
       enabled: "${EVENT_ERROR_RATE_LIMITS_ENABLED:true}"
-      # No more than 5000 messages per hour or 100 messages per minute for all integrations
+      # No more than 5000 messages per hour or 100 messages per minute for all integrations.
       integration: "${EVENT_ERROR_RATE_LIMITS_INTEGRATION:5000:3600,100:60}"
-      # Time (in minutes) to prevent duplicate persistence of rate limit events once the error event rate limit is reached
+      # Time to suppress duplicate persistence of rate limit events after the error rate limit is reached (in minutes).
       ttl-minutes: "${EVENT_ERROR_RATE_LIMITS_TTL:60}"
