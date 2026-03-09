@@ -58,7 +58,7 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLeve
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppPersistedSessionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)

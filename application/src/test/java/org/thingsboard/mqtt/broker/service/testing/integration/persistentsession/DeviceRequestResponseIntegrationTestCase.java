@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = DeviceRequestResponseIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -68,7 +68,8 @@ public class DeviceRequestResponseIntegrationTestCase extends AbstractRequestRes
         persistedClient.connect(getOptions(false, REQUEST_RESPONSE_USER_NAME));
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         assertTrue(receivedMsg.get());
     }

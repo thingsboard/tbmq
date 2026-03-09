@@ -39,6 +39,8 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -46,9 +48,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = SharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -60,6 +63,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     private ClientSessionService clientSessionService;
     @Autowired
     private ClientSubscriptionService clientSubscriptionService;
+    @Autowired
+    private ClientSessionCtxService clientSessionCtxService;
 
     private MqttClient shareSubClient1;
     private MqttClient shareSubClient2;
@@ -123,11 +128,12 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/" + random, Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), pubQos).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
@@ -166,13 +172,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/e", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
-        log.error("The result of awaiting should be [false], actual is: [{}]", await);
+        log.debug("The result of awaiting should be [false], actual is: [{}]", await);
         Assert.assertFalse(await);
 
         //asserts
@@ -212,13 +218,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/d", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
-        log.error("The result of awaiting should be [false], actual is: [{}]", await);
+        log.debug("The result of awaiting should be [false], actual is: [{}]", await);
 
         //asserts
         assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
@@ -226,11 +232,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
-        receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
-        receivedResponses.await(5, TimeUnit.SECONDS);
-
-        //asserts
-        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+        Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get()));
 
         //disconnect clients
         disconnectClient(pubClient);
@@ -257,11 +260,12 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/c", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
@@ -291,11 +295,12 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/b", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
@@ -352,15 +357,21 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("my/test/data", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
         }
+        Thread.sleep(50);
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        Thread.sleep(100);
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionCtx clientCtx = clientSessionCtxService.getClientSessionCtx(shareSubClient1.getClientConfig().getClientId());
+            return clientCtx != null;
+        });
+
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get());
@@ -397,11 +408,12 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("test/topic/a", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(500);
+            Thread.sleep(50);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT, shareSubClient1Group1ReceivedMessages.get() + shareSubClient2Group1ReceivedMessages.get());

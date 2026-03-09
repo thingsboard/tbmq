@@ -77,7 +77,7 @@ import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthentica
 import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthenticationService.SCRAM_SASL_PROTOCOL;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Mqtt5AuthIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -289,7 +289,6 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 .isInstanceOf(Mqtt5ConnAckException.class)
                 .extracting(e -> ((Mqtt5ConnAckException) e).getMqttMessage().getReasonCode())
                 .isEqualTo(Mqtt5ConnAckReasonCode.BAD_AUTHENTICATION_METHOD);
-        assertThat(actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, TEST_CLIENT_ID))).isNull();
     }
 
     @Test

@@ -28,6 +28,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -59,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = JwtJwksAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -218,7 +219,7 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
     }
 
     private MqttClient getMqttClient() throws MqttException {
-        return new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
+        return new MqttClient(SERVER_URI + mqttPort, CLIENT_ID + RandomStringUtils.secure().nextAlphanumeric(10));
     }
 
     private MqttConnectOptions getMqttConnectOptions(String jwt) {

@@ -90,7 +90,7 @@ public abstract class AbstractPubSubIntegrationTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        System.setProperty("tbmq.graceful.shutdown.timeout.sec", "1");
+        System.setProperty("tbmq.graceful.shutdown.timeout.sec", "0");
     }
 
     @Before

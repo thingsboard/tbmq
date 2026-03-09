@@ -47,7 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = UserPropertiesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -131,7 +131,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         subClient.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             assertUserProperties(message.getProperties().getUserProperties());
             latch.countDown();
         }};
@@ -165,7 +165,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         subClient.connect(subCliOptions);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertFalse(message.isRetained());
             Assert.assertEquals("will", new String(message.getPayload()));
 
@@ -218,7 +218,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         CountDownLatch retainedWillLatch = new CountDownLatch(1);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
 
             Assert.assertTrue(message.isRetained());
             Assert.assertEquals("willRetained", new String(message.getPayload()));

@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Mqtt5IntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -57,7 +57,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("will", new String(message.getPayload()));
 
             latch.countDown();
@@ -95,7 +95,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("will", new String(message.getPayload()));
             lastWillReceived.set(true);
         }};
@@ -139,7 +139,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("will", new String(message.getPayload()));
             latch.countDown();
         }};
@@ -177,7 +177,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("will", new String(message.getPayload()));
             latch.countDown();
         }};
@@ -221,7 +221,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClientMqtt5.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("test123", new String(message.getPayload()));
             Assert.assertEquals(2, message.getQos());
             Assert.assertNotNull(message.getProperties());
@@ -236,7 +236,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
                 new org.eclipse.paho.client.mqttv3.MqttClient(SERVER_URI + mqttPort, "subClientMqtt3");
         subClientMqtt3.connect();
         subClientMqtt3.subscribe(MY_TOPIC, 2, (topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message);
+            log.debug("[{}] Received msg: {}", topic, message);
             Assert.assertEquals("test123", new String(message.getPayload()));
             Assert.assertEquals(2, message.getQos());
 
@@ -270,7 +270,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         client.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("myMsg", new String(message.getPayload()));
 
             latch.countDown();
@@ -296,7 +296,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         client.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals("myMsg", new String(message.getPayload()));
 
             latch.countDown();

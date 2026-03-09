@@ -43,7 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = MqttSubscriptionOptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -109,7 +109,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         CountDownLatch latch = new CountDownLatch(3);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertTrue(message.isRetained());
 
@@ -124,7 +124,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         CountDownLatch latch = new CountDownLatch(3);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertFalse(message.isRetained());
 
@@ -215,7 +215,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         subClient.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertTrue(message.isRetained());
 
@@ -248,7 +248,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         subClient.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            log.debug("[{}] Received msg: {}", topic, message.getProperties());
             Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertFalse(message.isRetained());
 

@@ -49,7 +49,8 @@ public class IntegrationTestInitService {
                                BiConsumer<Waiter, Integer> publisherInitializer) throws Throwable {
         Waiter subscribersWaiter = new Waiter();
         CountDownLatch connectingSubscribers = new CountDownLatch(SUBSCRIBERS_COUNT);
-        executor = Executors.newFixedThreadPool(PUBLISHERS_COUNT);
+        executor.shutdownNow();
+        executor = Executors.newFixedThreadPool(SUBSCRIBERS_COUNT + PUBLISHERS_COUNT);
         for (int i = 0; i < SUBSCRIBERS_COUNT; i++) {
             int finalI = i;
             executor.execute(() -> {

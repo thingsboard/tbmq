@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = RequestResponseIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -62,7 +62,8 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         MqttClient subClient = connectClientAndSubscribe(new MqttConnectionOptions(), receivedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -81,7 +82,8 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         connectPubClientSendMsgAndClose(CORRELATION_DATA, RESPONSE_TOPIC, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -96,7 +98,7 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             assertEquals(RESPONSE_TOPIC, msg.getProperties().getResponseTopic());
             assertNull(msg.getProperties().getCorrelationData());
             receivedMsg.set(true);
@@ -108,7 +110,8 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         connectPubClientSendMsgAndClose(null, RESPONSE_TOPIC, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -123,7 +126,7 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             assertNull(msg.getProperties().getResponseTopic());
             assertEquals(new String(CORRELATION_DATA, StandardCharsets.UTF_8), new String(msg.getProperties().getCorrelationData(), StandardCharsets.UTF_8));
             receivedMsg.set(true);
@@ -135,7 +138,8 @@ public class RequestResponseIntegrationTestCase extends AbstractRequestResponseI
         connectPubClientSendMsgAndClose(CORRELATION_DATA, null, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 

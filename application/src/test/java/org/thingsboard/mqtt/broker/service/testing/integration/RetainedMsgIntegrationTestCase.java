@@ -42,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = RetainedMsgIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -66,7 +66,8 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("test/+", receivedRetainedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         disconnectAndCloseClient(subClient);
 
@@ -83,7 +84,8 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         createPubClientPublishRetainedMsgAndClose("online".getBytes());
 
         boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         disconnectAndCloseClient(subClient);
 
@@ -107,7 +109,8 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("expiration/retain", receivedRetainedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         disconnectAndCloseClient(subClient);
 
@@ -133,7 +136,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("expiration/retain", receivedRetainedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
 
         disconnectAndCloseClient(subClient);
 
@@ -142,10 +145,10 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
 
     private MqttClient createSubClientSubscribeToRetainedMsgTopicAndCheckMsg(String topicFilter, AtomicBoolean receivedRetainedMsg,
                                                                              CountDownLatch receivedResponses) throws MqttException {
-        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, message) -> {
-            log.error("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
+            log.debug("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
             if (message.isRetained()) {
                 receivedRetainedMsg.set(true);
             }
@@ -157,7 +160,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
     }
 
     private void createPubClientPublishRetainedMsgAndClose(byte[] payload) throws MqttException {
-        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "test_pub_client");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.secure().nextAlphanumeric(10));
         pubClient.connect();
         pubClient.publish(TEST_RETAIN_TOPIC, payload, 1, true);
         disconnectAndCloseClient(pubClient);

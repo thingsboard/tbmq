@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppBackpressureIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "listener.write_buffer_high_water_mark=64",
@@ -129,7 +129,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
 
         AtomicInteger counter = new AtomicInteger();
         MqttHandler mqttHandler = (topic, payload) -> {
-            log.error("[{}] Received msg: {}", topic, counter.incrementAndGet());
+            log.debug("[{}] Received msg: {}", topic, counter.incrementAndGet());
             latch.countDown();
             return Futures.immediateVoidFuture();
         };

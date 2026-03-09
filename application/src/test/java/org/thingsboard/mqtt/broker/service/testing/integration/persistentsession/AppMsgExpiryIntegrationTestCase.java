@@ -46,7 +46,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppMsgExpiryIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -84,7 +84,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         persistedClient = new MqttClient(SERVER_URI + mqttPort, APP_MSG_EXPIRY_CLIENT);
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             receivedExpirationMsg.set(true);
             receivedResponses.countDown();
         }};
@@ -104,7 +104,8 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
 
         boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
+        assertTrue(await);
 
         assertTrue(receivedExpirationMsg.get());
     }
@@ -117,7 +118,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         persistedClient = new MqttClient(SERVER_URI + mqttPort, APP_MSG_EXPIRY_CLIENT);
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             receivedExpirationMsg.set(true);
             receivedResponses.countDown();
         }};
@@ -139,7 +140,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
 
         boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.debug("The result of awaiting is: [{}]", await);
 
         assertFalse(receivedExpirationMsg.get());
     }

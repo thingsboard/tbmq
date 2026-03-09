@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = PayloadFormatAndContentTypesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -63,7 +63,8 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         MqttClient subClient = connectClientAndSubscribe(new MqttConnectionOptions(), receivedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -84,7 +85,8 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         connectPubClientSendMsgAndClose(true, CONTENT_TYPE, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -99,7 +101,7 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             assertEquals(CONTENT_TYPE, msg.getProperties().getContentType());
             assertFalse(msg.getProperties().getPayloadFormat());
             receivedMsg.set(true);
@@ -111,7 +113,8 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         connectPubClientSendMsgAndClose(false, CONTENT_TYPE, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 
@@ -126,7 +129,7 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             assertNull(msg.getProperties().getContentType());
             assertTrue(msg.getProperties().getPayloadFormat());
             receivedMsg.set(true);
@@ -138,7 +141,8 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         connectPubClientSendMsgAndClose(true, null, false);
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting of message receiving is: [{}]", await);
+        log.debug("The result of awaiting of message receiving is: [{}]", await);
+        assertTrue(await);
 
         TestUtils.disconnectAndCloseClient(subClient);
 

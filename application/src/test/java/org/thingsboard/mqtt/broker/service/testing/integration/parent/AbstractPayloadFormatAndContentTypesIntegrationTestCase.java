@@ -66,7 +66,7 @@ public abstract class AbstractPayloadFormatAndContentTypesIntegrationTestCase ex
         persistedClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         persistedClient.connect(connectionOptions);
         IMqttMessageListener[] listeners = {(topic, msg) -> {
-            log.error("[{}] Received msg with id: {}", topic, msg.getId());
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
             assertEquals(CONTENT_TYPE, msg.getProperties().getContentType());
             assertTrue(msg.getProperties().getPayloadFormat());
             receivedMsg.set(true);

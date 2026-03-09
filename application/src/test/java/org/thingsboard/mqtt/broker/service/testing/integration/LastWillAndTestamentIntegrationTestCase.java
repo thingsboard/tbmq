@@ -20,7 +20,6 @@ import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -36,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = LastWillAndTestamentIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -90,9 +89,4 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
         subClient.close();
     }
 
-    @Test
-    public void testLastWillOnProtocolError() {
-        // TODO implement own MqttClient with possibility to violate MQTT protocol and trigger LastWill msg
-        Assert.assertEquals(1, 1);
-    }
 }
