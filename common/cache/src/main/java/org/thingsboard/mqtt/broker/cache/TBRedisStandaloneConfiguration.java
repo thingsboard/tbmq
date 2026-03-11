@@ -69,9 +69,6 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
     @Value("${redis.password:}")
     private String password;
 
-    @Value("${redis.ssl.enabled:false}")
-    private boolean useSsl;
-
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder().database(db);
@@ -81,7 +78,7 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
         if (StringUtils.isNotEmpty(password)) {
             clientConfigBuilder.password(password);
         }
-        if (useSsl) {
+        if (sslEnabled) {
             clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
         }
         if (useDefaultClientConfig) {
@@ -95,7 +92,7 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
 
     @Override
     protected JedisConnectionFactory loadFactory() {
-        if (useDefaultClientConfig && !useSsl) {
+        if (useDefaultClientConfig && !sslEnabled) {
             return new JedisConnectionFactory(getRedisConfiguration());
         }
         return new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
@@ -127,7 +124,7 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
                 builder.usePooling().poolConfig(buildPoolConfig());
             }
         }
-        if (useSsl) {
+        if (sslEnabled) {
             builder.useSsl().sslSocketFactory(createSslSocketFactory());
         }
         return builder.build();

@@ -57,9 +57,6 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
     @Value("${redis.password:}")
     private String password;
 
-    @Value("${redis.ssl.enabled:false}")
-    private boolean useSsl;
-
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder();
@@ -69,7 +66,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
         if (StringUtils.isNotEmpty(password)) {
             clientConfigBuilder.password(password);
         }
-        if (useSsl) {
+        if (sslEnabled) {
             clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
         }
         ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
@@ -86,7 +83,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
         if (!useDefaultPoolConfig) {
             builder.usePooling().poolConfig(buildPoolConfig());
         }
-        if (useSsl) {
+        if (sslEnabled) {
             builder.useSsl().sslSocketFactory(createSslSocketFactory());
         }
         return builder.build();
@@ -119,7 +116,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
                 .builder()
                 .timeoutOptions(TimeoutOptions.enabled())
                 .topologyRefreshOptions(topologyRefreshOptions);
-        if (useSsl) {
+        if (sslEnabled) {
             builder.sslOptions(createLettuceSslOptions());
         }
         return builder.build();
