@@ -1119,8 +1119,21 @@ redis:
     useDefaultPoolConfig: "${REDIS_SENTINEL_USE_DEFAULT_POOL_CONFIG:true}"
   # DB index.
   db: "${REDIS_DB:0}"
+  # Username for Redis ACL authentication (Redis 6+). Optional.
+  username: "${REDIS_USERNAME:}"
   # DB password.
   password: "${REDIS_PASSWORD:}"
+  # SSL/TLS configuration parameters
+  ssl:
+    # Enables or disables TLS for Redis connections. Applies to all connection types: standalone, sentinel, cluster.
+    enabled: "${REDIS_SSL_ENABLED:false}"
+    credentials:
+      # Path to the CA certificate PEM file used to verify the Redis server certificate. Required when SSL is enabled.
+      cert_file: "${REDIS_SSL_CERT_FILE:}"
+      # Path to the client certificate PEM file. Required only for mutual TLS (mTLS). Optional.
+      user_cert_file: "${REDIS_SSL_USER_CERT_FILE:}"
+      # Path to the client private key PEM file. Required only for mutual TLS (mTLS). Optional.
+      user_key_file: "${REDIS_SSL_USER_KEY_FILE:}"
   # Pool config.
   pool_config:
     # Maximum number of connections that can be allocated by the connection pool.

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
@@ -50,14 +51,26 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
     @Value("${redis.db:0}")
     private int database;
 
+    @Value("${redis.username:}")
+    private String username;
+
     @Value("${redis.password:}")
     private String password;
+
+    @Value("${redis.ssl.enabled:false}")
+    private boolean useSsl;
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
         Builder masterClientConfigBuilder = DefaultJedisClientConfig.builder().database(database);
+        if (StringUtils.isNotEmpty(username)) {
+            masterClientConfigBuilder.user(username);
+        }
         if (StringUtils.isNotEmpty(password)) {
             masterClientConfigBuilder.password(password);
+        }
+        if (useSsl) {
+            masterClientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
         }
         Builder sentinelClientConfigBuilder = DefaultJedisClientConfig.builder();
         if (StringUtils.isNotEmpty(sentinelPassword)) {
@@ -69,9 +82,18 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
 
     @Override
     protected JedisConnectionFactory loadFactory() {
-        return useDefaultPoolConfig ?
-                new JedisConnectionFactory(getRedisConfiguration()) :
-                new JedisConnectionFactory(getRedisConfiguration(), buildPoolConfig());
+        return new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
+    }
+
+    private JedisClientConfiguration buildClientConfig() {
+        var builder = JedisClientConfiguration.builder();
+        if (!useDefaultPoolConfig) {
+            builder.usePooling().poolConfig(buildPoolConfig());
+        }
+        if (useSsl) {
+            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+        }
+        return builder.build();
     }
 
     @Override
@@ -85,6 +107,7 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
         redisSentinelConfiguration.setMaster(master);
         redisSentinelConfiguration.setSentinels(getNodes(sentinels));
         redisSentinelConfiguration.setSentinelPassword(sentinelPassword);
+        redisSentinelConfiguration.setUsername(username);
         redisSentinelConfiguration.setPassword(password);
         redisSentinelConfiguration.setDatabase(database);
         return redisSentinelConfiguration;
