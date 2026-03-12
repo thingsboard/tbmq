@@ -27,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -36,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -78,9 +80,19 @@ public class TBRedisTlsConnectionTest {
             KeyPair caKeyPair = RedisTlsCertGenerator.generateKeyPair();
             X509Certificate caCert = RedisTlsCertGenerator.generateCaCert(caKeyPair);
 
-            // Server cert must have SAN for localhost so the TLS handshake hostname check passes.
+            // Determine the address the test JVM will use to reach the container.
+            // On CI this is often a Docker bridge gateway IP (e.g. 172.18.0.1);
+            // locally it may be "localhost" or "127.0.0.1".
+            String dockerHost = DockerClientFactory.instance().dockerHostIpAddress();
+            boolean dockerHostIsIp = dockerHost.matches("\\d+\\.\\d+\\.\\d+\\.\\d+");
+
+            List<String> ipSans = dockerHostIsIp ? List.of(dockerHost, "127.0.0.1") : List.of("127.0.0.1");
+            List<String> dnsSans = dockerHostIsIp ? List.of("localhost") : List.of(dockerHost, "localhost");
+
+            // Server cert SANs must cover every IP/hostname the client may connect through.
             KeyPair serverKeyPair = RedisTlsCertGenerator.generateKeyPair();
-            X509Certificate serverCert = RedisTlsCertGenerator.generateSignedCert(serverKeyPair, caKeyPair, caCert, "localhost", true);
+            X509Certificate serverCert = RedisTlsCertGenerator.generateSignedCert(
+                    serverKeyPair, caKeyPair, caCert, "localhost", ipSans, dnsSans);
 
             KeyPair clientKeyPair = RedisTlsCertGenerator.generateKeyPair();
             X509Certificate clientCert = RedisTlsCertGenerator.generateSignedCert(clientKeyPair, caKeyPair, caCert, "tbmq-client");

@@ -19,6 +19,8 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+
+import java.util.List;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -71,13 +73,14 @@ class RedisTlsCertGenerator {
     }
 
     /**
-     * Generates a certificate signed by the provided CA.
-     *
-     * @param addLocalhostSan when {@code true}, adds SAN entries for {@code localhost} and {@code 127.0.0.1};
-     *                        required for server certificates used in TLS connections to localhost.
+     * Generates a certificate signed by the provided CA with explicit SAN IP and DNS entries.
+     * Required for server certificates: the IP list must include every address the test JVM
+     * may use to reach the container (e.g. {@code 127.0.0.1} locally, or the Docker bridge
+     * gateway IP such as {@code 172.18.0.1} in CI environments).
      */
     static X509Certificate generateSignedCert(
-            KeyPair keyPair, KeyPair caKeyPair, X509Certificate caCert, String cn, boolean addLocalhostSan) throws Exception {
+            KeyPair keyPair, KeyPair caKeyPair, X509Certificate caCert, String cn,
+            List<String> ipSans, List<String> dnsSans) throws Exception {
         long now = System.currentTimeMillis();
         X500Principal subject = new X500Principal("CN=" + cn + ",O=TBMQ-Test");
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(caKeyPair.getPrivate());
@@ -86,18 +89,20 @@ class RedisTlsCertGenerator {
                 BigInteger.valueOf(SERIAL.getAndIncrement()),
                 new Date(now), new Date(now + TimeUnit.DAYS.toMillis(365)),
                 subject, keyPair.getPublic());
-        if (addLocalhostSan) {
-            builder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(new GeneralName[]{
-                    new GeneralName(GeneralName.iPAddress, "127.0.0.1"),
-                    new GeneralName(GeneralName.dNSName, "localhost")
-            }));
+        if (!ipSans.isEmpty() || !dnsSans.isEmpty()) {
+            List<GeneralName> names = new java.util.ArrayList<>();
+            ipSans.forEach(ip -> names.add(new GeneralName(GeneralName.iPAddress, ip)));
+            dnsSans.forEach(dns -> names.add(new GeneralName(GeneralName.dNSName, dns)));
+            builder.addExtension(Extension.subjectAlternativeName, false,
+                    new GeneralNames(names.toArray(new GeneralName[0])));
         }
         return new JcaX509CertificateConverter().setProvider("BC").getCertificate(builder.build(signer));
     }
 
+    /** Generates a certificate signed by the provided CA with no SAN entries (suitable for client certs). */
     static X509Certificate generateSignedCert(
             KeyPair keyPair, KeyPair caKeyPair, X509Certificate caCert, String cn) throws Exception {
-        return generateSignedCert(keyPair, caKeyPair, caCert, cn, false);
+        return generateSignedCert(keyPair, caKeyPair, caCert, cn, List.of(), List.of());
     }
 
     static void writePem(Path file, Object obj) throws Exception {
