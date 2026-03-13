@@ -35,6 +35,8 @@ public interface MqttClientCredentialsService {
 
     void deleteCredentials(UUID id);
 
+    void deleteCredentials(MqttClientCredentials credentials);
+
     List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds);
 
     MqttClientCredentials findSystemWebSocketCredentials();

@@ -37,7 +37,7 @@ public class DefaultTbMqttClientCredentialsService extends AbstractTbEntityServi
 
     @Override
     public void delete(MqttClientCredentials credentials, User currentUser) {
-        mqttClientCredentialsService.deleteCredentials(credentials.getId());
+        mqttClientCredentialsService.deleteCredentials(credentials);
     }
 
 }
