@@ -63,14 +63,23 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
     @Value("${redis.db:0}")
     private int db;
 
+    @Value("${redis.username:}")
+    private String username;
+
     @Value("${redis.password:}")
     private String password;
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder().database(db);
+        if (StringUtils.isNotEmpty(username)) {
+            clientConfigBuilder.user(username);
+        }
         if (StringUtils.isNotEmpty(password)) {
             clientConfigBuilder.password(password);
+        }
+        if (sslEnabled) {
+            clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
         }
         if (useDefaultClientConfig) {
             return new JedisPooled(new HostAndPort(host, port), clientConfigBuilder.build());
@@ -83,9 +92,10 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
 
     @Override
     protected JedisConnectionFactory loadFactory() {
-        return useDefaultClientConfig ?
-                new JedisConnectionFactory(getRedisConfiguration()) :
-                new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
+        if (useDefaultClientConfig && !sslEnabled) {
+            return new JedisConnectionFactory(getRedisConfiguration());
+        }
+        return new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
     }
 
     @Override
@@ -99,23 +109,24 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
         standaloneConfiguration.setHostName(host);
         standaloneConfiguration.setPort(port);
         standaloneConfiguration.setDatabase(db);
+        standaloneConfiguration.setUsername(username);
         standaloneConfiguration.setPassword(password);
         return standaloneConfiguration;
     }
 
     private JedisClientConfiguration buildClientConfig() {
-        if (usePoolConfig) {
-            return JedisClientConfiguration.builder()
-                    .clientName(clientName)
+        var builder = JedisClientConfiguration.builder();
+        if (!useDefaultClientConfig) {
+            builder.clientName(clientName)
                     .connectTimeout(Duration.ofMillis(connectTimeout))
-                    .readTimeout(Duration.ofMillis(readTimeout))
-                    .usePooling().poolConfig(buildPoolConfig())
-                    .build();
-        } else {
-            return JedisClientConfiguration.builder()
-                    .clientName(clientName)
-                    .connectTimeout(Duration.ofMillis(connectTimeout))
-                    .readTimeout(Duration.ofMillis(readTimeout)).build();
+                    .readTimeout(Duration.ofMillis(readTimeout));
+            if (usePoolConfig) {
+                builder.usePooling().poolConfig(buildPoolConfig());
+            }
         }
+        if (sslEnabled) {
+            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+        }
+        return builder.build();
     }
 }

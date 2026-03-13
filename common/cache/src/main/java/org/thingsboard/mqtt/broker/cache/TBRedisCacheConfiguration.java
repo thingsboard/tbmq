@@ -19,9 +19,11 @@ import io.github.bucket4j.distributed.serialization.Mapper;
 import io.github.bucket4j.redis.jedis.Bucket4jJedis;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SslOptions;
 import io.lettuce.core.TimeoutOptions;
 import lombok.Data;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -40,12 +42,23 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.UnifiedJedis;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.CertPath;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,6 +109,12 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     @Value("${redis.pool_config.blockWhenExhausted:true}")
     private boolean blockWhenExhausted;
 
+    @Value("${redis.ssl.enabled:false}")
+    protected boolean sslEnabled;
+
+    @Autowired
+    private RedisSslCredentials redisSslCredentials;
+
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
         return loadFactory();
@@ -115,11 +134,19 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
                 .commandTimeout(Duration.ofSeconds(lettuceConfig.getCommandTimeout()))
                 .clientOptions(getLettuceClientOptions());
 
+        if (sslEnabled) {
+            lettucePoolingClientConfigBuilder.useSsl();
+        }
+
         return new LettuceConnectionFactory(getRedisConfiguration(), lettucePoolingClientConfigBuilder.build());
     }
 
     protected ClientOptions getLettuceClientOptions() {
-        return ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled()).build();
+        ClientOptions.Builder builder = ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled());
+        if (sslEnabled) {
+            builder.sslOptions(createLettuceSslOptions());
+        }
+        return builder.build();
     }
 
     protected abstract JedisConnectionFactory loadFactory();
@@ -200,6 +227,77 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         poolConfig.setMaxWait(Duration.ofMillis(maxWaitMills));
         poolConfig.setNumTestsPerEvictionRun(numberTestsPerEvictionRun);
         poolConfig.setBlockWhenExhausted(blockWhenExhausted);
+    }
+
+    protected SSLSocketFactory createSslSocketFactory() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            KeyManagerFactory kmf = createAndInitKeyManagerFactory();
+            TrustManagerFactory tmf = createAndInitTrustManagerFactory();
+            sslContext.init(kmf == null ? null : kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            return sslContext.getSocketFactory();
+        } catch (Exception e) {
+            throw new RuntimeException("Creating TLS socket factory for Redis failed!", e);
+        }
+    }
+
+    protected SslOptions createLettuceSslOptions() {
+        try {
+            TrustManagerFactory tmf = createAndInitTrustManagerFactory();
+            KeyManagerFactory kmf = createAndInitKeyManagerFactory();
+            SslOptions.Builder builder = SslOptions.builder().jdkSslProvider().trustManager(tmf);
+            if (kmf != null) {
+                builder.keyManager(kmf);
+            }
+            return builder.build();
+        } catch (Exception e) {
+            throw new RuntimeException("Creating TLS options for Redis (Lettuce) failed!", e);
+        }
+    }
+
+    private TrustManagerFactory createAndInitTrustManagerFactory() throws Exception {
+        List<X509Certificate> caCerts = SslUtil.readCertFileByPath(redisSslCredentials.getCertFile());
+        KeyStore caKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        caKeyStore.load(null, null);
+        for (X509Certificate caCert : caCerts) {
+            caKeyStore.setCertificateEntry("redis-ca-cert-" + caCert.getSubjectX500Principal().getName(), caCert);
+        }
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(caKeyStore);
+        return tmf;
+    }
+
+    private KeyManagerFactory createAndInitKeyManagerFactory() throws Exception {
+        KeyStore keyStore = loadKeyStore();
+        if (keyStore == null) {
+            return null;
+        }
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, null);
+        return kmf;
+    }
+
+    private KeyStore loadKeyStore() throws Exception {
+        if (StringUtils.isBlank(redisSslCredentials.getUserCertFile()) || StringUtils.isBlank(redisSslCredentials.getUserKeyFile())) {
+            return null;
+        }
+        List<X509Certificate> certificates = SslUtil.readCertFileByPath(redisSslCredentials.getUserCertFile());
+        PrivateKey privateKey = SslUtil.readPrivateKeyByFilePath(redisSslCredentials.getUserKeyFile(), null);
+
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(null);
+        List<X509Certificate> unique = certificates.stream().distinct().toList();
+        for (X509Certificate cert : unique) {
+            keyStore.setCertificateEntry("redis-cert-" + cert.getSubjectX500Principal().getName(), cert);
+        }
+        if (privateKey != null) {
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            CertPath certPath = factory.generateCertPath(certificates);
+            List<? extends Certificate> path = certPath.getCertificates();
+            Certificate[] x509Certificates = path.toArray(new Certificate[0]);
+            keyStore.setKeyEntry("redis-private-key", privateKey, null, x509Certificates);
+        }
+        return keyStore;
     }
 
     protected List<RedisNode> getNodes(String nodes) {

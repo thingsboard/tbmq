@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CacheProperties.class, LettuceConfig.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
+@ContextConfiguration(classes = {CacheProperties.class, LettuceConfig.class, RedisSslCredentials.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "redis.connection.type=standalone",

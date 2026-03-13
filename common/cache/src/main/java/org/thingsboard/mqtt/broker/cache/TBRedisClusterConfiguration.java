@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
@@ -50,14 +51,23 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
     @Value("${redis.cluster.useDefaultPoolConfig:true}")
     private boolean useDefaultPoolConfig;
 
+    @Value("${redis.username:}")
+    private String username;
+
     @Value("${redis.password:}")
     private String password;
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder();
+        if (StringUtils.isNotEmpty(username)) {
+            clientConfigBuilder.user(username);
+        }
         if (StringUtils.isNotEmpty(password)) {
             clientConfigBuilder.password(password);
+        }
+        if (sslEnabled) {
+            clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
         }
         ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
         return new JedisCluster(toHostAndPort(clusterNodes), clientConfigBuilder.build(), JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
@@ -65,9 +75,18 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
 
     @Override
     protected JedisConnectionFactory loadFactory() {
-        return useDefaultPoolConfig ?
-                new JedisConnectionFactory(getRedisConfiguration()) :
-                new JedisConnectionFactory(getRedisConfiguration(), buildPoolConfig());
+        return new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
+    }
+
+    private JedisClientConfiguration buildClientConfig() {
+        var builder = JedisClientConfiguration.builder();
+        if (!useDefaultPoolConfig) {
+            builder.usePooling().poolConfig(buildPoolConfig());
+        }
+        if (sslEnabled) {
+            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+        }
+        return builder.build();
     }
 
     @Override
@@ -80,6 +99,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
         var clusterConfiguration = new RedisClusterConfiguration();
         clusterConfiguration.setClusterNodes(getNodes(clusterNodes));
         clusterConfiguration.setMaxRedirects(maxRedirects);
+        clusterConfiguration.setUsername(username);
         clusterConfiguration.setPassword(password);
         return clusterConfiguration;
     }
@@ -92,11 +112,14 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
                 .enableAllAdaptiveRefreshTriggers()
                 .build();
 
-        return ClusterClientOptions
+        ClusterClientOptions.Builder builder = ClusterClientOptions
                 .builder()
                 .timeoutOptions(TimeoutOptions.enabled())
-                .topologyRefreshOptions(topologyRefreshOptions)
-                .build();
+                .topologyRefreshOptions(topologyRefreshOptions);
+        if (sslEnabled) {
+            builder.sslOptions(createLettuceSslOptions());
+        }
+        return builder.build();
     }
 
 }
