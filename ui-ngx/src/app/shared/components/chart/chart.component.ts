@@ -268,11 +268,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
 
   private setListeners(ctx: HTMLCanvasElement) {
     this.chart.options.plugins.tooltip.callbacks.label = (context) => {
-      if (this.chartView() === ChartView.detailed && this.entityIds().length !== 1) {
-        const hasData = (context.dataset.data as any[]).some(d => d.value > 0);
-        if (!hasData) {
-          return null;
-        }
+      if (context.parsed.y === 0 && context.dataset.label !== TOTAL_ENTITY_ID) {
+        return null;
       }
       const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
       const unit = this.chartIntervalUnit() ? ` ${this.chartIntervalUnit()}` : '';
