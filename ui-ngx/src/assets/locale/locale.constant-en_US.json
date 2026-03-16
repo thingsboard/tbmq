@@ -503,6 +503,8 @@
         "drop-file-csv-or": "Drag and drop a CSV file or",
         "import-csv-invalid-format-error": "Invalid file format. Line: '{{line}}'",
         "import-csv-number-columns-error": "A file should contain at least two columns",
+        "import-csv-empty-file-error": "The file contains no data rows",
+        "unsupported-file-type": "Unsupported file type. Allowed: {{extensions}}",
         "no-file": "No file selected",
         "message": {
             "create-entities": "{{count}} new entities were successfully created.",
