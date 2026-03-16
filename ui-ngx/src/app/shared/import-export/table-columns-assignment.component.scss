@@ -17,16 +17,15 @@
   overflow-x: auto;
 
   .mat-column-order {
-    flex: 0 0 40px;
+    min-width: 10px;
+    max-width: 10px;
   }
   .mat-column-sampleData {
     flex: 0 0 120px;
-    min-width: 120px;
-    max-width: 230px;
   }
   .mat-column-type {
-    flex: 0 0 180px;
-    min-width: 180px;
+    min-width: 140px;
+    max-width: 140px;
   }
   .mat-column-key {
     flex: 0 0 120px;

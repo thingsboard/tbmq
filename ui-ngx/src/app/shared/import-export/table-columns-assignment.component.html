@@ -17,7 +17,7 @@
 -->
 <table mat-table [dataSource]="dataSource">
   <ng-container matColumnDef="order">
-    <mat-header-cell *matHeaderCellDef style="min-width: 40px; max-width: 40px; width: 40px"></mat-header-cell>
+    <mat-header-cell *matHeaderCellDef class="mat-column-order"></mat-header-cell>
     <mat-cell *matCellDef="let column; let i = index">
       {{ (i+1) }}
     </mat-cell>
