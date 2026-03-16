@@ -194,13 +194,22 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
         const importData: string = this.selectFileFormGroup.get('importData').value;
         const parseData = this.parseCSV(importData);
         if (parseData === -1) {
-          this.importStepper.previous();
           this.importStepper.selected.reset();
+          this.importStepper.previous();
         } else {
           this.parseData = parseData as CsvToJsonResult;
-          const columnsParam = this.createColumnsData();
-          this.columnTypesFormGroup.patchValue({columnsParam}, {emitEvent: true});
-          this.importStepper.next();
+          if (!this.parseData.rows?.length) {
+            this.store.dispatch(new ActionNotificationShow({
+              message: this.translate.instant('import.import-csv-empty-file-error'),
+              type: 'error'
+            }));
+            this.importStepper.selected.reset();
+            this.importStepper.previous();
+          } else {
+            const columnsParam = this.createColumnsData();
+            this.columnTypesFormGroup.patchValue({columnsParam}, {emitEvent: true});
+            this.importStepper.next();
+          }
         }
         break;
       case 4:
@@ -239,11 +248,13 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
       if (isHeader) {
         const headerColumnName = this.parseData.headers[i].toUpperCase();
         findEntityColumnType = this.allowAssignColumn.find(column => column === headerColumnName);
+      } else {
+        findEntityColumnType = this.getDefaultColumnType(i);
       }
-      if (isHeader && findEntityColumnType) {
+      if (findEntityColumnType) {
         columnParam = {
           type: findEntityColumnType,
-          key: this.parseData.headers[i].toLowerCase(),
+          key: isHeader ? this.parseData.headers[i].toLowerCase() : '',
           sampleData: this.parseData.rows[0][i]
         };
       } else {
@@ -256,6 +267,17 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
       columnsParam.push(columnParam);
     }
     return columnsParam;
+  }
+
+  private getDefaultColumnType(index: number): ImportEntityColumnType | undefined {
+    switch (index) {
+      case 0:
+        return ImportEntityColumnType.name;
+      case 1:
+        return ImportEntityColumnType.clientId;
+      default:
+        return undefined;
+    }
   }
 
 
