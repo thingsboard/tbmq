@@ -47,7 +47,7 @@
     }
     @default {}
   }
-  @if (this.displayCheckConnectionProviders.includes(providerType())) {
+  @if (this.displayCheckConnectionProviders.includes(providerType()) && isEdit()) {
     <button mat-stroked-button color="primary"
             [disabled]="providerForm.invalid"
             (click)="onConnectionCheck()">
