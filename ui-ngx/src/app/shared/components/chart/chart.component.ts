@@ -16,7 +16,8 @@
 
 import {
   AfterViewInit,
-  Component, computed,
+  Component,
+  computed,
   input,
   model,
   OnChanges,
@@ -40,24 +41,21 @@ import { TimeseriesService } from '@core/http/timeseries.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   chartJsParams,
-  ChartView,
+  ChartKey,
   CHARTS_TOTAL_ENTITY_ID_ONLY,
+  ChartView,
   getColor,
   MAX_DATAPOINTS_LIMIT,
-  ChartKey,
   TimeseriesData,
   TOTAL_ENTITY_ID,
-  TsValue,
+  TsValue
 } from '@shared/models/chart.model';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import {
-  DataSizeUnit,
-  DataSizeUnitLongTranslationMap,
-} from '@shared/models/ws-client.model';
+import { DataSizeUnit, DataSizeUnitLongTranslationMap } from '@shared/models/ws-client.model';
 import { convertDataSizeUnits, formatLargeNumber } from '@core/utils';
 import { ConfigService } from '@core/http/config.service';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
@@ -296,7 +294,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       pointHoverBorderColor: color,
       pointRadius: 0,
       clip: 5,
-      tension: 0.1,
+      tension: 0.2,
     };
   }
 
