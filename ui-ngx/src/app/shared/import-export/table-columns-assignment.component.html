@@ -17,7 +17,7 @@
 -->
 <table mat-table [dataSource]="dataSource">
   <ng-container matColumnDef="order">
-    <mat-header-cell *matHeaderCellDef style="min-width: 40px; max-width: 40px; width: 40px"></mat-header-cell>
+    <mat-header-cell *matHeaderCellDef class="mat-column-order"></mat-header-cell>
     <mat-cell *matCellDef="let column; let i = index">
       {{ (i+1) }}
     </mat-cell>
@@ -29,9 +29,20 @@
     </mat-cell>
   </ng-container>
   <ng-container matColumnDef="type">
-    <mat-header-cell *matHeaderCellDef class="mat-column-type"> {{ 'import.column-type.column-type' | translate }} </mat-header-cell>
+    <mat-header-cell *matHeaderCellDef class="mat-column-type">
+      {{ 'import.column-type.column-type' | translate }}
+      <mat-icon [class.!hidden]="!hasRequiredFieldsMissing" class="tb-mat-18"
+                style="color: #ff9a00; margin-left: 4px; line-height: 22px;"
+                [matTooltip]="'import.required-columns-missing' | translate">
+        warning
+      </mat-icon>
+    </mat-header-cell>
     <mat-cell *matCellDef="let column">
-      <mat-select [(ngModel)]="column.type" (ngModelChange)="columnsUpdated()">
+      <mat-select [(ngModel)]="column.type" (ngModelChange)="columnsUpdated()"
+                  [class.not-assigned]="column.type === ImportEntityColumnType.unknown">
+        <mat-option [value]="ImportEntityColumnType.unknown" class="not-assigned-option">
+          {{ columnTypesTranslations.get(ImportEntityColumnType.unknown) | translate }}
+        </mat-option>
         @for (type of columnTypes; track type) {
           <mat-option [value]="type.value" [disabled]="type.disabled">
             {{ columnTypesTranslations.get(type.value) | translate }}

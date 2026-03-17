@@ -463,7 +463,14 @@
         "role": "Rol"
     },
     "import": {
-        "no-file": "No se seleccionó archivo"
+        "no-file": "No se seleccionó archivo",
+        "import-csv-empty-file-error": "El archivo no contiene filas de datos",
+        "unsupported-file-type": "Tipo de archivo no compatible. Permitidos: {{extensions}}",
+        "all-columns-must-have-type": "Todas las columnas deben tener un tipo asignado",
+        "required-columns-missing": "Las columnas Nombre y Client ID/Nombre de usuario son obligatorias",
+        "column-type": {
+            "not-assigned": "No asignado"
+        }
     },
     "integration": {
         "integration": "Integración",

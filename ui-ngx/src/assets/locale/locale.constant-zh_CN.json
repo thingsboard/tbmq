@@ -409,7 +409,14 @@
         "role": "角色"
     },
     "import": {
-        "no-file": "未选择文件"
+        "no-file": "未选择文件",
+        "import-csv-empty-file-error": "文件不包含数据行",
+        "unsupported-file-type": "不支持的文件类型。允许: {{extensions}}",
+        "all-columns-must-have-type": "所有列必须分配类型",
+        "required-columns-missing": "列 Name 和 Client ID/Username 是必填项",
+        "column-type": {
+            "not-assigned": "未分配"
+        }
     },
     "integration": {
         "integration": "集成",

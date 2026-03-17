@@ -54,7 +54,7 @@ export class AdvancedSettingsComponent implements OnInit {
     { key: ConfigParams.wsMaxPayloadSize,        labelKey: 'home.broker-settings.ws-max-payload' },
     { key: ConfigParams.wssMaxPayloadSize,       labelKey: 'home.broker-settings.wss-max-payload' },
     { key: ConfigParams.statsCollectionInterval, labelKey: 'home.broker-settings.stats-collection-interval' },
-    { key: ConfigParams.allowKafkaTopicDeletion, labelKey: 'home.broker-settings.kafka-topic-deletion', isBoolean: true },
+    // { key: ConfigParams.allowKafkaTopicDeletion, labelKey: 'home.broker-settings.kafka-topic-deletion', isBoolean: true },
   ];
 
   authParams = {
@@ -102,25 +102,28 @@ export class AdvancedSettingsComponent implements OnInit {
   }
 
   switchAuthProvider(type: MqttAuthProviderType) {
-    const value = !this.authParams[type];
+    const enabled = this.authParams[type];
     if (!this.authProviders) {
       const pageLink = new PageLink(10);
       this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(
         providersPageData => {
           this.authProviders = providersPageData.data;
-          this.updateAuthProvider(type, value);
+          this.updateAuthProvider(type, enabled);
         }
       );
     } else {
-      this.updateAuthProvider(type, value);
+      this.updateAuthProvider(type, enabled);
     }
   }
 
-  private updateAuthProvider(type: MqttAuthProviderType, value: boolean) {
+  private updateAuthProvider(type: MqttAuthProviderType, enabled: boolean) {
     const providerId = this.authProviders.find(e => e.type === type)?.id;
     if (providerId) {
-      this.mqttAuthProviderService.switchAuthProvider(providerId, value).subscribe(
-        () => this.configService.fetchBrokerConfig()
+      this.mqttAuthProviderService.switchAuthProvider(providerId, enabled).subscribe(
+        () => {
+          this.authParams[type] = !enabled;
+          this.configService.fetchBrokerConfig();
+        }
       );
     }
   }

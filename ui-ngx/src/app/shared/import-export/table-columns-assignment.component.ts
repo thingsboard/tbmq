@@ -44,6 +44,8 @@ import {
 } from '@angular/material/table';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { MatDivider } from '@angular/material/divider';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -61,6 +63,8 @@ import { TranslateModule } from '@ngx-translate/core';
     MatHeaderRow,
     MatRow,
     MatDivider,
+    MatIcon,
+    MatTooltip,
     TranslateModule,
     MatHeaderCellDef,
     MatCellDef,
@@ -93,10 +97,12 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
   columnTypes: AssignmentColumnType[] = [];
 
   columnTypesTranslations = importEntityColumnTypeTranslations;
+  ImportEntityColumnType = ImportEntityColumnType;
 
   private columns: CsvColumnParam[];
 
-  private valid = true;
+  valid = true;
+  hasRequiredFieldsMissing = false;
 
   private propagateChangePending = false;
   private propagateChange = null;
@@ -145,6 +151,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
     const hasInvalidColumn = this.columns.findIndex((column) => column.type === ImportEntityColumnType.unknown) > -1;
 
     this.valid = isSelectName && !hasInvalidColumn;
+    this.hasRequiredFieldsMissing = !isSelectName;
 
     this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.name).disabled = isSelectName;
     this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.description).disabled = isSelectDescription;
@@ -158,6 +165,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
       const isSelectPubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.pubAuthRulePatterns) > -1;
 
       this.valid = this.valid && (isSelectClientId || isSelectUsername);
+      this.hasRequiredFieldsMissing = !isSelectName || !(isSelectClientId || isSelectUsername);
 
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientType).disabled = isSelectClientType;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientId).disabled = isSelectClientId;

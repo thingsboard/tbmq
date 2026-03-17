@@ -48,6 +48,7 @@ export const importEntityColumnTypeTranslations = new Map<ImportEntityColumnType
     [ImportEntityColumnType.password, 'import.column-type.password'],
     [ImportEntityColumnType.subAuthRulePatterns, 'import.column-type.sub-auth-rule-patterns'],
     [ImportEntityColumnType.pubAuthRulePatterns, 'import.column-type.pub-auth-rule-patterns'],
+    [ImportEntityColumnType.unknown, 'import.column-type.not-assigned'],
   ]
 );
 

@@ -30,6 +30,7 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FlowDirective, FlowInjectionToken, NgxFlowModule } from '@flowjs/ngx-flow';
@@ -121,6 +122,7 @@ export class FileInputComponent extends PageComponent implements AfterViewInit, 
       if (event.type === 'filesAdded') {
         const readers = [];
         let showMaxSizeAlert = false;
+        let hasRejectedFiles = false;
         (event.event[0] as flowjs.FlowFile[]).forEach(file => {
           if (this.filterFile(file)) {
             if (this.checkMaxSize(file)) {
@@ -128,8 +130,17 @@ export class FileInputComponent extends PageComponent implements AfterViewInit, 
             } else {
               showMaxSizeAlert = true;
             }
+          } else {
+            hasRejectedFiles = true;
           }
         });
+
+        if (hasRejectedFiles) {
+          this.store.dispatch(new ActionNotificationShow({
+            message: this.translate.instant('import.unsupported-file-type', {extensions: this.allowedExtensions()}),
+            type: 'error'
+          }));
+        }
 
         if (showMaxSizeAlert) {
           this.dialog.alert(
