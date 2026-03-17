@@ -463,7 +463,14 @@
         "role": "भूमिका"
     },
     "import": {
-        "no-file": "कोई फ़ाइल चयनित नहीं"
+        "no-file": "कोई फ़ाइल चयनित नहीं",
+        "import-csv-empty-file-error": "फ़ाइल में कोई डेटा पंक्तियाँ नहीं हैं",
+        "unsupported-file-type": "असमर्थित फ़ाइल प्रकार। अनुमत: {{extensions}}",
+        "all-columns-must-have-type": "सभी कॉलम को एक प्रकार असाइन किया जाना चाहिए",
+        "required-columns-missing": "कॉलम Name और Client ID/Username आवश्यक हैं",
+        "column-type": {
+            "not-assigned": "असाइन नहीं किया गया"
+        }
     },
     "integration": {
         "integration": "इंटीग्रेशन",
