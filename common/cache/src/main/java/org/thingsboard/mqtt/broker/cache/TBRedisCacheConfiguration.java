@@ -29,10 +29,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -177,8 +175,7 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
             cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
         }
 
-        RedisCacheWriter cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(cf, BatchStrategies.scan(100));
-        var redisCacheManagerBuilder = RedisCacheManager.builder(cacheWriter).cacheDefaults(configuration)
+        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration)
                 .withInitialCacheConfigurations(cacheConfigurations).transactionAware().disableCreateOnMissingCache();
         if (cacheProperties.getStats().isEnabled()) {
             redisCacheManagerBuilder.enableStatistics();
