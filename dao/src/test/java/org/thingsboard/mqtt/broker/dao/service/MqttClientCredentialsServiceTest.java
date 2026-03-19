@@ -69,6 +69,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         mqttClientCredentialsCache = tbCacheOps.cache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
         basicCredentialsPasswordCache = tbCacheOps.cache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
         sslRegexBasedCredentialsCache = tbCacheOps.cache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+        mqttClientCredentialsCache.clear();
+        basicCredentialsPasswordCache.clear();
+        sslRegexBasedCredentialsCache.clear();
     }
 
     @After
