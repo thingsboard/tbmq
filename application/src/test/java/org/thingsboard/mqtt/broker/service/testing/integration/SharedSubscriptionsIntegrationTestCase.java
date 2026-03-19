@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.MqttClient;
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext(classMode = ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = SharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -118,11 +119,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), cleanSession);
-        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), cleanSession);
+        MqttHandler handler1 = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandler handler2 = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        shareSubClient1 = getClient(handler1, cleanSession);
+        shareSubClient2 = getClient(handler2, cleanSession);
 
-        shareSubClient1.on("$share/g1/test/+/" + random, getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+/" + random, getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/" + random, handler1, subQos).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/" + random, handler2, subQos).get(30, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getMqttPubClient();
@@ -153,11 +156,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttHandler handler1 = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandler handler2 = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        shareSubClient1 = getClient(handler1, false);
+        shareSubClient2 = getClient(handler2, false);
 
-        shareSubClient1.on("$share/g1/test/+/e", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+/e", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/e", handler1, MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/e", handler2, MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
 
         shareSubClient1.disconnect();
         shareSubClient2.disconnect();
@@ -199,11 +204,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttHandler handler1 = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandler handler2 = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        shareSubClient1 = getClient(handler1, false);
+        shareSubClient2 = getClient(handler2, false);
 
-        shareSubClient1.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/d", handler1, MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/d", handler2, MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
 
         shareSubClient1.disconnect();
         shareSubClient2.disconnect();
@@ -250,11 +257,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttHandler handler1 = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandler handler2 = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        shareSubClient1 = getClient(handler1, false);
+        shareSubClient2 = getClient(handler2, false);
 
-        shareSubClient1.on("$share/g1/test/+/c", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+/c", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/c", handler1, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/c", handler2, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getMqttPubClient();
@@ -332,11 +341,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttHandler handler1 = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandler handler2 = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        shareSubClient1 = getClient(handler1, false);
+        shareSubClient2 = getClient(handler2, false);
 
-        shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/my/test/data", handler1, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/my/test/data", handler2, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         Awaitility
                 .await()
