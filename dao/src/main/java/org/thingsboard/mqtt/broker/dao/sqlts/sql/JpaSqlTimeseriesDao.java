@@ -258,6 +258,10 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         }
     }
 
+    public void clearPartitionsCache() {
+        partitions.clear();
+    }
+
     private static long toMills(LocalDateTime time) {
         return time.toInstant(ZoneOffset.UTC).toEpochMilli();
     }

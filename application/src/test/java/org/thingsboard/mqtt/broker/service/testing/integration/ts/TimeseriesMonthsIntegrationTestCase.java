@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.PostgreSqlInitializer;
+import org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import javax.sql.DataSource;
@@ -44,7 +45,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TimeseriesMonthsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "sql.ts_key_value_partitioning=MONTHS"
@@ -62,12 +63,16 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
     private TimeseriesService timeseriesService;
 
     @Autowired
+    private JpaSqlTimeseriesDao jpaSqlTimeseriesDao;
+
+    @Autowired
     protected DataSource dataSource;
 
     @Before
     public void dropTsKvPartitions() {
         try {
             PostgreSqlInitializer.dropTsKvPartitions(dataSource.getConnection());
+            jpaSqlTimeseriesDao.clearPartitionsCache();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
