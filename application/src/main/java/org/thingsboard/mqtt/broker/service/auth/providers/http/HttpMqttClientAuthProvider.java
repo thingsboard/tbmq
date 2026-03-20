@@ -101,7 +101,8 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
                 latch.countDown();
 
             }, throwable -> {
-                if (throwable.getCause() instanceof ReadTimeoutException || throwable.getCause().getCause() instanceof ReadTimeoutException) {
+                Throwable cause = throwable.getCause();
+                if (cause instanceof ReadTimeoutException || (cause != null && cause.getCause() instanceof ReadTimeoutException)) {
                     response.set(AuthResponse.skip("HTTP client read timeout exception!"));
                 } else {
                     response.set(AuthResponse.skip(throwable.getMessage()));
