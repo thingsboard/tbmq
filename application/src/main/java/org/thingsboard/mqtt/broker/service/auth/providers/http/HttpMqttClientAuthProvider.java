@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers.http;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.ReadTimeoutException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -100,7 +101,11 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
                 latch.countDown();
 
             }, throwable -> {
-                response.set(AuthResponse.skip(throwable.getMessage()));
+                if (throwable.getCause() instanceof ReadTimeoutException || throwable.getCause().getCause() instanceof ReadTimeoutException) {
+                    response.set(AuthResponse.skip("HTTP client read timeout exception!"));
+                } else {
+                    response.set(AuthResponse.skip(throwable.getMessage()));
+                }
                 latch.countDown();
             });
 
