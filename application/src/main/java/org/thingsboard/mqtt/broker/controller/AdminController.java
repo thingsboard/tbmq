@@ -87,11 +87,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/settings")
     public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
-        AdminSettings savedAdminSettings = checkNotNull(tbAdminService.saveAdminSettings(adminSettings, getCurrentUser()));
-        if (savedAdminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
-            ((ObjectNode) savedAdminSettings.getJsonValue()).remove("password");
-        }
-        return savedAdminSettings;
+        return checkNotNull(tbAdminService.saveAdminSettings(adminSettings, getCurrentUser()));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

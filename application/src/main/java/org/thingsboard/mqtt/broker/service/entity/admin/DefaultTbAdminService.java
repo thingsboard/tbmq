@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.entity.admin;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -68,6 +69,7 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
                 }
             }
         });
+        sanitizeMailPassword(saved);
         return saved;
     }
 
@@ -76,4 +78,9 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
         return systemSecurityService.saveSecuritySettings(securitySettings);
     }
 
+    private void sanitizeMailPassword(AdminSettings adminSettings) {
+        if (SysAdminSettingType.MAIL.getKey().equals(adminSettings.getKey()) && adminSettings.getJsonValue() instanceof ObjectNode jsonValue) {
+            jsonValue.remove("password");
+        }
+    }
 }
