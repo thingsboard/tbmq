@@ -161,7 +161,7 @@ public class HistoricalStatsTotalConsumerTest {
     }
 
     @Test
-    public void givenStatsMsg_whenReceivePreviousTs_thenCalculateForCurrentTotalTs() {
+    public void givenStatsMsg_whenReceivePreviousTs_thenSkipStaleMessages() {
         List<TsKvEntry> entries = new ArrayList<>();
         var futuresEntry = Futures.immediateFuture(entries);
         when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
@@ -181,7 +181,7 @@ public class HistoricalStatsTotalConsumerTest {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
-        Assert.assertEquals(63, results.getTotalMsgCounter());
+        Assert.assertEquals(40, results.getTotalMsgCounter());
         verify(timeseriesService, times(1)).findLatest(any(), any());
     }
 
@@ -253,7 +253,7 @@ public class HistoricalStatsTotalConsumerTest {
             if (INCOMING_MSGS.equals(key)) {
                 Assert.assertEquals(14, value.getTotalMsgCounter());
             } else if (OUTGOING_MSGS.equals(key)) {
-                Assert.assertEquals(36, value.getTotalMsgCounter());
+                Assert.assertEquals(25, value.getTotalMsgCounter());
             } else {
                 Assert.assertEquals(6, value.getTotalMsgCounter());
             }

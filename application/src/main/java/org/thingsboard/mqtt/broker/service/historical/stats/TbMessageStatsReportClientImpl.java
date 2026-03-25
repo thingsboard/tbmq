@@ -97,7 +97,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void destroy() {
         if (historicalDataReportProperties.isEnabled()) {
             CountDownLatch latch = new CountDownLatch(MSG_RELATED_HISTORICAL_KEYS_COUNT);
-            reportAndPersistStats(getStartOfNextInterval(), latch); // sync; block to persist in Kafka
+            reportAndPersistStats(getStartOfNextCronBoundary(), latch); // sync; block to persist in Kafka
             try {
                 if (!latch.await(5, TimeUnit.SECONDS)) {
                     log.warn("[{}] Timeout waiting for historical messages to be sent on shutdown", serviceId);
@@ -281,8 +281,22 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
-    private long getStartOfNextInterval() {
-        return getStartOfCurrentMinute() + historicalDataReportProperties.getInterval() * ONE_MINUTE_MS;
+    private long getStartOfNextCronBoundary() {
+        return calculateNextCronBoundary(getStartOfCurrentMinute(), historicalDataReportProperties.getInterval());
+    }
+
+    /**
+     * Computes the start of the next cron-aligned minute for the {@code 0 0/N * * * *} schedule.
+     * The cron resets at each hour boundary, so for intervals that don't divide 60 evenly
+     * (e.g. 7 → fires at 0,7,14,...,49,56) the next fire after the last slot is the next hour's :00.
+     */
+    static long calculateNextCronBoundary(long currentMinuteMs, int interval) {
+        long minuteOfHour = (currentMinuteMs / ONE_MINUTE_MS) % 60;
+        long nextAlignedMinute = ((minuteOfHour / interval) + 1) * interval;
+        if (nextAlignedMinute > 59) {
+            nextAlignedMinute = 60; // wrap to next hour's :00
+        }
+        return currentMinuteMs + (nextAlignedMinute - minuteOfHour) * ONE_MINUTE_MS;
     }
 
 }

@@ -156,9 +156,24 @@ public class HistoricalStatsTotalConsumer {
 
     private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
+        long msgTs = msg.getValue().getTs();
         TsMsgTotalPair pair = calculatePairUsingProvidedMsg(msg);
-        TsKvEntry tsKvEntry = new BasicTsKvEntry(pair.getTs(), new LongDataEntry(key, pair.getTotalMsgCounter()));
 
+        long ts;
+        long value;
+        if (pair.getTs() > msgTs) {
+            // Message is from an older interval (e.g. after interval change or shutdown with future ts).
+            // Save it at its own timestamp to avoid data loss, without affecting the current pair.
+            ts = msgTs;
+            value = msg.getValue().getUsageStats().getValue();
+            log.warn("[{}] Received out-of-order historical stats for key {} at ts {} while current pair ts is {}. " +
+                    "Saving at message ts directly. This may happen after a restart with a different reporting interval.", ENTITY_ID_TOTAL, key, ts, pair.getTs());
+        } else {
+            ts = pair.getTs();
+            value = pair.getTotalMsgCounter();
+        }
+
+        TsKvEntry tsKvEntry = new BasicTsKvEntry(ts, new LongDataEntry(key, value));
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, tsKvEntry);
         DonAsynchron.withCallback(savedTsFuture,
                 unused -> log.trace("[{}] Successfully saved timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue()),
@@ -167,12 +182,14 @@ public class HistoricalStatsTotalConsumer {
 
     protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         TsMsgTotalPair pair = getTotalMessageCounterPair(msg);
-        if (pair.getTs() < msg.getValue().getTs()) {
-            pair.setTs(msg.getValue().getTs());
+        long msgTs = msg.getValue().getTs();
+        if (pair.getTs() < msgTs) {
+            pair.setTs(msgTs);
             pair.setTotalMsgCounter(msg.getValue().getUsageStats().getValue());
-        } else {
+        } else if (pair.getTs() == msgTs) {
             pair.addTotalMsg(msg.getValue().getUsageStats().getValue());
         }
+        // else pair.ts > msgTs: stale message from an older interval — skip to avoid inflating the current total
         return pair;
     }
 

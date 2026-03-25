@@ -34,6 +34,8 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -227,6 +229,101 @@ public class TbMessageStatsReportClientImplTest {
 
         // Then
         verify(timeseriesService, never()).saveLatest(anyString(), anyList());
+    }
+
+    // --- calculateNextCronBoundary tests ---
+
+    @Test
+    public void testNextCronBoundary_interval1_alwaysNextMinute() {
+        long minute0 = minuteMs(10, 0);
+        assertEquals(minuteMs(10, 1), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minute0, 1));
+
+        long minute30 = minuteMs(10, 30);
+        assertEquals(minuteMs(10, 31), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minute30, 1));
+
+        long minute59 = minuteMs(10, 59);
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minute59, 1));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval3_onBoundary() {
+        // At minute 0 → next is minute 3
+        assertEquals(minuteMs(10, 3), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 3));
+        // At minute 3 → next is minute 6
+        assertEquals(minuteMs(10, 6), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 3), 3));
+        // At minute 57 → next is minute 60 (i.e. next hour :00)
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 57), 3));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval3_betweenBoundaries() {
+        // At minute 1 → next boundary is minute 3
+        assertEquals(minuteMs(10, 3), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 1), 3));
+        // At minute 2 → next boundary is minute 3
+        assertEquals(minuteMs(10, 3), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 2), 3));
+        // At minute 4 → next boundary is minute 6
+        assertEquals(minuteMs(10, 6), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 4), 3));
+        // At minute 58 → next boundary is minute 60 (next hour :00)
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 58), 3));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval5() {
+        assertEquals(minuteMs(10, 5), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 5));
+        assertEquals(minuteMs(10, 5), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 3), 5));
+        assertEquals(minuteMs(10, 10), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 5), 5));
+        assertEquals(minuteMs(10, 60), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 55), 5));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval15() {
+        assertEquals(minuteMs(10, 15), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 15));
+        assertEquals(minuteMs(10, 15), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 7), 15));
+        assertEquals(minuteMs(10, 30), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 15), 15));
+        assertEquals(minuteMs(10, 60), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 45), 15));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval30() {
+        assertEquals(minuteMs(10, 30), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 30));
+        assertEquals(minuteMs(10, 30), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 14), 30));
+        assertEquals(minuteMs(10, 60), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 30), 30));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval7_nonDivisorOf60() {
+        // Cron 0/7 fires at: 0, 7, 14, 21, 28, 35, 42, 49, 56. After 56 → wraps to next hour :00.
+        assertEquals(minuteMs(10, 7), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 7));
+        assertEquals(minuteMs(10, 7), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 3), 7));
+        assertEquals(minuteMs(10, 14), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 7), 7));
+        assertEquals(minuteMs(10, 56), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 49), 7));
+        // After minute 56, wraps to next hour :00 (not :63)
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 56), 7));
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 58), 7));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval8_nonDivisorOf60() {
+        // Cron 0/8 fires at: 0, 8, 16, 24, 32, 40, 48, 56. After 56 → wraps to next hour :00.
+        assertEquals(minuteMs(10, 8), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 8));
+        assertEquals(minuteMs(10, 56), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 48), 8));
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 56), 8));
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 59), 8));
+    }
+
+    @Test
+    public void testNextCronBoundary_interval60() {
+        // Only fires at :00, so next is always the next hour
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 0), 60));
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 30), 60));
+        assertEquals(minuteMs(11, 0), TbMessageStatsReportClientImpl.calculateNextCronBoundary(minuteMs(10, 59), 60));
+    }
+
+    private static long minuteMs(int hour, int minute) {
+        return LocalDateTime.of(2026, 3, 25, hour, 0)
+                .plusMinutes(minute)
+                .toInstant(ZoneOffset.UTC)
+                .toEpochMilli();
     }
 
     @Test
