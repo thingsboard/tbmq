@@ -26,7 +26,7 @@ import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-h
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
 import { PageLink } from '@shared/models/page/page-link';
 import { formatBytes } from '@home/models/entity/entities-table-config.models';
-import { ConfigParams } from '@shared/models/config.model';
+import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
 
 @Component({
   selector: 'tb-home-advanced-settings',
@@ -81,28 +81,16 @@ export class AdvancedSettingsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    const config = this.configService.brokerConfig;
-
-    this.authParams = {
-      [MqttAuthProviderType.MQTT_BASIC]: config.basicAuthEnabled,
-      [MqttAuthProviderType.X_509]: config.x509AuthEnabled,
-      [MqttAuthProviderType.SCRAM]: config.scramAuthEnabled,
-      [MqttAuthProviderType.JWT]: config.jwtAuthEnabled,
-      [MqttAuthProviderType.HTTP]: config.httpAuthEnabled,
-    };
-
-    this.advancedParams = {
-      [ConfigParams.tcpMaxPayloadSize]: formatBytes(config.tcpMaxPayloadSize),
-      [ConfigParams.tlsMaxPayloadSize]: formatBytes(config.tlsMaxPayloadSize),
-      [ConfigParams.wsMaxPayloadSize]: formatBytes(config.wsMaxPayloadSize),
-      [ConfigParams.wssMaxPayloadSize]: formatBytes(config.wssMaxPayloadSize),
-      [ConfigParams.statsCollectionInterval]: this.translate.instant('timewindow.short.minutes', {minutes: config.statsCollectionInterval}).trim(),
-      [ConfigParams.allowKafkaTopicDeletion]: config.allowKafkaTopicDeletion
-    };
+    this.configService.fetchBrokerConfig().subscribe(
+      (config) => {
+        this.updateAuthParams(config);
+        this.updateAdvancedParams(config);
+      }
+    );
   }
 
   switchAuthProvider(type: MqttAuthProviderType) {
-    const enabled = this.authParams[type];
+    const enabled = !this.authParams[type];
     if (!this.authProviders) {
       const pageLink = new PageLink(10);
       this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(
@@ -122,9 +110,29 @@ export class AdvancedSettingsComponent implements OnInit {
       this.mqttAuthProviderService.switchAuthProvider(providerId, enabled).subscribe(
         () => {
           this.authParams[type] = !enabled;
-          this.configService.fetchBrokerConfig();
         }
       );
     }
+  }
+
+  private updateAuthParams(config: BrokerConfig) {
+    this.authParams = {
+      [MqttAuthProviderType.MQTT_BASIC]: config.basicAuthEnabled,
+      [MqttAuthProviderType.X_509]: config.x509AuthEnabled,
+      [MqttAuthProviderType.SCRAM]: config.scramAuthEnabled,
+      [MqttAuthProviderType.JWT]: config.jwtAuthEnabled,
+      [MqttAuthProviderType.HTTP]: config.httpAuthEnabled,
+    };
+  }
+
+  private updateAdvancedParams(config: BrokerConfig) {
+    this.advancedParams = {
+      [ConfigParams.tcpMaxPayloadSize]: formatBytes(config.tcpMaxPayloadSize),
+      [ConfigParams.tlsMaxPayloadSize]: formatBytes(config.tlsMaxPayloadSize),
+      [ConfigParams.wsMaxPayloadSize]: formatBytes(config.wsMaxPayloadSize),
+      [ConfigParams.wssMaxPayloadSize]: formatBytes(config.wssMaxPayloadSize),
+      [ConfigParams.statsCollectionInterval]: this.translate.instant('timewindow.short.minutes', {minutes: config.statsCollectionInterval}).trim(),
+      [ConfigParams.allowKafkaTopicDeletion]: config.allowKafkaTopicDeletion
+    };
   }
 }
