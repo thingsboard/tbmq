@@ -44,7 +44,7 @@ import {
 import { MatButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { ActionNotificationHide, ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { ToastDirective } from '@shared/components/toast.directive';
@@ -119,6 +119,7 @@ export class MqttAuthenticationProviderConfigurationComponent implements Control
     this.disabled.set(isDisabled);
     if (isDisabled) {
       this.providerForm.disable({emitEvent: false});
+      this.store.dispatch(new ActionNotificationHide({target: 'providerRoot'}));
     } else {
       this.providerForm.enable({emitEvent: false});
     }
