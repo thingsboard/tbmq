@@ -49,7 +49,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   actionsDeveloper = gettingStartedActionsDeveloper;
   actionsProduct = gettingStartedActionsProduct;
   features = gettingStartedFeatures;
-  readMore = helpBaseUrl + docsPath;
+  readMore = helpBaseUrl + docsPath + '/';
 
   constructor(private configService: ConfigService,
               private cd: ChangeDetectorRef,

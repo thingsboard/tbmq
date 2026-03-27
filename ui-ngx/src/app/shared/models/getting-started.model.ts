@@ -114,11 +114,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     title: 'Blocked Clients',
     url: HelpLinks.linksMap.blockedClient
   },
-  {
+  /*{
     img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
     url: HelpLinks.linksMap.troubleshooting
-  },
+  },*/
 ]
 
 export const gettingStartedFeatures: GettingStartedLink[] = [
