@@ -194,8 +194,9 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
         const importData: string = this.selectFileFormGroup.get('importData').value;
         const parseData = this.parseCSV(importData);
         if (parseData === -1) {
-          this.importStepper.selected.interacted = false;
+          const currentStep = this.importStepper.selected;
           this.importStepper.previous();
+          currentStep.interacted = false;
         } else {
           this.parseData = parseData as CsvToJsonResult;
           if (!this.parseData.rows?.length) {
@@ -203,8 +204,9 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
               message: this.translate.instant('import.import-csv-empty-file-error'),
               type: 'error'
             }));
-            this.importStepper.selected.interacted = false;
+            const currentStep = this.importStepper.selected;
             this.importStepper.previous();
+            currentStep.interacted = false;
           } else {
             const columnsParam = this.createColumnsData();
             this.columnTypesFormGroup.patchValue({columnsParam}, {emitEvent: true});
