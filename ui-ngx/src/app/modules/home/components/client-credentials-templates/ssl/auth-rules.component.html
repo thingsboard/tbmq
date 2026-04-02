@@ -56,64 +56,20 @@
                     warning
                   </mat-icon>
                 </mat-form-field>
-                <mat-form-field class="mat-block">
-                  <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-                  <mat-chip-grid #chipListPub [disabled]="disabled()">
-                    @for (rule of pubRulesArray[index]; track rule) {
-                      <mat-chip-row
-                        [editable]="!disabled()"
-                        (edited)="editTopicRule($event, index, authRulePatternsType.PUBLISH)"
-                        [removable]="!disabled()"
-                        [value]="rule"
-                        (removed)="removeTopicRule(rule, index, authRulePatternsType.PUBLISH)">
-                        {{ rule }}
-                        @if (!disabled()) {
-                          <button matChipRemove aria-label="'remove' + rule">
-                            <mat-icon>close</mat-icon>
-                          </button>
-                        }
-                      </mat-chip-row>
-                    }
-                    <input matInput
-                      placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                      matChipInputAddOnBlur
-                      [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                      [matChipInputFor]="chipListPub"
-                      (matChipInputTokenEnd)="addTopicRule($event, index, authRulePatternsType.PUBLISH)">
-                  </mat-chip-grid>
-                  <mat-icon [class.!hidden]="pubRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
-                    warning
-                  </mat-icon>
-                </mat-form-field>
-                <mat-form-field class="mat-block">
-                  <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-                  <mat-chip-grid #chipListSub [disabled]="disabled()">
-                    @for (rule of subRulesArray[index]; track rule) {
-                      <mat-chip-row
-                        [editable]="!disabled()"
-                        (edited)="editTopicRule($event, index, authRulePatternsType.SUBSCRIBE)"
-                        [removable]="!disabled()"
-                        [value]="rule"
-                        (removed)="removeTopicRule(rule, index, authRulePatternsType.SUBSCRIBE)">
-                        {{ rule }}
-                        @if (!disabled()) {
-                          <button matChipRemove aria-label="'remove' + rule">
-                            <mat-icon>close</mat-icon>
-                          </button>
-                        }
-                      </mat-chip-row>
-                    }
-                    <input matInput type="text"
-                      placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                      matChipInputAddOnBlur
-                      [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                      [matChipInputFor]="chipListSub"
-                      (matChipInputTokenEnd)="addTopicRule($event, index, authRulePatternsType.SUBSCRIBE)">
-                  </mat-chip-grid>
-                  <mat-icon [class.!hidden]="subRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
-                    warning
-                  </mat-icon>
-                </mat-form-field>
+                <tb-topic-rules-chip-list
+                  formControlName="pubAuthRulePatterns"
+                  [label]="'mqtt-client-credentials.authorization-rule-patterns-pub' | translate"
+                  [placeholder]="'mqtt-client-credentials.add-topic-rule' | translate"
+                  [warningTooltip]="'mqtt-client-credentials.warning-pub' | translate"
+                  [disabled]="disabled()">
+                </tb-topic-rules-chip-list>
+                <tb-topic-rules-chip-list
+                  formControlName="subAuthRulePatterns"
+                  [label]="'mqtt-client-credentials.authorization-rule-patterns-sub' | translate"
+                  [placeholder]="'mqtt-client-credentials.add-topic-rule' | translate"
+                  [warningTooltip]="'mqtt-client-credentials.warning-sub' | translate"
+                  [disabled]="disabled()">
+                </tb-topic-rules-chip-list>
               </div>
               <button mat-icon-button color="warn"
                 [class.!hidden]="disabled()"

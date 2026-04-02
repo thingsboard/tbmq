@@ -29,16 +29,13 @@ import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import {
   ANY_CHARACTERS,
-  AuthRulePatternsType,
   ScramCredentials,
   ClientCredentials,
   ShaType,
   shaTypeTranslationMap
 } from '@shared/models/credentials.model';
-import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientUserNameRandom } from '@shared/models/ws-client.model';
-import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatSuffix, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -50,6 +47,7 @@ import { TogglePasswordComponent } from '@shared/components/button/toggle-passwo
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
+import { TopicRulesChipListComponent } from '@shared/components/topic-rules-chip-list.component';
 
 @Component({
     selector: 'tb-mqtt-credentials-scram',
@@ -67,20 +65,16 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
         }
     ],
     styleUrls: ['./scram.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatIconButton, MatTooltip, MatIcon, TogglePasswordComponent, MatSelect, MatOption, MatHint, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatIconButton, MatTooltip, MatIcon, TogglePasswordComponent, MatSelect, MatOption, MatHint, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TopicRulesChipListComponent]
 })
 export class MqttCredentialsScramComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
 
-  authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
-  pubRulesSet = new Set<string>();
-  subRulesSet = new Set<string>();
   shaTypes = Object.values(ShaType);
   shaTypeTranslations = shaTypeTranslationMap;
-  separatorKeysCodes = [ENTER, TAB];
 
   private maskedPassword = '********';
   private newPassword: string;
@@ -114,8 +108,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   }
 
   ngAfterViewInit() {
-    this.addValueToAuthRulesSet('pubAuthRulePatterns');
-    this.addValueToAuthRulesSet('subAuthRulePatterns');
     this.cd.detectChanges();
   }
 
@@ -147,15 +139,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
 
   writeValue(value: string) {
     if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
-      this.clearRuleSets();
       const valueJson = JSON.parse(value);
-      if (valueJson.authRules) {
-        for (const rule of Object.keys(valueJson.authRules)) {
-          if (valueJson.authRules[rule]?.length) {
-            valueJson.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
-          }
-        }
-      }
       valueJson.password = this.maskedPassword;
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
       this.newPassword = null;
@@ -170,66 +154,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
     }
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
-  }
-
-  addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
-    const input = event.input;
-    const value = event.value;
-    if ((value || '').trim()) {
-      switch (type) {
-        case AuthRulePatternsType.PUBLISH:
-          this.pubRulesSet.add(value);
-          this.setAuthRulePatternsControl(this.pubRulesSet, type);
-          break;
-        case AuthRulePatternsType.SUBSCRIBE:
-          this.subRulesSet.add(value);
-          this.setAuthRulePatternsControl(this.subRulesSet, type);
-          break;
-      }
-    }
-    if (input) {
-      input.value = '';
-    }
-  }
-
-  removeTopicRule(rule: string, type: AuthRulePatternsType) {
-    switch (type) {
-      case AuthRulePatternsType.PUBLISH:
-        this.pubRulesSet.delete(rule);
-        this.setAuthRulePatternsControl(this.pubRulesSet, type);
-        break;
-      case AuthRulePatternsType.SUBSCRIBE:
-        this.subRulesSet.delete(rule);
-        this.setAuthRulePatternsControl(this.subRulesSet, type);
-        break;
-    }
-  }
-
-  editTopicRule(event: MatChipEditedEvent, type: AuthRulePatternsType): void {
-    let index: number;
-    let array: string[];
-    const oldRule = event.chip.value;
-    const newRule = event.value;
-    switch (type) {
-      case AuthRulePatternsType.SUBSCRIBE:
-        array = Array.from(this.subRulesSet);
-        index = array.indexOf(oldRule);
-        if (index !== -1) {
-          array[index] = newRule;
-        }
-        this.subRulesSet = new Set(array);
-        this.setAuthRulePatternsControl(this.subRulesSet, type);
-        break;
-      case AuthRulePatternsType.PUBLISH:
-        array = Array.from(this.pubRulesSet);
-        index = array.indexOf(oldRule);
-        if (index !== -1) {
-          array[index] = newRule;
-        }
-        this.pubRulesSet = new Set(array);
-        this.setAuthRulePatternsControl(this.pubRulesSet, type);
-        break;
-    }
   }
 
   regenerate(type: string) {
@@ -249,31 +173,4 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
     }
   }
 
-  private clearRuleSets() {
-    this.pubRulesSet.clear();
-    this.subRulesSet.clear();
-  }
-
-  private addValueToAuthRulesSet(type: string, value: string = ANY_CHARACTERS) {
-    switch (type) {
-      case 'subAuthRulePatterns':
-        this.subRulesSet.add(value);
-        break;
-      case 'pubAuthRulePatterns':
-        this.pubRulesSet.add(value);
-        break;
-    }
-  }
-
-  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
-    const rulesArray = [Array.from(set).join(',')];
-    switch (type) {
-      case AuthRulePatternsType.PUBLISH:
-        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
-        break;
-      case AuthRulePatternsType.SUBSCRIBE:
-        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
-        break;
-    }
-  }
 }
