@@ -43,7 +43,7 @@
   </mat-chip-grid>
   <tb-copy-button matSuffix
     [class.!hidden]="!rules.length"
-    [copyText]="rules.join(', ')">
+    [copyText]="rules.join('; ')">
   </tb-copy-button>
   @if (warningTooltip()) {
     <mat-icon [class.!hidden]="rules.length" matSuffix style="color: #ff9a00" [matTooltip]="warningTooltip()">

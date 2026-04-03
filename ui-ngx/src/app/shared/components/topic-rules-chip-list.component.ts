@@ -17,7 +17,7 @@
 import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
-import { COMMA, ENTER, SEMICOLON, TAB } from '@angular/cdk/keycodes';
+import { ENTER, SEMICOLON, TAB } from '@angular/cdk/keycodes';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
@@ -60,7 +60,7 @@ export class TopicRulesChipListComponent implements ControlValueAccessor {
   disabled = model<boolean>(false);
 
   public rules: string[] = [];
-  public separatorKeyCodes = [ENTER, TAB, COMMA, SEMICOLON];
+  public separatorKeyCodes = [ENTER, TAB, SEMICOLON];
 
   private propagateChange = (_: string[]) => {};
   private propagateTouched = () => {};
@@ -122,7 +122,7 @@ export class TopicRulesChipListComponent implements ControlValueAccessor {
 
     const pastedText = event.clipboardData?.getData('text') || '';
     const newRules = pastedText
-      .split(/[\n\r,;]+/)
+      .split(/[\n\r;]+/)
       .map(r => r.trim())
       .filter(r => r.length > 0 && !this.rules.includes(r));
 
