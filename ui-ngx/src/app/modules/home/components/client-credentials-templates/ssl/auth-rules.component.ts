@@ -17,16 +17,13 @@
 import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, OnDestroy, input, model } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, FormBuilder, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import {
   ANY_CHARACTERS,
-  AuthRulePatternsType,
   AuthRulesMapping,
   ClientCredentials,
   SslAuthRulesMapping,
   SslCredentialsAuthRules
 } from '@shared/models/credentials.model';
-import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -35,6 +32,7 @@ import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton, MatButton } from '@angular/material/button';
+import { TopicRulesChipListComponent } from '@shared/components/topic-rules-chip-list.component';
 
 @Component({
     selector: 'tb-auth-rules',
@@ -52,18 +50,14 @@ import { MatIconButton, MatButton } from '@angular/material/button';
         }
     ],
     styleUrls: ['./auth-rules.component.scss'],
-    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, MatTooltip, MatIconButton, MatButton]
+    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatIcon, MatSuffix, MatTooltip, MatIconButton, MatButton, TopicRulesChipListComponent]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
 
-  authRulePatternsType = AuthRulePatternsType;
   rulesMappingFormGroup: UntypedFormGroup;
-  pubRulesArray: string[][] = [];
-  subRulesArray: string[][] = [];
-  separatorKeysCodes = [ENTER, TAB];
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();
@@ -83,8 +77,6 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       pubAuthRulePatterns: [[ANY_CHARACTERS], []],
       subAuthRulePatterns: [[ANY_CHARACTERS], []]
     }));
-    this.subRulesArray.push([ANY_CHARACTERS]);
-    this.pubRulesArray.push([ANY_CHARACTERS]);
     this.rulesMappingFormGroup.valueChanges.subscribe(value =>  this.updateView(value));
   }
 
@@ -98,15 +90,11 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       pubAuthRulePatterns: [[ANY_CHARACTERS], []],
       subAuthRulePatterns: [[ANY_CHARACTERS], []]
     }));
-    this.subRulesArray.push([ANY_CHARACTERS]);
-    this.pubRulesArray.push([ANY_CHARACTERS]);
     this.cd.markForCheck();
   }
 
   removeRule(index: number) {
     this.rulesMappingFormGroup.markAsDirty();
-    this.subRulesArray.splice(index, 1);
-    this.pubRulesArray.splice(index, 1);
     this.rulesFormArray.removeAt(index);
   }
 
@@ -166,86 +154,19 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     }
     const rulesControls: Array<AbstractControl> = [];
     if (authRulesMapping) {
-      let index = 0;
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required, this.isUnique()]],
-          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns.join(',') : []],
-          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns.join(',') : []]
+          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns || []],
+          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns || []]
         });
-        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [];
-        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [];
         if (this.disabled()) {
           rulesControl.disable();
         }
         rulesControls.push(rulesControl);
-        index++;
       }
       this.rulesMappingFormGroup.setControl('authRulesMapping', this.fb.array(rulesControls), {emitEvent: false});
     }
-  }
-
-  addTopicRule(event: MatChipInputEvent, index: number, type: AuthRulePatternsType) {
-    const input = event.input;
-    const value = event.value;
-    if ((value || '').trim()) {
-      switch (type) {
-        case AuthRulePatternsType.SUBSCRIBE:
-          if (this.subRulesArray[index].indexOf(value) < 0) {
-            this.subRulesArray[index].push(value);
-          }
-          break;
-        case AuthRulePatternsType.PUBLISH:
-          if (this.pubRulesArray[index].indexOf(value) < 0) {
-            this.pubRulesArray[index].push(value);
-          }
-          break;
-      }
-    }
-    if (input) {
-      input.value = '';
-    }
-    this.updateTopicRuleControl(index, type);
-  }
-
-  removeTopicRule(rule: string, index: number, type: AuthRulePatternsType) {
-    let optIndex;
-    switch (type) {
-      case AuthRulePatternsType.SUBSCRIBE:
-        optIndex = this.subRulesArray[index].indexOf(rule);
-        if (optIndex >= 0) {
-          this.subRulesArray[index].splice(optIndex, 1);
-        }
-        break;
-      case AuthRulePatternsType.PUBLISH:
-        optIndex = this.pubRulesArray[index].indexOf(rule);
-        if (optIndex >= 0) {
-          this.pubRulesArray[index].splice(optIndex, 1);
-        }
-        break;
-    }
-    this.updateTopicRuleControl(index, type);
-  }
-
-  editTopicRule(event: MatChipEditedEvent, index: number, type: AuthRulePatternsType): void {
-    let optIndex: number;
-    const oldRule = event.chip.value;
-    const newRule = event.value;
-    switch (type) {
-      case AuthRulePatternsType.SUBSCRIBE:
-        optIndex = this.subRulesArray[index].indexOf(oldRule);
-        if (optIndex !== -1) {
-          this.subRulesArray[index].splice(optIndex, 1, newRule);
-        }
-        break;
-      case AuthRulePatternsType.PUBLISH:
-        optIndex = this.pubRulesArray[index].indexOf(oldRule);
-        if (optIndex !== -1) {
-          this.pubRulesArray[index].splice(optIndex, 1, newRule);
-        }
-        break;
-    }
-    this.updateTopicRuleControl(index, type);
   }
 
   private updateView(value: SslAuthRulesMapping) {
@@ -255,26 +176,15 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   private prepareValues(authRulesMapping: AuthRulesMapping[]): SslCredentialsAuthRules {
     const result = {};
-    authRulesMapping.map((obj, index) => {
+    authRulesMapping.map((obj) => {
       const key = obj?.certificateMatcherRegex;
       if (key) {
         result[key] = {};
-        result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns ? this.pubRulesArray[index] : null;
-        result[key].subAuthRulePatterns = obj?.subAuthRulePatterns ? this.subRulesArray[index] : null;
+        result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns || null;
+        result[key].subAuthRulePatterns = obj?.subAuthRulePatterns || null;
       }
     });
     return result;
-  }
-
-  private updateTopicRuleControl(index: number, type: AuthRulePatternsType) {
-    switch (type) {
-      case AuthRulePatternsType.SUBSCRIBE:
-        this.rulesFormArray.at(index).get('subAuthRulePatterns').setValue(this.subRulesArray[index].join(','));
-        break;
-      case AuthRulePatternsType.PUBLISH:
-        this.rulesFormArray.at(index).get('pubAuthRulePatterns').setValue(this.pubRulesArray[index].join(','));
-        break;
-    }
   }
 }
 
