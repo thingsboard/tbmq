@@ -121,10 +121,10 @@ export class TopicRulesChipListComponent implements ControlValueAccessor {
     event.preventDefault();
 
     const pastedText = event.clipboardData?.getData('text') || '';
-    const newRules = pastedText
+    const newRules = [...new Set(pastedText
       .split(/[\n\r;]+/)
       .map(r => r.trim())
-      .filter(r => r.length > 0 && !this.rules.includes(r));
+      .filter(r => r.length > 0 && !this.rules.includes(r)))];
 
     if (newRules.length) {
       this.rules.push(...newRules);
