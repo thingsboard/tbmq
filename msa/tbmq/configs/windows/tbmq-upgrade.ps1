@@ -1,5 +1,5 @@
 #
-# Copyright © 2016-2025 The Thingsboard Authors
+# Copyright © 2016-2026 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ try {
     $COMPOSE_VERSION = compose_version
     Write-Host "Docker Compose version is: $COMPOSE_VERSION"
 
+    # TO BE REMOVED!
+    # Define TBMQ IE 2.1 version that was missing in the previous update
+    $old21_ie_version="2.1.0"
+
     # Define TBMQ versions
     $old_version = "2.1.0"
     $new_version = "2.2.0"
@@ -48,6 +52,7 @@ try {
     $new_image = "image: `"thingsboard/tbmq:$new_version`""
 
     # Define TBMQ IE images
+    $old21_ie_image = "image: `"thingsboard/tbmq-integration-executor:$old21_ie_version`""
     $old_ie_image = "image: `"thingsboard/tbmq-integration-executor:$old_version`""
     $new_ie_image = "image: `"thingsboard/tbmq-integration-executor:$new_version`""
 
@@ -67,6 +72,12 @@ try {
     # Replace the TBMQ image version using PowerShell's Get-Content and Set-Content
     $composeFileContent = Get-Content -Path "docker-compose.yml"
     $updatedComposeContent = $composeFileContent -replace [regex]::Escape($old_image), $new_image
+    $updatedComposeContent | Set-Content -Path "docker-compose.yml"
+
+    # TO BE REMOVED!
+    # Replace the TBMQ IE v2.1 image version using PowerShell's Get-Content and Set-Content
+    $composeFileContent = Get-Content -Path "docker-compose.yml"
+    $updatedComposeContent = $composeFileContent -replace [regex]::Escape($old21_ie_image), $new_ie_image
     $updatedComposeContent | Set-Content -Path "docker-compose.yml"
 
     # Replace the TBMQ IE image version using PowerShell's Get-Content and Set-Content

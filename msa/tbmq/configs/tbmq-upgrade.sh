@@ -49,6 +49,10 @@ function compose_version() {
 
 set -u
 
+# TO BE REMOVED!
+# Define TBMQ IE 2.1 version that was missing in the previous update
+old21_ie_version="2.1.0"
+
 # Define TBMQ versions
 old_version="2.1.0"
 new_version="2.2.0"
@@ -58,6 +62,7 @@ old_image="image: \"thingsboard/tbmq:$old_version\""
 new_image="image: \"thingsboard/tbmq:$new_version\""
 
 # Define TBMQ IE images
+old21_ie_image="image: \"thingsboard/tbmq-integration-executor:$old21_ie_version\""
 old_ie_image="image: \"thingsboard/tbmq-integration-executor:$old_version\""
 new_ie_image="image: \"thingsboard/tbmq-integration-executor:$new_version\""
 
@@ -82,6 +87,15 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   sed -i "s#$old_image#$new_image#g" docker-compose.yml
 else
   sed -i '' "s#$old_image#$new_image#g" docker-compose.yml
+fi
+
+# # TO BE REMOVED!
+# Replace the TBMQ IE v2.1 image version using sed
+echo "Trying to replace the TBMQ Integration Executor image version from [$old21_ie_version] to [$new_version]..."
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  sed -i "s#$old21_ie_image#$new_ie_image#g" docker-compose.yml
+else
+  sed -i '' "s#$old21_ie_image#$new_ie_image#g" docker-compose.yml
 fi
 
 # Replace the TBMQ IE image version using sed
