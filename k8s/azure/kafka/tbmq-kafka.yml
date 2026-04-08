@@ -31,6 +31,10 @@ spec:
       labels:
         app: tbmq-kafka
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -112,7 +116,7 @@ spec:
             - name: KAFKA_HEAP_OPTS
               value: "-Xms1G -Xmx1G -XX:+AlwaysPreTouch"
             - name: KAFKA_LOG_DIRS
-              value: "/var/lib/kafka/data"
+              value: "/var/lib/kafka/data/logs"
             - name: JMX_PORT
               value: "9999"
             - name: KAFKA_JMX_OPTS
