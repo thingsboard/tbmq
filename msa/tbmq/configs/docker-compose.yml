@@ -63,7 +63,7 @@ services:
       - tbmq-valkey-data:/data
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:2.2.0"
+    image: "thingsboard/tbmq:2.3.0"
     depends_on:
       - postgres
       - kafka
@@ -91,7 +91,7 @@ services:
       - tbmq-data:/data
   tbmq-integration-executor:
     restart: always
-    image: "thingsboard/tbmq-integration-executor:2.2.0"
+    image: "thingsboard/tbmq-integration-executor:2.3.0"
     depends_on:
       - kafka
       - tbmq
