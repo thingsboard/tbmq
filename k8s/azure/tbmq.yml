@@ -30,6 +30,10 @@ spec:
       labels:
         app: tbmq
     spec:
+      securityContext:
+        runAsUser: 799
+        runAsNonRoot: true
+        fsGroup: 799
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -114,9 +118,9 @@ spec:
               name: tbmq-config
             - mountPath: /var/log/thingsboard-mqtt-broker
               name: tbmq-logs
-          # Uncomment the following lines to enable two-way MQTTS
-          #            - mountPath: /ssl-config
-          #              name: tbmq-mqtts-config
+            # Uncomment the following lines to enable two-way MQTTS
+            #            - mountPath: /ssl-config
+            #              name: tbmq-mqtts-config
           readinessProbe:
             tcpSocket:
               port: 1883
