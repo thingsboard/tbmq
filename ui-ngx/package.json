@@ -69,7 +69,7 @@
     "@juggle/resize-observer": "^3.4.0"
   },
   "devDependencies": {
-    "@angular-builders/custom-esbuild": "18.0.0",
+    "@angular-builders/custom-esbuild": "^20.0.0",
     "@angular-devkit/core": "^20.0.0",
     "@angular-devkit/schematics": "^20.0.0",
     "angular-eslint": "~18.4.3",
@@ -108,8 +108,6 @@
   },
   "resolutions": {
     "ace-builds": "1.36.5",
-    "rollup": "4.22.4",
-    "@babel/core": "7.25.2",
-    "esbuild": "0.23.0"
+    "@babel/core": "7.25.2"
   }
 }
