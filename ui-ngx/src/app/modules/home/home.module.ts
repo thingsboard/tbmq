@@ -33,7 +33,8 @@ import { MenuModule } from '@home/menu/menu.module';
       sanitize: SecurityContext.NONE,
       markedOptions: {
         provide: MARKED_OPTIONS,
-        useExisting: MarkedOptionsService
+        useFactory: (markedOptionsService: MarkedOptionsService) => markedOptionsService,
+        deps: [MarkedOptionsService]
       }
     }),
   ]

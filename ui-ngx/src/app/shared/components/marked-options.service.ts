@@ -64,47 +64,51 @@ export class MarkedOptionsService implements MarkedOptions {
       }
     };
     marked.use({tokenizer});
-    this.renderer.code = (code: string, language: string | undefined, isEscaped: boolean) => {
-      const codeContext = processCode(code);
+    this.renderer.code = (token: Tokens.Code) => {
+      const codeContext = processCode(token.text);
+      const modifiedToken: Tokens.Code = { ...token, text: codeContext.code };
       if (codeContext.copyCode) {
-        const content = postProcessCodeContent(this.renderer2.code(codeContext.code, language, isEscaped), codeContext);
+        const content = postProcessCodeContent(this.renderer2.code(modifiedToken), codeContext);
         this.id++;
         return this.wrapCopyCode(this.id, content, codeContext);
       } else {
-        return this.wrapDiv(postProcessCodeContent(this.renderer2.code(codeContext.code, language, isEscaped), codeContext));
+        return this.wrapDiv(postProcessCodeContent(this.renderer2.code(modifiedToken), codeContext));
       }
     };
-    this.renderer.table = (header: string, body: string) => {
-      let autoLayout = false;
-      if (header.includes(autoBlock)) {
-        autoLayout = true;
-        header = header.replace(autoBlock, '');
-      }
-      let table = this.renderer2.table(header, body);
-      if (autoLayout) {
+    this.renderer.table = (token: Tokens.Table) => {
+      const headerContainsAutoBlock = token.header.some(cell => cell.text.includes(autoBlock));
+      if (headerContainsAutoBlock) {
+        const modifiedHeader = token.header.map(cell => ({
+          ...cell,
+          text: cell.text.replace(autoBlock, '')
+        }));
+        const modifiedToken: Tokens.Table = { ...token, header: modifiedHeader };
+        let table = this.renderer2.table(modifiedToken);
         table = table.replace('<table', '<table class="auto"');
+        return table;
       }
-      return table;
+      return this.renderer2.table(token);
     };
-    this.renderer.tablecell = (content: string, flags: {
-      header: boolean;
-      align: 'center' | 'left' | 'right' | null;
-    }) => {
+    this.renderer.tablecell = (token: Tokens.TableCell) => {
+      const content = token.text;
       const codeContext = processCode(content);
       codeContext.multiline = false;
       if (codeContext.copyCode) {
         this.id++;
-        content = this.wrapCopyCode(this.id, codeContext.code, codeContext);
+        const wrappedContent = this.wrapCopyCode(this.id, codeContext.code, codeContext);
+        const modifiedToken: Tokens.TableCell = { ...token, text: wrappedContent };
+        return this.renderer2.tablecell(modifiedToken);
       }
-      return this.renderer2.tablecell(content, flags);
+      return this.renderer2.tablecell(token);
     };
-    this.renderer.link = (href: string | null, title: string | null, text: string) => {
+    this.renderer.link = (token: Tokens.Link) => {
+      const text = token.text;
       if (text.endsWith(targetBlankBlock)) {
-        text = text.substring(0, text.length - targetBlankBlock.length);
-        const content = this.renderer2.link(href, title, text);
+        const modifiedToken: Tokens.Link = { ...token, text: text.substring(0, text.length - targetBlankBlock.length) };
+        const content = this.renderer2.link(modifiedToken);
         return content.replace('<a href=', '<a target="_blank" href=');
       } else {
-        return this.renderer2.link(href, title, text);
+        return this.renderer2.link(token);
       }
     };
     this.document.addEventListener('selectionchange', this.onSelectionChange.bind(this));
