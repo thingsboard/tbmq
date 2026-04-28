@@ -132,7 +132,7 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   readonly toggleGroupContainer = viewChild<ElementRef<HTMLElement>>('toggleGroupContainer');
 
   @HostBinding('class.tb-toggle-header-pagination-controls-enabled')
-  private showPaginationControls = false;
+  protected showPaginationControls = false;
   private _showPaginationControlsChanged = false;
 
   private toggleGroupResize$: ResizeObserver;

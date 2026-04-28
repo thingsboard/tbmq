@@ -67,7 +67,7 @@
     "@juggle/resize-observer": "^3.4.0"
   },
   "devDependencies": {
-    "@angular-builders/custom-esbuild": "^20.0.0",
+    "@angular-builders/custom-esbuild": "^21.0.0",
     "@angular-devkit/core": "^21.0.0",
     "@angular-devkit/schematics": "^21.0.0",
     "angular-eslint": "^20.0.0",
