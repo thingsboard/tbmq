@@ -32,11 +32,18 @@ export default tsEslint.config(
       ],
       "@angular-eslint/component-selector": [
         "error",
-        {
-          prefix: [
-            "tb"
-          ]
-        }
+        [
+          {
+            type: "element",
+            prefix: ["tb"],
+            style: "kebab-case"
+          },
+          {
+            type: "attribute",
+            prefix: ["tb"],
+            style: "kebab-case"
+          }
+        ]
       ],
       "id-blacklist": [
         "error",
