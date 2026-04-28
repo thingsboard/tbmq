@@ -119,7 +119,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     const routerQueryParams: ClientSubscriptionFilterConfig = this.route.snapshot.queryParams;
     if (routerQueryParams) {
       const queryParams = deepClone(routerQueryParams);
-      let replaceUrl = false;
+      const replaceUrl = false;
       if (routerQueryParams?.clientId) {
         this.subscriptionsFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;

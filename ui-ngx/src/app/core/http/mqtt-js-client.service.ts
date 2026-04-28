@@ -182,7 +182,7 @@ export class MqttJsClientService {
   public publishMessage(topic: string, payload: string, options: IClientPublishOptions) {
     let properties;
     // @ts-ignore
-    let color = options.color;
+    const color = options.color;
     if (isDefinedAndNotNull(options?.properties)) properties = JSON.parse(JSON.stringify(options?.properties));
     const message: any = {
       topic,
@@ -251,10 +251,10 @@ export class MqttJsClientService {
     let filteredMessages = [];
     if (data) {
       filteredMessages = data.filter(item => {
-        let typeMatch = this.messagesFilter.type !== 'all' ? this.messagesFilter.type === item.type : true;
-        let topicMatch = this.messagesFilter.topic?.length ? item.topic.indexOf(this.messagesFilter.topic) > -1 : true;
-        let qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
-        let retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
+        const typeMatch = this.messagesFilter.type !== 'all' ? this.messagesFilter.type === item.type : true;
+        const topicMatch = this.messagesFilter.topic?.length ? item.topic.indexOf(this.messagesFilter.topic) > -1 : true;
+        const qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
+        const retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
         return typeMatch && topicMatch && qosMatch && retainMatch;
       });
     }
@@ -441,8 +441,8 @@ export class MqttJsClientService {
 
   private findWildcardSubscription(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {
     function isTopicMatched(subscription: string, topic: string): boolean {
-      let subscriptionParts = subscription.split('/');
-      let topicParts = topic.split('/');
+      const subscriptionParts = subscription.split('/');
+      const topicParts = topic.split('/');
 
       for (let i = 0; i < subscriptionParts.length; i++) {
         if (subscriptionParts[i] === '#') {
@@ -457,7 +457,7 @@ export class MqttJsClientService {
     }
 
     function checkTopicInSubscriptions(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {
-      for (let subscriptionTopic of subscriptions.map(el => el.configuration.topicFilter)) {
+      for (const subscriptionTopic of subscriptions.map(el => el.configuration.topicFilter)) {
         if (isTopicMatched(subscriptionTopic, topic)) {
           return subscriptions.find(el => el.configuration.topicFilter === subscriptionTopic);
         }

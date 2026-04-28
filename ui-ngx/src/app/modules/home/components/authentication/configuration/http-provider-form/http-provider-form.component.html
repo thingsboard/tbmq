@@ -95,7 +95,7 @@
           }
         </mat-select>
       </mat-form-field>
-      <div class="tb-hint pt-2 pb-0" [innerHtml]="'authentication.client-type-default-hint' | translate : {type: clientTypeTranslationMap.get(httpProviderConfigForm?.get('defaultClientType')?.value) | translate  }"></div>
+      <div class="tb-hint pb-0 pt-2" [innerHtml]="'authentication.client-type-default-hint' | translate : {type: clientTypeTranslationMap.get(httpProviderConfigForm?.get('defaultClientType')?.value) | translate  }"></div>
     </section>
     <section class="security-setting mat-padding">
       <div class="flex flex-1 flex-col" formGroupName="authRules">

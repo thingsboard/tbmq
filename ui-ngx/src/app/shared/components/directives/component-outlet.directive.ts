@@ -26,7 +26,7 @@ import {
 } from '@angular/core';
 
 @Directive({
-    // eslint-disable-next-line @angular-eslint/directive-selector
+     
     selector: '[tbComponentOutlet]',
     exportAs: 'tbComponentOutlet',
 })
@@ -42,9 +42,9 @@ export class TbComponentOutletDirective<_T = unknown> implements OnChanges {
   readonly componentChange = output<ComponentRef<any>>();
 
   static ngTemplateContextGuard<T>(
-    // eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle,id-blacklist,id-match
+     
     _dir: TbComponentOutletDirective<T>,
-    // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle, id-blacklist, id-match
+     
     _ctx: any
   ): _ctx is TbComponentOutletContext {
     return true;

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
@@ -34,7 +34,7 @@ import { EventType } from '@shared/models/event.models';
     EventTableComponent
   ]
 })
-export class IntegrationTabsComponent extends EntityTabsComponent<Integration, PageLink, IntegrationInfo> {
+export class IntegrationTabsComponent extends EntityTabsComponent implements OnInit<Integration, PageLink, IntegrationInfo> {
 
   private defaultEventTypeValue: EventType = EventType.LC_EVENT;
 

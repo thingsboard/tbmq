@@ -284,7 +284,7 @@ export function transformPropsToObject(input: {props: Array<{k: string, v: numbe
   }, {});
 }
 export function transformObjectToProps(input: {[key: string]: number|string|Array<number|string>}): {props: Array<{k: string, v: number|string}>}  {
-  let props = Object.entries(input).flatMap(([k, v]) => {
+  const props = Object.entries(input).flatMap(([k, v]) => {
     if (Array.isArray(v)) {
       return v.map(value => ({k, v: value}));
     } else {
@@ -306,7 +306,7 @@ export const colorRandom = () => {
 }
 export const isDefinedProps = (obj: any): boolean => {
   let count = 0;
-  for (let key in obj) {
+  for (const key in obj) {
     if (obj[key] !== null && obj[key] !== '' && key !== 'messageExpiryIntervalUnit') {
       count++;
     }

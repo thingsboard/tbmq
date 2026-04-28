@@ -68,7 +68,7 @@
           class="no-data-found flex items-center justify-center" translate>
       {{ noDataText() ? noDataText() : 'key-val.no-data' }}
     </span>
-    <mat-error class="text-xs mat-padding" [class.hidden]="!(isValueRequired() && !keyValsFormArray().length)">
+    <mat-error class="mat-padding text-xs" [class.hidden]="!(isValueRequired() && !keyValsFormArray().length)">
       {{ valueRequiredText() | translate }}
     </mat-error>
   </section>

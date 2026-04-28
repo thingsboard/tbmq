@@ -62,10 +62,10 @@ export type ToggleHeaderAppearance = 'fill' | 'fill-invert' | 'stroked';
 export type ScrollDirection = 'after' | 'before';
 
 @Directive({
-    // eslint-disable-next-line @angular-eslint/directive-selector
+     
     selector: 'tb-toggle-option'
 })
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
+ 
 export class ToggleOption {
 
   readonly value = input<any>();
