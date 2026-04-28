@@ -2,6 +2,8 @@
 
 **Date:** 2026-04-28
 **Scope:** `ui-ngx/` Angular frontend of TBMQ CE
+
+> **Model note:** Use Opus for brainstorming, writing the spec, and writing the implementation plan. **Switch to Sonnet (high reasoning) before executing the plan** — the upgrade work is mechanical (`ng update`, version bumps, fix-the-build loop) and Sonnet is faster and cheaper for it. Flip back to Opus only if a genuinely ambiguous decision appears (e.g., the custom esbuild builder has no v21 release and we need to reason about migrating to stock `@angular/build`).
 **Driver:** Angular 19 reaches end of LTS support; need to land on a supported major (21).
 **Out of scope:** Adopting v20/v21 idioms (signals, new control flow, zoneless, standalone migration, signal forms, mat-chip new APIs). Those are captured as a follow-up backlog.
 
