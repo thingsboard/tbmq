@@ -34,7 +34,7 @@ import { EventType } from '@shared/models/event.models';
     EventTableComponent
   ]
 })
-export class IntegrationTabsComponent extends EntityTabsComponent implements OnInit<Integration, PageLink, IntegrationInfo> {
+export class IntegrationTabsComponent extends EntityTabsComponent<Integration, PageLink, IntegrationInfo> implements OnInit {
 
   private defaultEventTypeValue: EventType = EventType.LC_EVENT;
 

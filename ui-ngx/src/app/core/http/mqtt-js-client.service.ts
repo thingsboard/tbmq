@@ -36,7 +36,7 @@ import {
   WsTableMessage
 } from '@shared/models/ws-client.model';
 import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient, Packet } from 'mqtt';
-import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
+import { ErrorWithReasonCode } from 'mqtt';
 import {
   convertDataSizeUnits,
   convertTimeUnits,
@@ -50,7 +50,7 @@ import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
 import { WebSocketSettings } from '@shared/models/settings.models';
-import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
+import { IClientSubscribeOptions } from 'mqtt';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
