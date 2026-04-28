@@ -17,7 +17,7 @@
 import { NgModule, SecurityContext } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HomeRoutingModule } from './home-routing.module';
-import { MarkdownModule, MARKED_OPTIONS } from 'ngx-markdown';
+import { MarkdownModule, MARKED_OPTIONS, SANITIZE } from 'ngx-markdown';
 import { MarkedOptionsService } from '@shared/components/marked-options.service';
 import { MenuModule } from '@home/menu/menu.module';
 
@@ -30,7 +30,10 @@ import { MenuModule } from '@home/menu/menu.module';
     HomeRoutingModule,
     MenuModule,
     MarkdownModule.forRoot({
-      sanitize: SecurityContext.NONE,
+      sanitize: {
+        provide: SANITIZE,
+        useValue: SecurityContext.NONE
+      },
       markedOptions: {
         provide: MARKED_OPTIONS,
         useFactory: (markedOptionsService: MarkedOptionsService) => markedOptionsService,
