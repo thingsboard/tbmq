@@ -57,10 +57,6 @@
         "node_modules/jstree/dist/jstree.min.js"
       ]
     },
-    "lib": [
-      "es2020",
-      "dom"
-    ],
     "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
