@@ -24,7 +24,7 @@ import {
   Injector,
   OnInit,
   ViewContainerRef,
-  viewChild
+  viewChild, OnDestroy
 } from '@angular/core';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
@@ -63,7 +63,7 @@ import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
     imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
-                                      implements OnInit, AfterViewInit {
+                                      implements OnInit, AfterViewInit, OnDestroy {
 
   readonly addGroupEntityWizardStepper = viewChild<MatStepper>('addGroupEntityWizardStepper');
   readonly detailsFormStepContainerRef = viewChild('detailsFormStep', { read: ViewContainerRef });

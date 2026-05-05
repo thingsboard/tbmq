@@ -140,10 +140,10 @@
   }
   .tb-form-hint {
     padding: 12px 16px;
-    font-size: var(--mdc-typography-caption-font-size, 12px);
-    line-height: var(--mdc-typography-caption-line-height, 20px);
-    font-weight: var(--mdc-typography-caption-font-weight, 400);
-    letter-spacing: var(--mdc-typography-caption-letter-spacing, 0.0333333333em);
+    font-size: var(--mat-typography-caption-font-size, 12px);
+    line-height: var(--mat-typography-caption-line-height, 20px);
+    font-weight: var(--mat-typography-caption-font-weight, 400);
+    letter-spacing: var(--mat-typography-caption-letter-spacing, 0.0333333333em);
     color: rgba(0, 0, 0, 0.6);
     white-space: normal;
     border-radius: 6px;

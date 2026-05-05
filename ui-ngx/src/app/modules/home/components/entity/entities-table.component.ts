@@ -615,7 +615,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     if (column instanceof ChipsTableColumn) {
       const col = this.entitiesTableConfig().columns.indexOf(column);
       const index = row * this.entitiesTableConfig().columns.length + col;
-      let res = column.cellContentFunction(entity, column.key)?.split(',');
+      const res = column.cellContentFunction(entity, column.key)?.split(',');
       this.cellContentCache[index] = res;
       return res;
     } else {

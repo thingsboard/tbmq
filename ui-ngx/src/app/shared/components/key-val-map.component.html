@@ -26,7 +26,7 @@
       </div>
       <mat-divider style="width: 100%" class="pb-4"></mat-divider>
     }
-    @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
+    @for (keyValControl of keyValsFormArray().controls; track $index) {
       <div class="flex flex-row items-center justify-start gap-3 px-4 pb-4" formArrayName="keyVals">
         <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
                         subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
@@ -68,7 +68,7 @@
           class="no-data-found flex items-center justify-center" translate>
       {{ noDataText() ? noDataText() : 'key-val.no-data' }}
     </span>
-    <mat-error class="text-xs mat-padding" [class.hidden]="!(isValueRequired() && !keyValsFormArray().length)">
+    <mat-error class="mat-padding text-xs" [class.hidden]="!(isValueRequired() && !keyValsFormArray().length)">
       {{ valueRequiredText() | translate }}
     </mat-error>
   </section>
