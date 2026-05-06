@@ -266,4 +266,7 @@ $tb-dark-theme: map_merge($tb-dark-theme, $color);
 
 .tb-dark {
   @include mat.all-component-colors($tb-dark-theme);
+  .mat-mdc-card.mat-mdc-card {
+    --mat-card-elevated-container-color: #{$tb-primary-color};
+  }
 }
