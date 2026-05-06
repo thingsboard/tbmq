@@ -1,0 +1,22 @@
+diff --git a/node_modules/ngx-markdown/types/ngx-markdown.d.ts b/node_modules/ngx-markdown/types/ngx-markdown.d.ts
+index d8c3f2a..e0aa0f0 100644
+--- a/node_modules/ngx-markdown/types/ngx-markdown.d.ts
++++ b/node_modules/ngx-markdown/types/ngx-markdown.d.ts
+@@ -158,7 +158,7 @@ declare class LanguagePipe implements PipeTransform {
+     static ɵpipe: i0.ɵɵPipeDeclaration<LanguagePipe, "language", true>;
+ }
+ 
+-declare const MARKED_OPTIONS: InjectionToken<MarkedOptions<string, string>>;
++declare const MARKED_OPTIONS: InjectionToken<MarkedOptions>;
+ 
+ declare const MERMAID_OPTIONS: InjectionToken<MermaidAPI.MermaidConfig>;
+ declare namespace MermaidAPI {
+@@ -1851,7 +1851,7 @@ declare class MarkdownComponent implements OnChanges, AfterViewInit, OnDestroy {
+     static ɵcmp: i0.ɵɵComponentDeclaration<MarkdownComponent, "markdown, [markdown]", never, { "data": { "alias": "data"; "required": false; }; "src": { "alias": "src"; "required": false; }; "disableSanitizer": { "alias": "disableSanitizer"; "required": false; }; "inline": { "alias": "inline"; "required": false; }; "clipboard": { "alias": "clipboard"; "required": false; }; "clipboardButtonComponent": { "alias": "clipboardButtonComponent"; "required": false; }; "clipboardButtonTemplate": { "alias": "clipboardButtonTemplate"; "required": false; }; "emoji": { "alias": "emoji"; "required": false; }; "katex": { "alias": "katex"; "required": false; }; "katexOptions": { "alias": "katexOptions"; "required": false; }; "mermaid": { "alias": "mermaid"; "required": false; }; "mermaidOptions": { "alias": "mermaidOptions"; "required": false; }; "lineHighlight": { "alias": "lineHighlight"; "required": false; }; "line": { "alias": "line"; "required": false; }; "lineOffset": { "alias": "lineOffset"; "required": false; }; "lineNumbers": { "alias": "lineNumbers"; "required": false; }; "start": { "alias": "start"; "required": false; }; "commandLine": { "alias": "commandLine"; "required": false; }; "filterOutput": { "alias": "filterOutput"; "required": false; }; "host": { "alias": "host"; "required": false; }; "prompt": { "alias": "prompt"; "required": false; }; "output": { "alias": "output"; "required": false; }; "user": { "alias": "user"; "required": false; }; }, { "error": "error"; "load": "load"; "ready": "ready"; }, never, ["*"], true, never>;
+ }
+ 
+-declare const MARKED_EXTENSIONS: InjectionToken<MarkedExtension<string, string>>;
++declare const MARKED_EXTENSIONS: InjectionToken<MarkedExtension>;
+ 
+ declare const SANITIZE: InjectionToken<SecurityContext | SanitizeFunction>;
+ type SanitizeFunction = (html: string) => string;

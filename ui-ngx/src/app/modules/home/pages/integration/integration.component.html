@@ -31,7 +31,7 @@
     {{'integration.delete' | translate }}
   </button>
   <div class="flex flex-row xs:flex-col">
-    <button mat-raised-button ngxClipboard (cbOnSuccess)="onIntegrationIdCopied()" [cbContent]="entity?.id"
+    <button mat-raised-button [cdkCopyToClipboard]="entity?.id" (cdkCopyToClipboardCopied)="onIntegrationIdCopied()"
       [class.!hidden]="isEdit">
       <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
       <span translate>integration.copyId</span>

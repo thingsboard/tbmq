@@ -30,7 +30,7 @@ export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implemen
   readonly sort = viewChild(MatSort);
 
   columns = [];
-  dataSource: MatTableDataSource<T> = new MatTableDataSource();
+  dataSource = new MatTableDataSource<T>();
   displayedColumns: Array<string> = [];
   pageLink: PageLink = new PageLink(999);
 
@@ -113,8 +113,8 @@ export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implemen
   private sortTable() {
     const sort = this.sort();
     if (sort?.direction) {
-      let direction = sort.direction === 'desc' ? -1 : 1;
-      let active = sort.active;
+      const direction = sort.direction === 'desc' ? -1 : 1;
+      const active = sort.active;
       return function(a, b) {
         return ((a[active] < b[active]) ? -1 : (a[active] > b[active]) ? 1 : 0) * direction;
       };
