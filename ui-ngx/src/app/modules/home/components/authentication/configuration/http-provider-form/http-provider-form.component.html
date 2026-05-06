@@ -80,7 +80,7 @@
       <div class="tb-hint pb-0" [innerHtml]="'authentication.expected-response' | translate"></div>
       <section class="flex">
         <div class="tb-hint flex-1" [innerHtml]="'authentication.expected-response-json' | translate"></div>
-        <tb-copy-button style="color: rgba(0,0,0,0.54)" [copyText]="expectedResponse | json"/>
+        <tb-copy-button [style]="{color: 'rgba(0,0,0,0.54)'}" [copyText]="expectedResponse | json"/>
       </section>
       <div class="tb-hint pb-0" [innerHtml]="'authentication.expected-response-interpretation' | translate"></div>
     </section>
