@@ -90,7 +90,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
       .pipe(map(({matches}) => matches ? 'end' : 'bottom'));
 
     this.clientCredentialsWizardFormGroup = this.fb.group({
-        name: [null, [Validators.required]],
+        name: [null, [Validators.required, Validators.maxLength(255), Validators.pattern(/(?:.|\s)*\S(&:.|\s)*/)]],
         clientType: [ClientType.DEVICE, [Validators.required]],
         credentialsType: [CredentialsType.MQTT_BASIC, [Validators.required]],
         additionalInfo: this.fb.group(

@@ -43,11 +43,18 @@
         <ng-template matStepLabel>{{ 'ws-client.connections.connection-details' | translate}}</ng-template>
         <mat-form-field class="mat-block">
           <mat-label translate>ws-client.connections.name</mat-label>
-          <input matInput formControlName="name">
+          <input matInput formControlName="name" required>
           <mat-icon matSuffix
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'mqtt-client-credentials.name-required' | translate }}"
-                    [class.!hidden]="!connectionFormGroup.get('name').hasError('required')"
+                    [class.!hidden]="!(connectionFormGroup.get('name').hasError('required') || connectionFormGroup.get('name').hasError('pattern'))"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'mqtt-client-credentials.name-max-length' | translate }}"
+                    [class.!hidden]="!connectionFormGroup.get('name').hasError('maxlength')"
                     class="tb-error">
             warning
           </mat-icon>
