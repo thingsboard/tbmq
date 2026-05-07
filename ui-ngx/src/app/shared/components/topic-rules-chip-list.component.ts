@@ -16,7 +16,7 @@
 
 import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput, MatChipEdit } from '@angular/material/chips';
 import { ENTER, SEMICOLON, TAB } from '@angular/cdk/keycodes';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -45,6 +45,7 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     MatChipRow,
     MatChipRemove,
     MatChipInput,
+    MatChipEdit,
     MatIcon,
     MatSuffix,
     MatTooltip,
