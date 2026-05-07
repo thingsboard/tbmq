@@ -225,7 +225,9 @@
                 <mat-label translate>ws-client.connections.password</mat-label>
                 <input matInput autocomplete="new-password" formControlName="password" type="password">
                 <tb-toggle-password matSuffix></tb-toggle-password>
-                <button matSuffix mat-icon-button type="button" [matTooltip]="'ws-client.connections.password-warning' | translate">
+                <button matSuffix mat-icon-button type="button"
+                  [class.!hidden]="!!connectionFormGroup.get('password')?.value?.length"
+                  [matTooltip]="'ws-client.connections.password-warning' | translate">
                   <mat-icon style="color: #ff9a00">warning</mat-icon>
                 </button>
               </mat-form-field>
