@@ -54,6 +54,9 @@ managedNodeGroups:
     volumeType: gp3
     volumeSize: 20
 
+  # Optional group. You can safely remove this section if:
+  #   - You’re using Amazon MSK or an existing managed Kafka service.
+  #   - You want to keep Kafka outside the EKS cluster.
   - name: tbmq-kafka
     instanceType: c7a.large
     desiredCapacity: 3
@@ -64,6 +67,9 @@ managedNodeGroups:
     volumeType: gp3
     volumeSize: 20
 
+  # Optional group. You can safely remove this section if:
+  #   - You’re using Amazon ElastiCache or an existing Redis-compatible service.
+  #   - You want to keep the cache outside the EKS cluster.
   - name: tbmq-redis
     instanceType: c7a.medium
     desiredCapacity: 6
