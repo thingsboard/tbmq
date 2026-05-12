@@ -17,16 +17,21 @@
 import {
   Component,
   input,
-  OnChanges,
   OnInit,
-  output,
-  SimpleChanges
+  output
 } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { LegendConfig, LegendKey, ChartKey, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
+import {
+  ChartKey,
+  ChartSeries,
+  getColor,
+  LegendConfig,
+  LegendKey,
+  TOTAL_ENTITY_ID
+} from '@shared/models/chart.model';
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { ChartLegendItemComponent } from './chart-legend-item.component';
-import { ChartDataset } from 'chart.js';
+import type { ECharts } from 'echarts/core';
 import {
   calculateAvg,
   calculateLatest,
@@ -35,15 +40,13 @@ import {
   calculateTotal,
   formatLargeNumber,
 } from '@core/utils';
-import { getColor } from '@shared/models/chart.model';
-import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'tb-chart-legend',
   templateUrl: './chart-legend.component.html',
   imports: [TranslateModule, SafePipe, ChartLegendItemComponent]
 })
-export class ChartLegendComponent implements OnInit, OnChanges {
+export class ChartLegendComponent implements OnInit {
   readonly isFullscreen = input<boolean>(false);
   readonly legendConfig = input<LegendConfig>({
     showMin: true,
@@ -52,41 +55,22 @@ export class ChartLegendComponent implements OnInit, OnChanges {
     showTotal: true,
     showLatest: true
   });
-  readonly chart = input<Chart<'line', any>>();
-  readonly datasets = input<ChartDataset<'line', any>[]>([]);
+  readonly chart = input<ECharts | null>(null);
+  readonly series = input<ChartSeries[]>([]);
   readonly chartKey = input<ChartKey>();
   readonly entityIds = input<string[]>([]);
   readonly visibleEntityIds = input<string[]>();
   readonly totalEntityIdOnly = input<boolean>();
+  readonly toggleVisibility = input<(dataKey: string) => boolean>();
 
   readonly visibleEntityIdsChange = output<string[]>();
   readonly entityIdTimeseriesRequested = output<string>();
 
   legendKeys: LegendKey[] = [];
-  legendData = [{
-    min: 0,
-    max: 0,
-    avg: 0,
-    total: 0,
-    latest: 0,
-  }];
-
-  constructor() {
-  }
+  legendData: Array<{ min: number; max: number; avg: number; total: number; latest: number }> = [];
 
   ngOnInit() {
     this.buildLegend();
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName of Object.keys(changes)) {
-      const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'datasets' && change.currentValue) {
-          this.updateLegend();
-        }
-      }
-    }
   }
 
   private buildLegend() {
@@ -109,74 +93,60 @@ export class ChartLegendComponent implements OnInit, OnChanges {
     }
   }
 
-  legendValue(index: number, type: string): string {
-    let value: number;
-    if (this.totalEntityIdOnly()) {
-      value = this.legendData[0]?.[type];
-    } else {
-      value = this.legendData[index]?.[type];
-    }
+  legendValue(index: number, type: 'min' | 'max' | 'avg' | 'total' | 'latest'): string {
+    const idx = this.totalEntityIdOnly() ? 0 : index;
+    const value = this.legendData[idx]?.[type] ?? 0;
     return formatLargeNumber(value);
   }
 
   updateLegend(): void {
     this.legendData = [];
-    const datasets = this.datasets() || [];
-    for (const ds of datasets) {
-      this.updateLegendData(ds?.data);
+    const series = this.series() || [];
+    for (const s of series) {
+      const data = s.data;
+      this.legendData.push({
+        min: data?.length ? Math.floor(calculateMin(data)) : 0,
+        max: data?.length ? Math.floor(calculateMax(data)) : 0,
+        avg: data?.length ? Math.floor(calculateAvg(data)) : 0,
+        total: data?.length ? Math.floor(calculateTotal(data)) : 0,
+        latest: data?.length ? Math.floor(calculateLatest(data)) : 0
+      });
     }
   }
 
   updateLineWidth(legendKey: LegendKey, width: number) {
     const visible = (this.visibleEntityIds()).includes(legendKey.dataKey.label);
-    if (visible) {
-      const datasetIndex = legendKey.dataIndex as number;
-      const chart = this.chart?.();
-      if (chart?.data?.datasets?.[datasetIndex]) {
-        chart.data.datasets[datasetIndex].borderWidth = width;
-        chart.update('none');
-      }
+    const chart = this.chart();
+    if (!visible || !chart) {
+      return;
     }
+    const seriesName = legendKey.dataKey.label;
+    chart.setOption({
+      series: [{ name: seriesName, lineStyle: { width } } as any],
+    });
   }
 
   toggleLegendKey(legendKey: LegendKey) {
     const dataKey = legendKey.dataKey.label;
-    const chart = this.chart?.();
-    if (!chart) {
+    const toggle = this.toggleVisibility();
+    if (!toggle) {
       return;
     }
-    const visibleIds = [...(this.visibleEntityIds())];
+    const visibleIds = [...(this.visibleEntityIds() ?? [])];
     if (!visibleIds.includes(dataKey)) {
       visibleIds.push(dataKey);
       this.visibleEntityIdsChange.emit(visibleIds);
       this.entityIdTimeseriesRequested.emit(dataKey);
     }
-
-    const datasetIndex = legendKey.dataIndex as number;
-    if (chart.isDatasetVisible(datasetIndex)) {
-      chart.hide(datasetIndex);
-    } else {
-      chart.show(datasetIndex);
-    }
-    const isVisible = chart.isDatasetVisible(datasetIndex);
-    this.updateLegendLabel(datasetIndex, isVisible);
+    const nowVisible = toggle(dataKey);
+    this.updateLegendLabel(legendKey.dataIndex, nowVisible);
   }
 
-  private updateLegendData(data: any[]) {
-    this.legendData.push({
-      min: data?.length ? Math.floor(calculateMin(data)) : 0,
-      max: data?.length ? Math.floor(calculateMax(data)) : 0,
-      avg: data?.length ? Math.floor(calculateAvg(data)) : 0,
-      total: data?.length ? Math.floor(calculateTotal(data)) : 0,
-      latest: data?.length ? Math.floor(calculateLatest(data)) : 0
-    });
-  }
-
-  private updateLegendLabel(datasetIndex: number, isDatasetVisible: boolean) {
-    const color = isDatasetVisible ? getColor(this.chartKey(), datasetIndex) : null;
+  private updateLegendLabel(datasetIndex: number, isVisible: boolean) {
+    const color = isVisible ? getColor(this.chartKey(), datasetIndex) : null;
     if (this.legendKeys[datasetIndex]?.dataKey) {
       this.legendKeys[datasetIndex].dataKey.color = color as any;
-      this.legendKeys[datasetIndex].dataKey.hidden = !this.legendKeys[datasetIndex].dataKey.hidden;
+      this.legendKeys[datasetIndex].dataKey.hidden = !isVisible;
     }
   }
 }

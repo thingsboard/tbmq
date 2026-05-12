@@ -14,8 +14,9 @@
 /// limitations under the License.
 ///
 
-import _ from 'lodash';
-import { Tooltip } from 'chart.js';
+import type { EChartsOption, LineSeriesOption, TopLevelFormatterParams } from 'echarts/types/dist/shared';
+import moment from 'moment';
+import { formatLargeNumber } from '@core/utils';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -118,270 +119,6 @@ export function getColor(type: ChartKey, index: number): string {
   return palette[normalizedIndex];
 }
 
-//@ts-ignore
-Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
-  return {
-    x: eventPosition.x,
-    y: eventPosition.y
-  };
-};
-
-const crosshairPlugin = {
-  id: 'corsair',
-  afterDatasetsDraw(chart) {
-    const { ctx, chartArea, corsair } = chart;
-    if (corsair?.x && corsair?.y) {
-      const { x, y } = corsair;
-      if (
-        x >= chartArea.left &&
-        x <= chartArea.right &&
-        y >= chartArea.top &&
-        y <= chartArea.bottom
-      ) {
-        ctx.save();
-        ctx.strokeStyle = '#960000';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, chartArea.top);
-        ctx.lineTo(x, chartArea.bottom);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-  },
-  afterEvent(chart, evt) {
-    const { chartArea } = chart;
-    const { x, y } = evt.event;
-    if (
-      x >= chartArea.left &&
-      x <= chartArea.right &&
-      y >= chartArea.top &&
-      y <= chartArea.bottom
-    ) {
-      chart.corsair = { x, y };
-    } else {
-      chart.corsair = null;
-    }
-    chart.draw();
-  },
-};
-
-const baseChartConfig = {
-  type: 'line',
-  plugins: [
-    crosshairPlugin,
-  ],
-  options: {
-    animation: false,
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
-    scales: {
-      x: {
-        type: 'time',
-        bounds: 'ticks',
-        time: {
-          round: 'minute',
-          unit: 'minute'
-        },
-        ticks: {
-          align: 'auto',
-          maxRotation: 0,
-          autoSkipPadding: 9,
-          major: {
-            enabled: true
-          },
-          font: (ctx) => {
-            if (ctx.tick && ctx.tick.major) {
-              return {
-                weight: 'bold',
-                size: 12
-              };
-            } else {
-              return {
-                weight: 'normal',
-                size: 11
-              };
-            }
-          },
-        },
-        grid: {
-          display: false,
-        },
-        border: {
-          display: false
-        },
-      },
-      y: {
-        offset: false,
-        min: 0,
-        suggestedMax: 1,
-        ticks: {
-          maxRotation: 0,
-          labelOffset: 0,
-          autoSkip: true,
-          callback(label, index) {
-            if (Math.floor(label) === label) {
-              const formatter = Intl.NumberFormat('en', { notation: 'compact'});
-              return formatter.format(label);
-            }
-          }
-        },
-        border: {
-          display: false
-        },
-        grid: {
-          display: false,
-        },
-      }
-    },
-    plugins: {
-      tooltip: {
-        position: 'tbPositioner',
-        multiKeyBackground: 'transparent'
-      }
-    },
-    layout: {
-      padding: {
-        right: 5,
-        left: 0,
-        bottom: 0,
-        top: 5
-      }
-    },
-    parsing: {
-      xAxisKey: 'ts',
-      yAxisKey: 'value'
-    }
-  }
-}
-
-function pageChartConfig(type: ChartView): object {
-  if (type === ChartView.detailed) {
-    return {
-      options: {
-        plugins: {
-          zoom: {
-            zoom: {
-              drag: {
-                enabled: true,
-                threshold: 5
-              },
-              wheel: {
-                enabled: false,
-              },
-              mode: 'x',
-              onZoomStart: ({ chart, event, point }) => {
-                chart.corsair = {x: 0, y: 0, draw: false};
-                chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-              },
-              onZoomComplete: ({ chart }) => {
-                chart.update();
-              }
-            }
-          },
-          legend: {
-            display: false,
-            position: 'bottom',
-            align: 'start',
-            fullSize: true,
-            labels: {
-              usePointStyle: true,
-              pointStyle: 'line',
-              padding: 20,
-              font: {
-                weight: 500,
-                size: 12
-              },
-              generateLabels(chart) {
-                const datasets = chart.data.datasets;
-                return chart._getSortedDatasetMetas().map((meta, index) => {
-                  return {
-                    datasetIndex: index,
-                    text: datasets[meta.index].label,
-                    hidden: !meta.visible,
-                    lineWidth: 5,
-                    strokeStyle: datasets[meta.index].backgroundColor,
-                    pointStyle: 'line'
-                  };
-                }, this);
-              }
-            },
-            onClick(e, legendItem, legend) {
-              const index = legendItem.datasetIndex;
-              const ci = legend.chart;
-              if (ci.isDatasetVisible(index)) {
-                ci.hide(index);
-                legendItem.hidden = true;
-              } else {
-                ci.show(index);
-                legendItem.hidden = false;
-              }
-            },
-            onHover: function(e) {
-              e.native.target.style.cursor = 'pointer';
-            },
-            onLeave: function(e) {
-              e.native.target.style.cursor = 'default';
-            }
-          }
-        }
-      },
-    };
-  }
-  if (type === ChartView.compact) {
-    return {
-      options: {
-        title: {
-          display: false,
-          text: null,
-          lineHeight: 0,
-          padding: 0,
-          fontStyle: 'normal',
-          fontColor: '#000000',
-          fontSize: 12
-        },
-        scales: {
-          x: {
-            time: {
-              displayFormats: {
-                minute: 'HH:mm'
-              }
-            },
-            ticks: {
-              major: {
-                enabled: false
-              }
-            },
-          },
-          y: {
-            ticks: {
-              font: {
-                size: 9
-              }
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-        }
-      }
-    }
-  }
-  return {};
-}
-
-export const chartJsParams = (type: ChartView) => {
-  const baseConfig = _.cloneDeep(baseChartConfig);
-  const pageConfig = pageChartConfig(type);
-  return _.merge(baseConfig, pageConfig);
-}
-
 export interface LegendConfig {
   showMin: boolean;
   showMax: boolean;
@@ -399,4 +136,243 @@ export interface DataKey {
   label: string;
   hidden: boolean;
   color: string;
+}
+
+export interface ChartSeries {
+  name: string;
+  color: string;
+  data: TsValue[];
+  visible: boolean;
+}
+
+// Thingsboard chart color scheme (light mode)
+const tbColors = {
+  axisLine: 'rgba(0, 0, 0, 0.54)',
+  axisLabel: 'rgba(0, 0, 0, 0.54)',
+  axisSplitLine: 'rgba(0, 0, 0, 0.12)',
+  tooltipLabel: 'rgba(0, 0, 0, 0.76)',
+  tooltipValue: 'rgba(0, 0, 0, 0.87)',
+  tooltipDate: 'rgba(0, 0, 0, 0.76)',
+  tooltipBackground: 'rgba(255, 255, 255, 0.76)',
+  tooltipBorder: 'rgba(0, 0, 0, 0.08)',
+};
+
+export interface XAxisFormat {
+  unit: 'minute' | 'hour' | 'day';
+  formatPattern: string;
+}
+
+export function pickXAxisFormat(startMs: number, endMs: number): XAxisFormat {
+  const hours = (endMs - startMs) / (1000 * 60 * 60);
+  if (hours <= 24) {
+    return { unit: 'minute', formatPattern: 'HH:mm' };
+  }
+  if (hours <= 24 * 30) {
+    return { unit: 'day', formatPattern: 'MMM-DD HH:mm' };
+  }
+  return { unit: 'day', formatPattern: 'MMM-DD' };
+}
+
+export interface TooltipFormatterContext {
+  intervalUnit: string;
+  totalEntityIdOnly: boolean;
+}
+
+export function buildTooltipFormatter(ctx: () => TooltipFormatterContext): (params: TopLevelFormatterParams) => HTMLElement | string {
+  return (params: TopLevelFormatterParams) => {
+    const list = Array.isArray(params) ? params : [params];
+    if (!list.length) {
+      return '';
+    }
+    const { intervalUnit, totalEntityIdOnly } = ctx();
+    const ts = (list[0].value as [number, number])[0];
+    const dateText = moment(ts).format('YYYY-MM-DD HH:mm');
+
+    const root = document.createElement('div');
+    root.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:4px 2px;min-width:160px;';
+
+    const dateEl = document.createElement('div');
+    dateEl.textContent = dateText;
+    dateEl.style.cssText = `font-size:11px;font-weight:500;color:${tbColors.tooltipDate};letter-spacing:0.02em;`;
+    root.appendChild(dateEl);
+
+    for (const p of list) {
+      const value = (p.value as [number, number])[1];
+      if (value == null) {
+        continue;
+      }
+      if (value === 0 && p.seriesName !== TOTAL_ENTITY_ID && !totalEntityIdOnly) {
+        continue;
+      }
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;justify-content:space-between;';
+
+      const label = document.createElement('div');
+      label.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${p.color};`;
+      label.appendChild(dot);
+
+      const name = document.createElement('div');
+      name.textContent = p.seriesName ?? '';
+      name.style.cssText = `font-size:12px;font-weight:400;color:${tbColors.tooltipLabel};`;
+      label.appendChild(name);
+
+      const val = document.createElement('div');
+      const formattedValue = Number.isInteger(value) ? value : Number(value).toFixed(2);
+      val.textContent = intervalUnit
+        ? `${formatLargeNumber(formattedValue as number)} ${intervalUnit}`
+        : `${formatLargeNumber(formattedValue as number)}`;
+      val.style.cssText = `font-size:13px;font-weight:600;color:${tbColors.tooltipValue};text-align:end;`;
+
+      row.appendChild(label);
+      row.appendChild(val);
+      root.appendChild(row);
+    }
+    return root;
+  };
+}
+
+export interface BuildOptionParams {
+  view: ChartView;
+  enableZoom: boolean;
+  series: LineSeriesOption[];
+  xMin: number;
+  xMax: number;
+  tooltipFormatter: (params: TopLevelFormatterParams) => HTMLElement | string;
+}
+
+export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
+  const { view, enableZoom, series, xMin, xMax, tooltipFormatter } = params;
+  const compact = view === ChartView.compact;
+  const xFormat = pickXAxisFormat(xMin, xMax);
+
+  return {
+    animation: false,
+    grid: {
+      left: compact ? 4 : 8,
+      right: compact ? 12 : 16,
+      top: compact ? 12 : 16,
+      bottom: enableZoom ? 56 : (compact ? 4 : 8),
+      containLabel: true,
+    },
+    tooltip: {
+      trigger: 'axis',
+      confine: true,
+      backgroundColor: tbColors.tooltipBackground,
+      borderColor: tbColors.tooltipBorder,
+      borderWidth: 1,
+      padding: [8, 12],
+      extraCssText: 'backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-radius: 4px;',
+      axisPointer: {
+        type: 'line',
+        lineStyle: {
+          color: '#960000',
+          width: 1,
+        },
+      },
+      formatter: tooltipFormatter,
+    },
+    xAxis: {
+      type: 'time',
+      min: xMin,
+      max: xMax,
+      boundaryGap: false as any,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLabel: {
+        color: tbColors.axisLabel,
+        fontSize: compact ? 10 : 11,
+        hideOverlap: true,
+        formatter: (value: number) => moment(value).format(xFormat.formatPattern),
+      },
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      minInterval: 1,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLabel: {
+        color: tbColors.axisLabel,
+        fontSize: compact ? 9 : 11,
+        formatter: (value: number) => {
+          if (Number.isInteger(value)) {
+            return new Intl.NumberFormat('en', { notation: 'compact' }).format(value);
+          }
+          return String(value);
+        },
+      },
+    },
+    dataZoom: enableZoom
+      ? [
+          {
+            type: 'slider',
+            xAxisIndex: 0,
+            show: true,
+            height: 32,
+            bottom: 8,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+            fillerColor: 'rgba(88, 81, 158, 0.12)',
+            handleStyle: {
+              color: '#ffffff',
+              borderColor: 'rgba(0, 0, 0, 0.32)',
+              borderWidth: 1,
+              shadowBlur: 2,
+              shadowColor: 'rgba(0, 0, 0, 0.12)',
+              shadowOffsetX: 0,
+              shadowOffsetY: 1,
+            },
+            moveHandleSize: 8,
+            moveHandleStyle: {
+              color: 'rgba(0, 0, 0, 0.16)',
+            },
+            dataBackground: {
+              lineStyle: { color: 'rgba(0, 0, 0, 0.16)', width: 1 },
+              areaStyle: { color: 'rgba(0, 0, 0, 0.04)' },
+            },
+            selectedDataBackground: {
+              lineStyle: { color: 'rgba(88, 81, 158, 0.6)', width: 1 },
+              areaStyle: { color: 'rgba(88, 81, 158, 0.08)' },
+            },
+            textStyle: {
+              color: 'rgba(0, 0, 0, 0.54)',
+              fontSize: 10,
+            },
+            labelFormatter: (value: number) => moment(value).format('MMM-DD HH:mm'),
+          },
+        ]
+      : undefined,
+    series,
+  };
+}
+
+export function buildSeries(
+  name: string,
+  color: string,
+  data: TsValue[] | null,
+  visible: boolean
+): LineSeriesOption {
+  return {
+    type: 'line',
+    name,
+    showSymbol: false,
+    symbol: 'circle',
+    symbolSize: 6,
+    sampling: 'lttb',
+    smooth: 0.2,
+    smoothMonotone: 'x',
+    lineStyle: { color, width: 3 },
+    itemStyle: { color },
+    emphasis: {
+      lineStyle: { width: 4 },
+    },
+    data: (data ?? []).map(d => [d.ts, d.value] as [number, number]),
+    z: 2,
+    silent: !visible,
+  };
 }
