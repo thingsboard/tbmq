@@ -38,27 +38,32 @@
     display: flex;
     flex-direction: row;
     gap: 10px;
+    flex: 1;
 
     .version-container {
+      display: flex;
       flex: 1;
-      padding: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px 12px 12px;
       border-radius: 10px;
       border: 1px solid #e0e0e0;
     }
 
     span {
       color: rgba(0,0,0,0.76);
-      font-size: 1.25em;
-      font-weight: 600;
+      font-size: 1.5rem;
+      font-weight: 500;
     }
 
     .tb-title-link {
       font-style: normal;
-      font-weight: 500;
-      font-size: 0.9em;
-      line-height: 1em;
+      font-weight: 400;
+      font-size: 0.9rem;
       letter-spacing: 0.25px;
-      color: rgba(0,0,0,0.54);
+      color: inherit;
       position: relative;
       border-bottom: none;
       cursor: pointer;
@@ -79,10 +84,11 @@
         transform: rotate(315deg);
         font-weight: normal;
         font-style: normal;
-        font-size: 18px;
+        font-size: 1.1rem;
+        line-height: 1.1rem;
         margin-left: 6px;
         color: rgba(0,0,0,0.12);
-        vertical-align: bottom;
+        vertical-align: top;
       }
       &:hover::after {
         color: rgba(0,0,0,0.54);
@@ -103,11 +109,10 @@
 
     .cards {
       span {
-        font-size: 1em;
+        font-size: 1.1em;
       }
       .tb-title-link {
         font-size: 0.9em;
-        line-height: 1em;
       }
       .tb-title-link-container {
         &::after {
