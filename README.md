@@ -56,7 +56,7 @@ below.
 #### 1. Download and run the installation script
 
 ```bash
-wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.2.0/msa/tbmq/configs/tbmq-install-and-run.sh &&
+wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.3.0/msa/tbmq/configs/tbmq-install-and-run.sh &&
 sudo chmod +x tbmq-install-and-run.sh &&
 ./tbmq-install-and-run.sh
 ```
