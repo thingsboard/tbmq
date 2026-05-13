@@ -16,8 +16,10 @@
 
 -->
 <section class="interval-section flex flex-1">
-  <mat-form-field class="flex flex-1">
-    <mat-label translate>timewindow.interval</mat-label>
+  <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+    @if (predefinedName()) {
+      <mat-label>{{ predefinedName() | translate }}</mat-label>
+    }
     <mat-select [disabled]="disabled()" [(ngModel)]="modelValue" (ngModelChange)="onIntervalChange()">
       @for (interval of intervals; track interval) {
         <mat-option [value]="interval">

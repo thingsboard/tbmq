@@ -56,9 +56,6 @@ import { DEFAULT_OVERLAY_POSITIONS, POSITION_MAP } from '@shared/models/overlay.
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { MatNativeDatetimeModule } from '@mat-datetimepicker/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
 
 // @dynamic
 @Component({
@@ -72,13 +69,9 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => TimewindowComponent),
             multi: true
-        },
-        {
-          provide: MAT_DATE_LOCALE,
-          useValue: 'en-GB'
         }
     ],
-    imports: [MatButton, MatIcon, MatTooltip, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
+    imports: [MatButton, MatIcon, MatTooltip, TranslateModule]
 })
 export class TimewindowComponent implements ControlValueAccessor {
 
@@ -244,7 +237,7 @@ export class TimewindowComponent implements ControlValueAccessor {
 
   updateDisplayValue() {
     if (this.innerValue.selectedTab === TimewindowType.REALTIME && !this.historyOnly) {
-      this.innerValue.displayValue = '';
+      this.innerValue.displayValue = this.translate.instant('timewindow.realtime') + ' - ';
       if (this.innerValue.realtime.realtimeType === RealtimeWindowType.INTERVAL) {
         this.innerValue.displayValue += this.translate.instant(QuickTimeIntervalTranslationMap.get(this.innerValue.realtime.quickInterval));
       } else {

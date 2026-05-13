@@ -132,6 +132,7 @@
         }
     },
     "aggregation": {
+        "aggregation": "Aggregation",
         "function": "Data aggregation function",
         "limit": "Max values",
         "group-interval": "Grouping interval",
@@ -289,7 +290,9 @@
         "date-from": "Date from",
         "time-from": "Time from",
         "date-to": "Date to",
-        "time-to": "Time to"
+        "time-to": "Time to",
+        "from": "From",
+        "to": "To"
     },
     "event": {
         "events": "Events",
@@ -1010,6 +1013,7 @@
         "minutes": "Minutes",
         "seconds": "Seconds",
         "advanced": "Advanced",
+        "custom": "Custom",
         "predefined": {
             "yesterday": "Yesterday",
             "day-before-yesterday": "Day before yesterday",
@@ -1051,7 +1055,7 @@
         "units": "Units"
     },
     "timewindow": {
-        "timewindow": "Timewindow",
+        "timewindow": "Time window",
         "time-invalid": "Enter a valid time format",
         "days": "{ days, plural, =1 { day } other {# days } }",
         "hours": "{ hours, plural, =0 { hour } =1 {1 hour } other {# hours } }",
@@ -1069,10 +1073,12 @@
         "history": "History",
         "last-prefix": "last",
         "period": "from {{ startTime }} to {{ endTime }}",
-        "edit": "Edit timewindow",
+        "edit": "Edit time window",
         "for-all-time": "For all time",
         "last": "Last",
         "time-period": "Time period",
+        "range": "Range",
+        "relative": "Relative",
         "hide": "Hide",
         "interval": "Interval"
     },
