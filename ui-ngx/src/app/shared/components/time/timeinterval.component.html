@@ -40,21 +40,21 @@
       </mat-form-field>
     </section>
   </section>
-  <section class="interval-section flex flex-row flex-wrap gap-1.5"
+  <section class="interval-section flex flex-row gap-1.5"
            [class.!hidden]="!(advanced && (isEdit() || !hideFlag))">
-    <mat-form-field class="number-input">
+    <mat-form-field class="number-input flex-1">
       <mat-label translate>timeinterval.days</mat-label>
       <input matInput [disabled]="hideFlag || disabled()" type="number" step="1" min="0" [(ngModel)]="days" (ngModelChange)="onTimeInputChange('days')"/>
     </mat-form-field>
-    <mat-form-field class="number-input">
+    <mat-form-field class="number-input flex-1">
       <mat-label translate>timeinterval.hours</mat-label>
       <input matInput [disabled]="hideFlag || disabled()" type="number" step="1" [(ngModel)]="hours" (ngModelChange)="onTimeInputChange('hours')"/>
     </mat-form-field>
-    <mat-form-field class="number-input">
+    <mat-form-field class="number-input flex-1">
       <mat-label translate>timeinterval.minutes</mat-label>
       <input matInput [disabled]="hideFlag || disabled()" type="number" step="1" [(ngModel)]="mins" (ngModelChange)="onTimeInputChange('mins')"/>
     </mat-form-field>
-    <mat-form-field class="number-input">
+    <mat-form-field class="number-input flex-1">
       <mat-label translate>timeinterval.seconds</mat-label>
       <input matInput [disabled]="hideFlag || disabled()" type="number" step="1" [(ngModel)]="secs" (ngModelChange)="onTimeInputChange('secs')"/>
     </mat-form-field>

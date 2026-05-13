@@ -425,11 +425,14 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     if (!this.chart) {
       return;
     }
+    const latestTs = this.getLatestDataTs();
+    const xMax = latestTs ?? this.fixedWindowTimeMs.endTimeMs;
+    const xMin = this.fixedWindowTimeMs.startTimeMs;
     const option = buildEChartsOption({
       view: this.chartView(),
       enableZoom: this.chartView() === ChartView.detailed,
-      xMin: this.fixedWindowTimeMs.startTimeMs,
-      xMax: this.fixedWindowTimeMs.endTimeMs,
+      xMin,
+      xMax,
       tooltipFormatter: buildTooltipFormatter(() => ({
         intervalUnit: this.chartIntervalUnit(),
         totalEntityIdOnly: this.totalEntityIdOnly(),
@@ -439,6 +442,20 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
       ),
     });
     this.chart.setOption(option, { notMerge: false, replaceMerge: ['series'] });
+  }
+
+  private getLatestDataTs(): number | null {
+    let max: number | null = null;
+    for (const s of this.series) {
+      if (!s.visible || !s.data?.length) {
+        continue;
+      }
+      const ts = s.data[0]?.ts;
+      if (ts != null && (max == null || ts > max)) {
+        max = ts;
+      }
+    }
+    return max;
   }
 
   private updateLegend() {

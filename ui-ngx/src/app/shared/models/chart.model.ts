@@ -158,12 +158,16 @@ const tbColors = {
 };
 
 export interface XAxisFormat {
-  unit: 'minute' | 'hour' | 'day';
+  unit: 'second' | 'minute' | 'hour' | 'day';
   formatPattern: string;
 }
 
 export function pickXAxisFormat(startMs: number, endMs: number): XAxisFormat {
-  const hours = (endMs - startMs) / (1000 * 60 * 60);
+  const minutes = (endMs - startMs) / (1000 * 60);
+  const hours = minutes / 60;
+  if (minutes < 4) {
+    return { unit: 'second', formatPattern: 'HH:mm:ss' };
+  }
   if (hours <= 24) {
     return { unit: 'minute', formatPattern: 'HH:mm' };
   }
@@ -252,7 +256,7 @@ export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
     animation: false,
     grid: {
       left: compact ? 4 : 8,
-      right: compact ? 12 : 16,
+      right: compact ? 20 : 28,
       top: compact ? 12 : 16,
       bottom: enableZoom ? 56 : (compact ? 4 : 8),
       containLabel: true,
@@ -279,14 +283,43 @@ export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
       min: xMin,
       max: xMax,
       boundaryGap: false as any,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      splitLine: { show: false },
+      axisLine: compact
+        ? { show: false }
+        : { show: true, lineStyle: { color: tbColors.axisLine } },
+      axisTick: compact
+        ? { show: false }
+        : { show: true, length: 4, lineStyle: { color: tbColors.axisLine } },
+      splitLine: compact
+        ? { show: false }
+        : { show: true, lineStyle: { color: tbColors.axisSplitLine, type: 'solid' } },
       axisLabel: {
         color: tbColors.axisLabel,
         fontSize: compact ? 10 : 11,
         hideOverlap: true,
-        formatter: (value: number) => moment(value).format(xFormat.formatPattern),
+        showMaxLabel: true,
+        formatter: (value: number) => {
+          const m = moment(value);
+          const text = m.format(xFormat.formatPattern);
+          if (compact) {
+            return text;
+          }
+          let isMajor = false;
+          if (xFormat.unit === 'second') {
+            isMajor = m.second() === 0;
+          } else if (xFormat.unit === 'minute') {
+            isMajor = m.minute() === 0;
+          } else {
+            isMajor = m.hour() === 0;
+          }
+          return isMajor ? `{major|${text}}` : text;
+        },
+        rich: {
+          major: {
+            fontWeight: 'bold',
+            color: tbColors.tooltipDate,
+            fontSize: compact ? 10 : 11,
+          },
+        },
       },
     },
     yAxis: {
