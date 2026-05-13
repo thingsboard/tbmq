@@ -32,7 +32,7 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
 
     // This list should include all versions that are compatible for the upgrade.
     // The compatibility cycle usually breaks when we have some scripts written in Java that may not work after new release.
-    private static final List<String> SUPPORTED_VERSIONS_FOR_UPGRADE = List.of("2.2.0");
+    private static final List<String> SUPPORTED_VERSIONS_FOR_UPGRADE = List.of("2.3.0");
 
     private final ProjectInfo projectInfo;
     private final JdbcTemplate jdbcTemplate;
