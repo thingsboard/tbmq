@@ -24,6 +24,15 @@ metadata:
   region: us-east-1
   version: "1.34"
 
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+
 managedNodeGroups:
   - name: managed
     instanceType: m7a.large
@@ -31,15 +40,40 @@ managedNodeGroups:
     maxSize: 2
     minSize: 1
     labels: { role: tbmq }
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak' # Note, use your own public key name here
+    privateNetworking: true
+    volumeType: gp3
+    volumeSize: 20
+    # Uncomment to enable SSH access to the nodes (replace with your own EC2 key pair name).
+    #ssh:
+    #  allow: true
+    #  publicKeyName: 'your-ec2-key-pair-name'
+
   - name: tbmq-ie
     instanceType: m7a.large
     desiredCapacity: 2
     maxSize: 2
     minSize: 1
     labels: { role: tbmq-ie }
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak' # Note, use your own public key name here
+    privateNetworking: true
+    volumeType: gp3
+    volumeSize: 20
+    # Uncomment to enable SSH access to the nodes (replace with your own EC2 key pair name).
+    #ssh:
+    #  allow: true
+    #  publicKeyName: 'your-ec2-key-pair-name'
+
+addons:
+  - name: aws-ebs-csi-driver
+    wellKnownPolicies:
+      ebsCSIController: true
+  - name: vpc-cni
+    attachPolicyARNs:
+      - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+    resolveConflicts: overwrite
+  - name: coredns
+    version: latest
+    configurationValues: "{\"replicaCount\":3}"
+    resolveConflicts: overwrite
+  - name: kube-proxy
+    version: latest
+    resolveConflicts: overwrite
