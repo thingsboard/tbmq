@@ -74,7 +74,7 @@ public class ForwardHeadersIpAddressHandler extends ChannelInboundHandlerAdapter
         if (trimmed.isEmpty()) {
             return null;
         }
-        if (trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length() >= 2) {
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             trimmed = trimmed.substring(1, trimmed.length() - 1);
         }
         try {

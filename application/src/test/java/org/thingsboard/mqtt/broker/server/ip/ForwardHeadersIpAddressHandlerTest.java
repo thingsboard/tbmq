@@ -33,8 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ForwardHeadersIpAddressHandlerTest {
 
     private static final InetSocketAddress SOCKET_ADDR = new InetSocketAddress("172.18.0.1", 54321);
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    private static final String X_REAL_IP = "X-Real-IP";
+    private static final String X_FORWARDED_FOR = ForwardHeadersIpAddressHandler.X_FORWARDED_FOR;
+    private static final String X_REAL_IP = ForwardHeadersIpAddressHandler.X_REAL_IP;
 
     private EmbeddedChannel channel;
 
