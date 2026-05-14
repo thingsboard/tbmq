@@ -29,6 +29,9 @@ public class MqttWsServerContext {
     @Value("${listener.ws.proxy_enabled:}")
     private Boolean listenerProxyProtocolEnabled;
 
+    @Value("${listener.ws.forward_headers_enabled:false}")
+    private boolean forwardHeadersEnabled;
+
     @Value("${listener.ws.netty.sub_protocols}")
     private String subprotocols;
 

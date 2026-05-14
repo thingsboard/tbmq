@@ -163,6 +163,12 @@ listener:
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_WS_PROXY_PROTOCOL_ENABLED:}"
+    # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
+    # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
+    # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
+    # Ignored when proxy_enabled is true for this listener — PROXY protocol takes precedence.
+    # SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.
+    forward_headers_enabled: "${MQTT_WS_FORWARD_HEADERS_ENABLED:false}"
     netty:
       # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5.
       sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
@@ -189,6 +195,12 @@ listener:
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_WSS_PROXY_PROTOCOL_ENABLED:}"
+    # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
+    # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
+    # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
+    # Ignored when proxy_enabled is true for this listener — PROXY protocol takes precedence.
+    # SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.
+    forward_headers_enabled: "${MQTT_WSS_FORWARD_HEADERS_ENABLED:false}"
     config:
       # SSL protocol. See <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a> for accepted values.
       protocol: "${LISTENER_WSS_PROTOCOL:TLSv1.2}"
