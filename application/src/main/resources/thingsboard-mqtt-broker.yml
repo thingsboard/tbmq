@@ -166,7 +166,7 @@ listener:
     # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
     # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
     # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
-    # Ignored when proxy_enabled is true for this listener — PROXY protocol takes precedence.
+    # Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy_enabled) — PROXY protocol takes precedence.
     # SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.
     forward_headers_enabled: "${MQTT_WS_FORWARD_HEADERS_ENABLED:false}"
     netty:
@@ -198,7 +198,7 @@ listener:
     # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
     # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
     # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
-    # Ignored when proxy_enabled is true for this listener — PROXY protocol takes precedence.
+    # Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy_enabled) — PROXY protocol takes precedence.
     # SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.
     forward_headers_enabled: "${MQTT_WSS_FORWARD_HEADERS_ENABLED:false}"
     config:

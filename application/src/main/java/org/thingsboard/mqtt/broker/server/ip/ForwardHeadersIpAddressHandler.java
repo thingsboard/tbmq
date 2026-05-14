@@ -36,6 +36,7 @@ public class ForwardHeadersIpAddressHandler extends ChannelInboundHandlerAdapter
         if (msg instanceof FullHttpRequest request) {
             InetAddress resolved = resolveFromHeaders(request);
             if (resolved != null) {
+                // Port 0 — the client's real source port is not carried in X-Forwarded-For / X-Real-IP.
                 InetSocketAddress address = new InetSocketAddress(resolved, 0);
                 log.trace("[{}] Overriding address from forward headers: {}", ctx.channel().id(), address);
                 ctx.channel().attr(MqttSessionHandler.ADDRESS).set(address);
