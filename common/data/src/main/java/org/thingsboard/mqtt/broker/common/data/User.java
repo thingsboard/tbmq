@@ -33,6 +33,7 @@ public class User extends BaseDataWithAdditionalInfo {
     @Serial
     private static final long serialVersionUID = 8250339805336035966L;
 
+    @Length
     private String email;
     private Authority authority;
     @NoXss

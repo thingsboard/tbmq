@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.UnauthorizedClientsProperties;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
@@ -87,10 +88,10 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
             return;
         }
         UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
-                .clientId(clientId)
+                .clientId(StringUtils.abbreviate(clientId))
                 .ipAddress(ipAddress)
                 .ts(System.currentTimeMillis())
-                .username(username)
+                .username(StringUtils.abbreviate(username))
                 .passwordProvided(passwordProvided)
                 .tlsUsed(tlsUsed)
                 .reason(reason)

@@ -450,6 +450,7 @@
         "delete-users-text": "Cuidado, tras confirmar los usuarios seleccionados y sus datos no se podrán recuperar.",
         "email": "Email",
         "email-required": "Email es obligatorio.",
+        "email-max-length": "El email debe tener menos de 256",
         "invalid-email-format": "Formato de email inválido.",
         "first-name": "Nombre",
         "last-name": "Apellido",

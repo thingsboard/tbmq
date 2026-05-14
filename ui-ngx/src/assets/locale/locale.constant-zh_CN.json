@@ -396,6 +396,7 @@
         "delete-users-text": "注意，确认后选中的用户及其数据不可恢复。",
         "email": "邮箱",
         "email-required": "邮箱必填。",
+        "email-max-length": "邮箱长度应小于 256",
         "invalid-email-format": "邮箱格式无效。",
         "first-name": "名",
         "last-name": "姓",

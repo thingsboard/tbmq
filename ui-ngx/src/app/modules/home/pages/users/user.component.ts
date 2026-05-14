@@ -65,7 +65,7 @@ export class UserComponent extends EntityComponent<User> {
   buildForm(entity: User): UntypedFormGroup {
     const form = this.fb.group(
       {
-        email: [entity ? entity.email : '', [Validators.required, Validators.email]],
+        email: [entity ? entity.email : '', [Validators.required, Validators.email, Validators.maxLength(255)]],
         firstName: [entity ? entity.firstName : ''],
         lastName: [entity ? entity.lastName : ''],
         additionalInfo: this.fb.group(

@@ -193,6 +193,14 @@ public class StringUtils {
         return encoder.encodeToString(bytes);
     }
 
+    public static String abbreviate(String value) {
+        return abbreviate(value, 255);
+    }
+
+    public static String abbreviate(String value, int maxLength) {
+        return org.apache.commons.lang3.StringUtils.abbreviate(value, maxLength);
+    }
+
     public static String truncate(String string, int maxLength) {
         return truncate(string, maxLength, n -> "...[truncated " + n + " symbols]");
     }
