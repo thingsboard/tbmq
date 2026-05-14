@@ -85,8 +85,12 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
     }
 
-    private boolean isProxyProtocolEnabled() {
+    protected boolean isProxyProtocolEnabled() {
         return Objects.requireNonNullElseGet(isListenerProxyProtocolEnabled(), () -> globalProxyProtocolEnabled);
+    }
+
+    protected boolean isForwardHeadersEnabled() {
+        return false;
     }
 
 }

@@ -58,6 +58,11 @@ public class MqttWsChannelInitializer extends AbstractMqttWsChannelInitializer {
     }
 
     @Override
+    public boolean isForwardHeadersEnabled() {
+        return context.isForwardHeadersEnabled();
+    }
+
+    @Override
     protected String getSubprotocols() {
         return context.getSubprotocols();
     }
