@@ -44,7 +44,6 @@ import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -91,7 +90,6 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandler messageHandler;
     private final ClientSubscriptionCache clientSubscriptionCache;
-    private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
     private final PublishMsgValidationService publishMsgValidationService;
     private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
