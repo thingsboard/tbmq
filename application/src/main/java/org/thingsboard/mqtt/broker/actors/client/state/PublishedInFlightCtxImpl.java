@@ -104,7 +104,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         } else {
             log.warn("[{}] Message is skipped! Max in-flight messages reached [{}] and delay queue is full [{}]!",
                     clientId, clientReceiveMax, delayedMsgQueueMaxSize);
-            ReferenceCountUtil.release(toRelease);
+            ReferenceCountUtil.safeRelease(toRelease);
             stats.incDropOverflow();
         }
         return reserve;
@@ -197,7 +197,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         }
 
         for (MqttPublishMessage m : toRelease) {
-            ReferenceCountUtil.release(m);
+            ReferenceCountUtil.safeRelease(m);
             stats.decDelayed();
             stats.incDropTtl();
         }
@@ -235,7 +235,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             stats.decDelayed(delayedSize);
         }
         for (MqttPublishMessage m : toRelease) {
-            ReferenceCountUtil.release(m);
+            ReferenceCountUtil.safeRelease(m);
         }
     }
 
