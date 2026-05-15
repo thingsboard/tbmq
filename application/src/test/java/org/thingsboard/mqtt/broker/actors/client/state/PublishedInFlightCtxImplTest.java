@@ -277,7 +277,7 @@ public class PublishedInFlightCtxImplTest {
         Thread.sleep(20);
         ctx.expireTtl(1L);
 
-        verify(stats, times(1)).incDropTtl();
+        verify(stats, times(1)).incDropTtl(1);
         assertEquals(0, expired.payload().refCnt());
     }
 

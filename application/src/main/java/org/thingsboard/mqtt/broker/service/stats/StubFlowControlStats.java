@@ -31,6 +31,10 @@ public class StubFlowControlStats implements FlowControlStats {
     }
 
     @Override
+    public void incDropTtl(int n) {
+    }
+
+    @Override
     public void incUnknownAck() {
     }
 

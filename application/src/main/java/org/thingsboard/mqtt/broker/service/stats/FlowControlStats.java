@@ -21,6 +21,8 @@ public interface FlowControlStats {
 
     void incDropTtl();
 
+    void incDropTtl(int n);
+
     void incUnknownAck();
 
     void incInflight();

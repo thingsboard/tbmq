@@ -31,6 +31,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -85,7 +86,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                 inFlightPacketIds.add(packetId);
                 reserve = true;
             } else if (delayedMsgCounter.get() < delayedMsgQueueMaxSize) {
-                delayedMsgQueue.add(new MqttPubMsgWithCreatedTime(mqttPubMsg, System.currentTimeMillis()));
+                delayedMsgQueue.add(new MqttPubMsgWithCreatedTime(mqttPubMsg, System.nanoTime()));
                 delayedMsgCounter.incrementAndGet();
                 register = true;
             } else {
@@ -176,7 +177,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
     @Override
     public void expireTtl(long ttlMs) {
-        long cutoff = System.currentTimeMillis() - ttlMs;
+        long cutoff = System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(ttlMs);
         List<MqttPublishMessage> toRelease = new ArrayList<>();
         boolean queueEmpty;
 
@@ -184,7 +185,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         try {
             while (true) {
                 MqttPubMsgWithCreatedTime head = delayedMsgQueue.peek();
-                if (head == null || head.getCreatedTime() >= cutoff) {
+                if (head == null || head.getCreatedTime() - cutoff >= 0) {
                     break;
                 }
                 delayedMsgQueue.poll();
@@ -198,8 +199,11 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
         for (MqttPublishMessage m : toRelease) {
             ReferenceCountUtil.safeRelease(m);
-            stats.decDelayed();
-            stats.incDropTtl();
+        }
+        int expiredCount = toRelease.size();
+        if (expiredCount > 0) {
+            stats.decDelayed(expiredCount);
+            stats.incDropTtl(expiredCount);
         }
 
         if (queueEmpty) {

@@ -52,6 +52,11 @@ public class DefaultFlowControlStats implements FlowControlStats {
     }
 
     @Override
+    public void incDropTtl(int n) {
+        dropTtlCounter.add(n);
+    }
+
+    @Override
     public void incUnknownAck() {
         unknownAckCounter.increment();
     }
