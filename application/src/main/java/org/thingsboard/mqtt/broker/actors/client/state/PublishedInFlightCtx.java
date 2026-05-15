@@ -28,14 +28,4 @@ public interface PublishedInFlightCtx {
     void expireTtl(long ttlMs);
 
     void release();
-
-    /**
-     * Temporary shim — kept until FlowControlServiceImpl is updated in the next task.
-     * After Task 3 this method is removed.
-     */
-    @Deprecated
-    default boolean processMsg(long ttlMs) {
-        expireTtl(ttlMs);
-        return false;
-    }
 }

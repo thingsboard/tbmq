@@ -15,20 +15,28 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.flow.control;
 
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FlowControlServiceImplTest {
@@ -40,9 +48,9 @@ public class FlowControlServiceImplTest {
     public void setUp() throws Exception {
         flowControlService = spy(new FlowControlServiceImpl());
         flowControlService.setFlowControlEnabled(true);
-        flowControlService.setTimeout(1000);
+        flowControlService.setSweepIntervalMs(100);
         flowControlService.setClientsWithDelayedMsgMap(new ConcurrentHashMap<>());
-        flowControlService.setService(ThingsBoardExecutors.initExecutorService(1, "flow-control-executor"));
+        flowControlService.setService(ThingsBoardExecutors.initExecutorService(1, "flow-control-ttl-sweeper"));
 
         publishedInFlightCtx = mock(PublishedInFlightCtxImpl.class);
     }
@@ -79,6 +87,50 @@ public class FlowControlServiceImplTest {
         flowControlService.removeFromMap(null);
 
         assertTrue(flowControlService.getClientsWithDelayedMsgMap().isEmpty());
+    }
+
+    @Test
+    public void launchProcessing_callsExpireTtlOnEachRegisteredCtx() {
+        PublishedInFlightCtx ctxA = mock(PublishedInFlightCtx.class);
+        PublishedInFlightCtx ctxB = mock(PublishedInFlightCtx.class);
+        flowControlService.addToMap("a", ctxA);
+        flowControlService.addToMap("b", ctxB);
+
+        flowControlService.launchProcessing();
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> {
+                    verify(ctxA, atLeastOnce()).expireTtl(anyLong());
+                    verify(ctxB, atLeastOnce()).expireTtl(anyLong());
+                });
+    }
+
+    @Test
+    public void launchProcessing_continuesAfterCtxException() {
+        PublishedInFlightCtx bad = mock(PublishedInFlightCtx.class);
+        PublishedInFlightCtx good = mock(PublishedInFlightCtx.class);
+        doThrow(new RuntimeException("boom")).when(bad).expireTtl(anyLong());
+        flowControlService.addToMap("bad", bad);
+        flowControlService.addToMap("good", good);
+
+        flowControlService.launchProcessing();
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> {
+                    verify(bad, atLeastOnce()).expireTtl(anyLong());
+                    verify(good, atLeastOnce()).expireTtl(anyLong());
+                });
+    }
+
+    @Test
+    public void init_doesNothingWhenDisabled() {
+        FlowControlServiceImpl fresh = new FlowControlServiceImpl();
+        fresh.setFlowControlEnabled(false);
+        fresh.init();
+
+        assertNull(fresh.getClientsWithDelayedMsgMap());
     }
 
 }
