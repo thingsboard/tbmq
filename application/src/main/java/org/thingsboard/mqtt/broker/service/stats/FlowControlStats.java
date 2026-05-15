@@ -27,7 +27,11 @@ public interface FlowControlStats {
 
     void decInflight();
 
+    void decInflight(int n);
+
     void incDelayed();
 
     void decDelayed();
+
+    void decDelayed(int n);
 }

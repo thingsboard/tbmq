@@ -43,10 +43,18 @@ public class StubFlowControlStats implements FlowControlStats {
     }
 
     @Override
+    public void decInflight(int n) {
+    }
+
+    @Override
     public void incDelayed() {
     }
 
     @Override
     public void decDelayed() {
+    }
+
+    @Override
+    public void decDelayed(int n) {
     }
 }

@@ -67,6 +67,11 @@ public class DefaultFlowControlStats implements FlowControlStats {
     }
 
     @Override
+    public void decInflight(int n) {
+        inflightGauge.addAndGet(-n);
+    }
+
+    @Override
     public void incDelayed() {
         delayedGauge.incrementAndGet();
     }
@@ -74,6 +79,11 @@ public class DefaultFlowControlStats implements FlowControlStats {
     @Override
     public void decDelayed() {
         delayedGauge.decrementAndGet();
+    }
+
+    @Override
+    public void decDelayed(int n) {
+        delayedGauge.addAndGet(-n);
     }
 
     public int getDropOverflow() {

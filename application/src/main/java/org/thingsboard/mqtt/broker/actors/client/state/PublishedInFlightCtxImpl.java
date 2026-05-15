@@ -228,11 +228,11 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             lock.unlock();
         }
 
-        for (int i = 0; i < inFlightSize; i++) {
-            stats.decInflight();
+        if (inFlightSize > 0) {
+            stats.decInflight(inFlightSize);
         }
-        for (int i = 0; i < delayedSize; i++) {
-            stats.decDelayed();
+        if (delayedSize > 0) {
+            stats.decDelayed(delayedSize);
         }
         for (MqttPublishMessage m : toRelease) {
             ReferenceCountUtil.release(m);
