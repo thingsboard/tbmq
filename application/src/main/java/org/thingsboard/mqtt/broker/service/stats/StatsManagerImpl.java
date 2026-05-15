@@ -80,6 +80,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
     private ClientActorStats clientActorStats;
+    private FlowControlStats flowControlStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -92,6 +93,10 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
         this.retainedMsgConsumerStats = new DefaultRetainedMsgConsumerStats(statsFactory);
         this.clientActorStats = new DefaultClientActorStats(statsFactory);
+        DefaultFlowControlStats defaultFlowControlStats = new DefaultFlowControlStats(statsFactory);
+        this.flowControlStats = defaultFlowControlStats;
+        gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
+        gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
     }
 
     @PreDestroy
@@ -380,6 +385,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public ClientActorStats getClientActorStats() {
         return clientActorStats;
+    }
+
+    @Override
+    public FlowControlStats getFlowControlStats() {
+        return flowControlStats;
     }
 
     @Override

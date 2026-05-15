@@ -180,6 +180,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public FlowControlStats getFlowControlStats() {
+        return StubFlowControlStats.STUB_FLOW_CONTROL_STATS;
+    }
+
+    @Override
     public boolean isEnabled() {
         return false;
     }
