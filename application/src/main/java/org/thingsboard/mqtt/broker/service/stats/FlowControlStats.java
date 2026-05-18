@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+
+import java.util.List;
+
 public interface FlowControlStats {
 
     void incDropOverflow();
@@ -36,4 +40,8 @@ public interface FlowControlStats {
     void decDelayed();
 
     void decDelayed(int n);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

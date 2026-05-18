@@ -15,6 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+
+import java.util.Collections;
+import java.util.List;
+
 public class StubFlowControlStats implements FlowControlStats {
 
     public static final StubFlowControlStats STUB_FLOW_CONTROL_STATS = new StubFlowControlStats();
@@ -60,5 +65,14 @@ public class StubFlowControlStats implements FlowControlStats {
 
     @Override
     public void decDelayed(int n) {
+    }
+
+    @Override
+    public List<StatsCounter> getStatsCounters() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void reset() {
     }
 }

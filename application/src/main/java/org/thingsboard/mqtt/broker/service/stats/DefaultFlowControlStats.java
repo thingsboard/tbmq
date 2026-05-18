@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultFlowControlStats implements FlowControlStats {
@@ -29,6 +30,8 @@ public class DefaultFlowControlStats implements FlowControlStats {
     private final StatsCounter dropTtlCounter;
     private final StatsCounter unknownAckCounter;
 
+    private final List<StatsCounter> counters;
+
     // Broker-wide aggregate gauges (no clientId tag — cardinality concern at 100M+ connections).
     private final AtomicInteger inflightGauge;
     private final AtomicInteger delayedGauge;
@@ -37,6 +40,7 @@ public class DefaultFlowControlStats implements FlowControlStats {
         this.dropOverflowCounter = statsFactory.createStatsCounter(STATS_KEY, "dropsOverflow");
         this.dropTtlCounter = statsFactory.createStatsCounter(STATS_KEY, "dropsTtl");
         this.unknownAckCounter = statsFactory.createStatsCounter(STATS_KEY, "unknownAck");
+        this.counters = List.of(dropOverflowCounter, dropTtlCounter, unknownAckCounter);
         this.inflightGauge = statsFactory.createGauge(STATS_KEY + ".inflightCount", new AtomicInteger(0));
         this.delayedGauge = statsFactory.createGauge(STATS_KEY + ".delayedQueueSize", new AtomicInteger(0));
     }
@@ -89,6 +93,16 @@ public class DefaultFlowControlStats implements FlowControlStats {
     @Override
     public void decDelayed(int n) {
         delayedGauge.addAndGet(-n);
+    }
+
+    @Override
+    public List<StatsCounter> getStatsCounters() {
+        return counters;
+    }
+
+    @Override
+    public void reset() {
+        counters.forEach(StatsCounter::clear);
     }
 
     public int getDropOverflow() {

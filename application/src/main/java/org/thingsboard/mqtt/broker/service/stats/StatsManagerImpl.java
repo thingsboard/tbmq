@@ -452,6 +452,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: {}", StatsType.RETAINED_MSG_CONSUMER.getPrintName(), retainedMsgStatsStr);
         retainedMsgConsumerStats.reset();
 
+        String flowControlStatsStr = flowControlStats.getStatsCounters().stream()
+                .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                .collect(Collectors.joining(" "));
+        log.info("[{}] Stats: {}", StatsType.FLOW_CONTROL.getPrintName(), flowControlStatsStr);
+        flowControlStats.reset();
+
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
