@@ -25,6 +25,7 @@ import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { isEqual } from '@core/utils';
 import { AuthService } from '@core/http/auth.service';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
@@ -89,6 +90,12 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
       newPassword: ['', Validators.required],
       newPassword2: ['', this.samePasswordValidation(false, 'newPassword')]
     });
+    this.changePassword.get('newPassword').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.changePassword.get('newPassword2').updateValueAndValidity({emitEvent: false}));
+    this.changePassword.get('currentPassword').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.changePassword.get('newPassword').updateValueAndValidity({emitEvent: false}));
   }
 
   private loadPasswordPolicy() {
@@ -147,7 +154,7 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
   private samePasswordValidation(isSame: boolean, key: string): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const value: string = control.value;
-      const keyValue = control.parent?.value[key];
+      const keyValue = control.parent?.get(key)?.value;
 
       if (isSame) {
         return value === keyValue ? {samePassword: true} : null;

@@ -85,7 +85,7 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
   buildForm(entity: ClientCredentials): UntypedFormGroup {
     const form = this.fb.group(
       {
-        name: [entity ? entity.name : null, [Validators.required]],
+        name: [entity ? entity.name : null, [Validators.required, Validators.maxLength(255), Validators.pattern(/(?:.|\s)*\S(&:.|\s)*/)]],
         clientType: [entity ? entity.clientType : null, [Validators.required]],
         credentialsType: [entity ? entity.credentialsType : null, [Validators.required]],
         credentialsValue: [entity ? entity.credentialsValue : null, []],

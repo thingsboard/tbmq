@@ -52,7 +52,7 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
+import { DEFAULT_OVERLAY_POSITIONS, POSITION_MAP } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -161,14 +161,24 @@ export class TimewindowComponent implements ControlValueAccessor {
       height: 'min-content'
     });
 
+    const triggerRect = (this.nativeElement.nativeElement as HTMLElement).getBoundingClientRect();
+    const preferRight = (triggerRect.left + triggerRect.right) / 2 > window.innerWidth / 2;
+    const positions = preferRight
+      ? [POSITION_MAP.bottomRight, POSITION_MAP.bottomLeft, POSITION_MAP.topRight, POSITION_MAP.topLeft,
+         POSITION_MAP.left, POSITION_MAP.right]
+      : DEFAULT_OVERLAY_POSITIONS;
     config.positionStrategy = this.overlay.position()
       .flexibleConnectedTo(this.nativeElement)
-      .withPositions(DEFAULT_OVERLAY_POSITIONS);
+      .withFlexibleDimensions(true)
+      .withGrowAfterOpen(true)
+      .withPositions(positions);
 
     const overlayRef = this.overlay.create(config);
     overlayRef.backdropClick().subscribe(() => {
       overlayRef.dispose();
     });
+    const resizeObserver = new ResizeObserver(() => overlayRef.updatePosition());
+    resizeObserver.observe(overlayRef.overlayElement);
     const providers: StaticProvider[] = [
       {
         provide: TIMEWINDOW_PANEL_DATA,
@@ -194,6 +204,7 @@ export class TimewindowComponent implements ControlValueAccessor {
       overlayRef.updatePosition();
     });
     componentRef.onDestroy(() => {
+      resizeObserver.disconnect();
       resizeWindows$.unsubscribe();
       if (componentRef.instance.result) {
         this.innerValue = componentRef.instance.result;

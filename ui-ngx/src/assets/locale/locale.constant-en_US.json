@@ -1,6 +1,6 @@
 {
     "access": {
-        "access-forbidden": "Access Forbidden",
+        "access-forbidden": "Access forbidden",
         "access-forbidden-text": "You haven't access rights to this location!<br/>Try to sign in with different user if you still wish to gain access to this location.",
         "refresh-token-expired": "Session has expired",
         "refresh-token-failed": "Unable to refresh session"
@@ -38,7 +38,7 @@
         "copy-code": "Click to copy",
         "collapse-all": "Collapse all",
         "expand-all": "Expand all",
-        "discard-changes": "Discard Changes",
+        "discard-changes": "Discard changes",
         "read-more": "Read more",
         "hide": "Hide",
         "on-copied": "Copied",
@@ -62,8 +62,8 @@
         "outgoing-mail-settings": "Outgoing mail server settings",
         "system-settings": "Settings",
         "test-mail-sent": "Test mail was successfully sent!",
-        "mail-from": "Mail From",
-        "mail-from-required": "Mail From is required.",
+        "mail-from": "Mail from",
+        "mail-from-required": "Mail from is required.",
         "smtp-protocol": "SMTP protocol",
         "smtp-host": "SMTP host",
         "smtp-host-required": "SMTP host is required.",
@@ -294,8 +294,8 @@
     "event": {
         "events": "Events",
         "event-type": "Event type",
-        "events-filter": "Events Filter",
-        "clean-events": "Clear Events",
+        "events-filter": "Events filter",
+        "clean-events": "Clear events",
         "type-error": "Error",
         "type-lc-event": "Lifecycle event",
         "type-stats": "Statistics",
@@ -321,7 +321,7 @@
         "min-value": "Minimum value is 0.",
         "all-events": "All",
         "has-error": "Has error",
-        "clear-filter": "Clear Filter",
+        "clear-filter": "Clear filter",
         "clear-request-title": "Clear all events",
         "clear-request-text": "Are you sure you want to clear all events?"
     },
@@ -362,8 +362,8 @@
         "home": "Home",
         "logout": "Logout",
         "config": "Broker settings",
-        "quick-links": "Quick Links",
-        "rest-api": "Rest API",
+        "quick-links": "Quick links",
+        "rest-api": "REST API",
         "total": "Total",
         "security": "Security",
         "configuration": "Configuration",
@@ -377,7 +377,7 @@
             "welcome-description": "Explore TBMQ - a scalable MQTT broker supporting millions of connections.",
             "quick-start": "Quick start",
             "quick-start-description": "Guide & examples",
-            "quick-start-tooltip": "Open Getting Started",
+            "quick-start-tooltip": "Open getting started",
             "add-credentials": "Add credentials",
             "add-credentials-description": "Connect devices",
             "add-credentials-tooltip": "Create credentials"
@@ -430,13 +430,13 @@
     "login": {
         "login": "Login",
         "login-as-user": "Login as admin",
-        "request-password-reset": "Request Password Reset",
-        "reset-password": "Reset Password",
-        "create-password": "Create Password",
+        "request-password-reset": "Request password reset",
+        "reset-password": "Reset password",
+        "create-password": "Create password",
         "passwords-mismatch-error": "Entered passwords must be same!",
         "password-again": "Password again",
         "username": "Username (email)",
-        "forgot-password": "Forgot Password?",
+        "forgot-password": "Forgot password?",
         "password-reset": "Password reset",
         "expired-password-reset-message": "Your credentials has been expired! Please create new password.",
         "new-password": "New password",
@@ -450,7 +450,7 @@
     },
     "profile": {
         "profile": "Profile",
-        "last-login-time": "Last Login",
+        "last-login-time": "Last login",
         "change-password": "Change password",
         "change-default-password": "Change default password",
         "current-password": "Current password",
@@ -722,7 +722,7 @@
             "resource-usage": "Resource usage",
             "no-resource-usage-text": "No resources found",
             "service-id": "Service ID",
-            "service-type": "Service Type",
+            "service-type": "Service type",
             "cpu-usage": "CPU",
             "cpu-count": "CPU(s)",
             "memory-usage": "RAM",
@@ -747,7 +747,7 @@
     },
     "mqtt-client": {
         "client-id": "Client ID",
-        "client-type": "Client Type",
+        "client-type": "Client type",
         "type-application": "Application",
         "type-device": "Device"
     },
@@ -781,11 +781,12 @@
         "list-of-client-credentials": "{ count, plural, =1 {One Client credentials} other {List of # Client credentials} }",
         "name": "Name",
         "name-required": "Name is required.",
+        "name-max-length": "Name should be less than 256",
         "no-client-credentials-text": "No Client credentials found",
         "no-mqtt-client-credentials-matching": "No Client credentials matching '{{entity}}' were found.",
-        "type": "Credentials Type",
+        "type": "Credentials type",
         "type-client-credentials": "Client credentials",
-        "type-clients-credentials": "Clients Credentials",
+        "type-clients-credentials": "Clients credentials",
         "type-applications": "Applications",
         "type-devices": "Devices",
         "add-topic-rule": "Add topic rule",
@@ -897,7 +898,7 @@
         "session-name-starts-with": "Sessions whose names start with '{{prefix}}'",
         "session-details": "Session details",
         "session-expiry-interval": "Session Expiry Interval (seconds)",
-        "session-end": "Session End",
+        "session-end": "Session end",
         "search": "Search by client ID",
         "selected-sessions": "{ count, plural, =1 {1 Session} other {# Sessions} } selected",
         "selected-sessions-are-connected": "Selected Sessions are connected. Please disconnect them before removing.",
@@ -956,6 +957,7 @@
         "selected-shared-subscriptions": "{ count, plural, =1 {1 Application Shared Subscription} other {# Application Shared Subscriptions} } selected",
         "name": "Name",
         "name-required": "Name is required.",
+        "name-max-length": "Name should be less than 256",
         "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> are the TBMQ entities used for effective management of the MQTT shared</br> subscriptions feature. Provision such entities if you plan to use <b>shared subscriptions with Application clients</b>. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Read more.</a>",
         "hint-topic-filter": "The format for a shared subscription topic filter is '$share/ShareName/TopicFilter'. If shared subscription topic filter is '$share/group1/city/+/home/#', set Topic Filter as 'city/+/home/#'",
         "hint-partitions": "It is recommended that the number of partitions is equal to or X times more than the expected number of clients of the shared subscription. For example, if 5 clients are going to be subscribed to the shared subscription, set the Partitions value to 5, 10 or 15. This will guarantee even load distribution between the subscribers.",
@@ -973,7 +975,7 @@
         "share-name": "Share Name"
     },
     "retained-message": {
-        "retained-message": "Retained Message",
+        "retained-message": "Retained message",
         "retained-messages": "Retained messages",
         "add": "Add retained message",
         "no-retained-messages-text": "No retained messages found",
@@ -984,7 +986,7 @@
         "clear-empty-retained-message-nodes": "Clear empty retained message nodes",
         "clear-empty-retained-message-nodes-title": "Clear empty retained message nodes?",
         "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation, all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message nodes</a> will be cleared.",
-        "details": "Retained Message Details",
+        "details": "Retained message details",
         "search": "Search by topic",
         "selected-retained-messages": "{ count, plural, =1 {1 Retained message} other {# Retained messages} } selected",
         "type-retained-message": "Retained message",
@@ -1087,14 +1089,14 @@
         "allow-kafka-topic-deletion": "Kafka topic deletion",
         "key": "Key",
         "value": "Value",
-        "port-mqtt": "TCP Port",
-        "tcp-listener": "TCP Listener",
+        "port-mqtt": "TCP port",
+        "tcp-listener": "TCP listener",
         "tcp-listener-max-payload-size": "TCP listener max payload size",
-        "tls-listener": "TLS Listener",
+        "tls-listener": "TLS listener",
         "tls-listener-max-payload-size": "TLS listener max payload size",
-        "tls-tcp-port": "TLS Port",
+        "tls-tcp-port": "TLS port",
         "basic-auth": "Basic authentication",
-        "ssl-auth": "X.509 Certificate Chain Authentication",
+        "ssl-auth": "X.509 certificate chain authentication",
         "ws-port": "WS Port",
         "wss-port": "WSS Port",
         "ws-listener": "WS Listener",
@@ -1107,11 +1109,11 @@
         "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config",
         "click-to-expand": "Click to expand",
         "group": {
-            "authentication": "Authentication Methods",
-            "tcp-listener": "MQTT TCP Listener",
-            "tls-listener": "MQTT TLS Listener",
-            "websocket-listeners": "WebSocket Listeners",
-            "advanced": "Advanced Settings"
+            "authentication": "Authentication methods",
+            "tcp-listener": "MQTT TCP listener",
+            "tls-listener": "MQTT TLS listener",
+            "websocket-listeners": "WebSocket listeners",
+            "advanced": "Advanced settings"
         }
     },
     "kafka": {
@@ -1125,8 +1127,8 @@
         "state": "State",
         "members": "Members",
         "management": "Kafka management",
-        "broker": "Kafka Broker",
-        "brokers": "Kafka Brokers",
+        "broker": "Kafka broker",
+        "brokers": "Kafka brokers",
         "brokers-title": "Brokers",
         "topic": "Kafka topic",
         "topics": "Kafka topics",
@@ -1197,27 +1199,27 @@
         "step": {
             "step-1": {
                 "title": "Enable Basic authentication",
-                "text": "To follow this guide, <b>Basic authentication</b> must be enabled.\nYou can enable it in the <b>Broker Settings</b> section on this page, or on the <a href=\"/authentication/providers\">Authentication providers</a> page."
+                "text": "To follow this guide, <b>Basic authentication</b> must be enabled.\nYou can enable it in the <b>Broker settings</b> section on this page, or on the <a href=\"/authentication/providers\">Authentication providers</a> page."
             },
             "step-2": {
-                "title": "Add Application Credentials",
-                "text": "Let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> client.\nThese credentials will be utilized to subscribe to the messages published from other MQTT clients.\n\nTo proceed, please click on the <b>Add Application Credentials</b> button below and confirm the action by clicking on the <b>Add</b> button.\n"
+                "title": "Add Application credentials",
+                "text": "Let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> client.\nThese credentials will be utilized to subscribe to the messages published from other MQTT clients.\n\nTo proceed, please click on the <b>Add Application credentials</b> button below and confirm the action by clicking on the <b>Add</b> button.\n"
             },
             "step-3": {
-                "title": "Add Device Credentials",
-                "text": "Now let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> client.\nThis will allow publishing messages to the <b>TBMQ</b>.\nPlease click on the button <b>Add Device Credentials</b>.\n"
+                "title": "Add Device credentials",
+                "text": "Now let's add credentials to connect \n<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> client.\nThis will allow publishing messages to the <b>TBMQ</b>.\nPlease click on the button <b>Add Device credentials</b>.\n"
             },
             "step-4": {
-                "title": "Subscribe to Topic",
+                "title": "Subscribe to topic",
                 "text": "To subscribe <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> \nclient to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a> MQTT client.\nPlease copy and paste the following code into a terminal tab:"
             },
             "step-5": {
-                "title": "Publish Message",
+                "title": "Publish message",
                 "text": "To publish a message from the <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> \nclient to the topic `tbmq/demo/topic` open a new tab in the terminal and paste the following command:",
                 "after-command": "Once you run this command, you should see the published message in the terminal tab of the subscribed client."
             },
             "step-6": {
-                "title": "Session Details",
+                "title": "Session details",
                 "text": "To access detailed information about the subscribed client, please click on the button below."
             }
         }
@@ -1259,14 +1261,14 @@
             "advanced-settings": "Advanced settings",
             "connections": "Connections",
             "connect": "Connect",
-            "connection-details": "Connection Details",
+            "connection-details": "Connection details",
             "connection-status": "Connection status",
-            "credentials-name": "Client credentials Name",
+            "credentials-name": "Client credentials name",
             "credentials-auto-generated": "Auto-generated credentials",
             "credentials-custom": "Custom authentication",
             "credentials-existing": "Use existing credentials",
             "clear-connection-history": "Clear messages",
-            "delete-connection": "Delete Connection",
+            "delete-connection": "Delete connection",
             "delete-connection-title": "Are you sure you want to delete the connection '{{connectionName}}'?",
             "delete-connection-text": "Be careful, after the confirmation the '{{connectionName}}' connection and all related data will become unrecoverable.",
             "disconnect": "Disconnect",
@@ -1277,9 +1279,9 @@
             "advanced": "Advanced",
             "add-user-property": "Add property",
             "remove-user-property": "Remove property",
-            "connect-timeout": "Connect Timeout",
+            "connect-timeout": "Connect timeout",
             "connect-timeout-hint": "Time to wait before a CONNACK is received",
-            "connect-timeout-required": "Connect Timeout is required.",
+            "connect-timeout-required": "Connect timeout is required.",
             "username": "Username",
             "password": "Password",
             "keep-alive": "Keep Alive",
@@ -1300,8 +1302,8 @@
             "topic-alias-error": "Topic Alias must be less than the Topic Alias Maximum",
             "topic-alias-maximum": "Topic Alias Maximum",
             "topic-alias-maximum-hint": "The highest value that the Client will accept as a Topic Alias sent by the Server ",
-            "reconnect-period": "Reconnect Period",
-            "reconnect-period-required": "Reconnect Period is required.",
+            "reconnect-period": "Reconnect period",
+            "reconnect-period-required": "Reconnect period is required.",
             "reconnect-period-hint": "Interval between two reconnections. Disable auto reconnect by setting to 0",
             "request-response-information": "Request Response Information",
             "request-response-information-hint": "The Client uses this value to request the Server to return Response Information in the CONNACK",
@@ -1313,7 +1315,7 @@
             "url-warning": "Your client's host uses HTTPS, but you have selected WS instead of WSS. This could lead to issues with the client's ability to establish a connection.",
             "session-expiry-interval": "Session Expiry Interval",
             "password-warning": "The password is required for the selected Client credentials.",
-            "select-connection": "Select Connection",
+            "select-connection": "Select connection",
             "disconnected": "Disconnected",
             "connection-failed": "Connection failed",
             "reconnecting": "Reconnecting...",
@@ -1322,7 +1324,7 @@
             "end": "End",
             "close": "Close",
             "offline": "Offline",
-            "status-log": "Status Log",
+            "status-log": "Status log",
             "no-logs": "No logs yet"
         },
         "last-will": {
@@ -1376,17 +1378,17 @@
         }
     },
     "subscription": {
-        "add-subscription": "Add Subscription",
+        "add-subscription": "Add subscription",
         "clear-empty-subscription-nodes": "Clear empty subscription nodes",
         "clear-empty-subscription-nodes-text": "Be careful, after the confirmation, all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>subscription</a> nodes will be cleared.",
         "clear-empty-subscription-nodes-title": "Clear empty subscription nodes?",
         "color": "Color",
         "copy-topic": "Copy topic filter",
-        "delete-subscription": "Delete Subscription",
+        "delete-subscription": "Delete subscription",
         "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",
         "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",
         "details": "Subscription details",
-        "edit-subscription": "Edit Subscription",
+        "edit-subscription": "Edit subscription",
         "list-of-subscriptions": "{ count, plural, =1 {One subscription} other {List of # subscriptions} }",
         "mqtt-5-features": "MQTT 5 Subscription Options",
         "nl": "No Local",

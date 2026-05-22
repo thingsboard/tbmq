@@ -50,7 +50,14 @@
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"
                   matTooltip="{{ 'shared-subscription.name-required' | translate }}"
-                  [class.!hidden]="!(entityForm.get('name').hasError('required') && entityForm.get('name').touched)"
+                  [class.!hidden]="!((entityForm.get('name').hasError('required') || entityForm.get('name').hasError('pattern')) && entityForm.get('name').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'shared-subscription.name-max-length' | translate }}"
+                  [class.!hidden]="!entityForm.get('name').hasError('maxlength')"
                   class="tb-error">
           warning
         </mat-icon>

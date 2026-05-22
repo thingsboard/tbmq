@@ -25,6 +25,11 @@
         [removable]="!disabled()"
         [value]="rule"
         (removed)="removeRule(rule)">
+        @if (!disabled()) {
+          <button matChipEdit [attr.aria-label]="'edit ' + rule">
+            <mat-icon>edit</mat-icon>
+          </button>
+        }
         {{ rule }}
         @if (!disabled()) {
           <button matChipRemove [attr.aria-label]="'remove ' + rule">

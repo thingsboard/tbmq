@@ -181,7 +181,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   private setConnectionFormGroup() {
     const entity: WebSocketConnection = this.connection;
     this.connectionFormGroup = this.fb.group({
-      name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required]],
+      name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required, Validators.maxLength(255), Validators.pattern(/(?:.|\s)*\S(&:.|\s)*/)]],
       url: [entity ? entity.configuration.url : this.getUrl(this.addressProtocol, this.urlConfig[this.addressProtocol].host, this.urlConfig[this.addressProtocol].port), [Validators.required]],
       rejectUnauthorized: [entity ? entity.configuration.rejectUnauthorized : true, []],
       credentialsName: [{
