@@ -1223,11 +1223,6 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.4.0.tgz#08d6c5e20cf7e4cc02fd181c4b0c225cd31dbb60"
   integrity sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==
 
-"@kurkle/color@^0.3.0":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@kurkle/color/-/color-0.3.4.tgz#4d4ff677e1609214fc71c580125ddddd86abcabf"
-  integrity sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==
-
 "@listr2/prompt-adapter-inquirer@3.0.5":
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/@listr2/prompt-adapter-inquirer/-/prompt-adapter-inquirer-3.0.5.tgz#5e5def882a7fc493cb97224b3174e0c02cd84184"
@@ -2050,13 +2045,6 @@
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@types/ace-diff/-/ace-diff-2.1.4.tgz#0bf9952c9b23fb3cb6f5cf96f1e8bbed8f603fcd"
   integrity sha512-Jd9J35hi9PdsQzAAXWzPlXTuxRxnxuaNBMzBNts3EUDoQ8yuWp4Y36GjPASke8D6yVwKrapOnAaVp3km/CxPRw==
-
-"@types/chart.js@2.9.38":
-  version "2.9.38"
-  resolved "https://registry.yarnpkg.com/@types/chart.js/-/chart.js-2.9.38.tgz#b73309767b0b3ce692f0e1cf9ce084107581c614"
-  integrity sha512-rLoHHprkVEDpAXqke/xHalyXR+5Nv+3tfViwT/UnJZ41Wp/XPaSRlJKw2PU3S3tTCqKKyjkYai+VpeHoti79XQ==
-  dependencies:
-    moment "^2.10.2"
 
 "@types/esrecurse@^4.3.1":
   version "4.3.1"
@@ -2939,30 +2927,6 @@ chardet@^2.1.1:
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-2.1.1.tgz#5c75593704a642f71ee53717df234031e65373c8"
   integrity sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ==
 
-chart.js@4.4.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/chart.js/-/chart.js-4.4.0.tgz#df843fdd9ec6bd88d7f07e2b95348d221bd2698c"
-  integrity sha512-vQEj6d+z0dcsKLlQvbKIMYFHd3t8W/7L2vfJIbYcfyPcRx92CsHqECpueN8qVGNlKyDcr5wBrYAYKnfu/9Q1hQ==
-  dependencies:
-    "@kurkle/color" "^0.3.0"
-
-chartjs-adapter-moment@1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/chartjs-adapter-moment/-/chartjs-adapter-moment-1.0.1.tgz#0f04c30d330b207c14bfb57dfaae9ce332f09102"
-  integrity sha512-Uz+nTX/GxocuqXpGylxK19YG4R3OSVf8326D+HwSTsNw1LgzyIGRo+Qujwro1wy6X+soNSnfj5t2vZ+r6EaDmA==
-
-chartjs-plugin-annotation@3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/chartjs-plugin-annotation/-/chartjs-plugin-annotation-3.0.1.tgz#4cf51d9797bf3202788ca0beae8694404621ad19"
-  integrity sha512-hlIrXXKqSDgb+ZjVYHefmlZUXK8KbkCPiynSVrTb/HjTMkT62cOInaT1NTQCKtxKKOm9oHp958DY3RTAFKtkHg==
-
-chartjs-plugin-zoom@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/chartjs-plugin-zoom/-/chartjs-plugin-zoom-2.0.1.tgz#3db76f92a4741e46cb148cb966181c1b1a974abc"
-  integrity sha512-ogOmLu6e+Q7E1XWOCOz9YwybMslz9qNfGV2a+qjfmqJYpsw5ZMoRHZBUyW+NGhkpQ5PwwPA/+rikHpBZb7PZuA==
-  dependencies:
-    hammerjs "^2.0.8"
-
 chokidar@^3.6.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.6.0.tgz#197c6cc669ef2a8dc5e7b4d97ee4e092c3eb0d5b"
@@ -3449,6 +3413,14 @@ eastasianwidth@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
+
+echarts@^5.5.1:
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/echarts/-/echarts-5.6.0.tgz#2377874dca9fb50f104051c3553544752da3c9d6"
+  integrity sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==
+  dependencies:
+    tslib "2.3.0"
+    zrender "5.6.1"
 
 editorconfig@^1.0.4:
   version "1.0.4"
@@ -4444,11 +4416,6 @@ gzip-size@^6.0.0:
   integrity sha512-ax7ZYomf6jqPTQ4+XCpUGyXKHk5WweS+e05MBO4/y3WJ5RkmPXNKvX+bx1behVILVwr6JSQvZAku021CHPXG3Q==
   dependencies:
     duplexer "^0.1.2"
-
-hammerjs@^2.0.8:
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/hammerjs/-/hammerjs-2.0.8.tgz#04ef77862cff2bb79d30f7692095930222bf60f1"
-  integrity sha512-tSQXBXS/MWQOn/RKckawJ61vvsDpCom87JgxiYdGwHdOa0ht0vzUWDlfioofFCRU0L+6NGDt6XzbgoJvZkMeRQ==
 
 has-bigints@^1.0.2:
   version "1.1.0"
@@ -5479,7 +5446,7 @@ mkdirp@^3.0.1:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-3.0.1.tgz#e44e4c5607fb279c168241713cc6e0fea9adcb50"
   integrity sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==
 
-moment@^2.10.2, moment@^2.30.1:
+moment@^2.30.1:
   version "2.30.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.30.1.tgz#f8c91c07b7a786e30c59926df530b4eac96974ae"
   integrity sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==
@@ -7374,6 +7341,11 @@ tsconfig-paths@^4.2.0:
     minimist "^1.2.6"
     strip-bom "^3.0.0"
 
+tslib@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.3.0.tgz#803b8cdab3e12ba581a4ca41c8839bbb0dacb09e"
+  integrity sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==
+
 tslib@2.8.1, tslib@^2.0.0, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.4.0, tslib@^2.6.2, tslib@~2.8.1:
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.8.1.tgz#612efe4ed235d567e8aba5f2a5fab70280ade83f"
@@ -7875,3 +7847,10 @@ zone.js@~0.15.0:
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/zone.js/-/zone.js-0.15.0.tgz#4810624e58d6dcf7b8379c1631765589917a0d8f"
   integrity sha512-9oxn0IIjbCZkJ67L+LkhYWRyAy7axphb3VgE2MBDlOqnmHMPWGYMxJxBYFueFq/JGY2GMwS0rU+UCLunEmy5UA==
+
+zrender@5.6.1:
+  version "5.6.1"
+  resolved "https://registry.yarnpkg.com/zrender/-/zrender-5.6.1.tgz#e08d57ecf4acac708c4fcb7481eb201df7f10a6b"
+  integrity sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==
+  dependencies:
+    tslib "2.3.0"

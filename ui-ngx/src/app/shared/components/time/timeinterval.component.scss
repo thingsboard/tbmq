@@ -46,9 +46,8 @@
 }
 
 :host ::ng-deep {
-  .number-input {
-    .mat-mdc-form-field-infix {
-      width: 50px;
-    }
+  .number-input .mat-mdc-form-field-infix {
+    width: auto;
+    min-width: 0;
   }
 }

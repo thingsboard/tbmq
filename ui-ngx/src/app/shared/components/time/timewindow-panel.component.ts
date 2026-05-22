@@ -20,6 +20,7 @@ import {
   AggregationType,
   DAY,
   HistoryWindowType,
+  MINUTE,
   quickTimeIntervalPeriod,
   RealtimeWindowType,
   Timewindow,
@@ -40,11 +41,8 @@ import {
 import { TimeService } from '@core/services/time.service';
 import { isDefined } from '@core/utils';
 import { OverlayRef } from '@angular/cdk/overlay';
-import { MatTabGroup, MatTab } from '@angular/material/tabs';
-import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
-import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
-import { TranslateModule } from '@ngx-translate/core';
-import { MatCheckbox } from '@angular/material/checkbox';
+import { AsyncPipe } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TimeintervalComponent } from './timeinterval.component';
 import { QuickTimeIntervalComponent } from './quick-time-interval.component';
 import { DatetimePeriodComponent } from './datetime-period.component';
@@ -52,6 +50,8 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatButton } from '@angular/material/button';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
+import { ToggleHeaderOption } from '@shared/components/toggle-header.component';
 
 export interface TimewindowPanelData {
   historyOnly: boolean;
@@ -69,7 +69,7 @@ export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelDat
     selector: 'tb-timewindow-panel',
     templateUrl: './timewindow-panel.component.html',
     styleUrls: ['./timewindow-panel.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatTabGroup, MatTab, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, MatOption, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, MatFormField, MatLabel, MatSelect, MatOption, MatButton, AsyncPipe, ToggleSelectComponent]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 
@@ -89,11 +89,18 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
   aggregationTypesTranslations = aggregationTranslations;
   result: Timewindow;
 
+  readonly minLastInterval = 2 * MINUTE;
+
+  timewindowTypeOptions: ToggleHeaderOption[] = [];
+  realtimeTypeOptions: ToggleHeaderOption[] = [];
+  historyTypeOptions: ToggleHeaderOption[] = [];
+
   constructor(@Inject(TIMEWINDOW_PANEL_DATA) public data: TimewindowPanelData,
               public overlayRef: OverlayRef,
               protected store: Store<AppState>,
               public fb: UntypedFormBuilder,
               private timeService: TimeService,
+              private translate: TranslateService,
               public viewContainerRef: ViewContainerRef) {
     super(store);
     this.historyOnly = data.historyOnly;
@@ -117,7 +124,35 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
     const history = this.timewindow.history;
     const aggregation = this.timewindow.aggregation;
 
+    this.timewindowTypeOptions = [
+      { name: this.translate.instant('timewindow.realtime'), value: TimewindowType.REALTIME },
+      { name: this.translate.instant('timewindow.history'), value: TimewindowType.HISTORY }
+    ];
+    this.realtimeTypeOptions = [];
+    if (!hideLastInterval) {
+      this.realtimeTypeOptions.push(
+        { name: this.translate.instant('timewindow.last'), value: RealtimeWindowType.LAST_INTERVAL });
+    }
+    if (!hideQuickInterval) {
+      this.realtimeTypeOptions.push(
+        { name: this.translate.instant('timewindow.relative'), value: RealtimeWindowType.INTERVAL });
+    }
+    this.historyTypeOptions = [];
+    if (this.forAllTimeEnabled) {
+      this.historyTypeOptions.push(
+        { name: this.translate.instant('timewindow.for-all-time'), value: HistoryWindowType.FOR_ALL_TIME });
+    }
+    this.historyTypeOptions.push(
+      { name: this.translate.instant('timewindow.last'), value: HistoryWindowType.LAST_INTERVAL },
+      { name: this.translate.instant('timewindow.range'), value: HistoryWindowType.FIXED },
+      { name: this.translate.instant('timewindow.relative'), value: HistoryWindowType.INTERVAL }
+    );
+
     this.timewindowForm = this.fb.group({
+      selectedTab: [{
+        value: isDefined(this.timewindow.selectedTab) ? this.timewindow.selectedTab : TimewindowType.REALTIME,
+        disabled: this.historyOnly
+      }],
       realtime: this.fb.group({
         realtimeType: [{
           value: isDefined(realtime?.realtimeType) ? this.timewindow.realtime.realtimeType : RealtimeWindowType.LAST_INTERVAL,
@@ -179,6 +214,10 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
         this.timewindowForm.get('history.fixedTimewindow').disable({emitEvent: false});
       }
     });
+    this.timewindowForm.get('selectedTab').valueChanges.subscribe((selectedTab: TimewindowType) => {
+      this.timewindow.selectedTab = selectedTab;
+      this.onTimewindowTypeChange();
+    });
   }
 
   private checkLimit(limit?: number): number {
@@ -234,6 +273,7 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
 
   update() {
     const timewindowFormValue = this.timewindowForm.getRawValue();
+    this.timewindow.selectedTab = timewindowFormValue.selectedTab;
     this.timewindow.realtime = {
       realtimeType: timewindowFormValue.realtime.realtimeType,
       timewindowMs: timewindowFormValue.realtime.timewindowMs,

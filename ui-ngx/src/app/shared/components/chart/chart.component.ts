@@ -40,9 +40,12 @@ import { TimeService } from '@core/services/time.service';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
-  chartJsParams,
+  buildEChartsOption,
+  buildSeries,
+  buildTooltipFormatter,
   ChartKey,
   CHARTS_TOTAL_ENTITY_ID_ONLY,
+  ChartSeries,
   ChartView,
   getColor,
   MAX_DATAPOINTS_LIMIT,
@@ -56,20 +59,25 @@ import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { DataSizeUnit, DataSizeUnitLongTranslationMap } from '@shared/models/ws-client.model';
-import { convertDataSizeUnits, formatLargeNumber } from '@core/utils';
+import { convertDataSizeUnits } from '@core/utils';
 import { ConfigService } from '@core/http/config.service';
-import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ChartToolbarComponent } from '@shared/components/chart/chart-toolbar.component';
 import { ChartCanvasComponent } from '@shared/components/chart/chart-canvas.component';
 import { ChartLegendComponent } from '@shared/components/chart/chart-legend.component';
 
-import Chart from 'chart.js/auto';
-import Zoom from 'chartjs-plugin-zoom';
-import 'chartjs-adapter-moment';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  TooltipComponent,
+  DataZoomComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import type { ECharts } from 'echarts/core';
 
-Chart.register([Zoom]);
+echarts.use([LineChart, GridComponent, TooltipComponent, DataZoomComponent, CanvasRenderer]);
 
 @Component({
   selector: 'tb-chart',
@@ -110,7 +118,8 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     return `${prefix} / ${minStr}`;
   });
 
-  chart: Chart<'line', TsValue[]>;
+  chart: ECharts | null = null;
+  series: ChartSeries[] = [];
   timewindow = this.timeService.defaultTimewindow();
   ChartView = ChartView;
   isLoading = false;
@@ -118,6 +127,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   private fixedWindowTimeMs: FixedWindow;
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
+  private resizeObserver?: ResizeObserver;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -135,6 +145,12 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.stopPolling();
     this.destroy$.next();
     this.destroy$.complete();
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
+    if (this.chart) {
+      this.chart.dispose();
+      this.chart = null;
+    }
   }
 
   ngAfterViewInit(): void {
@@ -162,19 +178,19 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.calcWindowTime();
     this.dataSizeUnitChange();
     this.fetchEntityTimeseries(this.visibleEntityIds(), false, this.getHistoricalDataObservables(this.visibleEntityIds()));
-    this.chart.resetZoom();
+    this.resetZoom();
   }
 
   onFullscreenChange(fullscreen: boolean) {
     this.isFullscreen.set(fullscreen);
+    setTimeout(() => this.chart?.resize());
   }
 
   dataSizeUnitChange(type = DataSizeUnit.BYTE) {
-    const datasets = this.chart?.data?.datasets;
-    if (this.chartHasDataSize() && datasets?.length) {
-      for (const ds of datasets) {
-        if (ds.data?.length) {
-          ds.data = ds.data.map(el => ({
+    if (this.chartHasDataSize() && this.series.length) {
+      for (const s of this.series) {
+        if (s.data?.length) {
+          s.data = s.data.map(el => ({
             value: convertDataSizeUnits(el.value, this.dataSizeUnit(), type),
             ts: el.ts
           }));
@@ -189,17 +205,32 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
     this.fetchEntityTimeseries([dataKey], false, this.getHistoricalDataObservables([dataKey]), false);
   }
 
+  toggleSeriesVisibility(dataKey: string): boolean {
+    const s = this.series.find(it => it.name === dataKey);
+    if (!s) {
+      return false;
+    }
+    s.visible = !s.visible;
+    this.updateChartView();
+    return s.visible;
+  }
+
+  getSeries(): ChartSeries[] {
+    return this.series;
+  }
+
   private init() {
     this.timewindow = this.globalTimewindow();
     this.calcWindowTime();
-    $(document).on('keydown',
-      (event) => {
-        if ((event.code === 'Escape') && this.isFullscreen()) {
-          event.preventDefault();
-          this.onFullscreenChange(false);
-        }
-      });
+    document.addEventListener('keydown', this.escapeHandler);
   }
+
+  private escapeHandler = (event: KeyboardEvent) => {
+    if (event.code === 'Escape' && this.isFullscreen()) {
+      event.preventDefault();
+      this.onFullscreenChange(false);
+    }
+  };
 
   private calcWindowTime() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
@@ -219,13 +250,15 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
           this.initCharts(data);
         } else {
           if (this.totalEntityIdOnly()) {
-            this.chart.data.datasets[0].data = this.toCurrentUnit(data[0][this.chartKey()]);
+            if (this.series[0]) {
+              this.series[0].data = this.toCurrentUnit(data[0][this.chartKey()]);
+            }
           } else {
             for (let i = 0; i < dataKeys.length; i++) {
               const dataKey = dataKeys[i];
-              const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
-              if (datasetIndex > -1) {
-                this.chart.data.datasets[datasetIndex].data = this.toCurrentUnit(data[i][this.chartKey()]);
+              const s = this.series.find(it => it.name === dataKey);
+              if (s) {
+                s.data = this.toCurrentUnit(data[i][this.chartKey()]);
               }
             }
           }
@@ -251,51 +284,49 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private initCharts(data: TimeseriesData[]) {
-    const ctx = document.getElementById(this.chartKey()) as HTMLCanvasElement;
-    const datasets = {data: {datasets: []}};
+    const container = document.getElementById(this.chartKey()) as HTMLElement;
+    if (!container) {
+      return;
+    }
+    this.series = [];
     for (let i = 0; i < this.entityIds().length; i++) {
       const dataKey = this.entityIds()[i];
-      const value = this.visibleEntityIds().includes(dataKey) ? data : null
-      datasets.data.datasets.push(this.getDataset(value, i, dataKey));
+      if (this.totalEntityIdOnly() && dataKey !== TOTAL_ENTITY_ID) {
+        continue;
+      }
+      const color = getColor(this.chartKey(), i);
+      const visible = dataKey === TOTAL_ENTITY_ID;
+      const seriesData = visible ? this.toCurrentUnit(data[i]?.[this.chartKey()]) : null;
+      this.series.push({
+        name: dataKey,
+        color,
+        data: seriesData ?? [],
+        visible,
+      });
     }
-    const params = {...chartJsParams(this.chartView()), ...datasets} as ChartConfiguration<'line', TsValue[]>;
-    this.chart = new Chart<'line', TsValue[]>(ctx, params);
+    this.chart = echarts.init(container);
+    this.setListeners(container);
     this.updateChartView();
-    this.setListeners(ctx);
+    this.observeResize(container);
   }
 
-  private setListeners(ctx: HTMLCanvasElement) {
-    this.chart.options.plugins.tooltip.callbacks.label = (context) => {
-      if (context.parsed.y === 0 && context.dataset.label !== TOTAL_ENTITY_ID) {
-        return null;
-      }
-      const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
-      const unit = this.chartIntervalUnit() ? ` ${this.chartIntervalUnit()}` : '';
-      return `${context.dataset.label}: ${formatLargeNumber(value)}${unit}`;
-    }
-    ctx.addEventListener('dblclick', () => {
-      this.chart.resetZoom();
+  private observeResize(container: HTMLElement) {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = new ResizeObserver(() => this.chart?.resize());
+    this.resizeObserver.observe(container);
+  }
+
+  private setListeners(container: HTMLElement) {
+    container.addEventListener('dblclick', () => {
+      this.resetZoom();
       this.updateChartView();
     });
   }
 
-  private getDataset(dataset: any[], i: number, dataKey: string): Partial<ChartDataset> {
-    const color = getColor(this.chartKey(), i);
-    return {
-      label: dataKey,
-      data: dataset ? dataset[i][this.chartKey()] : null,
-      pointStyle: 'circle',
-      hidden: dataKey !== TOTAL_ENTITY_ID,
-      borderColor: color,
-      backgroundColor: color,
-      pointHoverBackgroundColor: color,
-      pointBorderColor: color,
-      pointBackgroundColor: color,
-      pointHoverBorderColor: color,
-      pointRadius: 0,
-      clip: 5,
-      tension: 0.2,
-    };
+  private resetZoom() {
+    if (this.chart) {
+      this.chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 });
+    }
   }
 
   private startPolling() {
@@ -323,6 +354,9 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private toCurrentUnit(data: TsValue[]): TsValue[] {
+    if (!data) {
+      return [];
+    }
     if (!this.chartHasDataSize() || this.dataSizeUnit() === DataSizeUnit.BYTE) {
       return data;
     }
@@ -353,22 +387,24 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
         if (dataKey !== TOTAL_ENTITY_ID) {
           continue;
         }
-        if (data[0][this.chartKey()]?.length) {
+        if (data[0]?.[this.chartKey()]?.length) {
           const latestValue = data[0][this.chartKey()][0];
-          const chartData = this.chart.data.datasets[0].data;
-          const chartLatestValue = chartData[0];
-          if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
-            this.chart.data.datasets[0].data.unshift(latestValue);
+          const seriesData = this.series[0]?.data;
+          if (!seriesData) {
+            continue;
+          }
+          const head = seriesData[0];
+          if (!head || latestValue?.ts > head?.ts) {
+            seriesData.unshift(latestValue);
           }
         }
       } else {
-        const datasetIndex = this.chart.data.datasets.findIndex(ds => ds.label === dataKey);
-        if (datasetIndex > -1 && data[i]?.[this.chartKey()]?.length) {
+        const s = this.series.find(it => it.name === dataKey);
+        if (s && data[i]?.[this.chartKey()]?.length) {
           const latestValue = data[i][this.chartKey()][0];
-          const chartData = this.chart.data.datasets[datasetIndex].data;
-          const chartLatestValue = chartData[0];
-          if (!chartLatestValue || latestValue?.ts > chartLatestValue?.ts) {
-            this.chart.data.datasets[datasetIndex].data.unshift(latestValue);
+          const head = s.data[0];
+          if (!head || latestValue?.ts > head?.ts) {
+            s.data.unshift(latestValue);
           }
         }
       }
@@ -376,9 +412,9 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private updateChartView() {
-    this.updateXScale();
-    this.updateLegend();
+    this.calcWindowTime();
     this.updateChart();
+    this.updateLegend();
   }
 
   private stopPolling() {
@@ -386,45 +422,44 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private updateChart() {
-    this.chart.update('none');
+    if (!this.chart) {
+      return;
+    }
+    const latestTs = this.getLatestDataTs();
+    const xMax = latestTs ?? this.fixedWindowTimeMs.endTimeMs;
+    const xMin = this.fixedWindowTimeMs.startTimeMs;
+    const option = buildEChartsOption({
+      view: this.chartView(),
+      enableZoom: this.chartView() === ChartView.detailed,
+      xMin,
+      xMax,
+      tooltipFormatter: buildTooltipFormatter(() => ({
+        intervalUnit: this.chartIntervalUnit(),
+        totalEntityIdOnly: this.totalEntityIdOnly(),
+      })),
+      series: this.series.map(s =>
+        buildSeries(s.name, s.color, s.visible ? s.data : null, s.visible)
+      ),
+    });
+    this.chart.setOption(option, { notMerge: false, replaceMerge: ['series'] });
+  }
+
+  private getLatestDataTs(): number | null {
+    let max: number | null = null;
+    for (const s of this.series) {
+      if (!s.visible || !s.data?.length) {
+        continue;
+      }
+      const ts = s.data[0]?.ts;
+      if (ts != null && (max == null || ts > max)) {
+        max = ts;
+      }
+    }
+    return max;
   }
 
   private updateLegend() {
     this.legendComp?.updateLegend();
-  }
-
-  private updateXScale() {
-    if (!this.chart.isZoomedOrPanned()) {
-      this.calcWindowTime();
-      this.chart.options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
-      this.chart.options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
-      const hours = this.hoursInRange();
-      let format = 'MMM-DD';
-      let round: string;
-      let unit: string;
-      if (hours <= 24) {
-        format = 'HH:mm';
-        unit = 'minute';
-        round = 'minute';
-      } else if (hours <= 24 * 30) {
-        format = 'MMM-DD HH:mm';
-        unit = 'day';
-      }
-      const time = {
-        round,
-        unit,
-        displayFormats: {
-          minute: format
-        }
-      };
-      // @ts-ignore
-      this.chart.options.scales.x.time = {...this.chart.options.scales.x.time, ...time};
-    }
-  }
-
-  private hoursInRange(): number {
-    const hourMs = 1000 * 60 * 60;
-    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs;
   }
 
   private checkMaxAllowedDataLength(data) {

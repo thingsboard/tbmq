@@ -15,12 +15,78 @@
  */
 @import 'constants';
 
-:host ::ng-deep {
-  .mat-mdc-form-field-infix {
-    width: 100px;
+:host {
+  display: block;
+  width: 100%;
+}
 
-    @media #{$mat-xs} {
-      width: 100%;
+:host ::ng-deep {
+  mat-form-field {
+    font-size: 14px;
+    min-width: 0;
+    width: 100%;
+
+    .mat-mdc-text-field-wrapper {
+      height: 40px;
+    }
+
+    .mat-mdc-form-field-infix {
+      min-width: 0;
+      width: 0;
+      min-height: 40px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+
+      @media #{$mat-xs} {
+        width: 100%;
+      }
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding-left: 10px;
+      padding-right: 4px;
+    }
+
+    input.mat-mdc-input-element {
+      font-size: 14px;
+    }
+
+    .mat-mdc-form-field-icon-suffix,
+    .mat-datetimepicker-toggle {
+      height: 40px;
+      line-height: 40px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+
+      button.mat-mdc-icon-button.mat-mdc-icon-button {
+        --mdc-icon-button-state-layer-size: 32px;
+        --mdc-icon-button-icon-size: 18px;
+        width: 32px !important;
+        height: 32px !important;
+        padding: 7px !important;
+        line-height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        .mat-mdc-button-touch-target {
+          width: 32px;
+          height: 32px;
+        }
+
+        .mat-icon {
+          font-size: 18px !important;
+          width: 18px !important;
+          height: 18px !important;
+          line-height: 18px !important;
+
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
     }
   }
 }
