@@ -450,6 +450,7 @@
         "delete-users-text": "Achtung: Nach der Bestätigung werden alle ausgewählten Users gelöscht und alle zugehörigen Daten gehen unwiederbringlich verloren.",
         "email": "Email",
         "email-required": "Email ist erforderlich.",
+        "email-max-length": "Email darf höchstens 256 Zeichen lang sein",
         "invalid-email-format": "Ungültiges Email-Format.",
         "first-name": "Vorname",
         "last-name": "Nachname",

@@ -474,6 +474,7 @@
         "delete-users-text": "Be careful, after the confirmation all selected users will be removed and all related data will become unrecoverable.",
         "email": "Email",
         "email-required": "Email is required.",
+        "email-max-length": "Email should be less than 256",
         "invalid-email-format": "Invalid email format.",
         "first-name": "First name",
         "last-name": "Last name",
