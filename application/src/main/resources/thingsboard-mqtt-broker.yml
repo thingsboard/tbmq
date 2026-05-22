@@ -892,9 +892,11 @@ mqtt:
     # Enables or disables the MQTT 5 flow control feature for the server. If disabled, the server will not control the number of messages sent to subscribers via "Receive Maximum".
     # Also applies to MQTT 3.x clients when enabled. "Receive Maximum" for MQTT 3.x clients can be configured using MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX.
     enabled: "${MQTT_FLOW_CONTROL_ENABLED:true}"
-    # Timeout to wait when there is nothing to process for flow control. A separate thread handles sending delayed messages to subscribers (in ms).
-    # If no clients are affected by flow control restrictions, there is no need to continuously try to find and send such messages.
-    timeout: "${MQTT_FLOW_CONTROL_TIMEOUT:1000}"
+    # Interval between sweeps of the per-client delayed-message buffer that drops messages whose age exceeds 'ttl' (in ms).
+    # Drain on ACK/writability is event-driven, so this sweeper only handles TTL expiry. Defaults to 10 s.
+    # The legacy YAML key 'mqtt.flow-control.timeout' and env var MQTT_FLOW_CONTROL_TIMEOUT remain honoured as fallbacks
+    # for upgrade compatibility.
+    ttl-sweep-interval-ms: "${MQTT_FLOW_CONTROL_TTL_SWEEP_INTERVAL_MS:${mqtt.flow-control.timeout:${MQTT_FLOW_CONTROL_TIMEOUT:10000}}}"
     # Time to store delayed messages for subscribers (in s). Delayed messages are those that cannot be sent immediately due to flow control restrictions.
     # Defaults to 10 minutes.
     ttl: "${MQTT_FLOW_CONTROL_TTL:600}"

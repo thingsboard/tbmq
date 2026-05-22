@@ -52,6 +52,20 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         processSendPublish(ctx, msg, () -> ctx.getChannel().write(msg));
     }
 
+    @Override
+    public void sendAlreadyTrackedPublishMsgToClient(ClientSessionCtx ctx, MqttPublishMessage msg) {
+        try {
+            long startTime = System.nanoTime();
+            ctx.getChannel().writeAndFlush(msg);
+            deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
+            if (!msg.fixedHeader().isRetain()) {
+                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            }
+        }
+    }
+
     private void processSendPublish(ClientSessionCtx ctx, MqttPublishMessage msg, Runnable processor) {
         try {
             boolean added = ctx.addInFlightMsg(msg);

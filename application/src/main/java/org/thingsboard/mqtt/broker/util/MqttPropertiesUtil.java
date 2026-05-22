@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.util;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.IntegerProperty;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class MqttPropertiesUtil {
 
     /**
@@ -163,7 +165,15 @@ public class MqttPropertiesUtil {
 
     public static int getReceiveMaxValue(MqttProperties mqttProperties) {
         MqttProperties.IntegerProperty property = getIntegerProperty(mqttProperties, BrokerConstants.RECEIVE_MAXIMUM_PROP_ID);
-        return property == null ? BrokerConstants.DEFAULT_RECEIVE_MAXIMUM : property.value();
+        if (property == null) {
+            return BrokerConstants.DEFAULT_RECEIVE_MAXIMUM;
+        }
+        int value = property.value();
+        if (value <= 0) {
+            log.warn("Client sent Receive Maximum={} which is a protocol error per MQTT-5 §3.1.2.11.3. Flooring to 1.", value);
+            return 1;
+        }
+        return value;
     }
 
     private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {

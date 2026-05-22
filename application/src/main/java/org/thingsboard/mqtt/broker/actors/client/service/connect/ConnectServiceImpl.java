@@ -44,7 +44,6 @@ import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -52,11 +51,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -89,9 +90,10 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandler messageHandler;
     private final ClientSubscriptionCache clientSubscriptionCache;
-    private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
     private final PublishMsgValidationService publishMsgValidationService;
+    private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
+    private final StatsManager statsManager;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -151,7 +153,12 @@ public class ConnectServiceImpl implements ConnectService {
 
         if (flowControlEnabled) {
             int receiveMaxValue = getReceiveMaxValue(msg, sessionCtx);
-            sessionCtx.initPublishedInFlightCtx(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
+            sessionCtx.initPublishedInFlightCtx(
+                    flowControlService,
+                    mqttPublishMsgDeliveryService,
+                    statsManager.getFlowControlStats(),
+                    receiveMaxValue,
+                    delayedQueueMaxSize);
         }
 
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));

@@ -51,6 +51,11 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @Override
     public void onChannelWritable(ClientActorState state) {
+        // FlowControl: drain any messages buffered while the window was full.
+        // Must run BEFORE the early-returns below so it fires on every writability flip,
+        // including the clean-session path.
+        state.getCurrentSessionCtx().onChannelWritable();
+
         if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
             log.debug("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
             return;

@@ -91,5 +91,7 @@ public interface StatsManager {
 
     ClientActorStats getClientActorStats();
 
+    FlowControlStats getFlowControlStats();
+
     boolean isEnabled();
 }

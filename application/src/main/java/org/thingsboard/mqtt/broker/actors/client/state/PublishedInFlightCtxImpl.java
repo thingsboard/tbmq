@@ -18,45 +18,51 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.ReferenceCountUtil;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
+import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
-@Data
 public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
-    private final Queue<Integer> publishedInFlightMsgQueue = new ConcurrentLinkedQueue<>();
-    private final Queue<Integer> receivedAckMsgInWrongOrderQueue = new ConcurrentLinkedQueue<>();
+    private final Set<Integer> inFlightPacketIds = ConcurrentHashMap.newKeySet();
     private final Queue<MqttPubMsgWithCreatedTime> delayedMsgQueue = new ConcurrentLinkedQueue<>();
-
-    private final AtomicInteger publishedInFlightMsgCounter = new AtomicInteger(0);
     private final AtomicInteger delayedMsgCounter = new AtomicInteger(0);
 
     private final Lock lock = new ReentrantLock();
 
     private final FlowControlService flowControlService;
     private final ClientSessionCtx clientSessionCtx;
+    private final MqttPublishMsgDeliveryService deliveryService;
+    private final FlowControlStats stats;
     private final String clientId;
     private final int clientReceiveMax;
     private final int delayedMsgQueueMaxSize;
 
-    public PublishedInFlightCtxImpl(FlowControlService flowControlService, ClientSessionCtx clientSessionCtx) {
-        this(flowControlService, clientSessionCtx, BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, BrokerConstants.DELAYED_MSG_QUEUE_MAX_SIZE);
-    }
-
-    public PublishedInFlightCtxImpl(FlowControlService flowControlService, ClientSessionCtx clientSessionCtx, int clientReceiveMax, int delayedMsgQueueMaxSize) {
+    public PublishedInFlightCtxImpl(FlowControlService flowControlService,
+                                    ClientSessionCtx clientSessionCtx,
+                                    MqttPublishMsgDeliveryService deliveryService,
+                                    FlowControlStats stats,
+                                    int clientReceiveMax,
+                                    int delayedMsgQueueMaxSize) {
         this.flowControlService = flowControlService;
         this.clientSessionCtx = clientSessionCtx;
+        this.deliveryService = deliveryService;
+        this.stats = stats;
         this.clientId = clientSessionCtx.getClientId();
         this.clientReceiveMax = clientReceiveMax;
         this.delayedMsgQueueMaxSize = delayedMsgQueueMaxSize;
@@ -67,146 +73,178 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         if (atMostOnce(mqttPubMsg)) {
             return true;
         }
-        log.trace("[{}] Adding in-flight msg [{}]", clientId, mqttPubMsg.variableHeader().packetId());
+        int packetId = mqttPubMsg.variableHeader().packetId();
+        log.trace("[{}] Adding in-flight msg [{}]", clientId, packetId);
+
+        boolean reserve = false;
+        boolean register = false;
+        MqttPublishMessage toRelease = null;
+
         lock.lock();
         try {
-            int delayedMsgQueueSize = delayedMsgQueueSize();
-            if (delayedMsgQueueSize == 0) {
-                if (publishedInFlightMsgQueueSize() >= clientReceiveMax) {
-                    log.debug("[{}][{}] Max in-flight messages reached! Adding msg to empty delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
-                    addDelayedMsg(mqttPubMsg);
-                    flowControlService.addToMap(clientId, this);
-                    return false;
-                }
-                return addPublishedInFlightMsg(mqttPubMsg);
+            if (delayedMsgQueue.isEmpty() && inFlightPacketIds.size() < clientReceiveMax) {
+                inFlightPacketIds.add(packetId);
+                reserve = true;
+            } else if (delayedMsgCounter.get() < delayedMsgQueueMaxSize) {
+                delayedMsgQueue.add(new MqttPubMsgWithCreatedTime(mqttPubMsg, System.nanoTime()));
+                delayedMsgCounter.incrementAndGet();
+                register = true;
             } else {
-                if (delayedMsgQueueSize >= delayedMsgQueueMaxSize) {
-                    log.error("[{}] Message is skipped! Max in-flight messages reached [{}] and delay queue is full [{}]!",
-                            clientId, clientReceiveMax, delayedMsgQueueMaxSize);
-                    ReferenceCountUtil.release(mqttPubMsg);
-                } else {
-                    log.debug("[{}][{}] Max in-flight messages reached! Adding msg to delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
-                    addDelayedMsg(mqttPubMsg);
-                }
-                return false;
+                toRelease = mqttPubMsg;
             }
         } finally {
             lock.unlock();
         }
+
+        if (reserve) {
+            stats.incInflight();
+        } else if (register) {
+            log.debug("[{}][{}] Max in-flight messages reached! Buffering msg in delay queue", clientId, clientReceiveMax);
+            stats.incDelayed();
+            flowControlService.addToMap(clientId, this);
+        } else {
+            log.warn("[{}] Message is skipped! Max in-flight messages reached [{}] and delay queue is full [{}]!",
+                    clientId, clientReceiveMax, delayedMsgQueueMaxSize);
+            ReferenceCountUtil.safeRelease(toRelease);
+            stats.incDropOverflow();
+        }
+        return reserve;
     }
 
     @Override
     public void ackInFlightMsg(int msgId) {
         log.trace("[{}] Acknowledging in-flight msg [{}]", clientId, msgId);
+        boolean removed;
         lock.lock();
         try {
-            Integer publishedInFlightHead = publishedInFlightMsgQueue.peek();
-            if (publishedInFlightHead != null) {
-                if (publishedInFlightHead == msgId) {
-                    removePublishedInFlightMsg();
-                    Integer wrongOrderHead = receivedAckMsgInWrongOrderQueue.peek();
-                    if (wrongOrderHead == null) {
-                        return;
-                    }
-
-                    while (true) {
-                        Integer publishedInFlightNextHead = publishedInFlightMsgQueue.peek();
-                        if (publishedInFlightNextHead == null) {
-                            log.debug("[{}] No more in-flight messages waiting for ack! Clearing received ack queue", clientId);
-                            receivedAckMsgInWrongOrderQueue.clear();
-                            break;
-                        } else {
-                            if (receivedAckMsgInWrongOrderQueue.contains(publishedInFlightNextHead)) {
-                                receivedAckMsgInWrongOrderQueue.remove(publishedInFlightNextHead);
-                                log.debug("[{}] Removing unordered ack {} from queue", clientId, publishedInFlightNextHead);
-                                removePublishedInFlightMsg();
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    log.debug("[{}] Received ack [{}] in the wrong order. Head - [{}]", clientId, msgId, publishedInFlightHead);
-                    receivedAckMsgInWrongOrderQueue.add(msgId);
-                }
-            } else {
-                log.debug("[{}] In-flight msg queue is empty. Received ack [{}] for published msg that was sent outside of the current network connection", clientId, msgId);
-            }
+            removed = inFlightPacketIds.remove(msgId);
         } finally {
             lock.unlock();
+        }
+        if (!removed) {
+            log.warn("[{}] Unexpected ack for packetId={} not currently in-flight", clientId, msgId);
+            stats.incUnknownAck();
+            return;
+        }
+        stats.decInflight();
+        tryDrain();
+    }
+
+    @Override
+    public void onChannelWritable() {
+        tryDrain();
+    }
+
+    /**
+     * Drains the buffered messages while the channel is writable and the in-flight window has space.
+     * TTL is NOT checked here — see {@link #expireTtl(long)}.
+     * Loop is bounded: the queue size cannot exceed {@code delayedMsgQueueMaxSize}.
+     * Each iteration calls the delivery service OUTSIDE the lock.
+     */
+    private void tryDrain() {
+        while (clientSessionCtx.getChannel().channel().isWritable()) {
+            MqttPublishMessage toSend = null;
+            boolean queueEmpty = false;
+
+            lock.lock();
+            try {
+                MqttPubMsgWithCreatedTime head = delayedMsgQueue.peek();
+                if (head == null) {
+                    queueEmpty = true;
+                } else if (inFlightPacketIds.size() >= clientReceiveMax) {
+                    // Window full; the next ack will retry the drain.
+                    return;
+                } else {
+                    delayedMsgQueue.poll();
+                    delayedMsgCounter.decrementAndGet();
+                    inFlightPacketIds.add(head.getMqttPublishMessage().variableHeader().packetId());
+                    toSend = head.getMqttPublishMessage();
+                }
+            } finally {
+                lock.unlock();
+            }
+
+            if (queueEmpty) {
+                flowControlService.removeFromMap(clientId);
+                return;
+            }
+
+            stats.decDelayed();
+            stats.incInflight();
+            deliveryService.sendAlreadyTrackedPublishMsgToClient(clientSessionCtx, toSend);
         }
     }
 
     @Override
-    public boolean processMsg(long ttlMs) {
+    public void expireTtl(long ttlMs) {
+        long cutoff = System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(ttlMs);
+        List<MqttPublishMessage> toRelease = new ArrayList<>();
+        boolean queueEmpty;
+
         lock.lock();
         try {
-            if (!allowedToSendMsg()) {
-                log.debug("[{}] Still reaching clientReceiveMax... Waiting for more ack messages", clientId);
-                return false;
-            }
-
             while (true) {
-                MqttPubMsgWithCreatedTime head = delayedMsgQueue.poll();
-                if (head == null) {
-                    log.debug("[{}] Delayed queue is empty!", clientId);
-                    flowControlService.removeFromMap(clientId);
-                    return false;
+                MqttPubMsgWithCreatedTime head = delayedMsgQueue.peek();
+                if (head == null || head.getCreatedTime() - cutoff >= 0) {
+                    break;
                 }
+                delayedMsgQueue.poll();
                 delayedMsgCounter.decrementAndGet();
-                if (head.getCreatedTime() + ttlMs < System.currentTimeMillis()) {
-                    log.debug("[{}] Msg expired in delayed queue {}", clientId, head);
-                    ReferenceCountUtil.release(head.getMqttPublishMessage());
-                    continue;
-                }
-
-                addPublishedInFlightMsg(head.getMqttPublishMessage());
-                sendDelayedMsg(head.getMqttPublishMessage());
-                break;
+                toRelease.add(head.getMqttPublishMessage());
             }
-            return true;
+            queueEmpty = delayedMsgQueue.isEmpty();
         } finally {
             lock.unlock();
         }
+
+        for (MqttPublishMessage m : toRelease) {
+            ReferenceCountUtil.safeRelease(m);
+        }
+        int expiredCount = toRelease.size();
+        if (expiredCount > 0) {
+            stats.decDelayed(expiredCount);
+            stats.incDropTtl(expiredCount);
+        }
+
+        if (queueEmpty) {
+            flowControlService.removeFromMap(clientId);
+        }
     }
 
-    public void sendDelayedMsg(MqttPublishMessage mqttPubMsg) {
-        clientSessionCtx.getChannel().writeAndFlush(mqttPubMsg);
-    }
+    @Override
+    public void release() {
+        List<MqttPublishMessage> toRelease;
+        int inFlightSize;
+        int delayedSize;
 
-    private MqttPubMsgWithCreatedTime getDelayedMsg(MqttPublishMessage mqttPubMsg) {
-        return new MqttPubMsgWithCreatedTime(mqttPubMsg, System.currentTimeMillis());
-    }
+        lock.lock();
+        try {
+            delayedSize = delayedMsgCounter.get();
+            toRelease = new ArrayList<>(delayedSize);
+            for (MqttPubMsgWithCreatedTime entry : delayedMsgQueue) {
+                toRelease.add(entry.getMqttPublishMessage());
+            }
+            delayedMsgQueue.clear();
+            delayedMsgCounter.set(0);
+            inFlightSize = inFlightPacketIds.size();
+            inFlightPacketIds.clear();
+        } finally {
+            lock.unlock();
+        }
 
-    private int delayedMsgQueueSize() {
-        return delayedMsgCounter.get();
-    }
-
-    private boolean allowedToSendMsg() {
-        return publishedInFlightMsgQueueSize() < clientReceiveMax;
-    }
-
-    private int publishedInFlightMsgQueueSize() {
-        return publishedInFlightMsgCounter.get();
+        if (inFlightSize > 0) {
+            stats.decInflight(inFlightSize);
+        }
+        if (delayedSize > 0) {
+            stats.decDelayed(delayedSize);
+        }
+        for (MqttPublishMessage m : toRelease) {
+            ReferenceCountUtil.safeRelease(m);
+        }
     }
 
     private boolean atMostOnce(MqttPublishMessage mqttPubMsg) {
         return MqttQoS.AT_MOST_ONCE == mqttPubMsg.fixedHeader().qosLevel();
-    }
-
-    private void addDelayedMsg(MqttPublishMessage mqttPubMsg) {
-        delayedMsgCounter.incrementAndGet();
-        delayedMsgQueue.add(getDelayedMsg(mqttPubMsg));
-    }
-
-    private boolean addPublishedInFlightMsg(MqttPublishMessage mqttPubMsg) {
-        publishedInFlightMsgCounter.incrementAndGet();
-        return publishedInFlightMsgQueue.add(mqttPubMsg.variableHeader().packetId());
-    }
-
-    private void removePublishedInFlightMsg() {
-        publishedInFlightMsgQueue.poll();
-        publishedInFlightMsgCounter.decrementAndGet();
     }
 
 }
