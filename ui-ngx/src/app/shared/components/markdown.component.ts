@@ -87,8 +87,8 @@ export class TbMarkdownComponent implements OnChanges {
     }
   }
 
-  private render(markdown: string) {
-    const compiled = this.markdownService.parse(markdown, { decodeHtml: false });
+  private async render(markdown: string) {
+    const compiled = await this.markdownService.parse(markdown, { decodeHtml: false });
     let markdownClass = 'tb-markdown-view';
     const markdownClassValue = this.markdownClass();
     if (markdownClassValue) {

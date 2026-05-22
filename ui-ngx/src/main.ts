@@ -16,7 +16,7 @@
 
 
 
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { enableProdMode, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '@app/app-routing.module';
@@ -37,7 +37,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
     providers: [
-        importProvidersFrom(BrowserModule, AppRoutingModule, CoreModule, LoginModule, HomeModule, PageNotFoundRoutingModule),
+        provideZoneChangeDetection(),importProvidersFrom(BrowserModule, AppRoutingModule, CoreModule, LoginModule, HomeModule, PageNotFoundRoutingModule),
         provideAnimations()
     ]
 }).catch(err => console.error(err));

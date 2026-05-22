@@ -62,10 +62,10 @@ export type ToggleHeaderAppearance = 'fill' | 'fill-invert' | 'stroked';
 export type ScrollDirection = 'after' | 'before';
 
 @Directive({
-    // eslint-disable-next-line @angular-eslint/directive-selector
+     
     selector: 'tb-toggle-option'
 })
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
+ 
 export class ToggleOption {
 
   readonly value = input<any>();
@@ -132,7 +132,7 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   readonly toggleGroupContainer = viewChild<ElementRef<HTMLElement>>('toggleGroupContainer');
 
   @HostBinding('class.tb-toggle-header-pagination-controls-enabled')
-  private showPaginationControls = false;
+  protected showPaginationControls = false;
   private _showPaginationControlsChanged = false;
 
   private toggleGroupResize$: ResizeObserver;

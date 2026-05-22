@@ -30,7 +30,6 @@ import { PageLink } from '@shared/models/page/page-link';
 import { NULL_UUID } from '@shared/models/constants';
 
 @Directive()
-// tslint:disable-next-line:directive-class-suffix
 export abstract class EntityTabsComponent<T extends BaseData,
   P extends PageLink = PageLink,
   L extends BaseData = T,

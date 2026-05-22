@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import { ComponentFactory, Inject, Injectable, Type } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { ComponentFactory, Inject, Injectable, Type, DOCUMENT } from '@angular/core';
+
 import { Observable, ReplaySubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';

@@ -32,7 +32,7 @@
         <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl' | translate"></div>
         <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl-example' | translate"></div>
       </section>
-      @for (rulesControl of rulesFormArray.controls; let index = $index; track rulesControl) {
+      @for (rulesControl of rulesFormArray.controls; let index = $index; track index) {
         <div formArrayName="authRulesMapping">
           <fieldset class="fields-group">
             <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ (index +  1) }}</legend>

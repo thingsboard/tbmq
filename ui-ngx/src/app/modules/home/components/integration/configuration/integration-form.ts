@@ -18,7 +18,7 @@ import { Directive, Input, OnDestroy, TemplateRef, input } from '@angular/core';
 import { Subject } from 'rxjs';
 
 @Directive()
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
+ 
 export abstract class IntegrationForm implements OnDestroy {
 
   readonly executeRemotelyTemplate = input<TemplateRef<any>>();

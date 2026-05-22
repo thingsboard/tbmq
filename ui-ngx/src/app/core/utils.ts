@@ -281,9 +281,9 @@ export function hashCode(str: string): number {
   }
   for (i = 0; i < str.length; i++) {
     char = str.charCodeAt(i);
-    // eslint-disable-next-line no-bitwise
+     
     hash = ((hash << 5) - hash) + char;
-    // eslint-disable-next-line no-bitwise
+     
     hash = hash & hash; // Convert to 32bit integer
   }
   return hash;
@@ -565,7 +565,7 @@ export const camelCase = (str: string): string => {
 
 export const convertTimeUnits = (value: number, valueUnit: WebSocketTimeUnit, targetUnit: WebSocketTimeUnit): number => {
   if (!valueUnit) return 0;
-  let milliseconds: number = convertToMilliseconds(value, valueUnit);
+  const milliseconds: number = convertToMilliseconds(value, valueUnit);
   switch(targetUnit) {
     case WebSocketTimeUnit.MILLISECONDS:
       return milliseconds;

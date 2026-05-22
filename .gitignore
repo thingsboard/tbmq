@@ -1,4 +1,5 @@
 *.toDelete
+.worktrees/
 output/**
 *.class
 *~

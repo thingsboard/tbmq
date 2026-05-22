@@ -26,9 +26,9 @@ import { Observable, Subject } from 'rxjs';
 )
 export class ToastNotificationService {
 
-  private notificationSubject: Subject<NotificationMessage> = new Subject();
+  private notificationSubject = new Subject<NotificationMessage>();
 
-  private hideNotificationSubject: Subject<HideNotification> = new Subject();
+  private hideNotificationSubject = new Subject<HideNotification>();
 
   constructor(
   ) {

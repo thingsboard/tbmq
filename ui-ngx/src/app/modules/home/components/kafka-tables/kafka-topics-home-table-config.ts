@@ -63,7 +63,7 @@ export class KafkaTopicsHomeTableConfig extends EntityTableConfig<KafkaTopic, Ti
   private showKafkaTopicTooltip(entity: KafkaTopic) {
     if (entity?.name) {
       const rowName = entity.name;
-      for (let key in KafkaTopicsTooltipMap) {
+      for (const key in KafkaTopicsTooltipMap) {
         if (rowName.includes('tbmq.msg.app')) {
           if (rowName.includes('tbmq.msg.app.shared')) {
             return KafkaTopicsTooltipMap['tbmq.msg.app.shared'];

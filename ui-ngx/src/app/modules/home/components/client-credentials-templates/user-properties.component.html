@@ -20,7 +20,7 @@
     <legend class="group-title" translate>ws-client.connections.user-properties</legend>
     <div class="flex flex-col">
       <section class="container">
-        @for (control of userPropertiesFormArray.controls; track control) {
+        @for (control of userPropertiesFormArray.controls; track $index) {
           <div formArrayName="props">
             <div [formGroupName]="$index" class="flex flex-1 flex-row items-center justify-center gap-4">
               <mat-form-field class="flex flex-1" subscriptSizing="dynamic">

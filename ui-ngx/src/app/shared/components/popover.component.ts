@@ -63,7 +63,7 @@ import { TbComponentOutletDirective } from './directives/component-outlet.direct
 export type TbPopoverTrigger = 'click' | 'focus' | 'hover' | null;
 
 @Directive({
-    // eslint-disable-next-line @angular-eslint/directive-selector
+     
     selector: '[tb-popover]',
     exportAs: 'tbPopover',
     // eslint-disable-next-line @angular-eslint/no-host-metadata-property

@@ -33,7 +33,7 @@ import { AppState } from '@core/core.state';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FlowDirective, FlowInjectionToken, NgxFlowModule } from '@flowjs/ngx-flow';
+import { FlowConfig, FlowInjectionToken, NgxFlowModule } from '@flowjs/ngx-flow';
 import Flow from '@flowjs/flow.js';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { UtilsService } from '@core/services/utils.service';
@@ -103,7 +103,7 @@ export class FileInputComponent extends PageComponent implements AfterViewInit, 
   fileContent: any;
   files: File[];
 
-  readonly flow = viewChild<FlowDirective>('flow');
+  readonly flow = viewChild<FlowConfig>('flow');
   readonly flowInput = viewChild<ElementRef>('flowInput');
 
   autoUploadSubscription: Subscription;
