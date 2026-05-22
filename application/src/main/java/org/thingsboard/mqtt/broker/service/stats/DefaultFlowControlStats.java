@@ -105,11 +105,11 @@ public class DefaultFlowControlStats implements FlowControlStats {
         counters.forEach(StatsCounter::clear);
     }
 
-    public int getDropOverflow() {
+    public int getDropsOverflow() {
         return dropOverflowCounter.get();
     }
 
-    public int getDropTtl() {
+    public int getDropsTtl() {
         return dropTtlCounter.get();
     }
 

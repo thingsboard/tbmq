@@ -45,8 +45,8 @@ public class DefaultFlowControlStatsTest {
         flowControlStats.incDropTtl();
         flowControlStats.incUnknownAck();
 
-        assertEquals(2, flowControlStats.getDropOverflow());
-        assertEquals(1, flowControlStats.getDropTtl());
+        assertEquals(2, flowControlStats.getDropsOverflow());
+        assertEquals(1, flowControlStats.getDropsTtl());
         assertEquals(1, flowControlStats.getUnknownAcks());
     }
 
@@ -76,8 +76,8 @@ public class DefaultFlowControlStatsTest {
 
         flowControlStats.reset();
 
-        assertEquals(0, flowControlStats.getDropOverflow());
-        assertEquals(0, flowControlStats.getDropTtl());
+        assertEquals(0, flowControlStats.getDropsOverflow());
+        assertEquals(0, flowControlStats.getDropsTtl());
         assertEquals(0, flowControlStats.getUnknownAcks());
         assertEquals(2, flowControlStats.getInflightCount());
         assertEquals(1, flowControlStats.getDelayedQueueSize());
