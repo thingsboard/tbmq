@@ -24,12 +24,12 @@ import static org.junit.Assert.assertEquals;
 public class MqttPropertiesUtilTest {
 
     @Test
-    public void getReceiveMaxValue_zeroFromClient_returnsOneAndLogsWarn() {
-        // MQTT-5 §3.1.2.11.3 makes Receive Maximum=0 a protocol error.
-        // We choose to defensively floor to 1 rather than DISCONNECT 0x82.
+    public void getReceiveMaxValue_zeroFromClient_returnsZero() {
+        // MQTT-5 §3.1.2.11.3 makes Receive Maximum=0 a protocol error. The util returns the raw value;
+        // ConnectServiceImpl is responsible for rejecting the CONNECT with CONNACK 0x82.
         MqttProperties props = new MqttProperties();
         props.add(new MqttProperties.IntegerProperty(BrokerConstants.RECEIVE_MAXIMUM_PROP_ID, 0));
-        assertEquals(1, MqttPropertiesUtil.getReceiveMaxValue(props));
+        assertEquals(0, MqttPropertiesUtil.getReceiveMaxValue(props));
     }
 
     @Test

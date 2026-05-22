@@ -122,7 +122,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             lock.unlock();
         }
         if (!removed) {
-            log.warn("[{}] Unexpected ack for packetId={} not currently in-flight", clientId, msgId);
+            log.debug("[{}] Unexpected ack for packetId={} not currently in-flight", clientId, msgId);
             stats.incUnknownAck();
             return;
         }
@@ -138,11 +138,13 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
     /**
      * Drains the buffered messages while the channel is writable and the in-flight window has space.
      * TTL is NOT checked here — see {@link #expireTtl(long)}.
-     * Loop is bounded: the queue size cannot exceed {@code delayedMsgQueueMaxSize}.
+     * Each iteration reserves one in-flight slot and stops once the window fills, the queue empties,
+     * or the channel goes non-writable — so the loop is bounded by clientReceiveMax minus the slots
+     * already in use at entry.
      * Each iteration calls the delivery service OUTSIDE the lock.
      */
     private void tryDrain() {
-        while (clientSessionCtx.getChannel().channel().isWritable()) {
+        while (clientSessionCtx.isWritable()) {
             MqttPublishMessage toSend = null;
             boolean queueEmpty = false;
 

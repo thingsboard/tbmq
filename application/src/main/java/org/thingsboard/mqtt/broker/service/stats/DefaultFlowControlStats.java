@@ -39,7 +39,7 @@ public class DefaultFlowControlStats implements FlowControlStats {
     public DefaultFlowControlStats(StatsFactory statsFactory) {
         this.dropOverflowCounter = statsFactory.createStatsCounter(STATS_KEY, "dropsOverflow");
         this.dropTtlCounter = statsFactory.createStatsCounter(STATS_KEY, "dropsTtl");
-        this.unknownAckCounter = statsFactory.createStatsCounter(STATS_KEY, "unknownAck");
+        this.unknownAckCounter = statsFactory.createStatsCounter(STATS_KEY, "unknownAcks");
         this.counters = List.of(dropOverflowCounter, dropTtlCounter, unknownAckCounter);
         this.inflightGauge = statsFactory.createGauge(STATS_KEY + ".inflightCount", new AtomicInteger(0));
         this.delayedGauge = statsFactory.createGauge(STATS_KEY + ".delayedQueueSize", new AtomicInteger(0));
@@ -113,7 +113,7 @@ public class DefaultFlowControlStats implements FlowControlStats {
         return dropTtlCounter.get();
     }
 
-    public int getUnknownAck() {
+    public int getUnknownAcks() {
         return unknownAckCounter.get();
     }
 

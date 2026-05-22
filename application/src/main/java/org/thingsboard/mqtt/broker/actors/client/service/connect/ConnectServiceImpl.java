@@ -291,6 +291,7 @@ public class ConnectServiceImpl implements ConnectService {
         String clientId = actorState.getClientId();
         try {
             validateClientId(ctx, msg);
+            validateReceiveMaximum(ctx, msg);
             validateLastWillMessage(ctx, clientId, msg);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
@@ -305,6 +306,18 @@ public class ConnectServiceImpl implements ConnectService {
         if (isPersistentClientWithoutClientId(msg)) {
             throw new ConnectionValidationException("Client identifier is empty and clean session flag is set to false",
                     MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx));
+        }
+    }
+
+    private void validateReceiveMaximum(ClientSessionCtx ctx, MqttConnectMsg msg) throws ConnectionValidationException {
+        if (MqttVersion.MQTT_5 != ctx.getMqttVersion()) {
+            return;
+        }
+        int receiveMax = MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties());
+        if (receiveMax <= 0) {
+            throw new ConnectionValidationException(
+                    "Receive Maximum=" + receiveMax + " is a protocol error per MQTT 5",
+                    MqttReasonCodeResolver.connectionRefusedProtocolError(ctx));
         }
     }
 

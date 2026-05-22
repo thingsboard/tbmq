@@ -47,7 +47,7 @@ public class DefaultFlowControlStatsTest {
 
         assertEquals(2, flowControlStats.getDropOverflow());
         assertEquals(1, flowControlStats.getDropTtl());
-        assertEquals(1, flowControlStats.getUnknownAck());
+        assertEquals(1, flowControlStats.getUnknownAcks());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class DefaultFlowControlStatsTest {
 
         assertEquals(0, flowControlStats.getDropOverflow());
         assertEquals(0, flowControlStats.getDropTtl());
-        assertEquals(0, flowControlStats.getUnknownAck());
+        assertEquals(0, flowControlStats.getUnknownAcks());
         assertEquals(2, flowControlStats.getInflightCount());
         assertEquals(1, flowControlStats.getDelayedQueueSize());
     }
@@ -91,6 +91,6 @@ public class DefaultFlowControlStatsTest {
         List<String> names = counters.stream().map(StatsCounter::getName).collect(Collectors.toList());
         assertTrue(names.contains("dropsOverflow"));
         assertTrue(names.contains("dropsTtl"));
-        assertTrue(names.contains("unknownAck"));
+        assertTrue(names.contains("unknownAcks"));
     }
 }

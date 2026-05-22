@@ -16,8 +16,6 @@
 package org.thingsboard.mqtt.broker.actors.client.state;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
@@ -61,8 +59,6 @@ public class PublishedInFlightCtxImplTest {
     private ClientSessionCtx clientSessionCtx;
     private MqttPublishMsgDeliveryService deliveryService;
     private FlowControlStats stats;
-    private ChannelHandlerContext channelCtx;
-    private Channel channel;
 
     private PublishedInFlightCtxImpl ctx;
 
@@ -72,13 +68,9 @@ public class PublishedInFlightCtxImplTest {
         clientSessionCtx = mock(ClientSessionCtx.class);
         deliveryService = mock(MqttPublishMsgDeliveryService.class);
         stats = mock(FlowControlStats.class);
-        channelCtx = mock(ChannelHandlerContext.class);
-        channel = mock(Channel.class);
 
         when(clientSessionCtx.getClientId()).thenReturn(CLIENT_ID);
-        when(clientSessionCtx.getChannel()).thenReturn(channelCtx);
-        when(channelCtx.channel()).thenReturn(channel);
-        when(channel.isWritable()).thenReturn(true);
+        when(clientSessionCtx.isWritable()).thenReturn(true);
 
         ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats, RECEIVE_MAX, 5);
     }
@@ -255,12 +247,12 @@ public class PublishedInFlightCtxImplTest {
         ctx.addInFlightMsg(qos1(6));
 
         // Channel non-writable: drain on ack must not send.
-        when(channel.isWritable()).thenReturn(false);
+        when(clientSessionCtx.isWritable()).thenReturn(false);
         ctx.ackInFlightMsg(1);
         verify(deliveryService, never()).sendAlreadyTrackedPublishMsgToClient(any(), any());
 
         // Channel writable again: explicit hook drains.
-        when(channel.isWritable()).thenReturn(true);
+        when(clientSessionCtx.isWritable()).thenReturn(true);
         ctx.onChannelWritable();
         verify(deliveryService, times(1)).sendAlreadyTrackedPublishMsgToClient(same(clientSessionCtx), any());
     }
@@ -342,6 +334,13 @@ public class PublishedInFlightCtxImplTest {
         boolean finished = latch.await(10, TimeUnit.SECONDS);
         assertTrue("Threads did not finish in time", finished);
         assertFalse("An exception was thrown during concurrent ops", failed.get());
+
+        // Final-state invariant: after both threads finish, every add was either matched by a successful
+        // ack (decInflight) or the ack saw an unsubscribed id (incUnknownAck). incInflight count must
+        // equal the number of adds, and a fresh add must still reserve a slot — proving the Set + lock
+        // state isn't corrupted (no leaks, no over-counts).
+        verify(stats, times(ops)).incInflight();
+        assertTrue(ctx.addInFlightMsg(qos1(99999)));
     }
 
     @Test
