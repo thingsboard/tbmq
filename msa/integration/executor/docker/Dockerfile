@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM thingsboard/openjdk17:bookworm-slim
+FROM thingsboard/openjdk25:trixie-slim
 
 COPY start-tbmq-integration-executor.sh ${pkg.name}.deb /tmp/
 
