@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM thingsboard/openjdk25:trixie-slim
+FROM ${docker.base.image}
 
 COPY start-tbmq-integration-executor.sh ${pkg.name}.deb /tmp/
 
