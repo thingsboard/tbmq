@@ -13,19 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.service.stats;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 
-public interface PublishedInFlightCtx {
+import java.util.List;
 
-    boolean addInFlightMsg(MqttPublishMessage mqttPubMsg);
+public interface FlowControlStats {
 
-    void ackInFlightMsg(int msgId);
+    void incDropOverflow();
 
-    void onChannelWritable();
+    void incDropTtl();
 
-    void expireTtl(long ttlMs);
+    void incDropTtl(int n);
 
-    void release();
+    void incUnknownAck();
+
+    void incInflight();
+
+    void decInflight();
+
+    void decInflight(int n);
+
+    void incDelayed();
+
+    void decDelayed();
+
+    void decDelayed(int n);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

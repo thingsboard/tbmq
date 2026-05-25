@@ -137,6 +137,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         rateLimitService.remove(sessionCtx.getClientId());
         authorizationRuleService.evict(sessionCtx.getClientId());
+        sessionCtx.releasePublishedInFlightCtx();
         flowControlService.removeFromMap(sessionCtx.getClientId());
         tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
         closeChannel(sessionCtx);

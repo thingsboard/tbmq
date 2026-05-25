@@ -33,12 +33,14 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -212,6 +214,80 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
         publisher.disconnect();
         publisher.close();
         return timestampsOfReceivedMessages;
+    }
+
+    protected MqttClient givenReceiveMaxAndOutOfOrderAcks_whenSend50Messages_thenAllDeliveredInOrder(String client) throws Throwable {
+        final int total = 50;
+        final int receiveMax = 5;
+        CountDownLatch latch = new CountDownLatch(total);
+        List<Integer> deliveredPayloads = Collections.synchronizedList(new ArrayList<>(total));
+        AtomicInteger pendingOddMessageId = new AtomicInteger(-1);
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setReceiveMaximum(receiveMax);
+
+        persistedClient = new MqttClient(SERVER_URI + mqttPort, client);
+        persistedClient.setManualAcks(true);
+        persistedClient.connectWithResult(options);
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(persistedClient::isConnected);
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            int payloadSeq = Integer.parseInt(new String(message.getPayload()));
+            int messageId = message.getId();
+            deliveredPayloads.add(payloadSeq);
+            log.warn("[{}] Received payload seq={} (msgId={})", client, payloadSeq, messageId);
+
+            service.submit(() -> {
+                try {
+                    Thread.sleep(50); // slow consumer — force broker to use the delayed queue
+                    if (payloadSeq % 2 == 1) {
+                        // Hold the odd until the next even arrives.
+                        pendingOddMessageId.set(messageId);
+                    } else {
+                        // Even arrived — ack THIS one first, then the held odd.
+                        persistedClient.messageArrivedComplete(messageId, QOS);
+                        int heldOdd = pendingOddMessageId.getAndSet(-1);
+                        if (heldOdd != -1) {
+                            persistedClient.messageArrivedComplete(heldOdd, QOS);
+                        }
+                    }
+                    latch.countDown();
+                } catch (Exception e) {
+                    log.error("Failure", e);
+                }
+            });
+        }};
+        MqttSubscription[] subscriptions = {new MqttSubscription(RECEIVE_MAX_TOPIC, QOS)};
+        persistedClient.subscribe(subscriptions, listeners);
+
+        MqttClient publisher = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT);
+        publisher.connectWithResult(new MqttConnectionOptions());
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(publisher::isConnected);
+
+        for (int i = 1; i <= total; i++) {
+            publisher.publish(RECEIVE_MAX_TOPIC, String.valueOf(i).getBytes(), QOS, false);
+        }
+
+        boolean done = latch.await(30, TimeUnit.SECONDS);
+        Assert.assertTrue("All " + total + " messages must be delivered within 30s", done);
+
+        // Verify in-order on the wire — broker preserves publisher's order even under out-of-order acks.
+        Assert.assertEquals(total, deliveredPayloads.size());
+        for (int i = 0; i < total; i++) {
+            Assert.assertEquals("expected payload " + (i + 1) + " at position " + i,
+                    i + 1, (int) deliveredPayloads.get(i));
+        }
+
+        publisher.disconnect();
+        publisher.close();
+
+        return persistedClient;
     }
 
 }

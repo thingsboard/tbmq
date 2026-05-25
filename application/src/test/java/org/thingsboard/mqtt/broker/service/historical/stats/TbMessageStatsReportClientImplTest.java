@@ -105,7 +105,7 @@ public class TbMessageStatsReportClientImplTest {
 
     @Test
     public void testInitDisabled() {
-        when(historicalDataReportProperties.isDisabled()).thenReturn(true);
+        when(historicalDataReportProperties.isEnabled()).thenReturn(false);
         tbMessageStatsReportClient.init();
 
         assertNull(tbMessageStatsReportClient.getStats());

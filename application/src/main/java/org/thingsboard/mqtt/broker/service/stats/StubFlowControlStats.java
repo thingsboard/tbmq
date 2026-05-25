@@ -1,0 +1,78 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.service.stats;
+
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+
+import java.util.Collections;
+import java.util.List;
+
+public class StubFlowControlStats implements FlowControlStats {
+
+    public static final StubFlowControlStats STUB_FLOW_CONTROL_STATS = new StubFlowControlStats();
+
+    private StubFlowControlStats() {
+    }
+
+    @Override
+    public void incDropOverflow() {
+    }
+
+    @Override
+    public void incDropTtl() {
+    }
+
+    @Override
+    public void incDropTtl(int n) {
+    }
+
+    @Override
+    public void incUnknownAck() {
+    }
+
+    @Override
+    public void incInflight() {
+    }
+
+    @Override
+    public void decInflight() {
+    }
+
+    @Override
+    public void decInflight(int n) {
+    }
+
+    @Override
+    public void incDelayed() {
+    }
+
+    @Override
+    public void decDelayed() {
+    }
+
+    @Override
+    public void decDelayed(int n) {
+    }
+
+    @Override
+    public List<StatsCounter> getStatsCounters() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void reset() {
+    }
+}

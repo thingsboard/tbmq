@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -211,6 +212,16 @@ public class ChannelBackpressureManagerImplTest {
 
         verify(devicePersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
         assertThatCounterIs(0);
+    }
+
+    @Test
+    public void onChannelWritable_callsCtxOnChannelWritable_evenForCleanSession() {
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
+        setCleanSession();   // forces the clean-session early-return path
+
+        channelBackpressureManager.onChannelWritable(state);
+
+        verify(ctx, times(1)).onChannelWritable();
     }
 
     private void assertThatCounterIs(int expected) {

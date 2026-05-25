@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.session;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.junit.Test;
 
-public interface PublishedInFlightCtx {
+public class ClientSessionCtxTest {
 
-    boolean addInFlightMsg(MqttPublishMessage mqttPubMsg);
-
-    void ackInFlightMsg(int msgId);
-
-    void onChannelWritable();
-
-    void expireTtl(long ttlMs);
-
-    void release();
+    @Test
+    public void passthroughs_areNoOpWhenPublishedInFlightCtxIsNull() {
+        // With flowControlEnabled=false, initPublishedInFlightCtx is never called,
+        // so publishedInFlightCtx stays null. The three passthroughs must be silent no-ops.
+        ClientSessionCtx sessionCtx = new ClientSessionCtx();
+        sessionCtx.ackInFlightMsg(123);
+        sessionCtx.onChannelWritable();
+        sessionCtx.releasePublishedInFlightCtx();
+        // No NPE, no side effect.
+    }
 }

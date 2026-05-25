@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -49,6 +50,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -184,6 +186,18 @@ public class DisconnectServiceImplTest {
 
         verify(msgPersistenceManager, times(1)).stopProcessingPersistedMessages(any());
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());
+    }
+
+    @Test
+    public void cleanupClientSession_callsReleasePublishedInFlightCtx_beforeRemoveFromMap() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        InOrder inOrder = inOrder(ctx, flowControlService);
+        inOrder.verify(ctx).releasePublishedInFlightCtx();
+        inOrder.verify(flowControlService).removeFromMap(eq(CLIENT_ID));
     }
 
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {

@@ -41,8 +41,8 @@ public class FlowControlServiceImpl implements FlowControlService {
     @Value("${mqtt.flow-control.enabled:true}")
     private boolean flowControlEnabled;
     @Setter
-    @Value("${mqtt.flow-control.timeout:1000}")
-    private int timeout;
+    @Value("${mqtt.flow-control.ttl-sweep-interval-ms:10000}")
+    private int sweepIntervalMs;
     @Value("${mqtt.flow-control.ttl:600}")
     private int ttlSecs;
 
@@ -59,9 +59,13 @@ public class FlowControlServiceImpl implements FlowControlService {
         if (!flowControlEnabled) {
             return;
         }
+        if (sweepIntervalMs <= 0) {
+            log.warn("mqtt.flow-control.ttl-sweep-interval-ms={} is invalid; falling back to 10000 ms", sweepIntervalMs);
+            sweepIntervalMs = 10000;
+        }
         clientsWithDelayedMsgMap = new ConcurrentHashMap<>();
         ttlMs = TimeUnit.SECONDS.toMillis(ttlSecs);
-        service = ThingsBoardExecutors.initExecutorService(PARALLELISM, "flow-control-executor");
+        service = ThingsBoardExecutors.initExecutorService(PARALLELISM, "flow-control-ttl-sweeper");
         launchProcessing();
     }
 
@@ -69,33 +73,26 @@ public class FlowControlServiceImpl implements FlowControlService {
         service.submit(() -> {
             while (!stopped) {
                 try {
-                    if (clientsWithDelayedMsgMap.isEmpty()) {
-                        sleep();
-                        continue;
-                    }
-                    boolean atLeastOneMsgProcessed = false;
                     for (Map.Entry<String, PublishedInFlightCtx> entry : clientsWithDelayedMsgMap.entrySet()) {
-                        boolean isMessageProcessed = entry.getValue().processMsg(ttlMs);
-                        if (isMessageProcessed) {
-                            atLeastOneMsgProcessed = true;
-                        }
-                    }
-                    if (!atLeastOneMsgProcessed) {
-                        sleep();
-                    }
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        log.info("Flow control processing was interrupted");
-                        break;
-                    }
-                    if (!stopped) {
-                        log.error("Failed to process msg", e);
                         try {
-                            sleep();
-                        } catch (InterruptedException e2) {
-                            log.info("Thread was interrupted!");
-                            break;
+                            entry.getValue().expireTtl(ttlMs);
+                        } catch (Exception perCtx) {
+                            log.warn("[{}] TTL sweep failed for ctx", entry.getKey(), perCtx);
                         }
+                    }
+                    Thread.sleep(sweepIntervalMs);
+                } catch (InterruptedException ie) {
+                    log.info("Flow control TTL sweeper interrupted");
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    if (stopped) break;
+                    log.error("Flow control TTL sweeper error", e);
+                    try {
+                        Thread.sleep(sweepIntervalMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }
@@ -114,10 +111,6 @@ public class FlowControlServiceImpl implements FlowControlService {
         if (flowControlEnabled && clientId != null) {
             clientsWithDelayedMsgMap.remove(clientId);
         }
-    }
-
-    void sleep() throws InterruptedException {
-        Thread.sleep(timeout);
     }
 
     @PreDestroy

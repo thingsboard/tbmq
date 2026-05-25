@@ -28,7 +28,7 @@ server:
   http2:
     # Enables or disables HTTP/2 support.
     enabled: "${HTTP2_ENABLED:true}"
-  # Logs errors with stacktrace when REST API throws exception.
+  # Enables or disables logging of errors with stacktrace when the REST API throws an exception.
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration.
   ssl:
@@ -61,7 +61,7 @@ server:
 
 # MQTT listeners parameters
 listener:
-  # Enables proxy protocol support as a global setting for all listeners. If enabled, supports both v1 and v2.
+  # Enables or disables proxy protocol support as a global setting for all listeners. If enabled, supports both v1 and v2.
   # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
   proxy_enabled: "${MQTT_PROXY_PROTOCOL_ENABLED:false}"
   # Netty leak detector level. Accepted values: DISABLED, SIMPLE, ADVANCED, PARANOID. Applied globally for all listeners.
@@ -81,7 +81,7 @@ listener:
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
     # MQTT TCP listener bind port.
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
-    # Enables proxy protocol support for the MQTT TCP listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # Enables or disables proxy protocol support for the MQTT TCP listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_TCP_PROXY_PROTOCOL_ENABLED:}"
@@ -105,7 +105,7 @@ listener:
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
     # MQTT SSL listener bind port.
     bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
-    # Enables proxy protocol support for the MQTT TLS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # Enables or disables proxy protocol support for the MQTT TLS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_SSL_PROXY_PROTOCOL_ENABLED:}"
@@ -159,11 +159,11 @@ listener:
     bind_address: "${LISTENER_WS_BIND_ADDRESS:0.0.0.0}"
     # MQTT WS listener bind port.
     bind_port: "${LISTENER_WS_BIND_PORT:8084}"
-    # Enables proxy protocol support for the MQTT WS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # Enables or disables proxy protocol support for the MQTT WS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_WS_PROXY_PROTOCOL_ENABLED:}"
-    # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
+    # Enables or disables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
     # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
     # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
     # Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy_enabled) — PROXY protocol takes precedence.
@@ -191,11 +191,11 @@ listener:
     bind_address: "${LISTENER_WSS_BIND_ADDRESS:0.0.0.0}"
     # MQTT WSS listener bind port.
     bind_port: "${LISTENER_WSS_BIND_PORT:8085}"
-    # Enables proxy protocol support for the MQTT WSS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # Enables or disables proxy protocol support for the MQTT WSS listener. Unset by default — inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
     # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
     # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.
     proxy_enabled: "${MQTT_WSS_PROXY_PROTOCOL_ENABLED:}"
-    # Enables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
+    # Enables or disables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.
     # Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.
     # When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.
     # Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy_enabled) — PROXY protocol takes precedence.
@@ -844,10 +844,10 @@ spring:
 
 # General Spring parameters
 spring.lifecycle.timeout-per-shutdown-phase: "${SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE:1m}" # The server waits for active requests to finish up to the specified time before graceful shutdown.
-spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "${SPRING_JPA_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION:true}" # Setting this property to true disables contextual LOB creation and forces Hibernate's own LOB implementation. Fixes Postgres JPA error.
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "${SPRING_JPA_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION:true}" # Enables or disables Hibernate's own (non-contextual) LOB implementation. When enabled, replaces JDBC contextual LOB creation to fix a Postgres JPA error.
 spring.jpa.properties.hibernate.order_by.default_null_ordering: "${SPRING_JPA_HIBERNATE_ORDER_BY_DEFAULT_NULL_ORDERING:last}" # Default ordering for null values.
-spring.data.redis.repositories.enabled: "${SPRING_DATA_REDIS_REPOSITORIES_ENABLED:false}" # Disables Redis repositories scanning.
-spring.freemarker.checkTemplateLocation: "${SPRING_FREEMARKER_CHECK_TEMPLATE_LOCATION:false}" # Spring Freemarker configuration to check that the templates location exists.
+spring.data.redis.repositories.enabled: "${SPRING_DATA_REDIS_REPOSITORIES_ENABLED:false}" # Enables or disables Spring Data Redis repositories scanning.
+spring.freemarker.checkTemplateLocation: "${SPRING_FREEMARKER_CHECK_TEMPLATE_LOCATION:false}" # Enables or disables the Spring Freemarker check that the template location exists.
 spring.mvc.async.request-timeout: "${SPRING_MVC_ASYNC_REQUEST_TIMEOUT:30000}" # Default timeout for asynchronous requests (in ms).
 spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATEGY:ANT_PATH_MATCHER}" # Path matching strategy used for Swagger endpoints.
 
@@ -892,9 +892,11 @@ mqtt:
     # Enables or disables the MQTT 5 flow control feature for the server. If disabled, the server will not control the number of messages sent to subscribers via "Receive Maximum".
     # Also applies to MQTT 3.x clients when enabled. "Receive Maximum" for MQTT 3.x clients can be configured using MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX.
     enabled: "${MQTT_FLOW_CONTROL_ENABLED:true}"
-    # Timeout to wait when there is nothing to process for flow control. A separate thread handles sending delayed messages to subscribers (in ms).
-    # If no clients are affected by flow control restrictions, there is no need to continuously try to find and send such messages.
-    timeout: "${MQTT_FLOW_CONTROL_TIMEOUT:1000}"
+    # Interval between sweeps of the per-client delayed-message buffer that drops messages whose age exceeds 'ttl' (in ms).
+    # Drain on ACK/writability is event-driven, so this sweeper only handles TTL expiry. Defaults to 10 s.
+    # The legacy YAML key 'mqtt.flow-control.timeout' and env var MQTT_FLOW_CONTROL_TIMEOUT remain honoured as fallbacks
+    # for upgrade compatibility.
+    ttl-sweep-interval-ms: "${MQTT_FLOW_CONTROL_TTL_SWEEP_INTERVAL_MS:${mqtt.flow-control.timeout:${MQTT_FLOW_CONTROL_TIMEOUT:10000}}}"
     # Time to store delayed messages for subscribers (in s). Delayed messages are those that cannot be sent immediately due to flow control restrictions.
     # Defaults to 10 minutes.
     ttl: "${MQTT_FLOW_CONTROL_TTL:600}"
@@ -915,14 +917,11 @@ mqtt:
     # Minimum topic name length that the broker may replace with a topic alias (e.g., topics with more than 50 characters).
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   subscription:
-    # Controls whether clients are permitted to subscribe to the root multi-level wildcard "#".
-    # If set to 'true' (default):
-    #   Clients can subscribe to "#", receiving a copy of EVERY message published to the broker.
-    #   This is useful for debugging or firehose-style monitoring services.
-    # If set to 'false':
-    #   Clients are explicitly denied permission to subscribe to the exact topic "#".
-    #   They can still subscribe to specific paths (e.g., "sensors/#") or individual topics.
-    #   Recommended for production to prevent accidental or malicious data leakage.
+    # Enables or disables client subscriptions to the root multi-level wildcard "#".
+    # When true (default), clients can subscribe to "#" and receive a copy of every message published to the broker.
+    # Useful for debugging or firehose-style monitoring services.
+    # When false, clients are denied subscription to the exact topic "#" but can still subscribe to specific paths
+    # (e.g., "sensors/#") or individual topics. Recommended for production to prevent accidental or malicious data leakage.
     allow-root-multi-level-wildcard: "${MQTT_SUBSCRIPTION_ROOT_MULTI_LVL_WILDCARD:true}"
   shared-subscriptions:
     # Processing strategy for distributing messages among clients in a shared subscription. Accepted values: ROUND_ROBIN.
@@ -960,7 +959,7 @@ mqtt:
   version-3-1:
     # Maximum client ID length for MQTT 3.1.
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
-  # If enabled, each message published to non-persistent subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.
+  # Enables or disables immediate flush of each message published to non-persistent subscribers. When disabled, messages are buffered and flushed periodically.
   write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
   # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false.
   buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
@@ -991,13 +990,13 @@ mqtt:
         limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:10000}"
         # TTL of persisted DEVICE messages (in s). Defaults to one week.
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
-        # If enabled, each message published to persistent DEVICE client subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.
+        # Enables or disables immediate flush of each message published to persistent DEVICE client subscribers. When disabled, messages are buffered and flushed periodically.
         write-and-flush: "${MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH:true}"
         # Number of messages buffered in the channel before the flush is made. Used when `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` = false.
         buffered-msg-count: "${MQTT_PERSISTENT_BUFFERED_MSG_COUNT:5}"
     app:
       persisted-messages:
-        # If enabled, each message published to persistent APPLICATION client subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.
+        # Enables or disables immediate flush of each message published to persistent APPLICATION client subscribers. When disabled, messages are buffered and flushed periodically.
         write-and-flush: "${MQTT_APP_MSG_WRITE_AND_FLUSH:false}"
         # Number of messages buffered in the channel before the flush is made. Used when `MQTT_APP_MSG_WRITE_AND_FLUSH` = false.
         buffered-msg-count: "${MQTT_APP_BUFFERED_MSG_COUNT:10}"
@@ -1103,7 +1102,7 @@ redis:
     host: "${REDIS_HOST:localhost}"
     # Redis connection port.
     port: "${REDIS_PORT:6379}"
-    # Enables the default Redis client configuration.
+    # Enables or disables the default Redis client configuration.
     useDefaultClientConfig: "${REDIS_USE_DEFAULT_CLIENT_CONFIG:true}"
     # Client name. Applies only when not using the default ClientConfig.
     clientName: "${REDIS_CLIENT_NAME:standalone}"
@@ -1111,14 +1110,14 @@ redis:
     connectTimeout: "${REDIS_CLIENT_CONNECT_TIMEOUT:30000}"
     # Read timeout (in ms). Applies only when not using the default ClientConfig.
     readTimeout: "${REDIS_CLIENT_READ_TIMEOUT:60000}"
-    # Enables pool config. Applies only when not using the default ClientConfig.
+    # Enables or disables pool config. Applies only when not using the default ClientConfig.
     usePoolConfig: "${REDIS_CLIENT_USE_POOL_CONFIG:false}"
   cluster:
     # Comma-separated list of "host:port" pairs to bootstrap from.
     nodes: "${REDIS_NODES:}"
     # Maximum number of redirects to follow when executing commands across the cluster.
     maxRedirects: "${REDIS_MAX_REDIRECTS:12}"
-    # If set to false, pool config is built from the pool config section values.
+    # Enables or disables use of the default pool config. When false, the pool config is built from the 'pool_config' section values.
     useDefaultPoolConfig: "${REDIS_CLUSTER_USE_DEFAULT_POOL_CONFIG:true}"
   sentinel:
     # Name of the master node.
@@ -1127,24 +1126,24 @@ redis:
     sentinels: "${REDIS_SENTINELS:}"
     # Password to authenticate with the Sentinel.
     password: "${REDIS_SENTINEL_PASSWORD:}"
-    # If set to false, pool config is built from the pool config section values.
+    # Enables or disables use of the default pool config. When false, the pool config is built from the 'pool_config' section values.
     useDefaultPoolConfig: "${REDIS_SENTINEL_USE_DEFAULT_POOL_CONFIG:true}"
   # DB index.
   db: "${REDIS_DB:0}"
-  # Username for Redis ACL authentication (Redis 6+). Optional.
+  # Optional. Username for Redis ACL authentication (Redis 6+).
   username: "${REDIS_USERNAME:}"
   # DB password.
   password: "${REDIS_PASSWORD:}"
-  # SSL/TLS configuration parameters
+  # SSL/TLS configuration parameters.
   ssl:
     # Enables or disables TLS for Redis connections. Applies to all connection types: standalone, sentinel, cluster.
     enabled: "${REDIS_SSL_ENABLED:false}"
     credentials:
       # Path to the CA certificate PEM file used to verify the Redis server certificate. Required when SSL is enabled.
       cert_file: "${REDIS_SSL_CERT_FILE:}"
-      # Path to the client certificate PEM file. Required only for mutual TLS (mTLS). Optional.
+      # Optional. Path to the client certificate PEM file. Required only for mutual TLS (mTLS).
       user_cert_file: "${REDIS_SSL_USER_CERT_FILE:}"
-      # Path to the client private key PEM file. Required only for mutual TLS (mTLS). Optional.
+      # Optional. Path to the client private key PEM file. Required only for mutual TLS (mTLS).
       user_key_file: "${REDIS_SSL_USER_KEY_FILE:}"
   # Pool config.
   pool_config:
@@ -1168,7 +1167,7 @@ redis:
     maxWaitMills: "${REDIS_POOL_CONFIG_MAX_WAIT_MS:60000}"
     # Number of connections to test for eviction during each eviction run.
     numberTestsPerEvictionRun: "${REDIS_POOL_CONFIG_NUMBER_TESTS_PER_EVICTION_RUN:3}"
-    # Determines whether to block when a thread requests a connection from an exhausted pool.
+    # Enables or disables blocking when a thread requests a connection from an exhausted pool.
     blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
 
 # Statistics parameters
@@ -1204,11 +1203,10 @@ management:
       enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
   endpoint:
     health:
-      # Controls whether the health endpoint shows full component details (e.g., Redis, DB, TBMQ).
-      # Accepted values:
-      #   never: always hide details (default if security is enabled).
-      #   when-authorized: show details only to authenticated users.
-      #   always: always include full health details in the response.
+      # Visibility of full component details in the health endpoint response (e.g., Redis, DB, TBMQ). Accepted values:
+      #   never - always hide details (default if security is enabled).
+      #   when-authorized - show details only to authenticated users.
+      #   always - always include full health details in the response.
       show-details: "${HEALTH_SHOW_DETAILS:never}"
   endpoints:
     web:
@@ -1235,7 +1233,7 @@ spring.mvc.cors:
 
 # Spring doc common parameters
 springdoc:
-  # If false, Swagger API docs will be unavailable.
+  # Enables or disables Swagger API docs.
   api-docs.enabled: "${SWAGGER_ENABLED:true}"
   # Swagger default produces media-type.
   default-produces-media-type: "${SWAGGER_DEFAULT_PRODUCES_MEDIA_TYPE:application/json}"
@@ -1279,7 +1277,7 @@ analysis:
   log:
     # Enables or disables analysis logging.
     enabled: "${ANALYSIS_LOG_ENABLED:true}"
-    # If true, log events for ALL clients (ignores analyzed-client-ids).
+    # Enables or disables logging events for all clients. When true, ignores the 'analyzed-client-ids' list.
     all-clients: "${ANALYSIS_LOG_ALL_CLIENTS:false}"
     # Comma-separated list of client IDs for which additional events will be logged.
     # Example env var: ANALYSIS_LOG_CLIENT_IDS=client1,client2.

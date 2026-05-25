@@ -33,6 +33,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
@@ -68,6 +69,10 @@ public final class MqttReasonCodeResolver {
 
     public static MqttConnectReturnCode connectionRefusedTopicNameInvalid(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_TOPIC_NAME_INVALID : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
+
+    public static MqttConnectReturnCode connectionRefusedProtocolError(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_PROTOCOL_ERROR : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
     }
 
     public static PubAck pubAckSuccess(ClientSessionCtx ctx) {

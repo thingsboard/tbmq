@@ -30,8 +30,10 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
+import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -90,8 +92,13 @@ public class ClientSessionCtx implements SessionContext {
         return (sessionInfo != null && sessionInfo.getClientInfo() != null) ? sessionInfo.getClientId() : null;
     }
 
-    public void initPublishedInFlightCtx(FlowControlService flowControlService, ClientSessionCtx sessionCtx, int receiveMaxValue, int delayedQueueMaxSize) {
-        publishedInFlightCtx = new PublishedInFlightCtxImpl(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
+    public void initPublishedInFlightCtx(FlowControlService flowControlService,
+                                         MqttPublishMsgDeliveryService deliveryService,
+                                         FlowControlStats stats,
+                                         int receiveMaxValue,
+                                         int delayedQueueMaxSize) {
+        publishedInFlightCtx = new PublishedInFlightCtxImpl(
+                flowControlService, this, deliveryService, stats, receiveMaxValue, delayedQueueMaxSize);
     }
 
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {
@@ -104,6 +111,19 @@ public class ClientSessionCtx implements SessionContext {
     public void ackInFlightMsg(int msgId) {
         if (publishedInFlightCtx != null) {
             publishedInFlightCtx.ackInFlightMsg(msgId);
+        }
+    }
+
+    public void onChannelWritable() {
+        if (publishedInFlightCtx != null) {
+            publishedInFlightCtx.onChannelWritable();
+        }
+    }
+
+    public void releasePublishedInFlightCtx() {
+        if (publishedInFlightCtx != null) {
+            publishedInFlightCtx.release();
+            publishedInFlightCtx = null;
         }
     }
 

@@ -37,17 +37,18 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -60,6 +61,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,11 +101,13 @@ public class ConnectServiceImplTest {
     @MockitoBean
     ClientSubscriptionCache clientSubscriptionCache;
     @MockitoBean
-    RateLimitService rateLimitService;
-    @MockitoBean
     FlowControlService flowControlService;
     @MockitoBean
     PublishMsgValidationService publishMsgValidationService;
+    @MockitoBean
+    MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
+    @MockitoBean
+    StatsManager statsManager;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -260,6 +264,31 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED_5);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenMqtt5ReceiveMaxZero_whenCheckIfProceedConnection_thenConnectionRefusedWithProtocolError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.RECEIVE_MAXIMUM.value(), 0));
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", null, properties);
+
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_PROTOCOL_ERROR);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenMqtt3ReceiveMaxAbsent_whenCheckIfProceedConnection_thenConnectionProceeds() {
+        // MQTT 3.x has no Receive Maximum property — validation must not block the CONNECT.
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
+        Assert.assertTrue(result);
     }
 
     @Test
