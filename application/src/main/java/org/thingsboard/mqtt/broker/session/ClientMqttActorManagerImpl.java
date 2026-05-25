@@ -84,6 +84,13 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
+            return;
+        }
+        // Client-initiated disconnects (DISCONNECT packet, TCP close) must preserve FIFO order
+        // with previously received MQTT messages so that e.g. a QoS 0 PUBLISH sent right before
+        // DISCONNECT is not dropped by the high-priority queue.
+        if (disconnectMsg.getReason().getType().preservesInFlightMessages()) {
+            clientActorRef.tell(disconnectMsg);
         } else {
             clientActorRef.tellWithHighPriority(disconnectMsg);
         }
