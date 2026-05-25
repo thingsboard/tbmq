@@ -18,20 +18,25 @@ package org.thingsboard.mqtt.broker.service.mqtt.sparkplug;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SparkplugCertificateRepublisherImplTest {
 
     private MsgDispatcherService msgDispatcherService;
+    private RetainedMsgProcessor retainedMsgProcessor;
     private SparkplugCertificateRepublisherImpl republisher;
     private SessionInfo sessionInfo;
     private final String clientCertCn = "cn-edge";
@@ -39,8 +44,10 @@ public class SparkplugCertificateRepublisherImplTest {
     @Before
     public void setUp() {
         msgDispatcherService = mock(MsgDispatcherService.class);
+        retainedMsgProcessor = mock(RetainedMsgProcessor.class);
+        when(retainedMsgProcessor.process(any())).thenAnswer(inv -> inv.getArgument(0));
         sessionInfo = mock(SessionInfo.class);
-        republisher = new SparkplugCertificateRepublisherImpl(msgDispatcherService);
+        republisher = new SparkplugCertificateRepublisherImpl(msgDispatcherService, retainedMsgProcessor);
     }
 
     @Test
@@ -148,5 +155,68 @@ public class SparkplugCertificateRepublisherImplTest {
         ArgumentCaptor<PublishMsg> captor = ArgumentCaptor.forClass(PublishMsg.class);
         verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(clientCertCn), any());
         assertThat(captor.getValue().getQos()).isEqualTo(2);
+    }
+
+    @Test
+    public void givenNbirthPublish_whenMaybeRepublish_thenStoresRetainedBeforeDispatch() {
+        byte[] payload = new byte[]{42};
+        PublishMsg original = PublishMsg.builder()
+                .topicName("spBv1.0/G1/NBIRTH/E1")
+                .payload(payload)
+                .qos(1)
+                .isRetained(false)
+                .isDup(false)
+                .build();
+
+        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+
+        InOrder order = inOrder(retainedMsgProcessor, msgDispatcherService);
+        ArgumentCaptor<PublishMsg> retainedCaptor = ArgumentCaptor.forClass(PublishMsg.class);
+        order.verify(retainedMsgProcessor).process(retainedCaptor.capture());
+        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(clientCertCn), any());
+
+        PublishMsg storedAsRetained = retainedCaptor.getValue();
+        assertThat(storedAsRetained.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/NBIRTH/E1");
+        assertThat(storedAsRetained.isRetained()).isTrue();
+        assertThat(storedAsRetained.getPayload()).isSameAs(payload);
+    }
+
+    @Test
+    public void givenDbirthPublish_whenMaybeRepublish_thenStoresRetainedBeforeDispatch() {
+        byte[] payload = new byte[]{7};
+        PublishMsg original = PublishMsg.builder()
+                .topicName("spBv1.0/G1/DBIRTH/E1/D1")
+                .payload(payload)
+                .qos(0)
+                .isRetained(false)
+                .isDup(false)
+                .build();
+
+        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+
+        InOrder order = inOrder(retainedMsgProcessor, msgDispatcherService);
+        ArgumentCaptor<PublishMsg> retainedCaptor = ArgumentCaptor.forClass(PublishMsg.class);
+        order.verify(retainedMsgProcessor).process(retainedCaptor.capture());
+        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(clientCertCn), any());
+
+        PublishMsg storedAsRetained = retainedCaptor.getValue();
+        assertThat(storedAsRetained.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/DBIRTH/E1/D1");
+        assertThat(storedAsRetained.isRetained()).isTrue();
+        assertThat(storedAsRetained.getPayload()).isSameAs(payload);
+    }
+
+    @Test
+    public void givenNonSparkplugPublish_whenMaybeRepublish_thenDoesNotStoreRetained() {
+        PublishMsg original = PublishMsg.builder()
+                .topicName("sensors/temperature")
+                .payload(new byte[]{1})
+                .qos(0)
+                .isRetained(false)
+                .isDup(false)
+                .build();
+
+        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+
+        verify(retainedMsgProcessor, never()).process(any());
     }
 }

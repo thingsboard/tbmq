@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 
 @Service
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 public class SparkplugCertificateRepublisherImpl implements SparkplugCertificateRepublisher {
 
     private final MsgDispatcherService msgDispatcherService;
+    private final RetainedMsgProcessor retainedMsgProcessor;
 
     @Override
     public void maybeRepublish(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
@@ -41,6 +43,10 @@ public class SparkplugCertificateRepublisherImpl implements SparkplugCertificate
                 .topicName(certTopic)
                 .isRetained(true)
                 .build();
+        // Store as retained first (same order as MqttPublishHandler.process for client-originated
+        // retained publishes), then dispatch through the standard Kafka pipeline so live subscribers
+        // receive it. Without the retained-store step the fresh-subscribe path would see nothing.
+        republished = retainedMsgProcessor.process(republished);
         msgDispatcherService.persistPublishMsg(sessionInfo, republished, clientCertCn, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
