@@ -40,6 +40,7 @@
     <properties>
         <main.dir>${basedir}/..</main.dir>
         <docker.repo>thingsboard</docker.repo>
+        <docker.base.image>thingsboard/openjdk25:trixie-slim</docker.base.image>
         <dockerfile.skip>true</dockerfile.skip>
         <dockerfile.pullNewerImage>true</dockerfile.pullNewerImage>
         <dockerfile-maven.version>1.4.13</dockerfile-maven.version>
