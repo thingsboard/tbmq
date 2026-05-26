@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRepublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
@@ -72,6 +73,7 @@ public class MqttPublishHandler {
     private final RetainedMsgProcessor retainedMsgProcessor;
     private final PublishMsgValidationService publishMsgValidationService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final SparkplugCertificateRepublisher sparkplugCertificateRepublisher;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -134,6 +136,8 @@ public class MqttPublishHandler {
             }
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
+
+        sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn());
 
         clientLogger.logEventWithDetails(ctx.getClientId(), getClass(), logCtx -> logCtx
                 .msg("Persisting PUBLISH in queue")
