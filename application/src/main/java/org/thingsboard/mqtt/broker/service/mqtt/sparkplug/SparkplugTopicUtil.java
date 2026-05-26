@@ -20,6 +20,7 @@ public final class SparkplugTopicUtil {
     public static final String CERTIFICATE_TOPIC_PREFIX = "$sparkplug/certificates/";
 
     private static final String SP_BV_1_0_NAMESPACE = "spBv1.0";
+    private static final String SP_BV_1_0_PREFIX = SP_BV_1_0_NAMESPACE + "/";
     private static final String NBIRTH = "NBIRTH";
     private static final String DBIRTH = "DBIRTH";
 
@@ -36,6 +37,11 @@ public final class SparkplugTopicUtil {
      * not retained-republished per Sparkplug 3.0 §10.1.4.
      */
     public static String toCertificateTopic(String topic) {
+        // Fast-path: cheap prefix check short-circuits the 99% of publishes that aren't
+        // Sparkplug, avoiding String.split allocation on the publish hot path.
+        if (topic == null || !topic.startsWith(SP_BV_1_0_PREFIX)) {
+            return null;
+        }
         if (!isNbirth(topic) && !isDbirth(topic)) {
             return null;
         }

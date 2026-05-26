@@ -39,26 +39,30 @@ public class SparkplugCertificateRepublisherImpl implements SparkplugCertificate
         if (certTopic == null) {
             return;
         }
-        PublishMsg republished = publishMsg.toBuilder()
-                .topicName(certTopic)
-                .isRetained(true)
-                .build();
-        // Store as retained first (same order as MqttPublishHandler.process for client-originated
-        // retained publishes), then dispatch through the standard Kafka pipeline so live subscribers
-        // receive it. Without the retained-store step the fresh-subscribe path would see nothing.
-        republished = retainedMsgProcessor.process(republished);
-        msgDispatcherService.persistPublishMsg(sessionInfo, republished, clientCertCn, new TbQueueCallback() {
-            @Override
-            public void onSuccess(TbQueueMsgMetadata metadata) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Republished Sparkplug certificate on topic {}", certTopic);
+        try {
+            PublishMsg republished = publishMsg.toBuilder()
+                    .topicName(certTopic)
+                    .isRetained(true)
+                    .build();
+            // Store as retained first (same order as MqttPublishHandler.process for client-originated
+            // retained publishes), then dispatch through the standard Kafka pipeline so live subscribers
+            // receive it. Without the retained-store step the fresh-subscribe path would see nothing.
+            republished = retainedMsgProcessor.process(republished);
+            msgDispatcherService.persistPublishMsg(sessionInfo, republished, clientCertCn, new TbQueueCallback() {
+                @Override
+                public void onSuccess(TbQueueMsgMetadata metadata) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Republished Sparkplug certificate on topic {}", certTopic);
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Throwable t) {
-                log.warn("Failed to republish Sparkplug certificate on topic {}", certTopic, t);
-            }
-        });
+                @Override
+                public void onFailure(Throwable t) {
+                    log.warn("Failed to republish Sparkplug certificate on topic {}", certTopic, t);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to republish Sparkplug certificate on topic {}", certTopic, e);
+        }
     }
 }

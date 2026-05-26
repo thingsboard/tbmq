@@ -28,11 +28,14 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 public interface SparkplugCertificateRepublisher {
 
     /**
-     * If {@code publishMsg} is a Sparkplug B v1.0 NBIRTH or DBIRTH, asynchronously
-     * publish a copy on the corresponding {@code $sparkplug/certificates/...} topic
-     * with retain=true. For any other topic shape this is a no-op. The original
-     * publish is not modified — the caller continues to dispatch it through the
-     * normal publish path.
+     * If {@code publishMsg} is a Sparkplug B v1.0 NBIRTH or DBIRTH, synchronously
+     * stores a copy of the payload on the corresponding {@code $sparkplug/certificates/...}
+     * topic in the retained-message store, then asynchronously dispatches it through the
+     * standard Kafka pipeline so live subscribers receive it. For any other topic shape
+     * this is a no-op. The original publish is not modified — the caller continues to
+     * dispatch it through the normal publish path. Any exception raised during the
+     * republish is logged and swallowed so the primary publish path is never
+     * compromised.
      */
     void maybeRepublish(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn);
 }

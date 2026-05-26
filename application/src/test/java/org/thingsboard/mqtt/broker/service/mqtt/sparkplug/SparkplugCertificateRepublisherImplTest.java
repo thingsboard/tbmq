@@ -27,10 +27,12 @@ import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SparkplugCertificateRepublisherImplTest {
@@ -218,5 +220,41 @@ public class SparkplugCertificateRepublisherImplTest {
         republisher.maybeRepublish(sessionInfo, original, clientCertCn);
 
         verify(retainedMsgProcessor, never()).process(any());
+    }
+
+    @Test
+    public void givenRetainedMsgProcessorThrows_whenMaybeRepublish_thenSwallowsExceptionAndDoesNotDispatch() {
+        PublishMsg original = PublishMsg.builder()
+                .topicName("spBv1.0/G1/NBIRTH/E1")
+                .payload(new byte[]{1})
+                .qos(1)
+                .isRetained(false)
+                .isDup(false)
+                .build();
+        when(retainedMsgProcessor.process(any())).thenThrow(new RuntimeException("retain store down"));
+
+        // Must not propagate — the §10.1.4 hook must never break the primary publish path.
+        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+
+        verifyNoInteractions(msgDispatcherService);
+    }
+
+    @Test
+    public void givenMsgDispatcherThrows_whenMaybeRepublish_thenSwallowsException() {
+        PublishMsg original = PublishMsg.builder()
+                .topicName("spBv1.0/G1/DBIRTH/E1/D1")
+                .payload(new byte[]{1})
+                .qos(1)
+                .isRetained(false)
+                .isDup(false)
+                .build();
+        doThrow(new RuntimeException("kafka down"))
+                .when(msgDispatcherService).persistPublishMsg(any(), any(), any(), any());
+
+        // Must not propagate — the §10.1.4 hook must never break the primary publish path.
+        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+
+        // retain-store was still attempted before the dispatch failure
+        verify(retainedMsgProcessor).process(any());
     }
 }
