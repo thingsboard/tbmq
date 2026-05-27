@@ -22,6 +22,8 @@ public interface TbMessageStatsReportClient {
 
     void reportStats(String key, int count);
 
+    void reportDroppedMsgs(int count);
+
     void reportInboundTraffic(long bytes);
 
     void reportOutBoundTraffic(long bytes);

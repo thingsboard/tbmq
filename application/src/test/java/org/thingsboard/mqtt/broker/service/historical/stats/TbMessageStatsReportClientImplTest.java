@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -72,14 +72,25 @@ public class TbMessageStatsReportClientImplTest {
     @Mock
     private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
+
     private TbMessageStatsReportClientImpl tbMessageStatsReportClient;
 
     AutoCloseable autoCloseable;
 
     @Before
     public void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         autoCloseable = MockitoAnnotations.openMocks(this);
+
+        tbMessageStatsReportClient = new TbMessageStatsReportClientImpl(
+                historicalDataQueueFactory,
+                serviceInfoProvider,
+                timeseriesService,
+                helper,
+                historicalDataReportProperties,
+                meterRegistry
+        );
 
         when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
         when(historicalDataQueueFactory.createProducer(any())).thenReturn(historicalStatsProducer);
@@ -324,6 +335,40 @@ public class TbMessageStatsReportClientImplTest {
                 .plusMinutes(minute)
                 .toInstant(ZoneOffset.UTC)
                 .toEpochMilli();
+    }
+
+    @Test
+    public void testReportDroppedMsgs_incrementsPrometheusCounterAndHistoricalAtomic() {
+        tbMessageStatsReportClient.init();
+
+        tbMessageStatsReportClient.reportDroppedMsgs(1);
+
+        assertEquals(1.0, meterRegistry.counter(BrokerConstants.DROPPED_MSGS).count(), 0.0);
+        assertEquals(1, tbMessageStatsReportClient.getStats().get(BrokerConstants.DROPPED_MSGS).get());
+    }
+
+    @Test
+    public void testReportDroppedMsgs_withCount_incrementsBothCountersByCount() {
+        tbMessageStatsReportClient.init();
+
+        tbMessageStatsReportClient.reportDroppedMsgs(5);
+
+        assertEquals(5.0, meterRegistry.counter(BrokerConstants.DROPPED_MSGS).count(), 0.0);
+        assertEquals(5, tbMessageStatsReportClient.getStats().get(BrokerConstants.DROPPED_MSGS).get());
+    }
+
+    @Test
+    public void testReportDroppedMsgs_incrementsPrometheusCounterEvenWhenHistoricalDisabled() {
+        when(historicalDataReportProperties.isEnabled()).thenReturn(false);
+        tbMessageStatsReportClient.init();
+
+        // Sanity: with historical reporting disabled, the in-memory stats map is null.
+        assertNull(tbMessageStatsReportClient.getStats());
+
+        tbMessageStatsReportClient.reportDroppedMsgs(1);
+
+        // Prometheus counter must still increment.
+        assertEquals(1.0, meterRegistry.counter(BrokerConstants.DROPPED_MSGS).count(), 0.0);
     }
 
     @Test

@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
@@ -72,6 +74,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private final TimeseriesService timeseriesService;
     private final HistoricalStatsTotalHelper helper;
     private final HistoricalDataReportProperties historicalDataReportProperties;
+    private final MeterRegistry meterRegistry;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
@@ -80,9 +83,11 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     // Cached at init time to avoid Spring MethodValidationInterceptor AOP overhead on the hot path
     // (HistoricalDataReportProperties is @Validated, so every getter call would otherwise go through a CGLIB proxy).
     private boolean enabled;
+    private Counter droppedMsgsCounter;
 
     @PostConstruct
     void init() {
+        droppedMsgsCounter = meterRegistry.counter(BrokerConstants.DROPPED_MSGS);
         enabled = historicalDataReportProperties.isEnabled();
         if (!enabled) {
             return;
@@ -226,6 +231,14 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         if (enabled) {
             AtomicLong al = stats.get(key);
             al.addAndGet(count);
+        }
+    }
+
+    @Override
+    public void reportDroppedMsgs(int count) {
+        droppedMsgsCounter.increment(count);
+        if (enabled) {
+            stats.get(BrokerConstants.DROPPED_MSGS).addAndGet(count);
         }
     }
 
