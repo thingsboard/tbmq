@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
@@ -37,11 +36,11 @@ public interface StatsManager {
     MessagesStats createMsgDispatcherPublishStats();
 
     /**
-     * Creates the cumulative {@code droppedMsgs} Prometheus counter. Defined here so it shares the
-     * {@code stats.enabled} master switch with all other broker metrics: when stats are disabled the
-     * stub manager returns a no-op counter, so nothing is exposed on {@code /actuator/prometheus}.
+     * Returns the dropped-messages stats. Defined here so it shares the {@code stats.enabled} master switch
+     * with all other broker metrics: when stats are disabled the stub manager returns a no-op instance, so
+     * the {@code droppedMsgs} counter is not exposed on {@code /actuator/prometheus}.
      */
-    DefaultCounter createDroppedMsgsCounter();
+    DroppedMsgStats getDroppedMsgStats();
 
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 

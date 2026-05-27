@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -40,6 +39,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.DroppedMsgStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.time.LocalDateTime;
@@ -83,11 +83,11 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     // Cached at init time to avoid Spring MethodValidationInterceptor AOP overhead on the hot path
     // (HistoricalDataReportProperties is @Validated, so every getter call would otherwise go through a CGLIB proxy).
     private boolean enabled;
-    private DefaultCounter droppedMsgsCounter;
+    private DroppedMsgStats droppedMsgStats;
 
     @PostConstruct
     void init() {
-        droppedMsgsCounter = statsManager.createDroppedMsgsCounter();
+        droppedMsgStats = statsManager.getDroppedMsgStats();
         enabled = historicalDataReportProperties.isEnabled();
         if (!enabled) {
             return;
@@ -236,7 +236,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportDroppedMsgs() {
-        droppedMsgsCounter.increment();
+        droppedMsgStats.increment();
         if (enabled) {
             stats.get(BrokerConstants.DROPPED_MSGS).incrementAndGet();
         }
@@ -244,7 +244,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportDroppedMsgs(int count) {
-        droppedMsgsCounter.add(count);
+        droppedMsgStats.increment(count);
         if (enabled) {
             stats.get(BrokerConstants.DROPPED_MSGS).addAndGet(count);
         }

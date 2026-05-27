@@ -15,13 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -47,8 +44,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class StatsManagerStub implements StatsManager, ActorStatsManager, ProducerStatsManager, ConsumerStatsManager {
 
     private static final StubTimerStats timerStats = new StubTimerStats();
-    private static final DefaultCounter STUB_DROPPED_MSGS_COUNTER =
-            new DefaultCounter(new AtomicInteger(0), new SimpleMeterRegistry().counter(BrokerConstants.DROPPED_MSGS));
 
     @Override
     public TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats) {
@@ -61,8 +56,8 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public DefaultCounter createDroppedMsgsCounter() {
-        return STUB_DROPPED_MSGS_COUNTER;
+    public DroppedMsgStats getDroppedMsgStats() {
+        return StubDroppedMsgStats.STUB_DROPPED_MSG_STATS;
     }
 
     @Override

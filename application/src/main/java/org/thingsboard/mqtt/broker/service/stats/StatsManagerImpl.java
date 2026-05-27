@@ -28,8 +28,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
@@ -83,6 +81,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
     private ClientActorStats clientActorStats;
     private FlowControlStats flowControlStats;
+    private DroppedMsgStats droppedMsgStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -99,6 +98,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.flowControlStats = defaultFlowControlStats;
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
+        this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
     }
 
     @PreDestroy
@@ -121,9 +121,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public DefaultCounter createDroppedMsgsCounter() {
-        log.trace("Creating DroppedMsgsCounter");
-        return statsFactory.createDefaultCounter(BrokerConstants.DROPPED_MSGS);
+    public DroppedMsgStats getDroppedMsgStats() {
+        return droppedMsgStats;
     }
 
     @Override

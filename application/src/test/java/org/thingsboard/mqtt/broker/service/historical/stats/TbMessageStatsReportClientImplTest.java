@@ -25,7 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
@@ -34,6 +34,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.DefaultDroppedMsgStats;
+import org.thingsboard.mqtt.broker.service.stats.DroppedMsgStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.time.LocalDateTime;
@@ -43,7 +45,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -88,8 +89,8 @@ public class TbMessageStatsReportClientImplTest {
         meterRegistry = new SimpleMeterRegistry();
         autoCloseable = MockitoAnnotations.openMocks(this);
 
-        DefaultCounter droppedMsgsCounter = new DefaultCounter(new AtomicInteger(0), meterRegistry.counter(BrokerConstants.DROPPED_MSGS));
-        when(statsManager.createDroppedMsgsCounter()).thenReturn(droppedMsgsCounter);
+        DroppedMsgStats droppedMsgStats = new DefaultDroppedMsgStats(new DefaultStatsFactory(meterRegistry));
+        when(statsManager.getDroppedMsgStats()).thenReturn(droppedMsgStats);
 
         tbMessageStatsReportClient = new TbMessageStatsReportClientImpl(
                 historicalDataQueueFactory,
