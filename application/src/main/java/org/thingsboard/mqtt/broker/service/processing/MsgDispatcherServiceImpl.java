@@ -57,8 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -205,7 +203,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
 
         if (dropped > 0) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
+            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
         }
 
         return clientSubscriptions.subList(0, deliverCount);
