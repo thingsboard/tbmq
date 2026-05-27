@@ -27,8 +27,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -71,7 +69,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     }
 
     private void dropMessage() {
-        tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+        tbMessageStatsReportClient.reportDroppedMsgs(1);
     }
 
     private void logClientEvent(String clientId) {

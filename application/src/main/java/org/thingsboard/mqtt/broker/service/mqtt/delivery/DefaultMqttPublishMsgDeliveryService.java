@@ -26,8 +26,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Service
 @Slf4j
 public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliveryService {
@@ -61,7 +59,7 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
             if (!msg.fixedHeader().isRetain()) {
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                tbMessageStatsReportClient.reportDroppedMsgs(1);
             }
         }
     }
@@ -77,7 +75,7 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
             if (!msg.fixedHeader().isRetain()) {
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                tbMessageStatsReportClient.reportDroppedMsgs(1);
             }
         }
     }

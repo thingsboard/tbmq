@@ -72,7 +72,6 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CLIENT_INCOMING_MESSAGES_RATE_LIMITS_DETECTED;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_RATE_LIMITS_DETECTED;
 
 @Slf4j
@@ -228,7 +227,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         MqttPublishMessage publishMsg = (MqttPublishMessage) msg;
 
         if (!checkClientLimits(publishMsg)) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            tbMessageStatsReportClient.reportDroppedMsgs(1);
             processMsgOnRateLimits(
                     publishMsg.variableHeader().packetId(),
                     publishMsg.fixedHeader().qosLevel().value(),
@@ -248,7 +247,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 mqttPublishMsg,
                 msgToProcess -> clientMqttActorManager.processMqttMsg(clientId, msgToProcess),
                 msgToDrop -> {
-                    tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                    tbMessageStatsReportClient.reportDroppedMsgs(1);
                     processMsgOnRateLimits(
                             msgToDrop.getPublishMsg().getPacketId(),
                             msgToDrop.getPublishMsg().getQos(),
