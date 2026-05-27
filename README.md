@@ -37,7 +37,7 @@ Validate your IoT fleet against our high-performance **public MQTT broker**. Vis
 
 > **ℹ️ Sandbox Limitations:** The **[Live Dashboard](https://demo.tbmq.io/)** provides **read-only access** to TBMQ PE features. 
 > While you can monitor active sessions and throughput in real-time, configuration is locked.
-> To deploy a fully configurable cluster with administrative rights, **[Install TBMQ PE](https://thingsboard.io/docs/pe/mqtt-broker/install/installation-options/)**.
+> To deploy a fully configurable cluster with administrative rights, **[Install TBMQ PE](https://thingsboard.io/docs/mqtt-broker/pe/installation/)**.
 
 ## 🚀 Installation options
 TBMQ offers flexible installation options tailored for both development and large-scale production environments:
@@ -46,7 +46,7 @@ TBMQ offers flexible installation options tailored for both development and larg
 * **Kubernetes (K8s)** deployments on [AWS](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/), [Azure](https://thingsboard.io/docs/mqtt-broker/install/cluster/azure-cluster-setup/) or [GCP](https://thingsboard.io/docs/mqtt-broker/install/cluster/gcp-cluster-setup/).
 * [**Helm Charts**](https://thingsboard.io/docs/mqtt-broker/install/cluster/helm-cluster-setup-options/) for streamlined Kubernetes installation.
 
-➡️ **[View all installation options and guides ➜](https://thingsboard.io/docs/mqtt-broker/install/installation-options/)**
+➡️ **[View all installation options and guides ➜](https://thingsboard.io/docs/mqtt-broker/installation/)**
 
 <br>
 
