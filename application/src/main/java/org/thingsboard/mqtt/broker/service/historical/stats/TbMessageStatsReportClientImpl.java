@@ -29,7 +29,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
-import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -41,6 +40,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -74,7 +74,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private final TimeseriesService timeseriesService;
     private final HistoricalStatsTotalHelper helper;
     private final HistoricalDataReportProperties historicalDataReportProperties;
-    private final StatsFactory statsFactory;
+    private final StatsManager statsManager;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
@@ -87,7 +87,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @PostConstruct
     void init() {
-        droppedMsgsCounter = statsFactory.createDefaultCounter(BrokerConstants.DROPPED_MSGS);
+        droppedMsgsCounter = statsManager.createDroppedMsgsCounter();
         enabled = historicalDataReportProperties.isEnabled();
         if (!enabled) {
             return;

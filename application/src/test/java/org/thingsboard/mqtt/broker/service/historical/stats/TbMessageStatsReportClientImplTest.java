@@ -25,8 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
-import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
-import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
@@ -35,6 +34,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,6 +74,8 @@ public class TbMessageStatsReportClientImplTest {
     private HistoricalDataReportProperties historicalDataReportProperties;
     @Mock
     private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
+    @Mock
+    private StatsManager statsManager;
 
     private SimpleMeterRegistry meterRegistry;
 
@@ -85,14 +88,16 @@ public class TbMessageStatsReportClientImplTest {
         meterRegistry = new SimpleMeterRegistry();
         autoCloseable = MockitoAnnotations.openMocks(this);
 
-        StatsFactory statsFactory = new DefaultStatsFactory(meterRegistry);
+        DefaultCounter droppedMsgsCounter = new DefaultCounter(new AtomicInteger(0), meterRegistry.counter(BrokerConstants.DROPPED_MSGS));
+        when(statsManager.createDroppedMsgsCounter()).thenReturn(droppedMsgsCounter);
+
         tbMessageStatsReportClient = new TbMessageStatsReportClientImpl(
                 historicalDataQueueFactory,
                 serviceInfoProvider,
                 timeseriesService,
                 helper,
                 historicalDataReportProperties,
-                statsFactory
+                statsManager
         );
 
         when(serviceInfoProvider.getServiceId()).thenReturn("service-1");

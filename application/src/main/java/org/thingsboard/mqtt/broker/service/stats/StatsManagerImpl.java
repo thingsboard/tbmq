@@ -28,6 +28,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
@@ -116,6 +118,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
         managedStats.add(stats);
         return stats;
+    }
+
+    @Override
+    public DefaultCounter createDroppedMsgsCounter() {
+        log.trace("Creating DroppedMsgsCounter");
+        return statsFactory.createDefaultCounter(BrokerConstants.DROPPED_MSGS);
     }
 
     @Override
