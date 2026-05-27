@@ -240,7 +240,7 @@ public class MqttPublishHandler {
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    tbMessageStatsReportClient.reportDroppedMsgs(1);
+                    tbMessageStatsReportClient.reportDroppedMsgs();
                     handleMsgPersistenceFailure(ctx, publishMsg);
                 });
             }

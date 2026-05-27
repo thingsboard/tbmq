@@ -227,7 +227,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         MqttPublishMessage publishMsg = (MqttPublishMessage) msg;
 
         if (!checkClientLimits(publishMsg)) {
-            tbMessageStatsReportClient.reportDroppedMsgs(1);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             processMsgOnRateLimits(
                     publishMsg.variableHeader().packetId(),
                     publishMsg.fixedHeader().qosLevel().value(),
@@ -247,7 +247,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 mqttPublishMsg,
                 msgToProcess -> clientMqttActorManager.processMqttMsg(clientId, msgToProcess),
                 msgToDrop -> {
-                    tbMessageStatsReportClient.reportDroppedMsgs(1);
+                    tbMessageStatsReportClient.reportDroppedMsgs();
                     processMsgOnRateLimits(
                             msgToDrop.getPublishMsg().getPacketId(),
                             msgToDrop.getPublishMsg().getQos(),

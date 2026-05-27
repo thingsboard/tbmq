@@ -59,7 +59,7 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
             if (!msg.fixedHeader().isRetain()) {
-                tbMessageStatsReportClient.reportDroppedMsgs(1);
+                tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
     }
@@ -75,7 +75,7 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
             if (!msg.fixedHeader().isRetain()) {
-                tbMessageStatsReportClient.reportDroppedMsgs(1);
+                tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
     }

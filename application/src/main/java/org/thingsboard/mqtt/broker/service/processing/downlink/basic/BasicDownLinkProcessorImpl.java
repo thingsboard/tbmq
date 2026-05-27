@@ -69,7 +69,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     }
 
     private void dropMessage() {
-        tbMessageStatsReportClient.reportDroppedMsgs(1);
+        tbMessageStatsReportClient.reportDroppedMsgs();
     }
 
     private void logClientEvent(String clientId) {

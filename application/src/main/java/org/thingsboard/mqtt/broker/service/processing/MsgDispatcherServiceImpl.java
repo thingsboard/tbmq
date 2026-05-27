@@ -106,7 +106,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
         if (msgSubscriptions == null) {
-            tbMessageStatsReportClient.reportDroppedMsgs(1);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             callback.onSuccess();
             return;
         }

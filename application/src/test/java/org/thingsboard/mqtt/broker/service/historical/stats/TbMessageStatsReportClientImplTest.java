@@ -25,6 +25,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
@@ -83,13 +85,14 @@ public class TbMessageStatsReportClientImplTest {
         meterRegistry = new SimpleMeterRegistry();
         autoCloseable = MockitoAnnotations.openMocks(this);
 
+        StatsFactory statsFactory = new DefaultStatsFactory(meterRegistry);
         tbMessageStatsReportClient = new TbMessageStatsReportClientImpl(
                 historicalDataQueueFactory,
                 serviceInfoProvider,
                 timeseriesService,
                 helper,
                 historicalDataReportProperties,
-                meterRegistry
+                statsFactory
         );
 
         when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
@@ -341,7 +344,7 @@ public class TbMessageStatsReportClientImplTest {
     public void testReportDroppedMsgs_incrementsPrometheusCounterAndHistoricalAtomic() {
         tbMessageStatsReportClient.init();
 
-        tbMessageStatsReportClient.reportDroppedMsgs(1);
+        tbMessageStatsReportClient.reportDroppedMsgs();
 
         assertEquals(1.0, meterRegistry.counter(BrokerConstants.DROPPED_MSGS).count(), 0.0);
         assertEquals(1, tbMessageStatsReportClient.getStats().get(BrokerConstants.DROPPED_MSGS).get());
@@ -365,7 +368,7 @@ public class TbMessageStatsReportClientImplTest {
         // Sanity: with historical reporting disabled, the in-memory stats map is null.
         assertNull(tbMessageStatsReportClient.getStats());
 
-        tbMessageStatsReportClient.reportDroppedMsgs(1);
+        tbMessageStatsReportClient.reportDroppedMsgs();
 
         // Prometheus counter must still increment.
         assertEquals(1.0, meterRegistry.counter(BrokerConstants.DROPPED_MSGS).count(), 0.0);

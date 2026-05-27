@@ -90,7 +90,7 @@ public class DefaultMqttMsgDeliveryService implements MqttMsgDeliveryService {
                                              List<Integer> subscriptionIds) {
         if (!sessionCtx.isWritable()) {
             log.debug("[{}] Channel is not writable. Skip send Publish {}", sessionCtx.getClientId(), msg);
-            tbMessageStatsReportClient.reportDroppedMsgs(1);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             return;
         }
         if (isTraceEnabled) {

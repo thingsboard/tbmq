@@ -72,7 +72,7 @@ public class DuplexTrafficHandler extends ChannelDuplexHandler {
         DecoderResult decoderResult = mqttMessage.decoderResult();
         if (decoderResult.isFailure() && decoderResult.cause() instanceof TooLongFrameException) {
             tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
-            tbMessageStatsReportClient.reportDroppedMsgs(1);
+            tbMessageStatsReportClient.reportDroppedMsgs();
         }
     }
 

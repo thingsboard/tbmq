@@ -17,8 +17,6 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
@@ -30,6 +28,8 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
+import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -74,7 +74,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private final TimeseriesService timeseriesService;
     private final HistoricalStatsTotalHelper helper;
     private final HistoricalDataReportProperties historicalDataReportProperties;
-    private final MeterRegistry meterRegistry;
+    private final StatsFactory statsFactory;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
@@ -83,11 +83,11 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     // Cached at init time to avoid Spring MethodValidationInterceptor AOP overhead on the hot path
     // (HistoricalDataReportProperties is @Validated, so every getter call would otherwise go through a CGLIB proxy).
     private boolean enabled;
-    private Counter droppedMsgsCounter;
+    private DefaultCounter droppedMsgsCounter;
 
     @PostConstruct
     void init() {
-        droppedMsgsCounter = meterRegistry.counter(BrokerConstants.DROPPED_MSGS);
+        droppedMsgsCounter = statsFactory.createDefaultCounter(BrokerConstants.DROPPED_MSGS);
         enabled = historicalDataReportProperties.isEnabled();
         if (!enabled) {
             return;
@@ -235,8 +235,16 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     @Override
+    public void reportDroppedMsgs() {
+        droppedMsgsCounter.increment();
+        if (enabled) {
+            stats.get(BrokerConstants.DROPPED_MSGS).incrementAndGet();
+        }
+    }
+
+    @Override
     public void reportDroppedMsgs(int count) {
-        droppedMsgsCounter.increment(count);
+        droppedMsgsCounter.add(count);
         if (enabled) {
             stats.get(BrokerConstants.DROPPED_MSGS).addAndGet(count);
         }

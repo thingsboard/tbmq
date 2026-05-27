@@ -98,7 +98,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     public void onFailure(Throwable t) {
                         callbackProcessor.submit(() -> {
                             log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t);
-                            tbMessageStatsReportClient.reportDroppedMsgs(1);
+                            tbMessageStatsReportClient.reportDroppedMsgs();
                         });
                     }
                 },
