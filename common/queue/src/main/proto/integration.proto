@@ -103,3 +103,26 @@ message PublishIntegrationMsgProto {
   string tbmqNode = 2;
   int64 timestamp = 3;
 }
+
+message ClientLifecycleEventMsgProto {
+  string eventType = 1;
+  string clientId = 2;
+  string username = 3;
+  string sessionId = 4;
+  string ipAddress = 5;
+  int64 ts = 6;
+  string tbmqNode = 7;
+  bool cleanStart = 8;
+  int32 keepAlive = 9;
+  int32 protocolVersion = 10;
+  string disconnectReason = 11;
+  bool clientInitiated = 12;
+  repeated queue.TopicSubscriptionProto subscriptions = 13;
+}
+
+message TbIeMsgProto {
+  oneof msg {
+    PublishIntegrationMsgProto publishMsg = 1;
+    ClientLifecycleEventMsgProto lifecycleMsg = 2;
+  }
+}
