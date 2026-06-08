@@ -122,15 +122,28 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     @Override
     public void updateSubscriptions(Integration integration) {
         JsonNode configuration = integration.getConfiguration();
-        if (!configuration.has("topicFilters")) {
-            log.error("[{}][{}] Topic filters not configured", integration.getId(), integration.getName());
+
+        boolean hasTopicFilters = configuration.has("topicFilters") &&
+                configuration.get("topicFilters").isArray() &&
+                !configuration.get("topicFilters").isEmpty();
+        boolean hasLifecycleEvents = configuration.has("lifecycleEventTypes") &&
+                !configuration.get("lifecycleEventTypes").isEmpty();
+
+        if (!hasTopicFilters && !hasLifecycleEvents) {
+            log.error("[{}][{}] Neither topic filters nor lifecycle event types are configured",
+                    integration.getId(), integration.getName());
             return;
         }
-        ArrayNode topicFiltersArrayNode = (ArrayNode) configuration.get("topicFilters");
 
-        Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(topicFiltersArrayNode.size());
-        topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
-        integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
+        if (hasTopicFilters) {
+            ArrayNode topicFiltersArrayNode = (ArrayNode) configuration.get("topicFilters");
+
+            Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(topicFiltersArrayNode.size());
+            topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
+            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
+        } else {
+            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        }
     }
 
     @Override
