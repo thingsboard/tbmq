@@ -123,9 +123,14 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
             integrationLifecycleEventTypeCache.remove(proto.getIntegrationId());
             return;
         }
-        Set<ClientLifecycleEventType> eventTypes = proto.getLifecycleEventTypesList().stream()
-                .map(ClientLifecycleEventType::valueOf)
-                .collect(Collectors.toSet());
+        Set<ClientLifecycleEventType> eventTypes = new java.util.HashSet<>();
+        for (String s : proto.getLifecycleEventTypesList()) {
+            try {
+                eventTypes.add(ClientLifecycleEventType.valueOf(s));
+            } catch (IllegalArgumentException e) {
+                log.warn("[{}] Unknown lifecycle event type: {}", proto.getIntegrationId(), s);
+            }
+        }
         integrationLifecycleEventTypeCache.put(proto.getIntegrationId(), eventTypes);
     }
 
