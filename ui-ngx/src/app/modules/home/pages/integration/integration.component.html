@@ -65,6 +65,11 @@
         {{ 'integration.enabled' | translate }}
       </mat-slide-toggle>
     </div>
+    <section class="mat-padding">
+      <label class="tb-title" translate>integration.lifecycle-events</label>
+      <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
+      </tb-integration-lifecycle-events>
+    </section>
     <tb-integration-configuration
       formControlName="configuration"
       [integration]="entityValue"

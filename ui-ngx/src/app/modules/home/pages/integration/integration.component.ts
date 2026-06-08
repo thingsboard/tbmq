@@ -49,6 +49,9 @@ import {
   IntegrationConfigurationComponent
 } from '@home/components/integration/configuration/integration-configuration.component';
 import { KeyValMapComponent } from '@shared/components/key-val-map.component';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 
 @Component({
   selector: 'tb-integration',
@@ -70,7 +73,8 @@ import { KeyValMapComponent } from '@shared/components/key-val-map.component';
     IntegrationTypeSelectComponent,
     IntegrationConfigurationComponent,
     MatError,
-    KeyValMapComponent
+    KeyValMapComponent,
+    IntegrationLifecycleEventsComponent
   ]
 })
 export class IntegrationComponent extends EntityComponent<Integration, PageLink, IntegrationInfo> {
@@ -104,6 +108,7 @@ export class IntegrationComponent extends EntityComponent<Integration, PageLink,
         enabled: [isDefined(entity?.enabled) ? entity.enabled : true],
         configuration: this.fb.control([entity ? entity.configuration : null]),
         metadata: [entity && entity.configuration ? entity.configuration.metadata : {}],
+        lifecycleEventTypes: [entity && entity.configuration ? (entity.configuration.lifecycleEventTypes ?? []) : []],
         additionalInfo: this.fb.group(
           {
             description: [entity && entity.additionalInfo ? entity.additionalInfo.description : ''],
@@ -135,6 +140,7 @@ export class IntegrationComponent extends EntityComponent<Integration, PageLink,
       type: entity.type,
       enabled: isDefined(entity.enabled) ? entity.enabled : true,
       metadata: entity.configuration ? entity.configuration.metadata : {},
+      lifecycleEventTypes: entity.configuration ? (entity.configuration.lifecycleEventTypes ?? []) : [],
       configuration: entity.configuration,
       additionalInfo: {
         description: entity.additionalInfo ? entity.additionalInfo.description : '' }
@@ -149,8 +155,10 @@ export class IntegrationComponent extends EntityComponent<Integration, PageLink,
       formValue.configuration = {};
     }
     formValue.configuration.metadata = formValue.metadata || {};
+    formValue.configuration.lifecycleEventTypes = formValue.lifecycleEventTypes ?? [];
     formValue.name = formValue.name ? formValue.name.trim() : formValue.name;
     delete formValue.metadata;
+    delete formValue.lifecycleEventTypes;
     return formValue;
   }
 
