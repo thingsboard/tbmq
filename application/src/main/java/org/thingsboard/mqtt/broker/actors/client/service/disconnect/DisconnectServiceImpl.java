@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -58,6 +59,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final AuthorizationRuleService authorizationRuleService;
     private final FlowControlService flowControlService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -115,6 +117,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             SessionInfo disconnectSessionInfo = sessionCtx.getSessionInfo().withSessionExpiryInterval(sessionExpiryInterval);
             clientSessionEventService.notifyClientDisconnected(disconnectSessionInfo, reasonType, null);
+            integrationLifecycleEventPublisher.publishDisconnected(disconnectSessionInfo, reasonType);
         } catch (Exception e) {
             log.warn("[{}][{}][{}] Failed to notify client disconnected.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), sessionExpiryInterval, e);

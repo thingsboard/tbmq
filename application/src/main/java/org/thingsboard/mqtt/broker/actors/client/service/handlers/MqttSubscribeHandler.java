@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
@@ -74,6 +75,7 @@ public class MqttSubscribeHandler {
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
     private final RateLimitService rateLimitService;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
@@ -162,6 +164,7 @@ public class MqttSubscribeHandler {
                 CallbackUtil.createCallback(
                         () -> {
                             sendSubAck(ctx, subAckMessage);
+                            integrationLifecycleEventPublisher.publishSubscribed(ctx.getSessionInfo(), newSubscriptions);
                             processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
                         t -> log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t))

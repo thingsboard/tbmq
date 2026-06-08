@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.integration;
 
-public interface PublishMsgCallback {
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-    PublishMsgCallback EMPTY = new PublishMsgCallback() {
-        @Override
-        public void onSuccess() {}
+import java.util.List;
 
-        @Override
-        public void onFailure(Throwable t) {}
-    };
+public interface IntegrationLifecycleEventPublisher {
 
-    void onSuccess();
+    void publishConnected(SessionInfo sessionInfo);
 
-    default void onBatchSuccess(int totalCount) {
-        for (int i = 0; i < totalCount; i++) {
-            onSuccess();
-        }
-    }
+    void publishDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType);
 
-    void onFailure(Throwable t);
+    void publishSubscribed(SessionInfo sessionInfo, List<TopicSubscription> subscriptions);
+
 }
