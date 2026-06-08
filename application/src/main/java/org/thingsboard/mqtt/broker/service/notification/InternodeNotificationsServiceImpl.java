@@ -20,6 +20,8 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -29,9 +31,12 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,6 +50,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     private final MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
     private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
     private final AuthorizationRoutingService authorizationRoutingService;
+    private final IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
 
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> internodeNotificationsProducer;
 
@@ -74,8 +80,24 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
             if (notificationProto.hasClientSessionStatsCleanupProto()) {
                 log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
                 clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
+                continue;
+            }
+            if (notificationProto.hasIntegrationLifecycleConfigProto()) {
+                log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
+                applyIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
             }
         }
+    }
+
+    private void applyIntegrationLifecycleConfig(IntegrationLifecycleConfigProto proto) {
+        if (proto.getDeleted()) {
+            integrationLifecycleEventTypeCache.remove(proto.getIntegrationId());
+            return;
+        }
+        Set<ClientLifecycleEventType> eventTypes = proto.getLifecycleEventTypesList().stream()
+                .map(ClientLifecycleEventType::valueOf)
+                .collect(Collectors.toSet());
+        integrationLifecycleEventTypeCache.put(proto.getIntegrationId(), eventTypes);
     }
 
     private boolean isMyNode(String serviceId) {

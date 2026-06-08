@@ -23,7 +23,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
@@ -33,9 +35,11 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -66,6 +70,9 @@ public class InternodeNotificationsConsumerImplTest {
     private AuthorizationRoutingService authorizationRoutingService;
 
     @Mock
+    private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+
+    @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
 
     private InternodeNotificationsConsumerImpl notificationsConsumer;
@@ -78,7 +85,8 @@ public class InternodeNotificationsConsumerImplTest {
                 serviceInfoProvider,
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
-                authorizationRoutingService);
+                authorizationRoutingService,
+                integrationLifecycleEventTypeCache);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
@@ -152,6 +160,60 @@ public class InternodeNotificationsConsumerImplTest {
                 verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto()));
 
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager);
+
+        notificationsConsumer.destroy();
+        verify(consumer).unsubscribeAndClose();
+    }
+
+    @Test
+    public void testStartConsuming_AndProcessesMessageWithIntegrationLifecycleConfig() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .addLifecycleEventTypes(ClientLifecycleEventType.CLIENT_CONNECTED.name())
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
+
+        when(consumer.poll(anyLong()))
+                .thenReturn(List.of(msg))
+                .thenReturn(List.of());
+
+        notificationsConsumer.startConsuming();
+
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(integrationLifecycleEventTypeCache).put("integration-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED)));
+
+        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
+
+        notificationsConsumer.destroy();
+        verify(consumer).unsubscribeAndClose();
+    }
+
+    @Test
+    public void testStartConsuming_AndProcessesMessageWithIntegrationLifecycleConfigDeleted() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .setDeleted(true)
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
+
+        when(consumer.poll(anyLong()))
+                .thenReturn(List.of(msg))
+                .thenReturn(List.of());
+
+        notificationsConsumer.startConsuming();
+
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(integrationLifecycleEventTypeCache).remove("integration-1"));
+
+        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();

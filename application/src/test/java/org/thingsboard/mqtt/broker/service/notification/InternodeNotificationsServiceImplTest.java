@@ -21,7 +21,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
@@ -32,9 +34,11 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,6 +70,9 @@ public class InternodeNotificationsServiceImplTest {
     private AuthorizationRoutingService authorizationRoutingService;
 
     @Mock
+    private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+
+    @Mock
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> producer;
 
     private InternodeNotificationsServiceImpl service;
@@ -81,7 +88,8 @@ public class InternodeNotificationsServiceImplTest {
                 helper,
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
-                authorizationRoutingService
+                authorizationRoutingService,
+                integrationLifecycleEventTypeCache
         );
         service.init();
     }
@@ -201,6 +209,42 @@ public class InternodeNotificationsServiceImplTest {
 
         verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, producer);
+    }
+
+    @Test
+    public void testBroadcast_ToSelf_WithIntegrationLifecycleConfig() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .addLifecycleEventTypes(ClientLifecycleEventType.CLIENT_CONNECTED.name())
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeA"));
+
+        service.broadcast(proto);
+
+        verify(integrationLifecycleEventTypeCache).put("integration-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+    }
+
+    @Test
+    public void testBroadcast_ToSelf_WithIntegrationLifecycleConfigDeleted() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .setDeleted(true)
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeA"));
+
+        service.broadcast(proto);
+
+        verify(integrationLifecycleEventTypeCache).remove("integration-1");
+        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
     }
 
     @Test
