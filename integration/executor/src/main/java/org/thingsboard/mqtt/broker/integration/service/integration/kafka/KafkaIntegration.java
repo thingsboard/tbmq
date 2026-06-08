@@ -169,6 +169,39 @@ public class KafkaIntegration extends AbstractIntegration {
         }
     }
 
+    @Override
+    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
+        context.getExternalCallExecutor().executeAsync(() -> {
+            publishBody(body, callback);
+            return null;
+        });
+    }
+
+    private void publishBody(String body, IntegrationMsgCallback callback) {
+        try {
+            Headers headers = new RecordHeaders();
+            config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
+
+            var kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), body, headers);
+            producer.send(kvProducerRecord, (metadata, e) -> {
+                if (e == null) {
+                    log.debug("[{}][{}] publishBody success {}{}{}", getId(), getName(), metadata.topic(),
+                            metadata.partition(), metadata.offset());
+                    integrationStatistics.incMessagesProcessed();
+                    callback.onSuccess();
+                } else {
+                    log.warn("[{}][{}] processException", getId(), getName(), e);
+                    handleMsgProcessingFailure(e);
+                    callback.onFailure(e);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to publish lifecycle event body", getId(), getName(), e);
+            handleMsgProcessingFailure(e);
+            callback.onFailure(e);
+        }
+    }
+
     private String getRecordValue(PublishIntegrationMsgProto msg) {
         if (config.isSendOnlyMsgPayload()) {
             ByteString payload = msg.getPublishMsgProto().getPayload();

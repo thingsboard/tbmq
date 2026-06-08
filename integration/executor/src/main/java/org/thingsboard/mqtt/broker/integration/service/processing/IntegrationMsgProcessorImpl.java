@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingContext;
@@ -109,7 +109,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
         String integrationTopic = integrationTopicService.createTopic(integrationId);
         log.info("[{}] Starting integration messages processing", integrationId);
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer = initConsumer(integrationId, integrationTopic);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> consumer = initConsumer(integrationId, integrationTopic);
         IntegrationHolder integrationHolder = new IntegrationHolder(integration);
         Future<?> future = integrationMsgsConsumerExecutor.submit(() -> {
             try {
@@ -153,8 +153,8 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         }, 10, TimeUnit.SECONDS);
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> initConsumer(String integrationId, String topic) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer = createConsumer(integrationId, topic);
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> initConsumer(String integrationId, String topic) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> consumer = createConsumer(integrationId, topic);
         try {
             consumer.assignPartition(0);
 
@@ -171,7 +171,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         }
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createConsumer(String integrationId, String topic) {
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> createConsumer(String integrationId, String topic) {
         return integrationMsgQueueProvider
                 .getIeMsgConsumer(
                         topic,
@@ -179,7 +179,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                         integrationId);
     }
 
-    private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer,
+    private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> consumer,
                                  IntegrationHolder integrationHolder) {
         final AtomicLong counter = new AtomicLong(0);
 
@@ -189,7 +189,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
         while (isProcessorActive(integrationHolder)) {
             try {
-                List<TbProtoQueueMsg<PublishIntegrationMsgProto>> messages = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<TbIeMsgProto>> messages = consumer.poll(pollDuration);
                 if (messages.isEmpty()) {
                     continue;
                 }
@@ -209,7 +209,17 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                     IntegrationPackProcessingContext ctx = new IntegrationPackProcessingContext(integrationHolder.getIntegrationId(), submitStrategy.getPendingMap());
                     int totalMsgCount = pendingMsgMap.size();
 
-                    submitStrategy.process(entry -> integrationHolder.getIntegration().process(entry.getValue(), new BaseIntegrationMsgCallback(entry.getKey(), ctx)));
+                    submitStrategy.process(entry -> {
+                        TbIeMsgProto msg = entry.getValue();
+                        if (msg.hasPublishMsg()) {
+                            integrationHolder.getIntegration().process(msg.getPublishMsg(), new BaseIntegrationMsgCallback(entry.getKey(), ctx));
+                        } else if (msg.hasLifecycleMsg()) {
+                            integrationHolder.getIntegration().processLifecycleEvent(msg.getLifecycleMsg(), new BaseIntegrationMsgCallback(entry.getKey(), ctx));
+                        } else {
+                            log.warn("[{}] Received IE message with no payload set", integrationHolder.getIntegrationId());
+                            new BaseIntegrationMsgCallback(entry.getKey(), ctx).onSuccess();
+                        }
+                    });
 
                     if (isProcessorActive(integrationHolder)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -252,8 +262,8 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         integration.setStopped(true);
     }
 
-    private Map<UUID, PublishIntegrationMsgProto> toPendingMsgMap(List<TbProtoQueueMsg<PublishIntegrationMsgProto>> msgs, long packId) {
-        Map<UUID, PublishIntegrationMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
+    private Map<UUID, TbIeMsgProto> toPendingMsgMap(List<TbProtoQueueMsg<TbIeMsgProto>> msgs, long packId) {
+        Map<UUID, TbIeMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
         int i = 0;
         for (var msg : msgs) {
             UUID id = new UUID(packId, i++);

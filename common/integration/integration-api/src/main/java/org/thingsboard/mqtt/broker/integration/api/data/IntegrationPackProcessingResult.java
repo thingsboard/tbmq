@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.api.data;
 
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,9 +25,9 @@ import java.util.UUID;
 public class IntegrationPackProcessingResult {
 
     @Getter
-    private final Map<UUID, PublishIntegrationMsgProto> pendingMap;
+    private final Map<UUID, TbIeMsgProto> pendingMap;
     @Getter
-    private final Map<UUID, PublishIntegrationMsgProto> failedMap;
+    private final Map<UUID, TbIeMsgProto> failedMap;
 
     public IntegrationPackProcessingResult(IntegrationPackProcessingContext ctx) {
         this.pendingMap = new HashMap<>(ctx.getPendingMap());

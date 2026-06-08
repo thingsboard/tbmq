@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 
 import java.util.Map;
 import java.util.UUID;
@@ -33,29 +33,29 @@ public class BurstIntegrationSubmitStrategy implements IntegrationSubmitStrategy
     @Getter
     private final String integrationId;
 
-    private Map<UUID, PublishIntegrationMsgProto> publishMsgMap;
+    private Map<UUID, TbIeMsgProto> publishMsgMap;
 
     @Override
-    public void init(Map<UUID, PublishIntegrationMsgProto> messages) {
+    public void init(Map<UUID, TbIeMsgProto> messages) {
         log.debug("[{}] Init pack {}", integrationId, messages.size());
         this.publishMsgMap = messages;
     }
 
     @Override
-    public ConcurrentMap<UUID, PublishIntegrationMsgProto> getPendingMap() {
+    public ConcurrentMap<UUID, TbIeMsgProto> getPendingMap() {
         return new ConcurrentHashMap<>(publishMsgMap);
     }
 
     @Override
-    public void process(Consumer<Map.Entry<UUID, PublishIntegrationMsgProto>> msgConsumer) {
+    public void process(Consumer<Map.Entry<UUID, TbIeMsgProto>> msgConsumer) {
         log.debug("[{}] Start sending the pack of messages {}", integrationId, publishMsgMap.size());
-        for (Map.Entry<UUID, PublishIntegrationMsgProto> entry : publishMsgMap.entrySet()) {
+        for (Map.Entry<UUID, TbIeMsgProto> entry : publishMsgMap.entrySet()) {
             msgConsumer.accept(entry);
         }
     }
 
     @Override
-    public void update(Map<UUID, PublishIntegrationMsgProto> reprocessMap) {
+    public void update(Map<UUID, TbIeMsgProto> reprocessMap) {
         log.debug("[{}] Updating the pack of messages {}", integrationId, reprocessMap.size());
         publishMsgMap = reprocessMap;
     }

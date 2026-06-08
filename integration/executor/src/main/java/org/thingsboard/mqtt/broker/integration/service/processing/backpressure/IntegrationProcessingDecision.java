@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
 import lombok.Data;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +25,6 @@ import java.util.UUID;
 public class IntegrationProcessingDecision {
 
     private final boolean commit;
-    private final Map<UUID, PublishIntegrationMsgProto> reprocessMap;
+    private final Map<UUID, TbIeMsgProto> reprocessMap;
 
 }

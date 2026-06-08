@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
@@ -25,8 +26,11 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.api.util.ExceptionUtil;
@@ -179,6 +183,59 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
 
         return request;
+    }
+
+    @Override
+    public void processLifecycleEvent(ClientLifecycleEventMsgProto msg, IntegrationMsgCallback callback) {
+        try {
+            String body = constructLifecycleEventValue(msg);
+            doProcessLifecycleEvent(body, callback);
+        } catch (Exception e) {
+            handleMsgProcessingFailure(e);
+            callback.onFailure(e);
+        }
+    }
+
+    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
+        log.debug("[{}][{}] Lifecycle event processing is not supported by this integration type", getId(), getName());
+        callback.onSuccess();
+    }
+
+    protected String constructLifecycleEventValue(ClientLifecycleEventMsgProto msg) {
+        return JacksonUtil.toString(constructLifecycleEventBody(msg));
+    }
+
+    protected ObjectNode constructLifecycleEventBody(ClientLifecycleEventMsgProto msg) {
+        ObjectNode body = JacksonUtil.newObjectNode();
+        body.put("eventType", msg.getEventType());
+        body.put("clientId", msg.getClientId());
+        body.put("sessionId", msg.getSessionId());
+        body.put("ipAddress", msg.getIpAddress());
+        body.put("ts", msg.getTs());
+        body.put("tbmqNode", msg.getTbmqNode());
+
+        switch (msg.getEventType()) {
+            case "CLIENT_CONNECTED":
+                body.put("cleanStart", msg.getCleanStart());
+                body.put("keepAlive", msg.getKeepAlive());
+                break;
+            case "CLIENT_DISCONNECTED":
+                body.put("disconnectReason", msg.getDisconnectReason());
+                body.put("clientInitiated", msg.getClientInitiated());
+                break;
+            case "CLIENT_SUBSCRIBED":
+                ArrayNode subs = body.putArray("subscriptions");
+                for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
+                    subs.addObject()
+                            .put("topicFilter", sub.getTopic())
+                            .put("qos", sub.getQos());
+                }
+                break;
+            default:
+                break;
+        }
+        body.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
+        return body;
     }
 
     protected void handleMsgProcessingFailure(Throwable throwable) {

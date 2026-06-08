@@ -132,6 +132,24 @@ public class MqttIntegration extends AbstractIntegration {
                 );
     }
 
+    @Override
+    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
+        client.publish(config.getTopicName(), Unpooled.wrappedBuffer(body.getBytes(StandardCharsets.UTF_8)),
+                        MqttQoS.valueOf(config.getQos()), config.isRetained())
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        log.debug("[{}][{}] lifecycle event publish success {}", getId(), getName(), config.getTopicName());
+                        integrationStatistics.incMessagesProcessed();
+                        callback.onSuccess();
+                    } else {
+                        var t = future.cause();
+                        log.warn("[{}][{}] lifecycle event processException", getId(), getName(), t);
+                        handleMsgProcessingFailure(t);
+                        callback.onFailure(t);
+                    }
+                });
+    }
+
     private String getMsgTopicName(PublishIntegrationMsgProto msg) {
         return config.isUseMsgTopicName() ? msg.getPublishMsgProto().getTopicName() : config.getTopicName();
     }

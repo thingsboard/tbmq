@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
 import java.util.Collections;
@@ -56,12 +56,10 @@ public class IntegrationAckStrategyFactory {
             }
             if (log.isTraceEnabled()) {
                 result.getFailedMap().forEach((packetId, msg) ->
-                        log.trace("[{}] Failed message: id - {}, topic - {}.",
-                                integrationId, msg.getPublishMsgProto().getPacketId(), msg.getPublishMsgProto().getTopicName())
+                        log.trace("[{}] Failed message: id - {}.", integrationId, packetId)
                 );
                 result.getPendingMap().forEach((packetId, msg) ->
-                        log.trace("[{}] Timeout message: id - {}, topic - {}.",
-                                integrationId, msg.getPublishMsgProto().getPacketId(), msg.getPublishMsgProto().getTopicName())
+                        log.trace("[{}] Timeout message: id - {}.", integrationId, packetId)
                 );
             }
             return new IntegrationProcessingDecision(true, Collections.emptyMap());
@@ -79,8 +77,8 @@ public class IntegrationAckStrategyFactory {
 
         @Override
         public IntegrationProcessingDecision analyze(IntegrationPackProcessingResult result) {
-            Map<UUID, PublishIntegrationMsgProto> pendingMap = result.getPendingMap();
-            Map<UUID, PublishIntegrationMsgProto> failedMap = result.getFailedMap();
+            Map<UUID, TbIeMsgProto> pendingMap = result.getPendingMap();
+            Map<UUID, TbIeMsgProto> failedMap = result.getFailedMap();
             if (pendingMap.isEmpty() && failedMap.isEmpty()) {
                 return new IntegrationProcessingDecision(true, Collections.emptyMap());
             }
@@ -88,7 +86,7 @@ public class IntegrationAckStrategyFactory {
                 log.debug("[{}] Skip reprocess due to max retries.", integrationId);
                 return new IntegrationProcessingDecision(true, Collections.emptyMap());
             }
-            Map<UUID, PublishIntegrationMsgProto> toReprocess = new HashMap<>();
+            Map<UUID, TbIeMsgProto> toReprocess = new HashMap<>();
             toReprocess.putAll(pendingMap);
             toReprocess.putAll(failedMap);
             if (log.isDebugEnabled()) {
@@ -96,12 +94,10 @@ public class IntegrationAckStrategyFactory {
             }
             if (log.isTraceEnabled()) {
                 failedMap.forEach((packetId, msg) ->
-                        log.trace("[{}] Going to reprocess failed message: id - {}, topic - {}.",
-                                integrationId, msg.getPublishMsgProto().getPacketId(), msg.getPublishMsgProto().getTopicName())
+                        log.trace("[{}] Going to reprocess failed message: id - {}.", integrationId, packetId)
                 );
                 pendingMap.forEach((packetId, msg) ->
-                        log.trace("[{}] Going to reprocess timed-out message: id - {}, topic - {}.",
-                                integrationId, msg.getPublishMsgProto().getPacketId(), msg.getPublishMsgProto().getTopicName())
+                        log.trace("[{}] Going to reprocess timed-out message: id - {}.", integrationId, packetId)
                 );
             }
             if (pauseBetweenRetries > 0) {

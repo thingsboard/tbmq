@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.integration.api;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
@@ -40,6 +41,8 @@ public interface TbPlatformIntegration {
     void destroyAndClearData();
 
     void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback);
+
+    void processLifecycleEvent(ClientLifecycleEventMsgProto msg, IntegrationMsgCallback callback);
 
     IntegrationStatistics popStatistics();
 

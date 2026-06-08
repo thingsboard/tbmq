@@ -75,6 +75,11 @@ public class HttpIntegration extends AbstractHttpIntegration {
         tbHttpClient.processMessage(getRequestBody(msg), callback);
     }
 
+    @Override
+    protected void doSendBody(String body, BasicCallback callback) {
+        tbHttpClient.processMessage(body, callback);
+    }
+
     private Object getRequestBody(PublishIntegrationMsgProto msg) {
         ByteString payload = msg.getPublishMsgProto().getPayload();
         if (config.isSendOnlyMsgPayload()) {
