@@ -81,6 +81,13 @@
         </tb-integration-topic-filters>
       </form>
     </mat-step>
+    <mat-step [stepControl]="integrationLifecycleEventsForm" [optional]="true">
+      <ng-template matStepLabel>{{ "integration.lifecycle-events" | translate }}</ng-template>
+      <form [formGroup]="integrationLifecycleEventsForm">
+        <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
+        </tb-integration-lifecycle-events>
+      </form>
+    </mat-step>
     <mat-step [stepControl]="integrationConfigurationForm">
       <ng-template matStepLabel>{{ "integration.configuration" | translate }}</ng-template>
       <form [formGroup]="integrationConfigurationForm" tb-toast toastTarget="integrationRoot">

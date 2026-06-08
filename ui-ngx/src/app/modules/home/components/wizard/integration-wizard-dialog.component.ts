@@ -58,6 +58,9 @@ import {
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 import { MatTooltip } from '@angular/material/tooltip';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 
 @Component({
   selector: 'tb-integration-wizard',
@@ -92,7 +95,8 @@ import { MatTooltip } from '@angular/material/tooltip';
     ToastDirective,
     IntegrationTopicFiltersComponent,
     KeyValMapComponent,
-    MatTooltip
+    MatTooltip,
+    IntegrationLifecycleEventsComponent
   ]
 })
 export class IntegrationWizardDialogComponent extends
@@ -110,6 +114,7 @@ export class IntegrationWizardDialogComponent extends
 
   integrationWizardForm: UntypedFormGroup;
   integrationTopicFilterForm: UntypedFormGroup;
+  integrationLifecycleEventsForm: UntypedFormGroup;
   integrationConfigurationForm: UntypedFormGroup;
 
   private checkConnectionAllow = false;
@@ -163,6 +168,10 @@ export class IntegrationWizardDialogComponent extends
     this.integrationTopicFilterForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required]
     });
+
+    this.integrationLifecycleEventsForm = this.fb.group({
+      lifecycleEventTypes: [[]]
+    });
   }
 
   ngOnDestroy() {
@@ -179,6 +188,7 @@ export class IntegrationWizardDialogComponent extends
       integrationConfig.configuration = {
         ...integrationConfig.configuration,
         ...integrationTopicFilter,
+        ...this.integrationLifecycleEventsForm.getRawValue(),
         metadata: integrationConfig.metadata,
       };
       delete integrationConfig.metadata;
@@ -203,7 +213,8 @@ export class IntegrationWizardDialogComponent extends
       configuration: {
         metadata: this.integrationConfigurationForm.value.metadata,
         ...this.integrationConfigurationForm.value.configuration,
-        ...this.integrationTopicFilterForm.getRawValue()
+        ...this.integrationTopicFilterForm.getRawValue(),
+        ...this.integrationLifecycleEventsForm.getRawValue()
       },
       name: this.integrationWizardForm.value.name.trim(),
       type: this.integrationWizardForm.value.type,
@@ -218,7 +229,7 @@ export class IntegrationWizardDialogComponent extends
   }
 
   get maxStep(): number {
-    return 2;
+    return 3;
   }
 
   cancel(): void {
