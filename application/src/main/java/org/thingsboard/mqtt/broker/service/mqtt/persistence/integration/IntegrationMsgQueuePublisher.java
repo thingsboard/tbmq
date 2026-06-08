@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.integration;
 
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 public interface IntegrationMsgQueuePublisher {
 
-    void sendMsg(String integrationId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback);
+    void sendMsg(String integrationId, TbProtoQueueMsg<TbIeMsgProto> queueMsg, PublishMsgCallback callback);
 
 }

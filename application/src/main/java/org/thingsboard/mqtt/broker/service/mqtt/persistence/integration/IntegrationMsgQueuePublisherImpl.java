@@ -20,7 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -41,11 +41,11 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
-    private TbPublishServiceImpl<PublishIntegrationMsgProto> publisher;
+    private TbPublishServiceImpl<TbIeMsgProto> publisher;
 
     @PostConstruct
     public void init() {
-        this.publisher = TbPublishServiceImpl.<PublishIntegrationMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<TbIeMsgProto>builder()
                 .queueName("ieMsg")
                 .producer(msgQueueProvider.getIeMsgProducer())
                 .partition(0)
@@ -59,7 +59,7 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
     }
 
     @Override
-    public void sendMsg(String integrationId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback) {
+    public void sendMsg(String integrationId, TbProtoQueueMsg<TbIeMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(integrationId, this.getClass(), "Start waiting for IE msg to be persisted");
         String ieQueueTopic = integrationHelperService.getIntegrationTopic(integrationId);
         this.publisher.send(queueMsg,
@@ -75,8 +75,8 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the ie queue for MQTT topic {}.",
-                                integrationId, queueMsg.getValue().getPublishMsgProto().getTopicName(), t);
+                        log.error("[{}] Failed to send publish msg to the ie queue.",
+                                integrationId, t);
                         callback.onFailure(t);
                     }
                 },

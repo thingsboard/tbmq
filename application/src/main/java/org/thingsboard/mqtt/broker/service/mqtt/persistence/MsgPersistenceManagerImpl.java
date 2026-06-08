@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -49,6 +50,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
@@ -178,12 +180,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private void sendIntegrationMsg(Subscription integrationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
-        PublishIntegrationMsgProto publishMsg = IntegrationProtoConverter.toProto(publishMsgWithId.getPublishMsgProto(), integrationSubscription.getServiceId());
-        integrationMsgQueuePublisher.sendMsg(
-                integrationSubscription.getClientId(),
-                new TbProtoQueueMsg<>(publishMsg.getPublishMsgProto().getTopicName(), publishMsg),
-                callbackWrapper
-        );
+        PublishIntegrationMsgProto publishIntegrationMsgProto = IntegrationProtoConverter.toProto(publishMsgWithId.getPublishMsgProto(), integrationSubscription.getServiceId());
+        TbIeMsgProto wrapper = TbIeMsgProto.newBuilder()
+                .setPublishMsg(publishIntegrationMsgProto)
+                .build();
+        TbProtoQueueMsg<TbIeMsgProto> queueMsg = new TbProtoQueueMsg<>(UUID.randomUUID().toString(), wrapper);
+        integrationMsgQueuePublisher.sendMsg(integrationSubscription.getClientId(), queueMsg, callbackWrapper);
     }
 
     private TbQueueMsgHeaders getAppMsgHeaders(PublishMsgWithId publishMsgWithId) {
