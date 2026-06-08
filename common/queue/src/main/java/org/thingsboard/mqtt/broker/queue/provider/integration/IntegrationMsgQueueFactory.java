@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider.integration;
 
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -24,9 +24,9 @@ import java.util.Map;
 
 public interface IntegrationMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<TbIeMsgProto>> createProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId);
 
     Map<String, String> getTopicConfigs();
 }

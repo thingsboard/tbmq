@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.queue.provider.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.TbmqIntegrationExecutorComponent;
@@ -40,12 +40,12 @@ public class ExecutorIntegrationMsgQueueProvider implements IntegrationMsgQueueP
     private final ServiceInfoProvider serviceInfoProvider;
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgProducer() {
+    public TbQueueProducer<TbProtoQueueMsg<TbIeMsgProto>> getIeMsgProducer() {
         throw new RuntimeException(TBMQ_IE_NOT_IMPLEMENTED);
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
         return integrationMsgQueueFactory.createConsumer(topic, consumerGroupId, getConsumerId(integrationId));
     }
 
