@@ -24,6 +24,12 @@ export enum IntegrationType {
   KAFKA = 'KAFKA',
 }
 
+export enum ClientLifecycleEventType {
+  CLIENT_CONNECTED    = 'CLIENT_CONNECTED',
+  CLIENT_DISCONNECTED = 'CLIENT_DISCONNECTED',
+  CLIENT_SUBSCRIBED   = 'CLIENT_SUBSCRIBED',
+}
+
 export interface IntegrationTypeInfo {
   name: string;
   description: string;
@@ -147,6 +153,7 @@ export const IntegrationCredentialTypeTranslation = new Map<IntegrationCredentia
 
 export interface Topics {
   topicFilters: Array<string>;
+  lifecycleEventTypes?: ClientLifecycleEventType[];
 }
 
 export interface HttpIntegration extends Topics {
