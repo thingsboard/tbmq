@@ -17,15 +17,15 @@
 -->
 <div class="flex flex-col gap-2">
   <p class="text-sm text-gray-500">{{ 'integration.lifecycle-events-hint' | translate }}</p>
-  @for (eventType of eventTypes; track eventType) {
-    <mat-checkbox
-      [checked]="isChecked(eventType)"
-      [disabled]="disabled"
-      (change)="toggle(eventType, $event.checked)">
-      {{ eventTypeTranslations[eventType] | translate }}
-    </mat-checkbox>
-  }
-  @if (selected.size === 0 && showNoSelectionHint()) {
+  <mat-form-field class="mat-block" appearance="outline" subscriptSizing="dynamic">
+    <mat-label translate>integration.lifecycle-event-types</mat-label>
+    <mat-select multiple [formControl]="lifecycleEventsFormControl">
+      @for (eventType of eventTypes; track eventType) {
+        <mat-option [value]="eventType">{{ eventTypeTranslations[eventType] | translate }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (!hasSelection && showNoSelectionHint()) {
     <p class="mt-1 text-xs text-gray-400">{{ 'integration.lifecycle-events-no-selection' | translate }}</p>
   }
 </div>

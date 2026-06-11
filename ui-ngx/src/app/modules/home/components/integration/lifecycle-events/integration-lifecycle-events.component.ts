@@ -14,24 +14,27 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, forwardRef, input } from '@angular/core';
+import { Component, forwardRef, input, OnDestroy } from '@angular/core';
 import {
   ControlValueAccessor,
   FormsModule,
   NG_VALUE_ACCESSOR,
-  ReactiveFormsModule
+  ReactiveFormsModule,
+  UntypedFormBuilder,
+  UntypedFormControl
 } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 import { ClientLifecycleEventType } from '@shared/models/integration.models';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-integration-lifecycle-events',
   templateUrl: './integration-lifecycle-events.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatCheckboxModule, TranslateModule],
+  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatSelect, MatOption, TranslateModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -40,7 +43,7 @@ import { ClientLifecycleEventType } from '@shared/models/integration.models';
     }
   ]
 })
-export class IntegrationLifecycleEventsComponent implements ControlValueAccessor {
+export class IntegrationLifecycleEventsComponent implements ControlValueAccessor, OnDestroy {
 
   showNoSelectionHint = input(false);
 
@@ -56,43 +59,42 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
     [ClientLifecycleEventType.CLIENT_SUBSCRIBED]:   'integration.client-subscribed',
   };
 
-  selected = new Set<ClientLifecycleEventType>();
-  disabled = false;
+  lifecycleEventsFormControl: UntypedFormControl;
 
-  private onChange: (value: ClientLifecycleEventType[]) => void = () => {};
-  private onTouched: () => void = () => {};
+  private destroy$ = new Subject<void>();
+  private propagateChange = (_value: ClientLifecycleEventType[]) => {};
 
-  constructor(private cd: ChangeDetectorRef) {}
+  constructor(private fb: UntypedFormBuilder) {
+    this.lifecycleEventsFormControl = this.fb.control([]);
+    this.lifecycleEventsFormControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value: ClientLifecycleEventType[]) => this.propagateChange(value ?? []));
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get hasSelection(): boolean {
+    return (this.lifecycleEventsFormControl.value ?? []).length > 0;
+  }
 
   writeValue(value: ClientLifecycleEventType[] | null): void {
-    this.selected = new Set(value ?? []);
-    this.cd.markForCheck();
+    this.lifecycleEventsFormControl.patchValue(value ?? [], {emitEvent: false});
   }
 
   registerOnChange(fn: (value: ClientLifecycleEventType[]) => void): void {
-    this.onChange = fn;
+    this.propagateChange = fn;
   }
 
-  registerOnTouched(fn: () => void): void {
-    this.onTouched = fn;
-  }
+  registerOnTouched(): void {}
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    this.cd.markForCheck();
-  }
-
-  toggle(eventType: ClientLifecycleEventType, checked: boolean): void {
-    if (checked) {
-      this.selected.add(eventType);
+    if (isDisabled) {
+      this.lifecycleEventsFormControl.disable({emitEvent: false});
     } else {
-      this.selected.delete(eventType);
+      this.lifecycleEventsFormControl.enable({emitEvent: false});
     }
-    this.onChange(Array.from(this.selected));
-    this.onTouched();
-  }
-
-  isChecked(eventType: ClientLifecycleEventType): boolean {
-    return this.selected.has(eventType);
   }
 }

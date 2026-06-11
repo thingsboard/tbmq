@@ -594,6 +594,7 @@
         "add-topic-filter": "Add topic filter",
         "add-topic-filter-prompt": "Please add topic filter",
         "lifecycle-events": "Lifecycle events",
+        "lifecycle-event-types": "Event types",
         "lifecycle-events-hint": "Forward client lifecycle events to this integration.",
         "lifecycle-events-no-selection": "When no lifecycle events are selected, this step has no effect.",
         "client-connected": "Client connected",
