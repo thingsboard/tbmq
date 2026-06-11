@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, forwardRef } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, forwardRef, input } from '@angular/core';
 import {
   ControlValueAccessor,
   FormsModule,
@@ -42,6 +42,8 @@ import { ClientLifecycleEventType } from '@shared/models/integration.models';
 })
 export class IntegrationLifecycleEventsComponent implements ControlValueAccessor {
 
+  showNoSelectionHint = input(false);
+
   readonly eventTypes = [
     ClientLifecycleEventType.CLIENT_CONNECTED,
     ClientLifecycleEventType.CLIENT_DISCONNECTED,
@@ -60,8 +62,11 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
   private onChange: (value: ClientLifecycleEventType[]) => void = () => {};
   private onTouched: () => void = () => {};
 
+  constructor(private cd: ChangeDetectorRef) {}
+
   writeValue(value: ClientLifecycleEventType[] | null): void {
     this.selected = new Set(value ?? []);
+    this.cd.markForCheck();
   }
 
   registerOnChange(fn: (value: ClientLifecycleEventType[]) => void): void {
@@ -74,6 +79,7 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+    this.cd.markForCheck();
   }
 
   toggle(eventType: ClientLifecycleEventType, checked: boolean): void {

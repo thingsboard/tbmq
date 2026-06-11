@@ -51,6 +51,9 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   IntegrationTopicFiltersComponent
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
@@ -77,6 +80,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatIcon,
     MatTooltip,
     IntegrationTopicFiltersComponent,
+    IntegrationLifecycleEventsComponent,
     MatSlideToggle,
     CopyButtonComponent,
     HintTooltipIconComponent
@@ -118,6 +122,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
   ngOnInit() {
     this.kafkaIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
+      lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
         topic: ['tbmq.messages', [Validators.required]],
@@ -176,6 +181,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
   private updateModels(value) {
     if (this.isNew) {
       delete value.topicFilters;
+      delete value.lifecycleEventTypes;
     }
     this.propagateChange(value);
   }

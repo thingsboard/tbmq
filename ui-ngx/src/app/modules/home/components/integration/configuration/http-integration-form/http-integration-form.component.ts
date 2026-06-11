@@ -40,6 +40,9 @@ import {
   IntegrationTopicFiltersComponent
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
+import {
   IntegrationCredentialsComponent
 } from '@home/components/integration/integration-credentials/integration-credentials.component';
 import {
@@ -68,6 +71,7 @@ import { KeyValMapComponent } from '@shared/components/key-val-map.component';
     MatSelect,
     MatOption,
     IntegrationTopicFiltersComponent,
+    IntegrationLifecycleEventsComponent,
     IntegrationCredentialsComponent,
     TranslateModule,
     MatExpansionPanel,
@@ -125,6 +129,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
   ngOnInit() {
     this.baseHttpIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
+      lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
         restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
@@ -181,6 +186,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
   private updateModels(value) {
     if (this.isNew) {
       delete value.topicFilters;
+      delete value.lifecycleEventTypes;
     }
     this.propagateChange(value);
   }

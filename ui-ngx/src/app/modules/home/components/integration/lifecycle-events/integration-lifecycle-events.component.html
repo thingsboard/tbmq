@@ -25,7 +25,7 @@
       {{ eventTypeTranslations[eventType] | translate }}
     </mat-checkbox>
   }
-  @if (selected.size === 0) {
+  @if (selected.size === 0 && showNoSelectionHint()) {
     <p class="mt-1 text-xs text-gray-400">{{ 'integration.lifecycle-events-no-selection' | translate }}</p>
   }
 </div>

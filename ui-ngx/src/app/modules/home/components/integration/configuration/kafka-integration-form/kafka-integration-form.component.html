@@ -19,6 +19,7 @@
   <section formGroupName="clientConfiguration">
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
+      <ng-container *ngTemplateOutlet="lifecycleEvents"></ng-container>
     }
     <section class="pb-6" tb-hint-tooltip-icon="{{ 'integration.send-only-payload-hint' | translate }}">
       <mat-slide-toggle formControlName="sendOnlyMsgPayload">
@@ -209,6 +210,15 @@
                                       [isEdit]="isEdit()"
                                       [integration]="integration()">
         </tb-integration-topic-filters>
+      </section>
+    </section>
+  </ng-template>
+  <ng-template #lifecycleEvents>
+    <section class="mb-6" [formGroup]="kafkaIntegrationConfigForm">
+      <section class="security-setting mat-padding">
+        <p translate>integration.lifecycle-events</p>
+        <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
+        </tb-integration-lifecycle-events>
       </section>
     </section>
   </ng-template>

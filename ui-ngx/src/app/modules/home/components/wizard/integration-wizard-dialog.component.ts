@@ -228,9 +228,7 @@ export class IntegrationWizardDialogComponent extends
     return integrationData;
   }
 
-  get maxStep(): number {
-    return 3;
-  }
+  readonly maxStep = 3;
 
   cancel(): void {
     this.dialogRef.close(null);

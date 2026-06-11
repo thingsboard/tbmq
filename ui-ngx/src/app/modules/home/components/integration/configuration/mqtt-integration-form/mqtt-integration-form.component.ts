@@ -48,6 +48,9 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   IntegrationTopicFiltersComponent
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 import { MatIconButton } from '@angular/material/button';
 import { clientIdRandom } from '@shared/models/ws-client.model';
 import {
@@ -84,6 +87,7 @@ import { Observable } from 'rxjs';
     MatIcon,
     MatTooltip,
     IntegrationTopicFiltersComponent,
+    IntegrationLifecycleEventsComponent,
     MatIconButton,
     IntegrationCredentialsComponent,
     QosSelectComponent,
@@ -130,6 +134,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   ngOnInit() {
     this.mqttIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
+      lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
         host: [null, [Validators.required, notOnlyWhitespaceValidator]],
@@ -187,6 +192,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   private updateModels(value) {
     if (this.isNew) {
       delete value.topicFilters;
+      delete value.lifecycleEventTypes;
     }
     this.propagateChange(value);
   }
