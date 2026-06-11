@@ -24,7 +24,8 @@ import {
   UntypedFormControl
 } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatOption, MatSelect, MatSelectTrigger } from '@angular/material/select';
+import { MatChip, MatChipSet } from '@angular/material/chips';
 import { TranslateModule } from '@ngx-translate/core';
 import { ClientLifecycleEventType } from '@shared/models/integration.models';
 import { Subject } from 'rxjs';
@@ -34,7 +35,10 @@ import { takeUntil } from 'rxjs/operators';
   selector: 'tb-integration-lifecycle-events',
   templateUrl: './integration-lifecycle-events.component.html',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatSelect, MatOption, TranslateModule],
+  imports: [
+    FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatSelect, MatSelectTrigger,
+    MatOption, MatChipSet, MatChip, TranslateModule
+  ],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

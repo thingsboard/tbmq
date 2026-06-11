@@ -20,6 +20,13 @@
   <mat-form-field class="mat-block" appearance="outline" subscriptSizing="dynamic">
     <mat-label translate>integration.lifecycle-event-types</mat-label>
     <mat-select multiple [formControl]="lifecycleEventsFormControl">
+      <mat-select-trigger>
+        <mat-chip-set>
+          @for (eventType of lifecycleEventsFormControl.value; track eventType) {
+            <mat-chip>{{ eventTypeTranslations[eventType] | translate }}</mat-chip>
+          }
+        </mat-chip-set>
+      </mat-select-trigger>
       @for (eventType of eventTypes; track eventType) {
         <mat-option [value]="eventType">{{ eventTypeTranslations[eventType] | translate }}</mat-option>
       }
