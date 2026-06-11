@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMs
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -43,6 +44,7 @@ public class MqttUnsubscribeHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientSubscriptionService clientSubscriptionService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
@@ -50,7 +52,10 @@ public class MqttUnsubscribeHandler {
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
         clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
                 CallbackUtil.createCallback(
-                        () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
+                        () -> {
+                            ctx.getChannel().writeAndFlush(unSubAckMessage);
+                            integrationLifecycleEventPublisher.publishUnsubscribed(ctx.getSessionInfo(), msg.getTopics());
+                        },
                         t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
                 ));
 

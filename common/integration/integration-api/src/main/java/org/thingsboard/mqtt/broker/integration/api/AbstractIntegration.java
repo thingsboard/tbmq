@@ -231,6 +231,10 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                             .put("qos", sub.getQos());
                 }
                 break;
+            case "CLIENT_UNSUBSCRIBED":
+                ArrayNode topicFilters = body.putArray("topicFilters");
+                msg.getTopicFiltersList().forEach(topicFilters::add);
+                break;
             default:
                 break;
         }

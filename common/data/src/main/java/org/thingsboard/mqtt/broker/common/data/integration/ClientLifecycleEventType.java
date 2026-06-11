@@ -18,5 +18,6 @@ package org.thingsboard.mqtt.broker.common.data.integration;
 public enum ClientLifecycleEventType {
     CLIENT_CONNECTED,
     CLIENT_DISCONNECTED,
-    CLIENT_SUBSCRIBED
+    CLIENT_SUBSCRIBED,
+    CLIENT_UNSUBSCRIBED
 }

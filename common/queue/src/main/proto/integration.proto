@@ -118,6 +118,7 @@ message ClientLifecycleEventMsgProto {
   string disconnectReason = 11;
   bool clientInitiated = 12;
   repeated queue.TopicSubscriptionProto subscriptions = 13;
+  repeated string topicFilters = 14;
 }
 
 message TbIeMsgProto {

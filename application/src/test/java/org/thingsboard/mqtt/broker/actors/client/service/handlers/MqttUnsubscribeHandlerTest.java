@@ -24,6 +24,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -48,6 +49,7 @@ public class MqttUnsubscribeHandlerTest {
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     MqttUnsubscribeHandler mqttUnsubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -58,7 +60,8 @@ public class MqttUnsubscribeHandlerTest {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
         applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
-        mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService, applicationPersistenceProcessor));
+        integrationLifecycleEventPublisher = mock(IntegrationLifecycleEventPublisher.class);
+        mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService, applicationPersistenceProcessor, integrationLifecycleEventPublisher));
 
         ctx = mock(ClientSessionCtx.class);
         sessionInfo = mock(SessionInfo.class);

@@ -29,4 +29,6 @@ public interface IntegrationLifecycleEventPublisher {
 
     void publishSubscribed(SessionInfo sessionInfo, List<TopicSubscription> subscriptions);
 
+    void publishUnsubscribed(SessionInfo sessionInfo, List<String> topicFilters);
+
 }

@@ -600,6 +600,7 @@
         "client-connected": "Client connected",
         "client-disconnected": "Client disconnected",
         "client-subscribed": "Client subscribed",
+        "client-unsubscribed": "Client unsubscribed",
         "topic-filter-or-event-required": "At least one topic filter or one lifecycle event type is required.",
         "topic": "Topic",
         "topic-required": "Topic is required",

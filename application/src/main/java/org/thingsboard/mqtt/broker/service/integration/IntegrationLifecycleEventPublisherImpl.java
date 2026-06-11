@@ -102,6 +102,24 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
         publish(integrationIds, builder.build());
     }
 
+    @Override
+    public void publishUnsubscribed(SessionInfo sessionInfo, List<String> topicFilters) {
+        Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED);
+        if (integrationIds.isEmpty()) {
+            return;
+        }
+        ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED.name())
+                .setClientId(sessionInfo.getClientInfo().getClientId())
+                .setSessionId(sessionInfo.getSessionId().toString())
+                .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
+                .setTs(System.currentTimeMillis())
+                .setTbmqNode(sessionInfo.getServiceId())
+                .addAllTopicFilters(topicFilters)
+                .build();
+        publish(integrationIds, proto);
+    }
+
     private void publish(Set<String> integrationIds, ClientLifecycleEventMsgProto lifecycleMsg) {
         TbIeMsgProto wrapper = TbIeMsgProto.newBuilder().setLifecycleMsg(lifecycleMsg).build();
         for (String integrationId : integrationIds) {
