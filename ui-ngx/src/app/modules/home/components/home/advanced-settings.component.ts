@@ -91,7 +91,7 @@ export class AdvancedSettingsComponent implements OnInit {
   }
 
   switchAuthProvider(type: MqttAuthProviderType) {
-    const enabled = !this.authParams[type];
+    const enabled = this.authParams[type];
     if (!this.authProviders) {
       const pageLink = new PageLink(10);
       this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(
@@ -110,7 +110,7 @@ export class AdvancedSettingsComponent implements OnInit {
     if (providerId) {
       this.mqttAuthProviderService.switchAuthProvider(providerId, enabled).subscribe(
         () => {
-          this.authParams[type] = enabled;
+          this.authParams[type] = !enabled;
         }
       );
     }
