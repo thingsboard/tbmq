@@ -88,8 +88,24 @@
   .auth-toggle-status {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
+  }
+
+  .auth-toggle-button.mat-mdc-icon-button {
+    --mdc-icon-button-state-layer-size: 32px;
+    width: 32px;
+    height: 32px;
     padding: 4px;
+    color: rgba(0, 0, 0, 0.54);
+
+    .mat-mdc-button-touch-target {
+      width: 32px;
+      height: 32px;
+    }
+
+    tb-icon.enabled {
+      color: #4caf50;
+    }
   }
 
   .auth-status {
@@ -111,12 +127,5 @@
       background-color: rgba(0, 0, 0, 0.05);
       color: rgba(0, 0, 0, 0.38);
     }
-  }
-}
-
-:host ::ng-deep {
-  .small-toggle {
-    transform: scale(0.8);
-    transform-origin: right center;
   }
 }

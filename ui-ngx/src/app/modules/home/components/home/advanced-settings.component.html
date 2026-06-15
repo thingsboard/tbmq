@@ -36,8 +36,12 @@
             <div class="auth-row">
               <span class="auth-label">{{ row.labelKey | translate }}</span>
               <div class="auth-toggle-status">
-                <mat-slide-toggle class="small-toggle" [(ngModel)]="authParams[row.type]"
-                                  (ngModelChange)="switchAuthProvider(row.type)"></mat-slide-toggle>
+                <button mat-icon-button class="auth-toggle-button"
+                        matTooltip="{{ (authParams[row.type] ? 'authentication.disable' : 'authentication.enable') | translate }}"
+                        matTooltipPosition="above"
+                        (click)="switchAuthProvider(row.type)">
+                  <tb-icon class="tb-mat-24" [class.enabled]="authParams[row.type]">{{ authParams[row.type] ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off-outline' }}</tb-icon>
+                </button>
                 <span class="auth-status" [class.status-enabled]="authParams[row.type]" [class.status-disabled]="!authParams[row.type]">
                   {{ (authParams[row.type] ? 'home.network-settings.enabled' : 'home.network-settings.disabled') | translate }}
                 </span>
