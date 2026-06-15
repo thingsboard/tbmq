@@ -31,7 +31,6 @@ import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute } from '@angular/router';
 import { MatCard, MatCardHeader, MatCardContent } from '@angular/material/card';
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
@@ -44,7 +43,7 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-profile',
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss'],
-    imports: [MatCard, MatCardHeader, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatButton, AsyncPipe, DatePipe, MatIcon, MatSuffix, MatTooltip]
+    imports: [MatCard, MatCardHeader, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatButton, AsyncPipe, DatePipe, MatIcon, MatSuffix, MatTooltip]
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 
