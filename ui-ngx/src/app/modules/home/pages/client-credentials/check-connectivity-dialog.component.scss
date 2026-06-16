@@ -165,8 +165,20 @@
             background: $tb-primary-color;
             mask-image: url(/assets/copy-code-icon.svg);
             mask-repeat: no-repeat;
+            transition: opacity .18s ease;
           }
         }
+      }
+      .code-wrapper.copied button.clipboard-btn div:after {
+        mask-image: url(/assets/copy-code-done-icon.svg);
+        -webkit-mask-image: url(/assets/copy-code-done-icon.svg);
+      }
+      .code-wrapper.copying button.clipboard-btn div:after {
+        opacity: 0;
+      }
+      .code-wrapper.copied button.clipboard-btn p,
+      .code-wrapper.copying button.clipboard-btn p {
+        opacity: 0;
       }
     }
   }
