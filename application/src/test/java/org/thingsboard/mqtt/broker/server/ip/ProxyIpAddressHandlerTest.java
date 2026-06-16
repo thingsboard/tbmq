@@ -45,12 +45,13 @@ public class ProxyIpAddressHandlerTest {
         channel.finishAndReleaseAll();
     }
 
+    // PROXY command with real client addresses (a relayed client connection).
     private static HAProxyMessage proxyMessage() {
         return new HAProxyMessage(HAProxyProtocolVersion.V2, HAProxyCommand.PROXY,
                 HAProxyProxiedProtocol.TCP4, "203.0.113.7", "10.0.0.5", 51234, 8883);
     }
 
-    // PROXY command with real client addresses (a relayed client connection) — as before the fix.
+    // LOCAL command with no addresses — models a load balancer health-check connection (GH#322).
     private static HAProxyMessage localMessage() {
         return new HAProxyMessage(HAProxyProtocolVersion.V2, HAProxyCommand.LOCAL,
                 HAProxyProxiedProtocol.UNKNOWN, null, null, 0, 0);
