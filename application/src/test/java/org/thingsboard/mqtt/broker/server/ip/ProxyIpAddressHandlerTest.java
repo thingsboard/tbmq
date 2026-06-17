@@ -103,4 +103,26 @@ public class ProxyIpAddressHandlerTest {
 
         assertThat(channel.isActive()).isFalse();
     }
+
+    // The handler is the terminal consumer of the reference-counted HAProxyMessage (it never forwards it
+    // downstream), so it must release it — otherwise the message (and any TLV buffers it carries) leaks.
+    @Test
+    public void givenProxyCommand_whenChannelRead_thenMessageReleased() {
+        HAProxyMessage msg = proxyMessage();
+        assertThat(msg.refCnt()).isEqualTo(1);
+
+        channel.writeInbound(msg);
+
+        assertThat(msg.refCnt()).isZero();
+    }
+
+    @Test
+    public void givenLocalCommand_whenChannelRead_thenMessageReleased() {
+        HAProxyMessage msg = localMessage();
+        assertThat(msg.refCnt()).isEqualTo(1);
+
+        channel.writeInbound(msg);
+
+        assertThat(msg.refCnt()).isZero();
+    }
 }
