@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Data
@@ -49,6 +50,9 @@ public class ClientSessionCtx implements SessionContext {
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
+    // Tracks whether this session is currently counted in the broker-wide nonWritableClientsCount gauge.
+    // Used to make increment/decrement idempotent and to allow decrement on abrupt disconnect.
+    private final AtomicBoolean nonWritableCounted = new AtomicBoolean(false);
 
     private volatile SessionInfo sessionInfo;
     private volatile List<AuthRulePatterns> authRulePatterns;

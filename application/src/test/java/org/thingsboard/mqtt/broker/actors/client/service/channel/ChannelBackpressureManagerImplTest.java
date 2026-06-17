@@ -19,9 +19,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersist
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,14 +46,14 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = ChannelBackpressureManagerImpl.class)
 public class ChannelBackpressureManagerImplTest {
 
-    @MockBean
+    @MockitoBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
-    @MockBean
+    @MockitoBean
     DevicePersistenceProcessor devicePersistenceProcessor;
-    @MockBean
+    @MockitoBean
     StatsManager statsManager;
 
-    @SpyBean
+    @MockitoSpyBean
     ChannelBackpressureManagerImpl channelBackpressureManager;
 
     ClientActorState state;
@@ -67,6 +68,7 @@ public class ChannelBackpressureManagerImplTest {
         when(state.getClientId()).thenReturn(clientId);
         when(state.getCurrentSessionCtx()).thenReturn(ctx);
         when(ctx.isCleanSession()).thenReturn(false);
+        when(ctx.getNonWritableCounted()).thenReturn(new AtomicBoolean());
 
         when(statsManager.createNonWritableClientsCounter()).thenReturn(new AtomicInteger());
         channelBackpressureManager.init();
@@ -222,6 +224,93 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelWritable(state);
 
         verify(ctx, times(1)).onChannelWritable();
+    }
+
+    @Test
+    public void givenPersistentClientCountedAsNonWritable_whenOnSessionDisconnect_thenCounterDecremented() {
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+        channelBackpressureManager.onChannelNonWritable(state);
+        assertThatCounterIs(1);
+
+        when(state.getCurrentSessionState()).thenReturn(SessionState.DISCONNECTING);
+        channelBackpressureManager.onSessionDisconnect(state);
+
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenCleanSessionClientCountedAsNonWritable_whenOnSessionDisconnect_thenCounterDecremented() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+        channelBackpressureManager.onChannelNonWritable(state);
+        assertThatCounterIs(1);
+
+        when(state.getCurrentSessionState()).thenReturn(SessionState.DISCONNECTING);
+        channelBackpressureManager.onSessionDisconnect(state);
+
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenClientNotCountedAsNonWritable_whenOnSessionDisconnect_thenCounterUnchanged() {
+        channelBackpressureManager.onSessionDisconnect(state);
+
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenClientAlreadyDecremented_whenOnSessionDisconnect_thenCounterUnchanged() {
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+        channelBackpressureManager.onChannelNonWritable(state);
+        assertThatCounterIs(1);
+
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
+        channelBackpressureManager.onChannelWritable(state);
+        assertThatCounterIs(0);
+
+        when(state.getCurrentSessionState()).thenReturn(SessionState.DISCONNECTING);
+        channelBackpressureManager.onSessionDisconnect(state);
+
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenCleanSessionClient_whenChannelGoesNonWritableThenWritable_thenCounterDecremented() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+        assertThatCounterIs(1);
+
+        // Clean-session clients never transition to CHANNEL_NON_WRITABLE; state stays CONNECTED.
+        channelBackpressureManager.onChannelWritable(state);
+
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void onChannelNonWritable_isIdempotent_doesNotDoubleCount() {
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+        // Second call (e.g. duplicate writability event) must not double-count.
+        channelBackpressureManager.onChannelNonWritable(state);
+
+        assertThatCounterIs(1);
+    }
+
+    @Test
+    public void onSessionDisconnect_isNoOp_whenSessionCtxIsNull() {
+        when(state.getCurrentSessionCtx()).thenReturn(null);
+
+        channelBackpressureManager.onSessionDisconnect(state);
+
+        assertThatCounterIs(0);
     }
 
     private void assertThatCounterIs(int expected) {
