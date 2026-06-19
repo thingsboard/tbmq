@@ -36,4 +36,14 @@ public class DefaultDroppedMsgStats implements DroppedMsgStats {
     public void increment(int count) {
         droppedMsgsCounter.add(count);
     }
+
+    @Override
+    public int getCount() {
+        return droppedMsgsCounter.get();
+    }
+
+    @Override
+    public void reset() {
+        droppedMsgsCounter.clear();
+    }
 }

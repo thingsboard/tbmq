@@ -26,4 +26,13 @@ public class StubDroppedMsgStats implements DroppedMsgStats {
     @Override
     public void increment(int count) {
     }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
+    }
 }

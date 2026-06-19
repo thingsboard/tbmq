@@ -25,4 +25,15 @@ public interface DroppedMsgStats {
     void increment();
 
     void increment(int count);
+
+    /**
+     * Number of messages dropped since the last {@link #reset()} — read for the periodic stats log line.
+     */
+    int getCount();
+
+    /**
+     * Clears the per-interval count read by {@link #getCount()}. The cumulative {@code droppedMsgs} Prometheus
+     * counter is unaffected and stays monotonic.
+     */
+    void reset();
 }
