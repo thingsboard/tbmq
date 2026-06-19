@@ -699,4 +699,48 @@ class ApplicationPersistenceProcessorImplTest {
             logger.detachAppender(appender);
         }
     }
+
+    @Test
+    void processPubRec_whenLateDuplicateAndNoSharedSubscriptions_doesNotLogWarn_andStillSendsPubRel() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // Main context exists but does not contain the packet -> routes to processPubRecInSharedCtx(sendPubRelMsg=true).
+            // With no shared contexts present, must (a) log no WARN and (b) still send PubRel.
+            mainPackProcessingCtxMap().put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            ClientSessionCtx ctx = clientSessionCtx("appClient");
+            processor.processPubRec(ctx, 101);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubRec with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+            verify(mqttMsgDeliveryService).sendPubRelMsgToClient(any(), eq(101));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void processPubComp_whenLateDuplicateAndNoSharedSubscriptions_doesNotLogWarn() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // Main context exists but does not contain the packet -> routes to processPubCompInSharedCtx.
+            // With no shared contexts present, must log no WARN.
+            mainPackProcessingCtxMap().put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            processor.processPubComp("appClient", 202);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubComp with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
 }

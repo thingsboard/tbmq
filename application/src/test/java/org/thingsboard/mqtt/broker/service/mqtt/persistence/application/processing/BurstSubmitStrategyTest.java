@@ -49,4 +49,61 @@ class BurstSubmitStrategyTest {
                 .as("update() must use the reprocess-map copy, not the original message")
                 .isSameAs(dupCopy);
     }
+
+    @Test
+    void update_multiMessage_preservesOrderAndSubstitutesBothDupCopies() {
+        PublishMsg msg1 = new PublishMsg(1, "test/topic", new byte[]{1}, 1, false, false);
+        PublishMsg msg2 = new PublishMsg(2, "test/topic", new byte[]{2}, 1, false, false);
+        PersistedPublishMsg original1 = new PersistedPublishMsg(msg1, 10L, false);
+        PersistedPublishMsg original2 = new PersistedPublishMsg(msg2, 20L, false);
+
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("appClient");
+        strategy.init(List.of(original1, original2));
+
+        PersistedPublishMsg dup1 = original1.toBuilder()
+                .publishMsg(original1.getPublishMsg().toBuilder().isDup(true).build())
+                .build();
+        PersistedPublishMsg dup2 = original2.toBuilder()
+                .publishMsg(original2.getPublishMsg().toBuilder().isDup(true).build())
+                .build();
+
+        strategy.update(Map.of(1, dup1, 2, dup2));
+
+        List<PersistedMsg> reprocessed = strategy.getOrderedMessages();
+        assertThat(reprocessed).hasSize(2);
+        assertThat(reprocessed.get(0).getPacketId())
+                .as("first message must retain packetId 1 (original insertion order preserved)")
+                .isEqualTo(1);
+        assertThat(reprocessed.get(1).getPacketId())
+                .as("second message must retain packetId 2 (original insertion order preserved)")
+                .isEqualTo(2);
+        assertThat(reprocessed.get(0).getPublishMsg().isDup()).as("first message must carry DUP=1").isTrue();
+        assertThat(reprocessed.get(1).getPublishMsg().isDup()).as("second message must carry DUP=1").isTrue();
+        assertThat(reprocessed.get(0)).as("update() must use dup1 copy for packetId 1").isSameAs(dup1);
+        assertThat(reprocessed.get(1)).as("update() must use dup2 copy for packetId 2").isSameAs(dup2);
+    }
+
+    @Test
+    void update_dropFiltering_dropsMessageAbsentFromReprocessMap() {
+        PublishMsg msg1 = new PublishMsg(1, "test/topic", new byte[]{1}, 1, false, false);
+        PublishMsg msg2 = new PublishMsg(2, "test/topic", new byte[]{2}, 1, false, false);
+        PersistedPublishMsg original1 = new PersistedPublishMsg(msg1, 10L, false);
+        PersistedPublishMsg original2 = new PersistedPublishMsg(msg2, 20L, false);
+
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("appClient");
+        strategy.init(List.of(original1, original2));
+
+        // Reprocess map contains only packetId 1; packetId 2 is absent and must be dropped.
+        PersistedPublishMsg dup1 = original1.toBuilder()
+                .publishMsg(original1.getPublishMsg().toBuilder().isDup(true).build())
+                .build();
+
+        strategy.update(Map.of(1, dup1));
+
+        List<PersistedMsg> reprocessed = strategy.getOrderedMessages();
+        assertThat(reprocessed).hasSize(1);
+        assertThat(reprocessed.get(0).getPacketId())
+                .as("only the message present in the reprocess map must survive")
+                .isEqualTo(1);
+    }
 }
