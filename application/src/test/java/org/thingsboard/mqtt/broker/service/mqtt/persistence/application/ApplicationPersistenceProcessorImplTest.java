@@ -72,8 +72,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -100,6 +102,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationTopicService applicationTopicService;
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
+    @Mock org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -512,6 +515,57 @@ class ApplicationPersistenceProcessorImplTest {
         // The ack strategy must be created once per pack and reused across retries so the cap accumulates.
         // Today it is recreated on every retry, so this is called once per attempt instead of exactly once.
         verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
+    }
+
+    @Test
+    void tryCommitPack_whenGivingUpWithPendingMessages_reportsDroppedMsgs() {
+        // SKIP_ALL commits the pack on the first analysis even with pending messages (give-up by design).
+        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
+        ackConfig.setType(AckStrategyType.SKIP_ALL);
+        ackConfig.setRetries(0);
+        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
+        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
+        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 30L);
+        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
+        stopProcessorAfterDeliveries(5);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
+        UUID sessionId = UUID.randomUUID();
+        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
+
+        ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
+        pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
+
+        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
+                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
+                sessionId, clientState);
+
+        verify(tbMessageStatsReportClient, atLeastOnce()).reportStats(DROPPED_MSGS, 1);
+    }
+
+    @Test
+    void tryCommitPack_whenCleanCommitWithNoPendingMessages_doesNotReportDroppedMsgs() {
+        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
+        ackConfig.setType(AckStrategyType.RETRY_ALL);
+        ackConfig.setRetries(3);
+        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
+        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
+        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
+        stopProcessorAfterDeliveries(5);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
+        UUID sessionId = UUID.randomUUID();
+        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
+
+        // Empty pack: nothing pending -> clean commit, no skip.
+        ApplicationPubRelMsgCtx emptyPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
+
+        invokeProcessMainPack(emptyPubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
+                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
+                sessionId, clientState);
+
+        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS), anyInt());
+        verify(consumer, atLeastOnce()).commitSync();
     }
 
     // ===== Helpers =====

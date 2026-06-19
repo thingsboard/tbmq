@@ -56,10 +56,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -110,6 +113,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationTopicService applicationTopicService;
     private final ApplicationClientHelperService appClientHelperService;
     private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final boolean isTraceEnabled = log.isTraceEnabled();
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
@@ -652,6 +656,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
 
         if (decision.isCommit()) {
+            reportSkippedMessagesIfAny(clientId, result);
             log.debug("[{}] Committing pack", clientId);
             ctx.clear();
             consumer.commitSync();
@@ -663,6 +668,33 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             submitStrategy.update(decision.getReprocessMap());
         }
         return false;
+    }
+
+    private void reportSkippedMessagesIfAny(String clientId, ApplicationPackProcessingResult result) {
+        int skippedPublish = result.getPublishPendingMap().size();
+        int skippedPubRel = result.getPubRelPendingMap().size();
+        int skipped = skippedPublish + skippedPubRel;
+        if (skipped == 0) {
+            return;
+        }
+        log.warn("[{}] Giving up on pack: skipping {} un-acked message(s) [PUBLISH: {}, PUBREL: {}]{}. " +
+                        "Set APPLICATION ack-strategy retries to 0 for unlimited retries (strict at-least-once).",
+                clientId, skipped, skippedPublish, skippedPubRel, skippedPublishOffsets(result));
+        tbMessageStatsReportClient.reportStats(DROPPED_MSGS, skipped);
+    }
+
+    private String skippedPublishOffsets(ApplicationPackProcessingResult result) {
+        var pendingPublishes = result.getPublishPendingMap().values();
+        if (pendingPublishes.isEmpty()) {
+            return "";
+        }
+        long minOffset = Long.MAX_VALUE;
+        long maxOffset = Long.MIN_VALUE;
+        for (PersistedPublishMsg msg : pendingPublishes) {
+            minOffset = Math.min(minOffset, msg.getPacketOffset());
+            maxOffset = Math.max(maxOffset, msg.getPacketOffset());
+        }
+        return ", PUBLISH offsets [" + minOffset + ".." + maxOffset + "]";
     }
 
     private ApplicationPackProcessingCtx createPackProcessingCtx(ApplicationSubmitStrategy submitStrategy,
