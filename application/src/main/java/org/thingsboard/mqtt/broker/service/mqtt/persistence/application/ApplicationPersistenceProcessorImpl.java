@@ -63,8 +63,6 @@ import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
-
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -680,7 +678,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         log.warn("[{}] Giving up on pack: skipping {} un-acked message(s) [PUBLISH: {}, PUBREL: {}]{}. " +
                         "Set APPLICATION ack-strategy retries to 0 for unlimited retries (strict at-least-once).",
                 clientId, skipped, skippedPublish, skippedPubRel, skippedPublishOffsets(result));
-        tbMessageStatsReportClient.reportStats(DROPPED_MSGS, skipped);
+        tbMessageStatsReportClient.reportDroppedMsgs(skipped);
     }
 
     private String skippedPublishOffsets(ApplicationPackProcessingResult result) {

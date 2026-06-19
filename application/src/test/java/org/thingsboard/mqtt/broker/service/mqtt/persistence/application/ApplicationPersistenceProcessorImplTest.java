@@ -81,7 +81,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -546,7 +545,7 @@ class ApplicationPersistenceProcessorImplTest {
                 mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
                 sessionId, clientState);
 
-        verify(tbMessageStatsReportClient, atLeastOnce()).reportStats(DROPPED_MSGS, 1);
+        verify(tbMessageStatsReportClient, atLeastOnce()).reportDroppedMsgs(1);
     }
 
     @Test
@@ -570,7 +569,7 @@ class ApplicationPersistenceProcessorImplTest {
                 mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
                 sessionId, clientState);
 
-        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS), anyInt());
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
         verify(consumer, atLeastOnce()).commitSync();
     }
 
