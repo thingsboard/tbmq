@@ -41,8 +41,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -172,7 +170,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         }
 
         int dropped = totalMsgCount - availableTokens;
-        tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
 
         if (availableTokens <= 0) {
             log.debug("No available tokens left for total msgs bucket during consumer polling. Skipping {} messages", totalMsgCount);

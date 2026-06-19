@@ -59,8 +59,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -242,7 +240,7 @@ public class MqttPublishHandler {
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                    tbMessageStatsReportClient.reportDroppedMsgs();
                     handleMsgPersistenceFailure(ctx, publishMsg);
                 });
             }

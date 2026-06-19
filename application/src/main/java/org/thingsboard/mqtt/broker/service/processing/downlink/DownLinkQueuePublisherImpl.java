@@ -40,8 +40,6 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.concurrent.ExecutorService;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -100,7 +98,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     public void onFailure(Throwable t) {
                         callbackProcessor.submit(() -> {
                             log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t);
-                            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                            tbMessageStatsReportClient.reportDroppedMsgs();
                         });
                     }
                 },

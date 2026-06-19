@@ -15,12 +15,39 @@
  */
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 public interface TbMessageStatsReportClient {
 
+    /**
+     * Reports a generic usage stat under the given key.
+     * <p>
+     * Do not use this for {@link BrokerConstants#DROPPED_MSGS}: dropped messages must be reported via
+     * {@link #reportDroppedMsgs()} / {@link #reportDroppedMsgs(int)} so the {@code droppedMsgs} Prometheus
+     * counter exposed on {@code /actuator/prometheus} stays in sync.
+     */
     void reportStats(String key);
 
+    /**
+     * Reports a generic usage stat under the given key, incremented by {@code count}.
+     * <p>
+     * Do not use this for {@link BrokerConstants#DROPPED_MSGS}: dropped messages must be reported via
+     * {@link #reportDroppedMsgs()} / {@link #reportDroppedMsgs(int)} so the {@code droppedMsgs} Prometheus
+     * counter exposed on {@code /actuator/prometheus} stays in sync.
+     */
     void reportStats(String key, int count);
+
+    /**
+     * Reports a single dropped message. Increments the {@code droppedMsgs} Prometheus counter (always,
+     * regardless of {@code historical-data-report.enabled}) and the historical stat (when enabled).
+     */
+    void reportDroppedMsgs();
+
+    /**
+     * Reports {@code count} dropped messages. Increments the {@code droppedMsgs} Prometheus counter (always,
+     * regardless of {@code historical-data-report.enabled}) and the historical stat (when enabled).
+     */
+    void reportDroppedMsgs(int count);
 
     void reportInboundTraffic(long bytes);
 
