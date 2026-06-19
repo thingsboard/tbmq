@@ -258,9 +258,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
-                log.debug("[{}] No main processing context for PubAck, packetId: {}", clientId, packetId);
+                log.debug("[{}] No in-flight main pack for PubAck (packetId: {}); checking shared-subscription packs", clientId, packetId);
             }
-            processPubAckInSharedCtx(clientId, packetId, "[{}] No processing context found for PubAck, packetId: {}");
+            processPubAckInSharedCtx(clientId, packetId,
+                    "[{}] Discarding PubAck for packetId {}: no in-flight main or shared-subscription pack is awaiting it " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)");
         } else {
             var handled = processingContext.onPubAck(packetId);
             if (handled) {
@@ -269,7 +271,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 }
                 return;
             }
-            processPubAckInSharedCtx(clientId, packetId, "[{}] No shared subscription context found for PubAck, packetId: {}");
+            processPubAckInSharedCtx(clientId, packetId,
+                    "[{}] Discarding PubAck for packetId {}: not awaited by the in-flight main pack and no shared-subscription pack is active " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)");
         }
     }
 
@@ -279,10 +283,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
-                log.debug("[{}] No main processing context for PubRec, packetId: {}", clientId, packetId);
+                log.debug("[{}] No in-flight main pack for PubRec (packetId: {}); checking shared-subscription packs", clientId, packetId);
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] No processing context found for PubRec, packetId: {}", true);
+                    "[{}] PubRec for packetId {} not awaited by any in-flight main or shared-subscription pack; " +
+                            "still sending PUBREL to complete the QoS2 handshake " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)", true);
         } else {
             var handled = processingContext.onPubRec(packetId, true);
             if (handled) {
@@ -292,7 +298,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 return;
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] No shared subscription context found for PubRec, packetId: {}", true);
+                    "[{}] PubRec for packetId {} not awaited by the in-flight main pack and no shared-subscription pack is active; " +
+                            "still sending PUBREL to complete the QoS2 handshake " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)", true);
         }
     }
 
@@ -302,10 +310,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
-                log.debug("[{}] No main processing context for PubRec (no PubRel delivery), packetId: {}", clientId, packetId);
+                log.debug("[{}] No in-flight main pack for PubRec without PubRel delivery (packetId: {}); checking shared-subscription packs", clientId, packetId);
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] No processing context found for PubRec (no PubRel delivery), packetId: {}", false);
+                    "[{}] Discarding PubRec (no PubRel delivery) for packetId {}: no in-flight main or shared-subscription pack is awaiting it " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)", false);
         } else {
             var handled = processingContext.onPubRec(packetId, false);
             if (handled) {
@@ -315,7 +324,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 return;
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] No shared subscription context found for PubRec (no PubRel delivery), packetId: {}", false);
+                    "[{}] Discarding PubRec (no PubRel delivery) for packetId {}: not awaited by the in-flight main pack and no shared-subscription pack is active " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)", false);
         }
     }
 
@@ -324,9 +334,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingCtx processingContext = mainPackProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
-                log.debug("[{}] No main processing context for PubComp, packetId: {}", clientId, packetId);
+                log.debug("[{}] No in-flight main pack for PubComp (packetId: {}); checking shared-subscription packs", clientId, packetId);
             }
-            processPubCompInSharedCtx(clientId, packetId, "[{}] No processing context found for PubComp, packetId: {}");
+            processPubCompInSharedCtx(clientId, packetId,
+                    "[{}] Discarding PubComp for packetId {}: no in-flight main or shared-subscription pack is awaiting it " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)");
         } else {
             var handled = processingContext.onPubComp(packetId);
             if (handled) {
@@ -335,7 +347,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 }
                 return;
             }
-            processPubCompInSharedCtx(clientId, packetId, "[{}] No shared subscription context found for PubComp, packetId: {}");
+            processPubCompInSharedCtx(clientId, packetId,
+                    "[{}] Discarding PubComp for packetId {}: not awaited by the in-flight main pack and no shared-subscription pack is active " +
+                            "(likely a duplicate/late ack, or its pack was already committed or given up)");
         }
     }
 
