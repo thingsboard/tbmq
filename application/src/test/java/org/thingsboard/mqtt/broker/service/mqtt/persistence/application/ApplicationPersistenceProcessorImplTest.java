@@ -57,6 +57,11 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -668,5 +673,29 @@ class ApplicationPersistenceProcessorImplTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         lenient().when(ctx.getClientId()).thenReturn(clientId);
         return ctx;
+    }
+
+    @Test
+    void processPubAck_whenLateDuplicateAckAndNoSharedSubscriptions_doesNotLogWarn() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            @SuppressWarnings("unchecked")
+            ConcurrentMap<String, ApplicationPackProcessingCtx> mainCtxMap =
+                    (ConcurrentMap<String, ApplicationPackProcessingCtx>)
+                            ReflectionTestUtils.getField(processor, "mainPackProcessingCtxMap");
+            // Main context exists but does not contain the packet -> late/duplicate PubAck; no shared subs exist.
+            mainCtxMap.put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            processor.processPubAck("appClient", 2708);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubAck with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 }

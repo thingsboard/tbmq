@@ -719,7 +719,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private void processPubAckInSharedCtx(String clientId, int packetId, String format) {
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientId);
         if (CollectionUtils.isEmpty(contexts)) {
-            log.warn(format, clientId, packetId);
+            if (isDebugEnabled) {
+                log.debug(format, clientId, packetId);
+            }
             return;
         }
         for (ApplicationSharedSubscriptionCtx ctx : contexts) {
@@ -736,7 +738,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private void processPubRecInSharedCtx(ClientSessionCtx clientSessionCtx, int packetId, String format, boolean sendPubRelMsg) {
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientSessionCtx.getClientId());
         if (CollectionUtils.isEmpty(contexts)) {
-            log.warn(format, clientSessionCtx.getClientId(), packetId);
+            if (isDebugEnabled) {
+                log.debug(format, clientSessionCtx.getClientId(), packetId);
+            }
             if (sendPubRelMsg) {
                 mqttMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
             }
@@ -759,7 +763,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private void processPubCompInSharedCtx(String clientId, int packetId, String format) {
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedPackProcessingCtxMap.get(clientId);
         if (CollectionUtils.isEmpty(contexts)) {
-            log.warn(format, clientId, packetId);
+            if (isDebugEnabled) {
+                log.debug(format, clientId, packetId);
+            }
             return;
         }
         for (ApplicationSharedSubscriptionCtx ctx : contexts) {
