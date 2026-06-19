@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
@@ -107,7 +108,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationTopicService applicationTopicService;
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
-    @Mock org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient tbMessageStatsReportClient;
+    @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
