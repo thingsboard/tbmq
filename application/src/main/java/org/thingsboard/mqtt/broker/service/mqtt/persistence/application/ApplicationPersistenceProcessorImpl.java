@@ -441,6 +441,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.debug("[{}] Starting main pack, {} messages to deliver", clientId, messagesToDeliver.size());
         }
 
+        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
@@ -455,7 +456,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (tryCommitPack(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
                 break;
             }
         }
@@ -544,6 +545,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.trace("[{}] Starting shared subscription pack, {} messages to deliver", clientId, messagesToDeliver.size());
         }
 
+        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
@@ -558,7 +560,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (tryCommitPack(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
                 break;
             }
         }
@@ -637,12 +639,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private boolean tryCommitPack(String clientId,
                                   TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                   ApplicationProcessorStats stats,
+                                  ApplicationAckStrategy ackStrategy,
                                   ApplicationSubmitStrategy submitStrategy,
                                   ApplicationPackProcessingCtx ctx,
                                   int totalPublishMsgs,
                                   int totalPubRelMsgs) {
         log.trace("[{}] Analyzing pack processing result", clientId);
-        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
 
         ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
         ApplicationProcessingDecision decision = ackStrategy.analyze(result);
