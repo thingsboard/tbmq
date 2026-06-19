@@ -28,6 +28,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
@@ -81,6 +82,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
     private ClientActorStats clientActorStats;
     private FlowControlStats flowControlStats;
+    private DroppedMsgStats droppedMsgStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -97,6 +99,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.flowControlStats = defaultFlowControlStats;
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
+        this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
     }
 
     @PreDestroy
@@ -116,6 +119,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
         managedStats.add(stats);
         return stats;
+    }
+
+    @Override
+    public DroppedMsgStats getDroppedMsgStats() {
+        return droppedMsgStats;
     }
 
     @Override
@@ -457,6 +465,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                 .collect(Collectors.joining(" "));
         log.info("[{}] Stats: {}", StatsType.FLOW_CONTROL.getPrintName(), flowControlStatsStr);
         flowControlStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", BrokerConstants.DROPPED_MSGS, droppedMsgStats.getCount());
+        droppedMsgStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

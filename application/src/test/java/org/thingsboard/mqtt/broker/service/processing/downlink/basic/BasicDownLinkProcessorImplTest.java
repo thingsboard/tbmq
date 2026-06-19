@@ -33,12 +33,10 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BasicDownLinkProcessorImpl.class)
@@ -73,7 +71,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any());
-        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -87,7 +85,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(mqttMsgDeliveryService, times(1)).sendPublishMsgProtoToClient(any(), any());
-        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -101,7 +99,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
         verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any());
-        verify(tbMessageStatsReportClient).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
     }
 
     @Test
@@ -114,7 +112,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -128,7 +126,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(mqttMsgDeliveryService, times(1)).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(tbMessageStatsReportClient, never()).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -142,7 +140,7 @@ public class BasicDownLinkProcessorImplTest {
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
         verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
-        verify(tbMessageStatsReportClient).reportStats(eq(DROPPED_MSGS));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
     }
 
     private Subscription getSubscription(String clientId) {

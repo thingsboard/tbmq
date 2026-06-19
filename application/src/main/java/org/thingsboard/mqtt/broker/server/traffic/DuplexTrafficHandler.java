@@ -29,7 +29,6 @@ import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 import static org.thingsboard.mqtt.broker.server.MqttSessionHandler.CLIENT_ID_ATTR;
@@ -73,7 +72,7 @@ public class DuplexTrafficHandler extends ChannelDuplexHandler {
         DecoderResult decoderResult = mqttMessage.decoderResult();
         if (decoderResult.isFailure() && decoderResult.cause() instanceof TooLongFrameException) {
             tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            tbMessageStatsReportClient.reportDroppedMsgs();
         }
     }
 
