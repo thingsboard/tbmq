@@ -46,7 +46,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TimeintervalComponent } from './timeinterval.component';
 import { QuickTimeIntervalComponent } from './quick-time-interval.component';
 import { DatetimePeriodComponent } from './datetime-period.component';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField } from '@angular/material/form-field';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatButton } from '@angular/material/button';
@@ -69,7 +69,7 @@ export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelDat
     selector: 'tb-timewindow-panel',
     templateUrl: './timewindow-panel.component.html',
     styleUrls: ['./timewindow-panel.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, MatFormField, MatLabel, MatSelect, MatOption, MatButton, AsyncPipe, ToggleSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, MatFormField, MatSelect, MatOption, MatButton, AsyncPipe, ToggleSelectComponent]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 

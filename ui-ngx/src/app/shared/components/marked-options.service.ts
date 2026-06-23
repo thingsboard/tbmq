@@ -161,30 +161,20 @@ export class MarkedOptionsService implements MarkedOptions {
     if (copyWrapper.hasClass('noChars')) {
       const text = decodeURIComponent($('#copyCodeId' + id).text());
       if (this.clipboardService.copy(text)) {
-        import('tooltipster').then(
-          () => {
-            if (!copyWrapper.hasClass('tooltipstered')) {
-              copyWrapper.tooltipster(
-                {
-                  content: this.translate.instant('action.on-copied'),
-//              theme: 'tooltipster-shadow',
-                  delay: 0,
-                  trigger: 'custom',
-                  triggerClose: {
-                    click: true,
-                    tap: true,
-                    scroll: true,
-                    mouseleave: true
-                  },
-                  side: 'top',
-                  distance: 12,
-                  trackOrigin: true
-                }
-              );
-            }
-            const tooltip = copyWrapper.tooltipster('instance');
-            tooltip.open();
-          });
+        if (!copyWrapper.hasClass('copied') && !copyWrapper.hasClass('copying')) {
+          // Fade the icon out, swap it to the "done" icon while invisible, then fade in.
+          const fadeDuration = 100;
+          copyWrapper.addClass('copying');
+          this.window.setTimeout(() => {
+            copyWrapper.addClass('copied').removeClass('copying');
+          }, fadeDuration);
+          this.window.setTimeout(() => {
+            copyWrapper.addClass('copying');
+            this.window.setTimeout(() => {
+              copyWrapper.removeClass('copied').removeClass('copying');
+            }, fadeDuration);
+          }, 1000);
+        }
       }
     }
   }

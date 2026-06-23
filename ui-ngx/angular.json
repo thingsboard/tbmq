@@ -64,6 +64,8 @@
               }
             ],
             "styles": [
+              "node_modules/typeface-roboto/index.css",
+              "node_modules/font-awesome/css/font-awesome.min.css",
               "src/styles.scss",
               "src/form.scss",
               "node_modules/jquery.terminal/css/jquery.terminal.min.css",
