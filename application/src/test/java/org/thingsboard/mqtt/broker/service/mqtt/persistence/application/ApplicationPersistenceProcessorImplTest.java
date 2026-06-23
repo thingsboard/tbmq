@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
@@ -78,7 +77,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -107,7 +105,6 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationTopicService applicationTopicService;
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
-    @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -462,12 +459,6 @@ class ApplicationPersistenceProcessorImplTest {
         jobs.forEach(j -> assertThat(j.isInterrupted()).isFalse());
     }
 
-    // ===== GH#320: APPLICATION QoS1 RETRY_ALL ack-strategy lifecycle =====
-    // These two tests are expected to FAIL on the current code: tryCommitPack() instantiates a new
-    // ApplicationAckStrategy on every retry, so RetryStrategy#retryCount restarts at 0 each time and the
-    // configured retry cap is never reached. A client that never acks therefore loops forever instead of
-    // giving up, the Kafka offset is never committed, and consumer lag grows without bound.
-
     @Test
     void processMainPack_retryAll_whenClientNeverAcks_mustGiveUpAndCommitAfterRetryCap() {
         ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
@@ -489,11 +480,10 @@ class ApplicationPersistenceProcessorImplTest {
         ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
 
-        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
+        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient", sessionId),
                 mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
-                sessionId, clientState);
+                clientState);
 
-        // Expected: after the cap of 2 retries the pack is committed (give up). Today: never committed.
         verify(consumer, atLeastOnce()).commitSync();
     }
 
@@ -513,64 +503,12 @@ class ApplicationPersistenceProcessorImplTest {
         ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
 
-        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
+        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient", sessionId),
                 mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
-                sessionId, clientState);
+                clientState);
 
         // The ack strategy must be created once per pack and reused across retries so the cap accumulates.
-        // Today it is recreated on every retry, so this is called once per attempt instead of exactly once.
         verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
-    }
-
-    @Test
-    void tryCommitPack_whenGivingUpWithPendingMessages_reportsDroppedMsgs() {
-        // SKIP_ALL commits the pack on the first analysis even with pending messages (give-up by design).
-        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
-        ackConfig.setType(AckStrategyType.SKIP_ALL);
-        ackConfig.setRetries(0);
-        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
-        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
-        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 30L);
-        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
-        stopProcessorAfterDeliveries(5);
-
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
-        UUID sessionId = UUID.randomUUID();
-        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
-
-        ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
-        pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
-
-        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
-                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
-                sessionId, clientState);
-
-        verify(tbMessageStatsReportClient, atLeastOnce()).reportDroppedMsgs(1);
-    }
-
-    @Test
-    void tryCommitPack_whenCleanCommitWithNoPendingMessages_doesNotReportDroppedMsgs() {
-        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
-        ackConfig.setType(AckStrategyType.RETRY_ALL);
-        ackConfig.setRetries(3);
-        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
-        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
-        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
-        stopProcessorAfterDeliveries(5);
-
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
-        UUID sessionId = UUID.randomUUID();
-        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
-
-        // Empty pack: nothing pending -> clean commit, no skip.
-        ApplicationPubRelMsgCtx emptyPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
-
-        invokeProcessMainPack(emptyPubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient"),
-                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
-                sessionId, clientState);
-
-        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
-        verify(consumer, atLeastOnce()).commitSync();
     }
 
     // ===== Helpers =====
@@ -604,16 +542,15 @@ class ApplicationPersistenceProcessorImplTest {
                                        ApplicationPersistedMsgCtx persistedMsgCtx,
                                        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                        ApplicationProcessorStats stats,
-                                       UUID sessionId,
                                        ClientActorStateInfo clientState) {
         try {
             var method = ApplicationPersistenceProcessorImpl.class.getDeclaredMethod(
                     "processMainPack",
                     ApplicationPubRelMsgCtx.class, List.class, ClientSessionCtx.class,
                     ApplicationPersistedMsgCtx.class, TbQueueControlledOffsetConsumer.class,
-                    ApplicationProcessorStats.class, UUID.class, ClientActorStateInfo.class);
+                    ApplicationProcessorStats.class, ClientActorStateInfo.class);
             method.setAccessible(true);
-            method.invoke(processor, pubRelMsgCtx, messages, clientSessionCtx, persistedMsgCtx, consumer, stats, sessionId, clientState);
+            method.invoke(processor, pubRelMsgCtx, messages, clientSessionCtx, persistedMsgCtx, consumer, stats, clientState);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -672,6 +609,14 @@ class ApplicationPersistenceProcessorImplTest {
     private ClientSessionCtx clientSessionCtx(String clientId) {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         lenient().when(ctx.getClientId()).thenReturn(clientId);
+        return ctx;
+    }
+
+    // processMainPack derives sessionId from the passed ctx; in production it is clientState.getCurrentSessionCtx(),
+    // so getSessionId() must equal clientState.getCurrentSessionId() for the isClientSessionActive guard to pass.
+    private ClientSessionCtx clientSessionCtx(String clientId, UUID sessionId) {
+        ClientSessionCtx ctx = clientSessionCtx(clientId);
+        when(ctx.getSessionId()).thenReturn(sessionId);
         return ctx;
     }
 

@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -111,8 +110,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationTopicService applicationTopicService;
     private final ApplicationClientHelperService appClientHelperService;
     private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
-    private final boolean isTraceEnabled = log.isTraceEnabled();
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
     @Value("${queue.application-persisted-msg.poll-interval}")
@@ -427,7 +424,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 if (messages.isEmpty() && pubRelMsgCtx.nothingToDeliver()) {
                     continue;
                 }
-                pubRelMsgCtx = processMainPack(pubRelMsgCtx, messages, clientSessionCtx, persistedMsgCtx, consumer, stats, sessionId, clientState);
+                pubRelMsgCtx = processMainPack(pubRelMsgCtx, messages, clientSessionCtx, persistedMsgCtx, consumer, stats, clientState);
             } catch (Exception e) {
                 if (isClientSessionActive(sessionId, clientState)) {
                     log.warn("[{}] Failed to process messages from queue", clientId, e);
@@ -444,12 +441,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                                     ApplicationPersistedMsgCtx persistedMsgCtx,
                                                     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                                     ApplicationProcessorStats stats,
-                                                    UUID sessionId,
                                                     ClientActorStateInfo clientState) throws InterruptedException {
         String clientId = clientSessionCtx.getClientId();
+        UUID sessionId = clientSessionCtx.getSessionId();
         long packStart = System.nanoTime();
 
         ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
+        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
+
         List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, null);
         submitStrategy.init(messagesToDeliver);
 
@@ -457,7 +456,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.debug("[{}] Starting main pack, {} messages to deliver", clientId, messagesToDeliver.size());
         }
 
-        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
@@ -554,14 +552,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         long packStart = System.nanoTime();
 
         ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
+        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
+
         List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, subscription);
         submitStrategy.init(messagesToDeliver);
 
-        if (isTraceEnabled) {
+        if (log.isTraceEnabled()) {
             log.trace("[{}] Starting shared subscription pack, {} messages to deliver", clientId, messagesToDeliver.size());
         }
 
-        ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
@@ -607,7 +606,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         for (TbProtoQueueMsg<PublishMsgProto> msg : publishProtoMessages) {
             MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(msg.getHeaders(), currentTs);
             if (msgExpiryResult.isExpired()) {
-                if (isTraceEnabled) {
+                if (log.isTraceEnabled()) {
                     log.trace("[{}] Message at offset {} has expired, skipping", clientId, msg.getOffset());
                 }
                 continue;
@@ -690,9 +689,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             return;
         }
         log.warn("[{}] Giving up on pack: skipping {} un-acked message(s) [PUBLISH: {}, PUBREL: {}]{}. " +
-                        "Set APPLICATION ack-strategy retries to 0 for unlimited retries (strict at-least-once).",
+                        "Set APPLICATION ack-strategy retries to 0 for unlimited retries.",
                 clientId, skipped, skippedPublish, skippedPubRel, skippedPublishOffsets(result));
-        tbMessageStatsReportClient.reportDroppedMsgs(skipped);
     }
 
     private String skippedPublishOffsets(ApplicationPackProcessingResult result) {
@@ -852,7 +850,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void cancelJob(ApplicationSharedSubscriptionJob job) {
-        if (isDebugEnabled) {
+        if (log.isDebugEnabled()) {
             log.debug("Cancelling shared subscription job for subscription {}", job.getSubscription());
         }
         Future<?> future = job.getFuture();
@@ -965,7 +963,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             Thread.sleep(pollDuration);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            if (isTraceEnabled) {
+            if (log.isTraceEnabled()) {
                 log.trace("Thread interrupted during error backoff sleep", e);
             }
         }
