@@ -23,6 +23,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -35,29 +37,49 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.App
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.AckStrategyType;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategyConfiguration;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
+import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -65,6 +87,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationPersistenceProcessorImplTest {
@@ -436,7 +459,102 @@ class ApplicationPersistenceProcessorImplTest {
         jobs.forEach(j -> assertThat(j.isInterrupted()).isFalse());
     }
 
+    @Test
+    void processMainPack_retryAll_whenClientNeverAcks_mustGiveUpAndCommitAfterRetryCap() {
+        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
+        ackConfig.setType(AckStrategyType.RETRY_ALL);
+        ackConfig.setRetries(2);
+        // Delegate to a real factory so the production RetryStrategy (with real counting) is exercised.
+        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
+        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
+        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 30L);
+        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
+        // Safety net: a buggy unbounded-retry loop would never exit on its own.
+        stopProcessorAfterDeliveries(20);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
+        UUID sessionId = UUID.randomUUID();
+        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
+
+        // A single never-acked PUBREL keeps the pack pending across every retry.
+        ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
+        pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
+
+        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient", sessionId),
+                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
+                clientState);
+
+        verify(consumer, atLeastOnce()).commitSync();
+    }
+
+    @Test
+    void processMainPack_retryAll_mustObtainAckStrategyOncePerPack_notOncePerRetry() {
+        ApplicationAckStrategy alwaysReprocess = mock(ApplicationAckStrategy.class);
+        when(alwaysReprocess.analyze(any())).thenReturn(new ApplicationProcessingDecision(false, Map.of()));
+        when(acknowledgeStrategyFactory.newInstance("appClient")).thenReturn(alwaysReprocess);
+        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 5L);
+        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
+        stopProcessorAfterDeliveries(10);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
+        UUID sessionId = UUID.randomUUID();
+        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
+
+        ApplicationPubRelMsgCtx pubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
+        pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(1, 0L));
+
+        invokeProcessMainPack(pubRelMsgCtx, Collections.emptyList(), clientSessionCtx("appClient", sessionId),
+                mock(ApplicationPersistedMsgCtx.class), consumer, mock(ApplicationProcessorStats.class),
+                clientState);
+
+        // The ack strategy must be created once per pack and reused across retries so the cap accumulates.
+        verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
+    }
+
     // ===== Helpers =====
+
+    @SuppressWarnings("unchecked")
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mockConsumer() {
+        return mock(TbQueueControlledOffsetConsumer.class);
+    }
+
+    private ClientActorStateInfo activeClientState(String clientId, UUID sessionId) {
+        ClientActorStateInfo state = mock(ClientActorStateInfo.class);
+        lenient().when(state.getClientId()).thenReturn(clientId);
+        when(state.getCurrentSessionId()).thenReturn(sessionId);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+        return state;
+    }
+
+    private void stopProcessorAfterDeliveries(int maxDeliveries) {
+        AtomicInteger deliveries = new AtomicInteger();
+        doAnswer(invocation -> {
+            if (deliveries.incrementAndGet() >= maxDeliveries) {
+                ReflectionTestUtils.setField(processor, "stopped", true);
+            }
+            return null;
+        }).when(appMsgDeliveryStrategy).process(any(), any());
+    }
+
+    private void invokeProcessMainPack(ApplicationPubRelMsgCtx pubRelMsgCtx,
+                                       List<TbProtoQueueMsg<PublishMsgProto>> messages,
+                                       ClientSessionCtx clientSessionCtx,
+                                       ApplicationPersistedMsgCtx persistedMsgCtx,
+                                       TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
+                                       ApplicationProcessorStats stats,
+                                       ClientActorStateInfo clientState) {
+        try {
+            var method = ApplicationPersistenceProcessorImpl.class.getDeclaredMethod(
+                    "processMainPack",
+                    ApplicationPubRelMsgCtx.class, List.class, ClientSessionCtx.class,
+                    ApplicationPersistedMsgCtx.class, TbQueueControlledOffsetConsumer.class,
+                    ApplicationProcessorStats.class, ClientActorStateInfo.class);
+            method.setAccessible(true);
+            method.invoke(processor, pubRelMsgCtx, messages, clientSessionCtx, persistedMsgCtx, consumer, stats, clientState);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private boolean invokeIsProcessorActive() {
         try {
@@ -492,5 +610,81 @@ class ApplicationPersistenceProcessorImplTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         lenient().when(ctx.getClientId()).thenReturn(clientId);
         return ctx;
+    }
+
+    // processMainPack derives sessionId from the passed ctx; in production it is clientState.getCurrentSessionCtx(),
+    // so getSessionId() must equal clientState.getCurrentSessionId() for the isClientSessionActive guard to pass.
+    private ClientSessionCtx clientSessionCtx(String clientId, UUID sessionId) {
+        ClientSessionCtx ctx = clientSessionCtx(clientId);
+        when(ctx.getSessionId()).thenReturn(sessionId);
+        return ctx;
+    }
+
+    @Test
+    void processPubAck_whenLateDuplicateAckAndNoSharedSubscriptions_doesNotLogWarn() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            @SuppressWarnings("unchecked")
+            ConcurrentMap<String, ApplicationPackProcessingCtx> mainCtxMap =
+                    (ConcurrentMap<String, ApplicationPackProcessingCtx>)
+                            ReflectionTestUtils.getField(processor, "mainPackProcessingCtxMap");
+            // Main context exists but does not contain the packet -> late/duplicate PubAck; no shared subs exist.
+            mainCtxMap.put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            processor.processPubAck("appClient", 2708);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubAck with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void processPubRec_whenLateDuplicateAndNoSharedSubscriptions_doesNotLogWarn_andStillSendsPubRel() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // Main context exists but does not contain the packet -> routes to processPubRecInSharedCtx(sendPubRelMsg=true).
+            // With no shared contexts present, must (a) log no WARN and (b) still send PubRel.
+            mainPackProcessingCtxMap().put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            ClientSessionCtx ctx = clientSessionCtx("appClient");
+            processor.processPubRec(ctx, 101);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubRec with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+            verify(mqttMsgDeliveryService).sendPubRelMsgToClient(any(), eq(101));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void processPubComp_whenLateDuplicateAndNoSharedSubscriptions_doesNotLogWarn() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApplicationPersistenceProcessorImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // Main context exists but does not contain the packet -> routes to processPubCompInSharedCtx.
+            // With no shared contexts present, must log no WARN.
+            mainPackProcessingCtxMap().put("appClient", new ApplicationPackProcessingCtx("appClient"));
+
+            processor.processPubComp("appClient", 202);
+
+            assertThat(appender.list)
+                    .as("a late/duplicate PubComp with no shared subscriptions must not log at WARN")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 }

@@ -119,7 +119,12 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
         for (Subscription subscription : subscriptions) {
             if (subscription.getClientSessionInfo().isConnected()) {
                 ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(subscription.getClientId());
-                if (clientSessionCtx != null && clientSessionCtx.isWritable()) {
+                // A null ctx means the connected subscriber's session lives on another cluster node.
+                // Target selection and device delivery are cluster-wide (delivery is routed via the per-client
+                // device queue keyed by clientId), and backpressure for a remote subscriber is handled by that
+                // node's device actor - so a remote connected subscriber is eligible. The channel writability
+                // check only applies when the session is local to this node.
+                if (clientSessionCtx == null || clientSessionCtx.isWritable()) {
                     return subscription;
                 }
             }

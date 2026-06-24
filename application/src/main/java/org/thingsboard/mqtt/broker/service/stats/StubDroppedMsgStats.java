@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use 'constants' as *;
+package org.thingsboard.mqtt.broker.service.stats;
 
-:host {
-  .filter-text {
-    display: inline-flex;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    justify-content: flex-start;
-    max-width: 400px;
+public class StubDroppedMsgStats implements DroppedMsgStats {
 
-    @media #{$mat-lt-xl} {
-      max-width: 200px;
+    public static final StubDroppedMsgStats STUB_DROPPED_MSG_STATS = new StubDroppedMsgStats();
+
+    @Override
+    public void increment() {
     }
-  }
+
+    @Override
+    public void increment(int count) {
+    }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
+    }
 }

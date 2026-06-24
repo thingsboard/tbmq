@@ -63,7 +63,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.actors.client.state.SessionState.MQTT_PROCESSABLE_STATES;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @Slf4j
 public class ClientActor extends ContextAwareActor {
@@ -316,7 +315,7 @@ public class ClientActor extends ContextAwareActor {
         } catch (FullMsgQueueException e) {
             log.debug("[{}][{}] Too many messages in the pre-connect queue", state.getClientId(), state.getCurrentSessionId());
             release(msg);
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, state.getQueuedMessages().getPublishMsgCountAndClear());
+            tbMessageStatsReportClient.reportDroppedMsgs(state.getQueuedMessages().getPublishMsgCountAndClear());
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_QUOTA_EXCEEDED,
                     "Too many messages in the pre-connect queue")));
         }

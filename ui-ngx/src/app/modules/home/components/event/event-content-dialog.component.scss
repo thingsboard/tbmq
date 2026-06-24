@@ -14,28 +14,46 @@
  * limitations under the License.
  */
 :host {
-  div:first-child {
-    margin-bottom: 4px;
+  .tb-event-content-dialog {
+    position: relative;
+    overflow: hidden;
+    max-height: 85vh;
+    padding-top: 0;
+  }
+
+  .tb-event-content-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex-shrink: 0;
+    padding-top: 16px;
+    padding-bottom: 8px;
+    background: #fff;
   }
 
   .title {
     color: rgba(0, 0, 0, 0.87);
   }
 
+  .tb-event-content-copy {
+    position: absolute;
+    top: 56px;
+    right: 16px;
+    z-index: 3;
+  }
+
   .tb-event-content {
-    width: 100%;
+    flex: 1 1 auto;
     min-width: 400px;
-    max-width: 800px;
-    height: 100%;
-    min-height: 200px !important;
-    overflow: auto;
+    max-width: 80vw;
+    min-height: 200px;
+    overflow: hidden;
     color: rgba(0, 0, 0, 0.54);
-    margin-top: 16px;
   }
 }
 
 ::ng-deep {
   .tb-default .tb-dialog .mat-mdc-dialog-container .mat-mdc-dialog-content, .tb-dark .tb-dialog .mat-mdc-dialog-container .mat-mdc-dialog-content {
-    padding: 16px 16px 24px 24px;
+    padding: 0 16px 24px 24px;
   }
 }

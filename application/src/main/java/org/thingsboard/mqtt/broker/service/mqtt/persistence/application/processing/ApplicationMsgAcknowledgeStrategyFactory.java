@@ -54,11 +54,11 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
                 }
             }
             if (log.isTraceEnabled()) {
-                publishPendingMsgMap.forEach((packetId, msg) ->
+                publishPendingMsgMap.forEach((_, msg) ->
                         log.trace("[{}] Timeout PUBLISH message: topic - {}, packetId - {}.",
                                 clientId, msg.getPublishMsg().getTopicName(), msg.getPacketId())
                 );
-                pubRelPendingMsgMap.forEach((packetId, msg) ->
+                pubRelPendingMsgMap.forEach((_, msg) ->
                         log.trace("[{}] Timeout PUBREL message: packetId - {}.",
                                 clientId, msg.getPacketId())
                 );
@@ -90,11 +90,11 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
                 log.debug("[{}] Going to reprocess {} PUBLISH and {} PUBREL messages", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap.size());
             }
             if (log.isTraceEnabled()) {
-                publishPendingMsgMap.forEach((packetId, msg) ->
+                publishPendingMsgMap.forEach((_, msg) ->
                         log.trace("[{}] Going to reprocess PUBLISH message: topic - {}, packetId - {}.",
                                 clientId, msg.getPublishMsg().getTopicName(), msg.getPacketId())
                 );
-                pubRelPendingMsgMap.forEach((packetId, msg) ->
+                pubRelPendingMsgMap.forEach((_, msg) ->
                         log.trace("[{}] Going to reprocess PUBREL message: packetId - {}.",
                                 clientId, msg.getPacketId())
                 );
@@ -113,13 +113,8 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
     }
 
     private static PersistedPublishMsg getDupMsg(PersistedPublishMsg persistedPublishMsg) {
-        return persistedPublishMsg
-                .toBuilder()
-                .publishMsg(persistedPublishMsg
-                        .getPublishMsg()
-                        .toBuilder()
-                        .isDup(true)
-                        .build())
+        return persistedPublishMsg.toBuilder()
+                .publishMsg(persistedPublishMsg.getPublishMsg().toBuilder().isDup(true).build())
                 .build();
     }
 }

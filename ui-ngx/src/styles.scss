@@ -15,13 +15,11 @@
  */
 /* You can add global styles to this file, and also import other style files */
 
-@import 'typeface-roboto/index.css';
-@import 'font-awesome/css/font-awesome.min.css';
-@import 'theme.scss';
-@import 'constants';
-@import './scss/animations';
-@import './scss/mixins';
-@import './scss/fonts';
+@use 'theme';
+@use 'constants' as *;
+@use 'mixins' as *;
+@use 'animations';
+@use 'fonts';
 
 body, html {
   height: 100%;

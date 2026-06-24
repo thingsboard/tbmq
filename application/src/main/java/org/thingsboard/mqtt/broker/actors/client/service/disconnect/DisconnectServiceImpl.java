@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -59,6 +60,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final AuthorizationRuleService authorizationRuleService;
     private final FlowControlService flowControlService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ChannelBackpressureManager channelBackpressureManager;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @Override
@@ -143,6 +145,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         sessionCtx.releasePublishedInFlightCtx();
         flowControlService.removeFromMap(sessionCtx.getClientId());
         tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
+        channelBackpressureManager.onSessionDisconnect(actorState);
         closeChannel(sessionCtx);
 
         log.debug("[{}][{}] Client disconnected", sessionCtx.getClientId(), sessionCtx.getSessionId());

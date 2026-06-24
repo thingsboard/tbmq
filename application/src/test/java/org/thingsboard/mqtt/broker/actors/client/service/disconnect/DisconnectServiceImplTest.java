@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -85,6 +86,8 @@ public class DisconnectServiceImplTest {
     FlowControlService flowControlService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockitoBean
+    ChannelBackpressureManager channelBackpressureManager;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -186,6 +189,16 @@ public class DisconnectServiceImplTest {
 
         verify(msgPersistenceManager, times(1)).stopProcessingPersistedMessages(any());
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());
+    }
+
+    @Test
+    public void cleanupClientSession_notifiesChannelBackpressureManagerOnSessionDisconnect() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        verify(channelBackpressureManager).onSessionDisconnect(clientActorState);
     }
 
     @Test

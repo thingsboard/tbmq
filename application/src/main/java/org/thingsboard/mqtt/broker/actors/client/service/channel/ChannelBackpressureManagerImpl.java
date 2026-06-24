@@ -21,11 +21,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,16 +56,21 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
         // FlowControl: drain any messages buffered while the window was full.
         // Must run BEFORE the early-returns below so it fires on every writability flip,
         // including the clean-session path.
-        state.getCurrentSessionCtx().onChannelWritable();
+        ClientSessionCtx sessionCtx = state.getCurrentSessionCtx();
+        sessionCtx.onChannelWritable();
+
+        // Decrement is gated on the per-session flag, not on SessionState, because clean-session clients
+        // never transition to CHANNEL_NON_WRITABLE (see onChannelNonWritable below).
+        boolean wasCounted = decrementCounterIfCounted(sessionCtx);
+        if (wasCounted) {
+            log.info("[{}] Channel is writable", state.getClientId());
+        }
 
         if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
             log.debug("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
             return;
-        } else {
-            log.info("[{}] Channel is writable", state.getClientId());
         }
-        nonWritableClientsCount.updateAndGet(current -> current == 0 ? 0 : current - 1);
-        if (state.getCurrentSessionCtx().isCleanSession()) {
+        if (sessionCtx.isCleanSession()) {
             return;
         }
         state.updateSessionState(SessionState.CONNECTED);
@@ -79,11 +86,13 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
         if (!SessionState.CONNECTED.equals(state.getCurrentSessionState())) {
             log.debug("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
             return;
-        } else {
-            log.warn("[{}] Channel became non-writable", state.getClientId());
         }
-        nonWritableClientsCount.incrementAndGet();
-        if (state.getCurrentSessionCtx().isCleanSession()) {
+        ClientSessionCtx sessionCtx = state.getCurrentSessionCtx();
+        if (!incrementCounterIfNotCounted(sessionCtx)) {
+            return;
+        }
+        log.warn("[{}] Channel became non-writable", state.getClientId());
+        if (sessionCtx.isCleanSession()) {
             return;
         }
         state.updateSessionState(SessionState.CHANNEL_NON_WRITABLE);
@@ -92,6 +101,33 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
         } else if (DEVICE.equals(getClientType(state))) {
             devicePersistenceProcessor.processChannelNonWritable(state.getClientId());
         }
+    }
+
+    @Override
+    public void onSessionDisconnect(ClientActorStateInfo state) {
+        ClientSessionCtx sessionCtx = state.getCurrentSessionCtx();
+        if (sessionCtx == null) {
+            return;
+        }
+        if (decrementCounterIfCounted(sessionCtx)) {
+            log.debug("[{}] Decremented non-writable clients counter on session disconnect", state.getClientId());
+        }
+    }
+
+    private boolean incrementCounterIfNotCounted(ClientSessionCtx sessionCtx) {
+        if (sessionCtx.getNonWritableCounted().compareAndSet(false, true)) {
+            nonWritableClientsCount.incrementAndGet();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean decrementCounterIfCounted(ClientSessionCtx sessionCtx) {
+        if (sessionCtx.getNonWritableCounted().compareAndSet(true, false)) {
+            nonWritableClientsCount.decrementAndGet();
+            return true;
+        }
+        return false;
     }
 
     private ClientType getClientType(ClientActorState state) {

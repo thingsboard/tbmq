@@ -58,6 +58,8 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
   contentType: ContentType;
   aceEditor: Ace.Editor;
 
+  private readonly wrapLimit = 100;
+
   constructor(protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: EventContentDialogComponentDialogData,
@@ -142,7 +144,7 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
             this.aceEditor = ace.edit(editorElement, editorOptions);
             this.aceEditor.session.setUseWrapMode(this.contentType === ContentType.TEXT);
             if (this.contentType === ContentType.TEXT) {
-              this.aceEditor.session.setWrapLimitRange(0, 100);
+              this.aceEditor.session.setWrapLimitRange(0, this.wrapLimit);
               this.aceEditor.setOption('indentedSoftWrap', false);
             }
             this.aceEditor.setValue(processedContent, -1);
@@ -165,10 +167,18 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
         const lineLength = line.length;
         maxLineLength = Math.max(maxLineLength, lineLength);
       });
+      // In wrap mode (plain TEXT) lines wrap at the configured limit, so the editor
+      // never needs to be wider than that — otherwise long single-line strings would
+      // stretch the dialog to its max width with empty space on the right.
+      if (this.contentType === ContentType.TEXT) {
+        maxLineLength = Math.min(maxLineLength, this.wrapLimit);
+      }
       newWidth = 8 * maxLineLength + 16;
     }
-    // newHeight = Math.min(400, newHeight);
-    this.renderer.setStyle(editorElement, 'minHeight', newHeight.toString() + 'px');
+    // Cap to the viewport so the dialog never overflows; ACE renders its own
+    // scrollbars (pinned at the editor edges) when the content exceeds these bounds.
+    newHeight = Math.min(newHeight, Math.round(window.innerHeight * 0.7));
+    newWidth = Math.min(newWidth, Math.round(window.innerWidth * 0.8));
     this.renderer.setStyle(editorElement, 'height', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'width', newWidth.toString() + 'px');
     editor.resize();

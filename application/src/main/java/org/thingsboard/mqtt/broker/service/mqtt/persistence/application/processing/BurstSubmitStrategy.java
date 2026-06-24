@@ -57,8 +57,9 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
     public void update(Map<Integer, PersistedMsg> reprocessMap) {
         List<PersistedMsg> newOrderedMessages = new ArrayList<>(reprocessMap.size());
         for (PersistedMsg msg : orderedMessages) {
-            if (reprocessMap.containsKey(msg.getPacketId())) {
-                newOrderedMessages.add(msg);
+            PersistedMsg reprocessMsg = reprocessMap.get(msg.getPacketId());
+            if (reprocessMsg != null) {
+                newOrderedMessages.add(reprocessMsg);
             }
         }
         orderedMessages = newOrderedMessages;

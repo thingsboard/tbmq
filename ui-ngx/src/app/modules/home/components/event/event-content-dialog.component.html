@@ -15,8 +15,8 @@
     limitations under the License.
 
 -->
-<div mat-dialog-content class="flex flex-col gap-4">
-  <section class="flex flex-row items-center justify-start">
+<div mat-dialog-content class="tb-event-content-dialog flex flex-col">
+  <section class="tb-event-content-toolbar flex flex-row items-center justify-start">
     <div class="flex flex-row gap-2">
       @if (icon) {
         <tb-icon>{{ icon }}</tb-icon>
@@ -28,10 +28,9 @@
       <mat-icon class="material-icons">close</mat-icon>
     </button>
   </section>
-  <section class="flex flex-row">
-    <div #eventContentEditor class="tb-event-content"></div>
-    <tb-copy-button [disabled]="isLoading$ | async"
-      [copyText]="data.content">
-    </tb-copy-button>
-  </section>
+  <tb-copy-button class="tb-event-content-copy"
+    [disabled]="isLoading$ | async"
+    [copyText]="data.content">
+  </tb-copy-button>
+  <div #eventContentEditor class="tb-event-content"></div>
 </div>

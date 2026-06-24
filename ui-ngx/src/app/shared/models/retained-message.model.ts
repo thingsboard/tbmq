@@ -39,14 +39,14 @@ export interface UserProperties {
 export interface RetainedMessagesFilterConfig {
   topicName?: string;
   payload?: string;
-  qosList?: boolean[];
+  qosList?: string[];
 }
 
 export class RetainedMessagesQuery {
   pageLink: TimePageLink;
   topicName: string;
   payload: string;
-  qosList: boolean[];
+  qosList: string[];
 
   constructor(pageLink: TimePageLink, filter: RetainedMessagesFilterConfig) {
     this.pageLink = pageLink;

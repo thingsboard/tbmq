@@ -53,7 +53,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
@@ -137,7 +136,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         int dropped = totalCount - Math.max(availableTokens, 0);
         if (dropped > 0) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
+            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
         }
 
         if (availableTokens <= 0) {
