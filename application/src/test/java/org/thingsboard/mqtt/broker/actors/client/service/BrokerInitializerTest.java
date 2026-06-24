@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
@@ -97,6 +98,8 @@ public class BrokerInitializerTest {
     RateLimitService rateLimitService;
     @MockitoBean
     IntegrationService integrationService;
+    @MockitoBean
+    IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
     @MockitoBean

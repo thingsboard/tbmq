@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
@@ -99,6 +100,8 @@ public class MqttSubscribeHandlerTest {
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
     @MockitoBean
     RateLimitService rateLimitService;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoSpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 

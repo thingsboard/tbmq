@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -88,6 +89,8 @@ public class DisconnectServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     ChannelBackpressureManager channelBackpressureManager;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
