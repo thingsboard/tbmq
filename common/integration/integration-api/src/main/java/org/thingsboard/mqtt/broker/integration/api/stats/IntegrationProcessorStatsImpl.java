@@ -73,7 +73,7 @@ public class IntegrationProcessorStatsImpl implements IntegrationProcessorStats 
     }
 
     @Override
-    public void log(int totalMsgCount, IntegrationPackProcessingResult result, boolean finalIterationForPack) {
+    public void log(int totalMsgCount, IntegrationPackProcessingResult<?> result, boolean finalIterationForPack) {
         int pending = result.getPendingMap().size();
         int failed = result.getFailedMap().size();
         int success = totalMsgCount - (pending + failed);

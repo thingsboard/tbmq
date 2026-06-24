@@ -16,20 +16,19 @@
 package org.thingsboard.mqtt.broker.integration.api.data;
 
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class IntegrationPackProcessingResult {
+public class IntegrationPackProcessingResult<T> {
 
     @Getter
-    private final Map<UUID, PublishIntegrationMsgProto> pendingMap;
+    private final Map<UUID, T> pendingMap;
     @Getter
-    private final Map<UUID, PublishIntegrationMsgProto> failedMap;
+    private final Map<UUID, T> failedMap;
 
-    public IntegrationPackProcessingResult(IntegrationPackProcessingContext ctx) {
+    public IntegrationPackProcessingResult(IntegrationPackProcessingContext<T> ctx) {
         this.pendingMap = new HashMap<>(ctx.getPendingMap());
         this.failedMap = new HashMap<>(ctx.getFailedMap());
     }
