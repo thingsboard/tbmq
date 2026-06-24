@@ -20,6 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -41,16 +42,21 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
     private final ServiceInfoProvider serviceInfoProvider;
 
     private TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> integrationMsgProducer;
+    private TbQueueProducer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> integrationEventMsgProducer;
 
     @PostConstruct
     public void init() {
         this.integrationMsgProducer = integrationMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+        this.integrationEventMsgProducer = integrationMsgQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
     }
 
     @PreDestroy
     public void destroy() {
         if (integrationMsgProducer != null) {
             integrationMsgProducer.stop();
+        }
+        if (integrationEventMsgProducer != null) {
+            integrationEventMsgProducer.stop();
         }
     }
 
@@ -66,6 +72,21 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
 
     @Override
     public Map<String, String> getTopicConfigs() {
+        throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
+    }
+
+    @Override
+    public TbQueueProducer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> getIeEventMsgProducer() {
+        return integrationEventMsgProducer;
+    }
+
+    @Override
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> getIeEventMsgConsumer(String topic, String consumerGroupId, String integrationId) {
+        throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
+    }
+
+    @Override
+    public Map<String, String> getIeEventMsgTopicConfigs() {
         throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
     }
 }

@@ -19,6 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -40,10 +41,12 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     private final IntegrationMsgKafkaSettings integrationMsgKafkaSettings;
 
     private Map<String, String> topicConfigs;
+    private Map<String, String> eventTopicConfigs;
 
     @PostConstruct
     public void init() {
         this.topicConfigs = validateAndConfigurePartitionsForTopic(integrationMsgKafkaSettings.getTopicProperties(), "IE message");
+        this.eventTopicConfigs = validateAndConfigurePartitionsForTopic(integrationMsgKafkaSettings.getEventTopicProperties(), "IE event message");
     }
 
     @Override
@@ -80,5 +83,41 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     @Override
     public Map<String, String> getTopicConfigs() {
         return topicConfigs;
+    }
+
+    @Override
+    public TbQueueProducer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> createEventProducer(String serviceId) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+        producerBuilder.properties(producerSettings.toProps(integrationMsgKafkaSettings.getAdditionalEventProducerConfig()));
+        producerBuilder.clientId(kafkaPrefix + "ie-event-msg-producer-" + serviceId);
+        producerBuilder.admin(queueAdmin);
+        producerBuilder.topicConfigs(eventTopicConfigs);
+        producerBuilder.statsManager(producerStatsManager);
+        return producerBuilder.build();
+    }
+
+    @Override
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> createEventConsumer(String topic, String consumerGroupId, String consumerId) {
+        String clientId = "ie-event-msg-consumer-" + consumerId;
+
+        Properties props = consumerSettings.toProps(topic, integrationMsgKafkaSettings.getAdditionalEventConsumerConfig());
+        QueueUtil.overrideProperties("IeEventMsgQueue-" + consumerId, props, requiredConsumerProperties);
+
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+        consumerBuilder.properties(props);
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), ClientLifecycleEventMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
+                msg.getPartition(), msg.getOffset()));
+        consumerBuilder.clientId(kafkaPrefix + clientId);
+        consumerBuilder.groupId(consumerGroupId);
+        consumerBuilder.topic(topic);
+        consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.autoCommit(false);
+        consumerBuilder.createTopicIfNotExists(false);
+        return consumerBuilder.build();
+    }
+
+    @Override
+    public Map<String, String> getEventTopicConfigs() {
+        return eventTopicConfigs;
     }
 }
