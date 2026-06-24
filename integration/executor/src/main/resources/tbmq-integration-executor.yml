@@ -158,6 +158,14 @@ queue:
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.ie` topics.
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+      # Kafka topic properties separated by semicolon for the dedicated `tbmq.ie.event` lifecycle-event topics.
+      # Retention defaults shorter than the data topic since events are best-effort hints.
+      event-topic-properties: "${TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.event` topics.
+      additional-event-consumer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
+      # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.event` topics. Configured non-blocking
+      # (low max.block.ms); used only by the broker, present here for shared-settings parity.
+      additional-event-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
     # Common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string, meaning no prefix is applied.
     kafka-prefix: "${TB_KAFKA_PREFIX:}"
     # Custom consumer configuration per Kafka topic.
