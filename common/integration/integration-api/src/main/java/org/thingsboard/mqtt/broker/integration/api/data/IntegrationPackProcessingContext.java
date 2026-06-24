@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.integration.api.data;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,13 +30,13 @@ public class IntegrationPackProcessingContext {
 
     private final String integrationId;
     @Getter
-    private final ConcurrentMap<UUID, TbIeMsgProto> pendingMap;
+    private final ConcurrentMap<UUID, PublishIntegrationMsgProto> pendingMap;
     @Getter
-    private final ConcurrentMap<UUID, TbIeMsgProto> failedMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, PublishIntegrationMsgProto> failedMap = new ConcurrentHashMap<>();
 
     private final CountDownLatch processingTimeoutLatch;
 
-    public IntegrationPackProcessingContext(String integrationId, ConcurrentMap<UUID, TbIeMsgProto> pendingMessages) {
+    public IntegrationPackProcessingContext(String integrationId, ConcurrentMap<UUID, PublishIntegrationMsgProto> pendingMessages) {
         this.integrationId = integrationId;
         this.pendingMap = pendingMessages;
         this.processingTimeoutLatch = new CountDownLatch(pendingMap.size());
@@ -47,7 +47,7 @@ public class IntegrationPackProcessingContext {
     }
 
     public void onSuccess(UUID id) {
-        TbIeMsgProto msg = pendingMap.remove(id);
+        PublishIntegrationMsgProto msg = pendingMap.remove(id);
         if (msg != null) {
             processingTimeoutLatch.countDown();
         } else {
@@ -56,7 +56,7 @@ public class IntegrationPackProcessingContext {
     }
 
     public void onFailure(UUID id) {
-        TbIeMsgProto msg = pendingMap.remove(id);
+        PublishIntegrationMsgProto msg = pendingMap.remove(id);
         if (msg != null) {
             failedMap.put(id, msg);
             processingTimeoutLatch.countDown();

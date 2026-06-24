@@ -22,17 +22,12 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationMsgQueuePublisher;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -40,7 +35,6 @@ import java.util.UUID;
 public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecycleEventPublisher {
 
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
-    private final IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
 
     @Override
     public void publishConnected(SessionInfo sessionInfo) {
@@ -121,10 +115,11 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     }
 
     private void publish(Set<String> integrationIds, ClientLifecycleEventMsgProto lifecycleMsg) {
-        TbIeMsgProto wrapper = TbIeMsgProto.newBuilder().setLifecycleMsg(lifecycleMsg).build();
-        for (String integrationId : integrationIds) {
-            TbProtoQueueMsg<TbIeMsgProto> queueMsg = new TbProtoQueueMsg<>(UUID.randomUUID(), wrapper);
-            integrationMsgQueuePublisher.sendMsg(integrationId, queueMsg, PublishMsgCallback.EMPTY);
+        // Phase 1: dedicated events stream not yet wired (see Phase 3). Events are intentionally
+        // not produced here; the data stream wire contract is reverted and decoupled from events.
+        if (log.isTraceEnabled()) {
+            log.trace("Skipping lifecycle event {} for {} integration(s): events stream not yet wired",
+                    lifecycleMsg.getEventType(), integrationIds.size());
         }
     }
 
