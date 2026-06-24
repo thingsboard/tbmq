@@ -21,4 +21,8 @@ public interface IntegrationHelperService {
 
     String getIntegrationConsumerGroup(String integrationId);
 
+    String getIntegrationEventTopic(String integrationId);
+
+    String getIntegrationEventConsumerGroup(String integrationId);
+
 }
