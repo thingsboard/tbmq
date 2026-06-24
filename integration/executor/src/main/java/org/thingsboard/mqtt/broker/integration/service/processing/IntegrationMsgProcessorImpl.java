@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
@@ -62,6 +63,7 @@ import static java.lang.Long.MAX_VALUE;
 public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private final ConcurrentMap<String, IntegrationHolder> integrations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, IntegrationHolder> eventIntegrations = new ConcurrentHashMap<>();
 
     private final IntegrationMsgQueueProvider integrationMsgQueueProvider;
     private final IntegrationTopicService integrationTopicService;
@@ -91,6 +93,8 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         stopped = true;
         integrations.forEach((integrationId, integration) -> stopIntegrationCancelTask(integration));
         integrations.clear();
+        eventIntegrations.forEach((id, holder) -> stopIntegrationCancelTask(holder));
+        eventIntegrations.clear();
         if (integrationMsgsConsumerExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(integrationMsgsConsumerExecutor, "IE msg consumers'");
         }
@@ -120,6 +124,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         });
         integrationHolder.setFuture(future);
         integrations.put(integrationId, integrationHolder);
+        startProcessingEventsIfOptedIn(integration);
     }
 
     @Override
@@ -136,6 +141,14 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                 log.warn("[{}] Exception stopping future for integration", integrationId, e);
             }
         }
+        IntegrationHolder eventHolder = eventIntegrations.remove(integrationId);
+        if (eventHolder != null) {
+            try {
+                stopIntegrationCancelTask(eventHolder);
+            } catch (Exception e) {
+                log.warn("[{}] Exception stopping events future for integration", integrationId, e);
+            }
+        }
     }
 
     @Override
@@ -144,6 +157,10 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         taskExecutor.schedule(() -> {
             try {
                 integrationTopicService.deleteTopic(integrationId, CallbackUtil.createCallback(
+                        () -> {
+                        }, throwable -> {
+                        }));
+                integrationTopicService.deleteEventTopic(integrationId, CallbackUtil.createCallback(
                         () -> {
                         }, throwable -> {
                         }));
@@ -177,6 +194,117 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                         topic,
                         integrationTopicService.getConsumerGroup(integrationId),
                         integrationId);
+    }
+
+    private void startProcessingEventsIfOptedIn(TbPlatformIntegration integration) {
+        String integrationId = integration.getIntegrationId();
+        if (!IntegrationEventsOptInUtil.isOptedIn(integration.getLifecycleMsg())) {
+            log.debug("[{}] Integration is not opted in for lifecycle events. Skipping events consumer start", integrationId);
+            return;
+        }
+        if (eventIntegrations.containsKey(integrationId)) {
+            log.info("[{}] The events processor is already running. Skipping start", integrationId);
+            return;
+        }
+        String eventTopic = integrationTopicService.createEventTopic(integrationId);
+        log.info("[{}] Starting integration lifecycle-events processing", integrationId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumer =
+                initEventConsumer(integrationId, eventTopic);
+        IntegrationHolder holder = new IntegrationHolder(integration);
+        Future<?> future = integrationMsgsConsumerExecutor.submit(() -> {
+            try {
+                processEvents(consumer, holder);
+            } finally {
+                consumer.unsubscribeAndClose();
+            }
+        });
+        holder.setFuture(future);
+        eventIntegrations.put(integrationId, holder);
+    }
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> initEventConsumer(String integrationId, String topic) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumer =
+                integrationMsgQueueProvider.getIeEventMsgConsumer(
+                        topic, integrationTopicService.getEventConsumerGroup(integrationId), integrationId);
+        try {
+            consumer.assignPartition(0);
+            Optional<Long> committedOffset = consumer.getCommittedOffset(consumer.getTopic(), 0);
+            if (committedOffset.isEmpty()) {
+                long endOffset = consumer.getEndOffset(consumer.getTopic(), 0);
+                consumer.commit(0, endOffset);
+            }
+            return consumer;
+        } catch (Exception e) {
+            log.error("[{}] Failed to init integration events consumer", integrationId, e);
+            consumer.unsubscribeAndClose();
+            throw e;
+        }
+    }
+
+    private void processEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumer,
+                               IntegrationHolder holder) {
+        final AtomicLong counter = new AtomicLong(0);
+        while (isProcessorActive(holder)) {
+            try {
+                List<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> messages = consumer.poll(pollDuration);
+                if (messages.isEmpty()) {
+                    continue;
+                }
+                IntegrationAckStrategy<ClientLifecycleEventMsgProto> ackStrategy = ackStrategyFactory.newInstance(holder.getIntegrationId());
+                IntegrationSubmitStrategy<ClientLifecycleEventMsgProto> submitStrategy = submitStrategyFactory.newInstance(holder.getIntegrationId());
+
+                long packId = counter.incrementAndGet();
+                if (packId == MAX_VALUE) {
+                    counter.set(0);
+                }
+                var pendingMsgMap = toPendingEventMap(messages, packId);
+                submitStrategy.init(pendingMsgMap);
+
+                while (isProcessorActive(holder)) {
+                    IntegrationPackProcessingContext<ClientLifecycleEventMsgProto> ctx =
+                            new IntegrationPackProcessingContext<>(holder.getIntegrationId(), submitStrategy.getPendingMap());
+                    submitStrategy.process(entry -> dispatchEvent(holder, entry.getKey(), entry.getValue(), ctx));
+                    if (isProcessorActive(holder)) {
+                        ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
+                    }
+                    IntegrationPackProcessingResult<ClientLifecycleEventMsgProto> result = new IntegrationPackProcessingResult<>(ctx);
+                    ctx.cleanup();
+                    IntegrationProcessingDecision<ClientLifecycleEventMsgProto> decision = ackStrategy.analyze(result);
+                    if (decision.isCommit()) {
+                        consumer.commitSync();
+                        break;
+                    } else {
+                        submitStrategy.update(decision.getReprocessMap());
+                    }
+                }
+            } catch (Exception e) {
+                if (isProcessorActive(holder)) {
+                    log.warn("[{}] Failed to process events from queue.", holder.getIntegrationId(), e);
+                    try {
+                        Thread.sleep(pollDuration);
+                    } catch (InterruptedException e2) {
+                        log.trace("Failed to wait until capacity for new events", e2);
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+        log.info("[{}] IE events consumer stopped.", holder.getIntegrationId());
+    }
+
+    void dispatchEvent(IntegrationHolder holder, UUID packetId, ClientLifecycleEventMsgProto event,
+                       IntegrationPackProcessingContext<ClientLifecycleEventMsgProto> ctx) {
+        holder.getIntegration().processLifecycleEvent(event, new BaseIntegrationMsgCallback(packetId, ctx));
+    }
+
+    private Map<UUID, ClientLifecycleEventMsgProto> toPendingEventMap(List<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> msgs, long packId) {
+        Map<UUID, ClientLifecycleEventMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
+        int i = 0;
+        for (var msg : msgs) {
+            map.put(new UUID(packId, i++), msg.getValue());
+        }
+        return map;
     }
 
     private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer,
