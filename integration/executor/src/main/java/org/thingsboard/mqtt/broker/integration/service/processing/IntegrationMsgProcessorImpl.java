@@ -124,7 +124,11 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         });
         integrationHolder.setFuture(future);
         integrations.put(integrationId, integrationHolder);
-        startProcessingEventsIfOptedIn(integration);
+        try {
+            startProcessingEventsIfOptedIn(integration);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to start lifecycle-events processing; continuing with data only", integrationId, e);
+        }
     }
 
     @Override
