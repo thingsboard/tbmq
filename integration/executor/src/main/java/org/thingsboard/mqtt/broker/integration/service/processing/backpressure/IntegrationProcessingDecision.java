@@ -16,15 +16,14 @@
 package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
 import lombok.Data;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 
 import java.util.Map;
 import java.util.UUID;
 
 @Data
-public class IntegrationProcessingDecision {
+public class IntegrationProcessingDecision<T> {
 
     private final boolean commit;
-    private final Map<UUID, TbIeMsgProto> reprocessMap;
+    private final Map<UUID, T> reprocessMap;
 
 }

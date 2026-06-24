@@ -15,22 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
-
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
-public interface IntegrationSubmitStrategy {
+public interface IntegrationSubmitStrategy<T> {
 
-    void init(Map<UUID, TbIeMsgProto> messages);
+    void init(Map<UUID, T> messages);
 
-    ConcurrentMap<UUID, TbIeMsgProto> getPendingMap();
+    ConcurrentMap<UUID, T> getPendingMap();
 
-    void process(Consumer<Map.Entry<UUID, TbIeMsgProto>> msgConsumer);
+    void process(Consumer<Map.Entry<UUID, T>> msgConsumer);
 
-    void update(Map<UUID, TbIeMsgProto> reprocessMap);
+    void update(Map<UUID, T> reprocessMap);
 
     String getIntegrationId();
 }

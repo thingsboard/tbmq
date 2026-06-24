@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
 import java.util.Collections;
@@ -34,21 +33,21 @@ public class IntegrationAckStrategyFactory {
 
     private final IntegrationAckStrategyConfiguration ackStrategyConfiguration;
 
-    public IntegrationAckStrategy newInstance(String integrationId) {
+    public <T> IntegrationAckStrategy<T> newInstance(String integrationId) {
         return switch (ackStrategyConfiguration.getType()) {
-            case SKIP_ALL -> new SkipStrategy(integrationId);
+            case SKIP_ALL -> new SkipStrategy<>(integrationId);
             case RETRY_ALL ->
-                    new RetryStrategy(integrationId, ackStrategyConfiguration.getRetries(), ackStrategyConfiguration.getPauseBetweenRetries());
+                    new RetryStrategy<>(integrationId, ackStrategyConfiguration.getRetries(), ackStrategyConfiguration.getPauseBetweenRetries());
         };
     }
 
     @RequiredArgsConstructor
-    private static class SkipStrategy implements IntegrationAckStrategy {
+    private static class SkipStrategy<T> implements IntegrationAckStrategy<T> {
 
         private final String integrationId;
 
         @Override
-        public IntegrationProcessingDecision analyze(IntegrationPackProcessingResult result) {
+        public IntegrationProcessingDecision<T> analyze(IntegrationPackProcessingResult<T> result) {
             if (!result.getPendingMap().isEmpty() || !result.getFailedMap().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", integrationId, result.getFailedMap().size(), result.getPendingMap().size());
@@ -62,12 +61,12 @@ public class IntegrationAckStrategyFactory {
                         log.trace("[{}] Timeout message: id - {}.", integrationId, packetId)
                 );
             }
-            return new IntegrationProcessingDecision(true, Collections.emptyMap());
+            return new IntegrationProcessingDecision<>(true, Collections.emptyMap());
         }
     }
 
     @RequiredArgsConstructor
-    private static class RetryStrategy implements IntegrationAckStrategy {
+    private static class RetryStrategy<T> implements IntegrationAckStrategy<T> {
 
         private final String integrationId;
         private final int maxRetries;
@@ -76,17 +75,17 @@ public class IntegrationAckStrategyFactory {
         private int retryCount;
 
         @Override
-        public IntegrationProcessingDecision analyze(IntegrationPackProcessingResult result) {
-            Map<UUID, TbIeMsgProto> pendingMap = result.getPendingMap();
-            Map<UUID, TbIeMsgProto> failedMap = result.getFailedMap();
+        public IntegrationProcessingDecision<T> analyze(IntegrationPackProcessingResult<T> result) {
+            Map<UUID, T> pendingMap = result.getPendingMap();
+            Map<UUID, T> failedMap = result.getFailedMap();
             if (pendingMap.isEmpty() && failedMap.isEmpty()) {
-                return new IntegrationProcessingDecision(true, Collections.emptyMap());
+                return new IntegrationProcessingDecision<>(true, Collections.emptyMap());
             }
             if (maxRetries != 0 && ++retryCount > maxRetries) {
                 log.debug("[{}] Skip reprocess due to max retries.", integrationId);
-                return new IntegrationProcessingDecision(true, Collections.emptyMap());
+                return new IntegrationProcessingDecision<>(true, Collections.emptyMap());
             }
-            Map<UUID, TbIeMsgProto> toReprocess = new HashMap<>();
+            Map<UUID, T> toReprocess = new HashMap<>();
             toReprocess.putAll(pendingMap);
             toReprocess.putAll(failedMap);
             if (log.isDebugEnabled()) {
@@ -107,7 +106,7 @@ public class IntegrationAckStrategyFactory {
                     log.error("[{}] Failed to pause for retry", integrationId);
                 }
             }
-            return new IntegrationProcessingDecision(false, toReprocess);
+            return new IntegrationProcessingDecision<>(false, toReprocess);
         }
     }
 
