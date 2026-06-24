@@ -120,10 +120,3 @@ message ClientLifecycleEventMsgProto {
   repeated queue.TopicSubscriptionProto subscriptions = 13;
   repeated string topicFilters = 14;
 }
-
-message TbIeMsgProto {
-  oneof msg {
-    PublishIntegrationMsgProto publishMsg = 1;
-    ClientLifecycleEventMsgProto lifecycleMsg = 2;
-  }
-}
