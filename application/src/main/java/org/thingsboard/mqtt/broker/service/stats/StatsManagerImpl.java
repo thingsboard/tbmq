@@ -476,6 +476,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: count = [{}]", BrokerConstants.DROPPED_MSGS, droppedMsgStats.getCount());
         droppedMsgStats.reset();
 
+        log.info("[{}] Stats: count = [{}]", BrokerConstants.DROPPED_LIFECYCLE_EVENTS, droppedLifecycleEventStats.getCount());
+        droppedLifecycleEventStats.reset();
+
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");

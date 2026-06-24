@@ -23,6 +23,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -57,6 +59,8 @@ public class IntegrationLifecycleEventPublisherImplTest {
     private SessionInfo sessionInfo;
     @Mock
     private ClientInfo clientInfo;
+    @Mock
+    private TopicSubscription topicSubscription;
 
     private IntegrationLifecycleEventPublisherImpl publisher;
 
@@ -114,6 +118,54 @@ public class IntegrationLifecycleEventPublisherImplTest {
                 .when(lifecycleEventTypeCache).getIntegrationIds(ClientLifecycleEventType.CLIENT_DISCONNECTED);
 
         publisher.publishDisconnected(sessionInfo, DisconnectReasonType.ON_DISCONNECT_MSG);
+
+        verify(droppedLifecycleEventStats).increment();
+    }
+
+    @Test
+    public void givenSubscriber_whenPublishSubscribed_thenSendsEventMsgPerIntegration() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED)).thenReturn(Set.of("ie-1"));
+        stubSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("test/topic");
+
+        publisher.publishSubscribed(sessionInfo, List.of(topicSubscription));
+
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
+        verify(droppedLifecycleEventStats, never()).increment();
+    }
+
+    @Test
+    public void givenPublisherThrows_whenPublishSubscribed_thenSwallowsAndIncrementsDroppedMetric() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED)).thenReturn(Set.of("ie-1"));
+        stubSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("test/topic");
+        doThrow(new RuntimeException("send failure"))
+                .when(integrationEventMsgQueuePublisher).sendEventMsg(anyString(), any(), any());
+
+        publisher.publishSubscribed(sessionInfo, List.of(topicSubscription));
+
+        verify(droppedLifecycleEventStats).increment();
+    }
+
+    @Test
+    public void givenSubscriber_whenPublishUnsubscribed_thenSendsEventMsgPerIntegration() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)).thenReturn(Set.of("ie-1"));
+        stubSession();
+
+        publisher.publishUnsubscribed(sessionInfo, List.of("test/topic"));
+
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
+        verify(droppedLifecycleEventStats, never()).increment();
+    }
+
+    @Test
+    public void givenPublisherThrows_whenPublishUnsubscribed_thenSwallowsAndIncrementsDroppedMetric() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)).thenReturn(Set.of("ie-1"));
+        stubSession();
+        doThrow(new RuntimeException("send failure"))
+                .when(integrationEventMsgQueuePublisher).sendEventMsg(anyString(), any(), any());
+
+        publisher.publishUnsubscribed(sessionInfo, List.of("test/topic"));
 
         verify(droppedLifecycleEventStats).increment();
     }
