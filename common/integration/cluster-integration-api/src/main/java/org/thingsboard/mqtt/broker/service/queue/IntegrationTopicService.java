@@ -27,4 +27,10 @@ public interface IntegrationTopicService {
 
     String getConsumerGroup(String integrationId);
 
+    String createEventTopic(String integrationId);
+
+    void deleteEventTopic(String integrationId, BasicCallback callback);
+
+    String getEventConsumerGroup(String integrationId);
+
 }
