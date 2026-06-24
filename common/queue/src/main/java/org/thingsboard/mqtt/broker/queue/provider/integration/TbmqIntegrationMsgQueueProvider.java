@@ -20,7 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.TbmqComponent;
@@ -40,7 +40,7 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
     private final IntegrationMsgQueueFactory integrationMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
 
-    private TbQueueProducer<TbProtoQueueMsg<TbIeMsgProto>> integrationMsgProducer;
+    private TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> integrationMsgProducer;
 
     @PostConstruct
     public void init() {
@@ -55,12 +55,12 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<TbIeMsgProto>> getIeMsgProducer() {
+    public TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgProducer() {
         return integrationMsgProducer;
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> getIeMsgConsumer(String topic, String consumerGroupId, String integrationId) {
         throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
     }
 

@@ -19,7 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.integration.TbIeMsgProto;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -47,8 +47,8 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<TbIeMsgProto>> createProducer(String serviceId) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<TbIeMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createProducer(String serviceId) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<PublishIntegrationMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(integrationMsgKafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "ie-msg-producer-" + serviceId);
         producerBuilder.admin(queueAdmin);
@@ -58,15 +58,15 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<TbIeMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId) {
         String clientId = "ie-msg-consumer-" + consumerId;
 
         Properties props = consumerSettings.toProps(topic, integrationMsgKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("IeMsgQueue-" + consumerId, props, requiredConsumerProperties);
 
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<TbIeMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(props);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), TbIeMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), PublishIntegrationMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.clientId(kafkaPrefix + clientId);
         consumerBuilder.groupId(consumerGroupId);
