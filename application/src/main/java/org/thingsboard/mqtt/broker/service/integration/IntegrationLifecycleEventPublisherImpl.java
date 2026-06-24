@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,17 @@ import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventT
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,92 +42,125 @@ import java.util.Set;
 public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecycleEventPublisher {
 
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    private final IntegrationEventMsgQueuePublisher integrationEventMsgQueuePublisher;
+    private final StatsManager statsManager;
+
+    private DroppedLifecycleEventStats droppedLifecycleEventStats;
+
+    @PostConstruct
+    public void init() {
+        this.droppedLifecycleEventStats = statsManager.getDroppedLifecycleEventStats();
+    }
 
     @Override
     public void publishConnected(SessionInfo sessionInfo) {
-        Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
-        if (integrationIds.isEmpty()) {
-            return;
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
+                    .setEventType(ClientLifecycleEventType.CLIENT_CONNECTED.name())
+                    .setClientId(sessionInfo.getClientInfo().getClientId())
+                    .setSessionId(sessionInfo.getSessionId().toString())
+                    .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
+                    .setTs(System.currentTimeMillis())
+                    .setTbmqNode(sessionInfo.getServiceId())
+                    .setCleanStart(sessionInfo.isCleanStart())
+                    .setKeepAlive(sessionInfo.getKeepAlive())
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_CONNECTED, t);
         }
-        ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType(ClientLifecycleEventType.CLIENT_CONNECTED.name())
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .setSessionId(sessionInfo.getSessionId().toString())
-                .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
-                .setTs(System.currentTimeMillis())
-                .setTbmqNode(sessionInfo.getServiceId())
-                .setCleanStart(sessionInfo.isCleanStart())
-                .setKeepAlive(sessionInfo.getKeepAlive())
-                .build();
-        publish(integrationIds, proto);
     }
 
     @Override
     public void publishDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType) {
-        Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_DISCONNECTED);
-        if (integrationIds.isEmpty()) {
-            return;
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_DISCONNECTED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
+                    .setEventType(ClientLifecycleEventType.CLIENT_DISCONNECTED.name())
+                    .setClientId(sessionInfo.getClientInfo().getClientId())
+                    .setSessionId(sessionInfo.getSessionId().toString())
+                    .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
+                    .setTs(System.currentTimeMillis())
+                    .setTbmqNode(sessionInfo.getServiceId())
+                    .setDisconnectReason(reasonType.name())
+                    .setClientInitiated(isClientInitiated(reasonType))
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_DISCONNECTED, t);
         }
-        ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType(ClientLifecycleEventType.CLIENT_DISCONNECTED.name())
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .setSessionId(sessionInfo.getSessionId().toString())
-                .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
-                .setTs(System.currentTimeMillis())
-                .setTbmqNode(sessionInfo.getServiceId())
-                .setDisconnectReason(reasonType.name())
-                .setClientInitiated(isClientInitiated(reasonType))
-                .build();
-        publish(integrationIds, proto);
     }
 
     @Override
     public void publishSubscribed(SessionInfo sessionInfo, List<TopicSubscription> subscriptions) {
-        Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED);
-        if (integrationIds.isEmpty()) {
-            return;
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto.Builder builder = ClientLifecycleEventMsgProto.newBuilder()
+                    .setEventType(ClientLifecycleEventType.CLIENT_SUBSCRIBED.name())
+                    .setClientId(sessionInfo.getClientInfo().getClientId())
+                    .setSessionId(sessionInfo.getSessionId().toString())
+                    .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
+                    .setTs(System.currentTimeMillis())
+                    .setTbmqNode(sessionInfo.getServiceId());
+            for (TopicSubscription sub : subscriptions) {
+                builder.addSubscriptions(TopicSubscriptionProto.newBuilder()
+                        .setTopic(sub.getTopicFilter())
+                        .setQos(sub.getQos())
+                        .build());
+            }
+            publish(integrationIds, builder.build());
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_SUBSCRIBED, t);
         }
-        ClientLifecycleEventMsgProto.Builder builder = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType(ClientLifecycleEventType.CLIENT_SUBSCRIBED.name())
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .setSessionId(sessionInfo.getSessionId().toString())
-                .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
-                .setTs(System.currentTimeMillis())
-                .setTbmqNode(sessionInfo.getServiceId());
-        for (TopicSubscription sub : subscriptions) {
-            builder.addSubscriptions(TopicSubscriptionProto.newBuilder()
-                    .setTopic(sub.getTopicFilter())
-                    .setQos(sub.getQos())
-                    .build());
-        }
-        publish(integrationIds, builder.build());
     }
 
     @Override
     public void publishUnsubscribed(SessionInfo sessionInfo, List<String> topicFilters) {
-        Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED);
-        if (integrationIds.isEmpty()) {
-            return;
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
+                    .setEventType(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED.name())
+                    .setClientId(sessionInfo.getClientInfo().getClientId())
+                    .setSessionId(sessionInfo.getSessionId().toString())
+                    .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
+                    .setTs(System.currentTimeMillis())
+                    .setTbmqNode(sessionInfo.getServiceId())
+                    .addAllTopicFilters(topicFilters)
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED, t);
         }
-        ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED.name())
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .setSessionId(sessionInfo.getSessionId().toString())
-                .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
-                .setTs(System.currentTimeMillis())
-                .setTbmqNode(sessionInfo.getServiceId())
-                .addAllTopicFilters(topicFilters)
-                .build();
-        publish(integrationIds, proto);
     }
 
     private void publish(Set<String> integrationIds, ClientLifecycleEventMsgProto lifecycleMsg) {
-        // Phase 1: dedicated events stream not yet wired (see Phase 3). Events are intentionally
-        // not produced here; the data stream wire contract is reverted and decoupled from events.
-        if (log.isTraceEnabled()) {
-            log.trace("Skipping lifecycle event {} for {} integration(s): events stream not yet wired",
-                    lifecycleMsg.getEventType(), integrationIds.size());
+        for (String integrationId : integrationIds) {
+            try {
+                TbProtoQueueMsg<ClientLifecycleEventMsgProto> queueMsg = new TbProtoQueueMsg<>(UUID.randomUUID(), lifecycleMsg);
+                integrationEventMsgQueuePublisher.sendEventMsg(integrationId, queueMsg, PublishMsgCallback.EMPTY);
+            } catch (Throwable t) {
+                log.warn("[{}] Failed to publish lifecycle event [{}]; dropping.", integrationId, lifecycleMsg.getEventType(), t);
+                droppedLifecycleEventStats.increment();
+            }
         }
+    }
+
+    private void onPublishError(ClientLifecycleEventType eventType, Throwable t) {
+        log.warn("Failed to publish lifecycle event [{}]; dropping.", eventType, t);
+        droppedLifecycleEventStats.increment();
     }
 
     private String toIpString(byte[] ipAdr) {

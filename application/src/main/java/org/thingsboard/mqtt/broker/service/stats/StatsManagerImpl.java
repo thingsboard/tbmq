@@ -83,6 +83,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private ClientActorStats clientActorStats;
     private FlowControlStats flowControlStats;
     private DroppedMsgStats droppedMsgStats;
+    private DroppedLifecycleEventStats droppedLifecycleEventStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -100,6 +101,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
+        this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
     }
 
     @PreDestroy
@@ -124,6 +126,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public DroppedMsgStats getDroppedMsgStats() {
         return droppedMsgStats;
+    }
+
+    @Override
+    public DroppedLifecycleEventStats getDroppedLifecycleEventStats() {
+        return droppedLifecycleEventStats;
     }
 
     @Override
