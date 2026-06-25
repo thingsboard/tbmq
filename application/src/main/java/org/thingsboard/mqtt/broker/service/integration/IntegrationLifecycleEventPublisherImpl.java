@@ -164,6 +164,11 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
             if (integrationIds.isEmpty()) {
                 return;
             }
+            if (ctx.getSessionInfo() == null) {
+                // Authorization can be checked before the session is established (e.g. last-will topic validation
+                // at CONNECT, before setSessionInfo). With no session to attribute the event to, skip emission.
+                return;
+            }
             ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_AUTHORIZED)
                     .setAction(action)
                     .setResult("DENY")
