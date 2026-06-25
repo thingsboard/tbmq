@@ -134,6 +134,7 @@ public class MqttSubscribeHandler {
                 if (!isClientAuthorized) {
                     log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
                             ctx.getClientId(), ctx.getSessionId(), topic);
+                    integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, "subscribe", topic);
                     codes.add(MqttReasonCodeResolver.notAuthorizedSubscribe(ctx));
                     continue;
                 }

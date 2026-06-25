@@ -202,6 +202,23 @@ public class IntegrationLifecycleEventPublisherImplTest {
     }
 
     @Test
+    public void givenSubscriber_whenPublishAuthorizationDenied_thenBuildsDenyEvent() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZED)).thenReturn(Set.of("int-1"));
+        stubCtxSession();
+
+        publisher.publishAuthorizationDenied(ctx, "publish", "zxc/demo/topic");
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        ClientLifecycleEventMsgProto p = captor.getValue().getValue();
+        org.junit.Assert.assertEquals("CLIENT_AUTHORIZED", p.getEventType());
+        org.junit.Assert.assertEquals("publish", p.getAction());
+        org.junit.Assert.assertEquals("DENY", p.getResult());
+        org.junit.Assert.assertEquals("zxc/demo/topic", p.getTopic());
+        org.junit.Assert.assertEquals("demo", p.getUsername());
+    }
+
+    @Test
     public void givenSubscriber_whenPublishAuthenticatedFailure_thenBuildsFailureEvent() {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATED)).thenReturn(Set.of("int-1"));
         when(serviceInfoProvider.getServiceId()).thenReturn("tbmq-node-1");

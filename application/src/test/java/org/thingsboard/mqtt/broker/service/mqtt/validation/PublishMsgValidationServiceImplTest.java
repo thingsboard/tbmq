@@ -25,6 +25,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.service.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -43,6 +44,8 @@ public class PublishMsgValidationServiceImplTest {
     DefaultTopicValidationService topicValidationService;
     @MockBean
     AuthorizationRuleService authorizationRuleService;
+    @MockBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @SpyBean
     PublishMsgValidationServiceImpl publishMsgValidationService;

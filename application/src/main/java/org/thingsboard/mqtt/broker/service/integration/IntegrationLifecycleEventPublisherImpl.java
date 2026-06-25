@@ -158,6 +158,24 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
         }
     }
 
+    @Override
+    public void publishAuthorizationDenied(ClientSessionCtx ctx, String action, String topic) {
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_AUTHORIZED)
+                    .setAction(action)
+                    .setResult("DENY")
+                    .setTopic(topic)
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_AUTHORIZED, t);
+        }
+    }
+
     private ClientLifecycleEventMsgProto.Builder newSessionBuilder(ClientSessionCtx ctx, ClientLifecycleEventType eventType) {
         SessionInfo sessionInfo = ctx.getSessionInfo();
         return ClientLifecycleEventMsgProto.newBuilder()

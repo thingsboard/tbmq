@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -30,6 +31,7 @@ public class PublishMsgValidationServiceImpl implements PublishMsgValidationServ
 
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @Override
     public boolean validatePubMsg(ClientSessionCtx ctx, String clientId, PublishMsg publishMsg) {
@@ -51,6 +53,9 @@ public class PublishMsgValidationServiceImpl implements PublishMsgValidationServ
         if (!isClientAuthorized) {
             log.warn("[{}][{}][{}] Client is not authorized to publish to the topic {}",
                     clientId, ctx.getSessionId(), ctx.getAuthRulePatterns(), topic);
+            if (ctx.getReportedAuthzDenyTopics().add(topic)) {
+                integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, "publish", topic);
+            }
         }
         return isClientAuthorized;
     }
