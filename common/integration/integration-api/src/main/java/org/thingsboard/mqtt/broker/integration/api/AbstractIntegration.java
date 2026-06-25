@@ -213,11 +213,14 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         body.put("ipAddress", msg.getIpAddress());
         body.put("ts", msg.getTs());
         body.put("tbmqNode", msg.getTbmqNode());
+        body.put("username", msg.getUsername());
 
         switch (msg.getEventType()) {
             case "CLIENT_CONNECTED":
                 body.put("cleanStart", msg.getCleanStart());
                 body.put("keepAlive", msg.getKeepAlive());
+                body.put("protocolVersion", msg.getProtocolVersion());
+                body.put("sessionExpiryInterval", msg.getSessionExpiryInterval());
                 break;
             case "CLIENT_DISCONNECTED":
                 body.put("disconnectReason", msg.getDisconnectReason());
@@ -234,6 +237,17 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
             case "CLIENT_UNSUBSCRIBED":
                 ArrayNode topicFilters = body.putArray("topicFilters");
                 msg.getTopicFiltersList().forEach(topicFilters::add);
+                break;
+            case "CLIENT_AUTHENTICATED":
+                body.put("result", msg.getResult());
+                body.put("reason", msg.getReason());
+                body.put("authMethod", msg.getAuthMethod());
+                body.put("anonymous", msg.getAnonymous());
+                break;
+            case "CLIENT_AUTHORIZED":
+                body.put("action", msg.getAction());
+                body.put("result", msg.getResult());
+                body.put("topic", msg.getTopic());
                 break;
             default:
                 break;
