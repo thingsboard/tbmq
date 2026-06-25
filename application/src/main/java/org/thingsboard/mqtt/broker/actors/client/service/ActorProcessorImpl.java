@@ -96,6 +96,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
+        sessionCtx.setUsername(authContext.getUsername());
         AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
         if (authResponse.notSuccess()) {
@@ -203,6 +204,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private void processAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
         EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
         EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext);
+        sessionCtx.setUsername(authResponse.username());
         if (!authResponse.success()) {
             resetStateToDisconnected(state);
             MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
