@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClien
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
@@ -81,6 +82,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final UnauthorizedClientManager unauthorizedClientManager;
     private final BlockedClientService blockedClientService;
     private final AuthorizationRoutingService authorizationRoutingService;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -102,6 +104,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         if (authResponse.notSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionInitMsg, authResponse.getReason());
+            integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), false, authResponse.getReason());
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
             return;
         }
@@ -111,6 +114,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
         sessionCtx.setAuthDetails(authResponse.getAuthDetails());
         sessionCtx.setClientCertCn(authResponse.getClientCertCn());
+        integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), true, null);
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
@@ -209,6 +213,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             resetStateToDisconnected(state);
             MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
+            integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), false, String.valueOf(returnCode));
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
             return;
         }
@@ -220,6 +225,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         sessionCtx.clearScramServer();
         sessionCtx.clearConnectMsg();
         sessionCtx.setAuthDetails(SCRAM.name());
+        integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), true, null);
     }
 
     private void processReAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {

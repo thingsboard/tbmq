@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventT
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -46,6 +47,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     private final IntegrationEventMsgQueuePublisher integrationEventMsgQueuePublisher;
     private final StatsManager statsManager;
+    private final ServiceInfoProvider serviceInfoProvider;
 
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
 
@@ -124,6 +126,35 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
             publish(integrationIds, proto);
         } catch (Throwable t) {
             onPublishError(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED, t);
+        }
+    }
+
+    @Override
+    public void publishAuthenticated(ClientSessionCtx ctx, String clientId, boolean success, String reason) {
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            String username = ctx.getUsername();
+            int protocolVersion = ctx.getMqttVersion() != null ? ctx.getMqttVersion().protocolLevel() : 0;
+            ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
+                    .setEventType(ClientLifecycleEventType.CLIENT_AUTHENTICATED.name())
+                    .setClientId(nullToEmpty(clientId))
+                    .setUsername(nullToEmpty(username))
+                    .setSessionId(ctx.getSessionId() != null ? ctx.getSessionId().toString() : "")
+                    .setIpAddress(toIpString(ctx.getAddressBytes()))
+                    .setTs(System.currentTimeMillis())
+                    .setTbmqNode(serviceInfoProvider.getServiceId())
+                    .setProtocolVersion(protocolVersion)
+                    .setResult(success ? "SUCCESS" : "FAILURE")
+                    .setReason(nullToEmpty(reason))
+                    .setAuthMethod(nullToEmpty(ctx.getAuthDetails()))
+                    .setAnonymous(username == null || username.isEmpty())
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_AUTHENTICATED, t);
         }
     }
 

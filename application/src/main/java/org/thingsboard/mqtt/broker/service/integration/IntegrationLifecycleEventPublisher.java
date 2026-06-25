@@ -31,4 +31,6 @@ public interface IntegrationLifecycleEventPublisher {
 
     void publishUnsubscribed(ClientSessionCtx ctx, List<String> topicFilters);
 
+    void publishAuthenticated(ClientSessionCtx ctx, String clientId, boolean success, String reason);
+
 }

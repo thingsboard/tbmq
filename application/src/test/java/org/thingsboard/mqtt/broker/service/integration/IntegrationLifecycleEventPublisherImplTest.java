@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventT
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
@@ -60,6 +61,8 @@ public class IntegrationLifecycleEventPublisherImplTest {
     @Mock
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
     @Mock
+    private ServiceInfoProvider serviceInfoProvider;
+    @Mock
     private SessionInfo sessionInfo;
     @Mock
     private ClientInfo clientInfo;
@@ -73,7 +76,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
     @Before
     public void setUp() {
         when(statsManager.getDroppedLifecycleEventStats()).thenReturn(droppedLifecycleEventStats);
-        publisher = new IntegrationLifecycleEventPublisherImpl(lifecycleEventTypeCache, integrationEventMsgQueuePublisher, statsManager);
+        publisher = new IntegrationLifecycleEventPublisherImpl(lifecycleEventTypeCache, integrationEventMsgQueuePublisher, statsManager, serviceInfoProvider);
         publisher.init();
     }
 
@@ -196,5 +199,29 @@ public class IntegrationLifecycleEventPublisherImplTest {
         publisher.publishUnsubscribed(ctx, List.of("test/topic"));
 
         verify(droppedLifecycleEventStats).increment();
+    }
+
+    @Test
+    public void givenSubscriber_whenPublishAuthenticatedFailure_thenBuildsFailureEvent() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATED)).thenReturn(Set.of("int-1"));
+        when(serviceInfoProvider.getServiceId()).thenReturn("tbmq-node-1");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        when(ctx.getAddressBytes()).thenReturn(new byte[]{127, 0, 0, 1});
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getUsername()).thenReturn("demo");
+        when(ctx.getAuthDetails()).thenReturn("BASIC");
+
+        publisher.publishAuthenticated(ctx, "client-1", false, "Invalid credentials");
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        ClientLifecycleEventMsgProto p = captor.getValue().getValue();
+        org.junit.Assert.assertEquals("CLIENT_AUTHENTICATED", p.getEventType());
+        org.junit.Assert.assertEquals("client-1", p.getClientId());
+        org.junit.Assert.assertEquals("demo", p.getUsername());
+        org.junit.Assert.assertEquals("FAILURE", p.getResult());
+        org.junit.Assert.assertEquals("Invalid credentials", p.getReason());
+        org.junit.Assert.assertEquals("BASIC", p.getAuthMethod());
+        org.junit.Assert.assertFalse(p.getAnonymous());
     }
 }
