@@ -226,8 +226,6 @@ public class IntegrationLifecycleEventPublisherImplTest {
         when(ctx.getAddressBytes()).thenReturn(new byte[]{127, 0, 0, 1});
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(ctx.getUsername()).thenReturn("demo");
-        when(ctx.getAuthDetails()).thenReturn("BASIC");
-
         publisher.publishAuthenticated(ctx, "client-1", false, "Invalid credentials");
 
         ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
@@ -238,7 +236,6 @@ public class IntegrationLifecycleEventPublisherImplTest {
         org.junit.Assert.assertEquals("demo", p.getUsername());
         org.junit.Assert.assertEquals("FAILURE", p.getResult());
         org.junit.Assert.assertEquals("Invalid credentials", p.getReason());
-        org.junit.Assert.assertEquals("BASIC", p.getAuthMethod());
         org.junit.Assert.assertFalse(p.getAnonymous());
     }
 }

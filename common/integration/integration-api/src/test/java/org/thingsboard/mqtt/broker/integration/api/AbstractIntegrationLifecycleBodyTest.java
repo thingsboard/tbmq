@@ -29,6 +29,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AbstractIntegrationLifecycleBodyTest {
 
@@ -94,22 +95,21 @@ public class AbstractIntegrationLifecycleBodyTest {
     // ── CLIENT_AUTHENTICATED ──────────────────────────────────────────────────
 
     @Test
-    void givenAuthenticatedSuccessProto_whenBuildBody_thenHasResultReasonMethodAnonymous() {
+    void givenAuthenticatedSuccessProto_whenBuildBody_thenHasResultReasonAnonymous() {
         ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
                 .setEventType("CLIENT_AUTHENTICATED")
                 .setClientId("c1")
                 .setUsername("demo")
                 .setResult("SUCCESS")
                 .setReason("")
-                .setAuthMethod("BASIC")
                 .setAnonymous(false)
                 .build();
         ObjectNode body = integration.body(msg);
         assertEquals("demo", body.get("username").asText());
         assertEquals("SUCCESS", body.get("result").asText());
         assertEquals("", body.get("reason").asText());
-        assertEquals("BASIC", body.get("authMethod").asText());
         assertFalse(body.get("anonymous").asBoolean());
+        assertNull(body.get("authMethod"));
     }
 
     @Test
@@ -120,13 +120,12 @@ public class AbstractIntegrationLifecycleBodyTest {
                 .setUsername("baduser")
                 .setResult("FAILURE")
                 .setReason("Bad credentials")
-                .setAuthMethod("JWT")
                 .setAnonymous(false)
                 .build();
         ObjectNode body = integration.body(msg);
         assertEquals("FAILURE", body.get("result").asText());
         assertEquals("Bad credentials", body.get("reason").asText());
-        assertEquals("JWT", body.get("authMethod").asText());
+        assertNull(body.get("authMethod"));
     }
 
     // ── CLIENT_AUTHORIZED ────────────────────────────────────────────────────

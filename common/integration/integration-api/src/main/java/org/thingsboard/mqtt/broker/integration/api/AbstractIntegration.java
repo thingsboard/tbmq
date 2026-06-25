@@ -241,7 +241,6 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
             case "CLIENT_AUTHENTICATED":
                 body.put("result", msg.getResult());
                 body.put("reason", msg.getReason());
-                body.put("authMethod", msg.getAuthMethod());
                 body.put("anonymous", msg.getAnonymous());
                 break;
             case "CLIENT_AUTHORIZED":

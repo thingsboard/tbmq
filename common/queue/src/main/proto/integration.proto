@@ -121,7 +121,7 @@ message ClientLifecycleEventMsgProto {
   repeated string topicFilters = 14;
   string result = 15;                // CLIENT_AUTHENTICATED: SUCCESS|FAILURE; CLIENT_AUTHORIZED: DENY
   string reason = 16;                // CLIENT_AUTHENTICATED failure reason
-  string authMethod = 17;            // CLIENT_AUTHENTICATED: BASIC|JWT|X509|SCRAM
+  // field 17 reserved (authMethod removed — future follow-up for proper provider-type field)
   bool anonymous = 18;               // CLIENT_AUTHENTICATED
   string action = 19;                // CLIENT_AUTHORIZED: publish|subscribe
   string topic = 20;                 // CLIENT_AUTHORIZED: denied topic/filter

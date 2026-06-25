@@ -149,7 +149,6 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                     .setProtocolVersion(protocolVersion)
                     .setResult(success ? "SUCCESS" : "FAILURE")
                     .setReason(nullToEmpty(reason))
-                    .setAuthMethod(nullToEmpty(ctx.getAuthDetails()))
                     .setAnonymous(username == null || username.isEmpty())
                     .build();
             publish(integrationIds, proto);
