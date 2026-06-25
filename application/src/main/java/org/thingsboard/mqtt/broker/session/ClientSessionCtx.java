@@ -67,7 +67,6 @@ public class ClientSessionCtx implements SessionContext {
     private volatile String authDetails;
     private volatile String clientCertCn;
     private volatile String username;
-    private final java.util.Set<String> reportedAuthzDenyTopics = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private ChannelHandlerContext channel;
 

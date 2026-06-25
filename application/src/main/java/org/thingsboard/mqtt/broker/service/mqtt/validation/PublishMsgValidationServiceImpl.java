@@ -53,9 +53,7 @@ public class PublishMsgValidationServiceImpl implements PublishMsgValidationServ
         if (!isClientAuthorized) {
             log.warn("[{}][{}][{}] Client is not authorized to publish to the topic {}",
                     clientId, ctx.getSessionId(), ctx.getAuthRulePatterns(), topic);
-            if (ctx.getReportedAuthzDenyTopics().add(topic)) {
-                integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, "publish", topic);
-            }
+            integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, "publish", topic);
         }
         return isClientAuthorized;
     }
