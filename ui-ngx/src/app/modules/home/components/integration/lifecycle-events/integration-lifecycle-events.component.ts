@@ -56,13 +56,17 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
     ClientLifecycleEventType.CLIENT_DISCONNECTED,
     ClientLifecycleEventType.CLIENT_SUBSCRIBED,
     ClientLifecycleEventType.CLIENT_UNSUBSCRIBED,
+    ClientLifecycleEventType.CLIENT_AUTHENTICATED,
+    ClientLifecycleEventType.CLIENT_AUTHORIZED,
   ];
 
   readonly eventTypeTranslations: Record<ClientLifecycleEventType, string> = {
-    [ClientLifecycleEventType.CLIENT_CONNECTED]:    'integration.client-connected',
-    [ClientLifecycleEventType.CLIENT_DISCONNECTED]: 'integration.client-disconnected',
-    [ClientLifecycleEventType.CLIENT_SUBSCRIBED]:   'integration.client-subscribed',
-    [ClientLifecycleEventType.CLIENT_UNSUBSCRIBED]: 'integration.client-unsubscribed',
+    [ClientLifecycleEventType.CLIENT_CONNECTED]:     'integration.client-connected',
+    [ClientLifecycleEventType.CLIENT_DISCONNECTED]:  'integration.client-disconnected',
+    [ClientLifecycleEventType.CLIENT_SUBSCRIBED]:    'integration.client-subscribed',
+    [ClientLifecycleEventType.CLIENT_UNSUBSCRIBED]:  'integration.client-unsubscribed',
+    [ClientLifecycleEventType.CLIENT_AUTHENTICATED]: 'integration.client-authenticated',
+    [ClientLifecycleEventType.CLIENT_AUTHORIZED]:    'integration.client-authorized',
   };
 
   lifecycleEventsFormControl: UntypedFormControl;
