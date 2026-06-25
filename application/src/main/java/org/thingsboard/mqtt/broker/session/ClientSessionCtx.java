@@ -20,7 +20,10 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
@@ -40,10 +43,40 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Mutable per-connection state for a single MQTT client. One instance exists per client connection — over any
+ * transport: plain TCP, TLS, WebSocket, or WebSocket Secure (see {@link #initializerName}) — created in
+ * {@code MqttSessionHandler}; once the client is registered it is held as a value in
+ * {@code ClientSessionCtxService} keyed by clientId.
+ *
+ * <p><b>Initialization phases.</b> Most fields are populated after construction, in stages and on two
+ * threads, so accessing a not-yet-populated field can return {@code null} or throw. The main fields, grouped
+ * by the thread that writes them:
+ * <ul>
+ *   <li><b>Netty I/O thread</b> — at construction: {@link #sessionId}, {@link #sslHandler},
+ *       {@link #initializerName}; on the first inbound bytes: {@link #address} and {@link #channel}; while the
+ *       CONNECT packet is parsed: {@link #mqttVersion} and, for MQTT 5 enhanced authentication, the
+ *       {@link #enhancedAuthState} auth method and buffered CONNECT.</li>
+ *   <li><b>Client actor thread</b> — while the CONNECT/AUTH exchange is processed: {@link #sessionInfo},
+ *       {@link #authRulePatterns}, {@link #clientType}, the authentication results ({@link #username},
+ *       {@link #authDetails}, {@link #clientCertCn}), the {@link #enhancedAuthState} SCRAM server, and
+ *       {@link #publishedInFlightCtx}.</li>
+ * </ul>
+ * Accessors that dereference such a field (e.g. {@link #getClientId()}, {@link #isCleanSession()},
+ * {@link #getAddressBytes()}, {@link #isWritable()}) are only safe once it has been set.
+ *
+ * <p><b>Concurrency.</b> Because these fields are written and read across the Netty I/O, client actor and
+ * message-delivery threads, they are {@code volatile} (visibility only). Compound updates that need
+ * atomicity use dedicated types (see {@link #nonWritableCounted}).
+ */
 @Slf4j
-@Data
+@Getter
+@Setter
+@ToString(of = "sessionId")
+@EqualsAndHashCode(of = "sessionId")
 public class ClientSessionCtx implements SessionContext {
 
+    // Final: assigned once at construction and never reassigned.
     private final UUID sessionId;
     private final SslHandler sslHandler;
     private final String initializerName;
@@ -53,22 +86,21 @@ public class ClientSessionCtx implements SessionContext {
     // Tracks whether this session is currently counted in the broker-wide nonWritableClientsCount gauge.
     // Used to make increment/decrement idempotent and to allow decrement on abrupt disconnect.
     private final AtomicBoolean nonWritableCounted = new AtomicBoolean(false);
+    // Enhanced-auth (MQTT 5 SCRAM) handshake working set; partially cleared once it completes.
+    private final EnhancedAuthState enhancedAuthState = new EnhancedAuthState();
 
+    // Assigned after construction (see the "Initialization phases" above); volatile for cross-thread visibility.
+    private volatile InetSocketAddress address;
+    private volatile ChannelHandlerContext channel;
     private volatile SessionInfo sessionInfo;
     private volatile List<AuthRulePatterns> authRulePatterns;
     private volatile ClientType clientType;
     private volatile MqttVersion mqttVersion;
-    private volatile InetSocketAddress address;
     private volatile TopicAliasCtx topicAliasCtx;
     private volatile PublishedInFlightCtx publishedInFlightCtx;
-    private volatile MqttConnectMessage connectMsgFromEnhancedAuth;
-    private volatile String authMethod;
-    private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
+    private volatile String username;
     private volatile String authDetails;
     private volatile String clientCertCn;
-    private volatile String username;
-
-    private ChannelHandlerContext channel;
 
     public ClientSessionCtx() {
         this(null, UUID.randomUUID(), null, BrokerConstants.TCP);
@@ -95,6 +127,44 @@ public class ClientSessionCtx implements SessionContext {
 
     public String getClientId() {
         return (sessionInfo != null && sessionInfo.getClientInfo() != null) ? sessionInfo.getClientId() : null;
+    }
+
+    // --- Enhanced-auth handshake: thin delegation; the state lives in EnhancedAuthState ---
+
+    public String getAuthMethod() {
+        return enhancedAuthState.getAuthMethod();
+    }
+
+    public void setAuthMethod(String authMethod) {
+        enhancedAuthState.setAuthMethod(authMethod);
+    }
+
+    public ScramServerWithCallbackHandler getScramServerWithCallbackHandler() {
+        return enhancedAuthState.getScramServer();
+    }
+
+    public void setScramServerWithCallbackHandler(ScramServerWithCallbackHandler scramServer) {
+        enhancedAuthState.setScramServer(scramServer);
+    }
+
+    public MqttConnectMessage getConnectMsgFromEnhancedAuth() {
+        return enhancedAuthState.getConnectMsg();
+    }
+
+    public void setConnectMsgFromEnhancedAuth(MqttConnectMessage connectMsg) {
+        enhancedAuthState.setConnectMsg(connectMsg);
+    }
+
+    public boolean isDefaultAuth() {
+        return enhancedAuthState.isDefaultAuth();
+    }
+
+    public void clearScramServer() {
+        enhancedAuthState.clearScramServer();
+    }
+
+    public void clearConnectMsg() {
+        enhancedAuthState.clearConnectMsg();
     }
 
     public void initPublishedInFlightCtx(FlowControlService flowControlService,
@@ -125,6 +195,7 @@ public class ClientSessionCtx implements SessionContext {
         }
     }
 
+    // publishedInFlightCtx lifecycle (init/release) is driven solely by the client actor thread.
     public void releasePublishedInFlightCtx() {
         if (publishedInFlightCtx != null) {
             publishedInFlightCtx.release();
@@ -148,17 +219,5 @@ public class ClientSessionCtx implements SessionContext {
         log.debug("[{}] Closing channel...", getClientId());
         channel.flush();
         channel.close();
-    }
-
-    public boolean isDefaultAuth() {
-        return connectMsgFromEnhancedAuth == null;
-    }
-
-    public void clearScramServer() {
-        scramServerWithCallbackHandler = null;
-    }
-
-    public void clearConnectMsg() {
-        connectMsgFromEnhancedAuth = null;
     }
 }
