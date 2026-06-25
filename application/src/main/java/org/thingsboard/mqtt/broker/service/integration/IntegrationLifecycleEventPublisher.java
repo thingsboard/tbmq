@@ -15,20 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.List;
 
 public interface IntegrationLifecycleEventPublisher {
 
-    void publishConnected(SessionInfo sessionInfo);
+    void publishConnected(ClientSessionCtx ctx);
 
-    void publishDisconnected(SessionInfo sessionInfo, DisconnectReasonType reasonType);
+    void publishDisconnected(ClientSessionCtx ctx, DisconnectReasonType reasonType);
 
-    void publishSubscribed(SessionInfo sessionInfo, List<TopicSubscription> subscriptions);
+    void publishSubscribed(ClientSessionCtx ctx, List<TopicSubscription> subscriptions);
 
-    void publishUnsubscribed(SessionInfo sessionInfo, List<String> topicFilters);
+    void publishUnsubscribed(ClientSessionCtx ctx, List<String> topicFilters);
 
 }

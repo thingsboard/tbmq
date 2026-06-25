@@ -211,7 +211,7 @@ public class ConnectServiceImpl implements ConnectService {
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);
-        integrationLifecycleEventPublisher.publishConnected(sessionInfo);
+        integrationLifecycleEventPublisher.publishConnected(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.startProcessingPersistedMessages(actorState);

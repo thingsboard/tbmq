@@ -54,7 +54,7 @@ public class MqttUnsubscribeHandler {
                 CallbackUtil.createCallback(
                         () -> {
                             ctx.getChannel().writeAndFlush(unSubAckMessage);
-                            integrationLifecycleEventPublisher.publishUnsubscribed(ctx.getSessionInfo(), msg.getTopics());
+                            integrationLifecycleEventPublisher.publishUnsubscribed(ctx, msg.getTopics());
                         },
                         t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
                 ));

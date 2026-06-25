@@ -164,7 +164,7 @@ public class MqttSubscribeHandler {
                 CallbackUtil.createCallback(
                         () -> {
                             sendSubAck(ctx, subAckMessage);
-                            integrationLifecycleEventPublisher.publishSubscribed(ctx.getSessionInfo(), newSubscriptions);
+                            integrationLifecycleEventPublisher.publishSubscribed(ctx, newSubscriptions);
                             processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
                         t -> log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t))
