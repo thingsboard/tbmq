@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.cache;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisPassword;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import redis.clients.jedis.JedisClientConfig;
 
@@ -86,11 +85,7 @@ public class TBRedisClusterConfigurationTest extends AbstractTBRedisConfiguratio
     }
 
     @Test
-    void givenSslEnabled_whenLettuceConnectionFactory_thenUsesSslWithOptions() {
-        TBRedisClusterConfiguration config = newCluster(true, "redis-user", "redis-pass");
-        LettuceConnectionFactory factory = config.lettuceConnectionFactory();
-        assertThat(factory.getClientConfiguration().isUseSsl()).isTrue();
-        assertThat(factory.getClientConfiguration().getClientOptions()).isPresent();
-        assertThat(factory.getClientConfiguration().getClientOptions().get().getSslOptions()).isNotNull();
+    void givenSslEnabled_whenLettuceConnectionFactory_thenUsesSsl() {
+        assertLettuceUsesSsl(newCluster(true, "redis-user", "redis-pass").lettuceConnectionFactory());
     }
 }

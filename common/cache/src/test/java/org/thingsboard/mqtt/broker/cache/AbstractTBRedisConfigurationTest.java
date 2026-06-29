@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.cache;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import redis.clients.jedis.JedisClientConfig;
 
@@ -89,5 +90,16 @@ abstract class AbstractTBRedisConfigurationTest {
     static void assertCredentials(JedisClientConfig clientConfig, String user, String password) {
         assertThat(clientConfig.getUser()).isEqualTo(user);
         assertThat(clientConfig.getPassword()).isEqualTo(password);
+    }
+
+    /**
+     * The Lettuce SSL trust/key material (custom CA, optional mTLS key manager) is not introspectable via
+     * Lettuce's public API: {@code ClientOptions.getSslOptions()} always returns a non-null default whose
+     * provider is already {@code JDK}, so asserting on it is vacuous. {@code isUseSsl()} — set only when
+     * {@code redis.ssl.enabled=true} — is the meaningful unit signal here; the actual custom-SSL handshake
+     * is verified end-to-end by {@link TBRedisTlsConnectionTest}.
+     */
+    static void assertLettuceUsesSsl(LettuceConnectionFactory factory) {
+        assertThat(factory.getClientConfiguration().isUseSsl()).isTrue();
     }
 }
