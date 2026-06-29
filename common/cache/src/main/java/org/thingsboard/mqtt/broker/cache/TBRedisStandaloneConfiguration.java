@@ -79,7 +79,7 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
             clientConfigBuilder.password(password);
         }
         if (sslEnabled) {
-            clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
+            clientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
         if (useDefaultClientConfig) {
             return new JedisPooled(new HostAndPort(host, port), clientConfigBuilder.build());
@@ -125,7 +125,7 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
             }
         }
         if (sslEnabled) {
-            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+            builder.useSsl().sslSocketFactory(getSslSocketFactory());
         }
         return builder.build();
     }

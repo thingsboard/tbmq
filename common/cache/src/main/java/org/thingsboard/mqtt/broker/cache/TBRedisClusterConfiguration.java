@@ -67,7 +67,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
             clientConfigBuilder.password(password);
         }
         if (sslEnabled) {
-            clientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
+            clientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
         ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
         return new JedisCluster(toHostAndPort(clusterNodes), clientConfigBuilder.build(), JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
@@ -84,7 +84,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
             builder.usePooling().poolConfig(buildPoolConfig());
         }
         if (sslEnabled) {
-            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+            builder.useSsl().sslSocketFactory(getSslSocketFactory());
         }
         return builder.build();
     }
@@ -117,7 +117,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
                 .timeoutOptions(TimeoutOptions.enabled())
                 .topologyRefreshOptions(topologyRefreshOptions);
         if (sslEnabled) {
-            builder.sslOptions(createLettuceSslOptions());
+            builder.sslOptions(getLettuceSslOptions());
         }
         return builder.build();
     }
