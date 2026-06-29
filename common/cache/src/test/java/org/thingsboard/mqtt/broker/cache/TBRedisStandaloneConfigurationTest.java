@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.cache;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import redis.clients.jedis.JedisClientConfig;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -46,5 +47,21 @@ public class TBRedisStandaloneConfigurationTest extends AbstractTBRedisConfigura
         SSLSocketFactory first = config.loadFactory().getClientConfiguration().getSslSocketFactory().orElseThrow();
         SSLSocketFactory second = config.loadFactory().getClientConfiguration().getSslSocketFactory().orElseThrow();
         assertThat(first).isSameAs(second);
+    }
+
+    @Test
+    void givenSslAndCredentials_whenBuildingDataNodeClientConfig_thenTlsAndCredentialsApplied() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        JedisClientConfig clientConfig = config.buildDataNodeClientConfig();
+        assertTls(clientConfig);
+        assertCredentials(clientConfig, "redis-user", "redis-pass");
+    }
+
+    @Test
+    void givenSslEnabled_whenBuildingRawAndSpringConfigs_thenShareSameSslSocketFactory() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        SSLSocketFactory rawFactory = config.buildDataNodeClientConfig().getSslSocketFactory();
+        SSLSocketFactory springFactory = config.loadFactory().getClientConfiguration().getSslSocketFactory().orElseThrow();
+        assertThat(rawFactory).isSameAs(springFactory);
     }
 }

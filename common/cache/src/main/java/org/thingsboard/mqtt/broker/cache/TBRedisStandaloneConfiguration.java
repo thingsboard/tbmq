@@ -26,6 +26,7 @@ import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.DefaultJedisClientConfig.Builder;
 import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -71,6 +72,15 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
+        JedisClientConfig clientConfig = buildDataNodeClientConfig();
+        if (useDefaultClientConfig) {
+            return new JedisPooled(new HostAndPort(host, port), clientConfig);
+        }
+        ConnectionPoolConfig poolConfig = usePoolConfig ? buildConnectionPoolConfig() : new ConnectionPoolConfig();
+        return new JedisPooled(poolConfig, new HostAndPort(host, port), clientConfig);
+    }
+
+    JedisClientConfig buildDataNodeClientConfig() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder().database(db);
         if (StringUtils.isNotEmpty(username)) {
             clientConfigBuilder.user(username);
@@ -81,13 +91,10 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<Re
         if (sslEnabled) {
             clientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
-        if (useDefaultClientConfig) {
-            return new JedisPooled(new HostAndPort(host, port), clientConfigBuilder.build());
-        } else {
-            ConnectionPoolConfig poolConfig = usePoolConfig ? buildConnectionPoolConfig() : new ConnectionPoolConfig();
+        if (!useDefaultClientConfig) {
             clientConfigBuilder.clientName(clientName).socketTimeoutMillis((int) readTimeout).connectionTimeoutMillis((int) connectTimeout);
-            return new JedisPooled(poolConfig, new HostAndPort(host, port), clientConfigBuilder.build());
         }
+        return clientConfigBuilder.build();
     }
 
     @Override
