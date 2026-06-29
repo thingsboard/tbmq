@@ -20,6 +20,9 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
       <ng-container *ngTemplateOutlet="lifecycleEvents"></ng-container>
+      @if (baseHttpIntegrationConfigForm.hasError('topicFilterOrEventRequired')) {
+        <mat-error class="mb-6" style="font-size: 12px">{{ 'integration.topic-filter-or-event-required' | translate }}</mat-error>
+      }
     }
     <section class="pb-6" tb-hint-tooltip-icon="{{ 'integration.send-only-payload-hint' | translate }}">
       <mat-slide-toggle formControlName="sendOnlyMsgPayload">
@@ -151,6 +154,8 @@
       <section class="security-setting mat-padding">
         <tb-integration-topic-filters formControlName="topicFilters"
                                       displayHeaderAction
+                                      [required]="false"
+                                      [allowEmpty]="baseHttpIntegrationConfigForm.get('lifecycleEventTypes').value?.length > 0"
                                       [isEdit]="isEdit()"
                                       [integration]="integration()">
         </tb-integration-topic-filters>

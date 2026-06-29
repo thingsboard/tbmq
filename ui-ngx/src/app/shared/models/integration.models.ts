@@ -17,6 +17,7 @@
 import { BaseData } from '@shared/models/base-data';
 import { QoS } from '@shared/models/session.model';
 import { ContentType } from '@shared/models/constants';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 export enum IntegrationType {
   HTTP = 'HTTP',
@@ -92,6 +93,12 @@ export function getIntegrationHelpLink(integration: Integration): string {
     }
   }
   return 'integrations';
+}
+
+export function atLeastOneFilterOrEvent(group: AbstractControl): ValidationErrors | null {
+  const topicFilters = group.get('topicFilters')?.value ?? [];
+  const lifecycleEventTypes = group.get('lifecycleEventTypes')?.value ?? [];
+  return (topicFilters.length || lifecycleEventTypes.length) ? null : {topicFilterOrEventRequired: true};
 }
 
 export interface IntegrationMetaData {

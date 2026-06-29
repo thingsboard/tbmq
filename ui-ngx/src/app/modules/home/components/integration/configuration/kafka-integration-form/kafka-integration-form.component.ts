@@ -29,12 +29,13 @@ import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
+  atLeastOneFilterOrEvent,
   Integration,
   KafkaIntegration,
   ToByteStandartCharsetTypes,
   ToByteStandartCharsetTypeTranslations
 } from '@shared/models/integration.models';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -65,6 +66,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
   imports: [
     ReactiveFormsModule,
     MatFormField,
+    MatError,
     MatInput,
     MatLabel,
     TranslateModule,
@@ -121,7 +123,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
 
   ngOnInit() {
     this.kafkaIntegrationConfigForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required],
+      topicFilters: [['tbmq/#']],
       lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
@@ -141,7 +143,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
         kafkaHeaders: [null, []],
         kafkaHeadersCharset: ['UTF-8', []],
       })
-    });
+    }, {validators: atLeastOneFilterOrEvent});
     this.kafkaIntegrationConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.kafkaIntegrationConfigForm.getRawValue()));

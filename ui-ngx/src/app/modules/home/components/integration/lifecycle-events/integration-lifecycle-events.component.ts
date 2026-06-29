@@ -14,30 +14,45 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, OnDestroy } from '@angular/core';
+import { Component, ElementRef, forwardRef, OnInit, viewChild } from '@angular/core';
 import {
   ControlValueAccessor,
   FormsModule,
   NG_VALUE_ACCESSOR,
   ReactiveFormsModule,
   UntypedFormBuilder,
-  UntypedFormControl
+  UntypedFormGroup
 } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatOption, MatSelect, MatSelectTrigger } from '@angular/material/select';
-import { MatChip, MatChipSet } from '@angular/material/chips';
-import { TranslateModule } from '@ngx-translate/core';
+import {
+  MatAutocomplete,
+  MatAutocompleteOrigin,
+  MatAutocompleteTrigger
+} from '@angular/material/autocomplete';
+import { MatOption } from '@angular/material/core';
+import { MatChipGrid, MatChipInput, MatChipRemove, MatChipRow } from '@angular/material/chips';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ClientLifecycleEventType } from '@shared/models/integration.models';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { HighlightPipe } from '@shared/pipe/highlight.pipe';
+import { AsyncPipe } from '@angular/common';
+import { Observable, of } from 'rxjs';
+import { filter, map, mergeMap, share, tap } from 'rxjs/operators';
+
+interface EventTypeInfo {
+  name: string;
+  value: ClientLifecycleEventType;
+}
 
 @Component({
   selector: 'tb-integration-lifecycle-events',
   templateUrl: './integration-lifecycle-events.component.html',
   standalone: true,
   imports: [
-    FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatSelect, MatSelectTrigger,
-    MatOption, MatChipSet, MatChip, TranslateModule
+    FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipRemove,
+    MatChipInput, MatInput, MatIcon, MatAutocomplete, MatAutocompleteTrigger, MatAutocompleteOrigin,
+    MatOption, AsyncPipe, TranslateModule, HighlightPipe
   ],
   providers: [
     {
@@ -47,20 +62,13 @@ import { takeUntil } from 'rxjs/operators';
     }
   ]
 })
-export class IntegrationLifecycleEventsComponent implements ControlValueAccessor, OnDestroy {
+export class IntegrationLifecycleEventsComponent implements ControlValueAccessor, OnInit {
 
-  showNoSelectionHint = input(false);
+  readonly eventTypeInput = viewChild<ElementRef<HTMLInputElement>>('eventTypeInput');
+  readonly eventTypeAutocomplete = viewChild<MatAutocomplete>('eventTypeAutocomplete');
+  readonly chipList = viewChild<MatChipGrid>('chipList');
 
-  readonly eventTypes = [
-    ClientLifecycleEventType.CLIENT_CONNECTED,
-    ClientLifecycleEventType.CLIENT_DISCONNECTED,
-    ClientLifecycleEventType.CLIENT_SUBSCRIBED,
-    ClientLifecycleEventType.CLIENT_UNSUBSCRIBED,
-    ClientLifecycleEventType.CLIENT_AUTHENTICATED,
-    ClientLifecycleEventType.CLIENT_AUTHORIZED,
-  ];
-
-  readonly eventTypeTranslations: Record<ClientLifecycleEventType, string> = {
+  private readonly eventTypeTranslations: Record<ClientLifecycleEventType, string> = {
     [ClientLifecycleEventType.CLIENT_CONNECTED]:     'integration.client-connected',
     [ClientLifecycleEventType.CLIENT_DISCONNECTED]:  'integration.client-disconnected',
     [ClientLifecycleEventType.CLIENT_SUBSCRIBED]:    'integration.client-subscribed',
@@ -69,29 +77,52 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
     [ClientLifecycleEventType.CLIENT_AUTHORIZED]:    'integration.client-authorized',
   };
 
-  lifecycleEventsFormControl: UntypedFormControl;
+  readonly allEventTypeList: Array<EventTypeInfo> = [
+    ClientLifecycleEventType.CLIENT_CONNECTED,
+    ClientLifecycleEventType.CLIENT_DISCONNECTED,
+    ClientLifecycleEventType.CLIENT_SUBSCRIBED,
+    ClientLifecycleEventType.CLIENT_UNSUBSCRIBED,
+    ClientLifecycleEventType.CLIENT_AUTHENTICATED,
+    ClientLifecycleEventType.CLIENT_AUTHORIZED,
+  ].map(value => ({value, name: this.translate.instant(this.eventTypeTranslations[value])}));
 
-  private destroy$ = new Subject<void>();
+  lifecycleEventsListFormGroup: UntypedFormGroup;
+
+  eventTypeList: Array<EventTypeInfo> = [];
+  filteredEventTypeList: Observable<Array<EventTypeInfo>>;
+
+  placeholder = this.translate.instant('integration.lifecycle-event-types');
+  secondaryPlaceholder = '+' + this.translate.instant('integration.lifecycle-event');
+
+  searchText = '';
+
+  disabled = false;
+
+  private dirty = false;
   private propagateChange = (_value: ClientLifecycleEventType[]) => {};
 
-  constructor(private fb: UntypedFormBuilder) {
-    this.lifecycleEventsFormControl = this.fb.control([]);
-    this.lifecycleEventsFormControl.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((value: ClientLifecycleEventType[]) => this.propagateChange(value ?? []));
+  constructor(public translate: TranslateService,
+              private fb: UntypedFormBuilder) {
+    this.lifecycleEventsListFormGroup = this.fb.group({
+      lifecycleEventsList: [this.eventTypeList],
+      eventType: [null]
+    });
   }
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  get hasSelection(): boolean {
-    return (this.lifecycleEventsFormControl.value ?? []).length > 0;
-  }
-
-  writeValue(value: ClientLifecycleEventType[] | null): void {
-    this.lifecycleEventsFormControl.patchValue(value ?? [], {emitEvent: false});
+  ngOnInit() {
+    this.filteredEventTypeList = this.lifecycleEventsListFormGroup.get('eventType').valueChanges.pipe(
+      tap((value: EventTypeInfo | string) => {
+        if (value && typeof value !== 'string') {
+          this.add(value);
+        } else if (value === null) {
+          this.clear(this.eventTypeInput().nativeElement.value);
+        }
+      }),
+      filter((value) => typeof value === 'string'),
+      map((value: string) => value ? value : ''),
+      mergeMap(name => this.fetchEventTypes(name)),
+      share()
+    );
   }
 
   registerOnChange(fn: (value: ClientLifecycleEventType[]) => void): void {
@@ -101,10 +132,77 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
   registerOnTouched(): void {}
 
   setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
     if (isDisabled) {
-      this.lifecycleEventsFormControl.disable({emitEvent: false});
+      this.lifecycleEventsListFormGroup.disable({emitEvent: false});
     } else {
-      this.lifecycleEventsFormControl.enable({emitEvent: false});
+      this.lifecycleEventsListFormGroup.enable({emitEvent: false});
     }
+  }
+
+  writeValue(value: ClientLifecycleEventType[] | null): void {
+    this.searchText = '';
+    this.eventTypeList = [];
+    (value ?? []).forEach(eventType => {
+      const info = this.allEventTypeList.find(item => item.value === eventType);
+      if (info) {
+        this.eventTypeList.push(info);
+      }
+    });
+    this.lifecycleEventsListFormGroup.get('lifecycleEventsList').setValue(this.eventTypeList);
+    this.dirty = true;
+  }
+
+  add(eventType: EventTypeInfo): void {
+    if (this.eventTypeList.findIndex(info => info.value === eventType.value) === -1) {
+      this.eventTypeList.push(eventType);
+      this.lifecycleEventsListFormGroup.get('lifecycleEventsList').setValue(this.eventTypeList);
+      this.notifyValueChanged();
+    }
+    this.clear();
+  }
+
+  remove(eventType: EventTypeInfo): void {
+    const index = this.eventTypeList.indexOf(eventType);
+    if (index >= 0) {
+      this.eventTypeList.splice(index, 1);
+      this.lifecycleEventsListFormGroup.get('lifecycleEventsList').setValue(this.eventTypeList);
+      this.notifyValueChanged();
+      this.clear();
+    }
+  }
+
+  displayEventTypeFn(eventType?: EventTypeInfo): string | undefined {
+    return eventType ? eventType.name : undefined;
+  }
+
+  onFocus() {
+    if (this.dirty) {
+      this.lifecycleEventsListFormGroup.get('eventType').updateValueAndValidity({onlySelf: true, emitEvent: true});
+      this.dirty = false;
+    }
+  }
+
+  private notifyValueChanged() {
+    this.propagateChange(this.eventTypeList.map(info => info.value));
+  }
+
+  private fetchEventTypes(searchText?: string): Observable<Array<EventTypeInfo>> {
+    this.searchText = searchText;
+    const selected = new Set(this.eventTypeList.map(info => info.value));
+    let result = this.allEventTypeList.filter(info => !selected.has(info.value));
+    if (searchText && searchText.length) {
+      result = result.filter(info => info.name.toLowerCase().includes(searchText.toLowerCase()));
+    }
+    return of(result);
+  }
+
+  private clear(value: string = '') {
+    this.eventTypeInput().nativeElement.value = value;
+    this.lifecycleEventsListFormGroup.get('eventType').patchValue(value, {emitEvent: true});
+    setTimeout(() => {
+      this.eventTypeInput().nativeElement.blur();
+      this.eventTypeInput().nativeElement.focus();
+    }, 0);
   }
 }

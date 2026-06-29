@@ -29,10 +29,11 @@ import { filterTopics, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@
 import { map, takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
+  atLeastOneFilterOrEvent,
   Integration,
   MqttIntegration,
 } from '@shared/models/integration.models';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -73,6 +74,7 @@ import { Observable } from 'rxjs';
   imports: [
     ReactiveFormsModule,
     MatFormField,
+    MatError,
     MatInput,
     MatLabel,
     TranslateModule,
@@ -133,7 +135,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
 
   ngOnInit() {
     this.mqttIntegrationConfigForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required],
+      topicFilters: [['tbmq/#']],
       lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
@@ -153,7 +155,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         useMsgRetain: [true, []],
         keepAliveSec: [60, [Validators.required]],
       })
-    });
+    }, {validators: atLeastOneFilterOrEvent});
     this.initFormListeners();
   }
 

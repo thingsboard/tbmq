@@ -17,6 +17,7 @@
 import { Component, Inject, OnDestroy, viewChild } from '@angular/core';
 import { DialogComponent } from '@shared/components/dialog.component';
 import {
+  atLeastOneFilterOrEvent,
   getIntegrationHelpLink,
   Integration,
   IntegrationType,
@@ -43,7 +44,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { AsyncPipe } from '@angular/common';
 import { IntegrationTypeSelectComponent } from '@home/components/integration/integration-type-select.component';
-import { MatSuffix, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSuffix, MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import {
@@ -92,6 +93,7 @@ import {
     MatButton,
     MatSuffix,
     MatLabel,
+    MatError,
     ToastDirective,
     IntegrationTopicFiltersComponent,
     KeyValMapComponent,
@@ -113,8 +115,7 @@ export class IntegrationWizardDialogComponent extends
   stepperOrientation: Observable<StepperOrientation>;
 
   integrationWizardForm: UntypedFormGroup;
-  integrationTopicFilterForm: UntypedFormGroup;
-  integrationLifecycleEventsForm: UntypedFormGroup;
+  integrationFiltersForm: UntypedFormGroup;
   integrationConfigurationForm: UntypedFormGroup;
 
   private checkConnectionAllow = false;
@@ -165,13 +166,10 @@ export class IntegrationWizardDialogComponent extends
       )
     });
 
-    this.integrationTopicFilterForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required]
-    });
-
-    this.integrationLifecycleEventsForm = this.fb.group({
+    this.integrationFiltersForm = this.fb.group({
+      topicFilters: [['tbmq/#']],
       lifecycleEventTypes: [[]]
-    });
+    }, {validators: atLeastOneFilterOrEvent});
   }
 
   ngOnDestroy() {
@@ -183,12 +181,10 @@ export class IntegrationWizardDialogComponent extends
   add(): void {
     if (this.allValid()) {
       const integrationData = this.integrationWizardForm.getRawValue();
-      const integrationTopicFilter = this.integrationTopicFilterForm.getRawValue();
       const integrationConfig = this.integrationConfigurationForm.getRawValue();
       integrationConfig.configuration = {
         ...integrationConfig.configuration,
-        ...integrationTopicFilter,
-        ...this.integrationLifecycleEventsForm.getRawValue(),
+        ...this.integrationFiltersForm.getRawValue(),
         metadata: integrationConfig.metadata,
       };
       delete integrationConfig.metadata;
@@ -213,8 +209,7 @@ export class IntegrationWizardDialogComponent extends
       configuration: {
         metadata: this.integrationConfigurationForm.value.metadata,
         ...this.integrationConfigurationForm.value.configuration,
-        ...this.integrationTopicFilterForm.getRawValue(),
-        ...this.integrationLifecycleEventsForm.getRawValue()
+        ...this.integrationFiltersForm.getRawValue()
       },
       name: this.integrationWizardForm.value.name.trim(),
       type: this.integrationWizardForm.value.type,
@@ -228,7 +223,7 @@ export class IntegrationWizardDialogComponent extends
     return integrationData;
   }
 
-  readonly maxStep = 3;
+  readonly maxStep = 2;
 
   cancel(): void {
     this.dialogRef.close(null);

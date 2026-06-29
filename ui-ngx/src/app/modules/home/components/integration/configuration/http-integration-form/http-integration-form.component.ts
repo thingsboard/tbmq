@@ -27,13 +27,13 @@ import {
 } from '@angular/forms';
 import { baseUrl, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
-import { HttpIntegration, HttpRequestType, Integration } from '@shared/models/integration.models';
+import { atLeastOneFilterOrEvent, HttpIntegration, HttpRequestType, Integration } from '@shared/models/integration.models';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import { IntegrationCredentialType } from '@shared/models/integration.models';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatOption, MatSelect } from '@angular/material/select';
 import {
@@ -67,6 +67,7 @@ import { KeyValMapComponent } from '@shared/components/key-val-map.component';
   imports: [
     ReactiveFormsModule,
     MatFormField,
+    MatError,
     CopyButtonComponent,
     MatSelect,
     MatOption,
@@ -128,7 +129,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
 
   ngOnInit() {
     this.baseHttpIntegrationConfigForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required],
+      topicFilters: [['tbmq/#']],
       lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
@@ -142,7 +143,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
         payloadContentType: [ContentType.BINARY, []],
         sendBinaryOnParseFailure: [true, []],
       })
-    });
+    }, {validators: atLeastOneFilterOrEvent});
     this.baseHttpIntegrationConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.baseHttpIntegrationConfigForm.getRawValue()));

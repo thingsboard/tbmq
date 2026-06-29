@@ -15,24 +15,41 @@
     limitations under the License.
 
 -->
-<div class="flex flex-col gap-2">
-  <p class="text-sm text-gray-500">{{ 'integration.lifecycle-events-hint' | translate }}</p>
-  <mat-form-field class="mat-block" appearance="outline" subscriptSizing="dynamic">
+<div class="mt-2 flex flex-col gap-2">
+  <mat-form-field [formGroup]="lifecycleEventsListFormGroup" class="mat-block" appearance="outline"
+                  subscriptSizing="dynamic">
     <mat-label translate>integration.lifecycle-event-types</mat-label>
-    <mat-select multiple [formControl]="lifecycleEventsFormControl">
-      <mat-select-trigger>
-        <mat-chip-set>
-          @for (eventType of lifecycleEventsFormControl.value; track eventType) {
-            <mat-chip>{{ eventTypeTranslations[eventType] | translate }}</mat-chip>
+    <mat-chip-grid #chipList formControlName="lifecycleEventsList">
+      @for (eventType of eventTypeList; track eventType.value) {
+        <mat-chip-row [removable]="!disabled" (removed)="remove(eventType)">
+          {{ eventType.name }}
+          @if (!disabled) {
+            <mat-icon matChipRemove>close</mat-icon>
           }
-        </mat-chip-set>
-      </mat-select-trigger>
-      @for (eventType of eventTypes; track eventType) {
-        <mat-option [value]="eventType">{{ eventTypeTranslations[eventType] | translate }}</mat-option>
+        </mat-chip-row>
       }
-    </mat-select>
+      <input matInput type="text"
+             [class.!hidden]="disabled"
+             placeholder="{{ !disabled ? (eventTypeList.length ? secondaryPlaceholder : placeholder) : '' }}"
+             style="max-width: 200px;"
+             #eventTypeInput
+             (focusin)="onFocus()"
+             formControlName="eventType"
+             matAutocompleteOrigin
+             #origin="matAutocompleteOrigin"
+             [matAutocompleteConnectedTo]="origin"
+             [matAutocomplete]="eventTypeAutocomplete"
+             [matChipInputFor]="chipList">
+    </mat-chip-grid>
+    <mat-autocomplete #eventTypeAutocomplete="matAutocomplete"
+                      class="tb-autocomplete"
+                      [displayWith]="displayEventTypeFn">
+      @for (eventType of filteredEventTypeList | async; track eventType.value) {
+        <mat-option [value]="eventType">
+          <span [innerHTML]="eventType.name | highlight:searchText:true"></span>
+        </mat-option>
+      }
+    </mat-autocomplete>
   </mat-form-field>
-  @if (!hasSelection && showNoSelectionHint()) {
-    <p class="mt-1 text-xs text-gray-400">{{ 'integration.lifecycle-events-no-selection' | translate }}</p>
-  }
+  <div class="tb-hint">{{ 'integration.lifecycle-events-hint' | translate }}</div>
 </div>

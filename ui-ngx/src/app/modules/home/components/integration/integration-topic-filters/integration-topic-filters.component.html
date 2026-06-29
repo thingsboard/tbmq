@@ -149,7 +149,7 @@
         warning
       </mat-icon>
     </mat-form-field>
-    <button mat-icon-button color="primary" [disabled]="integrationFiltersFromArray.length === 1 || (!isEdit() && integration())"
+    <button mat-icon-button color="primary" [disabled]="(integrationFiltersFromArray.length === 1 && !allowEmpty()) || (!isEdit() && integration())"
             type="button" style="top: 4px; align-self: baseline"
             (click)="removeTopicFilter(topicFilter)"
             [matTooltip]="'integration.remove-topic-filter' | translate" matTooltipPosition="above">
