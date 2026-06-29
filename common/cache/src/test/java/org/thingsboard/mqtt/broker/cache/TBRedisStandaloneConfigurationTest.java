@@ -122,5 +122,7 @@ public class TBRedisStandaloneConfigurationTest extends AbstractTBRedisConfigura
         assertThat(factory.getClientConfiguration().isUseSsl()).isTrue();
         assertThat(factory.getClientConfiguration().getClientOptions()).isPresent();
         assertThat(factory.getClientConfiguration().getClientOptions().get().getSslOptions()).isNotNull();
+        assertThat(factory.getClientConfiguration().getClientOptions().get().getSslOptions().getSslProvider())
+                .isEqualTo(io.netty.handler.ssl.SslProvider.JDK);
     }
 }
