@@ -16,6 +16,9 @@
 package org.thingsboard.mqtt.broker.cache;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import redis.clients.jedis.JedisClientConfig;
 
@@ -63,5 +66,61 @@ public class TBRedisStandaloneConfigurationTest extends AbstractTBRedisConfigura
         SSLSocketFactory rawFactory = config.buildDataNodeClientConfig().getSslSocketFactory();
         SSLSocketFactory springFactory = config.loadFactory().getClientConfiguration().getSslSocketFactory().orElseThrow();
         assertThat(rawFactory).isSameAs(springFactory);
+    }
+
+    @Test
+    void givenSslDisabled_whenBuildingDataNodeClientConfig_thenNoTls() {
+        TBRedisStandaloneConfiguration config = newStandalone(false, "redis-user", "redis-pass");
+        assertNoTls(config.buildDataNodeClientConfig());
+    }
+
+    @Test
+    void givenNoCredentials_whenBuildingDataNodeClientConfig_thenUserNotSet() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "", "");
+        JedisClientConfig clientConfig = config.buildDataNodeClientConfig();
+        assertThat(clientConfig.getUser()).isNull();
+        assertThat(clientConfig.getPassword()).isNull();
+    }
+
+    @Test
+    void givenNonDefaultClientConfig_whenBuildingDataNodeClientConfig_thenClientNameAppliedWithTls() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        ReflectionTestUtils.setField(config, "useDefaultClientConfig", false);
+        JedisClientConfig clientConfig = config.buildDataNodeClientConfig();
+        assertThat(clientConfig.getClientName()).isEqualTo("standalone");
+        assertThat(clientConfig.getSocketTimeoutMillis()).isEqualTo(60000);
+        assertThat(clientConfig.getConnectionTimeoutMillis()).isEqualTo(30000);
+        assertTls(clientConfig);
+    }
+
+    @Test
+    void givenSslEnabled_whenLoadFactory_thenJedisClientConfigurationUsesSsl() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        var clientConfiguration = config.loadFactory().getClientConfiguration();
+        assertThat(clientConfiguration.isUseSsl()).isTrue();
+        assertThat(clientConfiguration.getSslSocketFactory()).isPresent();
+    }
+
+    @Test
+    void givenSslDisabled_whenLoadFactory_thenJedisClientConfigurationNoSsl() {
+        TBRedisStandaloneConfiguration config = newStandalone(false, "", "");
+        assertThat(config.loadFactory().getClientConfiguration().isUseSsl()).isFalse();
+    }
+
+    @Test
+    void givenCredentials_whenGetRedisConfiguration_thenUsernameAndPasswordSet() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        RedisStandaloneConfiguration redisConfig = config.getRedisConfiguration();
+        assertThat(redisConfig.getUsername()).isEqualTo("redis-user");
+        assertThat(redisConfig.getPassword()).isEqualTo(RedisPassword.of("redis-pass"));
+    }
+
+    @Test
+    void givenSslEnabled_whenLettuceConnectionFactory_thenUsesSslWithOptions() {
+        TBRedisStandaloneConfiguration config = newStandalone(true, "redis-user", "redis-pass");
+        LettuceConnectionFactory factory = config.lettuceConnectionFactory();
+        assertThat(factory.getClientConfiguration().isUseSsl()).isTrue();
+        assertThat(factory.getClientConfiguration().getClientOptions()).isPresent();
+        assertThat(factory.getClientConfiguration().getClientOptions().get().getSslOptions()).isNotNull();
     }
 }
