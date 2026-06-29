@@ -1124,6 +1124,8 @@ redis:
     master: "${REDIS_MASTER:}"
     # Comma-separated list of "host:port" pairs of sentinels.
     sentinels: "${REDIS_SENTINELS:}"
+    # Optional. Username to authenticate with the Sentinel (Sentinel ACL).
+    username: "${REDIS_SENTINEL_USERNAME:}"
     # Password to authenticate with the Sentinel.
     password: "${REDIS_SENTINEL_PASSWORD:}"
     # Enables or disables use of the default pool config. When false, the pool config is built from the 'pool_config' section values.
