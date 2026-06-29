@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.DefaultJedisClientConfig.Builder;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -59,6 +60,11 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
+        ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
+        return new JedisCluster(toHostAndPort(clusterNodes), buildDataNodeClientConfig(), JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
+    }
+
+    JedisClientConfig buildDataNodeClientConfig() {
         Builder clientConfigBuilder = DefaultJedisClientConfig.builder();
         if (StringUtils.isNotEmpty(username)) {
             clientConfigBuilder.user(username);
@@ -69,8 +75,7 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
         if (sslEnabled) {
             clientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
-        ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
-        return new JedisCluster(toHostAndPort(clusterNodes), clientConfigBuilder.build(), JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
+        return clientConfigBuilder.build();
     }
 
     @Override
