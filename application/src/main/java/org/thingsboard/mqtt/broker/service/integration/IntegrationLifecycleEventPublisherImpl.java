@@ -178,6 +178,12 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
         }
     }
 
+    /**
+     * Builds a base event proto from the established session. Callers MUST ensure the session is set
+     * (i.e. {@code ctx.getSessionInfo() != null} and its client info is populated) before invoking this;
+     * it dereferences both without null checks. Pre-session callers (e.g. last-will validation at CONNECT)
+     * must guard {@code getSessionInfo() == null} themselves rather than relying on it here.
+     */
     private ClientLifecycleEventMsgProto.Builder newSessionBuilder(ClientSessionCtx ctx, ClientLifecycleEventType eventType) {
         SessionInfo sessionInfo = ctx.getSessionInfo();
         return ClientLifecycleEventMsgProto.newBuilder()
