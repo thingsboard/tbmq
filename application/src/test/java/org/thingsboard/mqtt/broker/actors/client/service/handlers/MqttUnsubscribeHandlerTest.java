@@ -121,6 +121,24 @@ public class MqttUnsubscribeHandlerTest {
     }
 
     @Test
+    public void givenSharedSubscription_whenUnsubscribe_thenEmitsBareTopicFilter() {
+        String clientId = "client-1";
+        when(ctx.getClientId()).thenReturn(clientId);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        lenient().when(clientSubscriptionService.getClientSubscriptions(clientId))
+                .thenReturn(Set.of(new ClientTopicSubscription("topic", 1, "group")));
+
+        mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("$share/group/topic")));
+
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).unsubscribeAndPersist(eq(clientId), eq(List.of("$share/group/topic")), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
+        // CLIENT_SUBSCRIBED emits the bare filter; CLIENT_UNSUBSCRIBED must match it, not the raw "$share/group/topic"
+        verify(integrationLifecycleEventPublisher).publishUnsubscribed(ctx, List.of("topic"));
+    }
+
+    @Test
     public void testCollectUniqueSharedSubscriptions() {
         List<String> topics = List.of(
                 "test/topic",

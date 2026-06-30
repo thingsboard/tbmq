@@ -76,8 +76,11 @@ public class MqttUnsubscribeHandler {
         Set<String> currentTopicFilters = currentSubscriptions.stream()
                 .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toSet());
+        // Normalize to the bare topic filter ($share/group/topic -> topic) so CLIENT_UNSUBSCRIBED carries the same
+        // value CLIENT_SUBSCRIBED emits (TopicSubscription.getTopicFilter()), keeping the two events symmetric.
         return requestedTopics.stream()
-                .filter(topic -> currentTopicFilters.contains(toTopicFilter(topic)))
+                .map(MqttUnsubscribeHandler::toTopicFilter)
+                .filter(currentTopicFilters::contains)
                 .collect(Collectors.toList());
     }
 
