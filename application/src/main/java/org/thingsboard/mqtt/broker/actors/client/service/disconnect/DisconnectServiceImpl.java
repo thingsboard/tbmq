@@ -87,6 +87,10 @@ public class DisconnectServiceImpl implements DisconnectService {
         if (reasonType.isNotClusterConflictingSession()) {
             notifyClientDisconnected(actorState, sessionExpiryInterval, reasonType);
         }
+        // Emit the lifecycle CLIENT_DISCONNECTED on every disconnect, including cross-node session takeover
+        // (ON_CLUSTER_CONFLICTING_SESSIONS). The session-event notification above is intentionally suppressed
+        // on takeover, but the lifecycle event must still fire to pair with the CLIENT_CONNECTED this node emitted.
+        integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
         cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }
 
@@ -119,7 +123,6 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             SessionInfo disconnectSessionInfo = sessionCtx.getSessionInfo().withSessionExpiryInterval(sessionExpiryInterval);
             clientSessionEventService.notifyClientDisconnected(disconnectSessionInfo, reasonType, null);
-            integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
         } catch (Exception e) {
             log.warn("[{}][{}][{}] Failed to notify client disconnected.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), sessionExpiryInterval, e);

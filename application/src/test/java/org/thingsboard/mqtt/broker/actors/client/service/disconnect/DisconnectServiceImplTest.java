@@ -147,6 +147,20 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
+    public void givenClusterConflictingSession_whenDisconnect_thenEmitLifecycleDisconnectButSkipSessionEvent() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // Takeover on another node: the local session-event-service notification must stay suppressed
+        // (the session is now owned by the new node)...
+        verify(disconnectService, never()).notifyClientDisconnected(clientActorState, -1, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+        verify(clientSessionEventService, never()).notifyClientDisconnected(any(), any(), any());
+        // ...but the lifecycle CLIENT_DISCONNECTED event must still be emitted, to pair with the CLIENT_CONNECTED
+        // that this node emitted for the now-superseded session.
+        verify(integrationLifecycleEventPublisher, times(1)).publishDisconnected(ctx, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+    }
+
+    @Test
     public void givenMqtt5Client_whenDisconnectClientByServer_thenSendDisconnectMsgAndCloseChannel() {
         ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
         when(ctx.getChannel()).thenReturn(handlerContext);
