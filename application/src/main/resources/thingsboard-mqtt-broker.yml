@@ -799,17 +799,6 @@ lettuce:
         # Interval for periodic cluster topology updates (in s).
         period: "${REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
 
-# Redis jedis configuration parameters
-jedis:
-  cluster:
-    topology-refresh:
-      # Enables or disables periodic cluster topology updates.
-      # Useful for Redis cluster setup to handle topology changes,
-      # such as node failover, restarts, or IP address changes.
-      enabled: "${REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_ENABLED:false}"
-      # Interval for periodic cluster topology updates (in s).
-      period: "${REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
-
 # SQL DAO configuration parameters
 spring:
   data:
