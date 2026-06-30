@@ -85,7 +85,6 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
             }
             ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_DISCONNECTED)
                     .setDisconnectReason(reasonType.name())
-                    .setClientInitiated(isClientInitiated(reasonType))
                     .build();
             publish(integrationIds, proto);
         } catch (Throwable t) {
@@ -220,11 +219,6 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     private String toIpString(byte[] ipAdr) {
         // Single-source IPv6/error handling via BytesUtil; keep null/empty as "" for address-less sessions.
         return (ipAdr == null || ipAdr.length == 0) ? "" : BytesUtil.toHostAddress(ipAdr);
-    }
-
-    private boolean isClientInitiated(DisconnectReasonType reasonType) {
-        return reasonType == DisconnectReasonType.ON_DISCONNECT_MSG
-                || reasonType == DisconnectReasonType.ON_DISCONNECT_AND_WILL_MSG;
     }
 
 }

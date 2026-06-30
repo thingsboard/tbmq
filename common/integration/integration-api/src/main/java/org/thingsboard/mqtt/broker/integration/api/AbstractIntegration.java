@@ -230,7 +230,6 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     break;
                 case CLIENT_DISCONNECTED:
                     body.put("disconnectReason", msg.getDisconnectReason());
-                    body.put("clientInitiated", msg.getClientInitiated());
                     break;
                 case CLIENT_SUBSCRIBED:
                     ArrayNode subs = body.putArray("subscriptions");
