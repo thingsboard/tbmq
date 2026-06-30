@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -134,7 +135,7 @@ public class MqttSubscribeHandler {
                 if (!isClientAuthorized) {
                     log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
                             ctx.getClientId(), ctx.getSessionId(), topic);
-                    integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, "subscribe", topic);
+                    integrationLifecycleEventPublisher.publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, topic);
                     codes.add(MqttReasonCodeResolver.notAuthorizedSubscribe(ctx));
                     continue;
                 }

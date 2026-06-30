@@ -157,7 +157,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     }
 
     @Override
-    public void publishAuthorizationDenied(ClientSessionCtx ctx, String action, String topic) {
+    public void publishAuthorizationDenied(ClientSessionCtx ctx, AuthorizationAction action, String topic) {
         try {
             Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED);
             if (integrationIds.isEmpty()) {
@@ -169,7 +169,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                 return;
             }
             ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED)
-                    .setAction(action)
+                    .setAction(action.getLabel())
                     .setTopic(topic)
                     .build();
             publish(integrationIds, proto);

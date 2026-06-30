@@ -206,7 +206,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED)).thenReturn(Set.of("int-1"));
         stubCtxSession();
 
-        publisher.publishAuthorizationDenied(ctx, "publish", "zxc/demo/topic");
+        publisher.publishAuthorizationDenied(ctx, AuthorizationAction.PUBLISH, "zxc/demo/topic");
 
         ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());

@@ -33,6 +33,6 @@ public interface IntegrationLifecycleEventPublisher {
 
     void publishAuthenticationFailed(ClientSessionCtx ctx, String clientId, String reason);
 
-    void publishAuthorizationDenied(ClientSessionCtx ctx, String action, String topic);
+    void publishAuthorizationDenied(ClientSessionCtx ctx, AuthorizationAction action, String topic);
 
 }

@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -420,9 +421,9 @@ public class MqttSubscribeHandlerTest {
         mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
         // a CLIENT_AUTHORIZATION_FAILED event is emitted once per denied topic, and never for an authorized one
-        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, "subscribe", "topic1");
-        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, "subscribe", "topic2");
-        verify(integrationLifecycleEventPublisher, never()).publishAuthorizationDenied(ctx, "subscribe", "topic3");
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic1");
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic2");
+        verify(integrationLifecycleEventPublisher, never()).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic3");
     }
 
     @Test
