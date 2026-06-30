@@ -253,6 +253,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     putIfNotEmpty(body, "action", msg.getAction());
                     putIfNotEmpty(body, "topic", msg.getTopic());
                     break;
+                case CLIENT_CONNECTION_FAILED:
+                    putIfNotEmpty(body, "reason", msg.getReason());
+                    break;
             }
         }
         body.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));

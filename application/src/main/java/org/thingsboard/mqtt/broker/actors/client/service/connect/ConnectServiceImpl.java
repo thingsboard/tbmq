@@ -246,6 +246,8 @@ public class ConnectServiceImpl implements ConnectService {
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, reason);
+
         sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, reason);
     }
 

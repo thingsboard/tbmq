@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
@@ -173,6 +174,22 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
             publish(integrationIds, proto);
         } catch (Throwable t) {
             onPublishError(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED, t);
+        }
+    }
+
+    @Override
+    public void publishConnectionFailed(ClientSessionCtx ctx, ClientSessionFailureReason reason) {
+        try {
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTION_FAILED);
+            if (integrationIds.isEmpty()) {
+                return;
+            }
+            ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_CONNECTION_FAILED)
+                    .setReason(reason.name())
+                    .build();
+            publish(integrationIds, proto);
+        } catch (Throwable t) {
+            onPublishError(ClientLifecycleEventType.CLIENT_CONNECTION_FAILED, t);
         }
     }
 

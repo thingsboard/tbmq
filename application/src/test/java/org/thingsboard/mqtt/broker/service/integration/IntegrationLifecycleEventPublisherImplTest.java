@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
@@ -234,5 +235,21 @@ public class IntegrationLifecycleEventPublisherImplTest {
         org.junit.Assert.assertEquals("client-1", p.getClientId());
         org.junit.Assert.assertEquals("demo", p.getUsername());
         org.junit.Assert.assertEquals("Invalid credentials", p.getReason());
+    }
+
+    @Test
+    public void givenSubscriber_whenPublishConnectionFailed_thenBuildsFailureEvent() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTION_FAILED)).thenReturn(Set.of("int-1"));
+        stubCtxSession();
+
+        publisher.publishConnectionFailed(ctx, ClientSessionFailureReason.QUOTA_EXCEEDED);
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        ClientLifecycleEventMsgProto p = captor.getValue().getValue();
+        org.junit.Assert.assertEquals("CLIENT_CONNECTION_FAILED", p.getEventType());
+        org.junit.Assert.assertEquals("QUOTA_EXCEEDED", p.getReason());
+        org.junit.Assert.assertEquals("client-1", p.getClientId());
+        org.junit.Assert.assertEquals("demo", p.getUsername());
     }
 }

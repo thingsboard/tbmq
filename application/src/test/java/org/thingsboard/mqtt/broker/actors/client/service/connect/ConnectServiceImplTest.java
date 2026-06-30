@@ -165,6 +165,7 @@ public class ConnectServiceImplTest {
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, ClientSessionFailureReason.SERVER_UNAVAILABLE);
     }
 
     @Test

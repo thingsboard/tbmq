@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.integration;
 
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -34,5 +35,7 @@ public interface IntegrationLifecycleEventPublisher {
     void publishAuthenticationFailed(ClientSessionCtx ctx, String clientId, String reason);
 
     void publishAuthorizationDenied(ClientSessionCtx ctx, AuthorizationAction action, String topic);
+
+    void publishConnectionFailed(ClientSessionCtx ctx, ClientSessionFailureReason reason);
 
 }

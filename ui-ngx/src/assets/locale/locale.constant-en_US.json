@@ -605,6 +605,7 @@
         "client-unsubscribed": "Client unsubscribed",
         "client-authentication-failed": "Client authentication failed",
         "client-authorization-failed": "Client authorization failed",
+        "client-connection-failed": "Client connection failed",
         "topic-filter-or-event-required": "At least one topic filter or one lifecycle event type is required.",
         "topic": "Topic",
         "topic-required": "Topic is required",

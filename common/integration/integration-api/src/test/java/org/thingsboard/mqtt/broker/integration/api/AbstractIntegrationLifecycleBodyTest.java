@@ -138,6 +138,19 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertEquals("zxc/demo/topic", body.get("topic").asText());
     }
 
+    // ── CLIENT_CONNECTION_FAILED ──────────────────────────────────────────────
+
+    @Test
+    void givenConnectionFailedProto_whenBuildBody_thenHasReason() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_CONNECTION_FAILED")
+                .setClientId("c3")
+                .setReason("QUOTA_EXCEEDED")
+                .build();
+        ObjectNode body = integration.body(msg);
+        assertEquals("QUOTA_EXCEEDED", body.get("reason").asText());
+    }
+
     // ── metadata node always present ──────────────────────────────────────────
 
     @Test

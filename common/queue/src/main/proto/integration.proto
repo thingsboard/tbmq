@@ -118,7 +118,7 @@ message ClientLifecycleEventMsgProto {
   string disconnectReason = 11;
   repeated queue.TopicSubscriptionProto subscriptions = 12;
   repeated string topicFilters = 13;
-  string reason = 14;                // CLIENT_AUTHENTICATION_FAILED: failure reason
+  string reason = 14;                // CLIENT_AUTHENTICATION_FAILED / CLIENT_CONNECTION_FAILED: failure reason
   string action = 15;                // CLIENT_AUTHORIZATION_FAILED: publish|subscribe
   string topic = 16;                 // CLIENT_AUTHORIZATION_FAILED: denied topic/filter
   int64 sessionExpiryInterval = 17;  // CLIENT_CONNECTED enrichment
