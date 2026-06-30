@@ -109,18 +109,16 @@ public class AbstractIntegrationLifecycleBodyTest {
     // ── CLIENT_AUTHENTICATION_FAILED ──────────────────────────────────────────
 
     @Test
-    void givenAuthenticationFailedProto_whenBuildBody_thenHasReasonAndAnonymous() {
+    void givenAuthenticationFailedProto_whenBuildBody_thenHasReason() {
         ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
                 .setEventType("CLIENT_AUTHENTICATION_FAILED")
                 .setClientId("c2")
                 .setUsername("baduser")
                 .setReason("Bad credentials")
-                .setAnonymous(false)
                 .build();
         ObjectNode body = integration.body(msg);
         assertEquals("baduser", body.get("username").asText());
         assertEquals("Bad credentials", body.get("reason").asText());
-        assertFalse(body.get("anonymous").asBoolean());
     }
 
     // ── CLIENT_AUTHORIZATION_FAILED ───────────────────────────────────────────

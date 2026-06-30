@@ -234,6 +234,5 @@ public class IntegrationLifecycleEventPublisherImplTest {
         org.junit.Assert.assertEquals("client-1", p.getClientId());
         org.junit.Assert.assertEquals("demo", p.getUsername());
         org.junit.Assert.assertEquals("Invalid credentials", p.getReason());
-        org.junit.Assert.assertFalse(p.getAnonymous());
     }
 }

@@ -147,7 +147,6 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                     .setTbmqNode(serviceInfoProvider.getServiceId())
                     .setProtocolVersion(protocolVersion)
                     .setReason(nullToEmpty(reason))
-                    .setAnonymous(username == null || username.isEmpty())
                     .build();
             publish(integrationIds, proto);
         } catch (Throwable t) {

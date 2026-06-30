@@ -248,7 +248,6 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     break;
                 case CLIENT_AUTHENTICATION_FAILED:
                     putIfNotEmpty(body, "reason", msg.getReason());
-                    body.put("anonymous", msg.getAnonymous());
                     break;
                 case CLIENT_AUTHORIZATION_FAILED:
                     putIfNotEmpty(body, "action", msg.getAction());
