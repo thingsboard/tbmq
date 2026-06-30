@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
@@ -215,39 +217,42 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         body.put("tbmqNode", msg.getTbmqNode());
         body.put("username", msg.getUsername());
 
-        switch (msg.getEventType()) {
-            case "CLIENT_CONNECTED":
-                body.put("cleanStart", msg.getCleanStart());
-                body.put("keepAlive", msg.getKeepAlive());
-                body.put("protocolVersion", msg.getProtocolVersion());
-                body.put("sessionExpiryInterval", msg.getSessionExpiryInterval());
-                break;
-            case "CLIENT_DISCONNECTED":
-                body.put("disconnectReason", msg.getDisconnectReason());
-                body.put("clientInitiated", msg.getClientInitiated());
-                break;
-            case "CLIENT_SUBSCRIBED":
-                ArrayNode subs = body.putArray("subscriptions");
-                for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
-                    subs.addObject()
-                            .put("topicFilter", sub.getTopic())
-                            .put("qos", sub.getQos());
-                }
-                break;
-            case "CLIENT_UNSUBSCRIBED":
-                ArrayNode topicFilters = body.putArray("topicFilters");
-                msg.getTopicFiltersList().forEach(topicFilters::add);
-                break;
-            case "CLIENT_AUTHENTICATION_FAILED":
-                body.put("reason", msg.getReason());
-                body.put("anonymous", msg.getAnonymous());
-                break;
-            case "CLIENT_AUTHORIZATION_FAILED":
-                body.put("action", msg.getAction());
-                body.put("topic", msg.getTopic());
-                break;
-            default:
-                break;
+        // Switch on the canonical enum (parsed leniently) rather than raw string literals so the proto eventType
+        // and the enum names stay coupled; an unknown/newer type just yields the common fields above.
+        ClientLifecycleEventType eventType = ClientLifecycleEventTypeUtil.fromName(msg.getEventType());
+        if (eventType != null) {
+            switch (eventType) {
+                case CLIENT_CONNECTED:
+                    body.put("cleanStart", msg.getCleanStart());
+                    body.put("keepAlive", msg.getKeepAlive());
+                    body.put("protocolVersion", msg.getProtocolVersion());
+                    body.put("sessionExpiryInterval", msg.getSessionExpiryInterval());
+                    break;
+                case CLIENT_DISCONNECTED:
+                    body.put("disconnectReason", msg.getDisconnectReason());
+                    body.put("clientInitiated", msg.getClientInitiated());
+                    break;
+                case CLIENT_SUBSCRIBED:
+                    ArrayNode subs = body.putArray("subscriptions");
+                    for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
+                        subs.addObject()
+                                .put("topicFilter", sub.getTopic())
+                                .put("qos", sub.getQos());
+                    }
+                    break;
+                case CLIENT_UNSUBSCRIBED:
+                    ArrayNode topicFilters = body.putArray("topicFilters");
+                    msg.getTopicFiltersList().forEach(topicFilters::add);
+                    break;
+                case CLIENT_AUTHENTICATION_FAILED:
+                    body.put("reason", msg.getReason());
+                    body.put("anonymous", msg.getAnonymous());
+                    break;
+                case CLIENT_AUTHORIZATION_FAILED:
+                    body.put("action", msg.getAction());
+                    body.put("topic", msg.getTopic());
+                    break;
+            }
         }
         body.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
         return body;

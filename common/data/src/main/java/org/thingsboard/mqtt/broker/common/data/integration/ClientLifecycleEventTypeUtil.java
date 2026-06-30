@@ -64,4 +64,20 @@ public final class ClientLifecycleEventTypeUtil {
         arrayNode.forEach(node -> names.add(node.asText()));
         return parse(names, onUnknown);
     }
+
+    /**
+     * Returns the {@link ClientLifecycleEventType} matching the given name, or {@code null} if the name does not
+     * map to a known type (e.g. an event produced by a newer node). Lets callers handle unknown types gracefully
+     * instead of throwing.
+     */
+    public static ClientLifecycleEventType fromName(String name) {
+        if (name == null) {
+            return null;
+        }
+        try {
+            return ClientLifecycleEventType.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }
