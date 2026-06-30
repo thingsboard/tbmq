@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.processing;
 
 import com.google.common.collect.Maps;
+import com.google.protobuf.GeneratedMessageV3;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -247,33 +248,74 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private void processEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumer,
                                IntegrationHolder holder) {
+        processQueue(consumer, holder, this::dispatchEvent, null, "events");
+    }
+
+    void dispatchEvent(IntegrationHolder holder, UUID packetId, ClientLifecycleEventMsgProto event,
+                       IntegrationPackProcessingContext<ClientLifecycleEventMsgProto> ctx) {
+        holder.getIntegration().processLifecycleEvent(event, new BaseIntegrationMsgCallback(packetId, ctx));
+    }
+
+    private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer,
+                                 IntegrationHolder holder) {
+        IntegrationProcessorStats stats = statsService
+                .map(svc -> svc.createIntegrationProcessorStats(holder.getIntegrationUuid()))
+                .orElse(null);
+        processQueue(consumer, holder, this::dispatchMessage, stats, "messages");
+    }
+
+    void dispatchMessage(IntegrationHolder holder, UUID packetId, PublishIntegrationMsgProto msg,
+                         IntegrationPackProcessingContext<PublishIntegrationMsgProto> ctx) {
+        holder.getIntegration().process(msg, new BaseIntegrationMsgCallback(packetId, ctx));
+    }
+
+    /**
+     * Single consume/ack/commit loop shared by the data ({@link PublishIntegrationMsgProto}) and lifecycle-event
+     * ({@link ClientLifecycleEventMsgProto}) streams. Parameterized by the proto type, the per-message dispatcher,
+     * an optional stats sink (data stream only), and a {@code kind} label used purely for logging.
+     */
+    private <T extends GeneratedMessageV3> void processQueue(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<T>> consumer,
+                                  IntegrationHolder holder,
+                                  IntegrationDispatcher<T> dispatcher,
+                                  IntegrationProcessorStats stats,
+                                  String kind) {
         final AtomicLong counter = new AtomicLong(0);
         while (isProcessorActive(holder)) {
             try {
-                List<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> messages = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<T>> messages = consumer.poll(pollDuration);
                 if (messages.isEmpty()) {
                     continue;
                 }
-                IntegrationAckStrategy<ClientLifecycleEventMsgProto> ackStrategy = ackStrategyFactory.newInstance(holder.getIntegrationId());
-                IntegrationSubmitStrategy<ClientLifecycleEventMsgProto> submitStrategy = submitStrategyFactory.newInstance(holder.getIntegrationId());
+
+                IntegrationAckStrategy<T> ackStrategy = ackStrategyFactory.newInstance(holder.getIntegrationId());
+                IntegrationSubmitStrategy<T> submitStrategy = submitStrategyFactory.newInstance(holder.getIntegrationId());
 
                 long packId = counter.incrementAndGet();
                 if (packId == MAX_VALUE) {
                     counter.set(0);
                 }
-                var pendingMsgMap = toPendingEventMap(messages, packId);
+
+                var pendingMsgMap = toPendingMap(messages, packId);
                 submitStrategy.init(pendingMsgMap);
 
                 while (isProcessorActive(holder)) {
-                    IntegrationPackProcessingContext<ClientLifecycleEventMsgProto> ctx =
+                    IntegrationPackProcessingContext<T> ctx =
                             new IntegrationPackProcessingContext<>(holder.getIntegrationId(), submitStrategy.getPendingMap());
-                    submitStrategy.process(entry -> dispatchEvent(holder, entry.getKey(), entry.getValue(), ctx));
+                    int totalMsgCount = pendingMsgMap.size();
+
+                    submitStrategy.process(entry -> dispatcher.dispatch(holder, entry.getKey(), entry.getValue(), ctx));
+
                     if (isProcessorActive(holder)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
-                    IntegrationPackProcessingResult<ClientLifecycleEventMsgProto> result = new IntegrationPackProcessingResult<>(ctx);
+                    IntegrationPackProcessingResult<T> result = new IntegrationPackProcessingResult<>(ctx);
                     ctx.cleanup();
-                    IntegrationProcessingDecision<ClientLifecycleEventMsgProto> decision = ackStrategy.analyze(result);
+                    IntegrationProcessingDecision<T> decision = ackStrategy.analyze(result);
+
+                    if (stats != null) {
+                        stats.log(totalMsgCount, result, decision.isCommit());
+                    }
+
                     if (decision.isCommit()) {
                         consumer.commitSync();
                         break;
@@ -283,97 +325,18 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                 }
             } catch (Exception e) {
                 if (isProcessorActive(holder)) {
-                    log.warn("[{}] Failed to process events from queue.", holder.getIntegrationId(), e);
+                    log.warn("[{}] Failed to process {} from queue.", holder.getIntegrationId(), kind, e);
                     try {
                         Thread.sleep(pollDuration);
                     } catch (InterruptedException e2) {
-                        log.trace("Failed to wait until capacity for new events", e2);
+                        log.trace("Failed to wait until the server has capacity to handle new {}", kind, e2);
                         Thread.currentThread().interrupt();
                         break;
                     }
                 }
             }
         }
-        log.info("[{}] IE events consumer stopped.", holder.getIntegrationId());
-    }
-
-    void dispatchEvent(IntegrationHolder holder, UUID packetId, ClientLifecycleEventMsgProto event,
-                       IntegrationPackProcessingContext<ClientLifecycleEventMsgProto> ctx) {
-        holder.getIntegration().processLifecycleEvent(event, new BaseIntegrationMsgCallback(packetId, ctx));
-    }
-
-    private Map<UUID, ClientLifecycleEventMsgProto> toPendingEventMap(List<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> msgs, long packId) {
-        Map<UUID, ClientLifecycleEventMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
-        int i = 0;
-        for (var msg : msgs) {
-            map.put(new UUID(packId, i++), msg.getValue());
-        }
-        return map;
-    }
-
-    private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer,
-                                 IntegrationHolder integrationHolder) {
-        final AtomicLong counter = new AtomicLong(0);
-
-        IntegrationProcessorStats stats = statsService
-                .map(svc -> svc.createIntegrationProcessorStats(integrationHolder.getIntegrationUuid()))
-                .orElse(null);
-
-        while (isProcessorActive(integrationHolder)) {
-            try {
-                List<TbProtoQueueMsg<PublishIntegrationMsgProto>> messages = consumer.poll(pollDuration);
-                if (messages.isEmpty()) {
-                    continue;
-                }
-
-                IntegrationAckStrategy<PublishIntegrationMsgProto> ackStrategy = ackStrategyFactory.newInstance(integrationHolder.getIntegrationId());
-                IntegrationSubmitStrategy<PublishIntegrationMsgProto> submitStrategy = submitStrategyFactory.newInstance(integrationHolder.getIntegrationId());
-
-                long packId = counter.incrementAndGet();
-                if (packId == MAX_VALUE) {
-                    counter.set(0);
-                }
-
-                var pendingMsgMap = toPendingMsgMap(messages, packId);
-                submitStrategy.init(pendingMsgMap);
-
-                while (isProcessorActive(integrationHolder)) {
-                    IntegrationPackProcessingContext<PublishIntegrationMsgProto> ctx = new IntegrationPackProcessingContext<>(integrationHolder.getIntegrationId(), submitStrategy.getPendingMap());
-                    int totalMsgCount = pendingMsgMap.size();
-
-                    submitStrategy.process(entry ->
-                            integrationHolder.getIntegration().process(entry.getValue(), new BaseIntegrationMsgCallback(entry.getKey(), ctx)));
-
-                    if (isProcessorActive(integrationHolder)) {
-                        ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
-                    }
-                    IntegrationPackProcessingResult<PublishIntegrationMsgProto> result = new IntegrationPackProcessingResult<>(ctx);
-                    ctx.cleanup();
-                    IntegrationProcessingDecision<PublishIntegrationMsgProto> decision = ackStrategy.analyze(result);
-
-                    if (stats != null) stats.log(totalMsgCount, result, decision.isCommit());
-
-                    if (decision.isCommit()) {
-                        consumer.commitSync();
-                        break;
-                    } else {
-                        submitStrategy.update(decision.getReprocessMap());
-                    }
-                }
-            } catch (Exception e) {
-                if (isProcessorActive(integrationHolder)) {
-                    log.warn("[{}] Failed to process messages from queue.", integrationHolder.getIntegrationId(), e);
-                    try {
-                        Thread.sleep(pollDuration);
-                    } catch (InterruptedException e2) {
-                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-        }
-        log.info("[{}] IE messages consumer stopped.", integrationHolder.getIntegrationId());
+        log.info("[{}] IE {} consumer stopped.", holder.getIntegrationId(), kind);
     }
 
     private boolean isProcessorActive(IntegrationHolder integrationHolder) {
@@ -385,13 +348,17 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         integration.setStopped(true);
     }
 
-    private Map<UUID, PublishIntegrationMsgProto> toPendingMsgMap(List<TbProtoQueueMsg<PublishIntegrationMsgProto>> msgs, long packId) {
-        Map<UUID, PublishIntegrationMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
+    private <T extends GeneratedMessageV3> Map<UUID, T> toPendingMap(List<TbProtoQueueMsg<T>> msgs, long packId) {
+        Map<UUID, T> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
         int i = 0;
         for (var msg : msgs) {
-            UUID id = new UUID(packId, i++);
-            map.put(id, msg.getValue());
+            map.put(new UUID(packId, i++), msg.getValue());
         }
         return map;
+    }
+
+    @FunctionalInterface
+    private interface IntegrationDispatcher<T> {
+        void dispatch(IntegrationHolder holder, UUID packetId, T msg, IntegrationPackProcessingContext<T> ctx);
     }
 }
