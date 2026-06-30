@@ -155,6 +155,21 @@ public class IntegrationLifecycleEventPublisherImplTest {
     }
 
     @Test
+    public void givenSubscriber_whenPublishDisconnected_thenSetsMqttStandardReasonCode() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_DISCONNECTED)).thenReturn(Set.of("int-1"));
+        stubCtxSession();
+
+        publisher.publishDisconnected(ctx, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        ClientLifecycleEventMsgProto p = captor.getValue().getValue();
+        org.junit.Assert.assertEquals("CLIENT_DISCONNECTED", p.getEventType());
+        // MQTT-standard reason-code name (Netty MqttReasonCodes.Disconnect), not the internal DisconnectReasonType name
+        org.junit.Assert.assertEquals("SESSION_TAKEN_OVER", p.getDisconnectReason());
+    }
+
+    @Test
     public void givenSubscriber_whenPublishSubscribed_thenSendsEventMsgPerIntegration() {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED)).thenReturn(Set.of("ie-1"));
         stubCtxSession();

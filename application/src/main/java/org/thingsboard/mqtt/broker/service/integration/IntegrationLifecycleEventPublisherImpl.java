@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.Set;
@@ -85,7 +86,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                 return;
             }
             ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_DISCONNECTED)
-                    .setDisconnectReason(reasonType.name())
+                    .setDisconnectReason(MqttReasonCodeResolver.disconnect(reasonType).name())
                     .build();
             publish(integrationIds, proto);
         } catch (Throwable t) {
