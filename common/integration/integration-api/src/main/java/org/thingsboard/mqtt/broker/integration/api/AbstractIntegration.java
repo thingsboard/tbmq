@@ -209,13 +209,16 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     protected ObjectNode constructLifecycleEventBody(ClientLifecycleEventMsgProto msg) {
         ObjectNode body = JacksonUtil.newObjectNode();
+        // eventType is the discriminator and is always present; the other string fields are omitted when empty
+        // (e.g. no username when authentication is disabled, no ipAddress for address-less sessions) so the JSON
+        // carries only the keys that actually apply rather than default placeholders like "".
         body.put("eventType", msg.getEventType());
-        body.put("clientId", msg.getClientId());
-        body.put("sessionId", msg.getSessionId());
-        body.put("ipAddress", msg.getIpAddress());
+        putIfNotEmpty(body, "clientId", msg.getClientId());
+        putIfNotEmpty(body, "sessionId", msg.getSessionId());
+        putIfNotEmpty(body, "ipAddress", msg.getIpAddress());
         body.put("ts", msg.getTs());
-        body.put("tbmqNode", msg.getTbmqNode());
-        body.put("username", msg.getUsername());
+        putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
+        putIfNotEmpty(body, "username", msg.getUsername());
 
         // Switch on the canonical enum (parsed leniently) rather than raw string literals so the proto eventType
         // and the enum names stay coupled; an unknown/newer type just yields the common fields above.
@@ -229,7 +232,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     body.put("sessionExpiryInterval", msg.getSessionExpiryInterval());
                     break;
                 case CLIENT_DISCONNECTED:
-                    body.put("disconnectReason", msg.getDisconnectReason());
+                    putIfNotEmpty(body, "disconnectReason", msg.getDisconnectReason());
                     break;
                 case CLIENT_SUBSCRIBED:
                     ArrayNode subs = body.putArray("subscriptions");
@@ -244,17 +247,23 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     msg.getTopicFiltersList().forEach(topicFilters::add);
                     break;
                 case CLIENT_AUTHENTICATION_FAILED:
-                    body.put("reason", msg.getReason());
+                    putIfNotEmpty(body, "reason", msg.getReason());
                     body.put("anonymous", msg.getAnonymous());
                     break;
                 case CLIENT_AUTHORIZATION_FAILED:
-                    body.put("action", msg.getAction());
-                    body.put("topic", msg.getTopic());
+                    putIfNotEmpty(body, "action", msg.getAction());
+                    putIfNotEmpty(body, "topic", msg.getTopic());
                     break;
             }
         }
         body.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
         return body;
+    }
+
+    private static void putIfNotEmpty(ObjectNode body, String field, String value) {
+        if (value != null && !value.isEmpty()) {
+            body.put(field, value);
+        }
     }
 
     protected void handleMsgProcessingFailure(Throwable throwable) {

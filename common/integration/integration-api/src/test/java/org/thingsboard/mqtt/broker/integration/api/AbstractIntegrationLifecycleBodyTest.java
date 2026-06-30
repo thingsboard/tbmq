@@ -70,6 +70,21 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertEquals("alice", body.get("username").asText());
     }
 
+    @Test
+    void givenNoUsernameOrIp_whenBuildBody_thenEmptyStringKeysOmitted() {
+        // auth disabled => no username; address-less session => no ipAddress
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_CONNECTED")
+                .setClientId("c1")
+                .build();
+        ObjectNode body = integration.body(msg);
+        assertFalse(body.has("username"));
+        assertFalse(body.has("ipAddress"));
+        // the discriminator and populated fields stay present
+        assertEquals("CLIENT_CONNECTED", body.get("eventType").asText());
+        assertEquals("c1", body.get("clientId").asText());
+    }
+
     // ── CLIENT_CONNECTED: protocolVersion + sessionExpiryInterval ────────────
 
     @Test
