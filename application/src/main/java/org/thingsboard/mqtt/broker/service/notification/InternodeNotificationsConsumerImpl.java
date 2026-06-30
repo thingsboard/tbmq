@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -123,14 +123,9 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
             integrationLifecycleEventTypeCache.remove(proto.getIntegrationId());
             return;
         }
-        Set<ClientLifecycleEventType> eventTypes = new java.util.HashSet<>();
-        for (String s : proto.getLifecycleEventTypesList()) {
-            try {
-                eventTypes.add(ClientLifecycleEventType.valueOf(s));
-            } catch (IllegalArgumentException e) {
-                log.warn("[{}] Unknown lifecycle event type: {}", proto.getIntegrationId(), s);
-            }
-        }
+        Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
+                proto.getLifecycleEventTypesList(),
+                name -> log.warn("[{}] Unknown lifecycle event type: {}", proto.getIntegrationId(), name));
         integrationLifecycleEventTypeCache.put(proto.getIntegrationId(), eventTypes);
     }
 

@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -138,7 +138,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                     }
                     JsonNode configuration = integration.getConfiguration();
                     JsonNode topicFilters = configuration.get("topicFilters");
-                    JsonNode lifecycleEventTypes = configuration.get("lifecycleEventTypes");
+                    JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
 
                     boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
                     boolean hasLifecycleEventTypes = lifecycleEventTypes != null && lifecycleEventTypes.isArray() && !lifecycleEventTypes.isEmpty();
@@ -158,12 +158,8 @@ public class IntegrationServiceImpl implements IntegrationService {
                         if (!lifecycleEventTypes.isArray()) {
                             throw new DataValidationException("Lifecycle event types should be an array!");
                         }
-                        lifecycleEventTypes.forEach(eventType -> {
-                            try {
-                                ClientLifecycleEventType.valueOf(eventType.asText());
-                            } catch (IllegalArgumentException e) {
-                                throw new DataValidationException("Unknown lifecycle event type: " + eventType.asText());
-                            }
+                        ClientLifecycleEventTypeUtil.parse(lifecycleEventTypes, name -> {
+                            throw new DataValidationException("Unknown lifecycle event type: " + name);
                         });
                     }
                 }

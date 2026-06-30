@@ -18,12 +18,11 @@ package org.thingsboard.mqtt.broker.integration.service.processing;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class IntegrationEventsOptInUtil {
-
-    private static final String LIFECYCLE_EVENT_TYPES = "lifecycleEventTypes";
 
     public static boolean isOptedIn(IntegrationLifecycleMsg lifecycleMsg) {
         if (lifecycleMsg == null) {
@@ -31,7 +30,7 @@ public final class IntegrationEventsOptInUtil {
         }
         JsonNode configuration = lifecycleMsg.getConfiguration();
         return configuration != null
-                && configuration.has(LIFECYCLE_EVENT_TYPES)
-                && !configuration.get(LIFECYCLE_EVENT_TYPES).isEmpty();
+                && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
+                && !configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY).isEmpty();
     }
 }

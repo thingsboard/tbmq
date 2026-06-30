@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
@@ -120,17 +121,12 @@ public class BrokerInitializer {
         List<Integration> integrations = integrationService.findAllIntegrations();
         for (Integration integration : integrations) {
             JsonNode configuration = integration.getConfiguration();
-            if (configuration == null || !configuration.has("lifecycleEventTypes")) {
+            if (configuration == null || !configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
                 continue;
             }
-            Set<ClientLifecycleEventType> eventTypes = new HashSet<>();
-            configuration.get("lifecycleEventTypes").forEach(node -> {
-                try {
-                    eventTypes.add(ClientLifecycleEventType.valueOf(node.asText()));
-                } catch (IllegalArgumentException e) {
-                    log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), node.asText());
-                }
-            });
+            Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
+                    configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY),
+                    name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
             if (!eventTypes.isEmpty()) {
                 lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
             }

@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
@@ -78,8 +79,9 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
                 .setIntegrationId(integration.getIdStr())
                 .setDeleted(false);
         JsonNode configuration = integration.getConfiguration();
-        if (configuration != null && configuration.has("lifecycleEventTypes")) {
-            configuration.get("lifecycleEventTypes").forEach(node -> builder.addLifecycleEventTypes(node.asText()));
+        if (configuration != null && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+            configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
+                    .forEach(node -> builder.addLifecycleEventTypes(node.asText()));
         }
         return builder.build();
     }

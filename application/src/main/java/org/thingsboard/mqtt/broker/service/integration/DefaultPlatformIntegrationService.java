@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.event.EventType;
 import org.thingsboard.mqtt.broker.common.data.event.LifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
@@ -123,11 +124,11 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     public void updateSubscriptions(Integration integration) {
         JsonNode configuration = integration.getConfiguration();
 
-        boolean hasTopicFilters = configuration.has("topicFilters") &&
-                configuration.get("topicFilters").isArray() &&
-                !configuration.get("topicFilters").isEmpty();
-        boolean hasLifecycleEvents = configuration.has("lifecycleEventTypes") &&
-                !configuration.get("lifecycleEventTypes").isEmpty();
+        JsonNode topicFilters = configuration.get("topicFilters");
+        JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+
+        boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
+        boolean hasLifecycleEvents = lifecycleEventTypes != null && !lifecycleEventTypes.isEmpty();
 
         if (!hasTopicFilters && !hasLifecycleEvents) {
             log.error("[{}][{}] Neither topic filters nor lifecycle event types are configured",
@@ -136,7 +137,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
         }
 
         if (hasTopicFilters) {
-            ArrayNode topicFiltersArrayNode = (ArrayNode) configuration.get("topicFilters");
+            ArrayNode topicFiltersArrayNode = (ArrayNode) topicFilters;
 
             Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(topicFiltersArrayNode.size());
             topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
