@@ -261,7 +261,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     private static void putIfNotEmpty(ObjectNode body, String field, String value) {
-        if (value != null && !value.isEmpty()) {
+        if (StringUtils.isNotEmpty(value)) {
             body.put(field, value);
         }
     }
