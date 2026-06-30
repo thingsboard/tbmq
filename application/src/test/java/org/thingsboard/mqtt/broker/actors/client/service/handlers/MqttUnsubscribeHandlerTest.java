@@ -15,15 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -38,6 +42,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -95,6 +100,24 @@ public class MqttUnsubscribeHandlerTest {
         verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(Collections.singletonList(null)));
         verify(clientSubscriptionService).unsubscribeAndPersist(any(), any(), any());
         verify(applicationPersistenceProcessor).stopProcessingSharedSubscriptions(any(), eq(Set.of(new TopicSharedSubscription("topic", "group"))));
+    }
+
+    @Test
+    public void givenSubscribedAndNeverSubscribedFilters_whenProcess_thenEmitOnlyRemovedFilters() {
+        String clientId = "client-1";
+        when(ctx.getClientId()).thenReturn(clientId);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        lenient().when(clientSubscriptionService.getClientSubscriptions(clientId))
+                .thenReturn(Set.of(new ClientTopicSubscription("a/b", 1), new ClientTopicSubscription("c/d", 1)));
+
+        mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("a/b", "never/subscribed")));
+
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).unsubscribeAndPersist(eq(clientId), eq(List.of("a/b", "never/subscribed")), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
+        // "never/subscribed" was never subscribed; only the actually-removed "a/b" should produce a CLIENT_UNSUBSCRIBED event
+        verify(integrationLifecycleEventPublisher).publishUnsubscribed(ctx, List.of("a/b"));
     }
 
     @Test

@@ -24,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -50,16 +51,38 @@ public class MqttUnsubscribeHandler {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
 
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
+        // MQTT allows UNSUBSCRIBE for filters the client never subscribed to. Emit CLIENT_UNSUBSCRIBED only for
+        // the filters actually removed (symmetric with CLIENT_SUBSCRIBED, which emits only the granted subscriptions).
+        List<String> removedTopicFilters = getRemovedTopicFilters(ctx.getClientId(), msg.getTopics());
         clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
                 CallbackUtil.createCallback(
                         () -> {
                             ctx.getChannel().writeAndFlush(unSubAckMessage);
-                            integrationLifecycleEventPublisher.publishUnsubscribed(ctx, msg.getTopics());
+                            if (!removedTopicFilters.isEmpty()) {
+                                integrationLifecycleEventPublisher.publishUnsubscribed(ctx, removedTopicFilters);
+                            }
                         },
                         t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
                 ));
 
         stopProcessingApplicationSharedSubscriptions(ctx, msg.getTopics());
+    }
+
+    private List<String> getRemovedTopicFilters(String clientId, List<String> requestedTopics) {
+        Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
+        if (CollectionUtils.isEmpty(currentSubscriptions)) {
+            return List.of();
+        }
+        Set<String> currentTopicFilters = currentSubscriptions.stream()
+                .map(TopicSubscription::getTopicFilter)
+                .collect(Collectors.toSet());
+        return requestedTopics.stream()
+                .filter(topic -> currentTopicFilters.contains(toTopicFilter(topic)))
+                .collect(Collectors.toList());
+    }
+
+    private static String toTopicFilter(String topic) {
+        return NettyMqttConverter.isSharedTopic(topic) ? NettyMqttConverter.getTopicFilter(topic) : topic;
     }
 
     private List<UnsubAck> getCodes(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
