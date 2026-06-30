@@ -24,7 +24,9 @@ import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisClientConfig;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 public class JedisClusterTopologyRefresher {
 
     private final JedisConnectionFactory factory;
+    private final TBRedisClusterConfiguration clusterConfiguration;
 
     @Scheduled(initialDelayString = "${jedis.cluster.topology-refresh.period}", fixedDelayString = "${jedis.cluster.topology-refresh.period}", timeUnit = TimeUnit.SECONDS)
     public void refreshTopology() {
@@ -53,6 +56,10 @@ public class JedisClusterTopologyRefresher {
             Set<RedisNode> currentNodes = clusterConfig.getClusterNodes();
             log.debug("Current Redis cluster nodes: {}", currentNodes);
 
+            // Probe each node with the same data-node client config the cache uses, so TLS and the
+            // ACL username/password are applied. A raw new Jedis(host, port) with password-only auth
+            // cannot reach a TLS-only node (the handshake fails with "Connection reset").
+            JedisClientConfig clientConfig = clusterConfiguration.buildDataNodeClientConfig();
             for (RedisNode node : currentNodes) {
                 if (!node.hasValidHost()) {
                     log.debug("Skip Redis node with invalid host: {}", node);
@@ -62,10 +69,7 @@ public class JedisClusterTopologyRefresher {
                     log.debug("Skip Redis node with null port: {}", node);
                     continue;
                 }
-                try (Jedis jedis = new Jedis(node.getHost(), node.getPort())) {
-                    if (factory.getPassword() != null) {
-                        jedis.auth(factory.getPassword());
-                    }
+                try (Jedis jedis = new Jedis(new HostAndPort(node.getHost(), node.getPort()), clientConfig)) {
                     Set<RedisNode> redisNodes = getRedisNodes(node, jedis);
                     if (currentNodes.equals(redisNodes)) {
                         log.debug("Redis cluster topology is up to date!");

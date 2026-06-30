@@ -63,6 +63,11 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
+        ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
+        return new JedisSentineled(master, buildDataNodeClientConfig(), connectionPoolConfig, toHostAndPort(sentinels), buildSentinelClientConfig());
+    }
+
+    JedisClientConfig buildDataNodeClientConfig() {
         Builder masterClientConfigBuilder = DefaultJedisClientConfig.builder().database(database);
         if (StringUtils.isNotEmpty(username)) {
             masterClientConfigBuilder.user(username);
@@ -71,10 +76,9 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
             masterClientConfigBuilder.password(password);
         }
         if (sslEnabled) {
-            masterClientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
+            masterClientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
-        ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
-        return new JedisSentineled(master, masterClientConfigBuilder.build(), connectionPoolConfig, toHostAndPort(sentinels), buildSentinelClientConfig());
+        return masterClientConfigBuilder.build();
     }
 
     JedisClientConfig buildSentinelClientConfig() {
@@ -86,7 +90,7 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
             sentinelClientConfigBuilder.password(sentinelPassword);
         }
         if (sslEnabled) {
-            sentinelClientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
+            sentinelClientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
         return sentinelClientConfigBuilder.build();
     }
@@ -102,7 +106,7 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
             builder.usePooling().poolConfig(buildPoolConfig());
         }
         if (sslEnabled) {
-            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+            builder.useSsl().sslSocketFactory(getSslSocketFactory());
         }
         return builder.build();
     }
