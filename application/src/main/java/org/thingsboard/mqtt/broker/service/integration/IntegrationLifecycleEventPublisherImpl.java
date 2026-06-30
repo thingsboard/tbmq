@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -34,7 +35,6 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -212,14 +212,8 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     }
 
     private String toIpString(byte[] ipAdr) {
-        if (ipAdr == null || ipAdr.length == 0) {
-            return "";
-        }
-        try {
-            return InetAddress.getByAddress(ipAdr).getHostAddress();
-        } catch (Exception e) {
-            return "";
-        }
+        // Single-source IPv6/error handling via BytesUtil; keep null/empty as "" for address-less sessions.
+        return (ipAdr == null || ipAdr.length == 0) ? "" : BytesUtil.toHostAddress(ipAdr);
     }
 
     private boolean isClientInitiated(DisconnectReasonType reasonType) {
