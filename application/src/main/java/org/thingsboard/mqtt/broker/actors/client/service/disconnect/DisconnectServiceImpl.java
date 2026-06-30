@@ -90,7 +90,12 @@ public class DisconnectServiceImpl implements DisconnectService {
         // Emit the lifecycle CLIENT_DISCONNECTED on every disconnect, including cross-node session takeover
         // (ON_CLUSTER_CONFLICTING_SESSIONS). The session-event notification above is intentionally suppressed
         // on takeover, but the lifecycle event must still fire to pair with the CLIENT_CONNECTED this node emitted.
-        integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
+        // Exception: a broker-refused connection (ON_CONNECTION_FAILURE) never established a session and never
+        // emitted CLIENT_CONNECTED, so its teardown must not emit a phantom CLIENT_DISCONNECTED; the dedicated
+        // CLIENT_CONNECTION_FAILED event covers that case instead.
+        if (reasonType != DisconnectReasonType.ON_CONNECTION_FAILURE) {
+            integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
+        }
         cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }
 

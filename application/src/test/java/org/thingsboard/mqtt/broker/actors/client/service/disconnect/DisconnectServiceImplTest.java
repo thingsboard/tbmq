@@ -161,6 +161,16 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
+    public void givenConnectionFailure_whenDisconnect_thenDoesNotEmitLifecycleDisconnect() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CONNECTION_FAILURE));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // A broker-refused connection never established a session, so the teardown disconnect must NOT emit
+        // CLIENT_DISCONNECTED (there is no CLIENT_CONNECTED to pair with); CLIENT_CONNECTION_FAILED covers it instead.
+        verify(integrationLifecycleEventPublisher, never()).publishDisconnected(ctx, DisconnectReasonType.ON_CONNECTION_FAILURE);
+    }
+
+    @Test
     public void givenMqtt5Client_whenDisconnectClientByServer_thenSendDisconnectMsgAndCloseChannel() {
         ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
         when(ctx.getChannel()).thenReturn(handlerContext);
