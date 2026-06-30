@@ -73,8 +73,8 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
     [ClientLifecycleEventType.CLIENT_DISCONNECTED]:  'integration.client-disconnected',
     [ClientLifecycleEventType.CLIENT_SUBSCRIBED]:    'integration.client-subscribed',
     [ClientLifecycleEventType.CLIENT_UNSUBSCRIBED]:  'integration.client-unsubscribed',
-    [ClientLifecycleEventType.CLIENT_AUTHENTICATED]: 'integration.client-authenticated',
-    [ClientLifecycleEventType.CLIENT_AUTHORIZED]:    'integration.client-authorized',
+    [ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED]: 'integration.client-authentication-failed',
+    [ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED]:  'integration.client-authorization-failed',
   };
 
   readonly allEventTypeList: Array<EventTypeInfo> = [
@@ -82,8 +82,8 @@ export class IntegrationLifecycleEventsComponent implements ControlValueAccessor
     ClientLifecycleEventType.CLIENT_DISCONNECTED,
     ClientLifecycleEventType.CLIENT_SUBSCRIBED,
     ClientLifecycleEventType.CLIENT_UNSUBSCRIBED,
-    ClientLifecycleEventType.CLIENT_AUTHENTICATED,
-    ClientLifecycleEventType.CLIENT_AUTHORIZED,
+    ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED,
+    ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED,
   ].map(value => ({value, name: this.translate.instant(this.eventTypeTranslations[value])}));
 
   lifecycleEventsListFormGroup: UntypedFormGroup;

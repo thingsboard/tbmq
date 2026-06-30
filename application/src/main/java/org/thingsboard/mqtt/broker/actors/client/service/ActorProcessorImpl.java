@@ -104,7 +104,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         if (authResponse.notSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionInitMsg, authResponse.getReason());
-            integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), false, authResponse.getReason());
+            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), authResponse.getReason());
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
             return;
         }
@@ -114,7 +114,6 @@ public class ActorProcessorImpl implements ActorProcessor {
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
         sessionCtx.setAuthDetails(authResponse.getAuthDetails());
         sessionCtx.setClientCertCn(authResponse.getClientCertCn());
-        integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), true, null);
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
@@ -213,7 +212,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             resetStateToDisconnected(state);
             MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
-            integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), false, String.valueOf(returnCode));
+            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), String.valueOf(returnCode));
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
             return;
         }
@@ -225,7 +224,6 @@ public class ActorProcessorImpl implements ActorProcessor {
         sessionCtx.clearScramServer();
         sessionCtx.clearConnectMsg();
         sessionCtx.setAuthDetails(SCRAM.name());
-        integrationLifecycleEventPublisher.publishAuthenticated(sessionCtx, state.getClientId(), true, null);
     }
 
     private void processReAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {

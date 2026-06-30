@@ -29,7 +29,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AbstractIntegrationLifecycleBodyTest {
 
@@ -92,75 +91,38 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertEquals(60, body.get("keepAlive").asInt());
     }
 
-    // ── CLIENT_AUTHENTICATED ──────────────────────────────────────────────────
+    // ── CLIENT_AUTHENTICATION_FAILED ──────────────────────────────────────────
 
     @Test
-    void givenAuthenticatedSuccessProto_whenBuildBody_thenHasResultReasonAnonymous() {
+    void givenAuthenticationFailedProto_whenBuildBody_thenHasReasonAndAnonymous() {
         ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType("CLIENT_AUTHENTICATED")
-                .setClientId("c1")
-                .setUsername("demo")
-                .setResult("SUCCESS")
-                .setReason("")
-                .setAnonymous(false)
-                .build();
-        ObjectNode body = integration.body(msg);
-        assertEquals("demo", body.get("username").asText());
-        assertEquals("SUCCESS", body.get("result").asText());
-        assertEquals("", body.get("reason").asText());
-        assertFalse(body.get("anonymous").asBoolean());
-        assertNull(body.get("authMethod"));
-    }
-
-    @Test
-    void givenAuthenticatedFailureProto_whenBuildBody_thenHasFailureFields() {
-        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType("CLIENT_AUTHENTICATED")
+                .setEventType("CLIENT_AUTHENTICATION_FAILED")
                 .setClientId("c2")
                 .setUsername("baduser")
-                .setResult("FAILURE")
                 .setReason("Bad credentials")
                 .setAnonymous(false)
                 .build();
         ObjectNode body = integration.body(msg);
-        assertEquals("FAILURE", body.get("result").asText());
+        assertEquals("baduser", body.get("username").asText());
         assertEquals("Bad credentials", body.get("reason").asText());
-        assertNull(body.get("authMethod"));
+        assertFalse(body.get("anonymous").asBoolean());
     }
 
-    // ── CLIENT_AUTHORIZED ────────────────────────────────────────────────────
+    // ── CLIENT_AUTHORIZATION_FAILED ───────────────────────────────────────────
 
     @Test
-    void givenAuthorizedDenyProto_whenBuildBody_thenHasActionResultTopicAndUsername() {
+    void givenAuthorizationFailedProto_whenBuildBody_thenHasActionTopicAndUsername() {
         ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType("CLIENT_AUTHORIZED")
+                .setEventType("CLIENT_AUTHORIZATION_FAILED")
                 .setClientId("c1")
                 .setUsername("demo")
                 .setAction("publish")
-                .setResult("DENY")
                 .setTopic("zxc/demo/topic")
                 .build();
         ObjectNode body = integration.body(msg);
         assertEquals("demo", body.get("username").asText());
         assertEquals("publish", body.get("action").asText());
-        assertEquals("DENY", body.get("result").asText());
         assertEquals("zxc/demo/topic", body.get("topic").asText());
-    }
-
-    @Test
-    void givenAuthorizedAllowProto_whenBuildBody_thenHasActionResultTopic() {
-        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
-                .setEventType("CLIENT_AUTHORIZED")
-                .setClientId("c3")
-                .setUsername("pub")
-                .setAction("subscribe")
-                .setResult("ALLOW")
-                .setTopic("sensors/#")
-                .build();
-        ObjectNode body = integration.body(msg);
-        assertEquals("subscribe", body.get("action").asText());
-        assertEquals("ALLOW", body.get("result").asText());
-        assertEquals("sensors/#", body.get("topic").asText());
     }
 
     // ── metadata node always present ──────────────────────────────────────────

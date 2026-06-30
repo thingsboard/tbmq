@@ -238,14 +238,12 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                 ArrayNode topicFilters = body.putArray("topicFilters");
                 msg.getTopicFiltersList().forEach(topicFilters::add);
                 break;
-            case "CLIENT_AUTHENTICATED":
-                body.put("result", msg.getResult());
+            case "CLIENT_AUTHENTICATION_FAILED":
                 body.put("reason", msg.getReason());
                 body.put("anonymous", msg.getAnonymous());
                 break;
-            case "CLIENT_AUTHORIZED":
+            case "CLIENT_AUTHORIZATION_FAILED":
                 body.put("action", msg.getAction());
-                body.put("result", msg.getResult());
                 body.put("topic", msg.getTopic());
                 break;
             default:

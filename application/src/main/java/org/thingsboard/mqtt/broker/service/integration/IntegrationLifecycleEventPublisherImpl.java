@@ -130,16 +130,16 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     }
 
     @Override
-    public void publishAuthenticated(ClientSessionCtx ctx, String clientId, boolean success, String reason) {
+    public void publishAuthenticationFailed(ClientSessionCtx ctx, String clientId, String reason) {
         try {
-            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATED);
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED);
             if (integrationIds.isEmpty()) {
                 return;
             }
             String username = ctx.getUsername();
             int protocolVersion = ctx.getMqttVersion() != null ? ctx.getMqttVersion().protocolLevel() : 0;
             ClientLifecycleEventMsgProto proto = ClientLifecycleEventMsgProto.newBuilder()
-                    .setEventType(ClientLifecycleEventType.CLIENT_AUTHENTICATED.name())
+                    .setEventType(ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED.name())
                     .setClientId(nullToEmpty(clientId))
                     .setUsername(nullToEmpty(username))
                     .setSessionId(ctx.getSessionId() != null ? ctx.getSessionId().toString() : "")
@@ -147,20 +147,19 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                     .setTs(System.currentTimeMillis())
                     .setTbmqNode(serviceInfoProvider.getServiceId())
                     .setProtocolVersion(protocolVersion)
-                    .setResult(success ? "SUCCESS" : "FAILURE")
                     .setReason(nullToEmpty(reason))
                     .setAnonymous(username == null || username.isEmpty())
                     .build();
             publish(integrationIds, proto);
         } catch (Throwable t) {
-            onPublishError(ClientLifecycleEventType.CLIENT_AUTHENTICATED, t);
+            onPublishError(ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED, t);
         }
     }
 
     @Override
     public void publishAuthorizationDenied(ClientSessionCtx ctx, String action, String topic) {
         try {
-            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZED);
+            Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED);
             if (integrationIds.isEmpty()) {
                 return;
             }
@@ -169,14 +168,13 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                 // at CONNECT, before setSessionInfo). With no session to attribute the event to, skip emission.
                 return;
             }
-            ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_AUTHORIZED)
+            ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED)
                     .setAction(action)
-                    .setResult("DENY")
                     .setTopic(topic)
                     .build();
             publish(integrationIds, proto);
         } catch (Throwable t) {
-            onPublishError(ClientLifecycleEventType.CLIENT_AUTHORIZED, t);
+            onPublishError(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED, t);
         }
     }
 

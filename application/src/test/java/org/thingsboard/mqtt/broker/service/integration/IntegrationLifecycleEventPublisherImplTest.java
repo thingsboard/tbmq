@@ -203,7 +203,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
 
     @Test
     public void givenSubscriber_whenPublishAuthorizationDenied_thenBuildsDenyEvent() {
-        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZED)).thenReturn(Set.of("int-1"));
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHORIZATION_FAILED)).thenReturn(Set.of("int-1"));
         stubCtxSession();
 
         publisher.publishAuthorizationDenied(ctx, "publish", "zxc/demo/topic");
@@ -211,30 +211,28 @@ public class IntegrationLifecycleEventPublisherImplTest {
         ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
         ClientLifecycleEventMsgProto p = captor.getValue().getValue();
-        org.junit.Assert.assertEquals("CLIENT_AUTHORIZED", p.getEventType());
+        org.junit.Assert.assertEquals("CLIENT_AUTHORIZATION_FAILED", p.getEventType());
         org.junit.Assert.assertEquals("publish", p.getAction());
-        org.junit.Assert.assertEquals("DENY", p.getResult());
         org.junit.Assert.assertEquals("zxc/demo/topic", p.getTopic());
         org.junit.Assert.assertEquals("demo", p.getUsername());
     }
 
     @Test
     public void givenSubscriber_whenPublishAuthenticatedFailure_thenBuildsFailureEvent() {
-        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATED)).thenReturn(Set.of("int-1"));
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_AUTHENTICATION_FAILED)).thenReturn(Set.of("int-1"));
         when(serviceInfoProvider.getServiceId()).thenReturn("tbmq-node-1");
         when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
         when(ctx.getAddressBytes()).thenReturn(new byte[]{127, 0, 0, 1});
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(ctx.getUsername()).thenReturn("demo");
-        publisher.publishAuthenticated(ctx, "client-1", false, "Invalid credentials");
+        publisher.publishAuthenticationFailed(ctx, "client-1", "Invalid credentials");
 
         ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
         ClientLifecycleEventMsgProto p = captor.getValue().getValue();
-        org.junit.Assert.assertEquals("CLIENT_AUTHENTICATED", p.getEventType());
+        org.junit.Assert.assertEquals("CLIENT_AUTHENTICATION_FAILED", p.getEventType());
         org.junit.Assert.assertEquals("client-1", p.getClientId());
         org.junit.Assert.assertEquals("demo", p.getUsername());
-        org.junit.Assert.assertEquals("FAILURE", p.getResult());
         org.junit.Assert.assertEquals("Invalid credentials", p.getReason());
         org.junit.Assert.assertFalse(p.getAnonymous());
     }
