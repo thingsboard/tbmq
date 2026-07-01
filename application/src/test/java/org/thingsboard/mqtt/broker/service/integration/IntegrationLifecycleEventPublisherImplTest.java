@@ -132,7 +132,26 @@ public class IntegrationLifecycleEventPublisherImplTest {
 
         publisher.publishConnected(ctx);
 
-        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), any(PublishMsgCallback.class));
+    }
+
+    @Test
+    public void givenSendCallbackFails_whenPublishConnected_thenNoKeyAndIncrementsDroppedMetric() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED)).thenReturn(Set.of("ie-1"));
+        stubCtxSession();
+
+        publisher.publishConnected(ctx);
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> msgCaptor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        ArgumentCaptor<PublishMsgCallback> cbCaptor = ArgumentCaptor.forClass(PublishMsgCallback.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), msgCaptor.capture(), cbCaptor.capture());
+
+        // no record key: the event stream is single-partition with delete retention, so the key is unused
+        org.junit.Assert.assertNull(msgCaptor.getValue().getKey());
+
+        // an asynchronous Kafka send failure must be counted via the callback, not silently swallowed
+        cbCaptor.getValue().onFailure(new RuntimeException("kafka send failed"));
+        verify(droppedLifecycleEventStats).increment();
     }
 
     @Test
@@ -206,7 +225,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
 
         publisher.publishSubscribed(ctx, List.of(topicSubscription));
 
-        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), any(PublishMsgCallback.class));
         verify(droppedLifecycleEventStats, never()).increment();
     }
 
@@ -231,7 +250,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
 
         publisher.publishUnsubscribed(ctx, List.of(topicSubscription));
 
-        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), any(PublishMsgCallback.class));
         verify(droppedLifecycleEventStats, never()).increment();
     }
 

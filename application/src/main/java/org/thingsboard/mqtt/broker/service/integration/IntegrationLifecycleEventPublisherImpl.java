@@ -39,7 +39,6 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -53,9 +52,24 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
 
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
 
+    // Reused across all sends (no per-event allocation). A real callback ensures asynchronous Kafka send failures
+    // — the common failure mode — increment the dropped-event metric; PublishMsgCallback.EMPTY would swallow them
+    // silently. The detailed per-integration error is already logged by IntegrationEventMsgQueuePublisher.
+    private PublishMsgCallback droppedEventCallback;
+
     @PostConstruct
     public void init() {
         this.droppedLifecycleEventStats = statsManager.getDroppedLifecycleEventStats();
+        this.droppedEventCallback = new PublishMsgCallback() {
+            @Override
+            public void onSuccess() {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                droppedLifecycleEventStats.increment();
+            }
+        };
     }
 
     @Override
@@ -228,13 +242,10 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
 
     private void publish(Set<String> integrationIds, ClientLifecycleEventMsgProto lifecycleMsg) {
         for (String integrationId : integrationIds) {
-            try {
-                TbProtoQueueMsg<ClientLifecycleEventMsgProto> queueMsg = new TbProtoQueueMsg<>(UUID.randomUUID(), lifecycleMsg);
-                integrationEventMsgQueuePublisher.sendEventMsg(integrationId, queueMsg, PublishMsgCallback.EMPTY);
-            } catch (Throwable t) {
-                log.warn("[{}] Failed to publish lifecycle event [{}]; dropping.", integrationId, lifecycleMsg.getEventType(), t);
-                droppedLifecycleEventStats.increment();
-            }
+            // No record key: the event stream uses a single partition (0) with delete-based retention, so the key
+            // plays no role in partition routing, compaction, or consumer-side dedup (the consumer assigns its own
+            // packet id). Skipping it avoids a per-event UUID allocation. Send failures are counted via the callback.
+            integrationEventMsgQueuePublisher.sendEventMsg(integrationId, new TbProtoQueueMsg<>(lifecycleMsg), droppedEventCallback);
         }
     }
 
