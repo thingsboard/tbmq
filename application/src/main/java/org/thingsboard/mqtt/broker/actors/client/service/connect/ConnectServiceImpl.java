@@ -246,7 +246,7 @@ public class ConnectServiceImpl implements ConnectService {
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
-        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, reason);
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), reason.name());
 
         sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, reason);
     }
@@ -300,6 +300,9 @@ public class ConnectServiceImpl implements ConnectService {
             validateLastWillMessage(ctx, clientId, msg);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
+            // ctx.getSessionInfo() is not set yet at this point, so pass the already-built sessionInfo explicitly.
+            // reason is the MQTT connect return code the client received, e.g. CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID.
+            integrationLifecycleEventPublisher.publishConnectionFailed(ctx, sessionInfo, e.getMqttConnectReturnCode().name());
             createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
             disconnect(clientId, ctx.getSessionId());
             return false;

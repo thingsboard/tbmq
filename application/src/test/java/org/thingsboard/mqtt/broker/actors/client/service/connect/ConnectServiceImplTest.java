@@ -165,7 +165,7 @@ public class ConnectServiceImplTest {
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
-        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, ClientSessionFailureReason.SERVER_UNAVAILABLE);
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "SERVER_UNAVAILABLE");
     }
 
     @Test
@@ -198,6 +198,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_IDENTIFIER_REJECTED");
     }
 
     @Test
@@ -212,6 +213,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_SERVER_UNAVAILABLE");
     }
 
     @Test
@@ -226,6 +228,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_NOT_AUTHORIZED");
     }
 
     @Test
@@ -238,6 +241,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID");
     }
 
     @Test
@@ -253,6 +257,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_TOPIC_NAME_INVALID);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_TOPIC_NAME_INVALID");
     }
 
     @Test
@@ -268,6 +273,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED_5);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_NOT_AUTHORIZED_5");
     }
 
     @Test
@@ -283,6 +289,7 @@ public class ConnectServiceImplTest {
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_PROTOCOL_ERROR);
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+        verify(integrationLifecycleEventPublisher, times(1)).publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_PROTOCOL_ERROR");
     }
 
     @Test

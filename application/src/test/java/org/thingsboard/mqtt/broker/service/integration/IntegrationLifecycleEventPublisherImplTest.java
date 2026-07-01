@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationEventMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.stats.DroppedLifecycleEventStats;
@@ -306,13 +305,35 @@ public class IntegrationLifecycleEventPublisherImplTest {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTION_FAILED)).thenReturn(Set.of("int-1"));
         stubCtxSession();
 
-        publisher.publishConnectionFailed(ctx, ClientSessionFailureReason.QUOTA_EXCEEDED);
+        publisher.publishConnectionFailed(ctx, sessionInfo, "QUOTA_EXCEEDED");
 
         ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
         ClientLifecycleEventMsgProto p = captor.getValue().getValue();
         org.junit.Assert.assertEquals("CLIENT_CONNECTION_FAILED", p.getEventType());
         org.junit.Assert.assertEquals("QUOTA_EXCEEDED", p.getReason());
+        org.junit.Assert.assertEquals("client-1", p.getClientId());
+        org.junit.Assert.assertEquals("demo", p.getUsername());
+    }
+
+    @Test
+    public void givenPreConnectionValidationFailure_whenPublishConnectionFailed_thenBuildsFromPassedSessionInfo() {
+        // Pre-connection refusals happen before ctx.setSessionInfo, so the session is passed explicitly.
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTION_FAILED)).thenReturn(Set.of("int-1"));
+        when(ctx.getUsername()).thenReturn("demo");
+        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
+        when(clientInfo.getClientId()).thenReturn("client-1");
+        when(clientInfo.getClientIpAdr()).thenReturn(new byte[]{127, 0, 0, 1});
+        when(sessionInfo.getSessionId()).thenReturn(UUID.randomUUID());
+        when(sessionInfo.getServiceId()).thenReturn("tbmq-node-1");
+
+        publisher.publishConnectionFailed(ctx, sessionInfo, "CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID");
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        ClientLifecycleEventMsgProto p = captor.getValue().getValue();
+        org.junit.Assert.assertEquals("CLIENT_CONNECTION_FAILED", p.getEventType());
+        org.junit.Assert.assertEquals("CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID", p.getReason());
         org.junit.Assert.assertEquals("client-1", p.getClientId());
         org.junit.Assert.assertEquals("demo", p.getUsername());
     }
