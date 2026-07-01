@@ -15,22 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * Ack strategy for the dedicated lifecycle-event stream. Kept as a distinct type (rather than a second
  * binding of {@link IntegrationAckStrategyConfiguration}) so both configs inject unambiguously, and so events
- * can stay best-effort ({@code SKIP_ALL}) independently of the data stream's strategy.
+ * can stay best-effort ({@code SKIP_ALL}) independently of the data stream's strategy. The common shape lives in
+ * {@link IntegrationAckStrategyProperties}.
  */
 @Component
 @ConfigurationProperties(prefix = "queue.integration-msg.event-ack-strategy")
-@Data
-public class IntegrationEventAckStrategyConfiguration {
-
-    private IntegrationAckStrategyType type;
-    private int retries;
-    private int pauseBetweenRetries;
+public class IntegrationEventAckStrategyConfiguration extends IntegrationAckStrategyProperties {
 
 }

@@ -15,16 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * Ack strategy for the data ({@code tbmq.msg.ie}) stream. Shares its shape with
- * {@link IntegrationAckStrategyProperties}; see {@link IntegrationEventAckStrategyConfiguration} for the sibling
- * lifecycle-event config.
+ * Shared ack-strategy properties for the integration-executor consume loops. Concrete subclasses only supply the
+ * {@code @ConfigurationProperties} prefix so the data and lifecycle-event streams bind independently while a new
+ * field is declared here once. Left abstract (no {@code @ConfigurationProperties}) so it is never bound as a bean
+ * on its own, keeping the two concrete configs unambiguous to inject by type.
  */
-@Component
-@ConfigurationProperties(prefix = "queue.integration-msg.ack-strategy")
-public class IntegrationAckStrategyConfiguration extends IntegrationAckStrategyProperties {
+@Getter
+@Setter
+public abstract class IntegrationAckStrategyProperties {
+
+    private IntegrationAckStrategyType type;
+    private int retries;
+    private int pauseBetweenRetries;
 
 }
