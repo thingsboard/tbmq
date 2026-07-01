@@ -60,6 +60,7 @@ public enum StatsType {
     IE_UPLINK_PRODUCER("ie.uplink.published"),
     INTEGRATION("integration"),
     INTEGRATION_PROCESSOR("integrationProcessor"),
+    INTEGRATION_EVENT_PROCESSOR("integrationEventProcessor"),
     ;
 
     private final String printName;

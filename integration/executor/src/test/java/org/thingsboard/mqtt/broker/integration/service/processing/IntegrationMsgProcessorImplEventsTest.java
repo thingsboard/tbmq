@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleM
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingContext;
@@ -153,6 +154,43 @@ class IntegrationMsgProcessorImplEventsTest {
         processor.stopProcessingIntegrationMessages(ID);
 
         verify(eventCons, timeout(2000)).unsubscribeAndClose();
+    }
+
+    @Test
+    void givenStatsService_whenEventsStart_thenEventProcessorStatsCreated_andClearedOnStop() {
+        IntegrationStatisticsService statsService = mock(IntegrationStatisticsService.class);
+        IntegrationMsgProcessorImpl statsProcessor = new IntegrationMsgProcessorImpl(
+                queueProvider, topicService,
+                mock(IntegrationAckStrategyFactory.class),
+                mock(IntegrationSubmitStrategyFactory.class),
+                Optional.of(statsService));
+        statsProcessor.init();
+        try {
+            TbPlatformIntegration integration = mock(TbPlatformIntegration.class);
+            when(integration.getIntegrationId()).thenReturn(ID);
+            when(integration.getIntegrationUuid()).thenReturn(UUID.fromString(ID));
+            when(integration.getLifecycleMsg()).thenReturn(optedIn(true));
+            when(topicService.createTopic(ID)).thenReturn("tbmq.msg.ie.x");
+            when(topicService.createEventTopic(ID)).thenReturn(EVENT_TOPIC);
+            when(topicService.getConsumerGroup(ID)).thenReturn("ie-msg-consumer-group-x");
+            when(topicService.getEventConsumerGroup(ID)).thenReturn(EVENT_GROUP);
+            var dataCons = controlledConsumer();
+            var eventCons = controlledEventConsumer();
+            when(queueProvider.getIeMsgConsumer(anyString(), anyString(), eq(ID))).thenReturn(dataCons);
+            when(queueProvider.getIeEventMsgConsumer(eq(EVENT_TOPIC), eq(EVENT_GROUP), eq(ID))).thenReturn(eventCons);
+
+            statsProcessor.startProcessingIntegrationMessages(integration);
+
+            verify(statsService, timeout(2000)).createIntegrationProcessorStats(UUID.fromString(ID));
+            verify(statsService, timeout(2000)).createIntegrationEventProcessorStats(UUID.fromString(ID));
+
+            statsProcessor.stopProcessingIntegrationMessages(ID);
+
+            verify(statsService, timeout(2000)).clearIntegrationProcessorStats(UUID.fromString(ID));
+            verify(statsService, timeout(2000)).clearIntegrationEventProcessorStats(UUID.fromString(ID));
+        } finally {
+            statsProcessor.destroy();
+        }
     }
 
     // ---- helpers ----

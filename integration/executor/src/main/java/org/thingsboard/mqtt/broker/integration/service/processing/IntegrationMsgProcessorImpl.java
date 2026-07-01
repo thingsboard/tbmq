@@ -150,6 +150,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         if (eventHolder != null) {
             try {
                 stopIntegrationCancelTask(eventHolder);
+                statsService.ifPresent(svc -> svc.clearIntegrationEventProcessorStats(eventHolder.getIntegrationUuid()));
             } catch (Exception e) {
                 log.warn("[{}] Exception stopping events future for integration", integrationId, e);
             }
@@ -248,7 +249,10 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private void processEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumer,
                                IntegrationHolder holder) {
-        processQueue(consumer, holder, this::dispatchEvent, null, "events");
+        IntegrationProcessorStats stats = statsService
+                .map(svc -> svc.createIntegrationEventProcessorStats(holder.getIntegrationUuid()))
+                .orElse(null);
+        processQueue(consumer, holder, this::dispatchEvent, stats, "events");
     }
 
     void dispatchEvent(IntegrationHolder holder, UUID packetId, ClientLifecycleEventMsgProto event,
