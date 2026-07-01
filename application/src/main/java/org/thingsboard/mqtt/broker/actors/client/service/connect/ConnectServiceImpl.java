@@ -246,14 +246,16 @@ public class ConnectServiceImpl implements ConnectService {
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
-        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), reason.name());
+        MqttConnectReturnCode returnCode = reason.toMqttReturnCode(clientSessionCtx);
+        // Emit the same MQTT CONNACK reason-code name the client receives, matching the pre-connection validation
+        // path (which emits MqttConnectReturnCode.name()) so CLIENT_CONNECTION_FAILED speaks a single vocabulary.
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), returnCode.name());
 
-        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, reason);
+        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, returnCode);
     }
 
-    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, ClientSessionFailureReason reason) {
+    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, MqttConnectReturnCode mqttReturnCode) {
         try {
-            MqttConnectReturnCode mqttReturnCode = reason.toMqttReturnCode(ctx);
             createAndSendConnAckMsg(mqttReturnCode, ctx);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send CONN_ACK response.", ctx.getClientId(), ctx.getSessionId());
