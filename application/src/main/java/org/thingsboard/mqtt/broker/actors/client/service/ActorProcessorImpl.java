@@ -212,7 +212,9 @@ public class ActorProcessorImpl implements ActorProcessor {
             resetStateToDisconnected(state);
             MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
-            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), String.valueOf(returnCode));
+            // Carry the enhanced-auth failure cause (e.g. AUTH_METHOD_MISMATCH) so CLIENT_AUTHENTICATION_FAILED.reason
+            // describes why authentication failed on both paths, rather than leaking the MQTT CONNACK return-code name here.
+            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), authResponse.enhancedAuthFailure().name());
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
             return;
         }
