@@ -101,6 +101,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
     public void givenSubscriber_whenPublishConnected_thenSetsUsernameProtocolAndExpiry() {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED)).thenReturn(Set.of("int-1"));
         stubCtxSession();
+        when(ctx.getClientCertCn()).thenReturn("device-42");
 
         publisher.publishConnected(ctx);
 
@@ -108,6 +109,7 @@ public class IntegrationLifecycleEventPublisherImplTest {
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
         ClientLifecycleEventMsgProto proto = captor.getValue().getValue();
         org.junit.Assert.assertEquals("demo", proto.getUsername());
+        org.junit.Assert.assertEquals("device-42", proto.getClientCertCn());
         org.junit.Assert.assertEquals(5, proto.getProtocolVersion());
         org.junit.Assert.assertEquals(0L, proto.getSessionExpiryInterval());
         org.junit.Assert.assertTrue(proto.getCleanStart());

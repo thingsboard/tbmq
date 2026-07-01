@@ -220,6 +220,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         body.put("ts", msg.getTs());
         putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
         putIfNotEmpty(body, "username", msg.getUsername());
+        putIfNotEmpty(body, "clientCertCn", msg.getClientCertCn());
 
         // Switch on the canonical enum (parsed leniently) rather than raw string literals so the proto eventType
         // and the enum names stay coupled; an unknown/newer type just yields the common fields above.

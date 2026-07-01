@@ -215,6 +215,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
                 .setEventType(eventType.name())
                 .setClientId(sessionInfo.getClientInfo().getClientId())
                 .setUsername(nullToEmpty(ctx.getUsername()))
+                .setClientCertCn(nullToEmpty(ctx.getClientCertCn()))
                 .setSessionId(sessionInfo.getSessionId().toString())
                 .setIpAddress(toIpString(sessionInfo.getClientInfo().getClientIpAdr()))
                 .setTs(System.currentTimeMillis())

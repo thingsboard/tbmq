@@ -85,9 +85,24 @@ public class AbstractIntegrationLifecycleBodyTest {
         ObjectNode body = integration.body(msg);
         assertFalse(body.has("username"));
         assertFalse(body.has("ipAddress"));
+        // no X.509 auth => no clientCertCn
+        assertFalse(body.has("clientCertCn"));
         // the discriminator and populated fields stay present
         assertEquals("CLIENT_CONNECTED", body.get("eventType").asText());
         assertEquals("c1", body.get("clientId").asText());
+    }
+
+    // ── COMMON: clientCertCn present for X.509-authenticated clients ──────────
+
+    @Test
+    void givenX509Client_whenBuildBody_thenHasClientCertCn() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_CONNECTED")
+                .setClientId("c1")
+                .setClientCertCn("device-42")
+                .build();
+        ObjectNode body = integration.body(msg);
+        assertEquals("device-42", body.get("clientCertCn").asText());
     }
 
     // ── CLIENT_CONNECTED: protocolVersion + sessionExpiryInterval ────────────

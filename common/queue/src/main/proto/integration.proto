@@ -121,4 +121,5 @@ message ClientLifecycleEventMsgProto {
   string action = 14;                // CLIENT_AUTHORIZATION_FAILED: publish|subscribe
   string topic = 15;                 // CLIENT_AUTHORIZATION_FAILED: denied topic/filter
   int64 sessionExpiryInterval = 16;  // CLIENT_CONNECTED enrichment
+  string clientCertCn = 17;          // X.509 certificate Common Name; common field present only for X.509-authenticated clients
 }
