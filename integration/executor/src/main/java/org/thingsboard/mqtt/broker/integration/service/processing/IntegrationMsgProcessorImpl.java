@@ -285,7 +285,8 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     /**
      * Single consume/ack/commit loop shared by the data ({@link PublishIntegrationMsgProto}) and lifecycle-event
      * ({@link ClientLifecycleEventMsgProto}) streams. Parameterized by the proto type, the per-message dispatcher,
-     * an optional stats sink (data stream only), a {@code kind} label used purely for logging, and the per-stream
+     * an optional per-stream stats sink (data stream and lifecycle-event stream register under distinct meter keys),
+     * a {@code kind} label used purely for logging, and the per-stream
      * poll interval, pack-processing timeout, and ack-strategy supplier (data and events are configured
      * independently under {@code queue.integration-msg} / {@code queue.integration-msg.event-*}).
      */
