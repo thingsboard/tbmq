@@ -255,8 +255,13 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     }
                     break;
                 case CLIENT_UNSUBSCRIBED:
-                    ArrayNode topicFilters = body.putArray("topicFilters");
-                    msg.getTopicFiltersList().forEach(topicFilters::add);
+                    ArrayNode unsubscribed = body.putArray("subscriptions");
+                    for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
+                        ObjectNode subNode = unsubscribed.addObject().put("topicFilter", sub.getTopic());
+                        if (sub.hasShareName()) {
+                            subNode.put("shareName", sub.getShareName());
+                        }
+                    }
                     break;
                 case CLIENT_AUTHENTICATION_FAILED:
                     putIfNotEmpty(body, "reason", msg.getReason());

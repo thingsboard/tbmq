@@ -204,6 +204,29 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertEquals("SEND", sub.get("options").get("retainHandling").asText());
     }
 
+    @Test
+    void givenUnsubscribedProto_whenBuildBody_thenHasTopicFilterAndShareName() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_UNSUBSCRIBED")
+                .setClientId("c1")
+                .addSubscriptions(TopicSubscriptionProto.newBuilder().setTopic("foo/bar").build())
+                .addSubscriptions(TopicSubscriptionProto.newBuilder().setTopic("baz").setShareName("g1").build())
+                .build();
+        ObjectNode body = integration.body(msg);
+        JsonNode subs = body.get("subscriptions");
+        assertEquals(2, subs.size());
+        // regular unsubscribe: bare topic filter, no shareName
+        assertEquals("foo/bar", subs.get(0).get("topicFilter").asText());
+        assertFalse(subs.get(0).has("shareName"));
+        // shared unsubscribe: bare filter + shareName so $share/g1/baz can be reconstructed
+        assertEquals("baz", subs.get(1).get("topicFilter").asText());
+        assertEquals("g1", subs.get(1).get("shareName").asText());
+        // an UNSUBSCRIBE names filters only — no qos/options/subscriptionId
+        assertFalse(subs.get(0).has("qos"));
+        assertFalse(subs.get(0).has("options"));
+        assertFalse(subs.get(0).has("subscriptionId"));
+    }
+
     // ── metadata node always present ──────────────────────────────────────────
 
     @Test

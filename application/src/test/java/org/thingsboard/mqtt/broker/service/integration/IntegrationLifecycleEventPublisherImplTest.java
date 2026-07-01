@@ -226,21 +226,42 @@ public class IntegrationLifecycleEventPublisherImplTest {
     public void givenSubscriber_whenPublishUnsubscribed_thenSendsEventMsgPerIntegration() {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)).thenReturn(Set.of("ie-1"));
         stubCtxSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("test/topic");
 
-        publisher.publishUnsubscribed(ctx, List.of("test/topic"));
+        publisher.publishUnsubscribed(ctx, List.of(topicSubscription));
 
         verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("ie-1"), any(TbProtoQueueMsg.class), eq(PublishMsgCallback.EMPTY));
         verify(droppedLifecycleEventStats, never()).increment();
     }
 
     @Test
+    public void givenSharedSubscription_whenPublishUnsubscribed_thenProtoCarriesTopicFilterAndShareName() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)).thenReturn(Set.of("int-1"));
+        stubCtxSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("foo/bar");
+        when(topicSubscription.getShareName()).thenReturn("g1");
+
+        publisher.publishUnsubscribed(ctx, List.of(topicSubscription));
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        TopicSubscriptionProto sub = captor.getValue().getValue().getSubscriptions(0);
+        org.junit.Assert.assertEquals("foo/bar", sub.getTopic());
+        org.junit.Assert.assertTrue(sub.hasShareName());
+        org.junit.Assert.assertEquals("g1", sub.getShareName());
+        // an UNSUBSCRIBE carries only identity — no qos/options/subscriptionId on the wire
+        org.junit.Assert.assertFalse(sub.hasSubscriptionId());
+    }
+
+    @Test
     public void givenPublisherThrows_whenPublishUnsubscribed_thenSwallowsAndIncrementsDroppedMetric() {
         when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)).thenReturn(Set.of("ie-1"));
         stubCtxSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("test/topic");
         doThrow(new RuntimeException("send failure"))
                 .when(integrationEventMsgQueuePublisher).sendEventMsg(anyString(), any(), any());
 
-        publisher.publishUnsubscribed(ctx, List.of("test/topic"));
+        publisher.publishUnsubscribed(ctx, List.of(topicSubscription));
 
         verify(droppedLifecycleEventStats).increment();
     }

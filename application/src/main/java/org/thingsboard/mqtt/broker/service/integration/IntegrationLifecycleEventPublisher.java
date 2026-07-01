@@ -30,7 +30,7 @@ public interface IntegrationLifecycleEventPublisher {
 
     void publishSubscribed(ClientSessionCtx ctx, List<TopicSubscription> subscriptions);
 
-    void publishUnsubscribed(ClientSessionCtx ctx, List<String> topicFilters);
+    void publishUnsubscribed(ClientSessionCtx ctx, List<TopicSubscription> subscriptions);
 
     void publishAuthenticationFailed(ClientSessionCtx ctx, String clientId, String reason);
 

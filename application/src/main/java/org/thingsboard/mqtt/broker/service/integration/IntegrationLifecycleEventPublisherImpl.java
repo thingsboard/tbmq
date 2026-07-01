@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventT
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
@@ -112,16 +113,23 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
     }
 
     @Override
-    public void publishUnsubscribed(ClientSessionCtx ctx, List<String> topicFilters) {
+    public void publishUnsubscribed(ClientSessionCtx ctx, List<TopicSubscription> subscriptions) {
         try {
             Set<String> integrationIds = lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED);
             if (integrationIds.isEmpty()) {
                 return;
             }
-            ClientLifecycleEventMsgProto proto = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_UNSUBSCRIBED)
-                    .addAllTopicFilters(topicFilters)
-                    .build();
-            publish(integrationIds, proto);
+            ClientLifecycleEventMsgProto.Builder builder = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_UNSUBSCRIBED);
+            for (TopicSubscription sub : subscriptions) {
+                // An UNSUBSCRIBE names filters, not settings; carry only the removed subscription's identity
+                // (bare topic filter + shareName when shared) so $share/<group>/<filter> can be reconstructed.
+                TopicSubscriptionProto.Builder subProto = TopicSubscriptionProto.newBuilder().setTopic(sub.getTopicFilter());
+                if (sub.getShareName() != null) {
+                    subProto.setShareName(sub.getShareName());
+                }
+                builder.addSubscriptions(subProto);
+            }
+            publish(integrationIds, builder.build());
         } catch (Throwable t) {
             onPublishError(ClientLifecycleEventType.CLIENT_UNSUBSCRIBED, t);
         }

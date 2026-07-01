@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -117,11 +118,12 @@ public class MqttUnsubscribeHandlerTest {
         callbackCaptor.getValue().onSuccess();
 
         // "never/subscribed" was never subscribed; only the actually-removed "a/b" should produce a CLIENT_UNSUBSCRIBED event
-        verify(integrationLifecycleEventPublisher).publishUnsubscribed(ctx, List.of("a/b"));
+        verify(integrationLifecycleEventPublisher).publishUnsubscribed(ctx, List.of(new ClientTopicSubscription("a/b", 1)));
     }
 
     @Test
-    public void givenSharedSubscription_whenUnsubscribe_thenEmitsBareTopicFilter() {
+    @SuppressWarnings("unchecked")
+    public void givenSharedSubscription_whenUnsubscribe_thenEmitsSubscriptionWithShareName() {
         String clientId = "client-1";
         when(ctx.getClientId()).thenReturn(clientId);
         when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
@@ -134,8 +136,13 @@ public class MqttUnsubscribeHandlerTest {
         verify(clientSubscriptionService).unsubscribeAndPersist(eq(clientId), eq(List.of("$share/group/topic")), callbackCaptor.capture());
         callbackCaptor.getValue().onSuccess();
 
-        // CLIENT_SUBSCRIBED emits the bare filter; CLIENT_UNSUBSCRIBED must match it, not the raw "$share/group/topic"
-        verify(integrationLifecycleEventPublisher).publishUnsubscribed(ctx, List.of("topic"));
+        // The removed shared subscription must carry its shareName so $share/group/topic can be reconstructed downstream
+        ArgumentCaptor<List<TopicSubscription>> captor = ArgumentCaptor.forClass(List.class);
+        verify(integrationLifecycleEventPublisher).publishUnsubscribed(eq(ctx), captor.capture());
+        List<TopicSubscription> removed = captor.getValue();
+        assertEquals(1, removed.size());
+        assertEquals("topic", removed.get(0).getTopicFilter());
+        assertEquals("group", removed.get(0).getShareName());
     }
 
     @Test

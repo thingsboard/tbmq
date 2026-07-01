@@ -116,10 +116,9 @@ message ClientLifecycleEventMsgProto {
   int32 keepAlive = 9;
   int32 protocolVersion = 10;
   string disconnectReason = 11;
-  repeated queue.TopicSubscriptionProto subscriptions = 12;
-  repeated string topicFilters = 13;
-  string reason = 14;                // CLIENT_AUTHENTICATION_FAILED / CLIENT_CONNECTION_FAILED: failure reason
-  string action = 15;                // CLIENT_AUTHORIZATION_FAILED: publish|subscribe
-  string topic = 16;                 // CLIENT_AUTHORIZATION_FAILED: denied topic/filter
-  int64 sessionExpiryInterval = 17;  // CLIENT_CONNECTED enrichment
+  repeated queue.TopicSubscriptionProto subscriptions = 12;   // CLIENT_SUBSCRIBED: granted subscriptions (full); CLIENT_UNSUBSCRIBED: removed subscriptions (topic + shareName only)
+  string reason = 13;                // CLIENT_AUTHENTICATION_FAILED / CLIENT_CONNECTION_FAILED: failure reason
+  string action = 14;                // CLIENT_AUTHORIZATION_FAILED: publish|subscribe
+  string topic = 15;                 // CLIENT_AUTHORIZATION_FAILED: denied topic/filter
+  int64 sessionExpiryInterval = 16;  // CLIENT_CONNECTED enrichment
 }
