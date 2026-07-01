@@ -34,7 +34,6 @@ public class BrokerConstants {
     public static final String INCOMING_MSGS = "incomingMsgs";
     public static final String OUTGOING_MSGS = "outgoingMsgs";
     public static final String DROPPED_MSGS = "droppedMsgs";
-    public static final String DROPPED_LIFECYCLE_EVENTS = "droppedLifecycleEvents";
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
     public static final String RETAINED_MSGS = "retainedMsgs";

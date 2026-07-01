@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
+import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 
 public class DefaultDroppedLifecycleEventStats implements DroppedLifecycleEventStats {
@@ -24,7 +24,7 @@ public class DefaultDroppedLifecycleEventStats implements DroppedLifecycleEventS
     private final DefaultCounter droppedLifecycleEventsCounter;
 
     public DefaultDroppedLifecycleEventStats(StatsFactory statsFactory) {
-        this.droppedLifecycleEventsCounter = statsFactory.createDefaultCounter(BrokerConstants.DROPPED_LIFECYCLE_EVENTS);
+        this.droppedLifecycleEventsCounter = statsFactory.createDefaultCounter(StatsConstantNames.DROPPED_LIFECYCLE_EVENTS);
     }
 
     @Override
