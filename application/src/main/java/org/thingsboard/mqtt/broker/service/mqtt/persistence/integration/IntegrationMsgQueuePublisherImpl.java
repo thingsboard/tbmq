@@ -66,7 +66,7 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(integrationId, this.getClass(), "Persisted msg in IE Queue");
+                        clientLogger.logEvent(integrationId, IntegrationMsgQueuePublisherImpl.this.getClass(), "Persisted msg in IE Queue");
                         if (isTraceEnabled) {
                             log.trace("[{}] Successfully sent publish msg to the ie queue.", integrationId);
                         }
