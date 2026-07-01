@@ -25,7 +25,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -167,6 +170,31 @@ public class IntegrationLifecycleEventPublisherImplTest {
         org.junit.Assert.assertEquals("CLIENT_DISCONNECTED", p.getEventType());
         // MQTT-standard reason-code name (Netty MqttReasonCodes.Disconnect), not the internal DisconnectReasonType name
         org.junit.Assert.assertEquals("SESSION_TAKEN_OVER", p.getDisconnectReason());
+    }
+
+    @Test
+    public void givenSubscriber_whenPublishSubscribed_thenProtoCarriesFullSubscriptionDetails() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED)).thenReturn(Set.of("int-1"));
+        stubCtxSession();
+        when(topicSubscription.getTopicFilter()).thenReturn("foo/bar");
+        when(topicSubscription.getQos()).thenReturn(2);
+        when(topicSubscription.getShareName()).thenReturn("g1");
+        when(topicSubscription.getSubscriptionId()).thenReturn(7);
+        when(topicSubscription.getOptions()).thenReturn(
+                new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.DONT_SEND_AT_SUBSCRIBE));
+
+        publisher.publishSubscribed(ctx, List.of(topicSubscription));
+
+        ArgumentCaptor<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> captor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+        verify(integrationEventMsgQueuePublisher).sendEventMsg(eq("int-1"), captor.capture(), any());
+        TopicSubscriptionProto sub = captor.getValue().getValue().getSubscriptions(0);
+        org.junit.Assert.assertEquals("foo/bar", sub.getTopic());
+        org.junit.Assert.assertEquals(2, sub.getQos());
+        org.junit.Assert.assertEquals("g1", sub.getShareName());
+        org.junit.Assert.assertEquals(7, sub.getSubscriptionId());
+        org.junit.Assert.assertTrue(sub.getOptions().getNoLocal());
+        org.junit.Assert.assertTrue(sub.getOptions().getRetainAsPublish());
+        org.junit.Assert.assertEquals(RetainHandling.DONT_SEND, sub.getOptions().getRetainHandling());
     }
 
     @Test

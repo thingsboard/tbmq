@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
@@ -237,9 +238,20 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                 case CLIENT_SUBSCRIBED:
                     ArrayNode subs = body.putArray("subscriptions");
                     for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
-                        subs.addObject()
+                        ObjectNode subNode = subs.addObject()
                                 .put("topicFilter", sub.getTopic())
                                 .put("qos", sub.getQos());
+                        if (sub.hasShareName()) {
+                            subNode.put("shareName", sub.getShareName());
+                        }
+                        if (sub.hasSubscriptionId()) {
+                            subNode.put("subscriptionId", sub.getSubscriptionId());
+                        }
+                        SubscriptionOptionsProto options = sub.getOptions();
+                        subNode.putObject("options")
+                                .put("noLocal", options.getNoLocal())
+                                .put("retainAsPublish", options.getRetainAsPublish())
+                                .put("retainHandling", options.getRetainHandling().name());
                     }
                     break;
                 case CLIENT_UNSUBSCRIBED:

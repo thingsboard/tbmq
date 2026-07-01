@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.integration.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,12 +24,16 @@ import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallba
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AbstractIntegrationLifecycleBodyTest {
 
@@ -149,6 +154,54 @@ public class AbstractIntegrationLifecycleBodyTest {
                 .build();
         ObjectNode body = integration.body(msg);
         assertEquals("QUOTA_EXCEEDED", body.get("reason").asText());
+    }
+
+    // ── CLIENT_SUBSCRIBED: full subscription details ──────────────────────────
+
+    @Test
+    void givenSubscribedProto_whenBuildBody_thenHasFullSubscriptionDetails() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_SUBSCRIBED")
+                .setClientId("c1")
+                .addSubscriptions(TopicSubscriptionProto.newBuilder()
+                        .setTopic("foo/bar")
+                        .setQos(1)
+                        .setShareName("g1")
+                        .setSubscriptionId(7)
+                        .setOptions(SubscriptionOptionsProto.newBuilder()
+                                .setNoLocal(true)
+                                .setRetainAsPublish(true)
+                                .setRetainHandling(RetainHandling.DONT_SEND)
+                                .build())
+                        .build())
+                .build();
+        ObjectNode body = integration.body(msg);
+        JsonNode sub = body.get("subscriptions").get(0);
+        assertEquals("foo/bar", sub.get("topicFilter").asText());
+        assertEquals(1, sub.get("qos").asInt());
+        assertEquals("g1", sub.get("shareName").asText());
+        assertEquals(7, sub.get("subscriptionId").asInt());
+        assertTrue(sub.get("options").get("noLocal").asBoolean());
+        assertTrue(sub.get("options").get("retainAsPublish").asBoolean());
+        assertEquals("DONT_SEND", sub.get("options").get("retainHandling").asText());
+    }
+
+    @Test
+    void givenSubscribedProtoWithoutShareOrSubId_whenBuildBody_thenOptionalKeysOmitted() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_SUBSCRIBED")
+                .setClientId("c1")
+                .addSubscriptions(TopicSubscriptionProto.newBuilder()
+                        .setTopic("foo/bar")
+                        .setQos(0)
+                        .setOptions(SubscriptionOptionsProto.getDefaultInstance())
+                        .build())
+                .build();
+        ObjectNode body = integration.body(msg);
+        JsonNode sub = body.get("subscriptions").get(0);
+        assertFalse(sub.has("shareName"));
+        assertFalse(sub.has("subscriptionId"));
+        assertEquals("SEND", sub.get("options").get("retainHandling").asText());
     }
 
     // ── metadata node always present ──────────────────────────────────────────

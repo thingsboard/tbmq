@@ -20,12 +20,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
@@ -103,10 +103,7 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
             }
             ClientLifecycleEventMsgProto.Builder builder = newSessionBuilder(ctx, ClientLifecycleEventType.CLIENT_SUBSCRIBED);
             for (TopicSubscription sub : subscriptions) {
-                builder.addSubscriptions(TopicSubscriptionProto.newBuilder()
-                        .setTopic(sub.getTopicFilter())
-                        .setQos(sub.getQos())
-                        .build());
+                builder.addSubscriptions(ProtoConverter.toTopicSubscriptionProto(sub));
             }
             publish(integrationIds, builder.build());
         } catch (Throwable t) {
