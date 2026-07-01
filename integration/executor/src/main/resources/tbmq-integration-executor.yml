@@ -38,6 +38,19 @@ queue:
       retries: "${TB_IE_MSG_ACK_STRATEGY_RETRIES:5}"
       # Time to wait in the consumer thread before retrying (in s).
       pause-between-retries: "${TB_IE_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
+    # Poll interval for the dedicated 'tbmq.ie.event' lifecycle-event topics (in ms).
+    event-poll-interval: "${TB_IE_EVENT_MSG_POLL_INTERVAL:1000}"
+    # Timeout for processing a pack of lifecycle events (in ms).
+    event-pack-processing-timeout: "${TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT:30000}"
+    event-ack-strategy:
+      # Processing strategy for 'tbmq.ie.event' topics. Accepted values: SKIP_ALL, RETRY_ALL.
+      # Defaults to SKIP_ALL because lifecycle events are best-effort hints - retrying would redeliver
+      # stale events out of order; kept independent from the data stream so it is not coupled to RETRY_ALL.
+      type: "${TB_IE_EVENT_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      # Number of retries. Use 0 for unlimited. Applies to the RETRY_ALL strategy.
+      retries: "${TB_IE_EVENT_MSG_ACK_STRATEGY_RETRIES:5}"
+      # Time to wait in the consumer thread before retrying (in s).
+      pause-between-retries: "${TB_IE_EVENT_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
 
   kafka:
     # List of Kafka bootstrap servers used to establish connection.

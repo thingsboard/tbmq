@@ -55,6 +55,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static java.lang.Long.MAX_VALUE;
 
@@ -80,6 +81,10 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     private long pollDuration;
     @Value("${queue.integration-msg.pack-processing-timeout:30000}")
     private long packProcessingTimeout;
+    @Value("${queue.integration-msg.event-poll-interval:100}")
+    private long eventPollDuration;
+    @Value("${queue.integration-msg.event-pack-processing-timeout:30000}")
+    private long eventPackProcessingTimeout;
 
     @PostConstruct
     public void init() {
@@ -252,7 +257,9 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         IntegrationProcessorStats stats = statsService
                 .map(svc -> svc.createIntegrationEventProcessorStats(holder.getIntegrationUuid()))
                 .orElse(null);
-        processQueue(consumer, holder, this::dispatchEvent, stats, "events");
+        processQueue(consumer, holder, this::dispatchEvent, stats, "events",
+                eventPollDuration, eventPackProcessingTimeout,
+                () -> ackStrategyFactory.newEventInstance(holder.getIntegrationId()));
     }
 
     void dispatchEvent(IntegrationHolder holder, UUID packetId, ClientLifecycleEventMsgProto event,
@@ -265,7 +272,9 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         IntegrationProcessorStats stats = statsService
                 .map(svc -> svc.createIntegrationProcessorStats(holder.getIntegrationUuid()))
                 .orElse(null);
-        processQueue(consumer, holder, this::dispatchMessage, stats, "messages");
+        processQueue(consumer, holder, this::dispatchMessage, stats, "messages",
+                pollDuration, packProcessingTimeout,
+                () -> ackStrategyFactory.newInstance(holder.getIntegrationId()));
     }
 
     void dispatchMessage(IntegrationHolder holder, UUID packetId, PublishIntegrationMsgProto msg,
@@ -276,13 +285,18 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     /**
      * Single consume/ack/commit loop shared by the data ({@link PublishIntegrationMsgProto}) and lifecycle-event
      * ({@link ClientLifecycleEventMsgProto}) streams. Parameterized by the proto type, the per-message dispatcher,
-     * an optional stats sink (data stream only), and a {@code kind} label used purely for logging.
+     * an optional stats sink (data stream only), a {@code kind} label used purely for logging, and the per-stream
+     * poll interval, pack-processing timeout, and ack-strategy supplier (data and events are configured
+     * independently under {@code queue.integration-msg} / {@code queue.integration-msg.event-*}).
      */
     private <T extends GeneratedMessageV3> void processQueue(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<T>> consumer,
                                   IntegrationHolder holder,
                                   IntegrationDispatcher<T> dispatcher,
                                   IntegrationProcessorStats stats,
-                                  String kind) {
+                                  String kind,
+                                  long pollDuration,
+                                  long packProcessingTimeout,
+                                  Supplier<IntegrationAckStrategy<T>> ackStrategyProvider) {
         final AtomicLong counter = new AtomicLong(0);
         while (isProcessorActive(holder)) {
             try {
@@ -291,7 +305,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                     continue;
                 }
 
-                IntegrationAckStrategy<T> ackStrategy = ackStrategyFactory.newInstance(holder.getIntegrationId());
+                IntegrationAckStrategy<T> ackStrategy = ackStrategyProvider.get();
                 IntegrationSubmitStrategy<T> submitStrategy = submitStrategyFactory.newInstance(holder.getIntegrationId());
 
                 long packId = counter.incrementAndGet();

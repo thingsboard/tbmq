@@ -32,12 +32,22 @@ import java.util.concurrent.TimeUnit;
 public class IntegrationAckStrategyFactory {
 
     private final IntegrationAckStrategyConfiguration ackStrategyConfiguration;
+    private final IntegrationEventAckStrategyConfiguration eventAckStrategyConfiguration;
 
     public <T> IntegrationAckStrategy<T> newInstance(String integrationId) {
-        return switch (ackStrategyConfiguration.getType()) {
+        return build(integrationId, ackStrategyConfiguration.getType(),
+                ackStrategyConfiguration.getRetries(), ackStrategyConfiguration.getPauseBetweenRetries());
+    }
+
+    public <T> IntegrationAckStrategy<T> newEventInstance(String integrationId) {
+        return build(integrationId, eventAckStrategyConfiguration.getType(),
+                eventAckStrategyConfiguration.getRetries(), eventAckStrategyConfiguration.getPauseBetweenRetries());
+    }
+
+    private <T> IntegrationAckStrategy<T> build(String integrationId, IntegrationAckStrategyType type, int retries, int pauseBetweenRetries) {
+        return switch (type) {
             case SKIP_ALL -> new SkipStrategy<>(integrationId);
-            case RETRY_ALL ->
-                    new RetryStrategy<>(integrationId, ackStrategyConfiguration.getRetries(), ackStrategyConfiguration.getPauseBetweenRetries());
+            case RETRY_ALL -> new RetryStrategy<>(integrationId, retries, pauseBetweenRetries);
         };
     }
 
