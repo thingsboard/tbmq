@@ -191,7 +191,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     @Override
     public void processLifecycleEvent(ClientLifecycleEventMsgProto msg, IntegrationMsgCallback callback) {
         try {
-            String body = constructLifecycleEventValue(msg);
+            ObjectNode body = constructLifecycleEventBody(msg);
             doProcessLifecycleEvent(body, callback);
         } catch (Exception e) {
             handleMsgProcessingFailure(e);
@@ -199,13 +199,12 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         }
     }
 
-    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
+    // Receives the event as an ObjectNode (not a pre-serialized String) so JSON-native transports like HTTP can send
+    // it as application/json, mirroring the message path where constructBody(...) is passed on directly. Transports
+    // that need bytes on the wire (Kafka, MQTT) serialize it themselves via JacksonUtil.toString(body).
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
         log.debug("[{}][{}] Lifecycle event processing is not supported by this integration type", getId(), getName());
         callback.onSuccess();
-    }
-
-    protected String constructLifecycleEventValue(ClientLifecycleEventMsgProto msg) {
-        return JacksonUtil.toString(constructLifecycleEventBody(msg));
     }
 
     protected ObjectNode constructLifecycleEventBody(ClientLifecycleEventMsgProto msg) {

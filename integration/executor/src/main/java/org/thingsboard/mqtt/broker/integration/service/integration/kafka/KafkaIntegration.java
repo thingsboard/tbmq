@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
@@ -32,6 +33,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -170,9 +172,10 @@ public class KafkaIntegration extends AbstractIntegration {
     }
 
     @Override
-    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+        String value = JacksonUtil.toString(body);
         context.getExternalCallExecutor().executeAsync(() -> {
-            publishBody(body, callback);
+            publishBody(value, callback);
             return null;
         });
     }

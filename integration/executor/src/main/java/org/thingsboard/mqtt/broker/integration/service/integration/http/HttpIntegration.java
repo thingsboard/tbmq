@@ -76,7 +76,7 @@ public class HttpIntegration extends AbstractHttpIntegration {
     }
 
     @Override
-    protected void doSendBody(String body, BasicCallback callback) {
+    protected void doSendBody(ObjectNode body, BasicCallback callback) {
         tbHttpClient.processMessage(body, callback);
     }
 

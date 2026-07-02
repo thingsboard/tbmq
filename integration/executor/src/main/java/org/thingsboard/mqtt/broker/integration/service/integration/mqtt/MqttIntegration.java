@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.MqttConnectResult;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -133,8 +135,8 @@ public class MqttIntegration extends AbstractIntegration {
     }
 
     @Override
-    protected void doProcessLifecycleEvent(String body, IntegrationMsgCallback callback) {
-        client.publish(config.getTopicName(), Unpooled.wrappedBuffer(body.getBytes(StandardCharsets.UTF_8)),
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+        client.publish(config.getTopicName(), Unpooled.wrappedBuffer(JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8)),
                         MqttQoS.valueOf(config.getQos()), config.isRetained())
                 .addListener(future -> {
                     if (future.isSuccess()) {

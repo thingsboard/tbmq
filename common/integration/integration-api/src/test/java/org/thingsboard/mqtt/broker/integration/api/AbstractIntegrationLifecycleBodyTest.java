@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,9 +44,17 @@ public class AbstractIntegrationLifecycleBodyTest {
      * directly before each test so constructLifecycleEventBody doesn't NPE.
      */
     static class TestIntegration extends AbstractIntegration {
+        ObjectNode capturedLifecycleBody;
+
         @Override
         public void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
             // no-op — not exercised by these tests
+        }
+
+        @Override
+        protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+            this.capturedLifecycleBody = body;
+            callback.onSuccess();
         }
 
         ObjectNode body(ClientLifecycleEventMsgProto msg) {
@@ -240,6 +249,38 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertFalse(subs.get(0).has("qos"));
         assertFalse(subs.get(0).has("options"));
         assertFalse(subs.get(0).has("subscriptionId"));
+    }
+
+    // ── processLifecycleEvent delivers the ObjectNode (not a serialized String) ──
+
+    @Test
+    void givenProto_whenProcessLifecycleEvent_thenDoProcessReceivesConstructedObjectNode() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_CONNECTED")
+                .setClientId("c1")
+                .setUsername("alice")
+                .build();
+
+        AtomicBoolean succeeded = new AtomicBoolean(false);
+        IntegrationMsgCallback callback = new IntegrationMsgCallback() {
+            @Override
+            public void onSuccess() {
+                succeeded.set(true);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        };
+
+        integration.processLifecycleEvent(msg, callback);
+
+        // doProcessLifecycleEvent receives the parsed ObjectNode (equal to constructLifecycleEventBody's output),
+        // so JSON-native transports like HTTP can forward it as application/json rather than a text/plain String.
+        assertNotNull(integration.capturedLifecycleBody);
+        assertEquals(integration.body(msg), integration.capturedLifecycleBody);
+        assertEquals("alice", integration.capturedLifecycleBody.get("username").asText());
+        assertTrue(succeeded.get());
     }
 
     // ── metadata node always present ──────────────────────────────────────────
