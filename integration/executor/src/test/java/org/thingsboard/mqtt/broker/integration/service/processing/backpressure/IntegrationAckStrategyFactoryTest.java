@@ -19,11 +19,13 @@ import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingContext;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IntegrationAckStrategyFactoryTest {
@@ -44,6 +46,37 @@ class IntegrationAckStrategyFactoryTest {
         assertFalse(factory.newInstance("id").analyze(resultWithPending()).isCommit());
         // ...while the events stream (SKIP_ALL) commits (drops) it, independent of the data strategy.
         assertTrue(factory.newEventInstance("id").analyze(resultWithPending()).isCommit());
+    }
+
+    @Test
+    void givenUnorderedPendingAndFailed_whenRetryAnalyze_thenReprocessMapPreservesOffsetOrder() {
+        IntegrationAckStrategyConfiguration dataConfig = new IntegrationAckStrategyConfiguration();
+        dataConfig.setType(IntegrationAckStrategyType.RETRY_ALL);
+        dataConfig.setRetries(1);
+        dataConfig.setPauseBetweenRetries(0);
+
+        IntegrationAckStrategyFactory factory =
+                new IntegrationAckStrategyFactory(dataConfig, new IntegrationEventAckStrategyConfiguration());
+
+        // Keys are UUID(packId, offsetIndex); insert in shuffled order into an unordered ConcurrentHashMap.
+        long packId = 7L;
+        ConcurrentMap<UUID, Object> pending = new ConcurrentHashMap<>();
+        for (int i : new int[]{3, 1, 5, 0, 4, 2}) {
+            pending.put(new UUID(packId, i), "m" + i);
+        }
+        IntegrationPackProcessingContext<Object> ctx = new IntegrationPackProcessingContext<>("id", pending);
+        // Move a couple of entries into the failed map so reprocess spans both pending and failed.
+        ctx.onFailure(new UUID(packId, 1));
+        ctx.onFailure(new UUID(packId, 0));
+
+        IntegrationProcessingDecision<Object> decision =
+                factory.<Object>newInstance("id").analyze(new IntegrationPackProcessingResult<>(ctx));
+
+        assertFalse(decision.isCommit());
+        List<Long> reprocessOrder = decision.getReprocessMap().keySet().stream()
+                .map(UUID::getLeastSignificantBits)
+                .toList();
+        assertIterableEquals(List.of(0L, 1L, 2L, 3L, 4L, 5L), reprocessOrder);
     }
 
     private static IntegrationPackProcessingResult<Object> resultWithPending() {

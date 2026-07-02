@@ -21,10 +21,12 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -95,9 +97,12 @@ public class IntegrationAckStrategyFactory {
                 log.debug("[{}] Skip reprocess due to max retries.", integrationId);
                 return new IntegrationProcessingDecision<>(true, Collections.emptyMap());
             }
-            Map<UUID, T> toReprocess = new HashMap<>();
-            toReprocess.putAll(pendingMap);
-            toReprocess.putAll(failedMap);
+            // The pending/failed maps are unordered (ConcurrentHashMap -> HashMap copies), but the keys are
+            // UUID(packId, index), so sorting by key restores the original consume/offset order for the retry pass.
+            Map<UUID, T> toReprocess = Stream.concat(pendingMap.entrySet().stream(), failedMap.entrySet().stream())
+                    .sorted(Map.Entry.comparingByKey())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (a, b) -> a, LinkedHashMap::new));
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Going to reprocess {} messages", integrationId, toReprocess.size());
             }
