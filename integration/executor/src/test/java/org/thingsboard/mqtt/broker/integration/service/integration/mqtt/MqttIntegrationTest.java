@@ -17,12 +17,16 @@ package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
@@ -34,8 +38,14 @@ import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallba
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MqttIntegrationTest {
@@ -122,6 +132,19 @@ class MqttIntegrationTest {
     void testDoStopClient() {
         mqttIntegration.doStopClient();
         verify(mockClient, times(1)).disconnect();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDoProcessLifecycleEvent_publishesToEventsTopicWithQos1AndNoRetain() {
+        config.setEventsTopicName("tbmq/events");
+        ReflectionTestUtils.setField(mqttIntegration, "config", config);
+        Future<Void> future = mock(Future.class);
+        when(mockClient.publish(anyString(), any(ByteBuf.class), any(MqttQoS.class), anyBoolean())).thenReturn(future);
+
+        mqttIntegration.doProcessLifecycleEvent(JacksonUtil.newObjectNode(), mockCallback);
+
+        verify(mockClient).publish(eq("tbmq/events"), any(ByteBuf.class), eq(MqttQoS.AT_LEAST_ONCE), eq(false));
     }
 
 }

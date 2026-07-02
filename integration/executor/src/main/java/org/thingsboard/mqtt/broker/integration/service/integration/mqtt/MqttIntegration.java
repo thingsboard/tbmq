@@ -147,11 +147,13 @@ public class MqttIntegration extends AbstractIntegration {
 
     @Override
     protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
-        client.publish(config.getTopicName(), Unpooled.wrappedBuffer(JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8)),
-                        MqttQoS.valueOf(config.getQos()), config.isRetained())
+        // Lifecycle events have no originating message, so they always go to the dedicated static events topic with
+        // fixed QoS 1 (at-least-once, do not silently drop events) and retain=false (shared stream across all clients).
+        client.publish(config.getEventsTopicName(), Unpooled.wrappedBuffer(JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8)),
+                        MqttQoS.AT_LEAST_ONCE, false)
                 .addListener(future -> {
                     if (future.isSuccess()) {
-                        log.debug("[{}][{}] lifecycle event publish success {}", getId(), getName(), config.getTopicName());
+                        log.debug("[{}][{}] lifecycle event publish success {}", getId(), getName(), config.getEventsTopicName());
                         integrationStatistics.incMessagesProcessed();
                         callback.onSuccess();
                     } else {
