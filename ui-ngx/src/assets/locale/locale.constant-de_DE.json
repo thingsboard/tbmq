@@ -562,6 +562,7 @@
         "topic-name-hint": "Der Topic-Name definiert, wohin die Nachricht veröffentlicht wird",
         "topic-name-dynamic": "Dynamischer Topic-Name",
         "topic-name-dynamic-hint": "Wenn aktiviert, wird der Topic-Name aus der eingehenden Nachricht verwendet",
+        "topic-name-events-hint": "Lebenszyklus-Ereignisse werden immer in diesem Topic veröffentlicht; der dynamische Topic-Name gilt nur für Nachrichten",
         "mqtt-qos": "QoS",
         "mqtt-qos-dynamic": "Dynamisches QoS",
         "mqtt-qos-dynamic-hint": "Wenn aktiviert, wird das QoS aus der eingehenden Nachricht übernommen",

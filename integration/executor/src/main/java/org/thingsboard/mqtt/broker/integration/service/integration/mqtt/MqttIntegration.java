@@ -70,6 +70,17 @@ public class MqttIntegration extends AbstractIntegration {
     }
 
     @Override
+    protected void doValidateLifecycleEventsDelivery(JsonNode clientConfiguration) throws ThingsboardException {
+        try {
+            // Lifecycle events have no incoming MQTT message, so they are always published to the static topic
+            // (config.getTopicName()) regardless of the "use message topic name" option - require it to be set and valid.
+            MqttConfigValidator.validateLifecycleEventsTopic(getClientConfiguration(clientConfiguration, MqttIntegrationConfig.class));
+        } catch (Exception e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+        }
+    }
+
+    @Override
     public void doCheckConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
         this.context = ctx;
         try {

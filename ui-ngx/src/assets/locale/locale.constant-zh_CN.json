@@ -508,6 +508,7 @@
         "topic-name-hint": "Topic name 定义消息发布位置",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "启用后，将使用入站消息的 topic name",
+        "topic-name-events-hint": "生命周期事件始终发布到此 topic；动态 topic name 仅适用于消息",
         "mqtt-qos": "QoS",
         "mqtt-qos-dynamic": "Dynamic QoS",
         "mqtt-qos-dynamic-hint": "启用后，将使用入站消息的 QoS",

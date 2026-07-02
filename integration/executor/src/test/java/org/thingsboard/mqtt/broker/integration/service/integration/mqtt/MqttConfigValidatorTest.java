@@ -167,6 +167,49 @@ class MqttConfigValidatorTest {
         assertEquals("Keep Alive (seconds) must not be less than 0", exception.getMessage());
     }
 
+    @Test
+    void testLifecycleEventsTopicWithStaticTopicDoesNotThrow() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("events/topic");
+        // even with dynamic topic on for messages, a static topic is present for events
+        config.setUseMsgTopicName(true);
+
+        assertDoesNotThrow(() -> MqttConfigValidator.validateLifecycleEventsTopic(config));
+    }
+
+    @Test
+    void testLifecycleEventsEmptyTopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("");
+        config.setUseMsgTopicName(true);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateLifecycleEventsTopic(config));
+        assertEquals("Topic name is required to deliver lifecycle events", exception.getMessage());
+    }
+
+    @Test
+    void testLifecycleEventsWildcardTopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("abc/#");
+        config.setUseMsgTopicName(true);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateLifecycleEventsTopic(config));
+        assertEquals("Topic name cannot contain wildcard characters", exception.getMessage());
+    }
+
+    @Test
+    void testLifecycleEvents$TopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("$abc/abc");
+        config.setUseMsgTopicName(true);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateLifecycleEventsTopic(config));
+        assertEquals("Topic name cannot start with $ character", exception.getMessage());
+    }
+
     private MqttIntegrationConfig createValidConfig() {
         MqttIntegrationConfig config = new MqttIntegrationConfig();
         config.setHost("mqtt.example.com");

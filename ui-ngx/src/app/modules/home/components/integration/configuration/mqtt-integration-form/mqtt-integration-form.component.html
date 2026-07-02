@@ -110,6 +110,9 @@
           <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
             help
           </mat-icon>
+          @if (lifecycleEventsSelected && clientConfigurationFormGroup.get('useMsgTopicName').value) {
+            <mat-hint>{{ 'integration.topic-name-events-hint' | translate }}</mat-hint>
+          }
         </mat-form-field>
       </ng-template>
     </mat-expansion-panel>

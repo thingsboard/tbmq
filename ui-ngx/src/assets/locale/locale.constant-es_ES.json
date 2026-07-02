@@ -562,6 +562,7 @@
         "topic-name-hint": "El topic name define dónde se publicará el mensaje",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "Si está habilitado, se usará el topic name del mensaje entrante",
+        "topic-name-events-hint": "Los eventos de ciclo de vida siempre se publican en este topic; el topic name dinámico se aplica solo a los mensajes",
         "mqtt-qos": "QoS",
         "mqtt-qos-dynamic": "Dynamic QoS",
         "mqtt-qos-dynamic-hint": "Si está habilitado, se usará el QoS del mensaje entrante",
