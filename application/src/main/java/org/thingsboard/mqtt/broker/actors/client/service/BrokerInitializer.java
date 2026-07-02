@@ -119,6 +119,7 @@ public class BrokerInitializer {
 
     void initIntegrationLifecycleEventCache() {
         List<Integration> integrations = integrationService.findAllIntegrations();
+        int cached = 0;
         for (Integration integration : integrations) {
             JsonNode configuration = integration.getConfiguration();
             if (configuration == null || !configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
@@ -129,9 +130,10 @@ public class BrokerInitializer {
                     name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
             if (!eventTypes.isEmpty()) {
                 lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
+                cached++;
             }
         }
-        log.info("Loaded lifecycle event type cache for {} integrations.", integrations.size());
+        log.info("Loaded lifecycle event type cache: cached {} of {} integrations.", cached, integrations.size());
     }
 
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
