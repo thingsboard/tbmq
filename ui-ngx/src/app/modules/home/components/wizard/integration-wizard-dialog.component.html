@@ -86,6 +86,31 @@
           <p translate>integration.lifecycle-events</p>
           <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
           </tb-integration-lifecycle-events>
+          @if (isMqtt && eventsEnabled) {
+            <mat-form-field class="mt-2 flex" appearance="outline">
+              <mat-label translate>integration.events-topic-name</mat-label>
+              <input matInput formControlName="eventsTopicName" [matAutocomplete]="eventsTopicAuto">
+              <mat-autocomplete #eventsTopicAuto="matAutocomplete">
+                @for (option of filteredEventsTopics | async; track option) {
+                  <mat-option [value]="option">{{option}}</mat-option>
+                }
+              </mat-autocomplete>
+              <tb-copy-button matSuffix
+                              [class.!hidden]="!integrationFiltersForm.get('eventsTopicName')?.value?.length"
+                              [copyText]="integrationFiltersForm.get('eventsTopicName').value">
+              </tb-copy-button>
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                        [class.!hidden]="!integrationFiltersForm.get('eventsTopicName').hasError('required')"
+                        class="tb-error">
+                warning
+              </mat-icon>
+              <mat-icon matSuffix matTooltip="{{ 'integration.events-topic-name-hint' | translate }}">
+                help
+              </mat-icon>
+            </mat-form-field>
+          }
         </section>
         @if (integrationFiltersForm.hasError('topicFilterOrEventRequired')) {
           <mat-error style="font-size: 12px">{{ 'integration.topic-filter-or-event-required' | translate }}</mat-error>

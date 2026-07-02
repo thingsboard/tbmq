@@ -597,7 +597,7 @@
         "lifecycle-events": "Lifecycle events",
         "lifecycle-event": "Event type",
         "lifecycle-event-types": "Event types",
-        "lifecycle-events-hint": "Forward client lifecycle events to this integration.",
+        "lifecycle-events-hint": "Forward client lifecycle events to this integration. Events are published with QoS 1 and retain off.",
         "lifecycle-events-no-selection": "When no lifecycle events are selected, this step has no effect.",
         "client-connected": "Client connected",
         "client-disconnected": "Client disconnected",

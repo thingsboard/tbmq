@@ -545,7 +545,7 @@
         "lifecycle-events": "Lifecycle-Events",
         "lifecycle-event": "Event-Typ",
         "lifecycle-event-types": "Event-Typen",
-        "lifecycle-events-hint": "Client-Lifecycle-Events an diese Integration weiterleiten.",
+        "lifecycle-events-hint": "Client-Lifecycle-Events an diese Integration weiterleiten. Events werden mit QoS 1 und Retain aus veröffentlicht.",
         "lifecycle-events-no-selection": "Wenn keine Lifecycle-Events ausgewählt sind, hat dieser Schritt keine Auswirkung.",
         "client-connected": "Client verbunden",
         "client-disconnected": "Client getrennt",

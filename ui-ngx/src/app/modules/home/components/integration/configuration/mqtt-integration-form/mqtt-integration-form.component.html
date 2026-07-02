@@ -306,7 +306,12 @@
           <section formGroupName="clientConfiguration">
             <mat-form-field class="mt-2 flex" appearance="outline">
               <mat-label translate>integration.events-topic-name</mat-label>
-              <input matInput formControlName="eventsTopicName">
+              <input matInput formControlName="eventsTopicName" [matAutocomplete]="eventsAuto">
+              <mat-autocomplete #eventsAuto="matAutocomplete">
+                @for (option of filteredEventsTopics | async; track option) {
+                  <mat-option [value]="option">{{option}}</mat-option>
+                }
+              </mat-autocomplete>
               <tb-copy-button matSuffix
                               [class.!hidden]="!clientConfigurationFormGroup.get('eventsTopicName')?.value?.length"
                               [copyText]="clientConfigurationFormGroup.get('eventsTopicName').value">

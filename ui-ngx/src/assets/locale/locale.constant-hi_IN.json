@@ -545,7 +545,7 @@
         "lifecycle-events": "लाइफसाइकल इवेंट्स",
         "lifecycle-event": "इवेंट प्रकार",
         "lifecycle-event-types": "इवेंट प्रकार",
-        "lifecycle-events-hint": "क्लाइंट लाइफसाइकल इवेंट्स को इस इंटीग्रेशन पर अग्रेषित करें।",
+        "lifecycle-events-hint": "क्लाइंट लाइफसाइकल इवेंट्स को इस इंटीग्रेशन पर अग्रेषित करें। इवेंट QoS 1 के साथ प्रकाशित होते हैं और retain बंद रहता है।",
         "lifecycle-events-no-selection": "जब कोई लाइफसाइकल इवेंट चयनित नहीं होता, तो इस चरण का कोई प्रभाव नहीं पड़ता।",
         "client-connected": "क्लाइंट कनेक्टेड",
         "client-disconnected": "क्लाइंट डिस्कनेक्टेड",

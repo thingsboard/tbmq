@@ -121,6 +121,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   IntegrationCredentialType = IntegrationCredentialType;
   mqttVersions = MqttVersions;
   filteredTopics: Observable<string[]>;
+  filteredEventsTopics: Observable<string[]>;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -279,6 +280,11 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     }, 0);
 
     this.filteredTopics = this.clientConfigurationFormGroup.get('topicName').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      map(value => filterTopics(value || ''))
+    );
+
+    this.filteredEventsTopics = this.clientConfigurationFormGroup.get('eventsTopicName').valueChanges.pipe(
       takeUntil(this.destroy$),
       map(value => filterTopics(value || ''))
     );

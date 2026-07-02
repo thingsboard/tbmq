@@ -62,6 +62,10 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   IntegrationLifecycleEventsComponent
 } from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatOption } from '@angular/material/select';
+import { filterTopics } from '@core/utils';
 
 @Component({
   selector: 'tb-integration-wizard',
@@ -98,7 +102,11 @@ import {
     IntegrationTopicFiltersComponent,
     KeyValMapComponent,
     MatTooltip,
-    IntegrationLifecycleEventsComponent
+    IntegrationLifecycleEventsComponent,
+    CopyButtonComponent,
+    MatAutocomplete,
+    MatAutocompleteTrigger,
+    MatOption
   ]
 })
 export class IntegrationWizardDialogComponent extends
@@ -117,6 +125,8 @@ export class IntegrationWizardDialogComponent extends
   integrationWizardForm: UntypedFormGroup;
   integrationFiltersForm: UntypedFormGroup;
   integrationConfigurationForm: UntypedFormGroup;
+
+  filteredEventsTopics: Observable<string[]>;
 
   private checkConnectionAllow = false;
   private destroy$ = new Subject<void>();
@@ -154,6 +164,7 @@ export class IntegrationWizardDialogComponent extends
         this.integrationType = '';
       }
       this.integrationConfigurationForm.get('configuration').setValue(null);
+      this.updateEventsTopicState();
     });
 
     this.integrationConfigurationForm = this.fb.group({
@@ -168,8 +179,53 @@ export class IntegrationWizardDialogComponent extends
 
     this.integrationFiltersForm = this.fb.group({
       topicFilters: [['tbmq/#']],
-      lifecycleEventTypes: [[]]
+      lifecycleEventTypes: [[]],
+      eventsTopicName: ['tbmq/events']
     }, {validators: atLeastOneFilterOrEvent});
+
+    this.integrationFiltersForm.get('lifecycleEventTypes').valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.updateEventsTopicState());
+
+    this.filteredEventsTopics = this.integrationFiltersForm.get('eventsTopicName').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      map(value => filterTopics(value || ''))
+    );
+  }
+
+  get isMqtt(): boolean {
+    return this.integrationWizardForm.get('type').value === IntegrationType.MQTT;
+  }
+
+  get eventsEnabled(): boolean {
+    const types = this.integrationFiltersForm.get('lifecycleEventTypes')?.value;
+    return Array.isArray(types) && types.length > 0;
+  }
+
+  private updateEventsTopicState() {
+    const control = this.integrationFiltersForm.get('eventsTopicName');
+    if (this.isMqtt && this.eventsEnabled) {
+      control.setValidators(Validators.required);
+    } else {
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({emitEvent: false});
+  }
+
+  private mergeConfiguration(configuration: any, metadata: any): any {
+    const {eventsTopicName, ...topics} = this.integrationFiltersForm.getRawValue();
+    const merged: any = {
+      ...configuration,
+      ...topics,
+      metadata
+    };
+    if (this.isMqtt) {
+      merged.clientConfiguration = {
+        ...merged.clientConfiguration,
+        eventsTopicName
+      };
+    }
+    return merged;
   }
 
   ngOnDestroy() {
@@ -182,11 +238,7 @@ export class IntegrationWizardDialogComponent extends
     if (this.allValid()) {
       const integrationData = this.integrationWizardForm.getRawValue();
       const integrationConfig = this.integrationConfigurationForm.getRawValue();
-      integrationConfig.configuration = {
-        ...integrationConfig.configuration,
-        ...this.integrationFiltersForm.getRawValue(),
-        metadata: integrationConfig.metadata,
-      };
+      integrationConfig.configuration = this.mergeConfiguration(integrationConfig.configuration, integrationConfig.metadata);
       delete integrationConfig.metadata;
       const integration = {
         ...integrationData,
@@ -206,11 +258,10 @@ export class IntegrationWizardDialogComponent extends
 
   private getIntegrationData(): Integration {
     const integrationData: Integration = {
-      configuration: {
-        metadata: this.integrationConfigurationForm.value.metadata,
-        ...this.integrationConfigurationForm.value.configuration,
-        ...this.integrationFiltersForm.getRawValue()
-      },
+      configuration: this.mergeConfiguration(
+        this.integrationConfigurationForm.value.configuration,
+        this.integrationConfigurationForm.value.metadata
+      ),
       name: this.integrationWizardForm.value.name.trim(),
       type: this.integrationWizardForm.value.type,
       enabled: this.integrationWizardForm.value.enabled,
