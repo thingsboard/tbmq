@@ -39,7 +39,6 @@ import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEvent
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -184,7 +183,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(integrationLifecycleEventTypeCache).put("integration-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED)));
+                verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto));
 
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
 
@@ -211,7 +210,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(integrationLifecycleEventTypeCache).remove("integration-1"));
+                verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto));
 
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
 

@@ -20,11 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
-import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -36,7 +33,6 @@ import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEvent
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -114,19 +110,8 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
         }
         if (notificationProto.hasIntegrationLifecycleConfigProto()) {
             log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
-            applyIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
+            integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
         }
-    }
-
-    private void applyIntegrationLifecycleConfig(IntegrationLifecycleConfigProto proto) {
-        if (proto.getDeleted()) {
-            integrationLifecycleEventTypeCache.remove(proto.getIntegrationId());
-            return;
-        }
-        Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
-                proto.getLifecycleEventTypesList(),
-                name -> log.warn("[{}] Unknown lifecycle event type: {}", proto.getIntegrationId(), name));
-        integrationLifecycleEventTypeCache.put(proto.getIntegrationId(), eventTypes);
     }
 
     private void initConsumer() {

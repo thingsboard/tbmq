@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.integration;
 
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 
 import java.util.Set;
 
@@ -26,5 +27,12 @@ public interface IntegrationLifecycleEventTypeCache {
     void remove(String integrationId);
 
     Set<String> getIntegrationIds(ClientLifecycleEventType eventType);
+
+    /**
+     * Applies an integration lifecycle-config notification (delete -> {@link #remove}, otherwise parse the event-type
+     * names and {@link #put}). Owns the delete/parse semantics so the broadcast-to-self and consume paths share one
+     * implementation instead of duplicating it.
+     */
+    void processIntegrationLifecycleConfig(IntegrationLifecycleConfigProto proto);
 
 }

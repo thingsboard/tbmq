@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.integration;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 
 import java.util.Set;
 
@@ -79,6 +80,46 @@ public class IntegrationLifecycleEventTypeCacheImplTest {
         cache.put("ie-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
         Set<String> ids = cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
         assertThrows(UnsupportedOperationException.class, () -> ids.add("ie-x"));
+    }
+
+    @Test
+    public void givenConfigProto_whenProcess_thenReverseIndexResolvesIds() {
+        IntegrationLifecycleConfigProto proto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("ie-1")
+                .addLifecycleEventTypes("CLIENT_CONNECTED")
+                .addLifecycleEventTypes("CLIENT_SUBSCRIBED")
+                .build();
+
+        cache.processIntegrationLifecycleConfig(proto);
+
+        assertEquals(Set.of("ie-1"), cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED));
+        assertEquals(Set.of("ie-1"), cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_SUBSCRIBED));
+    }
+
+    @Test
+    public void givenDeletedConfigProto_whenProcess_thenRemoved() {
+        cache.put("ie-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+        IntegrationLifecycleConfigProto proto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("ie-1")
+                .setDeleted(true)
+                .build();
+
+        cache.processIntegrationLifecycleConfig(proto);
+
+        assertTrue(cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED).isEmpty());
+    }
+
+    @Test
+    public void givenConfigProtoWithUnknownType_whenProcess_thenKnownTypesApplied() {
+        IntegrationLifecycleConfigProto proto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("ie-1")
+                .addLifecycleEventTypes("CLIENT_CONNECTED")
+                .addLifecycleEventTypes("NOT_A_REAL_TYPE")
+                .build();
+
+        cache.processIntegrationLifecycleConfig(proto);
+
+        assertEquals(Set.of("ie-1"), cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED));
     }
 
 }

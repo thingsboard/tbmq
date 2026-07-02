@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -25,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 public class IntegrationLifecycleEventTypeCacheImpl implements IntegrationLifecycleEventTypeCache {
 
@@ -51,6 +55,18 @@ public class IntegrationLifecycleEventTypeCacheImpl implements IntegrationLifecy
     @Override
     public Set<String> getIntegrationIds(ClientLifecycleEventType eventType) {
         return byEventType.getOrDefault(eventType, Set.of());
+    }
+
+    @Override
+    public void processIntegrationLifecycleConfig(IntegrationLifecycleConfigProto proto) {
+        if (proto.getDeleted()) {
+            remove(proto.getIntegrationId());
+            return;
+        }
+        Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
+                proto.getLifecycleEventTypesList(),
+                name -> log.warn("[{}] Unknown lifecycle event type: {}", proto.getIntegrationId(), name));
+        put(proto.getIntegrationId(), eventTypes);
     }
 
     private void rebuildReverseIndex() {
