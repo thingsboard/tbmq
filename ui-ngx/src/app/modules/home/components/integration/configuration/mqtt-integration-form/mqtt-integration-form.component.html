@@ -302,6 +302,28 @@
         <p translate>integration.lifecycle-events</p>
         <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
         </tb-integration-lifecycle-events>
+        @if (eventsEnabled) {
+          <section formGroupName="clientConfiguration">
+            <mat-form-field class="mt-2 flex" appearance="outline">
+              <mat-label translate>integration.events-topic-name</mat-label>
+              <input matInput formControlName="eventsTopicName">
+              <tb-copy-button matSuffix
+                              [class.!hidden]="!clientConfigurationFormGroup.get('eventsTopicName')?.value?.length"
+                              [copyText]="clientConfigurationFormGroup.get('eventsTopicName').value">
+              </tb-copy-button>
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                        [class.!hidden]="!clientConfigurationFormGroup.get('eventsTopicName').hasError('required')"
+                        class="tb-error">
+                warning
+              </mat-icon>
+              <mat-icon matSuffix matTooltip="{{ 'integration.events-topic-name-hint' | translate }}">
+                help
+              </mat-icon>
+            </mat-form-field>
+          </section>
+        }
       </section>
     </section>
   </ng-template>

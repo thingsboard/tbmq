@@ -129,6 +129,11 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     return this.mqttIntegrationConfigForm.get('clientConfiguration') as UntypedFormGroup;
   }
 
+  get eventsEnabled(): boolean {
+    const types = this.mqttIntegrationConfigForm.get('lifecycleEventTypes')?.value;
+    return Array.isArray(types) && types.length > 0;
+  }
+
   constructor(private fb: UntypedFormBuilder) {
     super();
   }
@@ -143,6 +148,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
         topicName: ['tbmq/messages', [Validators.required]],
         useMsgTopicName: [true, []],
+        eventsTopicName: ['tbmq/events', []],
         clientId: [clientIdRandom(), [Validators.required]],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
         ssl: [false, [Validators.required]],
@@ -260,6 +266,10 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         }
       });
 
+    this.mqttIntegrationConfigForm.get('lifecycleEventTypes').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateEventsTopicState());
+
     setTimeout(() => {
       if (this.isNew) {
         this.clientConfigurationFormGroup.get('topicName').disable();
@@ -287,5 +297,19 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
       this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
       this.clientConfigurationFormGroup.get('retained').updateValueAndValidity({emitEvent: false});
     }
+    this.updateEventsTopicState();
+  }
+
+  private updateEventsTopicState() {
+    if (this.disabled) {
+      return;
+    }
+    const control = this.clientConfigurationFormGroup.get('eventsTopicName');
+    if (this.eventsEnabled) {
+      control.setValidators(Validators.required);
+    } else {
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({emitEvent: false});
   }
 }

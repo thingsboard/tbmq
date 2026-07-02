@@ -218,6 +218,7 @@ export interface MqttIntegration extends Topics {
     host: string;
     port: number;
     topicName: string;
+    eventsTopicName: string;
     ssl: boolean;
     clientId: string;
     credentials: Credentials | BasicCredentials | CertPemCredentials;
