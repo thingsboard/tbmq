@@ -97,6 +97,19 @@ class MqttIntegrationTest {
     }
 
     @Test
+    void testValidateConfiguration_eventsOptedInViaNonArray_throwsOnEmptyEventsTopic() {
+        config.setEventsTopicName("");
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.set("clientConfiguration", JacksonUtil.valueToTree(config));
+        // a non-empty, non-array lifecycleEventTypes value: validation must still treat events as opted in,
+        // matching the runtime IntegrationEventsOptInUtil.isOptedIn predicate (present + non-empty)
+        configuration.putObject("lifecycleEventTypes").put("CLIENT_CONNECTED", true);
+        IntegrationLifecycleMsg msg = IntegrationLifecycleMsg.builder().configuration(configuration).build();
+
+        assertThrows(ThingsboardException.class, () -> mqttIntegration.validateConfiguration(msg, true));
+    }
+
+    @Test
     void testValidateConfiguration_eventsEnabledWithValidEventsTopic_doesNotThrow() {
         config.setEventsTopicName("tbmq/events");
         IntegrationLifecycleMsg msg = lifecycleMsgWithEvents(config, "CLIENT_CONNECTED");

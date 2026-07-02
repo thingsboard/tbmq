@@ -121,7 +121,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     private static boolean isLifecycleEventsEnabled(JsonNode configuration) {
         JsonNode types = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
-        return types != null && types.isArray() && !types.isEmpty();
+        return types != null && !types.isEmpty();
     }
 
     @Override
