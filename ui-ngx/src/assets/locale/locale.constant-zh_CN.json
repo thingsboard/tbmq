@@ -506,6 +506,8 @@
         "topic-name": "Topic name",
         "topic-name-required": "Topic name 必填",
         "topic-name-hint": "Topic name 定义消息发布位置",
+        "events-topic-name": "事件 topic name",
+        "events-topic-name-hint": "客户端生命周期事件发布到的 topic（QoS 1，不保留）",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "启用后，将使用入站消息的 topic name",
         "mqtt-qos": "QoS",

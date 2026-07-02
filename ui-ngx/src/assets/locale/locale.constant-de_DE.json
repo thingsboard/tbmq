@@ -560,6 +560,8 @@
         "topic-name": "Topic-Name",
         "topic-name-required": "Topic-Name ist erforderlich",
         "topic-name-hint": "Der Topic-Name definiert, wohin die Nachricht veröffentlicht wird",
+        "events-topic-name": "Ereignis-Topic-Name",
+        "events-topic-name-hint": "Das Topic, in das Client-Lebenszyklus-Ereignisse veröffentlicht werden (QoS 1, Retain aus)",
         "topic-name-dynamic": "Dynamischer Topic-Name",
         "topic-name-dynamic-hint": "Wenn aktiviert, wird der Topic-Name aus der eingehenden Nachricht verwendet",
         "mqtt-qos": "QoS",

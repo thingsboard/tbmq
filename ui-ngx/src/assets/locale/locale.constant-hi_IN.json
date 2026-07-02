@@ -560,6 +560,8 @@
         "topic-name": "Topic name",
         "topic-name-required": "Topic name आवश्यक है",
         "topic-name-hint": "Topic name निर्धारित करता है कि संदेश कहाँ प्रकाशित होगा",
+        "events-topic-name": "Events topic name",
+        "events-topic-name-hint": "वह topic जहाँ क्लाइंट लाइफसाइकल इवेंट प्रकाशित होते हैं (QoS 1, retain बंद)",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "सक्षम होने पर, इनबाउंड संदेश का topic name उपयोग होगा",
         "mqtt-qos": "QoS",
