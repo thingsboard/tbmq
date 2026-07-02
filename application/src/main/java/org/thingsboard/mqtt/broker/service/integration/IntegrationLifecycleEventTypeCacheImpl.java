@@ -26,13 +26,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
 public class IntegrationLifecycleEventTypeCacheImpl implements IntegrationLifecycleEventTypeCache {
 
-    private final Map<String, Set<ClientLifecycleEventType>> byIntegrationId = new ConcurrentHashMap<>();
+    // Mutations are serialized by the instance monitor (put/remove/rebuildReverseIndex all run under synchronized);
+    // reads never touch this map - they use the immutable byEventType snapshot below. A plain HashMap suffices: the
+    // synchronization, not the map type, provides thread-safety.
+    private final Map<String, Set<ClientLifecycleEventType>> byIntegrationId = new HashMap<>();
 
     private volatile Map<ClientLifecycleEventType, Set<String>> byEventType = Map.of();
 
