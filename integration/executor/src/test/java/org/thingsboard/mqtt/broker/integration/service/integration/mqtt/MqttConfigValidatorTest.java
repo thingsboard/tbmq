@@ -167,6 +167,44 @@ class MqttConfigValidatorTest {
         assertEquals("Keep Alive (seconds) must not be less than 0", exception.getMessage());
     }
 
+    @Test
+    void testValidateEventsTopicWithStaticTopicDoesNotThrow() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setEventsTopicName("events/topic");
+
+        assertDoesNotThrow(() -> MqttConfigValidator.validateEventsTopic(config));
+    }
+
+    @Test
+    void testValidateEventsTopicEmptyThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setEventsTopicName("");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateEventsTopic(config));
+        assertEquals("Topic name is required to deliver lifecycle events", exception.getMessage());
+    }
+
+    @Test
+    void testValidateEventsTopicWildcardThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setEventsTopicName("abc/#");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateEventsTopic(config));
+        assertEquals("Topic name cannot contain wildcard characters", exception.getMessage());
+    }
+
+    @Test
+    void testValidateEventsTopicDollarPrefixThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setEventsTopicName("$abc/abc");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validateEventsTopic(config));
+        assertEquals("Topic name cannot start with $ character", exception.getMessage());
+    }
+
     private MqttIntegrationConfig createValidConfig() {
         MqttIntegrationConfig config = new MqttIntegrationConfig();
         config.setHost("mqtt.example.com");

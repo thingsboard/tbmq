@@ -35,6 +35,7 @@ public class MqttIntegrationConfig {
     private int port;
     private String topicName;
     private boolean useMsgTopicName;
+    private String eventsTopicName;
     private String clientId;
     private ClientCredentials credentials;
     private boolean ssl;

@@ -63,6 +63,22 @@ public class MqttConfigValidator {
         if (mqttIntegrationConfig.isUseMsgTopicName()) {
             return;
         }
+        validateTopicShape(topicName);
+    }
+
+    /**
+     * Lifecycle events have no originating MQTT message to derive a topic from, so they are always published to a
+     * dedicated static events topic. It must be present and a valid publish topic.
+     */
+    public static void validateEventsTopic(MqttIntegrationConfig mqttIntegrationConfig) {
+        var eventsTopicName = mqttIntegrationConfig.getEventsTopicName();
+        if (StringUtils.isEmpty(eventsTopicName)) {
+            throw new IllegalArgumentException("Topic name is required to deliver lifecycle events");
+        }
+        validateTopicShape(eventsTopicName);
+    }
+
+    private static void validateTopicShape(String topicName) {
         if (topicName.contains(MULTI_LEVEL_WILDCARD)
                 || topicName.contains(SINGLE_LEVEL_WILDCARD)) {
             throw new IllegalArgumentException("Topic name cannot contain wildcard characters");
