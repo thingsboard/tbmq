@@ -491,7 +491,7 @@
         "lifecycle-events": "生命周期事件",
         "lifecycle-event": "事件类型",
         "lifecycle-event-types": "事件类型",
-        "lifecycle-events-hint": "将客户端生命周期事件转发到此集成。事件以 QoS 1 发布且不保留。",
+        "lifecycle-events-hint": "将客户端生命周期事件转发到此集成。",
         "lifecycle-events-no-selection": "未选择任何生命周期事件时，此步骤不生效。",
         "client-connected": "客户端已连接",
         "client-disconnected": "客户端已断开",

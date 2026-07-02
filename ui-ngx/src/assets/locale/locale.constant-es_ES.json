@@ -545,7 +545,7 @@
         "lifecycle-events": "Eventos de ciclo de vida",
         "lifecycle-event": "Tipo de evento",
         "lifecycle-event-types": "Tipos de evento",
-        "lifecycle-events-hint": "Reenviar los eventos de ciclo de vida del cliente a esta integración. Los eventos se publican con QoS 1 y retain desactivado.",
+        "lifecycle-events-hint": "Reenviar los eventos de ciclo de vida del cliente a esta integración.",
         "lifecycle-events-no-selection": "Cuando no se selecciona ningún evento de ciclo de vida, este paso no tiene efecto.",
         "client-connected": "Cliente conectado",
         "client-disconnected": "Cliente desconectado",
