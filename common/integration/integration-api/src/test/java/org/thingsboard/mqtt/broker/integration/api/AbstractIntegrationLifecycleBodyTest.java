@@ -150,6 +150,18 @@ public class AbstractIntegrationLifecycleBodyTest {
         assertEquals("Bad credentials", body.get("reason").asText());
     }
 
+    @Test
+    void givenAuthenticationFailedProto_whenBuildBody_thenHasProtocolVersion() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_AUTHENTICATION_FAILED")
+                .setClientId("c2")
+                .setProtocolVersion(4)
+                .setReason("Bad credentials")
+                .build();
+        ObjectNode body = integration.body(msg);
+        assertEquals(4, body.get("protocolVersion").asInt());
+    }
+
     // ── CLIENT_AUTHORIZATION_FAILED ───────────────────────────────────────────
 
     @Test

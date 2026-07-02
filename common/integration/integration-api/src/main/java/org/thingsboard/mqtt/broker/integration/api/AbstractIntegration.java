@@ -273,6 +273,10 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
                     }
                     break;
                 case CLIENT_AUTHENTICATION_FAILED:
+                    // protocolVersion is known by the time authentication runs (the CONNECT variable header is
+                    // parsed first), so emit it like CLIENT_CONNECTED - it is useful context for version-specific
+                    // auth failures (e.g. MQTT 5 enhanced-auth vs 3.1.1 basic).
+                    body.put("protocolVersion", msg.getProtocolVersion());
                     putIfNotEmpty(body, "reason", msg.getReason());
                     break;
                 case CLIENT_AUTHORIZATION_FAILED:
