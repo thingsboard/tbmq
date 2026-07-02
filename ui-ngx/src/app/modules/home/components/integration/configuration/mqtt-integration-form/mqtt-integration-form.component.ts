@@ -33,7 +33,7 @@ import {
   Integration,
   MqttIntegration,
 } from '@shared/models/integration.models';
-import { MatError, MatFormField, MatHint, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -75,7 +75,6 @@ import { Observable } from 'rxjs';
     ReactiveFormsModule,
     MatFormField,
     MatError,
-    MatHint,
     MatInput,
     MatLabel,
     TranslateModule,
@@ -128,10 +127,6 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
 
   get clientConfigurationFormGroup() {
     return this.mqttIntegrationConfigForm.get('clientConfiguration') as UntypedFormGroup;
-  }
-
-  get lifecycleEventsSelected(): boolean {
-    return this.eventsEnabled();
   }
 
   constructor(private fb: UntypedFormBuilder) {
@@ -227,25 +222,42 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
 
     this.clientConfigurationFormGroup.get('useMsgQoS').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateQosState());
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('qos').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('qos').enable({emitEvent: false});
+          }
+          this.clientConfigurationFormGroup.get('qos').updateValueAndValidity();
+        }
+      });
 
     this.clientConfigurationFormGroup.get('useMsgTopicName').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateTopicNameState());
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('topicName').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('topicName').enable({emitEvent: false});
+            this.clientConfigurationFormGroup.get('topicName').setValidators(Validators.required);
+          }
+          this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity();
+        }
+      });
 
     this.clientConfigurationFormGroup.get('useMsgRetain').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateRetainState());
-
-    // Lifecycle events have no incoming message, so they are always delivered to the static topic/qos/retain.
-    // Whenever any lifecycle event is selected, these fields must be enabled and set - even if the matching
-    // "use message ..." option is on, since that option only governs message delivery.
-    this.mqttIntegrationConfigForm.get('lifecycleEventTypes').valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.updateTopicNameState();
-        this.updateQosState();
-        this.updateRetainState();
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('retained').enable({emitEvent: false});
+          }
+          this.clientConfigurationFormGroup.get('retained').updateValueAndValidity();
+        }
       });
 
     setTimeout(() => {
@@ -262,57 +274,18 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     );
   }
 
-  private updateView(_value: MqttIntegration) {
-    this.updateTopicNameState();
-    this.updateQosState();
-    this.updateRetainState();
-  }
-
-  private eventsEnabled(): boolean {
-    const types = this.mqttIntegrationConfigForm.get('lifecycleEventTypes')?.value;
-    return Array.isArray(types) && types.length > 0;
-  }
-
-  // The static topic must be enabled and required when it is used for message delivery (dynamic topic off)
-  // OR when lifecycle events are delivered (events always use the static topic).
-  private updateTopicNameState() {
-    if (this.disabled) {
-      return;
+  private updateView(value: MqttIntegration) {
+    if (value.clientConfiguration.useMsgTopicName) {
+      this.clientConfigurationFormGroup.get('topicName').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity({emitEvent: false});
     }
-    const control = this.clientConfigurationFormGroup.get('topicName');
-    if (!this.clientConfigurationFormGroup.get('useMsgTopicName').value || this.eventsEnabled()) {
-      control.enable({emitEvent: false});
-      control.setValidators(Validators.required);
-    } else {
-      control.disable({emitEvent: false});
-      control.clearValidators();
+    if (value.clientConfiguration.useMsgQoS) {
+      this.clientConfigurationFormGroup.get('qos').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('qos').updateValueAndValidity({emitEvent: false});
     }
-    control.updateValueAndValidity({emitEvent: false});
-  }
-
-  private updateQosState() {
-    if (this.disabled) {
-      return;
+    if (value.clientConfiguration.useMsgRetain) {
+      this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('retained').updateValueAndValidity({emitEvent: false});
     }
-    const control = this.clientConfigurationFormGroup.get('qos');
-    if (!this.clientConfigurationFormGroup.get('useMsgQoS').value || this.eventsEnabled()) {
-      control.enable({emitEvent: false});
-    } else {
-      control.disable({emitEvent: false});
-    }
-    control.updateValueAndValidity({emitEvent: false});
-  }
-
-  private updateRetainState() {
-    if (this.disabled) {
-      return;
-    }
-    const control = this.clientConfigurationFormGroup.get('retained');
-    if (!this.clientConfigurationFormGroup.get('useMsgRetain').value || this.eventsEnabled()) {
-      control.enable({emitEvent: false});
-    } else {
-      control.disable({emitEvent: false});
-    }
-    control.updateValueAndValidity({emitEvent: false});
   }
 }

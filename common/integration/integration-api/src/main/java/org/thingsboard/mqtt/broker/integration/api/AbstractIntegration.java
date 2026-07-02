@@ -112,16 +112,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         if (lifecycleMsg == null || lifecycleMsg.getConfiguration() == null) {
             throw new IllegalArgumentException("Integration configuration is empty!");
         }
-        JsonNode clientConfiguration = lifecycleMsg.getConfiguration().get("clientConfiguration");
-        doValidateConfiguration(clientConfiguration, allowLocalNetworkHosts);
-        if (isLifecycleEventsEnabled(lifecycleMsg.getConfiguration())) {
-            doValidateLifecycleEventsDelivery(clientConfiguration);
-        }
-    }
-
-    private static boolean isLifecycleEventsEnabled(JsonNode configuration) {
-        JsonNode types = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
-        return types != null && types.isArray() && !types.isEmpty();
+        doValidateConfiguration(lifecycleMsg.getConfiguration().get("clientConfiguration"), allowLocalNetworkHosts);
     }
 
     @Override
@@ -354,16 +345,6 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
-
-    }
-
-    /**
-     * Validates that this integration can deliver lifecycle events with the given client configuration. Called only
-     * when the integration is opted in for lifecycle events. Lifecycle events have no originating MQTT message, so a
-     * transport with a dynamic (per-message) destination must have a statically configured destination to fall back
-     * to here. Default is a no-op for transports whose destination is always static (e.g. HTTP URL, Kafka topic).
-     */
-    protected void doValidateLifecycleEventsDelivery(JsonNode clientConfiguration) throws ThingsboardException {
 
     }
 

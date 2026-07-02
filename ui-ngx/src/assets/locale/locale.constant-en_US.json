@@ -614,7 +614,6 @@
         "topic-name-hint": "The topic name defines where the message will be published",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "If enabled, the topic name from the incoming message will be used",
-        "topic-name-events-hint": "Lifecycle events are always published to this topic; the dynamic topic name applies to messages only",
         "mqtt-qos": "QoS",
         "mqtt-qos-dynamic": "Dynamic QoS",
         "mqtt-qos-dynamic-hint": "If enabled, the QoS from the incoming message will be used",

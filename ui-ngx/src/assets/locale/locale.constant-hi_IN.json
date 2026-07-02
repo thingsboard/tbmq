@@ -562,7 +562,6 @@
         "topic-name-hint": "Topic name निर्धारित करता है कि संदेश कहाँ प्रकाशित होगा",
         "topic-name-dynamic": "Dynamic topic name",
         "topic-name-dynamic-hint": "सक्षम होने पर, इनबाउंड संदेश का topic name उपयोग होगा",
-        "topic-name-events-hint": "लाइफसाइकल इवेंट हमेशा इसी topic पर प्रकाशित होते हैं; डायनामिक topic name केवल संदेशों पर लागू होता है",
         "mqtt-qos": "QoS",
         "mqtt-qos-dynamic": "Dynamic QoS",
         "mqtt-qos-dynamic-hint": "सक्षम होने पर, इनबाउंड संदेश का QoS उपयोग होगा",
