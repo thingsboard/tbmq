@@ -81,9 +81,9 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     private long pollDuration;
     @Value("${queue.integration-msg.pack-processing-timeout:30000}")
     private long packProcessingTimeout;
-    @Value("${queue.integration-msg.event-poll-interval:100}")
+    @Value("${queue.integration-event.poll-interval:100}")
     private long eventPollDuration;
-    @Value("${queue.integration-msg.event-pack-processing-timeout:30000}")
+    @Value("${queue.integration-event.pack-processing-timeout:30000}")
     private long eventPackProcessingTimeout;
 
     @PostConstruct
@@ -288,7 +288,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
      * an optional per-stream stats sink (data stream and lifecycle-event stream register under distinct meter keys),
      * a {@code kind} label used purely for logging, and the per-stream
      * poll interval, pack-processing timeout, and ack-strategy supplier (data and events are configured
-     * independently under {@code queue.integration-msg} / {@code queue.integration-msg.event-*}).
+     * independently under {@code queue.integration-msg} / {@code queue.integration-event}).
      */
     private <T extends GeneratedMessageV3> void processQueue(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<T>> consumer,
                                   IntegrationHolder holder,

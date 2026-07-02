@@ -29,8 +29,4 @@ public class IntegrationMsgKafkaSettings extends AbstractKafkaSettings {
     private String additionalProducerConfig;
     private String additionalConsumerConfig;
 
-    private String eventTopicProperties;
-    private String additionalEventProducerConfig;
-    private String additionalEventConsumerConfig;
-
 }

@@ -620,16 +620,17 @@ queue:
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.ie` topics.
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    integration-event:
       # Kafka topic properties separated by semicolon for the dedicated `tbmq.ie.event` lifecycle-event topics.
       # Retention defaults shorter than the data topic since events are best-effort hints.
-      event-topic-properties: "${TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.event` topics.
-      additional-event-consumer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
+      additional-consumer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.event` topics. Lifecycle events are
       # sent synchronously on the MQTT processing thread (same path as a regular publish), so a slow or unavailable Kafka
       # can stall that thread for up to max.block.ms before the send fails, after which the event is dropped and counted.
       # Lower max.block.ms to tighten that bound at the cost of more dropped events under Kafka pressure.
-      additional-event-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
+      additional-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
     internode-notifications:
       # Prefix for topics used to send system notifications to Broker nodes.
       topic-prefix: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PREFIX:tbmq.sys.internode.notifications}"

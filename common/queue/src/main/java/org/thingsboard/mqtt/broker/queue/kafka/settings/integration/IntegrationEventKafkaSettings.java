@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
+package org.thingsboard.mqtt.broker.queue.kafka.settings.integration;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.AbstractKafkaSettings;
 
-/**
- * Ack strategy for the dedicated lifecycle-event stream. Kept as a distinct type (rather than a second
- * binding of {@link IntegrationAckStrategyConfiguration}) so both configs inject unambiguously, and so events
- * can stay best-effort ({@code SKIP_ALL}) independently of the data stream's strategy. The common shape lives in
- * {@link IntegrationAckStrategyProperties}.
- */
+@Data
 @Component
-@ConfigurationProperties(prefix = "queue.integration-event.ack-strategy")
-public class IntegrationEventAckStrategyConfiguration extends IntegrationAckStrategyProperties {
+@ConfigurationProperties(prefix = "queue.kafka.integration-event")
+public class IntegrationEventKafkaSettings extends AbstractKafkaSettings {
+
+    private String topicProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 
 }
