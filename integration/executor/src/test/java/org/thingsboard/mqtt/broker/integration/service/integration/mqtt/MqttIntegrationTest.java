@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -72,6 +76,40 @@ class MqttIntegrationTest {
     void testDoValidateConfiguration_InvalidConfig() {
         config.setTopicName("test/topic/#");
         assertThrows(ThingsboardException.class, () -> mqttIntegration.doValidateConfiguration(JacksonUtil.valueToTree(config), true));
+    }
+
+    @Test
+    void testValidateConfiguration_eventsEnabledWithEmptyEventsTopic_throws() {
+        config.setEventsTopicName("");
+        IntegrationLifecycleMsg msg = lifecycleMsgWithEvents(config, "CLIENT_CONNECTED");
+
+        assertThrows(ThingsboardException.class, () -> mqttIntegration.validateConfiguration(msg, true));
+    }
+
+    @Test
+    void testValidateConfiguration_eventsEnabledWithValidEventsTopic_doesNotThrow() {
+        config.setEventsTopicName("tbmq/events");
+        IntegrationLifecycleMsg msg = lifecycleMsgWithEvents(config, "CLIENT_CONNECTED");
+
+        assertDoesNotThrow(() -> mqttIntegration.validateConfiguration(msg, true));
+    }
+
+    @Test
+    void testValidateConfiguration_noEventsWithEmptyEventsTopic_doesNotThrow() {
+        config.setEventsTopicName("");
+        IntegrationLifecycleMsg msg = lifecycleMsgWithEvents(config); // no event types
+
+        assertDoesNotThrow(() -> mqttIntegration.validateConfiguration(msg, true));
+    }
+
+    private static IntegrationLifecycleMsg lifecycleMsgWithEvents(MqttIntegrationConfig config, String... eventTypes) {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.set("clientConfiguration", JacksonUtil.valueToTree(config));
+        ArrayNode types = configuration.putArray("lifecycleEventTypes");
+        for (String type : eventTypes) {
+            types.add(type);
+        }
+        return IntegrationLifecycleMsg.builder().configuration(configuration).build();
     }
 
     @Test
