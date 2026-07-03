@@ -78,12 +78,17 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
         boolean reserve = false;
         boolean register = false;
+        boolean newInFlightSlot = false;
         MqttPublishMessage toRelease = null;
 
         lock.lock();
         try {
             if (delayedMsgQueue.isEmpty() && inFlightPacketIds.size() < clientReceiveMax) {
-                inFlightPacketIds.add(packetId);
+                // add() returns false when the packetId is already in-flight (e.g. a DUP retransmission of an
+                // unacked persisted message, whose packetId is cleared only on ack): still deliver it, but only
+                // bump the inflight gauge for a genuinely new slot so it is not over-counted (the ack path
+                // decrements each packetId once).
+                newInFlightSlot = inFlightPacketIds.add(packetId);
                 reserve = true;
             } else if (delayedMsgCounter.get() < delayedMsgQueueMaxSize) {
                 delayedMsgQueue.add(new MqttPubMsgWithCreatedTime(mqttPubMsg, System.nanoTime()));
@@ -97,7 +102,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         }
 
         if (reserve) {
-            stats.incInflight();
+            if (newInFlightSlot) {
+                stats.incInflight();
+            }
         } else if (register) {
             log.debug("[{}][{}] Max in-flight messages reached! Buffering msg in delay queue", clientId, clientReceiveMax);
             stats.incDelayed();
@@ -147,6 +154,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         while (clientSessionCtx.isWritable()) {
             MqttPublishMessage toSend = null;
             boolean queueEmpty = false;
+            boolean reserved = false;
 
             lock.lock();
             try {
@@ -159,7 +167,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                 } else {
                     delayedMsgQueue.poll();
                     delayedMsgCounter.decrementAndGet();
-                    inFlightPacketIds.add(head.getMqttPublishMessage().variableHeader().packetId());
+                    // add() returns false if the drained packetId is already in-flight; only bump the gauge for a
+                    // genuinely new slot so it is not over-counted.
+                    reserved = inFlightPacketIds.add(head.getMqttPublishMessage().variableHeader().packetId());
                     toSend = head.getMqttPublishMessage();
                 }
             } finally {
@@ -172,7 +182,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             }
 
             stats.decDelayed();
-            stats.incInflight();
+            if (reserved) {
+                stats.incInflight();
+            }
             deliveryService.sendAlreadyTrackedPublishMsgToClient(clientSessionCtx, toSend);
         }
     }

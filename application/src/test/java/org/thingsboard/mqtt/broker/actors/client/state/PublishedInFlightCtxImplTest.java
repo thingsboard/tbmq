@@ -128,6 +128,21 @@ public class PublishedInFlightCtxImplTest {
     }
 
     @Test
+    public void addInFlightMsg_duplicatePacketId_reservesForDeliveryButDoesNotDoubleCountInflight() {
+        assertTrue(ctx.addInFlightMsg(qos1(1)));
+
+        // Same packetId re-delivered while still in-flight — e.g. a DUP retransmission of an unacked persisted
+        // message on channel-writable, whose packetId is cleared from the in-flight set only on ack.
+        boolean result = ctx.addInFlightMsg(qos1(1));
+
+        // It must still be reserved so the caller delivers the retransmission (a duplicate is not a drop),
+        // but the inflight gauge must not be counted twice for one slot, and it is not an overflow drop.
+        assertTrue(result);
+        verify(stats, times(1)).incInflight();
+        verify(stats, never()).incDropOverflow();
+    }
+
+    @Test
     public void addInFlightMsg_mqtt3xDefaultReceiveMax_alwaysReservesInFlight() {
         ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats,
                 BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
