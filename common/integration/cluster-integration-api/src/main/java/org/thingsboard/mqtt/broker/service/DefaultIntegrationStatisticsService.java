@@ -203,7 +203,14 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
             log.info("[{}][{}] {}: {}", printName, stats.getIntegrationUuid(), label, msgStatsStr);
             if (!stats.isActive()) {
                 log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
-                managed.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
+                boolean removed = managed.computeIfPresent(stats.getIntegrationUuid(),
+                        (id, oldStats) -> oldStats.isActive() ? oldStats : null) == null;
+                if (removed) {
+                    // Deregister the per-integration counters so they stop being scraped and don't leak the
+                    // Micrometer registry on integration create/delete churn. Tied to the atomic map removal
+                    // above so a same-id re-enable in the meantime keeps its freshly-registered meters.
+                    stats.getStatsCounters().forEach(statsFactory::remove);
+                }
             } else {
                 stats.reset();
             }
