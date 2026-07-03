@@ -19,19 +19,25 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.integration.api.stats.IntegrationProcessorStats;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.INTEGRATION_ID_TAG;
 
 class DefaultIntegrationStatisticsServiceTest {
 
     private static final String INTEGRATION_PROCESSOR = StatsType.INTEGRATION_PROCESSOR.getPrintName();
-    private static final String INTEGRATION_EVENT_PROCESSOR = StatsType.INTEGRATION_EVENT_PROCESSOR.getPrintName();
 
     private SimpleMeterRegistry meterRegistry;
     private DefaultIntegrationStatisticsService service;
@@ -48,56 +54,116 @@ class DefaultIntegrationStatisticsServiceTest {
         service.shutdown();
     }
 
+    /**
+     * The two per-integration stat streams differ only by which create/clear pair feeds them and the
+     * metric name they register under, but both flow through the same {@code printProcessorStats}
+     * cleanup — so the behavioural tests below are parameterized over both to keep them in lockstep.
+     */
+    private enum Stream {
+        MESSAGE(StatsType.INTEGRATION_PROCESSOR.getPrintName()) {
+            @Override
+            IntegrationProcessorStats create(DefaultIntegrationStatisticsService service, UUID integrationId) {
+                return service.createIntegrationProcessorStats(integrationId);
+            }
+
+            @Override
+            void clear(DefaultIntegrationStatisticsService service, UUID integrationId) {
+                service.clearIntegrationProcessorStats(integrationId);
+            }
+        },
+        EVENT(StatsType.INTEGRATION_EVENT_PROCESSOR.getPrintName()) {
+            @Override
+            IntegrationProcessorStats create(DefaultIntegrationStatisticsService service, UUID integrationId) {
+                return service.createIntegrationEventProcessorStats(integrationId);
+            }
+
+            @Override
+            void clear(DefaultIntegrationStatisticsService service, UUID integrationId) {
+                service.clearIntegrationEventProcessorStats(integrationId);
+            }
+        };
+
+        final String key;
+
+        Stream(String key) {
+            this.key = key;
+        }
+
+        abstract IntegrationProcessorStats create(DefaultIntegrationStatisticsService service, UUID integrationId);
+
+        abstract void clear(DefaultIntegrationStatisticsService service, UUID integrationId);
+    }
+
     private int counters(String key, UUID integrationId) {
         return meterRegistry.find(key).tag(INTEGRATION_ID_TAG, integrationId.toString()).counters().size();
     }
 
-    @Test
-    void givenIntegrationProcessorStats_whenClearedAndPrinted_thenPerIntegrationCountersRemovedFromRegistry() {
-        UUID integrationId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        service.createIntegrationProcessorStats(integrationId);
-        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(8);
-
-        service.clearIntegrationProcessorStats(integrationId);
-        service.printStats();
-
-        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isZero();
+    @SuppressWarnings("unchecked")
+    private Map<UUID, IntegrationProcessorStats> managedProcessorStats() {
+        return (Map<UUID, IntegrationProcessorStats>) ReflectionTestUtils.getField(service, "managedIntegrationProcessorStats");
     }
 
-    @Test
-    void givenIntegrationEventProcessorStats_whenClearedAndPrinted_thenPerIntegrationCountersRemovedFromRegistry() {
-        UUID integrationId = UUID.fromString("00000000-0000-0000-0000-000000000002");
-        service.createIntegrationEventProcessorStats(integrationId);
-        assertThat(counters(INTEGRATION_EVENT_PROCESSOR, integrationId)).isEqualTo(8);
+    @ParameterizedTest
+    @EnumSource(Stream.class)
+    void givenProcessorStats_whenClearedAndPrinted_thenPerIntegrationCountersRemovedFromRegistry(Stream stream) {
+        UUID integrationId = UUID.randomUUID();
+        IntegrationProcessorStats created = stream.create(service, integrationId);
+        int registeredCounters = created.getStatsCounters().size();
+        assertThat(counters(stream.key, integrationId)).isEqualTo(registeredCounters);
 
-        service.clearIntegrationEventProcessorStats(integrationId);
+        stream.clear(service, integrationId);
         service.printStats();
 
-        assertThat(counters(INTEGRATION_EVENT_PROCESSOR, integrationId)).isZero();
+        assertThat(counters(stream.key, integrationId)).isZero();
     }
 
-    @Test
-    void givenActiveIntegrationProcessorStats_whenPrinted_thenCountersRetained() {
-        UUID integrationId = UUID.fromString("00000000-0000-0000-0000-000000000003");
-        service.createIntegrationProcessorStats(integrationId);
+    @ParameterizedTest
+    @EnumSource(Stream.class)
+    void givenActiveProcessorStats_whenPrinted_thenCountersRetained(Stream stream) {
+        UUID integrationId = UUID.randomUUID();
+        IntegrationProcessorStats created = stream.create(service, integrationId);
+        int registeredCounters = created.getStatsCounters().size();
 
         // No clear -> stats stay active -> printStats resets the local counts but must NOT deregister.
         service.printStats();
 
-        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(8);
+        assertThat(counters(stream.key, integrationId)).isEqualTo(registeredCounters);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Stream.class)
+    void givenTwoIntegrations_whenOneCleared_thenOnlyThatIntegrationsCountersRemoved(Stream stream) {
+        UUID cleared = UUID.randomUUID();
+        UUID retained = UUID.randomUUID();
+        stream.create(service, cleared);
+        IntegrationProcessorStats retainedStats = stream.create(service, retained);
+
+        stream.clear(service, cleared);
+        service.printStats();
+
+        assertThat(counters(stream.key, cleared)).isZero();
+        assertThat(counters(stream.key, retained)).isEqualTo(retainedStats.getStatsCounters().size());
     }
 
     @Test
-    void givenTwoIntegrations_whenOneCleared_thenOnlyThatIntegrationsCountersRemoved() {
-        UUID cleared = UUID.fromString("00000000-0000-0000-0000-000000000004");
-        UUID retained = UUID.fromString("00000000-0000-0000-0000-000000000005");
-        service.createIntegrationProcessorStats(cleared);
-        service.createIntegrationProcessorStats(retained);
+    void givenSameIdReEnabledBetweenSnapshotAndRemap_whenPrinted_thenCountersRetained() {
+        UUID integrationId = UUID.randomUUID();
+        // Register the real per-integration counters for this id.
+        IntegrationProcessorStats registered = service.createIntegrationProcessorStats(integrationId);
+        int registeredCounters = registered.getStatsCounters().size();
+        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(registeredCounters);
 
-        service.clearIntegrationProcessorStats(cleared);
+        // Simulate a concurrent re-enable landing between printStats' values() snapshot and the atomic
+        // remap: the entry reports inactive on the snapshot-loop check (so cleanup runs), but by the time
+        // the remap re-reads it the entry is active again, so its meters must be kept, not deregistered.
+        IntegrationProcessorStats reEnabling = mock(IntegrationProcessorStats.class);
+        when(reEnabling.getIntegrationUuid()).thenReturn(integrationId);
+        when(reEnabling.isActive()).thenReturn(false, true);
+        when(reEnabling.getStatsCounters()).thenReturn(registered.getStatsCounters());
+        managedProcessorStats().put(integrationId, reEnabling);
+
         service.printStats();
 
-        assertThat(counters(INTEGRATION_PROCESSOR, cleared)).isZero();
-        assertThat(counters(INTEGRATION_PROCESSOR, retained)).isEqualTo(8);
+        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(registeredCounters);
     }
 }
