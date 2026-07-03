@@ -17,11 +17,22 @@
 import { BaseData } from '@shared/models/base-data';
 import { QoS } from '@shared/models/session.model';
 import { ContentType } from '@shared/models/constants';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 export enum IntegrationType {
   HTTP = 'HTTP',
   MQTT = 'MQTT',
   KAFKA = 'KAFKA',
+}
+
+export enum ClientLifecycleEventType {
+  CLIENT_CONNECTED     = 'CLIENT_CONNECTED',
+  CLIENT_DISCONNECTED  = 'CLIENT_DISCONNECTED',
+  CLIENT_SUBSCRIBED    = 'CLIENT_SUBSCRIBED',
+  CLIENT_UNSUBSCRIBED  = 'CLIENT_UNSUBSCRIBED',
+  CLIENT_AUTHENTICATION_FAILED = 'CLIENT_AUTHENTICATION_FAILED',
+  CLIENT_AUTHORIZATION_FAILED  = 'CLIENT_AUTHORIZATION_FAILED',
+  CLIENT_CONNECTION_FAILED     = 'CLIENT_CONNECTION_FAILED',
 }
 
 export interface IntegrationTypeInfo {
@@ -83,6 +94,12 @@ export function getIntegrationHelpLink(integration: Integration): string {
     }
   }
   return 'integrations';
+}
+
+export function atLeastOneFilterOrEvent(group: AbstractControl): ValidationErrors | null {
+  const topicFilters = group.get('topicFilters')?.value ?? [];
+  const lifecycleEventTypes = group.get('lifecycleEventTypes')?.value ?? [];
+  return (topicFilters.length || lifecycleEventTypes.length) ? null : {topicFilterOrEventRequired: true};
 }
 
 export interface IntegrationMetaData {
@@ -147,6 +164,7 @@ export const IntegrationCredentialTypeTranslation = new Map<IntegrationCredentia
 
 export interface Topics {
   topicFilters: Array<string>;
+  lifecycleEventTypes?: ClientLifecycleEventType[];
 }
 
 export interface HttpIntegration extends Topics {
@@ -200,6 +218,7 @@ export interface MqttIntegration extends Topics {
     host: string;
     port: number;
     topicName: string;
+    eventsTopicName: string;
     ssl: boolean;
     clientId: string;
     credentials: Credentials | BasicCredentials | CertPemCredentials;

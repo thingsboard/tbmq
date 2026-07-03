@@ -93,7 +93,9 @@ class DefaultPlatformIntegrationServiceTest {
         integration.setId(integrationId);
         integration.setName("TestIntegration");
         ObjectNode configuration = JacksonUtil.newObjectNode();
-        configuration.set("topicFilters", JacksonUtil.newArrayNode());
+        ArrayNode topicFilters = JacksonUtil.newArrayNode();
+        topicFilters.add("test/topic");
+        configuration.set("topicFilters", topicFilters);
         integration.setConfiguration(configuration);
 
         when(eventService.saveAsync(any())).thenReturn(Futures.immediateFuture(null));

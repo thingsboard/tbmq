@@ -109,10 +109,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             address = getAddress(ctx);
             clientSessionCtx.setAddress(address);
         }
+        if (clientSessionCtx.getChannel() == null) {
+            // The ChannelHandlerContext is stable for the connection; capture it once rather than on every message.
+            clientSessionCtx.setChannel(ctx);
+        }
         if (log.isTraceEnabled()) {
             log.trace("[{}][{}][{}] Processing msg: {}", address, clientId, sessionId, msg);
         }
-        clientSessionCtx.setChannel(ctx);
         try {
             if (!(msg instanceof MqttMessage message)) {
                 log.warn("[{}][{}] Received unknown message", clientId, sessionId);

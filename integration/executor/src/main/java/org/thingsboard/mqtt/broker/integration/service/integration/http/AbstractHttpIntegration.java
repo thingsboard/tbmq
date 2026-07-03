@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.integration.http;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
@@ -36,6 +37,17 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
         }
     }
 
+    @Override
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback integrationMsgCallback) {
+        var callback = createBasicCallback(integrationMsgCallback);
+        try {
+            doSendBody(body, callback);
+        } catch (Exception e) {
+            log.error("[{}][{}] Failure during lifecycle event processing", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), e);
+            callback.onFailure(e);
+        }
+    }
+
     private BasicCallback createBasicCallback(IntegrationMsgCallback callback) {
         return CallbackUtil.createCallback(
                 () -> {
@@ -49,4 +61,9 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
     }
 
     protected abstract void doProcess(PublishIntegrationMsgProto msg, BasicCallback callback) throws Exception;
+
+    protected void doSendBody(ObjectNode body, BasicCallback callback) throws Exception {
+        log.debug("[{}][{}] doSendBody is not implemented for this HTTP integration", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName());
+        callback.onSuccess();
+    }
 }

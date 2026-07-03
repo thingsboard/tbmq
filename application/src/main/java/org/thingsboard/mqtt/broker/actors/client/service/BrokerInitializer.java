@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -24,11 +25,15 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
+import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
@@ -50,6 +55,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsum
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,6 +80,7 @@ public class BrokerInitializer {
     private final ServiceInfoProvider serviceInfoProvider;
     private final RateLimitService rateLimitService;
     private final IntegrationService integrationService;
+    private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
@@ -89,6 +96,7 @@ public class BrokerInitializer {
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.info("Initializing Client Sessions and Subscriptions.");
         try {
+            initIntegrationLifecycleEventCache();
             Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
             initClientSubscriptions(allClientSessions);
 
@@ -107,6 +115,25 @@ public class BrokerInitializer {
             log.error("Failed to initialize broker", e);
             throw new RuntimeException(e);
         }
+    }
+
+    void initIntegrationLifecycleEventCache() {
+        List<Integration> integrations = integrationService.findAllIntegrations();
+        int cached = 0;
+        for (Integration integration : integrations) {
+            JsonNode configuration = integration.getConfiguration();
+            if (configuration == null || !configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+                continue;
+            }
+            Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
+                    configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY),
+                    name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
+            if (!eventTypes.isEmpty()) {
+                lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
+                cached++;
+            }
+        }
+        log.info("Loaded lifecycle event type cache: cached {} of {} integrations.", cached, integrations.size());
     }
 
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {

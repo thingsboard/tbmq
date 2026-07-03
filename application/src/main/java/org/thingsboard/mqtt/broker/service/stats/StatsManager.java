@@ -42,6 +42,12 @@ public interface StatsManager {
      */
     DroppedMsgStats getDroppedMsgStats();
 
+    /**
+     * Returns the dropped-lifecycle-events stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    DroppedLifecycleEventStats getDroppedLifecycleEventStats();
+
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);

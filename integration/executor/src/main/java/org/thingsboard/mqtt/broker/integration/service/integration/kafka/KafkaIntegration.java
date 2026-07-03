@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
@@ -32,6 +33,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -164,6 +166,40 @@ public class KafkaIntegration extends AbstractIntegration {
             });
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process message: {}", getId(), getName(), msg, e);
+            handleMsgProcessingFailure(e);
+            callback.onFailure(e);
+        }
+    }
+
+    @Override
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+        String value = JacksonUtil.toString(body);
+        context.getExternalCallExecutor().executeAsync(() -> {
+            publishBody(value, callback);
+            return null;
+        });
+    }
+
+    private void publishBody(String body, IntegrationMsgCallback callback) {
+        try {
+            Headers headers = new RecordHeaders();
+            config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
+
+            var kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), body, headers);
+            producer.send(kvProducerRecord, (metadata, e) -> {
+                if (e == null) {
+                    log.debug("[{}][{}] publishBody success {}{}{}", getId(), getName(), metadata.topic(),
+                            metadata.partition(), metadata.offset());
+                    integrationStatistics.incMessagesProcessed();
+                    callback.onSuccess();
+                } else {
+                    log.warn("[{}][{}] processException", getId(), getName(), e);
+                    handleMsgProcessingFailure(e);
+                    callback.onFailure(e);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to publish lifecycle event body", getId(), getName(), e);
             handleMsgProcessingFailure(e);
             callback.onFailure(e);
         }

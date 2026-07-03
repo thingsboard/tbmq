@@ -28,6 +28,10 @@ public interface IntegrationStatisticsService {
 
     void clearIntegrationProcessorStats(UUID integrationId);
 
+    IntegrationProcessorStats createIntegrationEventProcessorStats(UUID integrationId);
+
+    void clearIntegrationEventProcessorStats(UUID integrationId);
+
     MessagesStats createIeUplinkPublishStats();
 
     void onIntegrationStateUpdate(IntegrationType integrationType, ComponentLifecycleEvent state, boolean success);

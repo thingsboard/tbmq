@@ -17,6 +17,7 @@
 import { Component, Inject, OnDestroy, viewChild } from '@angular/core';
 import { DialogComponent } from '@shared/components/dialog.component';
 import {
+  atLeastOneFilterOrEvent,
   getIntegrationHelpLink,
   Integration,
   IntegrationType,
@@ -43,7 +44,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { AsyncPipe } from '@angular/common';
 import { IntegrationTypeSelectComponent } from '@home/components/integration/integration-type-select.component';
-import { MatSuffix, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSuffix, MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import {
@@ -58,6 +59,13 @@ import {
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 import { MatTooltip } from '@angular/material/tooltip';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatOption } from '@angular/material/select';
+import { filterTopics } from '@core/utils';
 
 @Component({
   selector: 'tb-integration-wizard',
@@ -89,10 +97,16 @@ import { MatTooltip } from '@angular/material/tooltip';
     MatButton,
     MatSuffix,
     MatLabel,
+    MatError,
     ToastDirective,
     IntegrationTopicFiltersComponent,
     KeyValMapComponent,
-    MatTooltip
+    MatTooltip,
+    IntegrationLifecycleEventsComponent,
+    CopyButtonComponent,
+    MatAutocomplete,
+    MatAutocompleteTrigger,
+    MatOption
   ]
 })
 export class IntegrationWizardDialogComponent extends
@@ -109,8 +123,10 @@ export class IntegrationWizardDialogComponent extends
   stepperOrientation: Observable<StepperOrientation>;
 
   integrationWizardForm: UntypedFormGroup;
-  integrationTopicFilterForm: UntypedFormGroup;
+  integrationFiltersForm: UntypedFormGroup;
   integrationConfigurationForm: UntypedFormGroup;
+
+  filteredEventsTopics: Observable<string[]>;
 
   private checkConnectionAllow = false;
   private destroy$ = new Subject<void>();
@@ -148,6 +164,7 @@ export class IntegrationWizardDialogComponent extends
         this.integrationType = '';
       }
       this.integrationConfigurationForm.get('configuration').setValue(null);
+      this.updateEventsTopicState();
     });
 
     this.integrationConfigurationForm = this.fb.group({
@@ -160,9 +177,55 @@ export class IntegrationWizardDialogComponent extends
       )
     });
 
-    this.integrationTopicFilterForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required]
-    });
+    this.integrationFiltersForm = this.fb.group({
+      topicFilters: [['tbmq/#']],
+      lifecycleEventTypes: [[]],
+      eventsTopicName: ['tbmq/events']
+    }, {validators: atLeastOneFilterOrEvent});
+
+    this.integrationFiltersForm.get('lifecycleEventTypes').valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.updateEventsTopicState());
+
+    this.filteredEventsTopics = this.integrationFiltersForm.get('eventsTopicName').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      map(value => filterTopics(value || ''))
+    );
+  }
+
+  get isMqtt(): boolean {
+    return this.integrationWizardForm.get('type').value === IntegrationType.MQTT;
+  }
+
+  get eventsEnabled(): boolean {
+    const types = this.integrationFiltersForm.get('lifecycleEventTypes')?.value;
+    return Array.isArray(types) && types.length > 0;
+  }
+
+  private updateEventsTopicState() {
+    const control = this.integrationFiltersForm.get('eventsTopicName');
+    if (this.isMqtt && this.eventsEnabled) {
+      control.setValidators(Validators.required);
+    } else {
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({emitEvent: false});
+  }
+
+  private mergeConfiguration(configuration: any, metadata: any): any {
+    const {eventsTopicName, ...topics} = this.integrationFiltersForm.getRawValue();
+    const merged: any = {
+      ...configuration,
+      ...topics,
+      metadata
+    };
+    if (this.isMqtt) {
+      merged.clientConfiguration = {
+        ...merged.clientConfiguration,
+        eventsTopicName
+      };
+    }
+    return merged;
   }
 
   ngOnDestroy() {
@@ -174,13 +237,8 @@ export class IntegrationWizardDialogComponent extends
   add(): void {
     if (this.allValid()) {
       const integrationData = this.integrationWizardForm.getRawValue();
-      const integrationTopicFilter = this.integrationTopicFilterForm.getRawValue();
       const integrationConfig = this.integrationConfigurationForm.getRawValue();
-      integrationConfig.configuration = {
-        ...integrationConfig.configuration,
-        ...integrationTopicFilter,
-        metadata: integrationConfig.metadata,
-      };
+      integrationConfig.configuration = this.mergeConfiguration(integrationConfig.configuration, integrationConfig.metadata);
       delete integrationConfig.metadata;
       const integration = {
         ...integrationData,
@@ -200,11 +258,10 @@ export class IntegrationWizardDialogComponent extends
 
   private getIntegrationData(): Integration {
     const integrationData: Integration = {
-      configuration: {
-        metadata: this.integrationConfigurationForm.value.metadata,
-        ...this.integrationConfigurationForm.value.configuration,
-        ...this.integrationTopicFilterForm.getRawValue()
-      },
+      configuration: this.mergeConfiguration(
+        this.integrationConfigurationForm.value.configuration,
+        this.integrationConfigurationForm.value.metadata
+      ),
       name: this.integrationWizardForm.value.name.trim(),
       type: this.integrationWizardForm.value.type,
       enabled: this.integrationWizardForm.value.enabled,
@@ -217,9 +274,7 @@ export class IntegrationWizardDialogComponent extends
     return integrationData;
   }
 
-  get maxStep(): number {
-    return 2;
-  }
+  readonly maxStep = 2;
 
   cancel(): void {
     this.dialogRef.close(null);

@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -88,6 +89,8 @@ public class DisconnectServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     ChannelBackpressureManager channelBackpressureManager;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -141,6 +144,30 @@ public class DisconnectServiceImplTest {
         verify(flowControlService, times(1)).removeFromMap(eq(CLIENT_ID));
         verify(tbMessageStatsReportClient).removeClient(eq(CLIENT_ID));
         verify(mqttMessageGenerator, never()).createDisconnectMsg(any());
+    }
+
+    @Test
+    public void givenClusterConflictingSession_whenDisconnect_thenEmitLifecycleDisconnectButSkipSessionEvent() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // Takeover on another node: the local session-event-service notification must stay suppressed
+        // (the session is now owned by the new node)...
+        verify(disconnectService, never()).notifyClientDisconnected(clientActorState, -1, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+        verify(clientSessionEventService, never()).notifyClientDisconnected(any(), any(), any());
+        // ...but the lifecycle CLIENT_DISCONNECTED event must still be emitted, to pair with the CLIENT_CONNECTED
+        // that this node emitted for the now-superseded session.
+        verify(integrationLifecycleEventPublisher, times(1)).publishDisconnected(ctx, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+    }
+
+    @Test
+    public void givenConnectionFailure_whenDisconnect_thenDoesNotEmitLifecycleDisconnect() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CONNECTION_FAILURE));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // A broker-refused connection never established a session, so the teardown disconnect must NOT emit
+        // CLIENT_DISCONNECTED (there is no CLIENT_CONNECTED to pair with); CLIENT_CONNECTION_FAILED covers it instead.
+        verify(integrationLifecycleEventPublisher, never()).publishDisconnected(ctx, DisconnectReasonType.ON_CONNECTION_FAILURE);
     }
 
     @Test

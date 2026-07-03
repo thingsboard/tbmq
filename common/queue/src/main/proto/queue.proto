@@ -179,10 +179,17 @@ message ClientSessionStatsCleanupProto {
   string clientId = 1;
 }
 
+message IntegrationLifecycleConfigProto {
+  string integrationId = 1;
+  bool deleted = 2;
+  repeated string lifecycleEventTypes = 3;
+}
+
 message InternodeNotificationProto {
   MqttAuthSettingsProto mqttAuthSettingsProto = 1;
   MqttAuthProviderProto mqttAuthProviderProto = 2;
   ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 3;
+  IntegrationLifecycleConfigProto integrationLifecycleConfigProto = 4;
 }
 
 message DevicePublishMsgProto {

@@ -22,8 +22,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class IntegrationSubmitStrategyFactory {
 
-    public IntegrationSubmitStrategy newInstance(String integrationId) {
-        return new BurstIntegrationSubmitStrategy(integrationId);
+    public <T> IntegrationSubmitStrategy<T> newInstance(String integrationId) {
+        return new BurstIntegrationSubmitStrategy<>(integrationId);
     }
 
 }

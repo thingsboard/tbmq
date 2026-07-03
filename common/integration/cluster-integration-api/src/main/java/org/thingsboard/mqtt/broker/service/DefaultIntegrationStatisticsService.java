@@ -59,6 +59,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     private static final String STATS_KEY_GAUGE = StatsType.INTEGRATION.getPrintName() + "_stats_gauge";
 
     private final Map<UUID, IntegrationProcessorStats> managedIntegrationProcessorStats = new ConcurrentHashMap<>();
+    private final Map<UUID, IntegrationProcessorStats> managedEventProcessorStats = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, DefaultCounter> counters = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, AtomicLong> gauges = new ConcurrentHashMap<>();
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
@@ -85,7 +86,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     @Override
     public IntegrationProcessorStats createIntegrationProcessorStats(UUID integrationId) {
         log.trace("Creating IntegrationProcessorStats, integrationId - {}", integrationId);
-        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory);
+        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory, StatsType.INTEGRATION_PROCESSOR);
         managedIntegrationProcessorStats.put(integrationId, stats);
         return stats;
     }
@@ -93,7 +94,25 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     @Override
     public void clearIntegrationProcessorStats(UUID integrationId) {
         log.trace("Clearing IntegrationProcessorStats, integrationId - {}", integrationId);
-        IntegrationProcessorStats stats = managedIntegrationProcessorStats.get(integrationId);
+        disable(managedIntegrationProcessorStats, integrationId);
+    }
+
+    @Override
+    public IntegrationProcessorStats createIntegrationEventProcessorStats(UUID integrationId) {
+        log.trace("Creating IntegrationEventProcessorStats, integrationId - {}", integrationId);
+        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory, StatsType.INTEGRATION_EVENT_PROCESSOR);
+        managedEventProcessorStats.put(integrationId, stats);
+        return stats;
+    }
+
+    @Override
+    public void clearIntegrationEventProcessorStats(UUID integrationId) {
+        log.trace("Clearing IntegrationEventProcessorStats, integrationId - {}", integrationId);
+        disable(managedEventProcessorStats, integrationId);
+    }
+
+    private static void disable(Map<UUID, IntegrationProcessorStats> managed, UUID integrationId) {
+        IntegrationProcessorStats stats = managed.get(integrationId);
         if (stats != null && stats.isActive()) {
             stats.disable();
         }
@@ -172,14 +191,19 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
             log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), statsStr);
             stats.reset();
         }
-        for (IntegrationProcessorStats stats : new ArrayList<>(managedIntegrationProcessorStats.values())) {
+        printProcessorStats(managedIntegrationProcessorStats, StatsType.INTEGRATION_PROCESSOR.getPrintName(), "Integration Message Processing Stats");
+        printProcessorStats(managedEventProcessorStats, StatsType.INTEGRATION_EVENT_PROCESSOR.getPrintName(), "Integration Event Processing Stats");
+    }
+
+    private void printProcessorStats(Map<UUID, IntegrationProcessorStats> managed, String printName, String label) {
+        for (IntegrationProcessorStats stats : new ArrayList<>(managed.values())) {
             String msgStatsStr = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Integration Message Processing Stats: {}", StatsType.INTEGRATION_PROCESSOR.getPrintName(), stats.getIntegrationUuid(), msgStatsStr);
+            log.info("[{}][{}] {}: {}", printName, stats.getIntegrationUuid(), label, msgStatsStr);
             if (!stats.isActive()) {
                 log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
-                managedIntegrationProcessorStats.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
+                managed.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
             } else {
                 stats.reset();
             }

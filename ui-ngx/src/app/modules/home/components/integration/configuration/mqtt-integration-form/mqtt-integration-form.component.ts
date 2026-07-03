@@ -29,10 +29,11 @@ import { filterTopics, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@
 import { map, takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
+  atLeastOneFilterOrEvent,
   Integration,
   MqttIntegration,
 } from '@shared/models/integration.models';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -48,6 +49,9 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   IntegrationTopicFiltersComponent
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 import { MatIconButton } from '@angular/material/button';
 import { clientIdRandom } from '@shared/models/ws-client.model';
 import {
@@ -70,6 +74,7 @@ import { Observable } from 'rxjs';
   imports: [
     ReactiveFormsModule,
     MatFormField,
+    MatError,
     MatInput,
     MatLabel,
     TranslateModule,
@@ -84,6 +89,7 @@ import { Observable } from 'rxjs';
     MatIcon,
     MatTooltip,
     IntegrationTopicFiltersComponent,
+    IntegrationLifecycleEventsComponent,
     MatIconButton,
     IntegrationCredentialsComponent,
     QosSelectComponent,
@@ -115,6 +121,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   IntegrationCredentialType = IntegrationCredentialType;
   mqttVersions = MqttVersions;
   filteredTopics: Observable<string[]>;
+  filteredEventsTopics: Observable<string[]>;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -123,19 +130,26 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     return this.mqttIntegrationConfigForm.get('clientConfiguration') as UntypedFormGroup;
   }
 
+  get eventsEnabled(): boolean {
+    const types = this.mqttIntegrationConfigForm.get('lifecycleEventTypes')?.value;
+    return Array.isArray(types) && types.length > 0;
+  }
+
   constructor(private fb: UntypedFormBuilder) {
     super();
   }
 
   ngOnInit() {
     this.mqttIntegrationConfigForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required],
+      topicFilters: [['tbmq/#']],
+      lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
         host: [null, [Validators.required, notOnlyWhitespaceValidator]],
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
         topicName: ['tbmq/messages', [Validators.required]],
         useMsgTopicName: [true, []],
+        eventsTopicName: ['tbmq/events', []],
         clientId: [clientIdRandom(), [Validators.required]],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
         ssl: [false, [Validators.required]],
@@ -148,7 +162,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         useMsgRetain: [true, []],
         keepAliveSec: [60, [Validators.required]],
       })
-    });
+    }, {validators: atLeastOneFilterOrEvent});
     this.initFormListeners();
   }
 
@@ -187,6 +201,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   private updateModels(value) {
     if (this.isNew) {
       delete value.topicFilters;
+      delete value.lifecycleEventTypes;
     }
     this.propagateChange(value);
   }
@@ -252,6 +267,10 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         }
       });
 
+    this.mqttIntegrationConfigForm.get('lifecycleEventTypes').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateEventsTopicState());
+
     setTimeout(() => {
       if (this.isNew) {
         this.clientConfigurationFormGroup.get('topicName').disable();
@@ -261,6 +280,11 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     }, 0);
 
     this.filteredTopics = this.clientConfigurationFormGroup.get('topicName').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      map(value => filterTopics(value || ''))
+    );
+
+    this.filteredEventsTopics = this.clientConfigurationFormGroup.get('eventsTopicName').valueChanges.pipe(
       takeUntil(this.destroy$),
       map(value => filterTopics(value || ''))
     );
@@ -279,5 +303,19 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
       this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
       this.clientConfigurationFormGroup.get('retained').updateValueAndValidity({emitEvent: false});
     }
+    this.updateEventsTopicState();
+  }
+
+  private updateEventsTopicState() {
+    if (this.disabled) {
+      return;
+    }
+    const control = this.clientConfigurationFormGroup.get('eventsTopicName');
+    if (this.eventsEnabled) {
+      control.setValidators(Validators.required);
+    } else {
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({emitEvent: false});
   }
 }

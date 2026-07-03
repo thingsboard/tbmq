@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -22,6 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -29,6 +31,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -40,6 +43,8 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
@@ -69,6 +74,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -99,6 +105,8 @@ public class MqttSubscribeHandlerTest {
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
     @MockitoBean
     RateLimitService rateLimitService;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoSpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 
@@ -400,6 +408,50 @@ public class MqttSubscribeHandlerTest {
         );
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
         verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
+    }
+
+    @Test
+    public void givenDeniedTopics_whenCollectMqttReasonCodes_thenPublishAuthorizationDeniedPerDeniedTopic() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(false);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false);
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+
+        // a CLIENT_AUTHORIZATION_FAILED event is emitted once per denied topic, and never for an authorized one
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic1");
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic2");
+        verify(integrationLifecycleEventPublisher, never()).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic3");
+    }
+
+    @Test
+    public void givenSubscribeWithDeniedTopic_whenProcessSucceeds_thenPublishSubscribedWithGrantedSubscriptionsOnly() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+        when(retainedMsgService.getRetainedMessages(any())).thenReturn(Collections.emptyList());
+
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false); // denied -> excluded from SUBACK grants
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        List<TopicSubscription> grantedSubscriptions = List.of(getTopicSubscription("topic1", 0), getTopicSubscription("topic3", 2));
+
+        // persistence is requested only for the granted subscriptions; drive the success callback to trigger the event
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), eq(grantedSubscriptions), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
+        // only the granted (authorized) subscriptions are reported as CLIENT_SUBSCRIBED; the denied topic2 is excluded
+        verify(integrationLifecycleEventPublisher).publishSubscribed(ctx, grantedSubscriptions);
     }
 
     @Test

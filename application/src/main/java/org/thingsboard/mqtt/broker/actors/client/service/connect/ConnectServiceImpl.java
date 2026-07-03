@@ -57,6 +57,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -94,6 +95,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final PublishMsgValidationService publishMsgValidationService;
     private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
     private final StatsManager statsManager;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -209,6 +211,7 @@ public class ConnectServiceImpl implements ConnectService {
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);
+        integrationLifecycleEventPublisher.publishConnected(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.startProcessingPersistedMessages(actorState);
@@ -243,12 +246,16 @@ public class ConnectServiceImpl implements ConnectService {
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
-        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, reason);
+        MqttConnectReturnCode returnCode = reason.toMqttReturnCode(clientSessionCtx);
+        // Emit the same MQTT CONNACK reason-code name the client receives, matching the pre-connection validation
+        // path (which emits MqttConnectReturnCode.name()) so CLIENT_CONNECTION_FAILED speaks a single vocabulary.
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), returnCode.name());
+
+        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, returnCode);
     }
 
-    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, ClientSessionFailureReason reason) {
+    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, MqttConnectReturnCode mqttReturnCode) {
         try {
-            MqttConnectReturnCode mqttReturnCode = reason.toMqttReturnCode(ctx);
             createAndSendConnAckMsg(mqttReturnCode, ctx);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send CONN_ACK response.", ctx.getClientId(), ctx.getSessionId());
@@ -295,6 +302,9 @@ public class ConnectServiceImpl implements ConnectService {
             validateLastWillMessage(ctx, clientId, msg);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
+            // ctx.getSessionInfo() is not set yet at this point, so pass the already-built sessionInfo explicitly.
+            // reason is the MQTT connect return code the client received, e.g. CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID.
+            integrationLifecycleEventPublisher.publishConnectionFailed(ctx, sessionInfo, e.getMqttConnectReturnCode().name());
             createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
             disconnect(clientId, ctx.getSessionId());
             return false;

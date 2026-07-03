@@ -16,17 +16,24 @@
 package org.thingsboard.mqtt.broker.integration.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.api.util.ExceptionUtil;
@@ -105,7 +112,16 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         if (lifecycleMsg == null || lifecycleMsg.getConfiguration() == null) {
             throw new IllegalArgumentException("Integration configuration is empty!");
         }
-        doValidateConfiguration(lifecycleMsg.getConfiguration().get("clientConfiguration"), allowLocalNetworkHosts);
+        JsonNode clientConfiguration = lifecycleMsg.getConfiguration().get("clientConfiguration");
+        doValidateConfiguration(clientConfiguration, allowLocalNetworkHosts);
+        if (isLifecycleEventsEnabled(lifecycleMsg.getConfiguration())) {
+            doValidateLifecycleEventsDelivery(clientConfiguration);
+        }
+    }
+
+    private static boolean isLifecycleEventsEnabled(JsonNode configuration) {
+        JsonNode types = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+        return types != null && !types.isEmpty();
     }
 
     @Override
@@ -181,6 +197,107 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         return request;
     }
 
+    @Override
+    public void processLifecycleEvent(ClientLifecycleEventMsgProto msg, IntegrationMsgCallback callback) {
+        try {
+            ObjectNode body = constructLifecycleEventBody(msg);
+            doProcessLifecycleEvent(body, callback);
+        } catch (Exception e) {
+            handleMsgProcessingFailure(e);
+            callback.onFailure(e);
+        }
+    }
+
+    // Receives the event as an ObjectNode (not a pre-serialized String) so JSON-native transports like HTTP can send
+    // it as application/json, mirroring the message path where constructBody(...) is passed on directly. Transports
+    // that need bytes on the wire (Kafka, MQTT) serialize it themselves via JacksonUtil.toString(body).
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+        log.debug("[{}][{}] Lifecycle event processing is not supported by this integration type", getId(), getName());
+        callback.onSuccess();
+    }
+
+    protected ObjectNode constructLifecycleEventBody(ClientLifecycleEventMsgProto msg) {
+        ObjectNode body = JacksonUtil.newObjectNode();
+        // eventType is the discriminator and is always present; the other string fields are omitted when empty
+        // (e.g. no username when authentication is disabled, no ipAddress for address-less sessions) so the JSON
+        // carries only the keys that actually apply rather than default placeholders like "".
+        body.put("eventType", msg.getEventType());
+        putIfNotEmpty(body, "clientId", msg.getClientId());
+        putIfNotEmpty(body, "sessionId", msg.getSessionId());
+        putIfNotEmpty(body, "ipAddress", msg.getIpAddress());
+        body.put("ts", msg.getTs());
+        putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
+        putIfNotEmpty(body, "username", msg.getUsername());
+        putIfNotEmpty(body, "clientCertCn", msg.getClientCertCn());
+
+        // Switch on the canonical enum (parsed leniently) rather than raw string literals so the proto eventType
+        // and the enum names stay coupled; an unknown/newer type just yields the common fields above.
+        ClientLifecycleEventType eventType = ClientLifecycleEventTypeUtil.fromName(msg.getEventType());
+        if (eventType != null) {
+            switch (eventType) {
+                case CLIENT_CONNECTED:
+                    body.put("cleanStart", msg.getCleanStart());
+                    body.put("keepAlive", msg.getKeepAlive());
+                    body.put("protocolVersion", msg.getProtocolVersion());
+                    body.put("sessionExpiryInterval", msg.getSessionExpiryInterval());
+                    break;
+                case CLIENT_DISCONNECTED:
+                    putIfNotEmpty(body, "disconnectReason", msg.getDisconnectReason());
+                    break;
+                case CLIENT_SUBSCRIBED:
+                    ArrayNode subs = body.putArray("subscriptions");
+                    for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
+                        ObjectNode subNode = subs.addObject()
+                                .put("topicFilter", sub.getTopic())
+                                .put("qos", sub.getQos());
+                        if (sub.hasShareName()) {
+                            subNode.put("shareName", sub.getShareName());
+                        }
+                        if (sub.hasSubscriptionId()) {
+                            subNode.put("subscriptionId", sub.getSubscriptionId());
+                        }
+                        SubscriptionOptionsProto options = sub.getOptions();
+                        subNode.putObject("options")
+                                .put("noLocal", options.getNoLocal())
+                                .put("retainAsPublish", options.getRetainAsPublish())
+                                .put("retainHandling", options.getRetainHandling().name());
+                    }
+                    break;
+                case CLIENT_UNSUBSCRIBED:
+                    ArrayNode unsubscribed = body.putArray("subscriptions");
+                    for (TopicSubscriptionProto sub : msg.getSubscriptionsList()) {
+                        ObjectNode subNode = unsubscribed.addObject().put("topicFilter", sub.getTopic());
+                        if (sub.hasShareName()) {
+                            subNode.put("shareName", sub.getShareName());
+                        }
+                    }
+                    break;
+                case CLIENT_AUTHENTICATION_FAILED:
+                    // protocolVersion is known by the time authentication runs (the CONNECT variable header is
+                    // parsed first), so emit it like CLIENT_CONNECTED - it is useful context for version-specific
+                    // auth failures (e.g. MQTT 5 enhanced-auth vs 3.1.1 basic).
+                    body.put("protocolVersion", msg.getProtocolVersion());
+                    putIfNotEmpty(body, "reason", msg.getReason());
+                    break;
+                case CLIENT_AUTHORIZATION_FAILED:
+                    putIfNotEmpty(body, "action", msg.getAction());
+                    putIfNotEmpty(body, "topic", msg.getTopic());
+                    break;
+                case CLIENT_CONNECTION_FAILED:
+                    putIfNotEmpty(body, "reason", msg.getReason());
+                    break;
+            }
+        }
+        body.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
+        return body;
+    }
+
+    private static void putIfNotEmpty(ObjectNode body, String field, String value) {
+        if (StringUtils.isNotEmpty(value)) {
+            body.put(field, value);
+        }
+    }
+
     protected void handleMsgProcessingFailure(Throwable throwable) {
         integrationStatistics.incErrorsOccurred();
         context.saveErrorEvent(getErrorEvent(throwable));
@@ -241,6 +358,16 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
+
+    }
+
+    /**
+     * Validates that this integration can deliver lifecycle events with the given client configuration. Called only
+     * when the integration is opted in for lifecycle events. Lifecycle events have no originating MQTT message, so a
+     * transport with a dynamic (per-message) destination must have a statically configured destination to fall back
+     * to here. Default is a no-op for transports whose destination is always static (e.g. HTTP URL, Kafka topic).
+     */
+    protected void doValidateLifecycleEventsDelivery(JsonNode clientConfiguration) throws ThingsboardException {
 
     }
 

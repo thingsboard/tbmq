@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClien
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
@@ -81,6 +82,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final UnauthorizedClientManager unauthorizedClientManager;
     private final BlockedClientService blockedClientService;
     private final AuthorizationRoutingService authorizationRoutingService;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -96,11 +98,13 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
+        sessionCtx.setUsername(authContext.getUsername());
         AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
         if (authResponse.notSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionInitMsg, authResponse.getReason());
+            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), authResponse.getReason());
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
             return;
         }
@@ -203,10 +207,14 @@ public class ActorProcessorImpl implements ActorProcessor {
     private void processAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
         EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
         EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext);
+        sessionCtx.setUsername(authResponse.username());
         if (!authResponse.success()) {
             resetStateToDisconnected(state);
             MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
+            // Carry the enhanced-auth failure cause (e.g. AUTH_METHOD_MISMATCH) so CLIENT_AUTHENTICATION_FAILED.reason
+            // describes why authentication failed on both paths, rather than leaking the MQTT CONNACK return-code name here.
+            integrationLifecycleEventPublisher.publishAuthenticationFailed(sessionCtx, state.getClientId(), authResponse.enhancedAuthFailure().name());
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
             return;
         }

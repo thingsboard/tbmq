@@ -53,4 +53,6 @@ public class StatsConstantNames {
 
     public static final String MSG_TYPE = "msgType";
 
+    public static final String DROPPED_LIFECYCLE_EVENTS = "droppedLifecycleEvents";
+
 }

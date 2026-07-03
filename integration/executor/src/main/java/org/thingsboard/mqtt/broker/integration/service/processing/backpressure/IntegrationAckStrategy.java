@@ -17,8 +17,8 @@ package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
-public interface IntegrationAckStrategy {
+public interface IntegrationAckStrategy<T> {
 
-    IntegrationProcessingDecision analyze(IntegrationPackProcessingResult processingResult);
+    IntegrationProcessingDecision<T> analyze(IntegrationPackProcessingResult<T> processingResult);
 
 }

@@ -475,11 +475,15 @@ public class ProtoConverter {
             if (topicSubscription instanceof IntegrationTopicSubscription) {
                 source = SubscriptionsSourceProto.INTEGRATION;
             }
-            topicSubscriptionsProto.add(topicSubscription.getShareName() == null ?
-                    getTopicSubscriptionProto(topicSubscription) :
-                    getTopicSubscriptionProtoWithShareName(topicSubscription));
+            topicSubscriptionsProto.add(toTopicSubscriptionProto(topicSubscription));
         }
         return ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).setSource(source).build();
+    }
+
+    public static TopicSubscriptionProto toTopicSubscriptionProto(TopicSubscription topicSubscription) {
+        return topicSubscription.getShareName() == null ?
+                getTopicSubscriptionProto(topicSubscription) :
+                getTopicSubscriptionProtoWithShareName(topicSubscription);
     }
 
     private static SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {

@@ -66,4 +66,36 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
         return integrationHelperService.getIntegrationConsumerGroup(integrationId);
     }
 
+    @Override
+    public String createEventTopic(String integrationId) {
+        log.debug("[{}] Creating IE event topic", integrationId);
+        String eventTopic = integrationHelperService.getIntegrationEventTopic(integrationId);
+        queueAdmin.createTopic(eventTopic, integrationMsgQueueProvider.getIeEventMsgTopicConfigs());
+        return eventTopic;
+    }
+
+    @Override
+    public void deleteEventTopic(String integrationId, BasicCallback callback) {
+        log.debug("[{}] Deleting IE event topic", integrationId);
+        deleteEventConsumerGroup(integrationId);
+        String eventTopic = integrationHelperService.getIntegrationEventTopic(integrationId);
+        queueAdmin.deleteTopic(eventTopic, callback);
+    }
+
+    @Override
+    public String getEventConsumerGroup(String integrationId) {
+        return integrationHelperService.getIntegrationEventConsumerGroup(integrationId);
+    }
+
+    private void deleteEventConsumerGroup(String integrationId) {
+        String consumerGroup = getEventConsumerGroup(integrationId);
+        try {
+            queueAdmin.deleteConsumerGroup(consumerGroup);
+        } catch (Exception e) {
+            if (!(e.getCause() instanceof GroupIdNotFoundException)) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 }

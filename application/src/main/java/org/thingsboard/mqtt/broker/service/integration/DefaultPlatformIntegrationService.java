@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.event.EventType;
 import org.thingsboard.mqtt.broker.common.data.event.LifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
@@ -122,15 +123,28 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     @Override
     public void updateSubscriptions(Integration integration) {
         JsonNode configuration = integration.getConfiguration();
-        if (!configuration.has("topicFilters")) {
-            log.error("[{}][{}] Topic filters not configured", integration.getId(), integration.getName());
+
+        JsonNode topicFilters = configuration.get("topicFilters");
+        JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+
+        boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
+        boolean hasLifecycleEvents = lifecycleEventTypes != null && !lifecycleEventTypes.isEmpty();
+
+        if (!hasTopicFilters && !hasLifecycleEvents) {
+            log.error("[{}][{}] Neither topic filters nor lifecycle event types are configured",
+                    integration.getId(), integration.getName());
             return;
         }
-        ArrayNode topicFiltersArrayNode = (ArrayNode) configuration.get("topicFilters");
 
-        Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(topicFiltersArrayNode.size());
-        topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
-        integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
+        if (hasTopicFilters) {
+            ArrayNode topicFiltersArrayNode = (ArrayNode) topicFilters;
+
+            Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(topicFiltersArrayNode.size());
+            topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
+            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
+        } else {
+            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        }
     }
 
     @Override

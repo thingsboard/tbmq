@@ -15,16 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.service.entity.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 
 @Slf4j
 @Service
@@ -34,12 +39,17 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
     private final IntegrationService integrationService;
     private final PlatformIntegrationService platformIntegrationService;
     private final RateLimitService rateLimitService;
+    private final InternodeNotificationsService internodeNotificationsService;
 
     @Override
     public Integration save(Integration integration, User currentUser) {
         boolean created = integration.getId() == null;
         Integration result = integrationService.saveIntegration(integration);
         platformIntegrationService.processIntegrationUpdate(result, created);
+        internodeNotificationsService.broadcast(
+                InternodeNotificationProto.newBuilder()
+                        .setIntegrationLifecycleConfigProto(toLifecycleConfigProto(result))
+                        .build());
         return result;
     }
 
@@ -50,11 +60,30 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
             rateLimitService.decrementApplicationClientsCount();
         }
         platformIntegrationService.processIntegrationDelete(integration, removed);
+        internodeNotificationsService.broadcast(
+                InternodeNotificationProto.newBuilder()
+                        .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
+                                .setIntegrationId(integration.getIdStr())
+                                .setDeleted(true)
+                                .build())
+                        .build());
     }
 
     @Override
     public void restart(Integration integration, User currentUser) throws ThingsboardException {
         platformIntegrationService.processIntegrationRestart(integration);
+    }
+
+    private IntegrationLifecycleConfigProto toLifecycleConfigProto(Integration integration) {
+        IntegrationLifecycleConfigProto.Builder builder = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId(integration.getIdStr())
+                .setDeleted(false);
+        JsonNode configuration = integration.getConfiguration();
+        if (configuration != null && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+            configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
+                    .forEach(node -> builder.addLifecycleEventTypes(node.asText()));
+        }
+        return builder.build();
     }
 
 }

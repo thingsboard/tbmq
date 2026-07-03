@@ -19,18 +19,21 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.service.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,12 +42,14 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = PublishMsgValidationServiceImpl.class)
 public class PublishMsgValidationServiceImplTest {
 
-    @MockBean
+    @MockitoBean
     DefaultTopicValidationService topicValidationService;
-    @MockBean
+    @MockitoBean
     AuthorizationRuleService authorizationRuleService;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
-    @SpyBean
+    @MockitoSpyBean
     PublishMsgValidationServiceImpl publishMsgValidationService;
 
     ClientSessionCtx ctx;
@@ -77,17 +82,20 @@ public class PublishMsgValidationServiceImplTest {
     }
 
     @Test
-    public void givenClientContextAndAllowPublishToTopic_whenValidateClientAccess_thenSuccess() {
+    public void givenClientContextAndAllowPublishToTopic_whenValidateClientAccess_thenSuccessAndNoAuthorizationDeniedEvent() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
         boolean result = publishMsgValidationService.validateClientAccess(ctx, "clientId", "topic/1");
         Assert.assertTrue(result);
+        verify(integrationLifecycleEventPublisher, never()).publishAuthorizationDenied(any(), any(), any());
     }
 
     @Test
-    public void givenClientContextAndNotAllowPublishToTopic_whenValidateClientAccess_thenFailure() {
+    public void givenClientContextAndNotAllowPublishToTopic_whenValidateClientAccess_thenFailureAndAuthorizationDeniedEventPublished() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
         boolean result = publishMsgValidationService.validateClientAccess(ctx, "clientId", "topic/1");
         Assert.assertFalse(result);
+        verify(integrationLifecycleEventPublisher, times(1))
+                .publishAuthorizationDenied(eq(ctx), eq(AuthorizationAction.PUBLISH), eq("topic/1"));
     }
 
 }

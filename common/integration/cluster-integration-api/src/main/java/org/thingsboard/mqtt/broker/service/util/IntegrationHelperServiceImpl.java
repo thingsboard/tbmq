@@ -35,4 +35,14 @@ public class IntegrationHelperServiceImpl implements IntegrationHelperService {
     public String getIntegrationConsumerGroup(String integrationId) {
         return kafkaPrefix + IntegrationUtil.getIntegrationConsumerGroup(integrationId);
     }
+
+    @Override
+    public String getIntegrationEventTopic(String integrationId) {
+        return kafkaPrefix + IntegrationUtil.getIntegrationEventTopic(integrationId);
+    }
+
+    @Override
+    public String getIntegrationEventConsumerGroup(String integrationId) {
+        return kafkaPrefix + IntegrationUtil.getIntegrationEventConsumerGroup(integrationId);
+    }
 }

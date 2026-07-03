@@ -24,14 +24,19 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,18 +48,57 @@ public class MqttUnsubscribeHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientSubscriptionService clientSubscriptionService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
 
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
+        // MQTT allows UNSUBSCRIBE for filters the client never subscribed to. Emit CLIENT_UNSUBSCRIBED only for
+        // the subscriptions actually removed (symmetric with CLIENT_SUBSCRIBED, which emits only the granted ones).
+        List<TopicSubscription> removedSubscriptions = getRemovedSubscriptions(ctx.getClientId(), msg.getTopics());
         clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
                 CallbackUtil.createCallback(
-                        () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
+                        () -> {
+                            ctx.getChannel().writeAndFlush(unSubAckMessage);
+                            if (!removedSubscriptions.isEmpty()) {
+                                integrationLifecycleEventPublisher.publishUnsubscribed(ctx, removedSubscriptions);
+                            }
+                        },
                         t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
                 ));
 
         stopProcessingApplicationSharedSubscriptions(ctx, msg.getTopics());
+    }
+
+    private List<TopicSubscription> getRemovedSubscriptions(String clientId, List<String> requestedTopics) {
+        Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
+        if (CollectionUtils.isEmpty(currentSubscriptions)) {
+            return List.of();
+        }
+        // Index current subscriptions by (shareName, bare topic filter) so a requested $share/<group>/<filter>
+        // resolves to that exact shared subscription (carrying its shareName), and a bare filter to the regular one.
+        Map<SubKey, TopicSubscription> byKey = new HashMap<>();
+        for (TopicSubscription sub : currentSubscriptions) {
+            byKey.putIfAbsent(new SubKey(sub.getShareName(), sub.getTopicFilter()), sub);
+        }
+        List<TopicSubscription> removed = new ArrayList<>();
+        for (String requested : requestedTopics) {
+            String shareName = NettyMqttConverter.isSharedTopic(requested) ? NettyMqttConverter.getShareName(requested) : null;
+            TopicSubscription sub = byKey.get(new SubKey(shareName, toTopicFilter(requested)));
+            if (sub != null) {
+                removed.add(sub);
+            }
+        }
+        return removed;
+    }
+
+    // Composite lookup key; shareName is null for a regular subscription, the group name for a shared one.
+    private record SubKey(String shareName, String topicFilter) {
+    }
+
+    private static String toTopicFilter(String topic) {
+        return NettyMqttConverter.isSharedTopic(topic) ? NettyMqttConverter.getTopicFilter(topic) : topic;
     }
 
     private List<UnsubAck> getCodes(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
