@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,9 +137,20 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
         log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
-        Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
+        Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters).updatedSubscriptions();
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
+    }
+
+    @Override
+    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, UnsubscribeCallback callback) {
+        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        UnsubscribeResult result = unsubscribe(clientId, topicFilters);
+
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, result.updatedSubscriptions(),
+                createCallback(
+                        () -> callback.onSuccess(result.removedSubscriptions()),
+                        callback::onFailure));
     }
 
     @Override
@@ -147,19 +159,26 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         unsubscribe(clientId, topicFilters);
     }
 
-    private Set<TopicSubscription> unsubscribe(String clientId, Collection<String> topicFilters) {
+    private UnsubscribeResult unsubscribe(String clientId, Collection<String> topicFilters) {
         List<String> topics = extractTopicFilterFromSharedTopic(topicFilters);
         subscriptionService.unsubscribe(clientId, topics);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
+        List<TopicSubscription> removedSubscriptions = new ArrayList<>();
         clientSubscriptions.removeIf(topicSubscription -> {
             boolean unsubscribe = topics.contains(topicSubscription.getTopicFilter());
             if (unsubscribe) {
                 processSharedUnsubscribe(clientId, topicSubscription);
+                removedSubscriptions.add(topicSubscription);
             }
             return unsubscribe;
         });
-        return clientSubscriptions;
+        return new UnsubscribeResult(clientSubscriptions, removedSubscriptions);
+    }
+
+    // Surviving subscriptions to persist, plus the ones actually removed (for UNSUBACK codes and lifecycle events).
+    private record UnsubscribeResult(Set<TopicSubscription> updatedSubscriptions,
+                                     List<TopicSubscription> removedSubscriptions) {
     }
 
     private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {

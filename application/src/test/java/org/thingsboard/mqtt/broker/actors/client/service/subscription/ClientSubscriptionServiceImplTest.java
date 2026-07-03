@@ -20,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -33,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -206,6 +209,77 @@ public class ClientSubscriptionServiceImplTest {
 
         int clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
         assertThat(clientSubscriptionsCount).isEqualTo(7);
+    }
+
+    @Test
+    public void givenSubscriptions_whenUnsubscribeAndPersistWithCallback_thenDeliversRemovedSubscriptionsOnSuccess() {
+        String clientId = "clientId1"; // seeded with topic1
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic11")));
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("topic1"), callback);
+
+        Set<TopicSubscription> survivors = getAndVerifyClientSubscriptionsForClient(clientId, 1);
+        assertTrue(survivors.contains(getTopicSubscription("topic11")));
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), eq(survivors), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        assertThat(removedCaptor.getValue()).containsExactly(getTopicSubscription("topic1"));
+    }
+
+    @Test
+    public void givenSharedSubscription_whenUnsubscribeAndPersistWithCallback_thenRemovedCarriesShareName() {
+        String clientId = "sharedClientId";
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11")));
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("$share/sharedGroup/topic11"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        List<TopicSubscription> removed = removedCaptor.getValue();
+        assertEquals(1, removed.size());
+        assertEquals("topic11", removed.get(0).getTopicFilter());
+        assertEquals("sharedGroup", removed.get(0).getShareName());
+    }
+
+    @Test
+    public void givenNeverSubscribedFilter_whenUnsubscribeAndPersistWithCallback_thenRemovedIsEmpty() {
+        String clientId = "clientId1"; // seeded with topic1
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("never/subscribed"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        assertTrue(removedCaptor.getValue().isEmpty());
+    }
+
+    @Test
+    public void givenPersistFailure_whenUnsubscribeAndPersistWithCallback_thenPropagatesFailure() {
+        String clientId = "clientId1"; // seeded with topic1
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("topic1"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        RuntimeException failure = new RuntimeException("boom");
+        persistCallback.getValue().onFailure(failure);
+
+        verify(callback).onFailure(failure);
     }
 
     private Set<TopicSubscription> getAndVerifyClientSubscriptionsForClient(String clientId, int expected) {
