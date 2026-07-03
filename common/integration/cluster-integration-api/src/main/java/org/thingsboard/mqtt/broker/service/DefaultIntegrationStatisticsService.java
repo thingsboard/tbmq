@@ -211,19 +211,18 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
 
     private void removeInactiveStats(Map<UUID, IntegrationProcessorStats> managed, IntegrationProcessorStats stats) {
         log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
-        // Drop the entry and deregister its per-integration counters together, inside the remap so both
-        // happen atomically under the map's per-key lock. This stops the counters being scraped and bounds
-        // the Micrometer registry on integration create/delete churn, while keeping the meters of a same-id
-        // integration that was re-enabled in the meantime (seen active here) instead of stranding them.
-        // Removal is deferred to this print cycle (not eager on clear, as StatsManagerImpl does for the
-        // application-processor stats) so an inactive integration still emits one final stats line above.
-        managed.computeIfPresent(stats.getIntegrationUuid(), (id, oldStats) -> {
-            if (oldStats.isActive()) {
-                return oldStats;
-            }
-            oldStats.getStatsCounters().forEach(statsFactory::remove);
-            return null;
-        });
+        // Drop the entry only while it is still inactive: a same-id re-enable that already replaced it with an
+        // active entry is kept (the remap returns that value, so removed == false), so its meters aren't touched.
+        // Keep the remap trivial and deregister the counters afterwards, outside the per-key lock: MeterRegistry
+        // #remove takes the registry lock and fires removed-listeners, which is more than a ConcurrentHashMap
+        // remap should do while holding the bin lock. This mirrors how StatsManagerImpl deregisters its
+        // per-client counters. Removal is deferred to this print cycle (not eager on clear) so an inactive
+        // integration still emits one final stats line above.
+        boolean removed = managed.computeIfPresent(stats.getIntegrationUuid(),
+                (id, oldStats) -> oldStats.isActive() ? oldStats : null) == null;
+        if (removed) {
+            stats.getStatsCounters().forEach(statsFactory::remove);
+        }
     }
 
     @Override
