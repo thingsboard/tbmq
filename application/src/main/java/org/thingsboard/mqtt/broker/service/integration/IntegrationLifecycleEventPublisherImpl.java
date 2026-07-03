@@ -242,10 +242,18 @@ public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecy
 
     private void publish(Set<String> integrationIds, ClientLifecycleEventMsgProto lifecycleMsg) {
         for (String integrationId : integrationIds) {
-            // No record key: the event stream uses a single partition (0) with delete-based retention, so the key
-            // plays no role in partition routing, compaction, or consumer-side dedup (the consumer assigns its own
-            // packet id). Skipping it avoids a per-event UUID allocation. Send failures are counted via the callback.
-            integrationEventMsgQueuePublisher.sendEventMsg(integrationId, new TbProtoQueueMsg<>(lifecycleMsg), droppedEventCallback);
+            try {
+                // No record key: the event stream uses a single partition (0) with delete-based retention, so the key
+                // plays no role in partition routing, compaction, or consumer-side dedup (the consumer assigns its own
+                // packet id). Skipping it avoids a per-event UUID allocation. Async send failures are counted via the callback.
+                integrationEventMsgQueuePublisher.sendEventMsg(integrationId, new TbProtoQueueMsg<>(lifecycleMsg), droppedEventCallback);
+            } catch (Throwable t) {
+                // A synchronous enqueue failure for one integration is a single dropped event — attributed
+                // per-integration to match the async callback (droppedEventCallback.onFailure). Keep fanning out so
+                // one failing integration does not suppress delivery to the rest, nor collapse the batch to one drop.
+                log.warn("[{}] Failed to publish lifecycle event; dropping.", integrationId, t);
+                droppedLifecycleEventStats.increment();
+            }
         }
     }
 

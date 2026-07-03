@@ -48,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -165,6 +166,23 @@ public class IntegrationLifecycleEventPublisherImplTest {
         publisher.publishConnected(ctx);
 
         verify(droppedLifecycleEventStats).increment();
+    }
+
+    @Test
+    public void givenMultipleIntegrations_whenEverySendThrows_thenCountsOneDropPerIntegration() {
+        when(lifecycleEventTypeCache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED))
+                .thenReturn(Set.of("ie-1", "ie-2", "ie-3"));
+        stubCtxSession();
+        doThrow(new RuntimeException("kafka down"))
+                .when(integrationEventMsgQueuePublisher).sendEventMsg(anyString(), any(), any());
+
+        // must not throw
+        publisher.publishConnected(ctx);
+
+        // a synchronous send failure must be attributed per-integration (mirroring the async callback) and must
+        // not abort the fan-out to the remaining integrations — not collapsed to a single drop for the whole batch
+        verify(integrationEventMsgQueuePublisher, times(3)).sendEventMsg(anyString(), any(), any());
+        verify(droppedLifecycleEventStats, times(3)).increment();
     }
 
     @Test
