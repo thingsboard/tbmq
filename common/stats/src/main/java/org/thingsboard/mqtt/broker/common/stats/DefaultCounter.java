@@ -28,6 +28,10 @@ public class DefaultCounter {
         this.micrometerCounter = micrometerCounter;
     }
 
+    public Counter getMicrometerCounter() {
+        return micrometerCounter;
+    }
+
     public void increment() {
         aiCounter.incrementAndGet();
         micrometerCounter.increment();

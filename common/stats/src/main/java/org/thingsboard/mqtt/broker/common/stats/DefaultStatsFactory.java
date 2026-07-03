@@ -97,6 +97,11 @@ public class DefaultStatsFactory implements StatsFactory {
     }
 
     @Override
+    public void remove(DefaultCounter counter) {
+        meterRegistry.remove(counter.getMicrometerCounter());
+    }
+
+    @Override
     public Timer createTimer(String key, String... tags) {
         Timer.Builder timerBuilder = Timer.builder(key)
                 .tags(tags)
