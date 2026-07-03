@@ -37,8 +37,6 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.INTEGR
 
 class DefaultIntegrationStatisticsServiceTest {
 
-    private static final String INTEGRATION_PROCESSOR = StatsType.INTEGRATION_PROCESSOR.getPrintName();
-
     private SimpleMeterRegistry meterRegistry;
     private DefaultIntegrationStatisticsService service;
 
@@ -59,7 +57,7 @@ class DefaultIntegrationStatisticsServiceTest {
      * metric name they register under, but both flow through the same {@code printProcessorStats}
      * cleanup — so the behavioural tests below are parameterized over both to keep them in lockstep.
      */
-    private enum Stream {
+    private enum StatStream {
         MESSAGE(StatsType.INTEGRATION_PROCESSOR.getPrintName()) {
             @Override
             IntegrationProcessorStats create(DefaultIntegrationStatisticsService service, UUID integrationId) {
@@ -85,7 +83,7 @@ class DefaultIntegrationStatisticsServiceTest {
 
         final String key;
 
-        Stream(String key) {
+        StatStream(String key) {
             this.key = key;
         }
 
@@ -104,8 +102,8 @@ class DefaultIntegrationStatisticsServiceTest {
     }
 
     @ParameterizedTest
-    @EnumSource(Stream.class)
-    void givenProcessorStats_whenClearedAndPrinted_thenPerIntegrationCountersRemovedFromRegistry(Stream stream) {
+    @EnumSource(StatStream.class)
+    void givenProcessorStats_whenClearedAndPrinted_thenPerIntegrationCountersRemovedFromRegistry(StatStream stream) {
         UUID integrationId = UUID.randomUUID();
         IntegrationProcessorStats created = stream.create(service, integrationId);
         int registeredCounters = created.getStatsCounters().size();
@@ -118,8 +116,8 @@ class DefaultIntegrationStatisticsServiceTest {
     }
 
     @ParameterizedTest
-    @EnumSource(Stream.class)
-    void givenActiveProcessorStats_whenPrinted_thenCountersRetained(Stream stream) {
+    @EnumSource(StatStream.class)
+    void givenActiveProcessorStats_whenPrinted_thenCountersRetained(StatStream stream) {
         UUID integrationId = UUID.randomUUID();
         IntegrationProcessorStats created = stream.create(service, integrationId);
         int registeredCounters = created.getStatsCounters().size();
@@ -131,8 +129,8 @@ class DefaultIntegrationStatisticsServiceTest {
     }
 
     @ParameterizedTest
-    @EnumSource(Stream.class)
-    void givenTwoIntegrations_whenOneCleared_thenOnlyThatIntegrationsCountersRemoved(Stream stream) {
+    @EnumSource(StatStream.class)
+    void givenTwoIntegrations_whenOneCleared_thenOnlyThatIntegrationsCountersRemoved(StatStream stream) {
         UUID cleared = UUID.randomUUID();
         UUID retained = UUID.randomUUID();
         stream.create(service, cleared);
@@ -151,19 +149,22 @@ class DefaultIntegrationStatisticsServiceTest {
         // Register the real per-integration counters for this id.
         IntegrationProcessorStats registered = service.createIntegrationProcessorStats(integrationId);
         int registeredCounters = registered.getStatsCounters().size();
-        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(registeredCounters);
+        assertThat(counters(StatStream.MESSAGE.key, integrationId)).isEqualTo(registeredCounters);
 
-        // Simulate a concurrent re-enable landing between printStats' values() snapshot and the atomic
-        // remap: the entry reports inactive on the snapshot-loop check (so cleanup runs), but by the time
-        // the remap re-reads it the entry is active again, so its meters must be kept, not deregistered.
+        // Simulate a concurrent re-enable landing between printStats' values() snapshot and the remap: the
+        // entry reports inactive on the snapshot-loop check (so cleanup runs), but by the time the remap
+        // re-reads it the entry is active again, so its meters must be kept, not deregistered.
         IntegrationProcessorStats reEnabling = mock(IntegrationProcessorStats.class);
         when(reEnabling.getIntegrationUuid()).thenReturn(integrationId);
+        // isActive() is read twice per entry: first the snapshot-loop check in printProcessorStats, then the
+        // remap re-read in removeInactiveStats. Returning false then true drives the "inactive at snapshot,
+        // active at remap" branch — keep this call count in sync with printProcessorStats.
         when(reEnabling.isActive()).thenReturn(false, true);
         when(reEnabling.getStatsCounters()).thenReturn(registered.getStatsCounters());
         managedProcessorStats().put(integrationId, reEnabling);
 
         service.printStats();
 
-        assertThat(counters(INTEGRATION_PROCESSOR, integrationId)).isEqualTo(registeredCounters);
+        assertThat(counters(StatStream.MESSAGE.key, integrationId)).isEqualTo(registeredCounters);
     }
 }
