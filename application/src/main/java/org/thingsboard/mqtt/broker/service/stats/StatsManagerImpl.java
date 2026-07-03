@@ -204,7 +204,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}", clientId);
-        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(clientId));
+        printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(clientId));
     }
 
     @Override
@@ -215,7 +215,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             return;
         }
         for (String compoundClientId : clientIds) {
-            printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+            printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
         }
     }
 
@@ -231,16 +231,21 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
         clientIds.remove(compoundClientId);
 
-        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+        printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
         if (clientIds.isEmpty()) {
             sharedSubscriptionCompoundClientIds.remove(clientId);
         }
     }
 
-    private void printApplicationStatsOnClear(ApplicationProcessorStats stats) {
+    private void printAndRemoveApplicationStatsOnClear(ApplicationProcessorStats stats) {
         if (stats != null) {
             log.info("[{}][{}] Stats on clear", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId());
             printApplicationProcessorStats(stats);
+            // Deregister the per-client counters so they stop being scraped and don't leak the
+            // Micrometer registry on client/shared-subscription churn. The appProcessor.latency
+            // timers carry no clientId tag (one shared set across all clients), so they are
+            // intentionally left registered.
+            stats.getStatsCounters().forEach(statsFactory::remove);
         }
     }
 

@@ -36,6 +36,22 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TIMEOU
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_TIMEOUT_PUBLISH;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_TIMEOUT_PUBREL;
 
+/**
+ * Per-application-client processing stats.
+ * <p>
+ * The 8 {@link StatsCounter}s are tagged with the {@code clientId} (or the shared-subscription
+ * compound id), so each application client gets its own Micrometer series. They are deregistered
+ * from the registry when the client is cleared (see
+ * {@code StatsManagerImpl#printAndRemoveApplicationStatsOnClear}) to bound cardinality on churn.
+ * <p>
+ * The 3 {@code appProcessor.latency} timers, by contrast, carry <b>no</b> {@code clientId} tag —
+ * they are keyed only by {@code packetType}, so Micrometer registers a single shared set that
+ * aggregates latency across all application clients. This is intentional: per-client latency
+ * would add an unbounded {@code clientId} dimension on a broker targeting 100M+ connections.
+ * <b>Do not add a {@code clientId} tag to these timers</b> (cardinality trap); per-client latency
+ * remains available in the periodic log line only. Because they are shared, they are also
+ * intentionally <b>not</b> deregistered when a single client is cleared.
+ */
 @Slf4j
 public class DefaultApplicationProcessorStats implements ApplicationProcessorStats {
 

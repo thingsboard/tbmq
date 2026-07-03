@@ -1182,7 +1182,10 @@ stats:
     # Metrics percentiles returned by actuator for timer metrics. List of comma-separated double values.
     percentiles: "${STATS_TIMER_PERCENTILES:0.5}"
   application-processor:
-    # Enables or disables specific Application clients stats.
+    # Enables or disables per-Application-client processing stats. When enabled, each Application client gets its own set
+    # of counters tagged with 'clientId' (deregistered when the client disconnects); the appProcessor.latency timers are
+    # aggregated globally (keyed only by packetType, with no per-client tag). On a broker with very many Application
+    # clients the per-client counter cardinality can be high, so enable only when per-client stats are needed.
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
   system-info:
     # Persistence frequency of system info such as CPU and memory usage (in s).
