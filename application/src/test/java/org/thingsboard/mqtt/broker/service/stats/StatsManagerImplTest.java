@@ -24,7 +24,12 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
+import java.util.Map;
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
 
 public class StatsManagerImplTest {
@@ -45,6 +50,11 @@ public class StatsManagerImplTest {
 
     private int appProcessorCounters(String clientId) {
         return meterRegistry.find(APP_PROCESSOR).tag(CLIENT_ID_TAG, clientId).counters().size();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Set<String>> sharedSubscriptionCompoundClientIds() {
+        return (Map<String, Set<String>>) ReflectionTestUtils.getField(statsManager, "sharedSubscriptionCompoundClientIds");
     }
 
     @Test
@@ -69,6 +79,33 @@ public class StatsManagerImplTest {
         statsManager.clearSharedApplicationProcessorStats(clientId);
 
         assertEquals(0, appProcessorCounters(compoundClientId));
+    }
+
+    @Test
+    public void givenTwoSharedSubscriptionsForOneClient_whenClearOneBySubscription_thenOnlyThatCompoundRemovedAndOuterEntrySurvivesUntilLast() {
+        String clientId = "app-client-1";
+        TopicSharedSubscription subscription1 = new TopicSharedSubscription("topic/a", "group1");
+        TopicSharedSubscription subscription2 = new TopicSharedSubscription("topic/b", "group2");
+        statsManager.createSharedApplicationProcessorStats(clientId, subscription1);
+        statsManager.createSharedApplicationProcessorStats(clientId, subscription2);
+        String compoundClientId1 = clientId + "_group1_topic/a";
+        String compoundClientId2 = clientId + "_group2_topic/b";
+        assertEquals(8, appProcessorCounters(compoundClientId1));
+        assertEquals(8, appProcessorCounters(compoundClientId2));
+
+        statsManager.clearSharedApplicationProcessorStats(clientId, subscription1);
+
+        // Only the cleared subscription's counters are deregistered; the other subscription's remain.
+        assertEquals(0, appProcessorCounters(compoundClientId1));
+        assertEquals(8, appProcessorCounters(compoundClientId2));
+        // The outer per-client set entry survives while the client still has a tracked subscription.
+        assertTrue(sharedSubscriptionCompoundClientIds().containsKey(clientId));
+
+        statsManager.clearSharedApplicationProcessorStats(clientId, subscription2);
+
+        // Clearing the last subscription deregisters its counters and drops the outer set entry.
+        assertEquals(0, appProcessorCounters(compoundClientId2));
+        assertFalse(sharedSubscriptionCompoundClientIds().containsKey(clientId));
     }
 
     @Test

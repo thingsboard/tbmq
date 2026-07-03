@@ -28,7 +28,8 @@ public class DefaultCounter {
         this.micrometerCounter = micrometerCounter;
     }
 
-    public Counter getMicrometerCounter() {
+    // Package-private: only DefaultStatsFactory (same package) needs the backing meter, to deregister it.
+    Counter getMicrometerCounter() {
         return micrometerCounter;
     }
 
