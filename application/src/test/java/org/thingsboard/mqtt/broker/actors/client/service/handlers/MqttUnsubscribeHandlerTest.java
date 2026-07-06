@@ -173,6 +173,42 @@ public class MqttUnsubscribeHandlerTest {
     }
 
     @Test
+    public void givenMqtt5AndPersistFailure_whenOnFailure_thenErrorUnsubAckAndNoEvent() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        UnsubscribeCallback callback = process(new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
+        callback.onFailure(new RuntimeException("persist failed"));
+
+        // The Server MUST still send an UNSUBACK on failure; MQTT 5 carries an error code per requested filter,
+        // and no CLIENT_UNSUBSCRIBED lifecycle event is published.
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCodes.UnsubAck.UNSPECIFIED_ERROR)));
+        verify(ctx.getChannel()).writeAndFlush(any());
+        verify(integrationLifecycleEventPublisher, never()).publishUnsubscribed(any(), any());
+    }
+
+    @Test
+    public void givenMqtt5AndPersistFailureMultipleFilters_whenOnFailure_thenErrorCodePerFilterInOrder() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        UnsubscribeCallback callback = process(new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("a/b", "c/d")));
+        callback.onFailure(new RuntimeException("persist failed"));
+
+        // One error code per requested topic filter, in request order (we do not know which filters were removed).
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1),
+                eq(List.of(MqttReasonCodes.UnsubAck.UNSPECIFIED_ERROR, MqttReasonCodes.UnsubAck.UNSPECIFIED_ERROR)));
+    }
+
+    @Test
+    public void givenMqtt3AndPersistFailure_whenOnFailure_thenCodelessUnsubAck() {
+        // MQTT 3.1.1 (version not stubbed) UNSUBACK carries no reason codes -> codeless packet even on failure.
+        UnsubscribeCallback callback = process(new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
+        callback.onFailure(new RuntimeException("persist failed"));
+
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(Collections.singletonList(null)));
+        verify(ctx.getChannel()).writeAndFlush(any());
+    }
+
+    @Test
     public void testCollectUniqueSharedSubscriptions() {
         List<String> topics = List.of(
                 "test/topic",

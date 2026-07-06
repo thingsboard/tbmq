@@ -57,4 +57,20 @@ public class MqttReasonCodeResolverTest {
 
         assertThat(MqttReasonCodeResolver.unsubAckNoSubscriptionExisted(ctx)).isNull();
     }
+
+    @Test
+    public void givenMqtt5_whenUnsubAckError_thenReturnsUnspecifiedError() {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        assertThat(MqttReasonCodeResolver.unsubAckError(ctx)).isEqualTo(UnsubAck.UNSPECIFIED_ERROR);
+    }
+
+    @Test
+    public void givenMqtt311_whenUnsubAckError_thenReturnsNull() {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+
+        assertThat(MqttReasonCodeResolver.unsubAckError(ctx)).isNull();
+    }
 }

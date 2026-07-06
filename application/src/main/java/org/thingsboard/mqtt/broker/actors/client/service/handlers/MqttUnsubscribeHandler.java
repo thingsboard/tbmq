@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,6 +68,11 @@ public class MqttUnsubscribeHandler {
                     @Override
                     public void onFailure(Throwable t) {
                         log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t);
+                        // The Server MUST still respond with an UNSUBACK (MQTT-3.10.4-5). The persist failed, so the removed
+                        // set is unknown: every requested filter gets an error code (null => codeless UNSUBACK on MQTT 3.1.1).
+                        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(
+                                msg.getMessageId(), getFailureCodes(ctx, msg.getTopics()));
+                        ctx.getChannel().writeAndFlush(unSubAckMessage);
                     }
                 });
 
@@ -85,6 +91,12 @@ public class MqttUnsubscribeHandler {
                         ? MqttReasonCodeResolver.unsubAckSuccess(ctx)
                         : MqttReasonCodeResolver.unsubAckNoSubscriptionExisted(ctx))
                 .collect(Collectors.toList());
+    }
+
+    // On persist failure the removed set is unknown, so every requested filter gets the same error code
+    // (UNSPECIFIED_ERROR on MQTT 5, null => codeless UNSUBACK on MQTT 3.1.1).
+    private List<UnsubAck> getFailureCodes(ClientSessionCtx ctx, List<String> requestedTopics) {
+        return Collections.nCopies(requestedTopics.size(), MqttReasonCodeResolver.unsubAckError(ctx));
     }
 
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {

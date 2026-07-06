@@ -99,6 +99,10 @@ public final class MqttReasonCodeResolver {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? UnsubAck.NO_SUBSCRIPTION_EXISTED : null;
     }
 
+    public static UnsubAck unsubAckError(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? UnsubAck.UNSPECIFIED_ERROR : null;
+    }
+
     public static PubAck pubAckTopicNameInvalid() {
         return PubAck.TOPIC_NAME_INVALID;
     }
