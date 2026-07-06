@@ -46,7 +46,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
             }
         } finally {
             stopWatch.stop();
-            actorProcessingMetricService.logMsgProcessingTime(msg.getMsgType(), stopWatch.getTime());
+            actorProcessingMetricService.logMsgProcessingTime(msg.getMsgType(), stopWatch.getNanoTime());
             stopWatch.reset();
         }
     }

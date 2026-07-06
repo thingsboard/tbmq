@@ -43,6 +43,6 @@ public class MsgTypeActorProcessingMetricService implements ActorProcessingMetri
     public void logMsgProcessingTime(MsgType msgType, long time) {
         Timer timer = timers.computeIfAbsent(msgType, t -> statsFactory.createTimer(ACTOR_MSG_PROCESSING_STATS_NAME,
                 StatsConstantNames.MSG_TYPE, msgType.toString()));
-        timer.record(time, TimeUnit.MILLISECONDS);
+        timer.record(time, TimeUnit.NANOSECONDS);
     }
 }
