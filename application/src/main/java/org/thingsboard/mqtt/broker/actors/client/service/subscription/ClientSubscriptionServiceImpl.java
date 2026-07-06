@@ -137,9 +137,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
         log.trace("[{}] Unsubscribe and persist {}.", clientId, topicFilters);
-        Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters).updatedSubscriptions();
+        Set<TopicSubscription> survivingClientSubscriptions = unsubscribe(clientId, topicFilters).survivingSubscriptions();
 
-        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, survivingClientSubscriptions, callback);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         log.trace("[{}] Unsubscribing from {} and reporting removed.", clientId, topicFilters);
         UnsubscribeResult result = unsubscribe(clientId, topicFilters);
 
-        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, result.updatedSubscriptions(),
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, result.survivingSubscriptions(),
                 createCallback(
                         () -> callback.onSuccess(result.removedSubscriptions()),
                         callback::onFailure));
@@ -176,8 +176,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return new UnsubscribeResult(clientSubscriptions, removedSubscriptions);
     }
 
-    // Surviving subscriptions to persist, plus the ones actually removed (for UNSUBACK codes and lifecycle events).
-    private record UnsubscribeResult(Set<TopicSubscription> updatedSubscriptions,
+    // survivingSubscriptions are persisted; removedSubscriptions feed the UNSUBACK codes and lifecycle events.
+    private record UnsubscribeResult(Set<TopicSubscription> survivingSubscriptions,
                                      List<TopicSubscription> removedSubscriptions) {
     }
 
