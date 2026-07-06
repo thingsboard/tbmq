@@ -91,8 +91,7 @@ public class MqttSubscribeHandler {
         }
         List<TopicSubscription> validTopicSubscriptions = collectValidSubscriptions(topicSubscriptions, codes);
 
-        MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
-        subscribeAndPersist(ctx, validTopicSubscriptions, subAckMessage);
+        subscribeAndPersist(ctx, validTopicSubscriptions, msg.getMessageId(), codes);
 
         startProcessingSharedSubscriptions(ctx, validTopicSubscriptions, currentSharedSubscriptions);
     }
@@ -126,7 +125,7 @@ public class MqttSubscribeHandler {
                 validateSharedSubscription(subscription);
             } catch (DataValidationException e) {
                 log.warn("[{}][{}] Not valid topic", ctx.getClientId(), ctx.getSessionId(), e);
-                codes.add(MqttReasonCodeResolver.failure());
+                codes.add(MqttReasonCodeResolver.topicFilterInvalid(ctx));
                 continue;
             }
 
@@ -154,9 +153,10 @@ public class MqttSubscribeHandler {
         return codes;
     }
 
-    private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions, MqttSubAckMessage subAckMessage) {
+    private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions,
+                                     int messageId, List<MqttReasonCodes.SubAck> codes) {
         if (CollectionUtils.isEmpty(newSubscriptions)) {
-            sendSubAck(ctx, subAckMessage);
+            sendSubAck(ctx, mqttMessageGenerator.createSubAckMessage(messageId, codes));
             return;
         }
 
@@ -165,12 +165,25 @@ public class MqttSubscribeHandler {
         clientSubscriptionService.subscribeAndPersist(clientId, newSubscriptions,
                 CallbackUtil.createCallback(
                         () -> {
-                            sendSubAck(ctx, subAckMessage);
+                            sendSubAck(ctx, mqttMessageGenerator.createSubAckMessage(messageId, codes));
                             integrationLifecycleEventPublisher.publishSubscribed(ctx, newSubscriptions);
                             processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
-                        t -> log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t))
+                        t -> {
+                            log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t);
+                            // The Server MUST still respond with a SUBACK (MQTT-3.8.4-1). The persist failed, so every filter that
+                            // would have been granted now reports UNSPECIFIED_ERROR; the pre-validation error codes are preserved.
+                            sendSubAck(ctx, mqttMessageGenerator.createSubAckMessage(messageId, toFailureCodes(codes)));
+                        })
         );
+    }
+
+    // On persist failure the granted-QoS codes flip to UNSPECIFIED_ERROR (0x80, valid on both MQTT versions); codes decided
+    // during validation (not authorized, topic invalid, shared-sub errors) are kept, as they do not depend on the persist.
+    private List<MqttReasonCodes.SubAck> toFailureCodes(List<MqttReasonCodes.SubAck> codes) {
+        return codes.stream()
+                .map(code -> MqttReasonCodeUtil.getGrantedQosList().contains(code) ? MqttReasonCodeResolver.failure() : code)
+                .toList();
     }
 
     private void disconnectClient(ClientSessionCtx ctx) {

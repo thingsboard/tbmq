@@ -393,20 +393,26 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenMqttSubscribeMsg_whenProcessSubscriptions_thenReturnExpectedResult() {
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
         when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
 
         when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
 
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
         mqttSubscribeHandler.process(ctx, msg);
 
+        // the SUBACK carrying the granted QoS codes is built and sent from the persist success callback
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
         verify(mqttMessageGenerator, times(1)).createSubAckMessage(
                 eq(1), eq(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_0, MqttReasonCodes.SubAck.GRANTED_QOS_1, MqttReasonCodes.SubAck.GRANTED_QOS_2))
         );
-        verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
         verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
     }
 
@@ -455,6 +461,63 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
+    public void givenSubscribeWithDeniedTopic_whenPersistFails_thenSendSubAckWithErrorCodesAndNoEvent() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        ChannelHandlerContext channel = mock(ChannelHandlerContext.class);
+        when(ctx.getChannel()).thenReturn(channel);
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false); // denied
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        // persistence is requested only for the granted subscriptions; drive the failure callback
+        List<TopicSubscription> grantedSubscriptions = List.of(getTopicSubscription("topic1", 0), getTopicSubscription("topic3", 2));
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), eq(grantedSubscriptions), callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new RuntimeException("persist failed"));
+
+        // on persist failure the granted entries flip to UNSPECIFIED_ERROR; the pre-validated NOT_AUTHORIZED is preserved
+        verify(mqttMessageGenerator).createSubAckMessage(eq(1), eq(List.of(
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.NOT_AUTHORIZED,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR)));
+        // the SUBACK is still sent so the client does not hang, but no CLIENT_SUBSCRIBED event is emitted
+        verify(channel).writeAndFlush(any());
+        verify(integrationLifecycleEventPublisher, never()).publishSubscribed(any(), any());
+    }
+
+    @Test
+    public void givenAllGrantedSubscribe_whenPersistFails_thenAllGrantedCodesBecomeUnspecifiedError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+        when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), any(), callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new RuntimeException("boom"));
+
+        // every granted QoS entry is replaced with UNSPECIFIED_ERROR (0x80, version-agnostic)
+        verify(mqttMessageGenerator).createSubAckMessage(eq(1), eq(List.of(
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR)));
+    }
+
+    @Test
     public void givenMultiLvlRootSub_whenCollectMqttReasonCodes_thenReturnExpectedResult() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("#"));
@@ -463,6 +526,19 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID), reasonCodes);
+    }
+
+    @Test
+    public void givenMqtt311_whenCollectMqttReasonCodesForInvalidTopic_thenReturnUnspecifiedError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("#"));
+
+        List<TopicSubscription> topicSubscriptions = List.of(getTopicSubscription(BrokerConstants.MULTI_LEVEL_WILDCARD, 1));
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+
+        // MQTT 3.1.1 has no 0x8F Topic Filter invalid; its only SUBACK failure code is 0x80
         assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR), reasonCodes);
     }
 
@@ -477,7 +553,7 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
     }
 
     @Test

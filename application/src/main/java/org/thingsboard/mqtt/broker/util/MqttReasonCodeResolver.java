@@ -135,6 +135,11 @@ public final class MqttReasonCodeResolver {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.NOT_AUTHORIZED : failure();
     }
 
+    public static SubAck topicFilterInvalid(ClientSessionCtx ctx) {
+        // 0x8F exists only in MQTT 5; MQTT 3.1.1 has no such SUBACK code, so fall back to 0x80 (Failure).
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.TOPIC_FILTER_INVALID : failure();
+    }
+
     public static SubAck implementationSpecificError(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.IMPLEMENTATION_SPECIFIC_ERROR : failure();
     }
