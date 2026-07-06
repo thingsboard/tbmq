@@ -49,5 +49,7 @@ public class DefaultClientSubscriptionConsumerStatsTest {
         assertEquals(1, meterRegistry.find(NAME).tag(STATS_NAME_TAG, "ignoredRecords").counters().size());
         // The old `*Subscriptions` stats names are gone.
         assertTrue(meterRegistry.find(NAME).tag(STATS_NAME_TAG, "totalSubscriptions").counters().isEmpty());
+        assertTrue(meterRegistry.find(NAME).tag(STATS_NAME_TAG, "acceptedSubscriptions").counters().isEmpty());
+        assertTrue(meterRegistry.find(NAME).tag(STATS_NAME_TAG, "ignoredSubscriptions").counters().isEmpty());
     }
 }

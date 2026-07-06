@@ -27,12 +27,12 @@ public class StubClientSubscriptionConsumerStats implements ClientSubscriptionCo
     }
 
     @Override
-    public void logTotal(int totalSubscriptions) {
+    public void logTotal(int totalRecords) {
 
     }
 
     @Override
-    public void log(int acceptedSubscriptions, int ignoredSubscriptions) {
+    public void log(int acceptedRecords, int ignoredRecords) {
 
     }
 
