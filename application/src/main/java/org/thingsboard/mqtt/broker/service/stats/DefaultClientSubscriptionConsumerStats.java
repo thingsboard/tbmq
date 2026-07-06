@@ -21,35 +21,35 @@ import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
 import java.util.List;
 
-import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.ACCEPTED_SUBSCRIPTIONS;
-import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.IGNORED_SUBSCRIPTIONS;
-import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TOTAL_SUBSCRIPTIONS;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.ACCEPTED_RECORDS;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.IGNORED_RECORDS;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TOTAL_RECORDS;
 
 public class DefaultClientSubscriptionConsumerStats implements ClientSubscriptionConsumerStats {
     private final List<StatsCounter> counters;
 
-    private final StatsCounter totalSubscriptionCounter;
-    private final StatsCounter acceptedSubscriptionCounter;
-    private final StatsCounter ignoredSubscriptionCounter;
+    private final StatsCounter totalRecordCounter;
+    private final StatsCounter acceptedRecordCounter;
+    private final StatsCounter ignoredRecordCounter;
 
     public DefaultClientSubscriptionConsumerStats(StatsFactory statsFactory) {
         String statsKey = StatsType.CLIENT_SUBSCRIPTIONS_CONSUMER.getPrintName();
-        this.totalSubscriptionCounter = statsFactory.createStatsCounter(statsKey, TOTAL_SUBSCRIPTIONS);
-        this.acceptedSubscriptionCounter = statsFactory.createStatsCounter(statsKey, ACCEPTED_SUBSCRIPTIONS);
-        this.ignoredSubscriptionCounter = statsFactory.createStatsCounter(statsKey, IGNORED_SUBSCRIPTIONS);
+        this.totalRecordCounter = statsFactory.createStatsCounter(statsKey, TOTAL_RECORDS);
+        this.acceptedRecordCounter = statsFactory.createStatsCounter(statsKey, ACCEPTED_RECORDS);
+        this.ignoredRecordCounter = statsFactory.createStatsCounter(statsKey, IGNORED_RECORDS);
 
-        counters = List.of(totalSubscriptionCounter, acceptedSubscriptionCounter, ignoredSubscriptionCounter);
+        counters = List.of(totalRecordCounter, acceptedRecordCounter, ignoredRecordCounter);
     }
 
     @Override
-    public void logTotal(int totalSubscriptions) {
-        totalSubscriptionCounter.add(totalSubscriptions);
+    public void logTotal(int totalRecords) {
+        totalRecordCounter.add(totalRecords);
     }
 
     @Override
-    public void log(int acceptedSubscriptions, int ignoredSubscriptions) {
-        acceptedSubscriptionCounter.add(acceptedSubscriptions);
-        ignoredSubscriptionCounter.add(ignoredSubscriptions);
+    public void log(int acceptedRecords, int ignoredRecords) {
+        acceptedRecordCounter.add(acceptedRecords);
+        ignoredRecordCounter.add(ignoredRecords);
     }
 
     @Override

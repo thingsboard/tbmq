@@ -20,9 +20,9 @@ import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import java.util.List;
 
 public interface ClientSubscriptionConsumerStats {
-    void logTotal(int totalSubscriptions);
+    void logTotal(int totalRecords);
 
-    void log(int acceptedSubscriptions, int ignoredSubscriptions);
+    void log(int acceptedRecords, int ignoredRecords);
 
     List<StatsCounter> getStatsCounters();
 
