@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
         clientSubscriptionsMap = new ConcurrentHashMap<>();
-        clientTopicSubscriptions.forEach((key, value) -> clientSubscriptionsMap.put(key.getId(), value));
+        clientTopicSubscriptions.forEach((key, val) -> clientSubscriptionsMap.put(key.getId(), val));
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
@@ -135,10 +136,21 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
-        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
-        Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
+        log.trace("[{}] Unsubscribe and persist {}.", clientId, topicFilters);
+        Set<TopicSubscription> survivingClientSubscriptions = unsubscribe(clientId, topicFilters).survivingSubscriptions();
 
-        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, survivingClientSubscriptions, callback);
+    }
+
+    @Override
+    public void unsubscribeAndPersistReportingRemoved(String clientId, Collection<String> topicFilters, UnsubscribeCallback callback) {
+        log.trace("[{}] Unsubscribing from {} and reporting removed.", clientId, topicFilters);
+        UnsubscribeResult result = unsubscribe(clientId, topicFilters);
+
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, result.survivingSubscriptions(),
+                createCallback(
+                        () -> callback.onSuccess(result.removedSubscriptions()),
+                        callback::onFailure));
     }
 
     @Override
@@ -147,24 +159,31 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         unsubscribe(clientId, topicFilters);
     }
 
-    private Set<TopicSubscription> unsubscribe(String clientId, Collection<String> topicFilters) {
+    private UnsubscribeResult unsubscribe(String clientId, Collection<String> topicFilters) {
         List<String> topics = extractTopicFilterFromSharedTopic(topicFilters);
         subscriptionService.unsubscribe(clientId, topics);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
+        List<TopicSubscription> removedSubscriptions = new ArrayList<>();
         clientSubscriptions.removeIf(topicSubscription -> {
             boolean unsubscribe = topics.contains(topicSubscription.getTopicFilter());
             if (unsubscribe) {
                 processSharedUnsubscribe(clientId, topicSubscription);
+                removedSubscriptions.add(topicSubscription);
             }
             return unsubscribe;
         });
-        return clientSubscriptions;
+        return new UnsubscribeResult(clientSubscriptions, removedSubscriptions);
+    }
+
+    // survivingSubscriptions are persisted; removedSubscriptions feed the UNSUBACK codes and lifecycle events.
+    private record UnsubscribeResult(Set<TopicSubscription> survivingSubscriptions,
+                                     List<TopicSubscription> removedSubscriptions) {
     }
 
     private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {
         return topicFilters.stream()
-                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicFilter(tf) : tf)
+                .map(NettyMqttConverter::getTopicFilter)
                 .collect(Collectors.toList());
     }
 

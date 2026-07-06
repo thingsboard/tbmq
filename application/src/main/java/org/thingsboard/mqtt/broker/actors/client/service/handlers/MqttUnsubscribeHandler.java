@@ -23,9 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.UnsubscribeCallback;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -33,10 +33,8 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,60 +51,52 @@ public class MqttUnsubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
 
-        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
-        // MQTT allows UNSUBSCRIBE for filters the client never subscribed to. Emit CLIENT_UNSUBSCRIBED only for
-        // the subscriptions actually removed (symmetric with CLIENT_SUBSCRIBED, which emits only the granted ones).
-        List<TopicSubscription> removedSubscriptions = getRemovedSubscriptions(ctx.getClientId(), msg.getTopics());
-        clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
-                CallbackUtil.createCallback(
-                        () -> {
-                            ctx.getChannel().writeAndFlush(unSubAckMessage);
-                            if (!removedSubscriptions.isEmpty()) {
-                                integrationLifecycleEventPublisher.publishUnsubscribed(ctx, removedSubscriptions);
-                            }
-                        },
-                        t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
-                ));
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(ctx.getClientId(), msg.getTopics(),
+                new UnsubscribeCallback() {
+                    @Override
+                    public void onSuccess(List<TopicSubscription> removedSubscriptions) {
+                        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(
+                                msg.getMessageId(), getCodes(ctx, msg.getTopics(), removedSubscriptions));
+                        ctx.getChannel().writeAndFlush(unSubAckMessage);
+                        // MQTT allows UNSUBSCRIBE for filters the client never subscribed to. Emit CLIENT_UNSUBSCRIBED only for
+                        // the subscriptions actually removed (symmetric with CLIENT_SUBSCRIBED, which emits only the granted ones).
+                        if (!removedSubscriptions.isEmpty()) {
+                            integrationLifecycleEventPublisher.publishUnsubscribed(ctx, removedSubscriptions);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t);
+                        // The Server MUST still respond with an UNSUBACK (MQTT-3.10.4-5). The persist failed, so the removed
+                        // set is unknown: every requested filter gets an error code (null => codeless UNSUBACK on MQTT 3.1.1).
+                        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(
+                                msg.getMessageId(), getFailureCodes(ctx, msg.getTopics()));
+                        ctx.getChannel().writeAndFlush(unSubAckMessage);
+                    }
+                });
 
         stopProcessingApplicationSharedSubscriptions(ctx, msg.getTopics());
     }
 
-    private List<TopicSubscription> getRemovedSubscriptions(String clientId, List<String> requestedTopics) {
-        Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
-        if (CollectionUtils.isEmpty(currentSubscriptions)) {
-            return List.of();
-        }
-        // Index current subscriptions by (shareName, bare topic filter) so a requested $share/<group>/<filter>
-        // resolves to that exact shared subscription (carrying its shareName), and a bare filter to the regular one.
-        Map<SubKey, TopicSubscription> byKey = new HashMap<>();
-        for (TopicSubscription sub : currentSubscriptions) {
-            byKey.putIfAbsent(new SubKey(sub.getShareName(), sub.getTopicFilter()), sub);
-        }
-        List<TopicSubscription> removed = new ArrayList<>();
-        for (String requested : requestedTopics) {
-            String shareName = NettyMqttConverter.isSharedTopic(requested) ? NettyMqttConverter.getShareName(requested) : null;
-            TopicSubscription sub = byKey.get(new SubKey(shareName, toTopicFilter(requested)));
-            if (sub != null) {
-                removed.add(sub);
-            }
-        }
-        return removed;
-    }
-
-    // Composite lookup key; shareName is null for a regular subscription, the group name for a shared one.
-    private record SubKey(String shareName, String topicFilter) {
-    }
-
-    private static String toTopicFilter(String topic) {
-        return NettyMqttConverter.isSharedTopic(topic) ? NettyMqttConverter.getTopicFilter(topic) : topic;
-    }
-
-    private List<UnsubAck> getCodes(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
-        return msg
-                .getTopics()
-                .stream()
-                .map(s -> MqttReasonCodeResolver.unsubAckSuccess(ctx))
+    // A requested filter that matched a removed subscription gets SUCCESS; one the client was not subscribed to gets
+    // NO_SUBSCRIPTION_EXISTED (both null on MQTT 3.1.1 => no reason codes). Matching is by bare topic filter, mirroring
+    // how the removal itself matches, so codes always agree with what was actually removed.
+    private List<UnsubAck> getCodes(ClientSessionCtx ctx, List<String> requestedTopics, List<TopicSubscription> removedSubscriptions) {
+        Set<String> removedTopicFilters = removedSubscriptions.stream()
+                .map(TopicSubscription::getTopicFilter)
+                .collect(Collectors.toSet());
+        return requestedTopics.stream()
+                .map(topic -> removedTopicFilters.contains(NettyMqttConverter.getTopicFilter(topic))
+                        ? MqttReasonCodeResolver.unsubAckSuccess(ctx)
+                        : MqttReasonCodeResolver.unsubAckNoSubscriptionExisted(ctx))
                 .collect(Collectors.toList());
+    }
+
+    // On persist failure the removed set is unknown, so every requested filter gets the same error code
+    // (UNSPECIFIED_ERROR on MQTT 5, null => codeless UNSUBACK on MQTT 3.1.1).
+    private List<UnsubAck> getFailureCodes(ClientSessionCtx ctx, List<String> requestedTopics) {
+        return Collections.nCopies(requestedTopics.size(), MqttReasonCodeResolver.unsubAckError(ctx));
     }
 
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {

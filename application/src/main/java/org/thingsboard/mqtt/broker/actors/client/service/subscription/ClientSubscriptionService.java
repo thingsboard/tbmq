@@ -43,6 +43,8 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
     void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback);
 
+    void unsubscribeAndPersistReportingRemoved(String clientId, Collection<String> topicFilters, UnsubscribeCallback callback);
+
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
 
     void clearSubscriptionsAndPersist(String clientId);
