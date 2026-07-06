@@ -40,8 +40,6 @@ public interface IntegrationStatisticsService {
 
     void onUplinkMsg(IntegrationType integrationType, boolean success);
 
-    void onDownlinkMsg(IntegrationType integrationType, boolean success);
-
     void printStats();
 
     void reset();

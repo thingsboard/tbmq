@@ -156,11 +156,6 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
         onMsg(IntegrationStatisticsMetricName.MSGS_UPLINK, integrationType, success);
     }
 
-    @Override
-    public void onDownlinkMsg(IntegrationType integrationType, boolean success) {
-        onMsg(IntegrationStatisticsMetricName.MSGS_DOWNLINK, integrationType, success);
-    }
-
     private void onMsg(IntegrationStatisticsMetricName metric, IntegrationType integrationType, boolean success) {
         try {
             incrementCounter(new IntegrationStatisticsKey(metric, success, integrationType));
