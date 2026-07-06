@@ -17,12 +17,12 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.PackSizeStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class DefaultClientSessionEventConsumerStats implements ClientSessionEventConsumerStats {
@@ -31,7 +31,7 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
 
     private final String consumerId;
     private final ResettableTimer packProcessingTimer;
-    private final AtomicLong totalPackSize = new AtomicLong();
+    private final PackSizeStats packSizeStats = new PackSizeStats();
 
     public DefaultClientSessionEventConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -48,7 +48,7 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
     @Override
     public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
         packProcessingTimer.logTime(amount, unit);
-        totalPackSize.addAndGet(packSize);
+        packSizeStats.record(packSize);
     }
 
     @Override
@@ -56,21 +56,14 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
         return packProcessingTimer.getAvg();
     }
 
-    /**
-     * Average processed pack size. This is a log-only diagnostic (printed by {@code StatsManagerImpl.printStats}),
-     * intentionally not exported as a Micrometer meter — mirroring the sibling {@code DefaultPublishMsgConsumerStats}
-     * and {@code DefaultDeviceProcessorStats} pack-size averages. The pack processing time IS exported as a timer.
-     * Returns 0 (not NaN) when no pack has been processed in the interval, since session events are sparse.
-     */
     @Override
     public double getAvgPackSize() {
-        int count = packProcessingTimer.getCount();
-        return count == 0 ? 0 : Math.ceil((double) totalPackSize.get() / count);
+        return packSizeStats.getAvg();
     }
 
     @Override
     public void reset() {
         packProcessingTimer.reset();
-        totalPackSize.getAndSet(0);
+        packSizeStats.reset();
     }
 }

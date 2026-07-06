@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.PackSizeStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -24,7 +25,6 @@ import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_ITERATIONS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
@@ -58,7 +58,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     private final ResettableTimer msgProcessingTimer;
     private final ResettableTimer packProcessingTimer;
 
-    private final AtomicLong totalPackSize = new AtomicLong();
+    private final PackSizeStats packSizeStats = new PackSizeStats();
 
     public DefaultPublishMsgConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -114,7 +114,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     @Override
     public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
         packProcessingTimer.logTime(amount, unit);
-        totalPackSize.addAndGet(packSize);
+        packSizeStats.record(packSize);
     }
 
     @Override
@@ -124,8 +124,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public double getAvgPackSize() {
-        int count = packProcessingTimer.getCount();
-        return count == 0 ? 0 : Math.ceil((double) totalPackSize.get() / count);
+        return packSizeStats.getAvg();
     }
 
     @Override
@@ -143,6 +142,6 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
         counters.forEach(StatsCounter::clear);
         msgProcessingTimer.reset();
         packProcessingTimer.reset();
-        totalPackSize.getAndSet(0);
+        packSizeStats.reset();
     }
 }
