@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Service
 @Slf4j
@@ -32,12 +34,14 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final DeliveryTimerStats deliveryTimerStats;
+    private final boolean statsEnabled;
 
     @Autowired
     public DefaultMqttPublishMsgDeliveryService(TbMessageStatsReportClient tbMessageStatsReportClient,
                                                 StatsManager statsManager) {
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
+        this.statsEnabled = statsManager.isEnabled();
     }
 
     @Override
@@ -54,8 +58,8 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
     public void sendAlreadyTrackedPublishMsgToClient(ClientSessionCtx ctx, MqttPublishMessage msg) {
         try {
             long startTime = System.nanoTime();
-            ctx.getChannel().writeAndFlush(msg);
-            deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+            ChannelFuture future = ctx.getChannel().writeAndFlush(msg);
+            recordDeliveryOnSuccess(future, startTime);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
             if (!msg.fixedHeader().isRetain()) {
@@ -64,13 +68,13 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         }
     }
 
-    private void processSendPublish(ClientSessionCtx ctx, MqttPublishMessage msg, Runnable processor) {
+    private void processSendPublish(ClientSessionCtx ctx, MqttPublishMessage msg, Supplier<ChannelFuture> processor) {
         try {
             boolean added = ctx.addInFlightMsg(msg);
             if (added) {
                 long startTime = System.nanoTime();
-                processor.run();
-                deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+                ChannelFuture future = processor.get();
+                recordDeliveryOnSuccess(future, startTime);
             }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
@@ -78,6 +82,24 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
+    }
+
+    /**
+     * Records the delivery latency when the write {@link ChannelFuture} completes successfully, i.e. once the
+     * PUBLISH bytes have been written to the socket — not the synchronous cost of handing the write off to the
+     * Netty event loop, which the surrounding {@code writeAndFlush}/{@code write} calls return before completing.
+     * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
+     * event-loop callback are not paid on the hot delivery path when metrics are turned off.
+     */
+    private void recordDeliveryOnSuccess(ChannelFuture future, long startTime) {
+        if (!statsEnabled) {
+            return;
+        }
+        future.addListener(f -> {
+            if (f.isSuccess()) {
+                deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+            }
+        });
     }
 
 }
