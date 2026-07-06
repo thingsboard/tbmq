@@ -154,8 +154,15 @@ public class HistoricalStatsTotalConsumer {
                 throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
     }
 
-    private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
+    protected void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
+        if (!totalStatsMap.containsKey(key)) {
+            // Unknown/removed historical key (e.g. a 'processedBytes' message from a not-yet-upgraded node
+            // during a rolling upgrade). Ignore it so a single stale message can't NPE and poison the whole
+            // aggregation loop — an uncommitted batch would otherwise be re-polled forever.
+            log.debug("[{}] Ignoring historical stats for unknown key {}", ENTITY_ID_TOTAL, key);
+            return;
+        }
         long msgTs = msg.getValue().getTs();
         TsMsgTotalPair pair = calculatePairUsingProvidedMsg(msg);
 

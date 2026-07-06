@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +45,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
 
 
 @Slf4j
@@ -259,6 +261,19 @@ public class HistoricalStatsTotalConsumerTest {
             }
         });
         verify(timeseriesService, times(3)).findLatest(any(), any());
+    }
+
+    @Test
+    public void givenMsgWithUnknownRemovedKey_whenProcessSaveHistoricalStatsTotal_thenIgnoredWithoutSaveOrNpe() {
+        // processedBytes was removed from the historical key set, so totalStatsMap has no entry for it.
+        // A message with such a key (e.g. produced by a not-yet-upgraded node during a rolling upgrade)
+        // must be ignored, not throw NPE — otherwise the uncommitted batch is re-polled forever and
+        // poisons cluster-wide historical aggregation.
+        var msg = buildMessage(PROCESSED_BYTES, 7);
+
+        historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(msg);
+
+        verify(timeseriesService, never()).save(any(), any(TsKvEntry.class));
     }
 
     private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessage(String key, int value) {
