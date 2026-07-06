@@ -70,7 +70,7 @@ public class ChannelBackpressureManagerImplTest {
         when(ctx.isCleanSession()).thenReturn(false);
         when(ctx.getNonWritableCounted()).thenReturn(new AtomicBoolean());
 
-        when(statsManager.createNonWritableClientsCounter()).thenReturn(new AtomicInteger());
+        when(statsManager.createNonWritableClientsGauge()).thenReturn(new AtomicInteger());
         channelBackpressureManager.init();
     }
 

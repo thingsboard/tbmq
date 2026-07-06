@@ -115,17 +115,17 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public AtomicInteger createNonWritableClientsCounter() {
+    public AtomicInteger createNonWritableClientsGauge() {
         return new AtomicInteger(0);
     }
 
     @Override
-    public AtomicInteger createSubscriptionSizeCounter() {
+    public AtomicInteger createSubscriptionSizeGauge() {
         return new AtomicInteger(0);
     }
 
     @Override
-    public AtomicInteger createRetainMsgSizeCounter() {
+    public AtomicInteger createRetainMsgSizeGauge() {
         return new AtomicInteger(0);
     }
 
@@ -204,12 +204,12 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public AtomicLong createSubscriptionTrieNodesCounter() {
+    public AtomicLong createSubscriptionTrieNodesGauge() {
         return new AtomicLong(0);
     }
 
     @Override
-    public AtomicLong createRetainMsgTrieNodesCounter() {
+    public AtomicLong createRetainMsgTrieNodesGauge() {
         return new AtomicLong(0);
     }
 

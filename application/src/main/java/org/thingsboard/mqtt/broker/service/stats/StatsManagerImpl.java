@@ -251,24 +251,24 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public AtomicInteger createNonWritableClientsCounter() {
-        log.trace("Creating NonWritableClientsCounter");
+    public AtomicInteger createNonWritableClientsGauge() {
+        log.trace("Creating NonWritableClientsGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createSubscriptionSizeCounter() {
-        log.trace("Creating SubscriptionSizeCounter");
+    public AtomicInteger createSubscriptionSizeGauge() {
+        log.trace("Creating SubscriptionSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createRetainMsgSizeCounter() {
-        log.trace("Creating RetainMsgSizeCounter");
+    public AtomicInteger createRetainMsgSizeGauge() {
+        log.trace("Creating RetainMsgSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -343,16 +343,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public AtomicLong createSubscriptionTrieNodesCounter() {
-        log.trace("Creating SubscriptionTrieNodesCounter");
+    public AtomicLong createSubscriptionTrieNodesGauge() {
+        log.trace("Creating SubscriptionTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicLong createRetainMsgTrieNodesCounter() {
-        log.trace("Creating RetainMsgTrieNodesCounter");
+    public AtomicLong createRetainMsgTrieNodesGauge() {
+        log.trace("Creating RetainMsgTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
