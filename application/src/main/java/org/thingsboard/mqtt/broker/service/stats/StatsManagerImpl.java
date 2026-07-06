@@ -365,8 +365,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         managedStats.add(stats);
         // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
         // previously computed and logged but never scraped). The queue::size supplier is wired later by
-        // TbSqlBlockingQueue#init, so getCurrentQueueSize() reports 0 until then. The stats instance is
-        // strong-held by managedStats above, so the gauge (weak-ref to its state object) will not be GC'd.
+        // TbSqlBlockingQueue#init, so getCurrentQueueSize() reports 0 until then. Micrometer holds only a
+        // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
+        // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
         statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
                 MessagesStats::getCurrentQueueSize, "queueIndex", String.valueOf(queueIndex));
         return stats;
