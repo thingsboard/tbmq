@@ -526,6 +526,19 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID), reasonCodes);
+    }
+
+    @Test
+    public void givenMqtt311_whenCollectMqttReasonCodesForInvalidTopic_thenReturnUnspecifiedError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("#"));
+
+        List<TopicSubscription> topicSubscriptions = List.of(getTopicSubscription(BrokerConstants.MULTI_LEVEL_WILDCARD, 1));
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+
+        // MQTT 3.1.1 has no 0x8F Topic Filter invalid; its only SUBACK failure code is 0x80
         assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR), reasonCodes);
     }
 
@@ -540,7 +553,7 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
     }
 
     @Test

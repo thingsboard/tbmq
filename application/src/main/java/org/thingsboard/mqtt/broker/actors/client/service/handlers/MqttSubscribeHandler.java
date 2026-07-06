@@ -125,7 +125,7 @@ public class MqttSubscribeHandler {
                 validateSharedSubscription(subscription);
             } catch (DataValidationException e) {
                 log.warn("[{}][{}] Not valid topic", ctx.getClientId(), ctx.getSessionId(), e);
-                codes.add(MqttReasonCodeResolver.failure());
+                codes.add(MqttReasonCodeResolver.topicFilterInvalid(ctx));
                 continue;
             }
 
