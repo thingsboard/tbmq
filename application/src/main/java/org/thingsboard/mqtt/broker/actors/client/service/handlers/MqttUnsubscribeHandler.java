@@ -81,14 +81,10 @@ public class MqttUnsubscribeHandler {
                 .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toSet());
         return requestedTopics.stream()
-                .map(topic -> removedTopicFilters.contains(toTopicFilter(topic))
+                .map(topic -> removedTopicFilters.contains(NettyMqttConverter.getTopicFilter(topic))
                         ? MqttReasonCodeResolver.unsubAckSuccess(ctx)
                         : MqttReasonCodeResolver.unsubAckNoSubscriptionExisted(ctx))
                 .collect(Collectors.toList());
-    }
-
-    private static String toTopicFilter(String topic) {
-        return NettyMqttConverter.isSharedTopic(topic) ? NettyMqttConverter.getTopicFilter(topic) : topic;
     }
 
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
