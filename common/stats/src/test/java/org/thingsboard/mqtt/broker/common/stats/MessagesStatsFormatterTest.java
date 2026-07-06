@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MessagesStatsLogTest {
+class MessagesStatsFormatterTest {
 
     private final StatsFactory statsFactory = new DefaultStatsFactory(new SimpleMeterRegistry());
 
@@ -31,7 +31,7 @@ class MessagesStatsLogTest {
         stats.incrementSuccessful(7);
         stats.incrementFailed(3);
 
-        String line = MessagesStatsLog.format(stats);
+        String line = MessagesStatsFormatter.format(stats);
 
         // Producer-style stats never wire a queue-size supplier, so the dead always-0 field is omitted.
         assertThat(line).doesNotContain("queueSize");
@@ -45,7 +45,7 @@ class MessagesStatsLogTest {
         MessagesStats stats = statsFactory.createMessagesStats("sqlQueue.Events");
         stats.updateQueueSize(() -> 5);
 
-        String line = MessagesStatsLog.format(stats);
+        String line = MessagesStatsFormatter.format(stats);
 
         assertThat(line).contains("queueSize = [5]");
         assertThat(line).contains("totalMsgs = [0]");

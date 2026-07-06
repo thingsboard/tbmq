@@ -23,9 +23,9 @@ package org.thingsboard.mqtt.broker.common.stats;
  * ({@link MessagesStats#isQueueSizeTracked()}); producer-style stats (which never wire a supplier)
  * omit the dead always-0 field.
  */
-public final class MessagesStatsLog {
+public final class MessagesStatsFormatter {
 
-    private MessagesStatsLog() {
+    private MessagesStatsFormatter() {
     }
 
     public static String format(MessagesStats stats) {
