@@ -89,6 +89,14 @@ public class ClientSubscriptionServiceImplTest {
     }
 
     @Test
+    public void givenClientTopicSubscriptions_whenInit_thenCachesEachClientOnceAndRegistersSubscriptionsStats() {
+        // init() ran in setUp() with 2 clients: each client is subscribed, shared-cached, once,
+        // and the subscriptions gauge is registered exactly once over the backing map.
+        verify(sharedSubscriptionCacheService, times(2)).put(any(), any());
+        verify(statsManager, times(1)).registerSubscriptionsStats(any());
+    }
+
+    @Test
     public void givenClientTopicSubscriptionsAndSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnExpectedResult() {
         String clientId = "sharedClientId";
         getAndVerifyClientSubscriptionsForClient(clientId, 0);

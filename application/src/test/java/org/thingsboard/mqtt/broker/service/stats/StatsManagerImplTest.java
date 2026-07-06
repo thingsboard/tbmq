@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
 
@@ -140,5 +141,34 @@ public class StatsManagerImplTest {
         // The 3 latency timers carry no clientId tag, so Micrometer shares one set across all
         // application clients. Clearing one client must NOT deregister them.
         assertEquals(3, meterRegistry.find(APP_PROCESSOR_LATENCY).timers().size());
+    }
+
+    @Test
+    public void givenSubscriptionsAcrossClients_whenRegistered_thenGaugeReportsTotalSubscriptionCountNotClientCount() {
+        Map<String, Set<String>> subscriptions = Map.of(
+                "client-a", Set.of("t1", "t2"),
+                "client-b", Set.of("t3"),
+                "client-c", Set.of("t4", "t5", "t6"));
+
+        statsManager.registerSubscriptionsStats(subscriptions);
+
+        assertEquals("subscriptions", StatsType.SUBSCRIPTIONS.getPrintName());
+        Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
+        assertNotNull(gauge);
+        // 2 + 1 + 3 = total subscriptions across the 3 clients — NOT the client count (3).
+        assertEquals(6.0, gauge.value(), 0.0);
+        // The metric was renamed from the misleading clientSubscriptions (which meant clients-with-subs).
+        assertNull(meterRegistry.find("clientSubscriptions").gauge());
+    }
+
+    @Test
+    public void givenNoSubscriptions_whenRegistered_thenGaugeReportsZeroNotNaN() {
+        Map<String, Set<String>> subscriptions = Map.of();
+
+        statsManager.registerSubscriptionsStats(subscriptions);
+
+        Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
+        assertNotNull(gauge);
+        assertEquals(0.0, gauge.value(), 0.0);
     }
 }

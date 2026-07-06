@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -152,7 +153,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
+    public void registerSubscriptionsStats(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
     }
 
     @Override

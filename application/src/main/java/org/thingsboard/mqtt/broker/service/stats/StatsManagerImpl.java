@@ -50,6 +50,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -304,10 +305,17 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
-        log.trace("Registering ClientSubscriptionsStats");
-        statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
-        gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
+    public void registerSubscriptionsStats(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
+        log.trace("Registering SubscriptionsStats");
+        // Total subscription count (sum of the per-client subscription set sizes), consistent with the
+        // historical 'subscriptions' chart (ClientSubscriptionService#getClientSubscriptionsCount) --
+        // NOT the number of clients that have subscriptions.
+        statsFactory.createGauge(StatsType.SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, StatsManagerImpl::countSubscriptions);
+        gauges.add(new Gauge(StatsType.SUBSCRIPTIONS.getPrintName(), () -> countSubscriptions(clientSubscriptionsMap)));
+    }
+
+    private static int countSubscriptions(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
+        return clientSubscriptionsMap.values().stream().mapToInt(Collection::size).sum();
     }
 
     @Override

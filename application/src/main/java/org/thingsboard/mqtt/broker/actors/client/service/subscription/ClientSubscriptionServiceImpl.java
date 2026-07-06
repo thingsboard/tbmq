@@ -67,15 +67,18 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
         clientSubscriptionsMap = new ConcurrentHashMap<>();
-        clientTopicSubscriptions.forEach((key, val) -> clientSubscriptionsMap.put(key.getId(), val));
-        statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
-
-        clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
+        // Keys are unique by client id (SubscriptionsSourceKey equals/hashCode exclude 'source'),
+        // so a single pass safely populates the map and subscribes each client exactly once.
+        clientTopicSubscriptions.forEach((key, topicSubscriptions) -> {
+            String clientId = key.getId();
+            clientSubscriptionsMap.put(clientId, topicSubscriptions);
             subscriptionService.subscribe(clientId, topicSubscriptions);
             sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
+        statsManager.registerSubscriptionsStats(clientSubscriptionsMap);
         initialized = true;
-        log.info("Subscriptions initialized. Total clients with subscriptions: {}", clientSubscriptionsMap.size());
+        log.info("Subscriptions initialized. Clients with subscriptions: {}, total subscriptions: {}",
+                clientSubscriptionsMap.size(), getClientSubscriptionsCount());
     }
 
     @Override

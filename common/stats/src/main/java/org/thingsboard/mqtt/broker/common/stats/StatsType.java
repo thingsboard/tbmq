@@ -29,10 +29,17 @@ public enum StatsType {
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
     RETAIN_MSG_TRIE_SIZE("retainMsgTrieSize"),
     LAST_WILL_CLIENTS("lastWillClients"),
+    // Live MQTT channels on THIS node only. NOT the analog of the historical 'sessions' chart, which
+    // counts cluster-wide sessions incl. offline persistent ones (see ALL_CLIENT_SESSIONS).
     CONNECTED_SESSIONS("connectedSessions"),
     CONNECTED_SSL_SESSIONS("connectedSslSessions"),
+    // Cluster-wide client sessions incl. offline persistent ones. This is the Prometheus analog of the
+    // historical 'sessions' chart (BrokerConstants.SESSIONS).
     ALL_CLIENT_SESSIONS("allClientSessions"),
-    CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
+    // Total subscription count across all clients (sum of the per-client subscription set sizes), matching
+    // the historical 'subscriptions' chart (BrokerConstants.SUBSCRIPTIONS). Renamed from 'clientSubscriptions',
+    // which misleadingly reported the number of clients with at least one subscription rather than a count.
+    SUBSCRIPTIONS("subscriptions"),
     RETAINED_MESSAGES("retainedMessages"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     RETAIN_MSG_TRIE_NODES("retainMsgTrieNodes"),

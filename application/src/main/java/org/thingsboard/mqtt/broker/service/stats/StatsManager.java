@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -86,7 +87,7 @@ public interface StatsManager {
 
     void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap);
 
-    void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
+    void registerSubscriptionsStats(Map<?, ? extends Collection<?>> clientSubscriptionsMap);
 
     void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap);
 
