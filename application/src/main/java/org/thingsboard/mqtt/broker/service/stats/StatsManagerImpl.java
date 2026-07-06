@@ -30,6 +30,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStatsFormatter;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -360,9 +361,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}", queueName, queueIndex);
-        MessagesStats stats = statsFactory.createMessagesStats(StatsType.SQL_QUEUE.getPrintName() + "." + queueName,
-                "queueIndex", String.valueOf(queueIndex));
+        String statsKey = StatsType.SQL_QUEUE.getPrintName() + "." + queueName;
+        MessagesStats stats = statsFactory.createMessagesStats(statsKey, "queueIndex", String.valueOf(queueIndex));
         managedStats.add(stats);
+        // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
+        // previously computed and logged but never scraped). The queue::size supplier is wired later by
+        // TbSqlBlockingQueue#init, so getCurrentQueueSize() reports 0 until then. Micrometer holds only a
+        // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
+        // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
+        statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
+                MessagesStats::getCurrentQueueSize, "queueIndex", String.valueOf(queueIndex));
         return stats;
     }
 
@@ -421,11 +429,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void printStats() {
         log.info("----------------------------------------------------------------");
         for (MessagesStats stats : managedStats) {
-            String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
-                    StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
-                    StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
-                    StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
-            log.info("[{}] Stats: {}", stats.getName(), statsStr);
+            log.info("[{}] Stats: {}", stats.getName(), MessagesStatsFormatter.format(stats));
             stats.reset();
         }
 

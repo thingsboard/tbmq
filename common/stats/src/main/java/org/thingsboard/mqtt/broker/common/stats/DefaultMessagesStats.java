@@ -24,7 +24,8 @@ public class DefaultMessagesStats implements MessagesStats {
     private final StatsCounter successfulCounter;
     private final StatsCounter failedCounter;
 
-    private Supplier<Integer> queueSizeSupplier;
+    // Written once at queue init, then read from the stats-scheduler and Micrometer scrape threads.
+    private volatile Supplier<Integer> queueSizeSupplier;
 
     public DefaultMessagesStats(String name, StatsCounter totalCounter, StatsCounter successfulCounter, StatsCounter failedCounter) {
         this.name = name;
@@ -82,5 +83,10 @@ public class DefaultMessagesStats implements MessagesStats {
 
     public int getCurrentQueueSize() {
         return queueSizeSupplier != null ? queueSizeSupplier.get() : 0;
+    }
+
+    @Override
+    public boolean isQueueSizeTracked() {
+        return queueSizeSupplier != null;
     }
 }

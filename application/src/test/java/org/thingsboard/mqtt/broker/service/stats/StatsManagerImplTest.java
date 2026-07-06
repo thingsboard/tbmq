@@ -15,20 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
 
@@ -36,6 +40,7 @@ public class StatsManagerImplTest {
 
     private static final String APP_PROCESSOR = StatsType.APP_PROCESSOR.getPrintName();
     private static final String APP_PROCESSOR_LATENCY = APP_PROCESSOR + ".latency";
+    private static final String SQL_QUEUE = StatsType.SQL_QUEUE.getPrintName();
 
     private SimpleMeterRegistry meterRegistry;
     private StatsManagerImpl statsManager;
@@ -106,6 +111,22 @@ public class StatsManagerImplTest {
         // Clearing the last subscription deregisters its counters and drops the outer set entry.
         assertEquals(0, appProcessorCounters(compoundClientId2));
         assertFalse(sharedSubscriptionCompoundClientIds().containsKey(clientId));
+    }
+
+    @Test
+    public void givenSqlQueueStats_whenCreated_thenQueueSizeGaugeRegisteredAndReflectsLiveDepth() {
+        MessagesStats stats = statsManager.createSqlQueueStats("Events", 0);
+
+        Gauge gauge = meterRegistry.find(SQL_QUEUE + ".Events.queueSize").tag("queueIndex", "0").gauge();
+        assertNotNull(gauge);
+        // No queue supplier wired yet (TbSqlBlockingQueue#init wires it later) -> depth reads 0, not NaN.
+        assertEquals(0.0, gauge.value(), 0.0);
+
+        // Once the backing queue's size supplier is wired, the gauge reflects the live depth.
+        AtomicInteger depth = new AtomicInteger(0);
+        stats.updateQueueSize(depth::get);
+        depth.set(7);
+        assertEquals(7.0, gauge.value(), 0.0);
     }
 
     @Test

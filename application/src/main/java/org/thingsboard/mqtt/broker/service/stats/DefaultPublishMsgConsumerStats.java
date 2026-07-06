@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.PackProcessingStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -24,7 +25,6 @@ import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_ITERATIONS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
@@ -56,9 +56,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     private final StatsCounter failedIterationsCounter;
 
     private final ResettableTimer msgProcessingTimer;
-    private final ResettableTimer packProcessingTimer;
-
-    private final AtomicLong totalPackSize = new AtomicLong();
+    private final PackProcessingStats packProcessingStats;
 
     public DefaultPublishMsgConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -76,7 +74,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
                 successIterationsCounter, failedIterationsCounter);
 
         this.msgProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId));
-        this.packProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
+        this.packProcessingStats = new PackProcessingStats(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
     }
 
     @Override
@@ -113,18 +111,17 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
-        packProcessingTimer.logTime(amount, unit);
-        totalPackSize.addAndGet(packSize);
+        packProcessingStats.record(packSize, amount, unit);
     }
 
     @Override
     public double getAvgPackProcessingTime() {
-        return packProcessingTimer.getAvg();
+        return packProcessingStats.getAvgProcessingTime();
     }
 
     @Override
     public double getAvgPackSize() {
-        return Math.ceil((double) totalPackSize.get() / packProcessingTimer.getCount());
+        return packProcessingStats.getAvgPackSize();
     }
 
     @Override
@@ -141,7 +138,6 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     public void reset() {
         counters.forEach(StatsCounter::clear);
         msgProcessingTimer.reset();
-        packProcessingTimer.reset();
-        totalPackSize.getAndSet(0);
+        packProcessingStats.reset();
     }
 }
