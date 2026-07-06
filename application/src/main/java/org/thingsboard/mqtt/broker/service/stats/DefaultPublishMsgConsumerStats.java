@@ -124,7 +124,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public double getAvgPackSize() {
-        return Math.ceil((double) totalPackSize.get() / packProcessingTimer.getCount());
+        int count = packProcessingTimer.getCount();
+        return count == 0 ? 0 : Math.ceil((double) totalPackSize.get() / count);
     }
 
     @Override

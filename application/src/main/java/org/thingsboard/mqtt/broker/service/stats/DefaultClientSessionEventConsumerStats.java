@@ -56,9 +56,16 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
         return packProcessingTimer.getAvg();
     }
 
+    /**
+     * Average processed pack size. This is a log-only diagnostic (printed by {@code StatsManagerImpl.printStats}),
+     * intentionally not exported as a Micrometer meter — mirroring the sibling {@code DefaultPublishMsgConsumerStats}
+     * and {@code DefaultDeviceProcessorStats} pack-size averages. The pack processing time IS exported as a timer.
+     * Returns 0 (not NaN) when no pack has been processed in the interval, since session events are sparse.
+     */
     @Override
     public double getAvgPackSize() {
-        return Math.ceil((double) totalPackSize.get() / packProcessingTimer.getCount());
+        int count = packProcessingTimer.getCount();
+        return count == 0 ? 0 : Math.ceil((double) totalPackSize.get() / count);
     }
 
     @Override
