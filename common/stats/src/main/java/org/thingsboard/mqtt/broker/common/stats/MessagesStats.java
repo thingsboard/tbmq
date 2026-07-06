@@ -50,4 +50,27 @@ public interface MessagesStats {
     void updateQueueSize(Supplier<Integer> queueSizeSupplier);
 
     int getCurrentQueueSize();
+
+    /**
+     * Whether a queue-size supplier has been wired via {@link #updateQueueSize(Supplier)}. Only stats
+     * backed by a real queue (e.g. the SQL blocking queues) report a meaningful depth; producer-style
+     * stats never wire a supplier and would otherwise print a dead always-0 {@code queueSize} log field.
+     */
+    boolean isQueueSizeTracked();
+
+    /**
+     * Renders the counters for the periodic stats log line. The {@code queueSize} field is emitted only
+     * when a real queue depth is tracked ({@link #isQueueSizeTracked()}), so producer-style stats no
+     * longer print a dead always-0 value.
+     */
+    default String toLogString() {
+        StringBuilder sb = new StringBuilder();
+        if (isQueueSizeTracked()) {
+            sb.append(StatsConstantNames.QUEUE_SIZE).append(" = [").append(getCurrentQueueSize()).append("] ");
+        }
+        sb.append(StatsConstantNames.TOTAL_MSGS).append(" = [").append(getTotal()).append("] ")
+                .append(StatsConstantNames.SUCCESSFUL_MSGS).append(" = [").append(getSuccessful()).append("] ")
+                .append(StatsConstantNames.FAILED_MSGS).append(" = [").append(getFailed()).append("] ");
+        return sb.toString();
+    }
 }

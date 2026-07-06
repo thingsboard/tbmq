@@ -64,4 +64,9 @@ public class StubMessagesStats implements MessagesStats {
     public int getCurrentQueueSize() {
         return 0;
     }
+
+    @Override
+    public boolean isQueueSizeTracked() {
+        return false;
+    }
 }

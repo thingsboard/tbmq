@@ -83,4 +83,9 @@ public class DefaultMessagesStats implements MessagesStats {
     public int getCurrentQueueSize() {
         return queueSizeSupplier != null ? queueSizeSupplier.get() : 0;
     }
+
+    @Override
+    public boolean isQueueSizeTracked() {
+        return queueSizeSupplier != null;
+    }
 }

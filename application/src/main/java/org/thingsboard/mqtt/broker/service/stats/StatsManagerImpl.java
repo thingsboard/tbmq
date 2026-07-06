@@ -427,11 +427,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void printStats() {
         log.info("----------------------------------------------------------------");
         for (MessagesStats stats : managedStats) {
-            String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
-                    StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
-                    StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
-                    StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
-            log.info("[{}] Stats: {}", stats.getName(), statsStr);
+            log.info("[{}] Stats: {}", stats.getName(), stats.toLogString());
             stats.reset();
         }
 
