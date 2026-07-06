@@ -42,7 +42,7 @@ public class DefaultFlowControlStatsTest {
     public void givenFreshStats_whenIncOps_thenCountersIncrease() {
         flowControlStats.incDropOverflow();
         flowControlStats.incDropOverflow();
-        flowControlStats.incDropTtl();
+        flowControlStats.incDropTtl(1);
         flowControlStats.incUnknownAck();
 
         assertEquals(2, flowControlStats.getDropsOverflow());

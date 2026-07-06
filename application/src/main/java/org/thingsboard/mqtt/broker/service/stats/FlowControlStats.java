@@ -23,8 +23,6 @@ public interface FlowControlStats {
 
     void incDropOverflow();
 
-    void incDropTtl();
-
     void incDropTtl(int n);
 
     void incUnknownAck();

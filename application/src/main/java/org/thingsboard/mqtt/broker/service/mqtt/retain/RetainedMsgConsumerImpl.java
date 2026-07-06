@@ -148,23 +148,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                     if (messages.isEmpty()) {
                         continue;
                     }
-                    stats.logTotal(messages.size());
-                    int newRetainedMsgCount = 0;
-                    int clearedRetainedMsgCount = 0;
-                    for (TbProtoQueueMsg<RetainedMsgProto> msg : messages) {
-                        String topic = msg.getKey();
-                        String serviceId = BytesUtil.bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
-
-                        if (isRetainedMsgProtoEmpty(msg.getValue())) {
-                            callback.accept(topic, serviceId, null);
-                            clearedRetainedMsgCount++;
-                        } else {
-                            RetainedMsg retainedMsg = convertToRetainedMsg(msg);
-                            callback.accept(topic, serviceId, retainedMsg);
-                            newRetainedMsgCount++;
-                        }
-                    }
-                    stats.log(newRetainedMsgCount, clearedRetainedMsgCount);
+                    processPack(messages, callback);
                     retainedMsgConsumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
@@ -178,6 +162,29 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                 }
             }
         });
+    }
+
+    void processPack(List<TbProtoQueueMsg<RetainedMsgProto>> messages, RetainedMsgChangesCallback callback) {
+        int newRetainedMsgCount = 0;
+        int clearedRetainedMsgCount = 0;
+        for (TbProtoQueueMsg<RetainedMsgProto> msg : messages) {
+            String topic = msg.getKey();
+            String serviceId = BytesUtil.bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
+
+            if (isRetainedMsgProtoEmpty(msg.getValue())) {
+                callback.accept(topic, serviceId, null);
+                clearedRetainedMsgCount++;
+            } else {
+                RetainedMsg retainedMsg = convertToRetainedMsg(msg);
+                callback.accept(topic, serviceId, retainedMsg);
+                newRetainedMsgCount++;
+            }
+        }
+        // Record all three counters only after the whole pack is processed and is about to be committed: a mid-pack
+        // failure then leaves total/new/cleared unchanged, so total stays equal to new+cleared and the uncommitted
+        // pack is not re-counted on a re-poll.
+        stats.logTotal(messages.size());
+        stats.log(newRetainedMsgCount, clearedRetainedMsgCount);
     }
 
     private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<RetainedMsgProto> msg) {

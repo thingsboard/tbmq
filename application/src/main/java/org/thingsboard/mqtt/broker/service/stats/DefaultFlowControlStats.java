@@ -51,11 +51,6 @@ public class DefaultFlowControlStats implements FlowControlStats {
     }
 
     @Override
-    public void incDropTtl() {
-        dropTtlCounter.increment();
-    }
-
-    @Override
     public void incDropTtl(int n) {
         dropTtlCounter.add(n);
     }
