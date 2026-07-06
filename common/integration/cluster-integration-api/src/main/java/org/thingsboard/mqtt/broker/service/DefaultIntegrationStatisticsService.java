@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEve
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStatsLog;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
@@ -183,7 +184,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
             log.info("Integration State Summary: {}", gaugeLogBuilder);
         }
         for (MessagesStats stats : managedStats) {
-            log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), stats.toLogString());
+            log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), MessagesStatsLog.format(stats));
             stats.reset();
         }
         printProcessorStats(managedIntegrationProcessorStats, StatsType.INTEGRATION_PROCESSOR.getPrintName(), "Integration Message Processing Stats");

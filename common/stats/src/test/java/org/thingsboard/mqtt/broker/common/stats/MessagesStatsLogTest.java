@@ -20,27 +20,34 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DefaultMessagesStatsTest {
+class MessagesStatsLogTest {
 
     private final StatsFactory statsFactory = new DefaultStatsFactory(new SimpleMeterRegistry());
 
     @Test
-    void givenNoQueueSizeSupplierWired_whenIsQueueSizeTracked_thenFalseAndSizeZero() {
+    void givenNoQueueSizeSupplier_whenFormat_thenOmitsQueueSizeButKeepsCounters() {
         MessagesStats stats = statsFactory.createMessagesStats("producer");
+        stats.incrementTotal(10);
+        stats.incrementSuccessful(7);
+        stats.incrementFailed(3);
 
-        // A producer-style MessagesStats never wires a queue-size supplier, so its queueSize log
-        // field is a dead always-0 value that callers should omit.
-        assertThat(stats.isQueueSizeTracked()).isFalse();
-        assertThat(stats.getCurrentQueueSize()).isZero();
+        String line = MessagesStatsLog.format(stats);
+
+        // Producer-style stats never wire a queue-size supplier, so the dead always-0 field is omitted.
+        assertThat(line).doesNotContain("queueSize");
+        assertThat(line).contains("totalMsgs = [10]");
+        assertThat(line).contains("successfulMsgs = [7]");
+        assertThat(line).contains("failedMsgs = [3]");
     }
 
     @Test
-    void givenQueueSizeSupplierWired_whenIsQueueSizeTracked_thenTrueAndReflectsSupplier() {
+    void givenQueueSizeSupplierWired_whenFormat_thenIncludesQueueSize() {
         MessagesStats stats = statsFactory.createMessagesStats("sqlQueue.Events");
-
         stats.updateQueueSize(() -> 5);
 
-        assertThat(stats.isQueueSizeTracked()).isTrue();
-        assertThat(stats.getCurrentQueueSize()).isEqualTo(5);
+        String line = MessagesStatsLog.format(stats);
+
+        assertThat(line).contains("queueSize = [5]");
+        assertThat(line).contains("totalMsgs = [0]");
     }
 }

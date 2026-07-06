@@ -30,6 +30,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStatsLog;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -428,7 +429,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void printStats() {
         log.info("----------------------------------------------------------------");
         for (MessagesStats stats : managedStats) {
-            log.info("[{}] Stats: {}", stats.getName(), stats.toLogString());
+            log.info("[{}] Stats: {}", stats.getName(), MessagesStatsLog.format(stats));
             stats.reset();
         }
 
