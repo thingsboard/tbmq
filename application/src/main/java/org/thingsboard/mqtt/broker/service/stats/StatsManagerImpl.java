@@ -361,8 +361,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}", queueName, queueIndex);
-        String statsKey = StatsType.SQL_QUEUE.getPrintName() + "." + queueName;
-        MessagesStats stats = statsFactory.createMessagesStats(statsKey, "queueIndex", String.valueOf(queueIndex));
+        String statsKey = StatsType.SQL_QUEUE.getPrintName();
+        // Carry the queue name as a `queueName` tag on a single `sqlQueue` metric rather than baking it into
+        // the metric name (`sqlQueue.<queueName>`); a stable name with a bounded tag is the Prometheus-idiomatic
+        // shape and lets consumers aggregate across queues.
+        MessagesStats stats = statsFactory.createMessagesStats(statsKey,
+                "queueName", queueName, "queueIndex", String.valueOf(queueIndex));
         managedStats.add(stats);
         // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
         // previously computed and logged but never scraped). The queue::size supplier is wired later by
@@ -370,7 +374,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
         // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
         statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
-                MessagesStats::getCurrentQueueSize, "queueIndex", String.valueOf(queueIndex));
+                MessagesStats::getCurrentQueueSize, "queueName", queueName, "queueIndex", String.valueOf(queueIndex));
         return stats;
     }
 
@@ -384,8 +388,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public Timer createCommitTimer(String clientId) {
         ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_CONSUMER.getPrintName(),
-                "consumerId", clientId,
-                "operation", "syncCommit"));
+                "consumerId", clientId));
         managedQueueConsumers.put(clientId, timer);
         return timer::logTime;
     }

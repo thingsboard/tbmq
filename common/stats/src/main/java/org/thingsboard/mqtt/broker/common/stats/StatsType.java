@@ -54,8 +54,8 @@ public enum StatsType {
     PERSISTENT_MESSAGES_PROCESSING("persistentMessagesProcessing"),
     DELIVERY("delivery"),
 
-    QUEUE_PRODUCER("producer"),
-    QUEUE_CONSUMER("consumer"),
+    QUEUE_PRODUCER("kafkaProducer.send"),
+    QUEUE_CONSUMER("kafkaConsumer.commit"),
 
     IE_UPLINK_PRODUCER("ie.uplink.published"),
     INTEGRATION("integration"),
