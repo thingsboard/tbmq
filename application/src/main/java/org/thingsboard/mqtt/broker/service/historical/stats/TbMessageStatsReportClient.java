@@ -17,6 +17,24 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
+/**
+ * Collects the historical (System B) usage timeseries shown on the TBMQ UI monitoring charts.
+ * <p>
+ * These historical values are <b>per-interval deltas</b>: each reporting cron accumulates counts and
+ * persists them with {@code getAndSet(0)}. This is intentionally a different shape from the Micrometer
+ * meters exposed on {@code /actuator/prometheus} (via {@code StatsManager}), which are
+ * <b>cumulative/monotonic lifetime totals</b>. So the same underlying events produce very different raw
+ * numbers on the two systems — a per-minute delta on the chart vs. a lifetime total in Prometheus.
+ * <p>
+ * The two systems can also diverge in <b>gating</b>: historical reporting is gated on
+ * {@code historical-data-report.enabled}, whereas several Micrometer counters (notably {@code droppedMsgs},
+ * see {@link #reportDroppedMsgs()}) increment unconditionally — so with historical reporting disabled
+ * Prometheus still counts while the chart shows nothing.
+ * <p>
+ * <b>Known limitation (async-save loss):</b> interval deltas are saved asynchronously. If a save/Kafka-send
+ * fails, that interval's delta is lost permanently from the chart, while the cumulative Micrometer meter is
+ * unaffected — so under save failures the chart can undercount relative to Prometheus.
+ */
 public interface TbMessageStatsReportClient {
 
     /**
