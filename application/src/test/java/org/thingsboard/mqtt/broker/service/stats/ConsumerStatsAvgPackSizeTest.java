@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * The avg-pack-size behavior shared by the three consumer stats implementations, which all delegate
- * to {@link org.thingsboard.mqtt.broker.common.stats.PackSizeStats}. Parameterized over each so the
+ * to {@link org.thingsboard.mqtt.broker.common.stats.PackProcessingStats}. Parameterized over each so the
  * single shared invariant (0 at idle, ceil(avg) after packs, 0 after reset — never NaN) isn't
  * asserted in three near-identical copies.
  */

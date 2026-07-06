@@ -15,10 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.stats.PackSizeStats;
-import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
+import org.thingsboard.mqtt.broker.common.stats.PackProcessingStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
@@ -30,14 +28,13 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
     private static final String CONSUMER_ID_TAG = "consumerId";
 
     private final String consumerId;
-    private final ResettableTimer packProcessingTimer;
-    private final PackSizeStats packSizeStats = new PackSizeStats();
+    private final PackProcessingStats packProcessingStats;
 
     public DefaultClientSessionEventConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
         String statsKey = StatsType.CLIENT_SESSION_EVENT_CONSUMER.getPrintName();
-        Timer timer = statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId);
-        this.packProcessingTimer = new ResettableTimer(timer);
+        this.packProcessingStats = new PackProcessingStats(
+                statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
     }
 
     @Override
@@ -47,23 +44,21 @@ public class DefaultClientSessionEventConsumerStats implements ClientSessionEven
 
     @Override
     public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
-        packProcessingTimer.logTime(amount, unit);
-        packSizeStats.record(packSize);
+        packProcessingStats.record(packSize, amount, unit);
     }
 
     @Override
     public double getAvgPackProcessingTime() {
-        return packProcessingTimer.getAvg();
+        return packProcessingStats.getAvgProcessingTime();
     }
 
     @Override
     public double getAvgPackSize() {
-        return packSizeStats.getAvg();
+        return packProcessingStats.getAvgPackSize();
     }
 
     @Override
     public void reset() {
-        packProcessingTimer.reset();
-        packSizeStats.reset();
+        packProcessingStats.reset();
     }
 }

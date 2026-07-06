@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.stats.PackSizeStats;
+import org.thingsboard.mqtt.broker.common.stats.PackProcessingStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -56,9 +56,7 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
     private final StatsCounter failedIterationsCounter;
 
     private final ResettableTimer clientIdPackProcessingTimer;
-    private final ResettableTimer packProcessingTimer;
-
-    private final PackSizeStats packSizeStats = new PackSizeStats();
+    private final PackProcessingStats packProcessingStats;
 
     public DefaultDeviceProcessorStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -76,7 +74,7 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
                 successIterationsCounter, failedIterationsCounter);
 
         this.clientIdPackProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId));
-        this.packProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
+        this.packProcessingStats = new PackProcessingStats(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
     }
 
     @Override
@@ -113,8 +111,7 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
 
     @Override
     public void logClientIdPacksProcessingTime(int packSize, long amount, TimeUnit unit) {
-        packProcessingTimer.logTime(amount, unit);
-        packSizeStats.record(packSize);
+        packProcessingStats.record(packSize, amount, unit);
     }
 
     @Override
@@ -129,19 +126,18 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
 
     @Override
     public double getAvgPackProcessingTime() {
-        return packProcessingTimer.getAvg();
+        return packProcessingStats.getAvgProcessingTime();
     }
 
     @Override
     public double getAvgPackSize() {
-        return packSizeStats.getAvg();
+        return packProcessingStats.getAvgPackSize();
     }
 
     @Override
     public void reset() {
         counters.forEach(StatsCounter::clear);
         clientIdPackProcessingTimer.reset();
-        packProcessingTimer.reset();
-        packSizeStats.reset();
+        packProcessingStats.reset();
     }
 }
