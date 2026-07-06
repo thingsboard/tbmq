@@ -364,9 +364,10 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         String statsKey = StatsType.SQL_QUEUE.getPrintName();
         // Carry the queue name as a `queueName` tag on a single `sqlQueue` metric rather than baking it into
         // the metric name (`sqlQueue.<queueName>`); a stable name with a bounded tag is the Prometheus-idiomatic
-        // shape and lets consumers aggregate across queues.
-        MessagesStats stats = statsFactory.createMessagesStats(statsKey,
-                "queueName", queueName, "queueIndex", String.valueOf(queueIndex));
+        // shape and lets consumers aggregate across queues. The counters and the queueSize gauge below must
+        // share the same tag set so consumers can correlate throughput with depth per queue, so build it once.
+        String[] tags = {"queueName", queueName, "queueIndex", String.valueOf(queueIndex)};
+        MessagesStats stats = statsFactory.createMessagesStats(statsKey, tags);
         managedStats.add(stats);
         // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
         // previously computed and logged but never scraped). The queue::size supplier is wired later by
@@ -374,7 +375,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
         // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
         statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
-                MessagesStats::getCurrentQueueSize, "queueName", queueName, "queueIndex", String.valueOf(queueIndex));
+                MessagesStats::getCurrentQueueSize, tags);
         return stats;
     }
 
