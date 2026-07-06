@@ -397,9 +397,9 @@ public class TbMessageStatsReportClientImplTest {
         // When
         tbMessageStatsReportClient.reportAndPersistStats(timestamp, null);
 
-        // Then
-        verify(timeseriesService, times(6)).save(anyString(), any(BasicTsKvEntry.class));
-        verify(historicalStatsProducer, times(6)).send(eq("topic"), eq(null), any(TbProtoQueueMsg.class), any(TbQueueCallback.class));
+        // Then: one save + one send per persisted historical key (processedBytes was removed as a dead key).
+        verify(timeseriesService, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).save(anyString(), any(BasicTsKvEntry.class));
+        verify(historicalStatsProducer, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).send(eq("topic"), eq(null), any(TbProtoQueueMsg.class), any(TbQueueCallback.class));
 
         // Assert that stats are reset to 0
         assertEquals(0, tbMessageStatsReportClient.getStats().get(BrokerConstants.INCOMING_MSGS).get());
