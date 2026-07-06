@@ -50,7 +50,7 @@ public class MqttUnsubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
 
-        clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(ctx.getClientId(), msg.getTopics(),
                 new UnsubscribeCallback() {
                     @Override
                     public void onSuccess(List<TopicSubscription> removedSubscriptions) {

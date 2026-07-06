@@ -217,7 +217,7 @@ public class ClientSubscriptionServiceImplTest {
         clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic11")));
 
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
-        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("topic1"), callback);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("topic1"), callback);
 
         Set<TopicSubscription> survivors = getAndVerifyClientSubscriptionsForClient(clientId, 1);
         assertTrue(survivors.contains(getTopicSubscription("topic11")));
@@ -237,7 +237,7 @@ public class ClientSubscriptionServiceImplTest {
         clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11")));
 
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
-        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("$share/sharedGroup/topic11"), callback);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("$share/sharedGroup/topic11"), callback);
 
         ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
@@ -256,7 +256,7 @@ public class ClientSubscriptionServiceImplTest {
         String clientId = "clientId1"; // seeded with topic1
 
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
-        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("never/subscribed"), callback);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("never/subscribed"), callback);
 
         ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
@@ -272,7 +272,7 @@ public class ClientSubscriptionServiceImplTest {
         String clientId = "clientId1"; // seeded with topic1
 
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
-        clientSubscriptionService.unsubscribeAndPersist(clientId, Set.of("topic1"), callback);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("topic1"), callback);
 
         ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());

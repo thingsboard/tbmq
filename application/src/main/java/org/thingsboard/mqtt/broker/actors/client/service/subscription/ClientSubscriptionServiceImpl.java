@@ -136,15 +136,15 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
-        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        log.trace("[{}] Unsubscribe and persist {}.", clientId, topicFilters);
         Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters).updatedSubscriptions();
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
     }
 
     @Override
-    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, UnsubscribeCallback callback) {
-        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+    public void unsubscribeAndPersistReportingRemoved(String clientId, Collection<String> topicFilters, UnsubscribeCallback callback) {
+        log.trace("[{}] Unsubscribing from {} and reporting removed.", clientId, topicFilters);
         UnsubscribeResult result = unsubscribe(clientId, topicFilters);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, result.updatedSubscriptions(),

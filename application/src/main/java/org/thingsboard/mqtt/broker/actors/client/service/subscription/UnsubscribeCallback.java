@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import java.util.List;
 
 /**
- * Callback for {@link ClientSubscriptionService#unsubscribeAndPersist(String, java.util.Collection, UnsubscribeCallback)}
+ * Callback for {@link ClientSubscriptionService#unsubscribeAndPersistReportingRemoved(String, java.util.Collection, UnsubscribeCallback)}
  * that reports the subscriptions actually removed by the operation, so callers can derive the correct
  * UNSUBACK reason codes and emit lifecycle events without re-deriving what was removed.
  */

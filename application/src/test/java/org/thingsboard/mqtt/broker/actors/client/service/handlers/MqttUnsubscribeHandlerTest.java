@@ -80,7 +80,7 @@ public class MqttUnsubscribeHandlerTest {
     private UnsubscribeCallback process(MqttUnsubscribeMsg msg) {
         mqttUnsubscribeHandler.process(ctx, msg);
         ArgumentCaptor<UnsubscribeCallback> callbackCaptor = ArgumentCaptor.forClass(UnsubscribeCallback.class);
-        verify(clientSubscriptionService).unsubscribeAndPersist(eq("client-1"), eq(msg.getTopics()), callbackCaptor.capture());
+        verify(clientSubscriptionService).unsubscribeAndPersistReportingRemoved(eq("client-1"), eq(msg.getTopics()), callbackCaptor.capture());
         return callbackCaptor.getValue();
     }
 
