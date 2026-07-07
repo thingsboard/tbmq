@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -62,6 +63,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ChannelBackpressureManager channelBackpressureManager;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final StatsManager statsManager;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -95,6 +97,11 @@ public class DisconnectServiceImpl implements DisconnectService {
         // CLIENT_CONNECTION_FAILED event covers that case instead.
         if (reasonType != DisconnectReasonType.ON_CONNECTION_FAILURE) {
             integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
+            // Count every genuine disconnect of an established session. Sharing the ON_CONNECTION_FAILURE
+            // exclusion (and running past the getSessionInfo() == null early return above) keeps clientDisconnect
+            // consistent with the CLIENT_DISCONNECTED lifecycle event and avoids double-counting broker-refused
+            // connections, which are surfaced separately as connection refusals.
+            statsManager.getClientDisconnectStats().increment(reasonType);
         }
         cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }

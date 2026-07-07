@@ -44,6 +44,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -91,6 +93,8 @@ public class DisconnectServiceImplTest {
     ChannelBackpressureManager channelBackpressureManager;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    @MockitoBean
+    StatsManager statsManager;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -99,6 +103,7 @@ public class DisconnectServiceImplTest {
     ClientActorStateInfo clientActorState;
     QueuedMqttMessages queuedMqttMessages;
     SessionInfo sessionInfo;
+    ClientDisconnectStats clientDisconnectStats;
 
     @Before
     public void setUp() {
@@ -117,6 +122,9 @@ public class DisconnectServiceImplTest {
         when(clientActorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
 
         when(ctx.getClientId()).thenReturn(CLIENT_ID);
+
+        clientDisconnectStats = mock(ClientDisconnectStats.class);
+        when(statsManager.getClientDisconnectStats()).thenReturn(clientDisconnectStats);
     }
 
     @Test
@@ -238,6 +246,43 @@ public class DisconnectServiceImplTest {
         InOrder inOrder = inOrder(ctx, flowControlService);
         inOrder.verify(ctx).releasePublishedInFlightCtx();
         inOrder.verify(flowControlService).removeFromMap(eq(CLIENT_ID));
+    }
+
+    @Test
+    public void givenEstablishedSession_whenDisconnect_thenClientDisconnectCounterIncrementedWithReason() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        verify(clientDisconnectStats, times(1)).increment(ON_DISCONNECT_MSG);
+    }
+
+    @Test
+    public void givenClusterConflictingSession_whenDisconnect_thenClientDisconnectCounterIncremented() {
+        // Cross-node takeover is a real established-session disconnect (it emits CLIENT_DISCONNECTED), so it counts.
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        verify(clientDisconnectStats, times(1)).increment(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+    }
+
+    @Test
+    public void givenConnectionFailure_whenDisconnect_thenClientDisconnectCounterNotIncremented() {
+        // A broker-refused connection never established a session; it's counted as a connection refusal, not here.
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CONNECTION_FAILURE));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
+    }
+
+    @Test
+    public void givenSessionInfoIsNull_whenDisconnect_thenClientDisconnectCounterNotIncremented() {
+        // Never-initialized session (early return before the increment site).
+        when(ctx.getSessionInfo()).thenReturn(null);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
     }
 
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {
