@@ -48,7 +48,7 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @PostConstruct
     public void init() {
-        this.nonWritableClientsCount = statsManager.createNonWritableClientsCounter();
+        this.nonWritableClientsCount = statsManager.createNonWritableClientsGauge();
     }
 
     @Override

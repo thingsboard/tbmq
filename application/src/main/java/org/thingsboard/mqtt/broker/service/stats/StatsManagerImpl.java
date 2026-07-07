@@ -251,24 +251,24 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public AtomicInteger createNonWritableClientsCounter() {
-        log.trace("Creating NonWritableClientsCounter");
+    public AtomicInteger createNonWritableClientsGauge() {
+        log.trace("Creating NonWritableClientsGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createSubscriptionSizeCounter() {
-        log.trace("Creating SubscriptionSizeCounter");
+    public AtomicInteger createSubscriptionSizeGauge() {
+        log.trace("Creating SubscriptionSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createRetainMsgSizeCounter() {
-        log.trace("Creating RetainMsgSizeCounter");
+    public AtomicInteger createRetainMsgSizeGauge() {
+        log.trace("Creating RetainMsgSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -343,16 +343,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public AtomicLong createSubscriptionTrieNodesCounter() {
-        log.trace("Creating SubscriptionTrieNodesCounter");
+    public AtomicLong createSubscriptionTrieNodesGauge() {
+        log.trace("Creating SubscriptionTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicLong createRetainMsgTrieNodesCounter() {
-        log.trace("Creating RetainMsgTrieNodesCounter");
+    public AtomicLong createRetainMsgTrieNodesGauge() {
+        log.trace("Creating RetainMsgTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -361,8 +361,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}", queueName, queueIndex);
-        String statsKey = StatsType.SQL_QUEUE.getPrintName() + "." + queueName;
-        MessagesStats stats = statsFactory.createMessagesStats(statsKey, "queueIndex", String.valueOf(queueIndex));
+        String statsKey = StatsType.SQL_QUEUE.getPrintName();
+        // Carry the queue name as a `queueName` tag on a single `sqlQueue` metric rather than baking it into
+        // the metric name (`sqlQueue.<queueName>`); a stable name with a bounded tag is the Prometheus-idiomatic
+        // shape and lets consumers aggregate across queues. The counters and the queueSize gauge below must
+        // share the same tag set so consumers can correlate throughput with depth per queue, so build it once.
+        String[] tags = {"queueName", queueName, "queueIndex", String.valueOf(queueIndex)};
+        MessagesStats stats = statsFactory.createMessagesStats(statsKey, tags);
         managedStats.add(stats);
         // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
         // previously computed and logged but never scraped). The queue::size supplier is wired later by
@@ -370,7 +375,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
         // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
         statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
-                MessagesStats::getCurrentQueueSize, "queueIndex", String.valueOf(queueIndex));
+                MessagesStats::getCurrentQueueSize, tags);
         return stats;
     }
 
@@ -384,8 +389,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public Timer createCommitTimer(String clientId) {
         ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_CONSUMER.getPrintName(),
-                "consumerId", clientId,
-                "operation", "syncCommit"));
+                "consumerId", clientId));
         managedQueueConsumers.put(clientId, timer);
         return timer::logTime;
     }

@@ -117,7 +117,8 @@ public class StatsManagerImplTest {
     public void givenSqlQueueStats_whenCreated_thenQueueSizeGaugeRegisteredAndReflectsLiveDepth() {
         MessagesStats stats = statsManager.createSqlQueueStats("Events", 0);
 
-        Gauge gauge = meterRegistry.find(SQL_QUEUE + ".Events.queueSize").tag("queueIndex", "0").gauge();
+        Gauge gauge = meterRegistry.find(SQL_QUEUE + ".queueSize")
+                .tag("queueName", "Events").tag("queueIndex", "0").gauge();
         assertNotNull(gauge);
         // No queue supplier wired yet (TbSqlBlockingQueue#init wires it later) -> depth reads 0, not NaN.
         assertEquals(0.0, gauge.value(), 0.0);
@@ -127,6 +128,37 @@ public class StatsManagerImplTest {
         stats.updateQueueSize(depth::get);
         depth.set(7);
         assertEquals(7.0, gauge.value(), 0.0);
+    }
+
+    @Test
+    public void givenSqlQueueStats_whenCreated_thenQueueNameIsATagNotAMetricNameSegment() {
+        statsManager.createSqlQueueStats("Events", 0);
+
+        // The queue name is carried as a `queueName` tag on a single `sqlQueue` metric ...
+        assertEquals(3, meterRegistry.find(SQL_QUEUE)
+                .tag("queueName", "Events").tag("queueIndex", "0").counters().size());
+        // ... not baked into the metric name (the old `sqlQueue.<queueName>` form is gone).
+        assertTrue(meterRegistry.find(SQL_QUEUE + ".Events").counters().isEmpty());
+    }
+
+    @Test
+    public void givenSendTimer_whenCreated_thenRegisteredUnderKafkaProducerSendName() {
+        statsManager.createSendTimer("client-1");
+
+        assertEquals(1, meterRegistry.find("kafkaProducer.send").tag("producerId", "client-1").timers().size());
+        // The old generic `producer` name is gone.
+        assertTrue(meterRegistry.find("producer").timers().isEmpty());
+    }
+
+    @Test
+    public void givenCommitTimer_whenCreated_thenRegisteredUnderKafkaConsumerCommitWithoutOperationTag() {
+        statsManager.createCommitTimer("client-1");
+
+        assertEquals(1, meterRegistry.find("kafkaConsumer.commit").tag("consumerId", "client-1").timers().size());
+        // The always-constant `operation=syncCommit` tag is dropped ...
+        assertTrue(meterRegistry.find("kafkaConsumer.commit").tag("operation", "syncCommit").timers().isEmpty());
+        // ... and the old generic `consumer` name is gone.
+        assertTrue(meterRegistry.find("consumer").timers().isEmpty());
     }
 
     @Test

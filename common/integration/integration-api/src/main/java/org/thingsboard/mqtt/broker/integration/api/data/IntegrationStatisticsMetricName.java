@@ -21,8 +21,7 @@ public enum IntegrationStatisticsMetricName {
 
     START("start"),
     STOP("stop"),
-    MSGS_UPLINK("msgUplink"),
-    MSGS_DOWNLINK("msgDownlink");
+    MSGS_UPLINK("msgUplink");
 
     @Getter
     private final String name;

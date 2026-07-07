@@ -52,8 +52,8 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
     private int waitForClearLockMs;
 
     public ConcurrentMapRetainMsgTrie(StatsManager statsManager) {
-        this.size = statsManager.createRetainMsgSizeCounter();
-        this.nodesCount = statsManager.createRetainMsgTrieNodesCounter();
+        this.size = statsManager.createRetainMsgSizeGauge();
+        this.nodesCount = statsManager.createRetainMsgTrieNodesGauge();
     }
 
     @EqualsAndHashCode

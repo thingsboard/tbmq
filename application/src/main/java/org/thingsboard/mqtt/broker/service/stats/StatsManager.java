@@ -68,15 +68,15 @@ public interface StatsManager {
 
     void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription);
 
-    AtomicInteger createNonWritableClientsCounter();
+    AtomicInteger createNonWritableClientsGauge();
 
-    AtomicInteger createSubscriptionSizeCounter();
+    AtomicInteger createSubscriptionSizeGauge();
 
-    AtomicInteger createRetainMsgSizeCounter();
+    AtomicInteger createRetainMsgSizeGauge();
 
-    AtomicLong createSubscriptionTrieNodesCounter();
+    AtomicLong createSubscriptionTrieNodesGauge();
 
-    AtomicLong createRetainMsgTrieNodesCounter();
+    AtomicLong createRetainMsgTrieNodesGauge();
 
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 

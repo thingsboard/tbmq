@@ -45,8 +45,8 @@ public class ConcurrentMapSubscriptionTrieTest {
         this.subscriptionCounter = new AtomicInteger(0);
         this.nodesCounter = new AtomicLong(0);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(subscriptionCounter);
-        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(nodesCounter);
+        Mockito.when(statsManagerMock.createSubscriptionSizeGauge()).thenReturn(subscriptionCounter);
+        Mockito.when(statsManagerMock.createSubscriptionTrieNodesGauge()).thenReturn(nodesCounter);
         this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 

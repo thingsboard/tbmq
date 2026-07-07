@@ -40,9 +40,9 @@ public class StatsConstantNames {
     public static final String INTEGRATION_ID_TAG = "integrationId";
     public static final String CONSUMER_ID_TAG = "consumerId";
 
-    public static final String TOTAL_SUBSCRIPTIONS = "totalSubscriptions";
-    public static final String ACCEPTED_SUBSCRIPTIONS = "acceptedSubscriptions";
-    public static final String IGNORED_SUBSCRIPTIONS = "ignoredSubscriptions";
+    public static final String TOTAL_RECORDS = "totalRecords";
+    public static final String ACCEPTED_RECORDS = "acceptedRecords";
+    public static final String IGNORED_RECORDS = "ignoredRecords";
 
     public static final String TOTAL_RETAINED_MSGS = "totalRetainedMsgs";
     public static final String NEW_RETAINED_MSGS = "newRetainedMsgs";
