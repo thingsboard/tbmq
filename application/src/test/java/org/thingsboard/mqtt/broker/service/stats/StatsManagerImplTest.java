@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -144,28 +145,26 @@ public class StatsManagerImplTest {
     }
 
     @Test
-    public void givenSubscriptionsAcrossClients_whenRegistered_thenGaugeReportsTotalSubscriptionCountNotClientCount() {
-        Map<String, Set<String>> subscriptions = Map.of(
-                "client-a", Set.of("t1", "t2"),
-                "client-b", Set.of("t3"),
-                "client-c", Set.of("t4", "t5", "t6"));
+    public void givenSubscriptionCount_whenRegistered_thenGaugeReflectsItLiveUnderSubscriptionsName() {
+        LongAdder subscriptionCount = new LongAdder();
+        subscriptionCount.add(6);
 
-        statsManager.registerSubscriptionsStats(subscriptions);
+        statsManager.registerSubscriptionsStats(subscriptionCount);
 
         assertEquals("subscriptions", StatsType.SUBSCRIPTIONS.getPrintName());
         Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
         assertNotNull(gauge);
-        // 2 + 1 + 3 = total subscriptions across the 3 clients — NOT the client count (3).
         assertEquals(6.0, gauge.value(), 0.0);
-        // The metric was renamed from the misleading clientSubscriptions (which meant clients-with-subs).
+        // The gauge tracks the live running total (O(1) read), reflecting later updates.
+        subscriptionCount.add(2);
+        assertEquals(8.0, gauge.value(), 0.0);
+        // Renamed from the misleading clientSubscriptions (which meant clients-with-subscriptions).
         assertNull(meterRegistry.find("clientSubscriptions").gauge());
     }
 
     @Test
-    public void givenNoSubscriptions_whenRegistered_thenGaugeReportsZeroNotNaN() {
-        Map<String, Set<String>> subscriptions = Map.of();
-
-        statsManager.registerSubscriptionsStats(subscriptions);
+    public void givenZeroSubscriptionCount_whenRegistered_thenGaugeReportsZeroNotNaN() {
+        statsManager.registerSubscriptionsStats(new LongAdder());
 
         Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
         assertNotNull(gauge);

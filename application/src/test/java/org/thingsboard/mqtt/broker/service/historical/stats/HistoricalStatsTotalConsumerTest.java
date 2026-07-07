@@ -276,6 +276,17 @@ public class HistoricalStatsTotalConsumerTest {
         verify(timeseriesService, never()).save(any(), any(TsKvEntry.class));
     }
 
+    @Test
+    public void givenMsgWithKnownKey_whenProcessSaveHistoricalStatsTotal_thenSavesExactlyOnce() {
+        when(timeseriesService.findLatest(any(), any())).thenReturn(Futures.immediateFuture(new ArrayList<>()));
+        when(timeseriesService.save(any(), any(TsKvEntry.class))).thenReturn(Futures.immediateFuture(null));
+
+        historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(buildMessage(INCOMING_MSGS, 5));
+
+        // A known key is aggregated and persisted exactly once — proving the guard only filters unknown keys.
+        verify(timeseriesService, times(1)).save(any(), any(TsKvEntry.class));
+    }
+
     private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessage(String key, int value) {
 
         UsageStatsKVProto statsItem = UsageStatsKVProto.newBuilder()

@@ -220,6 +220,40 @@ public class ClientSubscriptionServiceImplTest {
     }
 
     @Test
+    public void givenSubscriptions_whenUnsubscribeInternally_thenTotalSubscriptionCountDecreases() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("topic11"), getTopicSubscription("topic12")));
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.unsubscribeInternally("clientId1", Set.of("topic11", "topic12"));
+
+        assertEquals(2, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenSubscriptions_whenClearSubscriptionsInternally_thenTotalDecreasesByClientSetSize() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.clearSubscriptionsInternally("clientId1");
+
+        // clientId1's two subscriptions are removed; clientId2's one remains.
+        assertEquals(1, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenClientWithMultipleSubscriptions_whenGetClientSubscriptionsCount_thenReturnsTotalNotClientCount() {
+        // setUp seeded 2 clients with 1 subscription each. Add 2 more to a single client:
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("a"), getTopicSubscription("b")));
+
+        // 2 clients, but 4 total subscriptions.
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
     public void givenSubscriptions_whenUnsubscribeAndPersistWithCallback_thenDeliversRemovedSubscriptionsOnSuccess() {
         String clientId = "clientId1"; // seeded with topic1
         clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic11")));

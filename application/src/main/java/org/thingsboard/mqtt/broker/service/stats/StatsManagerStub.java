@@ -33,11 +33,11 @@ import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 @Slf4j
 @Service
@@ -153,7 +153,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerSubscriptionsStats(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
+    public void registerSubscriptionsStats(LongAdder subscriptionCount) {
     }
 
     @Override

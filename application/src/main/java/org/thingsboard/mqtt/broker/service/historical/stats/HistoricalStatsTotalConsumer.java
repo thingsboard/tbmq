@@ -154,6 +154,8 @@ public class HistoricalStatsTotalConsumer {
                 throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
     }
 
+    // Protected (not private) so it can be unit-tested directly, consistent with the other test seams
+    // in this class (calculatePairUsingProvidedMsg, getTotalMessageCounterPair); not an extension point.
     protected void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
         if (!totalStatsMap.containsKey(key)) {

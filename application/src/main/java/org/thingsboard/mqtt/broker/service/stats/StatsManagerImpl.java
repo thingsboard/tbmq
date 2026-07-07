@@ -50,7 +50,6 @@ import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -305,17 +305,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerSubscriptionsStats(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
+    public void registerSubscriptionsStats(LongAdder subscriptionCount) {
         log.trace("Registering SubscriptionsStats");
-        // Total subscription count (sum of the per-client subscription set sizes), consistent with the
-        // historical 'subscriptions' chart (ClientSubscriptionService#getClientSubscriptionsCount) --
+        // Total subscription count across all clients — maintained incrementally by ClientSubscriptionService
+        // (see #getClientSubscriptionsCount) so this reads O(1) instead of summing every client's set per scrape.
         // NOT the number of clients that have subscriptions.
-        statsFactory.createGauge(StatsType.SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, StatsManagerImpl::countSubscriptions);
-        gauges.add(new Gauge(StatsType.SUBSCRIPTIONS.getPrintName(), () -> countSubscriptions(clientSubscriptionsMap)));
-    }
-
-    private static int countSubscriptions(Map<?, ? extends Collection<?>> clientSubscriptionsMap) {
-        return clientSubscriptionsMap.values().stream().mapToInt(Collection::size).sum();
+        statsFactory.createGauge(StatsType.SUBSCRIPTIONS.getPrintName(), subscriptionCount, LongAdder::sum);
+        gauges.add(new Gauge(StatsType.SUBSCRIPTIONS.getPrintName(), subscriptionCount::sum));
     }
 
     @Override
