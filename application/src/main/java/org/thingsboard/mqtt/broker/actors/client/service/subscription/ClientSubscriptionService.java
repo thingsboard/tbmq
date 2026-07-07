@@ -53,5 +53,5 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
     void clearSubscriptionsInternally(String clientId);
 
-    int getClientSubscriptionsCount();
+    long getClientSubscriptionsCount();
 }

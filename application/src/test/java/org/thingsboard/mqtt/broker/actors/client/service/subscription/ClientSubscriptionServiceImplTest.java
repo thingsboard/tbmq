@@ -215,7 +215,7 @@ public class ClientSubscriptionServiceImplTest {
                         getTopicSubscription("topic321"),
                         getTopicSubscription("topic12345")));
 
-        int clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
+        long clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
         assertThat(clientSubscriptionsCount).isEqualTo(7);
     }
 
@@ -251,6 +251,20 @@ public class ClientSubscriptionServiceImplTest {
 
         // 2 clients, but 4 total subscriptions.
         assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenExistingSubscription_whenReSubscribedToSameFilter_thenTotalSubscriptionCountUnchanged() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        // Re-subscribing an already-present (topicFilter+shareName-equal) subscription is a net-zero change:
+        // subscribe() removes the existing entry then re-adds it, so size() - sizeBefore == 0 and the total
+        // must not double-count. Guards the subtlest branch of the running-counter arithmetic.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
     }
 
     @Test

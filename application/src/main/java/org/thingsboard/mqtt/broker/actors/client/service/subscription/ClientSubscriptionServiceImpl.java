@@ -236,8 +236,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public int getClientSubscriptionsCount() {
-        return subscriptionCount.intValue();
+    public long getClientSubscriptionsCount() {
+        return subscriptionCount.sum();
     }
 
     @Override
