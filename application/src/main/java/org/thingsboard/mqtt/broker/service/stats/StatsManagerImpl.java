@@ -86,6 +86,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private FlowControlStats flowControlStats;
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
+    private ClientDisconnectStats clientDisconnectStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -104,6 +105,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
         this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
+        this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
     }
 
     @PreDestroy
@@ -133,6 +135,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public DroppedLifecycleEventStats getDroppedLifecycleEventStats() {
         return droppedLifecycleEventStats;
+    }
+
+    @Override
+    public ClientDisconnectStats getClientDisconnectStats() {
+        return clientDisconnectStats;
     }
 
     @Override
@@ -495,6 +502,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         log.info("[{}] Stats: count = [{}]", StatsConstantNames.DROPPED_LIFECYCLE_EVENTS, droppedLifecycleEventStats.getCount());
         droppedLifecycleEventStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsConstantNames.CLIENT_DISCONNECT, clientDisconnectStats.getCount());
+        clientDisconnectStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

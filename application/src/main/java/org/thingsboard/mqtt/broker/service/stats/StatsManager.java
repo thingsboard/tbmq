@@ -49,6 +49,8 @@ public interface StatsManager {
      */
     DroppedLifecycleEventStats getDroppedLifecycleEventStats();
 
+    ClientDisconnectStats getClientDisconnectStats();
+
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
