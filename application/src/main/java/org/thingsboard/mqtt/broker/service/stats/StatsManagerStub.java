@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 @Slf4j
 @Service
@@ -152,7 +153,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
+    public void registerSubscriptionsStats(LongAdder subscriptionCount) {
     }
 
     @Override

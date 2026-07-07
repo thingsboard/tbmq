@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
@@ -62,20 +63,28 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private final ClientMqttActorManager clientMqttActorManager;
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
+    // Running total of subscriptions across all clients, maintained on every subscribe/unsubscribe/clear so
+    // the 'subscriptions' gauge and getClientSubscriptionsCount stay O(1) rather than summing every client's
+    // set on each read (this map is the largest in the broker at the 100M-connection scale it targets).
+    private final LongAdder subscriptionCount = new LongAdder();
     private volatile boolean initialized = false;
 
     @Override
     public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
         clientSubscriptionsMap = new ConcurrentHashMap<>();
-        clientTopicSubscriptions.forEach((key, val) -> clientSubscriptionsMap.put(key.getId(), val));
-        statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
-
-        clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
+        // Keys are unique by client id (SubscriptionsSourceKey equals/hashCode exclude 'source'),
+        // so a single pass safely populates the map and subscribes each client exactly once.
+        clientTopicSubscriptions.forEach((key, topicSubscriptions) -> {
+            String clientId = key.getId();
+            clientSubscriptionsMap.put(clientId, topicSubscriptions);
             subscriptionService.subscribe(clientId, topicSubscriptions);
             sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
+            subscriptionCount.add(topicSubscriptions.size());
         });
+        statsManager.registerSubscriptionsStats(subscriptionCount);
         initialized = true;
-        log.info("Subscriptions initialized. Total clients with subscriptions: {}", clientSubscriptionsMap.size());
+        log.info("Subscriptions initialized. Clients with subscriptions: {}, total subscriptions: {}",
+                clientSubscriptionsMap.size(), getClientSubscriptionsCount());
     }
 
     @Override
@@ -114,6 +123,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
+        int sizeBefore = clientSubscriptions.size();
         clientSubscriptions.removeIf(sub -> {
             boolean existSubs = topicSubscriptions.contains(sub);
             if (existSubs && sub.isSharedSubscription()) {
@@ -122,6 +132,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             return existSubs;
         });
         clientSubscriptions.addAll(topicSubscriptions);
+        // Net change to this client's set == net change to the total (re-subscribes cancel out).
+        subscriptionCount.add(clientSubscriptions.size() - sizeBefore);
         sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         return clientSubscriptions;
     }
@@ -173,6 +185,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             }
             return unsubscribe;
         });
+        subscriptionCount.add(-removedSubscriptions.size());
         return new UnsubscribeResult(clientSubscriptions, removedSubscriptions);
     }
 
@@ -214,6 +227,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             log.debug("[{}] There were no active subscriptions for client.", clientId);
             return;
         }
+        subscriptionCount.add(-clientSubscriptions.size());
         List<String> unsubscribeTopics = clientSubscriptions.stream()
                 .peek(topicSubscription -> processSharedUnsubscribe(clientId, topicSubscription))
                 .map(TopicSubscription::getTopicFilter)
@@ -222,8 +236,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public int getClientSubscriptionsCount() {
-        return clientSubscriptionsMap == null ? 0 : clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
+    public long getClientSubscriptionsCount() {
+        return subscriptionCount.sum();
     }
 
     @Override

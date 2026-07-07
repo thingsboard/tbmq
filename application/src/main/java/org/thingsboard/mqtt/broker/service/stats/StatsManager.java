@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public interface StatsManager {
 
@@ -86,7 +87,7 @@ public interface StatsManager {
 
     void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap);
 
-    void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
+    void registerSubscriptionsStats(LongAdder subscriptionCount);
 
     void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap);
 

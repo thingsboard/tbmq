@@ -29,10 +29,12 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
 
@@ -172,5 +174,32 @@ public class StatsManagerImplTest {
         // The 3 latency timers carry no clientId tag, so Micrometer shares one set across all
         // application clients. Clearing one client must NOT deregister them.
         assertEquals(3, meterRegistry.find(APP_PROCESSOR_LATENCY).timers().size());
+    }
+
+    @Test
+    public void givenSubscriptionCount_whenRegistered_thenGaugeReflectsItLiveUnderSubscriptionsName() {
+        LongAdder subscriptionCount = new LongAdder();
+        subscriptionCount.add(6);
+
+        statsManager.registerSubscriptionsStats(subscriptionCount);
+
+        assertEquals("subscriptions", StatsType.SUBSCRIPTIONS.getPrintName());
+        Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
+        assertNotNull(gauge);
+        assertEquals(6.0, gauge.value(), 0.0);
+        // The gauge tracks the live running total (O(1) read), reflecting later updates.
+        subscriptionCount.add(2);
+        assertEquals(8.0, gauge.value(), 0.0);
+        // Renamed from the misleading clientSubscriptions (which meant clients-with-subscriptions).
+        assertNull(meterRegistry.find("clientSubscriptions").gauge());
+    }
+
+    @Test
+    public void givenZeroSubscriptionCount_whenRegistered_thenGaugeReportsZeroNotNaN() {
+        statsManager.registerSubscriptionsStats(new LongAdder());
+
+        Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
+        assertNotNull(gauge);
+        assertEquals(0.0, gauge.value(), 0.0);
     }
 }

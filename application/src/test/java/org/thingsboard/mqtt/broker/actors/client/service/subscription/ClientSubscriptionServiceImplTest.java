@@ -89,6 +89,14 @@ public class ClientSubscriptionServiceImplTest {
     }
 
     @Test
+    public void givenClientTopicSubscriptions_whenInit_thenCachesEachClientOnceAndRegistersSubscriptionsStats() {
+        // init() ran in setUp() with 2 clients: each client is subscribed, shared-cached, once,
+        // and the subscriptions gauge is registered exactly once over the backing map.
+        verify(sharedSubscriptionCacheService, times(2)).put(any(), any());
+        verify(statsManager, times(1)).registerSubscriptionsStats(any());
+    }
+
+    @Test
     public void givenClientTopicSubscriptionsAndSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnExpectedResult() {
         String clientId = "sharedClientId";
         getAndVerifyClientSubscriptionsForClient(clientId, 0);
@@ -207,8 +215,56 @@ public class ClientSubscriptionServiceImplTest {
                         getTopicSubscription("topic321"),
                         getTopicSubscription("topic12345")));
 
-        int clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
+        long clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
         assertThat(clientSubscriptionsCount).isEqualTo(7);
+    }
+
+    @Test
+    public void givenSubscriptions_whenUnsubscribeInternally_thenTotalSubscriptionCountDecreases() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("topic11"), getTopicSubscription("topic12")));
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.unsubscribeInternally("clientId1", Set.of("topic11", "topic12"));
+
+        assertEquals(2, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenSubscriptions_whenClearSubscriptionsInternally_thenTotalDecreasesByClientSetSize() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.clearSubscriptionsInternally("clientId1");
+
+        // clientId1's two subscriptions are removed; clientId2's one remains.
+        assertEquals(1, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenClientWithMultipleSubscriptions_whenGetClientSubscriptionsCount_thenReturnsTotalNotClientCount() {
+        // setUp seeded 2 clients with 1 subscription each. Add 2 more to a single client:
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("a"), getTopicSubscription("b")));
+
+        // 2 clients, but 4 total subscriptions.
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenExistingSubscription_whenReSubscribedToSameFilter_thenTotalSubscriptionCountUnchanged() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        // Re-subscribing an already-present (topicFilter+shareName-equal) subscription is a net-zero change:
+        // subscribe() removes the existing entry then re-adds it, so size() - sizeBefore == 0 and the total
+        // must not double-count. Guards the subtlest branch of the running-counter arithmetic.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
     }
 
     @Test
