@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.service;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,9 +44,12 @@ public class ContextAwareActorTest {
         actor.process(msg);
 
         // A ~2 ms operation is ~2_000_000 ns. A value this large can only be nanoseconds.
-        assertTrue("expected nanosecond-scale processing time but got " + stats.processingNanos.get(),
-                stats.processingNanos.get() > 100_000L);
-        assertEquals("non-TimedMsg must not record queue time", 0, stats.queueCalls.get());
+        assertThat(stats.processingNanos.get())
+                .as("expected nanosecond-scale processing time")
+                .isGreaterThan(100_000L);
+        assertThat(stats.queueCalls.get())
+                .as("non-TimedMsg must not record queue time")
+                .isZero();
     }
 
     @Test
@@ -59,7 +61,9 @@ public class ContextAwareActorTest {
 
         actor.process(msg);
 
-        assertEquals("TimedMsg must record queue time exactly once", 1, stats.queueCalls.get());
+        assertThat(stats.queueCalls.get())
+                .as("TimedMsg must record queue time exactly once")
+                .isEqualTo(1);
     }
 
     private ContextAwareActor newActor(ActorStats stats) {
