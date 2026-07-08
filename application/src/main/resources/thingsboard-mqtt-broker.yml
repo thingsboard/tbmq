@@ -673,9 +673,6 @@ actors:
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
     # Maximum number of attempts to initialize the actor before disabling it.
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
-    processing-metrics:
-      # Enables or disables actor processing metrics.
-      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
     # Time the actor system waits during TBMQ node shutdown to process client disconnections (in ms).
     disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:15000}"
   persisted-device:
