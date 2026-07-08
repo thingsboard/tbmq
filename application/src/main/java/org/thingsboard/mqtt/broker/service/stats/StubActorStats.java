@@ -16,26 +16,25 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
-import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-public class StubClientActorStats implements ClientActorStats {
-    public static ClientActorStats STUB_CLIENT_ACTOR_STATS = new StubClientActorStats();
+public class StubActorStats implements ActorStats {
 
-    private StubClientActorStats() {
+    public static final ActorStats STUB_ACTOR_STATS = new StubActorStats();
+
+    private StubActorStats() {
     }
 
     @Override
-    public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
+    public void logMsgProcessingTime(MsgType msgType, long startTime) {
     }
 
     @Override
-    public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
-
+    public void logMsgQueueTime(TimedMsg msg) {
     }
 
     @Override
@@ -58,9 +57,7 @@ public class StubClientActorStats implements ClientActorStats {
         return 0;
     }
 
-
     @Override
     public void reset() {
-
     }
 }

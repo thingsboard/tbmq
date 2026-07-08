@@ -96,7 +96,7 @@ public class DeviceBackpressureIntegrationTestCase extends AbstractPubSubIntegra
 
         for (int i = 0; i < msgCount; i++) {
             if (i == msgCount / 2) {
-                clientMqttActorManager.notifyChannelNonWritable(subscriberClientId, NonWritableChannelMsg.DEFAULT);
+                clientMqttActorManager.notifyChannelNonWritable(subscriberClientId, new NonWritableChannelMsg());
             }
             publisher.publish(backpressureTopic, PAYLOAD, 1, false);
         }
@@ -104,7 +104,7 @@ public class DeviceBackpressureIntegrationTestCase extends AbstractPubSubIntegra
         publisher.disconnect();
         publisher.close();
 
-        clientMqttActorManager.notifyChannelWritable(subscriberClientId, WritableChannelMsg.DEFAULT);
+        clientMqttActorManager.notifyChannelWritable(subscriberClientId, new WritableChannelMsg());
 
         boolean await = latch.await(30, TimeUnit.SECONDS);
         assertThat(await).isTrue();

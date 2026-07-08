@@ -300,7 +300,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         log.trace("[{}] Handle channel writable, unacknowledged msg count: {}", clientId, count);
 
         if (count > 0 && backoffPolicy.canRetry()) {
-            systemContext.scheduleHighPriorityMsgWithDelay(actorCtx, ChannelWritableEventMsg.INSTANCE, backoffPolicy.nextDelay());
+            systemContext.scheduleHighPriorityMsgWithDelay(actorCtx, new ChannelWritableEventMsg(), backoffPolicy.nextDelay());
             return;
         }
         backoffPolicy.reset();

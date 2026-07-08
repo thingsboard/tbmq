@@ -191,8 +191,13 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public ClientActorStats getClientActorStats() {
-        return StubClientActorStats.STUB_CLIENT_ACTOR_STATS;
+    public ActorStats getClientActorStats() {
+        return StubActorStats.STUB_ACTOR_STATS;
+    }
+
+    @Override
+    public ActorStats getPersistedDeviceActorStats() {
+        return StubActorStats.STUB_ACTOR_STATS;
     }
 
     @Override

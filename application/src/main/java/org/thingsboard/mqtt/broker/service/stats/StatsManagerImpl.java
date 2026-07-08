@@ -79,7 +79,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
-    private ClientActorStats clientActorStats;
+    private ActorStats clientActorStats;
+    private ActorStats persistedDeviceActorStats;
     private FlowControlStats flowControlStats;
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
@@ -95,7 +96,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.timerStats = new TimerStats(statsFactory);
         this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
         this.retainedMsgConsumerStats = new DefaultRetainedMsgConsumerStats(statsFactory);
-        this.clientActorStats = new DefaultClientActorStats(statsFactory);
+        this.clientActorStats = new DefaultActorStats(statsFactory, StatsType.CLIENT_ACTOR);
+        this.persistedDeviceActorStats = new DefaultActorStats(statsFactory, StatsType.PERSISTED_DEVICE_ACTOR);
         DefaultFlowControlStats defaultFlowControlStats = new DefaultFlowControlStats(statsFactory);
         this.flowControlStats = defaultFlowControlStats;
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
@@ -423,8 +425,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public ClientActorStats getClientActorStats() {
+    public ActorStats getClientActorStats() {
         return clientActorStats;
+    }
+
+    @Override
+    public ActorStats getPersistedDeviceActorStats() {
+        return persistedDeviceActorStats;
     }
 
     @Override
@@ -509,17 +516,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder);
 
-        StringBuilder clientActorLogBuilder = new StringBuilder();
-        clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")
-                .append(clientActorStats.getQueueTimeAvg()).append(" | ")
-                .append(clientActorStats.getQueueTimeMax()).append("] ")
-        ;
-        clientActorStats.getTimers().forEach((msgType, timer) -> {
-            clientActorLogBuilder.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
-                    .append(timer.getAvg()).append("] ");
-        });
-        clientActorStats.reset();
-        log.info("Client Actor Average Stats: {}", clientActorLogBuilder);
+        printActorStats(clientActorStats, "Client Actor");
+        printActorStats(persistedDeviceActorStats, "Device Actor");
 
         StringBuilder timerLogBuilder = new StringBuilder();
         for (ResettableTimer resettableTimer : timerStats.getTimers()) {
@@ -544,6 +542,18 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             timer.reset();
         });
         log.info("Queue Consumer Commit Time Average Stats: {}", queueConsumerLogBuilder);
+    }
+
+    private void printActorStats(ActorStats stats, String label) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("msgInQueueTime").append(" = [").append(stats.getMsgCount()).append(" | ")
+                .append(stats.getQueueTimeAvg()).append(" | ")
+                .append(stats.getQueueTimeMax()).append("] ");
+        stats.getTimers().forEach((msgType, timer) ->
+                sb.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
+                        .append(timer.getAvg()).append("] "));
+        stats.reset();
+        log.info("{} Average Stats: {}", label, sb);
     }
 
     private void printApplicationProcessorStats(ApplicationProcessorStats stats) {

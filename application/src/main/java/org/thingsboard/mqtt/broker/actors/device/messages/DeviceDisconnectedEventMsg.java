@@ -17,8 +17,9 @@ package org.thingsboard.mqtt.broker.actors.device.messages;
 
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 
-public class DeviceDisconnectedEventMsg implements TbActorMsg {
+public class DeviceDisconnectedEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
     @Override
     public MsgType getMsgType() {

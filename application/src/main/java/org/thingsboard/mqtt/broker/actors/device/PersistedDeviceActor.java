@@ -39,7 +39,7 @@ public class PersistedDeviceActor extends ContextAwareActor {
     private final String clientId;
 
     PersistedDeviceActor(ActorSystemContext systemContext, String clientId) {
-        super(systemContext);
+        super(systemContext, systemContext.getClientActorContext().getStatsManager().getPersistedDeviceActorStats());
         this.clientId = clientId;
         this.processor = new PersistedDeviceActorMessageProcessor(systemContext, clientId);
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
