@@ -16,38 +16,40 @@
 package org.thingsboard.mqtt.broker.actors.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.thingsboard.mqtt.broker.actors.AbstractTbActor;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.ProcessFailureStrategy;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+import org.thingsboard.mqtt.broker.service.stats.ActorStats;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class ContextAwareActor extends AbstractTbActor {
 
     protected final ActorSystemContext systemContext;
-    private final StopWatch stopWatch;
-    private final ActorProcessingMetricService actorProcessingMetricService;
+    protected final ActorStats actorStats;
 
-    public ContextAwareActor(ActorSystemContext systemContext) {
+    public ContextAwareActor(ActorSystemContext systemContext, ActorStats actorStats) {
         super();
         this.systemContext = systemContext;
-        this.stopWatch = new StopWatch();
-        this.actorProcessingMetricService = systemContext.getActorProcessingMetricService();
+        this.actorStats = actorStats;
     }
 
     @Override
     public void process(TbActorMsg msg) {
-        stopWatch.start();
+        if (msg instanceof TimedMsg) {
+            actorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
+        }
+        long startTime = System.nanoTime();
         try {
             if (!doProcess(msg)) {
                 log.warn("[{}] Unprocessed message: {}!", getActorId(), msg);
             }
         } finally {
-            stopWatch.stop();
-            actorProcessingMetricService.logMsgProcessingTime(msg.getMsgType(), stopWatch.getNanoTime());
-            stopWatch.reset();
+            actorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
         }
     }
 

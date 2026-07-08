@@ -19,9 +19,16 @@ import org.junit.Test;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
+import org.thingsboard.mqtt.broker.service.stats.ActorStats;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,13 +37,35 @@ public class ContextAwareActorTest {
 
     @Test
     public void givenSubMillisecondWork_whenProcess_thenReportsProcessingTimeInNanoseconds() {
-        AtomicLong captured = new AtomicLong(-1);
-        ActorProcessingMetricService capturingService = (msgType, time) -> captured.set(time);
+        CapturingActorStats stats = new CapturingActorStats();
+        ContextAwareActor actor = newActor(stats);
 
+        TbActorMsg msg = mock(TbActorMsg.class);
+        when(msg.getMsgType()).thenReturn(MsgType.INCOMING_PUBLISH_MSG);
+
+        actor.process(msg);
+
+        // A ~2 ms operation is ~2_000_000 ns. A value this large can only be nanoseconds.
+        assertTrue("expected nanosecond-scale processing time but got " + stats.processingNanos.get(),
+                stats.processingNanos.get() > 100_000L);
+        assertEquals("non-TimedMsg must not record queue time", 0, stats.queueCalls.get());
+    }
+
+    @Test
+    public void givenTimedMsg_whenProcess_thenRecordsQueueTime() {
+        CapturingActorStats stats = new CapturingActorStats();
+        ContextAwareActor actor = newActor(stats);
+
+        TimedTbActorMsg msg = new TimedTbActorMsg();
+
+        actor.process(msg);
+
+        assertEquals("TimedMsg must record queue time exactly once", 1, stats.queueCalls.get());
+    }
+
+    private ContextAwareActor newActor(ActorStats stats) {
         ActorSystemContext systemContext = mock(ActorSystemContext.class);
-        when(systemContext.getActorProcessingMetricService()).thenReturn(capturingService);
-
-        ContextAwareActor actor = new ContextAwareActor(systemContext) {
+        return new ContextAwareActor(systemContext, stats) {
             @Override
             protected boolean doProcess(TbActorMsg msg) {
                 try {
@@ -47,14 +76,32 @@ public class ContextAwareActorTest {
                 return true;
             }
         };
+    }
 
-        TbActorMsg msg = mock(TbActorMsg.class);
-        when(msg.getMsgType()).thenReturn(MsgType.INCOMING_PUBLISH_MSG);
+    private static final class TimedTbActorMsg implements TbActorMsg, TimedMsg {
+        private final long created = System.nanoTime();
+        @Override public long getMsgCreatedTimeNanos() { return created; }
+        @Override public MsgType getMsgType() { return MsgType.INCOMING_PUBLISH_MSG; }
+    }
 
-        actor.process(msg);
+    private static final class CapturingActorStats implements ActorStats {
+        final AtomicLong processingNanos = new AtomicLong(-1);
+        final AtomicInteger queueCalls = new AtomicInteger(0);
 
-        // A ~2 ms operation is ~2_000_000 ns but only ~2 ms. A value this large can only be nanoseconds,
-        // proving the actor reports StopWatch.getNanoTime() rather than the millisecond getTime().
-        assertTrue("expected nanosecond-scale processing time but got " + captured.get(), captured.get() > 100_000L);
+        @Override
+        public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
+            processingNanos.set(System.nanoTime() - startTime);
+        }
+
+        @Override
+        public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
+            queueCalls.incrementAndGet();
+        }
+
+        @Override public Map<String, ResettableTimer> getTimers() { return Map.of(); }
+        @Override public int getMsgCount() { return 0; }
+        @Override public double getQueueTimeAvg() { return 0; }
+        @Override public double getQueueTimeMax() { return 0; }
+        @Override public void reset() { }
     }
 }
