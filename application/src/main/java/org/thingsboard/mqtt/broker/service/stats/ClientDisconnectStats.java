@@ -39,7 +39,7 @@ public interface ClientDisconnectStats {
     int getCount();
 
     /**
-     * Clears the per-interval count read by {@link #getCount()}. The cumulative {@code clientDisconnect}
+     * Clears the per-interval count read by {@link #getCount()}. The cumulative {@code clientDisconnects}
      * Prometheus counter is unaffected and stays monotonic.
      */
     void reset();

@@ -38,9 +38,9 @@ public enum StatsType {
     // historical 'sessions' chart (BrokerConstants.SESSIONS).
     ALL_CLIENT_SESSIONS("allClientSessions"),
     // Total subscription count across all clients (sum of the per-client subscription set sizes), matching
-    // the historical 'subscriptions' chart (BrokerConstants.SUBSCRIPTIONS). Renamed from 'clientSubscriptions',
-    // which misleadingly reported the number of clients with at least one subscription rather than a count.
-    SUBSCRIPTIONS("subscriptions"),
+    // the historical 'subscriptions' chart. Renamed from 'clientSubscriptions', which misleadingly reported
+    // the number of clients with at least one subscription rather than a count.
+    SUBSCRIPTIONS(BrokerConstants.SUBSCRIPTIONS),
     RETAINED_MESSAGES("retainedMessages"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     RETAIN_MSG_TRIE_NODES("retainMsgTrieNodes"),
