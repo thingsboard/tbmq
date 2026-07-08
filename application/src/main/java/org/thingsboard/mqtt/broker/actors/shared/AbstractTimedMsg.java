@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
-
-import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+package org.thingsboard.mqtt.broker.actors.shared;
 
 public abstract class AbstractTimedMsg implements TimedMsg {
 

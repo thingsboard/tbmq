@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class DefaultActorStatsTest {
 
@@ -72,6 +73,16 @@ public class DefaultActorStatsTest {
         assertNotNull(timer);
         assertEquals(1, timer.count());
         assertEquals(1, stats.getMsgCount());
+    }
+
+    @Test
+    public void deviceMessagesAreTimedMsg() {
+        assertTrue(TimedMsg.class.isAssignableFrom(
+                org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg.class));
+        assertTrue(TimedMsg.class.isAssignableFrom(
+                org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg.class));
+        assertTrue(TimedMsg.class.isAssignableFrom(
+                org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg.class));
     }
 
     // Stands in for a real actor message until Task 3 makes device messages TimedMsg.

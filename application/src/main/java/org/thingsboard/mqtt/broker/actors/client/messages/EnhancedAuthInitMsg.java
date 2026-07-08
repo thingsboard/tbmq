@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.EnhancedAuthMsg;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Slf4j
