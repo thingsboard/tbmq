@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.actors.service;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
@@ -30,7 +29,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "actors.system.processing-metrics", value = "enabled", havingValue = "true")
 public class MsgTypeActorProcessingMetricService implements ActorProcessingMetricService {
