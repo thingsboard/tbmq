@@ -55,7 +55,7 @@ import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.stats.ClientActorStats;
+import org.thingsboard.mqtt.broker.service.stats.ActorStats;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -74,7 +74,7 @@ public class ClientActor extends ContextAwareActor {
     private final ConnectService connectService;
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
-    private final ClientActorStats clientActorStats;
+    private final ActorStats clientActorStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private final ClientActorConfiguration actorConfiguration;

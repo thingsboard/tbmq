@@ -103,7 +103,9 @@ public interface StatsManager {
 
     DeliveryTimerStats getDeliveryTimerStats();
 
-    ClientActorStats getClientActorStats();
+    ActorStats getClientActorStats();
+
+    ActorStats getPersistedDeviceActorStats();
 
     FlowControlStats getFlowControlStats();
 

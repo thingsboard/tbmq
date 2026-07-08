@@ -28,17 +28,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-public class DefaultClientActorStats implements ClientActorStats {
+public class DefaultActorStats implements ActorStats {
 
-    private final String statsKey = StatsType.CLIENT_ACTOR.getPrintName();
+    private final String statsKey;
 
     private final ConcurrentMap<String, ResettableTimer> timers = new ConcurrentHashMap<>();
     private final ResettableTimer queueTimer;
 
     private final StatsFactory statsFactory;
 
-    public DefaultClientActorStats(StatsFactory statsFactory) {
+    public DefaultActorStats(StatsFactory statsFactory, StatsType statsType) {
         this.statsFactory = statsFactory;
+        this.statsKey = statsType.getPrintName();
         this.queueTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".msgInQueueTime"), true);
     }
 

@@ -19,23 +19,46 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public interface ClientActorStats {
+public class StubActorStats implements ActorStats {
 
-    void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit);
+    public static final ActorStats STUB_ACTOR_STATS = new StubActorStats();
 
-    void logMsgQueueTime(TbActorMsg msg, TimeUnit unit);
+    private StubActorStats() {
+    }
 
-    Map<String, ResettableTimer> getTimers();
+    @Override
+    public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
+    }
 
-    int getMsgCount();
+    @Override
+    public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
+    }
 
-    double getQueueTimeAvg();
+    @Override
+    public Map<String, ResettableTimer> getTimers() {
+        return Collections.emptyMap();
+    }
 
-    double getQueueTimeMax();
+    @Override
+    public int getMsgCount() {
+        return 0;
+    }
 
-    void reset();
+    @Override
+    public double getQueueTimeAvg() {
+        return 0;
+    }
 
+    @Override
+    public double getQueueTimeMax() {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
+    }
 }

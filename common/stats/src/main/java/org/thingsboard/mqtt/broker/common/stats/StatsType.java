@@ -52,6 +52,7 @@ public enum StatsType {
     CLIENT_SUBSCRIPTIONS_CONSUMER("clientSubscriptionsConsumer"),
     RETAINED_MSG_CONSUMER("retainedMsgConsumer"),
     CLIENT_ACTOR("clientActor"),
+    PERSISTED_DEVICE_ACTOR("deviceActor"),
     FLOW_CONTROL("flowControl"),
 
     SUBSCRIPTION_LOOKUP("subscriptionLookup"),
