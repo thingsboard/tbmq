@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.Map;
 import java.util.Set;
@@ -201,5 +202,18 @@ public class StatsManagerImplTest {
         Gauge gauge = meterRegistry.find(StatsType.SUBSCRIPTIONS.getPrintName()).gauge();
         assertNotNull(gauge);
         assertEquals(0.0, gauge.value(), 0.0);
+    }
+
+    @Test
+    public void givenStatsManager_whenGetClientDisconnectStats_thenReturnsWiredStatsThatRegisterCounter() {
+        statsManager.init();
+
+        ClientDisconnectStats stats = statsManager.getClientDisconnectStats();
+        assertNotNull(stats);
+
+        stats.increment(DisconnectReasonType.ON_DISCONNECT_MSG);
+        stats.increment(DisconnectReasonType.ON_KEEP_ALIVE);
+
+        assertEquals(2.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
     }
 }

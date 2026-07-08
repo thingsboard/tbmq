@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
 import java.util.concurrent.TimeUnit;
 
@@ -47,7 +48,7 @@ public class MsgTypeActorProcessingMetricServiceTest {
         // If the timer records the value as MILLISECONDS, the recorded total is 1_500_000 ms, not 1.5 ms.
         service.logMsgProcessingTime(MsgType.INCOMING_PUBLISH_MSG, 1_500_000L);
 
-        Timer timer = meterRegistry.find("actors.processing")
+        Timer timer = meterRegistry.find(StatsType.ACTORS_PROCESSING.getPrintName())
                 .tag(StatsConstantNames.MSG_TYPE, MsgType.INCOMING_PUBLISH_MSG.toString())
                 .timer();
         assertNotNull(timer);

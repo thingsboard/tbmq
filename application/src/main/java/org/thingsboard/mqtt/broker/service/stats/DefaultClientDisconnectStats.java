@@ -18,32 +18,31 @@ package org.thingsboard.mqtt.broker.service.stats;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-public class DefaultDroppedMsgStats implements DroppedMsgStats {
+public class DefaultClientDisconnectStats implements ClientDisconnectStats {
 
-    private final DefaultCounter droppedMsgsCounter;
+    private final DefaultCounter clientDisconnectCounter;
 
-    public DefaultDroppedMsgStats(StatsFactory statsFactory) {
-        this.droppedMsgsCounter = statsFactory.createDefaultCounter(StatsType.DROPPED_MSGS.getPrintName());
+    public DefaultClientDisconnectStats(StatsFactory statsFactory) {
+        this.clientDisconnectCounter = statsFactory.createDefaultCounter(StatsType.CLIENT_DISCONNECTS.getPrintName());
     }
 
     @Override
-    public void increment() {
-        droppedMsgsCounter.increment();
-    }
-
-    @Override
-    public void increment(int count) {
-        droppedMsgsCounter.add(count);
+    public void increment(DisconnectReasonType reasonType) {
+        // CE records a single untagged clientDisconnects counter — the reason is deliberately not used as a
+        // Micrometer tag. The reason breakdown (tagging + persistence) is a PE-only extension that overrides
+        // this class; DisconnectReasonType stays on the shared seam so PE can extend without touching callers.
+        clientDisconnectCounter.increment();
     }
 
     @Override
     public int getCount() {
-        return droppedMsgsCounter.get();
+        return clientDisconnectCounter.get();
     }
 
     @Override
     public void reset() {
-        droppedMsgsCounter.clear();
+        clientDisconnectCounter.clear();
     }
 }

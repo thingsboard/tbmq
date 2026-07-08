@@ -18,30 +18,27 @@ package org.thingsboard.mqtt.broker.actors.service;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "actors.system.processing-metrics", value = "enabled", havingValue = "true")
 public class MsgTypeActorProcessingMetricService implements ActorProcessingMetricService {
-
-    private static final String ACTOR_MSG_PROCESSING_STATS_NAME = "actors.processing";
 
     private final ConcurrentMap<MsgType, Timer> timers = new ConcurrentHashMap<>();
     private final StatsFactory statsFactory;
 
     @Override
     public void logMsgProcessingTime(MsgType msgType, long time) {
-        Timer timer = timers.computeIfAbsent(msgType, t -> statsFactory.createTimer(ACTOR_MSG_PROCESSING_STATS_NAME,
+        Timer timer = timers.computeIfAbsent(msgType, t -> statsFactory.createTimer(StatsType.ACTORS_PROCESSING.getPrintName(),
                 StatsConstantNames.MSG_TYPE, msgType.toString()));
         timer.record(time, TimeUnit.NANOSECONDS);
     }
