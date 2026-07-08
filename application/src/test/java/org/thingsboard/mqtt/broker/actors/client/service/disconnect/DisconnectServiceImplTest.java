@@ -44,6 +44,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -91,6 +93,8 @@ public class DisconnectServiceImplTest {
     ChannelBackpressureManager channelBackpressureManager;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    @MockitoBean
+    StatsManager statsManager;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -99,6 +103,7 @@ public class DisconnectServiceImplTest {
     ClientActorStateInfo clientActorState;
     QueuedMqttMessages queuedMqttMessages;
     SessionInfo sessionInfo;
+    ClientDisconnectStats clientDisconnectStats;
 
     @Before
     public void setUp() {
@@ -117,6 +122,12 @@ public class DisconnectServiceImplTest {
         when(clientActorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
 
         when(ctx.getClientId()).thenReturn(CLIENT_ID);
+
+        clientDisconnectStats = mock(ClientDisconnectStats.class);
+        when(statsManager.getClientDisconnectStats()).thenReturn(clientDisconnectStats);
+        // The bean caches the stats reference in @PostConstruct; re-run it here so the cached field
+        // picks up the stub above (context init ran before this stub was set).
+        disconnectService.init();
     }
 
     @Test
@@ -129,6 +140,8 @@ public class DisconnectServiceImplTest {
         verify(disconnectService, never()).cleanupClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0, ON_DISCONNECT_MSG);
         verify(disconnectService, times(1)).closeChannel(ctx);
+        // Never-initialized session returns before the increment site, so the counter must not move.
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
     }
 
     @Test
@@ -144,6 +157,8 @@ public class DisconnectServiceImplTest {
         verify(flowControlService, times(1)).removeFromMap(eq(CLIENT_ID));
         verify(tbMessageStatsReportClient).removeClient(eq(CLIENT_ID));
         verify(mqttMessageGenerator, never()).createDisconnectMsg(any());
+        // A genuine established-session disconnect counts, and the disconnect reason is passed through.
+        verify(clientDisconnectStats, times(1)).increment(ON_DISCONNECT_MSG);
     }
 
     @Test
@@ -158,6 +173,8 @@ public class DisconnectServiceImplTest {
         // ...but the lifecycle CLIENT_DISCONNECTED event must still be emitted, to pair with the CLIENT_CONNECTED
         // that this node emitted for the now-superseded session.
         verify(integrationLifecycleEventPublisher, times(1)).publishDisconnected(ctx, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+        // Cross-node takeover is a real established-session disconnect, so it counts in lockstep with the event.
+        verify(clientDisconnectStats, times(1)).increment(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
     }
 
     @Test
@@ -168,6 +185,8 @@ public class DisconnectServiceImplTest {
         // A broker-refused connection never established a session, so the teardown disconnect must NOT emit
         // CLIENT_DISCONNECTED (there is no CLIENT_CONNECTED to pair with); CLIENT_CONNECTION_FAILED covers it instead.
         verify(integrationLifecycleEventPublisher, never()).publishDisconnected(ctx, DisconnectReasonType.ON_CONNECTION_FAILURE);
+        // ...and for the same reason it must not be counted here; it is surfaced separately as a connection refusal.
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
     }
 
     @Test

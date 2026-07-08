@@ -49,6 +49,12 @@ public interface StatsManager {
      */
     DroppedLifecycleEventStats getDroppedLifecycleEventStats();
 
+    /**
+     * Returns the client-disconnect stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    ClientDisconnectStats getClientDisconnectStats();
+
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);

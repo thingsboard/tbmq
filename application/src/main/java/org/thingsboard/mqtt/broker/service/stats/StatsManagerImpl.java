@@ -23,12 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStatsFormatter;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
@@ -63,7 +61,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
 public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager, ConsumerStatsManager {
@@ -87,6 +84,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private FlowControlStats flowControlStats;
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
+    private ClientDisconnectStats clientDisconnectStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -106,6 +104,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
         this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
+        this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
     }
 
     @PreDestroy
@@ -135,6 +134,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public DroppedLifecycleEventStats getDroppedLifecycleEventStats() {
         return droppedLifecycleEventStats;
+    }
+
+    @Override
+    public ClientDisconnectStats getClientDisconnectStats() {
+        return clientDisconnectStats;
     }
 
     @Override
@@ -497,11 +501,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: {}", StatsType.FLOW_CONTROL.getPrintName(), flowControlStatsStr);
         flowControlStats.reset();
 
-        log.info("[{}] Stats: count = [{}]", BrokerConstants.DROPPED_MSGS, droppedMsgStats.getCount());
+        log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_MSGS.getPrintName(), droppedMsgStats.getCount());
         droppedMsgStats.reset();
 
-        log.info("[{}] Stats: count = [{}]", StatsConstantNames.DROPPED_LIFECYCLE_EVENTS, droppedLifecycleEventStats.getCount());
+        log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_LIFECYCLE_EVENTS.getPrintName(), droppedLifecycleEventStats.getCount());
         droppedLifecycleEventStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.CLIENT_DISCONNECTS.getPrintName(), clientDisconnectStats.getCount());
+        clientDisconnectStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

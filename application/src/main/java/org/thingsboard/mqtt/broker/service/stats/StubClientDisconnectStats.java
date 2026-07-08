@@ -15,35 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
-import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
-import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-public class DefaultDroppedMsgStats implements DroppedMsgStats {
+public class StubClientDisconnectStats implements ClientDisconnectStats {
 
-    private final DefaultCounter droppedMsgsCounter;
-
-    public DefaultDroppedMsgStats(StatsFactory statsFactory) {
-        this.droppedMsgsCounter = statsFactory.createDefaultCounter(StatsType.DROPPED_MSGS.getPrintName());
-    }
+    public static final StubClientDisconnectStats STUB_CLIENT_DISCONNECT_STATS = new StubClientDisconnectStats();
 
     @Override
-    public void increment() {
-        droppedMsgsCounter.increment();
-    }
-
-    @Override
-    public void increment(int count) {
-        droppedMsgsCounter.add(count);
+    public void increment(DisconnectReasonType reasonType) {
     }
 
     @Override
     public int getCount() {
-        return droppedMsgsCounter.get();
+        return 0;
     }
 
     @Override
     public void reset() {
-        droppedMsgsCounter.clear();
     }
 }

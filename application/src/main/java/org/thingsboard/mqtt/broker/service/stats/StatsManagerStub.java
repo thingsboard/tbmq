@@ -67,6 +67,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ClientDisconnectStats getClientDisconnectStats() {
+        return StubClientDisconnectStats.STUB_CLIENT_DISCONNECT_STATS;
+    }
+
+    @Override
     public ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId) {
         return StubClientSessionEventConsumerStats.STUB_CLIENT_SESSION_EVENT_CONSUMER_STATS;
     }
