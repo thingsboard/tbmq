@@ -28,7 +28,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStatsFormatter;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
@@ -497,7 +496,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: {}", StatsType.FLOW_CONTROL.getPrintName(), flowControlStatsStr);
         flowControlStats.reset();
 
-        log.info("[{}] Stats: count = [{}]", BrokerConstants.DROPPED_MSGS, droppedMsgStats.getCount());
+        log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_MSGS.getPrintName(), droppedMsgStats.getCount());
         droppedMsgStats.reset();
 
         log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_LIFECYCLE_EVENTS.getPrintName(), droppedLifecycleEventStats.getCount());

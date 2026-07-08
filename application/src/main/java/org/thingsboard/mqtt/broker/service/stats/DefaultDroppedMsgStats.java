@@ -15,16 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 
 public class DefaultDroppedMsgStats implements DroppedMsgStats {
 
     private final DefaultCounter droppedMsgsCounter;
 
     public DefaultDroppedMsgStats(StatsFactory statsFactory) {
-        this.droppedMsgsCounter = statsFactory.createDefaultCounter(BrokerConstants.DROPPED_MSGS);
+        this.droppedMsgsCounter = statsFactory.createDefaultCounter(StatsType.DROPPED_MSGS.getPrintName());
     }
 
     @Override

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.common.stats;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 @RequiredArgsConstructor
 @Getter
@@ -52,6 +53,7 @@ public enum StatsType {
     CLIENT_SUBSCRIPTIONS_CONSUMER("clientSubscriptionsConsumer"),
     RETAINED_MSG_CONSUMER("retainedMsgConsumer"),
     CLIENT_ACTOR("clientActor"),
+    ACTORS_PROCESSING("actors.processing"),
     FLOW_CONTROL("flowControl"),
 
     SUBSCRIPTION_LOOKUP("subscriptionLookup"),
@@ -69,6 +71,7 @@ public enum StatsType {
     INTEGRATION_PROCESSOR("integrationProcessor"),
     INTEGRATION_EVENT_PROCESSOR("integrationEventProcessor"),
 
+    DROPPED_MSGS(BrokerConstants.DROPPED_MSGS),
     DROPPED_LIFECYCLE_EVENTS("droppedLifecycleEvents"),
     CLIENT_DISCONNECTS("clientDisconnects"),
     ;
