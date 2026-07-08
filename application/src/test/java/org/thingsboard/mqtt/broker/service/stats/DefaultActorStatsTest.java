@@ -60,8 +60,10 @@ public class DefaultActorStatsTest {
         ActorStats stats = new DefaultActorStats(statsFactory, StatsType.PERSISTED_DEVICE_ACTOR);
         stats.logMsgProcessingTime(MsgType.INCOMING_PUBLISH_MSG, System.nanoTime(), TimeUnit.NANOSECONDS);
 
-        assertNotNull(meterRegistry.find("deviceActor.processing.time")
-                .tag(StatsConstantNames.MSG_TYPE, MsgType.INCOMING_PUBLISH_MSG.toString()).timer());
+        Timer timer = meterRegistry.find("deviceActor.processing.time")
+                .tag(StatsConstantNames.MSG_TYPE, MsgType.INCOMING_PUBLISH_MSG.toString()).timer();
+        assertNotNull(timer);
+        assertEquals(1, timer.count());
     }
 
     @Test
@@ -85,7 +87,7 @@ public class DefaultActorStatsTest {
                 org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg.class));
     }
 
-    // Stands in for a real actor message until Task 3 makes device messages TimedMsg.
+    // Generic TbActorMsg + TimedMsg stand-in for the queue-timer unit test.
     private static final class TestTimedMsg implements TbActorMsg, TimedMsg {
         private final long createdTimeNanos;
 
