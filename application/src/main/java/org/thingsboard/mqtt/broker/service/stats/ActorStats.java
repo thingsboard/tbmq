@@ -16,17 +16,16 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
-import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public interface ActorStats {
 
-    void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit);
+    void logMsgProcessingTime(MsgType msgType, long startTime);
 
-    void logMsgQueueTime(TbActorMsg msg, TimeUnit unit);
+    void logMsgQueueTime(TimedMsg msg);
 
     Map<String, ResettableTimer> getTimers();
 

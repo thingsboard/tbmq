@@ -24,7 +24,6 @@ import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.service.stats.ActorStats;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -89,12 +88,12 @@ public class ContextAwareActorTest {
         final AtomicInteger queueCalls = new AtomicInteger(0);
 
         @Override
-        public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
+        public void logMsgProcessingTime(MsgType msgType, long startTime) {
             processingNanos.set(System.nanoTime() - startTime);
         }
 
         @Override
-        public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
+        public void logMsgQueueTime(TimedMsg msg) {
             queueCalls.incrementAndGet();
         }
 

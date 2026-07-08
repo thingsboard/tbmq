@@ -24,13 +24,11 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.service.stats.ActorStats;
 
-import java.util.concurrent.TimeUnit;
-
 @Slf4j
 public abstract class ContextAwareActor extends AbstractTbActor {
 
     protected final ActorSystemContext systemContext;
-    protected final ActorStats actorStats;
+    private final ActorStats actorStats;
 
     public ContextAwareActor(ActorSystemContext systemContext, ActorStats actorStats) {
         super();
@@ -40,8 +38,8 @@ public abstract class ContextAwareActor extends AbstractTbActor {
 
     @Override
     public void process(TbActorMsg msg) {
-        if (msg instanceof TimedMsg) {
-            actorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
+        if (msg instanceof TimedMsg timedMsg) {
+            actorStats.logMsgQueueTime(timedMsg);
         }
         long startTime = System.nanoTime();
         try {
@@ -49,7 +47,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
                 log.warn("[{}] Unprocessed message: {}!", getActorId(), msg);
             }
         } finally {
-            actorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
+            actorStats.logMsgProcessingTime(msg.getMsgType(), startTime);
         }
     }
 
