@@ -27,8 +27,6 @@ import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 @RequiredArgsConstructor
 public class NonWritableChannelMsg extends AbstractTimedMsg implements TbActorMsg {
 
-    public static final NonWritableChannelMsg DEFAULT = new NonWritableChannelMsg();
-
     @Override
     public MsgType getMsgType() {
         return MsgType.NON_WRITABLE_CHANNEL_MSG;

@@ -27,8 +27,6 @@ import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 @RequiredArgsConstructor
 public class RemovePersistedMessagesEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
-    public static final RemovePersistedMessagesEventMsg DEFAULT = new RemovePersistedMessagesEventMsg();
-
     @Override
     public MsgType getMsgType() {
         return MsgType.REMOVE_PERSISTED_MESSAGES_MSG;
