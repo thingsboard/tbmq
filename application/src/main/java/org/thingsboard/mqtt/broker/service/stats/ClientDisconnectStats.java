@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.service.stats;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 /**
- * Tracks client disconnects as a cumulative {@code clientDisconnect} Prometheus counter. In CE the counter is
- * untagged, so {@code rate(clientDisconnect_total[...])} yields the broker-wide disconnect rate; the per-reason
+ * Tracks client disconnects as a cumulative {@code clientDisconnects} Prometheus counter. In CE the counter is
+ * untagged, so {@code rate(clientDisconnects_total[...])} yields the broker-wide disconnect rate; the per-reason
  * breakdown is a PE-only extension that overrides {@link #increment(DisconnectReasonType)}.
  * <p>
  * Obtained from {@link StatsManager}, so it shares the {@code stats.enabled} master switch with every other

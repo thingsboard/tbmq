@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
-import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 public class DefaultClientDisconnectStats implements ClientDisconnectStats {
@@ -25,12 +25,12 @@ public class DefaultClientDisconnectStats implements ClientDisconnectStats {
     private final DefaultCounter clientDisconnectCounter;
 
     public DefaultClientDisconnectStats(StatsFactory statsFactory) {
-        this.clientDisconnectCounter = statsFactory.createDefaultCounter(StatsConstantNames.CLIENT_DISCONNECT);
+        this.clientDisconnectCounter = statsFactory.createDefaultCounter(StatsType.CLIENT_DISCONNECTS.getPrintName());
     }
 
     @Override
     public void increment(DisconnectReasonType reasonType) {
-        // CE records a single untagged clientDisconnect counter — the reason is deliberately not used as a
+        // CE records a single untagged clientDisconnects counter — the reason is deliberately not used as a
         // Micrometer tag. The reason breakdown (tagging + persistence) is a PE-only extension that overrides
         // this class; DisconnectReasonType stays on the shared seam so PE can extend without touching callers.
         clientDisconnectCounter.increment();

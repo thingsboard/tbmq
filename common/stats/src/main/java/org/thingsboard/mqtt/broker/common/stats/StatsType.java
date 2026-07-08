@@ -68,6 +68,9 @@ public enum StatsType {
     INTEGRATION("integration"),
     INTEGRATION_PROCESSOR("integrationProcessor"),
     INTEGRATION_EVENT_PROCESSOR("integrationEventProcessor"),
+
+    DROPPED_LIFECYCLE_EVENTS("droppedLifecycleEvents"),
+    CLIENT_DISCONNECTS("clientDisconnects"),
     ;
 
     private final String printName;

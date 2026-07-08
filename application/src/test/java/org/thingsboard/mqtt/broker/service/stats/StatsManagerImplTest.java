@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -215,6 +214,6 @@ public class StatsManagerImplTest {
         stats.increment(DisconnectReasonType.ON_DISCONNECT_MSG);
         stats.increment(DisconnectReasonType.ON_KEEP_ALIVE);
 
-        assertEquals(2.0, meterRegistry.counter(StatsConstantNames.CLIENT_DISCONNECT).count(), 0.0);
+        assertEquals(2.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
     }
 }

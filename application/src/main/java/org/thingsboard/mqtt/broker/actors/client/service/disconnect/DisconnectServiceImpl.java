@@ -98,7 +98,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         if (reasonType != DisconnectReasonType.ON_CONNECTION_FAILURE) {
             integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
             // Count every genuine disconnect of an established session. Sharing the ON_CONNECTION_FAILURE
-            // exclusion (and running past the getSessionInfo() == null early return above) keeps clientDisconnect
+            // exclusion (and running past the getSessionInfo() == null early return above) keeps clientDisconnects
             // consistent with the CLIENT_DISCONNECTED lifecycle event and avoids double-counting broker-refused
             // connections, which are surfaced separately as connection refusals.
             statsManager.getClientDisconnectStats().increment(reasonType);

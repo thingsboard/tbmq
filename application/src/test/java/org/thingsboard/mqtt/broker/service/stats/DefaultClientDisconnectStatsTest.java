@@ -19,8 +19,8 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
-import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import static org.junit.Assert.assertEquals;
@@ -43,7 +43,7 @@ public class DefaultClientDisconnectStatsTest {
         clientDisconnectStats.increment(DisconnectReasonType.ON_KEEP_ALIVE);
 
         assertEquals(2, clientDisconnectStats.getCount());
-        assertEquals(2.0, meterRegistry.counter(StatsConstantNames.CLIENT_DISCONNECT).count(), 0.0);
+        assertEquals(2.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
     }
 
     @Test
@@ -52,10 +52,10 @@ public class DefaultClientDisconnectStatsTest {
         clientDisconnectStats.increment(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
         clientDisconnectStats.increment(DisconnectReasonType.ON_RATE_LIMITS);
 
-        // CE emits a single untagged clientDisconnect counter; the reason is intentionally ignored
+        // CE emits a single untagged clientDisconnects counter; the reason is intentionally ignored
         // (the reason breakdown is a PE-only extension). All reasons accumulate into one series.
-        assertEquals(3.0, meterRegistry.counter(StatsConstantNames.CLIENT_DISCONNECT).count(), 0.0);
-        assertEquals(1, meterRegistry.find(StatsConstantNames.CLIENT_DISCONNECT).counters().size());
+        assertEquals(3.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
+        assertEquals(1, meterRegistry.find(StatsType.CLIENT_DISCONNECTS.getPrintName()).counters().size());
     }
 
     @Test
@@ -69,11 +69,11 @@ public class DefaultClientDisconnectStatsTest {
         // Per-interval count cleared for the next log line...
         assertEquals(0, clientDisconnectStats.getCount());
         // ...but the cumulative Prometheus counter must never be reset.
-        assertEquals(3.0, meterRegistry.counter(StatsConstantNames.CLIENT_DISCONNECT).count(), 0.0);
+        assertEquals(3.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
 
         clientDisconnectStats.increment(DisconnectReasonType.ON_KEEP_ALIVE);
 
         assertEquals(1, clientDisconnectStats.getCount());
-        assertEquals(4.0, meterRegistry.counter(StatsConstantNames.CLIENT_DISCONNECT).count(), 0.0);
+        assertEquals(4.0, meterRegistry.counter(StatsType.CLIENT_DISCONNECTS.getPrintName()).count(), 0.0);
     }
 }
