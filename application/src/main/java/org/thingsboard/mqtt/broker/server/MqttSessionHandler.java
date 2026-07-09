@@ -222,6 +222,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
         var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
+        // Broker-initiated close: record it so exceptionCaught can attribute a following reset to TBMQ rather
+        // than the peer. This path closes the channel directly instead of going through ClientSessionCtx#closeChannel.
+        clientSessionCtx.setCloseInitiated(true);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
         clientSessionCtx.getChannel().close();
     }
@@ -332,24 +335,44 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Prefer the address captured on the first inbound bytes; fall back to the channel so pre-CONNECT
+        // failures (e.g. SSL handshake) still identify the remote peer. clientId may be null before CONNECT.
+        InetSocketAddress remoteAddress = address != null ? address : getAddress(ctx);
         String exceptionMessage;
         if (cause.getCause() instanceof SSLHandshakeException) {
-            log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] Exception on SSL handshake. Reason - {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause.getCause() instanceof NotSslRecordException) {
-            log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] NotSslRecordException: {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause instanceof IOException) {
-            log.warn("[{}] IOException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] IOException ({}): {}. Connection closed {}.",
+                    sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(), describeConnectionCloseOrigin());
             exceptionMessage = cause.getMessage();
         } else if (cause instanceof ProtocolViolationException) {
-            log.warn("[{}] ProtocolViolationException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] ProtocolViolationException: {}", sessionId, clientId, remoteAddress, cause.getMessage());
             exceptionMessage = cause.getMessage();
         } else {
-            log.error("[{}] Unexpected Exception", sessionId, cause);
+            log.error("[{}][{}][{}] Unexpected Exception", sessionId, clientId, remoteAddress, cause);
             exceptionMessage = cause.getMessage();
         }
         disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, exceptionMessage));
+    }
+
+    /**
+     * Explains who closed the connection for an IOException surfaced on the Netty I/O thread (typically
+     * "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ received a
+     * TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use whether a
+     * broker-side close was initiated for this session to tell the two situations apart:
+     * <ul>
+     *   <li>initiated — the reset is part of a teardown TBMQ started (rate limit, protocol error, takeover, ...);</li>
+     *   <li>not initiated — the client or a network device between the client and TBMQ aborted the connection.</li>
+     * </ul>
+     */
+    private String describeConnectionCloseOrigin() {
+        return clientSessionCtx.isCloseInitiated()
+                ? "by TBMQ (a disconnect was initiated on the broker side; the peer's reset is part of that teardown)"
+                : "by the remote peer or a network device between the client and TBMQ (external to TBMQ; no disconnect was initiated on the broker side)";
     }
 
     @Override

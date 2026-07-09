@@ -101,6 +101,9 @@ public class ClientSessionCtx implements SessionContext {
     private volatile String username;
     private volatile String authDetails;
     private volatile String clientCertCn;
+    // Set when TBMQ itself initiates the channel close (see closeChannel()); read on the Netty I/O thread from
+    // MqttSessionHandler.exceptionCaught() to tell a broker-side teardown apart from a spontaneous peer/network reset.
+    private volatile boolean closeInitiated;
 
     public ClientSessionCtx() {
         this(null, UUID.randomUUID(), null, BrokerConstants.TCP);
@@ -217,6 +220,7 @@ public class ClientSessionCtx implements SessionContext {
 
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
+        closeInitiated = true;
         channel.flush();
         channel.close();
     }
