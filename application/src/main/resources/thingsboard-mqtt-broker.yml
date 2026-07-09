@@ -1169,6 +1169,12 @@ redis:
     # Enables or disables blocking when a thread requests a connection from an exhausted pool.
     blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
 
+# Connection-outcome Prometheus counters (emitted when stats.enabled=true), untagged in CE:
+#   connectionAccepted_total  - successful CONNACKs.
+#   connectionRefused_total   - refused CONNACKs (any CONNECTION_REFUSED_* code).
+#   connectionError_total     - connection-establishment failures with no CONNACK (TLS/framing/IO).
+# Total attempts = accepted + refused + error (derived in PromQL). The per-cause breakdowns
+# (connectionRefused{returnCode}, connectionError{type}) are a PE-only feature.
 # Statistics parameters
 stats:
   # Enables or disables stats printing to the logs.
