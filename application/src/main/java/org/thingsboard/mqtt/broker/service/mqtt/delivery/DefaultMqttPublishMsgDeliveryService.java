@@ -59,10 +59,10 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         try {
             long startTime = System.nanoTime();
             ChannelFuture future = ctx.getChannel().writeAndFlush(msg);
-            recordDeliveryOnSuccess(future, startTime);
+            recordDeliveryOnSuccess(ctx, msg, future, startTime);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain()) {
+            if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
@@ -74,11 +74,11 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
             if (added) {
                 long startTime = System.nanoTime();
                 ChannelFuture future = processor.get();
-                recordDeliveryOnSuccess(future, startTime);
+                recordDeliveryOnSuccess(ctx, msg, future, startTime);
             }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain()) {
+            if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
@@ -91,13 +91,15 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
      * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
      * event-loop callback are not paid on the hot delivery path when metrics are turned off.
      */
-    private void recordDeliveryOnSuccess(ChannelFuture future, long startTime) {
+    private void recordDeliveryOnSuccess(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
         if (!statsEnabled) {
             return;
         }
         future.addListener(f -> {
             if (f.isSuccess()) {
                 deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+            } else if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
+                tbMessageStatsReportClient.reportDroppedMsgs();
             }
         });
     }

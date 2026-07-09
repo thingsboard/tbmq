@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
@@ -88,6 +89,12 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         return captor.getValue();
     }
 
+    private void stubPersistence(boolean persistent) {
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(sessionInfo.isPersistent()).thenReturn(persistent);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     public void givenStatsEnabled_whenSendPublish_thenDeliveryRecordedOnFutureCompletionNotSynchronously() throws Exception {
@@ -106,8 +113,12 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void givenStatsEnabled_whenWriteFutureFails_thenDeliveryNotRecorded() throws Exception {
+    public void givenAsyncFailureNonPersistentNonRetained_whenSendPublish_thenReportsDroppedAndNoDelivery() throws Exception {
         DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(false);
         when(ctx.addInFlightMsg(msg)).thenReturn(true);
         when(channel.writeAndFlush(msg)).thenReturn(future);
         when(future.isSuccess()).thenReturn(false);
@@ -115,7 +126,43 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         service.sendPublishMsgToClient(ctx, msg);
         captureListener().operationComplete(future);
 
+        verify(reportClient, times(1)).reportDroppedMsgs();
         assertEquals(0, deliveryTimer().count());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenAsyncFailurePersistent_whenSendPublish_thenNotCounted() throws Exception {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(true);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenReturn(future);
+        when(future.isSuccess()).thenReturn(false);
+
+        service.sendPublishMsgToClient(ctx, msg);
+        captureListener().operationComplete(future);
+
+        verify(reportClient, never()).reportDroppedMsgs();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenAsyncFailureRetained_whenSendPublish_thenNotCounted() throws Exception {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(true);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenReturn(future);
+        when(future.isSuccess()).thenReturn(false);
+
+        service.sendPublishMsgToClient(ctx, msg);
+        captureListener().operationComplete(future);
+
+        verify(reportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -180,6 +227,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(false);
         when(ctx.addInFlightMsg(msg)).thenReturn(true);
         when(channel.writeAndFlush(msg)).thenThrow(new RuntimeException("boom"));
 
