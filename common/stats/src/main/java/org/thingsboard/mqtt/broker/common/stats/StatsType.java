@@ -74,6 +74,9 @@ public enum StatsType {
     DROPPED_MSGS(BrokerConstants.DROPPED_MSGS),
     DROPPED_LIFECYCLE_EVENTS("droppedLifecycleEvents"),
     CLIENT_DISCONNECTS("clientDisconnects"),
+    CONNECTION_ACCEPTED("connectionAccepted"),
+    CONNECTION_REFUSED("connectionRefused"),
+    CONNECTION_ERROR("connectionError"),
     ;
 
     private final String printName;
