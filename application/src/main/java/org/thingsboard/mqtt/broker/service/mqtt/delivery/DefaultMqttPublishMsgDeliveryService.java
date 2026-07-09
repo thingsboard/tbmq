@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -95,6 +96,12 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
      * <p>
      * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
      * event-loop callback are not paid on the hot delivery path when metrics are turned off.
+     * <p>
+     * On failure it reports a dropped message when the drop is countable (see {@link #isCountableDrop}):
+     * non-retained, and either non-persistent or QoS0, since a persistent-session copy of a QoS&gt;0 message
+     * remains recoverable from the store (APPLICATION: redelivered from Kafka, counted once at give-up in
+     * {@code ApplicationPersistenceProcessorImpl}; DEVICE: redelivered from Redis) whereas QoS0 is never stored
+     * and so is always a permanent loss.
      */
     private void recordDeliveryOutcome(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
         if (!statsEnabled) {
@@ -109,11 +116,13 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         });
     }
 
-    // A drop is countable only when non-retained and non-persistent: persistent (APPLICATION) copies stay in
-    // the store and are counted once at give-up (ApplicationPersistenceProcessorImpl), so counting them here
-    // too would double count.
+    // A drop is countable only when non-retained, and either non-persistent or QoS0. QoS0 is never stored, so
+    // it is a permanent loss even for a persistent session; QoS>0 to a persistent session is recoverable from
+    // the store (APPLICATION: from Kafka, counted once at give-up in ApplicationPersistenceProcessorImpl;
+    // DEVICE: redelivered from Redis) so must not be counted here too, or it would be double counted.
     private boolean isCountableDrop(ClientSessionCtx ctx, MqttPublishMessage msg) {
-        return !msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent();
+        return !msg.fixedHeader().isRetain()
+                && (!ctx.getSessionInfo().isPersistent() || msg.fixedHeader().qosLevel() == MqttQoS.AT_MOST_ONCE);
     }
 
 }

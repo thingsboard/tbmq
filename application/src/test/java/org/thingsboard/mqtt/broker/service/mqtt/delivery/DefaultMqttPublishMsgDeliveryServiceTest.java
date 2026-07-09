@@ -21,6 +21,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.junit.Before;
 import org.junit.Test;
@@ -150,6 +151,25 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void givenAsyncFailureQos0Persistent_whenSendPublish_thenReportsDropped() throws Exception {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_MOST_ONCE);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(true);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenReturn(future);
+        when(future.isSuccess()).thenReturn(false);
+
+        service.sendPublishMsgToClient(ctx, msg);
+        captureListener().operationComplete(future);
+
+        verify(reportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void givenAsyncFailureRetained_whenSendPublish_thenNotCounted() throws Exception {
         DefaultMqttPublishMsgDeliveryService service = buildService(true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
@@ -236,5 +256,21 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         verify(reportClient, times(1)).reportDroppedMsgs();
         verify(future, never()).addListener(any(GenericFutureListener.class));
         assertEquals(0, deliveryTimer().count());
+    }
+
+    @Test
+    public void givenSyncThrowQos0Persistent_whenSendPublish_thenReportsDropped() {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_MOST_ONCE);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(true);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenThrow(new RuntimeException("boom"));
+
+        service.sendPublishMsgToClient(ctx, msg);
+
+        verify(reportClient, times(1)).reportDroppedMsgs();
     }
 }
