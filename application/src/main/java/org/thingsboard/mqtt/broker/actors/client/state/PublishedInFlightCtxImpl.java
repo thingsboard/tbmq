@@ -118,9 +118,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     clientId, clientReceiveMax, delayedMsgQueueMaxSize);
             ReferenceCountUtil.safeRelease(toRelease);
             stats.incDropOverflow();
-            // Count as dropped only for non-persistent sessions; persistent (APPLICATION) copies stay in the
-            // store and are counted once at give-up (ApplicationPersistenceProcessorImpl).
-            if (!clientSessionCtx.getSessionInfo().isPersistent()) {
+            if (isCountableDrop(toRelease)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
@@ -227,10 +225,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         if (expiredCount > 0) {
             stats.decDelayed(expiredCount);
             stats.incDropTtl(expiredCount);
-            // Count as dropped only for non-persistent sessions; persistent (APPLICATION) copies stay in the
-            // store and are counted once at give-up (ApplicationPersistenceProcessorImpl).
-            if (!clientSessionCtx.getSessionInfo().isPersistent()) {
-                tbMessageStatsReportClient.reportDroppedMsgs(expiredCount);
+            int countableDrops = (int) toRelease.stream().filter(this::isCountableDrop).count();
+            if (countableDrops > 0) {
+                tbMessageStatsReportClient.reportDroppedMsgs(countableDrops);
             }
         }
 
@@ -273,6 +270,14 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
     private boolean atMostOnce(MqttPublishMessage mqttPubMsg) {
         return MqttQoS.AT_MOST_ONCE == mqttPubMsg.fixedHeader().qosLevel();
+    }
+
+    // A flow-control drop counts toward droppedMsgs only for a non-persistent session and a non-retained
+    // message: persistent copies are recoverable from the store (APPLICATION via Kafka, counted once at
+    // give-up in ApplicationPersistenceProcessorImpl; DEVICE via Redis redelivery), and retained messages are
+    // recoverable from the retained-message store (consistent with DefaultMqttPublishMsgDeliveryService).
+    private boolean isCountableDrop(MqttPublishMessage msg) {
+        return !clientSessionCtx.getSessionInfo().isPersistent() && !msg.fixedHeader().isRetain();
     }
 
 }

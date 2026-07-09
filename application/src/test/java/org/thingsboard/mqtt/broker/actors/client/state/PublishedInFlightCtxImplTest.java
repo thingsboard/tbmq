@@ -151,6 +151,24 @@ public class PublishedInFlightCtxImplTest {
     }
 
     @Test
+    public void addInFlightMsg_delayedQueueFull_retainedMsg_notReportedAsDropped() {
+        stubPersistence(false);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill in-flight window (non-retained)
+        }
+        for (int i = 6; i <= 10; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill delay queue (non-retained)
+        }
+
+        MqttPublishMessage retainedOverflow = qos1Retained(11);
+        boolean result = ctx.addInFlightMsg(retainedOverflow);   // this one is dropped (overflow)
+
+        assertFalse(result);
+        verify(stats, times(1)).incDropOverflow();
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();  // retained ⇒ not counted
+    }
+
+    @Test
     public void addInFlightMsg_duplicatePacketId_reservesForDeliveryButDoesNotDoubleCountInflight() {
         assertTrue(ctx.addInFlightMsg(qos1(1)));
 
@@ -329,6 +347,22 @@ public class PublishedInFlightCtxImplTest {
     }
 
     @Test
+    public void expireTtl_mixedRetainedAndPlain_countsOnlyNonRetained() throws InterruptedException {
+        stubPersistence(false);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill in-flight window so the next two are buffered
+        }
+        ctx.addInFlightMsg(qos1(6));              // non-retained, buffered
+        ctx.addInFlightMsg(qos1Retained(7));      // retained, buffered
+
+        Thread.sleep(20);
+        ctx.expireTtl(1L);                        // both expire
+
+        verify(stats, times(1)).incDropTtl(2);                       // flow-control meter counts both
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs(1);  // only the 1 non-retained counted
+    }
+
+    @Test
     public void release_clearsBothStructuresAndReleasesBufferedMessages() {
         for (int i = 1; i <= 5; i++) {
             ctx.addInFlightMsg(qos1(i));
@@ -458,6 +492,13 @@ public class PublishedInFlightCtxImplTest {
 
     private MqttPublishMessage qos1(int packetId) {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+        return new MqttPublishMessage(fixed,
+                new MqttPublishVariableHeader("t", packetId),
+                Unpooled.buffer(1).writeByte(0x42));
+    }
+
+    private MqttPublishMessage qos1Retained(int packetId) {
+        MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, true, 0);
         return new MqttPublishMessage(fixed,
                 new MqttPublishVariableHeader("t", packetId),
                 Unpooled.buffer(1).writeByte(0x42));
