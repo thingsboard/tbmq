@@ -58,6 +58,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -95,6 +96,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final PublishMsgValidationService publishMsgValidationService;
     private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
     private final StatsManager statsManager;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     private ExecutorService connectHandlerExecutor;
@@ -159,6 +161,7 @@ public class ConnectServiceImpl implements ConnectService {
                     flowControlService,
                     mqttPublishMsgDeliveryService,
                     statsManager.getFlowControlStats(),
+                    tbMessageStatsReportClient,
                     receiveMaxValue,
                     delayedQueueMaxSize);
         }

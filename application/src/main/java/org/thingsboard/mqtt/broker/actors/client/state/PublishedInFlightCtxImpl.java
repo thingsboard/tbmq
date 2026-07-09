@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
@@ -49,6 +50,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
     private final ClientSessionCtx clientSessionCtx;
     private final MqttPublishMsgDeliveryService deliveryService;
     private final FlowControlStats stats;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final String clientId;
     private final int clientReceiveMax;
     private final int delayedMsgQueueMaxSize;
@@ -57,12 +59,14 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                                     ClientSessionCtx clientSessionCtx,
                                     MqttPublishMsgDeliveryService deliveryService,
                                     FlowControlStats stats,
+                                    TbMessageStatsReportClient tbMessageStatsReportClient,
                                     int clientReceiveMax,
                                     int delayedMsgQueueMaxSize) {
         this.flowControlService = flowControlService;
         this.clientSessionCtx = clientSessionCtx;
         this.deliveryService = deliveryService;
         this.stats = stats;
+        this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.clientId = clientSessionCtx.getClientId();
         this.clientReceiveMax = clientReceiveMax;
         this.delayedMsgQueueMaxSize = delayedMsgQueueMaxSize;
@@ -114,6 +118,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     clientId, clientReceiveMax, delayedMsgQueueMaxSize);
             ReferenceCountUtil.safeRelease(toRelease);
             stats.incDropOverflow();
+            if (!clientSessionCtx.getSessionInfo().isPersistent()) {
+                tbMessageStatsReportClient.reportDroppedMsgs();
+            }
         }
         return reserve;
     }
@@ -218,6 +225,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         if (expiredCount > 0) {
             stats.decDelayed(expiredCount);
             stats.incDropTtl(expiredCount);
+            if (!clientSessionCtx.getSessionInfo().isPersistent()) {
+                tbMessageStatsReportClient.reportDroppedMsgs(expiredCount);
+            }
         }
 
         if (queueEmpty) {
