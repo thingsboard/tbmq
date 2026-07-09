@@ -347,7 +347,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause instanceof IOException) {
             log.warn("[{}][{}][{}] IOException ({}): {}. Connection closed {}.",
-                    sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(), describeConnectionCloseOrigin());
+                    sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(),
+                    connectionCloseOrigin(clientSessionCtx.isCloseInitiated()));
             exceptionMessage = cause.getMessage();
         } else if (cause instanceof ProtocolViolationException) {
             log.warn("[{}][{}][{}] ProtocolViolationException: {}", sessionId, clientId, remoteAddress, cause.getMessage());
@@ -360,19 +361,22 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     /**
-     * Explains who closed the connection for an IOException surfaced on the Netty I/O thread (typically
-     * "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ received a
-     * TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use whether a
-     * broker-side close was initiated for this session to tell the two situations apart:
+     * Best-effort attribution of who closed the connection for an IOException surfaced on the Netty I/O thread
+     * (typically "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ
+     * received a TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use
+     * whether a broker-side close was recorded for this session (see {@link ClientSessionCtx#isCloseInitiated()})
+     * to tell the two situations apart:
      * <ul>
-     *   <li>initiated — the reset is part of a teardown TBMQ started (rate limit, protocol error, takeover, ...);</li>
-     *   <li>not initiated — the client or a network device between the client and TBMQ aborted the connection.</li>
+     *   <li>recorded — the reset is part of a teardown TBMQ started (rate limit, protocol error, takeover, ...);</li>
+     *   <li>not recorded — the client or a network device between the client and TBMQ aborted the connection.</li>
      * </ul>
+     * It is best-effort: a reset arriving before the actor pipeline reaches {@code closeChannel()}, or a close
+     * driven by server shutdown, is not recorded and therefore reads as external.
      */
-    private String describeConnectionCloseOrigin() {
-        return clientSessionCtx.isCloseInitiated()
-                ? "by TBMQ (a disconnect was initiated on the broker side; the peer's reset is part of that teardown)"
-                : "by the remote peer or a network device between the client and TBMQ (external to TBMQ; no disconnect was initiated on the broker side)";
+    static String connectionCloseOrigin(boolean brokerCloseRecorded) {
+        return brokerCloseRecorded
+                ? "by TBMQ (a broker-side close was recorded for this session; the peer's reset is part of that teardown)"
+                : "by the remote peer or a network device between the client and TBMQ (external to TBMQ; no broker-side close was recorded for this session)";
     }
 
     @Override
