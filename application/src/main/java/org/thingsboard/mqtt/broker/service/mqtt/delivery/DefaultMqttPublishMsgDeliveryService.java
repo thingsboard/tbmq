@@ -109,6 +109,9 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         });
     }
 
+    // A drop is countable only when non-retained and non-persistent: persistent (APPLICATION) copies stay in
+    // the store and are counted once at give-up (ApplicationPersistenceProcessorImpl), so counting them here
+    // too would double count.
     private boolean isCountableDrop(ClientSessionCtx ctx, MqttPublishMessage msg) {
         return !msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent();
     }

@@ -118,6 +118,8 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     clientId, clientReceiveMax, delayedMsgQueueMaxSize);
             ReferenceCountUtil.safeRelease(toRelease);
             stats.incDropOverflow();
+            // Count as dropped only for non-persistent sessions; persistent (APPLICATION) copies stay in the
+            // store and are counted once at give-up (ApplicationPersistenceProcessorImpl).
             if (!clientSessionCtx.getSessionInfo().isPersistent()) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
@@ -225,6 +227,8 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         if (expiredCount > 0) {
             stats.decDelayed(expiredCount);
             stats.incDropTtl(expiredCount);
+            // Count as dropped only for non-persistent sessions; persistent (APPLICATION) copies stay in the
+            // store and are counted once at give-up (ApplicationPersistenceProcessorImpl).
             if (!clientSessionCtx.getSessionInfo().isPersistent()) {
                 tbMessageStatsReportClient.reportDroppedMsgs(expiredCount);
             }
