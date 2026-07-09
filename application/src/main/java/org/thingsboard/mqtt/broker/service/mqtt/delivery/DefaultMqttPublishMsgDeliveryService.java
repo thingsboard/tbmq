@@ -59,10 +59,10 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         try {
             long startTime = System.nanoTime();
             ChannelFuture future = ctx.getChannel().writeAndFlush(msg);
-            recordDeliveryOnSuccess(ctx, msg, future, startTime);
+            recordDeliveryOutcome(ctx, msg, future, startTime);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
+            if (isCountableDrop(ctx, msg)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
@@ -74,34 +74,43 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
             if (added) {
                 long startTime = System.nanoTime();
                 ChannelFuture future = processor.get();
-                recordDeliveryOnSuccess(ctx, msg, future, startTime);
+                recordDeliveryOutcome(ctx, msg, future, startTime);
             }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
+            if (isCountableDrop(ctx, msg)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
     }
 
     /**
-     * Records the delivery latency when the write {@link ChannelFuture} completes successfully, i.e. once the
-     * PUBLISH bytes have been written to the socket — not the synchronous cost of handing the write off to the
-     * Netty event loop, which the surrounding {@code writeAndFlush}/{@code write} calls return before completing.
+     * Handles the outcome of a write once its {@link ChannelFuture} completes.
+     * <p>
+     * On success it records the delivery latency, i.e. the time until the PUBLISH bytes have been written to the
+     * socket — not the synchronous cost of handing the write off to the Netty event loop, which the surrounding
+     * {@code writeAndFlush}/{@code write} calls return before completing. On failure it reports a dropped message
+     * when the drop is countable (see {@link #isCountableDrop}): non-retained and non-persistent, since persistent
+     * copies remain recoverable from the store and are counted later at give-up.
+     * <p>
      * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
      * event-loop callback are not paid on the hot delivery path when metrics are turned off.
      */
-    private void recordDeliveryOnSuccess(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
+    private void recordDeliveryOutcome(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
         if (!statsEnabled) {
             return;
         }
         future.addListener(f -> {
             if (f.isSuccess()) {
                 deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
-            } else if (!msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent()) {
+            } else if (isCountableDrop(ctx, msg)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         });
+    }
+
+    private boolean isCountableDrop(ClientSessionCtx ctx, MqttPublishMessage msg) {
+        return !msg.fixedHeader().isRetain() && !ctx.getSessionInfo().isPersistent();
     }
 
 }
