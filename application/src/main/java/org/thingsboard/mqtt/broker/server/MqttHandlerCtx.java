@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 @Component
@@ -37,6 +38,7 @@ public class MqttHandlerCtx {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RateLimitBatchProcessor rateLimitBatchProcessor;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final StatsManager statsManager;
 
     @Value("${mqtt.max-in-flight-msgs:1000}")
     private int maxInFlightMsgs;
@@ -49,12 +51,14 @@ public class MqttHandlerCtx {
                           RateLimitService rateLimitService,
                           MqttMessageGenerator mqttMessageGenerator,
                           @Autowired(required = false) RateLimitBatchProcessor rateLimitBatchProcessor,
-                          TbMessageStatsReportClient tbMessageStatsReportClient) {
+                          TbMessageStatsReportClient tbMessageStatsReportClient,
+                          StatsManager statsManager) {
         this.actorManager = actorManager;
         this.clientLogger = clientLogger;
         this.rateLimitService = rateLimitService;
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.rateLimitBatchProcessor = rateLimitBatchProcessor;
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
+        this.statsManager = statsManager;
     }
 }

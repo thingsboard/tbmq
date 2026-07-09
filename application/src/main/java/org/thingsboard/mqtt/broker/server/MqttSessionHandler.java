@@ -59,6 +59,8 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionErrorType;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -86,6 +88,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RateLimitBatchProcessor rateLimitBatchProcessor;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ConnectionStats connectionStats;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -100,6 +103,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
         this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
+        this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -333,21 +337,33 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         String exceptionMessage;
+        ConnectionErrorType errorType;
         if (cause.getCause() instanceof SSLHandshakeException) {
             log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
+            errorType = ConnectionErrorType.SSL_HANDSHAKE;
         } else if (cause.getCause() instanceof NotSslRecordException) {
             log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
+            errorType = ConnectionErrorType.NOT_SSL_RECORD;
         } else if (cause instanceof IOException) {
             log.warn("[{}] IOException: {}", sessionId, cause.getMessage());
             exceptionMessage = cause.getMessage();
+            errorType = ConnectionErrorType.IO;
         } else if (cause instanceof ProtocolViolationException) {
             log.warn("[{}] ProtocolViolationException: {}", sessionId, cause.getMessage());
             exceptionMessage = cause.getMessage();
+            errorType = ConnectionErrorType.PROTOCOL_VIOLATION;
         } else {
             log.error("[{}] Unexpected Exception", sessionId, cause);
             exceptionMessage = cause.getMessage();
+            errorType = ConnectionErrorType.OTHER;
+        }
+        // Count only pre-establishment errors: clientId is still null, i.e. no CONNECT has been processed
+        // yet (no session). Post-session channel errors (clientId != null) are counted as clientDisconnects
+        // via disconnect(ON_ERROR) below.
+        if (clientId == null) {
+            connectionStats.onConnectionError(errorType);
         }
         disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, exceptionMessage));
     }
