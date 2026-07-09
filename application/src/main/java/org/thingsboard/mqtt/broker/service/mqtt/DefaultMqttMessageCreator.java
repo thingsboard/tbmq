@@ -48,6 +48,8 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeUtil;
@@ -94,6 +96,12 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     @Value("${mqtt.max-in-flight-msgs:65535}")
     private int maxInFlightMessages;
 
+    private final ConnectionStats connectionStats;
+
+    public DefaultMqttMessageCreator(StatsManager statsManager) {
+        this.connectionStats = statsManager.getConnectionStats();
+    }
+
     @PostConstruct
     public void init() {
         if (maxInFlightMessages <= 0) {
@@ -103,11 +111,15 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
+        // This single-arg overload is the refusal-only CONNACK choke point (accepts use the two-arg
+        // overload), so every call here is a refused connection.
+        connectionStats.onConnectionRefused(returnCode);
         return MqttMessageBuilders.connAck().returnCode(returnCode).build();
     }
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
+        connectionStats.onConnectionAccepted();
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         var sessionPresent = msg.isSessionPresent();
         var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
