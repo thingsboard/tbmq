@@ -32,7 +32,9 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
@@ -42,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategyConfiguration;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
@@ -49,6 +52,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
@@ -77,6 +81,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -105,6 +110,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationTopicService applicationTopicService;
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
+    @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -460,6 +466,27 @@ class ApplicationPersistenceProcessorImplTest {
     }
 
     @Test
+    void reportSkippedMessagesIfAny_whenPublishPending_thenReportsPublishCountOnly() {
+        invokeReportSkippedMessagesIfAny("appClient", resultWith(3, 2));
+
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs(3);
+    }
+
+    @Test
+    void reportSkippedMessagesIfAny_whenOnlyPubRelPending_thenReportsNothing() {
+        invokeReportSkippedMessagesIfAny("appClient", resultWith(0, 2));
+
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
+    void reportSkippedMessagesIfAny_whenNothingPending_thenReportsNothing() {
+        invokeReportSkippedMessagesIfAny("appClient", resultWith(0, 0));
+
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
     void processMainPack_retryAll_whenClientNeverAcks_mustGiveUpAndCommitAfterRetryCap() {
         ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
         ackConfig.setType(AckStrategyType.RETRY_ALL);
@@ -554,6 +581,28 @@ class ApplicationPersistenceProcessorImplTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void invokeReportSkippedMessagesIfAny(String clientId, ApplicationPackProcessingResult result) {
+        try {
+            var method = ApplicationPersistenceProcessorImpl.class.getDeclaredMethod(
+                    "reportSkippedMessagesIfAny", String.class, ApplicationPackProcessingResult.class);
+            method.setAccessible(true);
+            method.invoke(processor, clientId, result);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ApplicationPackProcessingResult resultWith(int publishPending, int pubRelPending) {
+        ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx("appClient");
+        for (int i = 1; i <= publishPending; i++) {
+            ctx.getPublishPendingMsgMap().put(i, new PersistedPublishMsg(mock(PublishMsg.class), i, false));
+        }
+        for (int i = 1; i <= pubRelPending; i++) {
+            ctx.getPubRelPendingMsgMap().put(1000 + i, new PersistedPubRelMsg(1000 + i, i));
+        }
+        return new ApplicationPackProcessingResult(ctx);
     }
 
     private boolean invokeIsProcessorActive() {
