@@ -222,11 +222,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
         var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
-        // Broker-initiated close: record it so exceptionCaught can attribute a following reset to TBMQ rather
-        // than the peer. This path closes the channel directly instead of going through ClientSessionCtx#closeChannel.
-        clientSessionCtx.setCloseInitiated(true);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
-        clientSessionCtx.getChannel().close();
+        // Funnel this broker-initiated close through the single chokepoint (which records it via closeInitiated,
+        // read by exceptionCaught) rather than closing the channel directly.
+        clientSessionCtx.closeChannel();
     }
 
     private void processPublish(MqttMessage msg) {
