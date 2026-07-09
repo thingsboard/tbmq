@@ -1173,7 +1173,9 @@ redis:
 #   connectionAccepted_total  - successful CONNACKs.
 #   connectionRefused_total   - refused CONNACKs (any CONNECTION_REFUSED_* code).
 #   connectionError_total     - connection-establishment failures with no CONNACK (TLS/framing/IO).
-# Total attempts = accepted + refused + error (derived in PromQL). The per-cause breakdowns
+# accepted + refused + error (derived in PromQL) is a lower bound on total attempts: an error that
+# occurs after CONNECT but before the session is established is counted by neither connectionError nor
+# clientDisconnects (this keeps the two families disjoint). The per-cause breakdowns
 # (connectionRefused{returnCode}, connectionError{type}) are a PE-only feature.
 # Statistics parameters
 stats:

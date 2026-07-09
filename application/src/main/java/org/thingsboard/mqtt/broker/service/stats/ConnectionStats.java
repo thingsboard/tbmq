@@ -20,9 +20,17 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 /**
  * Tracks the terminal outcomes of inbound MQTT connection attempts as three cumulative Prometheus
  * counters: {@code connectionAccepted}, {@code connectionRefused}, {@code connectionError}. In CE all
- * three are untagged, so {@code total attempts = accepted + refused + error} is derived in PromQL and
- * each {@code rate(...)} gives the accept/refuse/error throughput. The per-cause breakdowns
+ * three are untagged, so {@code accepted + refused + error} (derived in PromQL) approximates total
+ * attempts and each {@code rate(...)} gives the accept/refuse/error throughput. The per-cause breakdowns
  * ({@code returnCode} / {@code type}) are PE-only extensions that override this impl.
+ * <p>
+ * {@code connectionError} counts establishment failures that surface before a session exists, so
+ * {@code accepted + refused + error} is a <b>lower bound</b> on total attempts, not an exact identity:
+ * a channel error occurring after the CONNECT is read but before the session is established (during async
+ * authentication/validation) is counted by neither {@code connectionError} (see
+ * {@code MqttSessionHandler.exceptionCaught}, gated on {@code clientId == null}) nor {@code clientDisconnects}
+ * (which skips sessions that were never established). That gap is deliberate — it keeps the two metric
+ * families disjoint at the cost of not counting the narrow mid-handshake window.
  * <p>
  * Obtained from {@link StatsManager}, so it shares the {@code stats.enabled} master switch; when stats
  * are disabled the stub implementation is a no-op and nothing is exposed.

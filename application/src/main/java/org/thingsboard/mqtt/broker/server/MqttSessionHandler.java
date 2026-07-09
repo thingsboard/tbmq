@@ -361,7 +361,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
         // Count only pre-establishment errors: clientId is still null, i.e. no CONNECT has been processed
         // yet (no session). Post-session channel errors (clientId != null) are counted as clientDisconnects
-        // via disconnect(ON_ERROR) below.
+        // via disconnect(ON_ERROR) below. This gate deliberately leaves connectionError a lower bound: an
+        // error after CONNECT but before the session is established (clientId != null, sessionInfo == null)
+        // is counted by neither family, which is accepted to keep connectionError and clientDisconnects disjoint.
         if (clientId == null) {
             connectionStats.onConnectionError(errorType);
         }
