@@ -90,18 +90,16 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
      * <p>
      * On success it records the delivery latency, i.e. the time until the PUBLISH bytes have been written to the
      * socket — not the synchronous cost of handing the write off to the Netty event loop, which the surrounding
-     * {@code writeAndFlush}/{@code write} calls return before completing. On failure it reports a dropped message
-     * when the drop is countable (see {@link #isCountableDrop}): non-retained and non-persistent, since persistent
-     * copies remain recoverable from the store and are counted later at give-up.
-     * <p>
-     * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
-     * event-loop callback are not paid on the hot delivery path when metrics are turned off.
+     * {@code writeAndFlush}/{@code write} calls return before completing.
      * <p>
      * On failure it reports a dropped message when the drop is countable (see {@link #isCountableDrop}):
      * non-retained, and either non-persistent or QoS0, since a persistent-session copy of a QoS&gt;0 message
      * remains recoverable from the store (APPLICATION: redelivered from Kafka, counted once at give-up in
      * {@code ApplicationPersistenceProcessorImpl}; DEVICE: redelivered from Redis) whereas QoS0 is never stored
      * and so is always a permanent loss.
+     * <p>
+     * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
+     * event-loop callback are not paid on the hot delivery path when metrics are turned off.
      */
     private void recordDeliveryOutcome(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
         if (!statsEnabled) {

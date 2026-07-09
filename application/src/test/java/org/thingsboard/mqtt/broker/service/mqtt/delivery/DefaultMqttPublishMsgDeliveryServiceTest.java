@@ -166,6 +166,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         captureListener().operationComplete(future);
 
         verify(reportClient, times(1)).reportDroppedMsgs();
+        assertEquals(0, deliveryTimer().count());
     }
 
     @Test
@@ -272,5 +273,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         service.sendPublishMsgToClient(ctx, msg);
 
         verify(reportClient, times(1)).reportDroppedMsgs();
+        verify(future, never()).addListener(any(GenericFutureListener.class));
+        assertEquals(0, deliveryTimer().count());
     }
 }
