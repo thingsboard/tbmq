@@ -275,7 +275,11 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
     // A flow-control drop counts toward droppedMsgs only for a non-persistent session and a non-retained
     // message: persistent copies are recoverable from the store (APPLICATION via Kafka, counted once at
     // give-up in ApplicationPersistenceProcessorImpl; DEVICE via Redis redelivery), and retained messages are
-    // recoverable from the retained-message store (consistent with DefaultMqttPublishMsgDeliveryService).
+    // recoverable from the retained-message store.
+    //
+    // NOTE: this predicate intentionally has NO QoS0 clause, unlike DefaultMqttPublishMsgDeliveryService#isCountableDrop.
+    // QoS0 messages short-circuit in atMostOnce()/addInFlightMsg() and never enter the delay queue, so they cannot be
+    // dropped here — the two predicates are deliberately different. Do not "align" them by adding a QoS0 clause here.
     private boolean isCountableDrop(MqttPublishMessage msg) {
         return !clientSessionCtx.getSessionInfo().isPersistent() && !msg.fixedHeader().isRetain();
     }
