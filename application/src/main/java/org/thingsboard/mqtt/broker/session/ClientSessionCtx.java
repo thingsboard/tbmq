@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
 
@@ -101,6 +102,9 @@ public class ClientSessionCtx implements SessionContext {
     private volatile String username;
     private volatile String authDetails;
     private volatile String clientCertCn;
+    // Set when TBMQ itself initiates the channel close (see closeChannel()); read on the Netty I/O thread from
+    // MqttSessionHandler.exceptionCaught() to tell a broker-side teardown apart from a spontaneous peer/network reset.
+    private volatile boolean closeInitiated;
 
     public ClientSessionCtx() {
         this(null, UUID.randomUUID(), null, BrokerConstants.TCP);
@@ -170,10 +174,11 @@ public class ClientSessionCtx implements SessionContext {
     public void initPublishedInFlightCtx(FlowControlService flowControlService,
                                          MqttPublishMsgDeliveryService deliveryService,
                                          FlowControlStats stats,
+                                         TbMessageStatsReportClient tbMessageStatsReportClient,
                                          int receiveMaxValue,
                                          int delayedQueueMaxSize) {
         publishedInFlightCtx = new PublishedInFlightCtxImpl(
-                flowControlService, this, deliveryService, stats, receiveMaxValue, delayedQueueMaxSize);
+                flowControlService, this, deliveryService, stats, tbMessageStatsReportClient, receiveMaxValue, delayedQueueMaxSize);
     }
 
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {
@@ -217,6 +222,7 @@ public class ClientSessionCtx implements SessionContext {
 
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
+        closeInitiated = true;
         channel.flush();
         channel.close();
     }

@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -109,6 +110,8 @@ public class ConnectServiceImplTest {
     MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
     @MockitoBean
     StatsManager statsManager;
+    @MockitoBean
+    TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 

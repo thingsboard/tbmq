@@ -124,6 +124,7 @@ public class MqttPublishHandler {
             }
         } catch (FullMsgQueueException e) {
             log.warn("[{}][{}] Failed to process publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             disconnectClient(ctx, DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED, e.getMessage());
             return;
         }

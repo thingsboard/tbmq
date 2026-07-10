@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
@@ -49,6 +50,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
     private final ClientSessionCtx clientSessionCtx;
     private final MqttPublishMsgDeliveryService deliveryService;
     private final FlowControlStats stats;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final String clientId;
     private final int clientReceiveMax;
     private final int delayedMsgQueueMaxSize;
@@ -57,12 +59,14 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                                     ClientSessionCtx clientSessionCtx,
                                     MqttPublishMsgDeliveryService deliveryService,
                                     FlowControlStats stats,
+                                    TbMessageStatsReportClient tbMessageStatsReportClient,
                                     int clientReceiveMax,
                                     int delayedMsgQueueMaxSize) {
         this.flowControlService = flowControlService;
         this.clientSessionCtx = clientSessionCtx;
         this.deliveryService = deliveryService;
         this.stats = stats;
+        this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.clientId = clientSessionCtx.getClientId();
         this.clientReceiveMax = clientReceiveMax;
         this.delayedMsgQueueMaxSize = delayedMsgQueueMaxSize;
@@ -114,6 +118,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     clientId, clientReceiveMax, delayedMsgQueueMaxSize);
             ReferenceCountUtil.safeRelease(toRelease);
             stats.incDropOverflow();
+            if (isCountableDrop(toRelease)) {
+                tbMessageStatsReportClient.reportDroppedMsgs();
+            }
         }
         return reserve;
     }
@@ -211,13 +218,23 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             lock.unlock();
         }
 
+        // Session persistence is a per-session invariant, so resolve it once and pass it to isCountableDrop for each
+        // message rather than re-reading the field per message. Tally in the same pass that releases the buffers.
+        boolean nonPersistentSession = isNonPersistentSession();
+        int countableDrops = 0;
         for (MqttPublishMessage m : toRelease) {
+            if (isCountableDrop(nonPersistentSession, m)) {
+                countableDrops++;
+            }
             ReferenceCountUtil.safeRelease(m);
         }
         int expiredCount = toRelease.size();
         if (expiredCount > 0) {
             stats.decDelayed(expiredCount);
             stats.incDropTtl(expiredCount);
+            if (countableDrops > 0) {
+                tbMessageStatsReportClient.reportDroppedMsgs(countableDrops);
+            }
         }
 
         if (queueEmpty) {
@@ -259,6 +276,30 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
     private boolean atMostOnce(MqttPublishMessage mqttPubMsg) {
         return MqttQoS.AT_MOST_ONCE == mqttPubMsg.fixedHeader().qosLevel();
+    }
+
+    private boolean isNonPersistentSession() {
+        return !clientSessionCtx.getSessionInfo().isPersistent();
+    }
+
+    private boolean isCountableDrop(MqttPublishMessage msg) {
+        return isCountableDrop(isNonPersistentSession(), msg);
+    }
+
+    // Single source of truth for the countable-drop rule, shared by the overflow site (addInFlightMsg, via the
+    // single-arg overload) and the expireTtl batch (which resolves session persistence once and passes it in so the
+    // per-session field read is not repeated per message).
+    //
+    // A flow-control drop counts toward droppedMsgs only for a non-persistent session and a non-retained message:
+    // persistent copies are recoverable from the store (APPLICATION via Kafka, counted once at give-up in
+    // ApplicationPersistenceProcessorImpl; DEVICE via Redis redelivery), and retained messages are recoverable from
+    // the retained-message store.
+    //
+    // NOTE: intentionally NO QoS0 clause, unlike DefaultMqttPublishMsgDeliveryService#isCountableDrop. QoS0 messages
+    // short-circuit in atMostOnce()/addInFlightMsg() and never enter the delay queue, so they cannot be dropped here —
+    // the two predicates are deliberately different. Do not "align" them by adding a QoS0 clause here.
+    private boolean isCountableDrop(boolean nonPersistentSession, MqttPublishMessage msg) {
+        return nonPersistentSession && !msg.fixedHeader().isRetain();
     }
 
 }

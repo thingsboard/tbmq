@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.ClientIdMessagesPack;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
@@ -63,6 +64,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientLogger clientLogger;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Value("${queue.device-persisted-msg.consumers-count}")
     private int consumersCount;
@@ -148,6 +150,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         stats.log(totalMessagesCount, result, decision.commit());
 
                         if (decision.commit()) {
+                            reportDroppedMsgsOnGiveUp(result);
                             consumer.commitSync();
                             break;
                         } else {
@@ -181,6 +184,15 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Device msg consumer");
+        }
+    }
+
+    void reportDroppedMsgsOnGiveUp(DevicePackProcessingResult result) {
+        int dropped = result.getFailedMap().values().stream()
+                .mapToInt(pack -> pack.messages().size())
+                .sum();
+        if (dropped > 0) {
+            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
         }
     }
 

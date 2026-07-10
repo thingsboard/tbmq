@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -110,6 +111,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationTopicService applicationTopicService;
     private final ApplicationClientHelperService appClientHelperService;
     private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
     @Value("${queue.application-persisted-msg.poll-interval}")
@@ -687,6 +689,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         int skipped = skippedPublish + skippedPubRel;
         if (skipped == 0) {
             return;
+        }
+        if (skippedPublish > 0) {
+            tbMessageStatsReportClient.reportDroppedMsgs(skippedPublish);
         }
         log.warn("[{}] Giving up on pack: skipping {} un-acked message(s) [PUBLISH: {}, PUBREL: {}]{}. " +
                         "Set APPLICATION ack-strategy retries to 0 for unlimited retries.",
