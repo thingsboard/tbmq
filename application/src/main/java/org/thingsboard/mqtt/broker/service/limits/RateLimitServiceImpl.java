@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
+import org.thingsboard.mqtt.broker.config.ApplicationPersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
@@ -44,6 +45,7 @@ public class RateLimitServiceImpl implements RateLimitService {
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
     private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
+    private final ApplicationPersistedMsgsRateLimitsConfiguration applicationPersistedMsgsRateLimitsConfiguration;
     private final RateLimitCacheService rateLimitCacheService;
     private final ClientsLimitProperties clientsLimitProperties;
 
@@ -51,6 +53,8 @@ public class RateLimitServiceImpl implements RateLimitService {
     private ConcurrentMap<String, TbRateLimits> incomingPublishClientLimits;
     @Getter
     private ConcurrentMap<String, TbRateLimits> outgoingPublishClientLimits;
+    @Getter
+    private ConcurrentMap<String, TbRateLimits> applicationPersistedMsgClientLimits;
 
     @PostConstruct
     public void init() {
@@ -59,6 +63,9 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
         if (outgoingRateLimitsConfiguration.isEnabled()) {
             outgoingPublishClientLimits = new ConcurrentHashMap<>();
+        }
+        if (applicationPersistedMsgsRateLimitsConfiguration.isEnabled()) {
+            applicationPersistedMsgClientLimits = new ConcurrentHashMap<>();
         }
     }
 
@@ -99,6 +106,9 @@ public class RateLimitServiceImpl implements RateLimitService {
             }
             if (outgoingPublishClientLimits != null) {
                 outgoingPublishClientLimits.remove(clientId);
+            }
+            if (applicationPersistedMsgClientLimits != null) {
+                applicationPersistedMsgClientLimits.remove(clientId);
             }
         }
     }
@@ -173,6 +183,21 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Override
     public boolean isDevicePersistedMsgsLimitEnabled() {
         return devicePersistedMsgsRateLimitsConfiguration.isEnabled();
+    }
+
+    @Override
+    public boolean tryConsumeApplicationPersistedMsg(String clientId) {
+        if (!applicationPersistedMsgsRateLimitsConfiguration.isEnabled()) {
+            return true;
+        }
+        TbRateLimits rateLimits = applicationPersistedMsgClientLimits.computeIfAbsent(
+                clientId, id -> new TbRateLimits(applicationPersistedMsgsRateLimitsConfiguration.getClientConfig()));
+        return rateLimits.tryConsume();
+    }
+
+    @Override
+    public boolean isApplicationPersistedMsgsRateLimitEnabled() {
+        return applicationPersistedMsgsRateLimitsConfiguration.isEnabled();
     }
 
     @Override

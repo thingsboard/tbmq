@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
+import org.thingsboard.mqtt.broker.config.ApplicationPersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
@@ -55,6 +56,8 @@ public class RateLimitServiceImplTest {
     @MockitoBean
     DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     @MockitoBean
+    ApplicationPersistedMsgsRateLimitsConfiguration applicationPersistedMsgsRateLimitsConfiguration;
+    @MockitoBean
     TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     @MockitoBean
     RateLimitCacheService rateLimitCacheService;
@@ -69,12 +72,14 @@ public class RateLimitServiceImplTest {
         when(incomingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
         rateLimitService.init();
 
         rateLimitService.getIncomingPublishClientLimits().put(CLIENT_ID, new TbRateLimits("1:1")); // limit 1 per 1 second
         rateLimitService.getOutgoingPublishClientLimits().put(CLIENT_ID, new TbRateLimits("1:1")); // limit 1 per 1 second
+        rateLimitService.getApplicationPersistedMsgClientLimits().put(CLIENT_ID, new TbRateLimits("1:1")); // limit 1 per 1 second
     }
 
     @After
@@ -157,6 +162,7 @@ public class RateLimitServiceImplTest {
         rateLimitService.remove(CLIENT_ID);
         assertEquals(0, rateLimitService.getIncomingPublishClientLimits().size());
         assertEquals(0, rateLimitService.getOutgoingPublishClientLimits().size());
+        assertEquals(0, rateLimitService.getApplicationPersistedMsgClientLimits().size());
     }
 
     @Test
@@ -164,6 +170,7 @@ public class RateLimitServiceImplTest {
         rateLimitService.remove(null);
         assertEquals(1, rateLimitService.getIncomingPublishClientLimits().size());
         assertEquals(1, rateLimitService.getOutgoingPublishClientLimits().size());
+        assertEquals(1, rateLimitService.getApplicationPersistedMsgClientLimits().size());
     }
 
     @Test
@@ -302,5 +309,39 @@ public class RateLimitServiceImplTest {
 
         long tokens = rateLimitService.tryConsumeTotalMsgs(10L);
         assertEquals(10L, tokens);
+    }
+
+    @Test
+    public void givenAppPersistedMsgsRateLimitsDisabled_whenTryConsume_thenAlwaysTrue() {
+        when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
+
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+    }
+
+    @Test
+    public void givenAppPersistedMsgsRateLimitsEnabled_whenTryConsume_thenGetExpectedResult() {
+        when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+    }
+
+    @Test
+    public void givenTwoClients_whenTryConsume_thenBucketsAreIndependent() {
+        when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        rateLimitService.getApplicationPersistedMsgClientLimits().put("other", new TbRateLimits("1:1"));
+
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg("other"));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg("other"));
+    }
+
+    @Test
+    public void givenEnabledConfig_whenIsApplicationPersistedMsgsRateLimitEnabled_thenTrue() {
+        when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        Assert.assertTrue(rateLimitService.isApplicationPersistedMsgsRateLimitEnabled());
     }
 }

@@ -46,6 +46,13 @@ public interface RateLimitService {
 
     boolean isDevicePersistedMsgsLimitEnabled();
 
+    /**
+     * Non-blocking token consume for outbound persisted messages to an APPLICATION client (throttling, not dropping)
+     */
+    boolean tryConsumeApplicationPersistedMsg(String clientId);
+
+    boolean isApplicationPersistedMsgsRateLimitEnabled();
+
     long tryConsumeTotalMsgs(long limit);
 
     boolean isTotalMsgsLimitEnabled();
