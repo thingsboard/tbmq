@@ -220,7 +220,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
         // Session persistence is a per-session invariant, so resolve it once and pass it to isCountableDrop for each
         // message rather than re-reading the field per message. Tally in the same pass that releases the buffers.
-        boolean nonPersistentSession = !clientSessionCtx.getSessionInfo().isPersistent();
+        boolean nonPersistentSession = isNonPersistentSession();
         int countableDrops = 0;
         for (MqttPublishMessage m : toRelease) {
             if (isCountableDrop(nonPersistentSession, m)) {
@@ -278,8 +278,12 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         return MqttQoS.AT_MOST_ONCE == mqttPubMsg.fixedHeader().qosLevel();
     }
 
+    private boolean isNonPersistentSession() {
+        return !clientSessionCtx.getSessionInfo().isPersistent();
+    }
+
     private boolean isCountableDrop(MqttPublishMessage msg) {
-        return isCountableDrop(!clientSessionCtx.getSessionInfo().isPersistent(), msg);
+        return isCountableDrop(isNonPersistentSession(), msg);
     }
 
     // Single source of truth for the countable-drop rule, shared by the overflow site (addInFlightMsg, via the
