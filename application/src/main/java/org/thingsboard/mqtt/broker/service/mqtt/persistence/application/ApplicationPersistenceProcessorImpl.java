@@ -457,6 +457,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, null);
         submitStrategy.init(messagesToDeliver);
+        throttleDelivery(clientId, messagesToDeliver, () -> isClientSessionActive(sessionId, clientState));
 
         if (isDebugEnabled) {
             log.debug("[{}] Starting main pack, {} messages to deliver", clientId, messagesToDeliver.size());
@@ -562,6 +563,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         List<PersistedMsg> messagesToDeliver = buildMessagesToDeliver(pubRelMsgCtx, clientSessionCtx, persistedMsgCtx, messages, subscription);
         submitStrategy.init(messagesToDeliver);
+        throttleDelivery(clientId, messagesToDeliver, () -> isJobActive(job));
 
         if (log.isTraceEnabled()) {
             log.trace("[{}] Starting shared subscription pack, {} messages to deliver", clientId, messagesToDeliver.size());
