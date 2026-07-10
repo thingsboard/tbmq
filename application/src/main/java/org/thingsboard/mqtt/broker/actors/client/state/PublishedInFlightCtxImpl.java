@@ -218,14 +218,13 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             lock.unlock();
         }
 
-        // Session persistence is fixed for the session, so evaluate it once here rather than per expired message:
-        // for a persistent session nothing expiring here is a countable drop (the copy is recoverable from the
-        // store), so the per-message retain check is skipped entirely. Count in the same pass that releases the
-        // buffers instead of a second stream over the list. See isCountableDrop for the full rule and rationale.
-        boolean countableSession = !toRelease.isEmpty() && !clientSessionCtx.getSessionInfo().isPersistent();
+        // Persistence is a per-session invariant: check it once, not per message. A persistent-session copy is
+        // recoverable from the store so it never counts here; otherwise a non-retained message counts (see
+        // isCountableDrop for the full rule). Tally in the same pass that releases the buffers.
+        boolean nonPersistentSession = !clientSessionCtx.getSessionInfo().isPersistent();
         int countableDrops = 0;
         for (MqttPublishMessage m : toRelease) {
-            if (countableSession && !m.fixedHeader().isRetain()) {
+            if (nonPersistentSession && !m.fixedHeader().isRetain()) {
                 countableDrops++;
             }
             ReferenceCountUtil.safeRelease(m);
