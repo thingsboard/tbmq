@@ -21,8 +21,9 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
  * Tracks the terminal outcomes of inbound MQTT connection attempts as three cumulative Prometheus
  * counters: {@code connectionAccepted}, {@code connectionRefused}, {@code connectionError}. In CE all
  * three are untagged, so {@code accepted + refused + error} (derived in PromQL) approximates total
- * attempts and each {@code rate(...)} gives the accept/refuse/error throughput. The per-cause breakdowns
- * ({@code returnCode} / {@code type}) are PE-only extensions that override this impl.
+ * attempts and each {@code rate(...)} gives the accept/refuse/error throughput. The refusal-reason
+ * breakdown ({@code connectionRefused{returnCode}}) is a PE-only extension that overrides this impl;
+ * {@code connectionError} stays a single untagged count in both editions.
  * <p>
  * {@code connectionError} counts establishment failures that surface before a session exists, so
  * {@code accepted + refused + error} is a <b>lower bound</b> on total attempts, not an exact identity:
@@ -46,11 +47,8 @@ public interface ConnectionStats {
      */
     void onConnectionRefused(MqttConnectReturnCode returnCode);
 
-    /**
-     * Records one connection-establishment error (no CONNACK — TLS/framing/IO). {@code type} is carried
-     * so the PE extension can tag by type; the CE impl ignores it (single untagged counter).
-     */
-    void onConnectionError(ConnectionErrorType type);
+    /** Records one connection-establishment error (no CONNACK — e.g. TLS handshake, framing, or IO failure). */
+    void onConnectionError();
 
     /** Accepted count since the last {@link #reset()} — read for the periodic stats log line. */
     int getAcceptedCount();

@@ -30,7 +30,7 @@ public class StubConnectionStats implements ConnectionStats {
     }
 
     @Override
-    public void onConnectionError(ConnectionErrorType type) {
+    public void onConnectionError() {
     }
 
     @Override

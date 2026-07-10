@@ -23,7 +23,6 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
-import org.thingsboard.mqtt.broker.service.stats.ConnectionErrorType;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -31,7 +30,6 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,35 +53,35 @@ public class MqttSessionHandlerTest {
     }
 
     @Test
-    public void givenNoClientId_whenSslHandshakeException_thenConnectionErrorSslHandshakeCounted() {
+    public void givenNoClientId_whenSslHandshakeException_thenConnectionErrorCounted() {
         Throwable cause = new RuntimeException("outer", new SSLHandshakeException("bad cert"));
         handler.exceptionCaught(mock(ChannelHandlerContext.class), cause);
-        verify(connectionStats).onConnectionError(ConnectionErrorType.SSL_HANDSHAKE);
+        verify(connectionStats).onConnectionError();
     }
 
     @Test
-    public void givenNoClientId_whenNotSslRecordException_thenConnectionErrorNotSslRecordCounted() {
+    public void givenNoClientId_whenNotSslRecordException_thenConnectionErrorCounted() {
         Throwable cause = new RuntimeException("outer", new NotSslRecordException("plaintext"));
         handler.exceptionCaught(mock(ChannelHandlerContext.class), cause);
-        verify(connectionStats).onConnectionError(ConnectionErrorType.NOT_SSL_RECORD);
+        verify(connectionStats).onConnectionError();
     }
 
     @Test
-    public void givenNoClientId_whenIOException_thenConnectionErrorIoCounted() {
+    public void givenNoClientId_whenIOException_thenConnectionErrorCounted() {
         handler.exceptionCaught(mock(ChannelHandlerContext.class), new IOException("reset"));
-        verify(connectionStats).onConnectionError(ConnectionErrorType.IO);
+        verify(connectionStats).onConnectionError();
     }
 
     @Test
-    public void givenNoClientId_whenProtocolViolationException_thenConnectionErrorProtocolViolationCounted() {
+    public void givenNoClientId_whenProtocolViolationException_thenConnectionErrorCounted() {
         handler.exceptionCaught(mock(ChannelHandlerContext.class), new ProtocolViolationException("bad"));
-        verify(connectionStats).onConnectionError(ConnectionErrorType.PROTOCOL_VIOLATION);
+        verify(connectionStats).onConnectionError();
     }
 
     @Test
-    public void givenNoClientId_whenUnknownException_thenConnectionErrorOtherCounted() {
+    public void givenNoClientId_whenUnknownException_thenConnectionErrorCounted() {
         handler.exceptionCaught(mock(ChannelHandlerContext.class), new RuntimeException("boom"));
-        verify(connectionStats).onConnectionError(ConnectionErrorType.OTHER);
+        verify(connectionStats).onConnectionError();
     }
 
     @Test
@@ -92,6 +90,6 @@ public class MqttSessionHandlerTest {
         // connection-establishment error — connectionError must NOT be counted.
         ReflectionTestUtils.setField(handler, "clientId", "client-a");
         handler.exceptionCaught(mock(ChannelHandlerContext.class), new IOException("reset"));
-        verify(connectionStats, never()).onConnectionError(any());
+        verify(connectionStats, never()).onConnectionError();
     }
 }

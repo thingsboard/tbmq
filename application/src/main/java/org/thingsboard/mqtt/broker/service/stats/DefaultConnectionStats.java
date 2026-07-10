@@ -45,9 +45,7 @@ public class DefaultConnectionStats implements ConnectionStats {
     }
 
     @Override
-    public void onConnectionError(ConnectionErrorType type) {
-        // CE records a single untagged connectionError counter — the type is deliberately not used as a
-        // Micrometer tag. The type breakdown is a PE-only extension that overrides this class.
+    public void onConnectionError() {
         errorCounter.increment();
     }
 

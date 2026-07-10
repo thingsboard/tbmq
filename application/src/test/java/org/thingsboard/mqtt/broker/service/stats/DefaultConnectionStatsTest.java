@@ -42,7 +42,7 @@ public class DefaultConnectionStatsTest {
         connectionStats.onConnectionAccepted();
         connectionStats.onConnectionAccepted();
         connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
-        connectionStats.onConnectionError(ConnectionErrorType.SSL_HANDSHAKE);
+        connectionStats.onConnectionError();
 
         assertEquals(2, connectionStats.getAcceptedCount());
         assertEquals(1, connectionStats.getRefusedCount());
@@ -65,11 +65,12 @@ public class DefaultConnectionStatsTest {
     }
 
     @Test
-    public void givenDifferentErrorTypes_whenError_thenAllMapToSingleUntaggedCounter() {
-        connectionStats.onConnectionError(ConnectionErrorType.SSL_HANDSHAKE);
-        connectionStats.onConnectionError(ConnectionErrorType.NOT_SSL_RECORD);
-        connectionStats.onConnectionError(ConnectionErrorType.IO);
+    public void givenMultipleErrors_whenError_thenSingleUntaggedCounterAccumulates() {
+        connectionStats.onConnectionError();
+        connectionStats.onConnectionError();
+        connectionStats.onConnectionError();
 
+        // CE emits a single untagged connectionError counter; establishment errors carry no discriminator.
         assertEquals(3.0, meterRegistry.counter(StatsType.CONNECTION_ERROR.getPrintName()).count(), 0.0);
         assertEquals(1, meterRegistry.find(StatsType.CONNECTION_ERROR.getPrintName()).counters().size());
     }
@@ -78,7 +79,7 @@ public class DefaultConnectionStatsTest {
     public void givenIncrementedStats_whenReset_thenCountsClearedButPrometheusCountersStayMonotonic() {
         connectionStats.onConnectionAccepted();
         connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
-        connectionStats.onConnectionError(ConnectionErrorType.IO);
+        connectionStats.onConnectionError();
 
         connectionStats.reset();
 
@@ -93,7 +94,7 @@ public class DefaultConnectionStatsTest {
         // Per-interval counters keep working after reset; cumulative Prometheus counters advance.
         connectionStats.onConnectionAccepted();
         connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
-        connectionStats.onConnectionError(ConnectionErrorType.IO);
+        connectionStats.onConnectionError();
 
         assertEquals(1, connectionStats.getAcceptedCount());
         assertEquals(1, connectionStats.getRefusedCount());
