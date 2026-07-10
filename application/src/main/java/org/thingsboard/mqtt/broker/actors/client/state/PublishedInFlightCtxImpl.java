@@ -218,13 +218,12 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
             lock.unlock();
         }
 
-        // Persistence is a per-session invariant: check it once, not per message. A persistent-session copy is
-        // recoverable from the store so it never counts here; otherwise a non-retained message counts (see
-        // isCountableDrop for the full rule). Tally in the same pass that releases the buffers.
+        // Session persistence is a per-session invariant, so resolve it once and pass it to isCountableDrop for each
+        // message rather than re-reading the field per message. Tally in the same pass that releases the buffers.
         boolean nonPersistentSession = !clientSessionCtx.getSessionInfo().isPersistent();
         int countableDrops = 0;
         for (MqttPublishMessage m : toRelease) {
-            if (nonPersistentSession && !m.fixedHeader().isRetain()) {
+            if (isCountableDrop(nonPersistentSession, m)) {
                 countableDrops++;
             }
             ReferenceCountUtil.safeRelease(m);
@@ -279,16 +278,24 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
         return MqttQoS.AT_MOST_ONCE == mqttPubMsg.fixedHeader().qosLevel();
     }
 
-    // A flow-control drop counts toward droppedMsgs only for a non-persistent session and a non-retained
-    // message: persistent copies are recoverable from the store (APPLICATION via Kafka, counted once at
-    // give-up in ApplicationPersistenceProcessorImpl; DEVICE via Redis redelivery), and retained messages are
-    // recoverable from the retained-message store.
-    //
-    // NOTE: this predicate intentionally has NO QoS0 clause, unlike DefaultMqttPublishMsgDeliveryService#isCountableDrop.
-    // QoS0 messages short-circuit in atMostOnce()/addInFlightMsg() and never enter the delay queue, so they cannot be
-    // dropped here — the two predicates are deliberately different. Do not "align" them by adding a QoS0 clause here.
     private boolean isCountableDrop(MqttPublishMessage msg) {
-        return !clientSessionCtx.getSessionInfo().isPersistent() && !msg.fixedHeader().isRetain();
+        return isCountableDrop(!clientSessionCtx.getSessionInfo().isPersistent(), msg);
+    }
+
+    // Single source of truth for the countable-drop rule, shared by the overflow site (addInFlightMsg, via the
+    // single-arg overload) and the expireTtl batch (which resolves session persistence once and passes it in so the
+    // per-session field read is not repeated per message).
+    //
+    // A flow-control drop counts toward droppedMsgs only for a non-persistent session and a non-retained message:
+    // persistent copies are recoverable from the store (APPLICATION via Kafka, counted once at give-up in
+    // ApplicationPersistenceProcessorImpl; DEVICE via Redis redelivery), and retained messages are recoverable from
+    // the retained-message store.
+    //
+    // NOTE: intentionally NO QoS0 clause, unlike DefaultMqttPublishMsgDeliveryService#isCountableDrop. QoS0 messages
+    // short-circuit in atMostOnce()/addInFlightMsg() and never enter the delay queue, so they cannot be dropped here —
+    // the two predicates are deliberately different. Do not "align" them by adding a QoS0 clause here.
+    private boolean isCountableDrop(boolean nonPersistentSession, MqttPublishMessage msg) {
+        return nonPersistentSession && !msg.fixedHeader().isRetain();
     }
 
 }
