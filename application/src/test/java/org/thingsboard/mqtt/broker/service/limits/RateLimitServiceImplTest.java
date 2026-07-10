@@ -315,17 +315,17 @@ public class RateLimitServiceImplTest {
     public void givenAppPersistedMsgsRateLimitsDisabled_whenTryConsume_thenAlwaysTrue() {
         when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
 
-        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
-        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
     }
 
     @Test
     public void givenAppPersistedMsgsRateLimitsEnabled_whenTryConsume_thenGetExpectedResult() {
         when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
-        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
-        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
-        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
     }
 
     @Test
@@ -333,10 +333,10 @@ public class RateLimitServiceImplTest {
         when(applicationPersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
         rateLimitService.getApplicationPersistedMsgClientLimits().put("other", new TbRateLimits("1:1"));
 
-        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
-        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsg("other"));
-        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg(CLIENT_ID));
-        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsg("other"));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
+        Assert.assertTrue(rateLimitService.tryConsumeApplicationPersistedMsgs("other"));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsgs(CLIENT_ID));
+        Assert.assertFalse(rateLimitService.tryConsumeApplicationPersistedMsgs("other"));
     }
 
     @Test

@@ -49,7 +49,7 @@ public interface RateLimitService {
     /**
      * Non-blocking token consume for outbound persisted messages to an APPLICATION client (throttling, not dropping)
      */
-    boolean tryConsumeApplicationPersistedMsg(String clientId);
+    boolean tryConsumeApplicationPersistedMsgs(String clientId);
 
     boolean isApplicationPersistedMsgsRateLimitEnabled();
 

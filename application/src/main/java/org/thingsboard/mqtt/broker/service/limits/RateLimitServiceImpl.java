@@ -186,7 +186,7 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean tryConsumeApplicationPersistedMsg(String clientId) {
+    public boolean tryConsumeApplicationPersistedMsgs(String clientId) {
         if (!applicationPersistedMsgsRateLimitsConfiguration.isEnabled()) {
             return true;
         }
