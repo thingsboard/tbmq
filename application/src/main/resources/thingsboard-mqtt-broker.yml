@@ -1032,7 +1032,7 @@ mqtt:
       # Enables or disables per-client outbound rate limits for persistent APPLICATION subscribers.
       # Throttles (paces) delivery without dropping messages: the Kafka backlog is retained and
       # replayed at the configured rate. Applies to the main and shared-subscription consumers.
-      enabled: "${MQTT_APP_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
+      enabled: "${MQTT_APPLICATION_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
       # Limits the count of outgoing persisted messages per APPLICATION client per time interval (in s).
       # Comma-separated list of limit:seconds pairs.
       # Example: 100 messages per second or 5000 messages per minute.
@@ -1040,7 +1040,7 @@ mqtt:
       # draining one polled pack (up to max.poll.records) takes longer than max.poll.interval.ms (default 300s),
       # otherwise the shared-subscription consumer may be evicted and its group rebalanced. The per-client
       # (non-shared) APPLICATION consumer uses manual partition assignment and is not affected.
-      client-config: "${MQTT_APP_PERSISTED_MSGS_RATE_LIMITS_CLIENT_CONFIG:100:1,5000:60}"
+      client-config: "${MQTT_APPLICATION_PERSISTED_MSGS_RATE_LIMITS_CLIENT_CONFIG:100:1,5000:60}"
   # Total limit of sessions (connected + disconnected) stored on the broker, applied collectively across the cluster, not per node.
   # For example, when set to 1000, the entire cluster can store 1000 sessions in total. This is a soft limit, meaning slightly more sessions may be stored.
   # Defaults to 0, which disables the limit.

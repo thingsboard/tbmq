@@ -742,6 +742,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             return;
         }
         int remaining = countPublishMsgs(messagesToDeliver);
+        boolean throttled = false;
         while (remaining > 0) {
             if (!isActive.getAsBoolean()) {
                 return;
@@ -749,6 +750,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             if (rateLimitService.tryConsumeApplicationPersistedMsgs(clientId)) {
                 remaining--;
             } else {
+                if (!throttled) {
+                    throttled = true;
+                    if (isDebugEnabled) {
+                        log.debug("[{}] Outbound rate limit reached; pacing delivery of {} remaining message(s) in this pack", clientId, remaining);
+                    }
+                }
+                // Reuse the Kafka poll interval as the throttle back-off granularity (intentionally no separate tunable).
                 try {
                     Thread.sleep(pollDuration);
                 } catch (InterruptedException e) {
