@@ -85,6 +85,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
     private ClientDisconnectStats clientDisconnectStats;
+    private ConnectionStats connectionStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -105,6 +106,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
         this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
         this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
+        this.connectionStats = new DefaultConnectionStats(statsFactory);
     }
 
     @PreDestroy
@@ -139,6 +141,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public ClientDisconnectStats getClientDisconnectStats() {
         return clientDisconnectStats;
+    }
+
+    @Override
+    public ConnectionStats getConnectionStats() {
+        return connectionStats;
     }
 
     @Override
@@ -509,6 +516,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         log.info("[{}] Stats: count = [{}]", StatsType.CLIENT_DISCONNECTS.getPrintName(), clientDisconnectStats.getCount());
         clientDisconnectStats.reset();
+
+        log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",
+                StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount(),
+                StatsType.CONNECTION_REFUSED.getPrintName(), connectionStats.getRefusedCount(),
+                StatsType.CONNECTION_ERROR.getPrintName(), connectionStats.getErrorCount());
+        connectionStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

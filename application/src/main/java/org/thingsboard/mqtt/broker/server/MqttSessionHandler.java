@@ -59,6 +59,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -86,6 +87,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RateLimitBatchProcessor rateLimitBatchProcessor;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ConnectionStats connectionStats;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -100,6 +102,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
         this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
+        this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -353,6 +356,14 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         } else {
             log.error("[{}][{}][{}] Unexpected Exception", sessionId, clientId, remoteAddress, cause);
             exceptionMessage = cause.getMessage();
+        }
+        // Count only pre-establishment errors: clientId is still null, i.e. no CONNECT has been processed
+        // yet (no session). Post-session channel errors (clientId != null) are counted as clientDisconnects
+        // via disconnect(ON_ERROR) below. This gate deliberately leaves connectionError a lower bound: an
+        // error after CONNECT but before the session is established (clientId != null, sessionInfo == null)
+        // is counted by neither family, which is accepted to keep connectionError and clientDisconnects disjoint.
+        if (clientId == null) {
+            connectionStats.onConnectionError();
         }
         disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, exceptionMessage));
     }

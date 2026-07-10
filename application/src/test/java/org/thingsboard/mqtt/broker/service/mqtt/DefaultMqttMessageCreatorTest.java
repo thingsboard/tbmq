@@ -16,17 +16,21 @@
 package org.thingsboard.mqtt.broker.service.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
@@ -34,14 +38,20 @@ import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMqttMessageCreatorTest {
 
-    DefaultMqttMessageCreator mqttMessageCreator = new DefaultMqttMessageCreator();
+    ConnectionStats connectionStats;
+    DefaultMqttMessageCreator mqttMessageCreator;
 
     @Before
     public void setUp() throws Exception {
+        StatsManager statsManager = mock(StatsManager.class);
+        connectionStats = mock(ConnectionStats.class);
+        given(statsManager.getConnectionStats()).willReturn(connectionStats);
+        mqttMessageCreator = new DefaultMqttMessageCreator(statsManager);
     }
 
     @After
@@ -71,25 +81,53 @@ public class DefaultMqttMessageCreatorTest {
 
     @Test
     public void givenMqttConnAckMsg_whenEnhancedAuthIsNull_thenMqttConnAckMsgDoesNotContainAuthMethod() {
-        // setup mock
-        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        ClientActorStateInfo clientActorState = mockAcceptedActorState();
 
-        ClientActorStateInfo clientActorState = mock(ClientActorStateInfo.class);
-        given(clientActorState.getCurrentSessionCtx()).willReturn(ctx);
-
-        SessionInfo sessionInfo = mock(SessionInfo.class);
-        given(ctx.getSessionInfo()).willReturn(sessionInfo);
-        given(ctx.getInitializerName()).willReturn("TCP");
-
-        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
-        given(ctx.getTopicAliasCtx()).willReturn(topicAliasCtx);
-        given(topicAliasCtx.getMaxTopicAlias()).willReturn(1);
-
-        // test
         ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, MqttProperties.NO_PROPERTIES);
         MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
 
         Assert.assertNull(msg.variableHeader().properties().getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));
+    }
+
+    @Test
+    public void givenRefusalReturnCode_whenCreateConnAck_thenConnectionRefusedCounted() {
+        mqttMessageCreator.createMqttConnAckMsg(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+
+        verify(connectionStats).onConnectionRefused();
+        verify(connectionStats, Mockito.never()).onConnectionAccepted();
+    }
+
+    @Test
+    public void givenAcceptedReturnCode_whenCreateConnAckSingleArg_thenConnectionAcceptedCounted() {
+        mqttMessageCreator.createMqttConnAckMsg(MqttConnectReturnCode.CONNECTION_ACCEPTED);
+
+        verify(connectionStats).onConnectionAccepted();
+        verify(connectionStats, Mockito.never()).onConnectionRefused();
+    }
+
+    @Test
+    public void givenAcceptedConnection_whenCreateConnAck_thenConnectionAcceptedCounted() {
+        ClientActorStateInfo clientActorState = mockAcceptedActorState();
+
+        ConnectionAcceptedMsg connectionAcceptedMsg =
+                new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, MqttProperties.NO_PROPERTIES);
+        mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
+
+        verify(connectionStats).onConnectionAccepted();
+        verify(connectionStats, Mockito.never()).onConnectionRefused();
+    }
+
+    private ClientActorStateInfo mockAcceptedActorState() {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        ClientActorStateInfo clientActorState = mock(ClientActorStateInfo.class);
+        given(clientActorState.getCurrentSessionCtx()).willReturn(ctx);
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        given(ctx.getSessionInfo()).willReturn(sessionInfo);
+        given(ctx.getInitializerName()).willReturn("TCP");
+        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
+        given(ctx.getTopicAliasCtx()).willReturn(topicAliasCtx);
+        given(topicAliasCtx.getMaxTopicAlias()).willReturn(1);
+        return clientActorState;
     }
 
 }

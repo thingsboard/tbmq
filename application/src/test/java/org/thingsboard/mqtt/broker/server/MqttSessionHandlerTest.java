@@ -27,25 +27,31 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.util.Attribute;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,6 +60,7 @@ public class MqttSessionHandlerTest {
     static final InetSocketAddress REMOTE = new InetSocketAddress("10.0.0.7", 51000);
 
     MqttMessageGenerator mqttMessageGenerator;
+    ConnectionStats connectionStats;
     MqttSessionHandler handler;
     ChannelHandlerContext ctx;
     Channel channel;
@@ -63,13 +70,17 @@ public class MqttSessionHandlerTest {
     @SuppressWarnings("unchecked")
     public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
+        StatsManager statsManager = mock(StatsManager.class);
+        connectionStats = mock(ConnectionStats.class);
+        when(statsManager.getConnectionStats()).thenReturn(connectionStats);
         MqttHandlerCtx handlerCtx = new MqttHandlerCtx(
                 mock(ClientMqttActorManager.class),
                 mock(ClientLogger.class),
                 mock(RateLimitService.class),
                 mqttMessageGenerator,
                 mock(RateLimitBatchProcessor.class),
-                mock(TbMessageStatsReportClient.class));
+                mock(TbMessageStatsReportClient.class),
+                statsManager);
         handlerCtx.setMaxInFlightMsgs(1000);
         handler = new MqttSessionHandler(handlerCtx, null, BrokerConstants.TCP);
 
@@ -160,5 +171,46 @@ public class MqttSessionHandlerTest {
 
         verify(ctx).writeAndFlush(connAck);
         verify(ctx).close(); // closeChannel() is the single chokepoint that records the broker-side close
+    }
+
+    // --- connectionError counting: a pre-establishment failure (clientId == null) is counted once as a
+    //     connection error, however the exception is classified; a post-session error (clientId != null) is
+    //     a disconnect (clientDisconnects), so connectionError must NOT be counted. ---
+
+    @Test
+    public void givenNoClientId_whenSslHandshakeException_thenConnectionErrorCounted() {
+        handler.exceptionCaught(ctx, new RuntimeException("outer", new SSLHandshakeException("bad cert")));
+        verify(connectionStats).onConnectionError();
+    }
+
+    @Test
+    public void givenNoClientId_whenNotSslRecordException_thenConnectionErrorCounted() {
+        handler.exceptionCaught(ctx, new RuntimeException("outer", new NotSslRecordException("plaintext")));
+        verify(connectionStats).onConnectionError();
+    }
+
+    @Test
+    public void givenNoClientId_whenIOException_thenConnectionErrorCounted() {
+        handler.exceptionCaught(ctx, new IOException("reset"));
+        verify(connectionStats).onConnectionError();
+    }
+
+    @Test
+    public void givenNoClientId_whenProtocolViolationException_thenConnectionErrorCounted() {
+        handler.exceptionCaught(ctx, new ProtocolViolationException("bad"));
+        verify(connectionStats).onConnectionError();
+    }
+
+    @Test
+    public void givenNoClientId_whenUnknownException_thenConnectionErrorCounted() {
+        handler.exceptionCaught(ctx, new RuntimeException("boom"));
+        verify(connectionStats).onConnectionError();
+    }
+
+    @Test
+    public void givenEstablishedClientId_whenException_thenConnectionErrorNotCounted() {
+        ReflectionTestUtils.setField(handler, "clientId", "client-a");
+        handler.exceptionCaught(ctx, new IOException("reset"));
+        verify(connectionStats, never()).onConnectionError();
     }
 }

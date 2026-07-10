@@ -55,6 +55,12 @@ public interface StatsManager {
      */
     ClientDisconnectStats getClientDisconnectStats();
 
+    /**
+     * Returns the connection-outcome stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    ConnectionStats getConnectionStats();
+
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
