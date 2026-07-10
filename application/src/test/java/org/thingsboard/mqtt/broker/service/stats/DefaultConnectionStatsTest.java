@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
@@ -41,7 +40,7 @@ public class DefaultConnectionStatsTest {
     public void givenFreshStats_whenIncrementEachOutcome_thenCountsAndPrometheusCountersIncrease() {
         connectionStats.onConnectionAccepted();
         connectionStats.onConnectionAccepted();
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+        connectionStats.onConnectionRefused();
         connectionStats.onConnectionError();
 
         assertEquals(2, connectionStats.getAcceptedCount());
@@ -53,13 +52,12 @@ public class DefaultConnectionStatsTest {
     }
 
     @Test
-    public void givenDifferentReturnCodes_whenRefused_thenAllMapToSingleUntaggedCounter() {
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_BANNED);
+    public void givenMultipleRefusals_whenRefused_thenSingleUntaggedCounterAccumulates() {
+        connectionStats.onConnectionRefused();
+        connectionStats.onConnectionRefused();
+        connectionStats.onConnectionRefused();
 
-        // CE emits a single untagged connectionRefused counter; the returnCode is intentionally ignored
-        // (the breakdown is a PE-only extension). All codes accumulate into one series.
+        // CE emits a single untagged connectionRefused counter; refusals carry no discriminator.
         assertEquals(3.0, meterRegistry.counter(StatsType.CONNECTION_REFUSED.getPrintName()).count(), 0.0);
         assertEquals(1, meterRegistry.find(StatsType.CONNECTION_REFUSED.getPrintName()).counters().size());
     }
@@ -78,7 +76,7 @@ public class DefaultConnectionStatsTest {
     @Test
     public void givenIncrementedStats_whenReset_thenCountsClearedButPrometheusCountersStayMonotonic() {
         connectionStats.onConnectionAccepted();
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+        connectionStats.onConnectionRefused();
         connectionStats.onConnectionError();
 
         connectionStats.reset();
@@ -93,7 +91,7 @@ public class DefaultConnectionStatsTest {
 
         // Per-interval counters keep working after reset; cumulative Prometheus counters advance.
         connectionStats.onConnectionAccepted();
-        connectionStats.onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+        connectionStats.onConnectionRefused();
         connectionStats.onConnectionError();
 
         assertEquals(1, connectionStats.getAcceptedCount());

@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-
 public class StubConnectionStats implements ConnectionStats {
 
     public static final StubConnectionStats STUB_CONNECTION_STATS = new StubConnectionStats();
@@ -26,7 +24,7 @@ public class StubConnectionStats implements ConnectionStats {
     }
 
     @Override
-    public void onConnectionRefused(MqttConnectReturnCode returnCode) {
+    public void onConnectionRefused() {
     }
 
     @Override

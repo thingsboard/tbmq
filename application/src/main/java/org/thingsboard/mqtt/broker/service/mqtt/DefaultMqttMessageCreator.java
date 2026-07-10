@@ -118,7 +118,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         if (returnCode == CONNECTION_ACCEPTED) {
             connectionStats.onConnectionAccepted();
         } else {
-            connectionStats.onConnectionRefused(returnCode);
+            connectionStats.onConnectionRefused();
         }
         return MqttMessageBuilders.connAck().returnCode(returnCode).build();
     }

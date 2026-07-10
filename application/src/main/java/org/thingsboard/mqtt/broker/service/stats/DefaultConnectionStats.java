@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
@@ -38,9 +37,7 @@ public class DefaultConnectionStats implements ConnectionStats {
     }
 
     @Override
-    public void onConnectionRefused(MqttConnectReturnCode returnCode) {
-        // CE records a single untagged connectionRefused counter — the returnCode is deliberately not
-        // used as a Micrometer tag. The reason breakdown is a PE-only extension that overrides this class.
+    public void onConnectionRefused() {
         refusedCounter.increment();
     }
 

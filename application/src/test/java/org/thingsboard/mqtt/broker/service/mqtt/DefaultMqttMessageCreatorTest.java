@@ -93,7 +93,7 @@ public class DefaultMqttMessageCreatorTest {
     public void givenRefusalReturnCode_whenCreateConnAck_thenConnectionRefusedCounted() {
         mqttMessageCreator.createMqttConnAckMsg(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
 
-        verify(connectionStats).onConnectionRefused(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+        verify(connectionStats).onConnectionRefused();
         verify(connectionStats, Mockito.never()).onConnectionAccepted();
     }
 
@@ -102,7 +102,7 @@ public class DefaultMqttMessageCreatorTest {
         mqttMessageCreator.createMqttConnAckMsg(MqttConnectReturnCode.CONNECTION_ACCEPTED);
 
         verify(connectionStats).onConnectionAccepted();
-        verify(connectionStats, Mockito.never()).onConnectionRefused(Mockito.any());
+        verify(connectionStats, Mockito.never()).onConnectionRefused();
     }
 
     @Test
@@ -114,7 +114,7 @@ public class DefaultMqttMessageCreatorTest {
         mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
 
         verify(connectionStats).onConnectionAccepted();
-        verify(connectionStats, Mockito.never()).onConnectionRefused(Mockito.any());
+        verify(connectionStats, Mockito.never()).onConnectionRefused();
     }
 
     private ClientActorStateInfo mockAcceptedActorState() {

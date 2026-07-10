@@ -15,15 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-
 /**
  * Tracks the terminal outcomes of inbound MQTT connection attempts as three cumulative Prometheus
  * counters: {@code connectionAccepted}, {@code connectionRefused}, {@code connectionError}. In CE all
  * three are untagged, so {@code accepted + refused + error} (derived in PromQL) approximates total
- * attempts and each {@code rate(...)} gives the accept/refuse/error throughput. The refusal-reason
- * breakdown ({@code connectionRefused{returnCode}}) is a PE-only extension that overrides this impl;
- * {@code connectionError} stays a single untagged count in both editions.
+ * attempts and each {@code rate(...)} gives the accept/refuse/error throughput. All three are plain
+ * untagged counts (YAGNI): no per-cause discriminator (return code, error type) is carried through this
+ * seam. A PE build that wants breakdowns such as {@code connectionRefused{returnCode}} re-derives the
+ * cause at its own call sites rather than threading it through here.
  * <p>
  * {@code connectionError} counts establishment failures that surface before a session exists, so
  * {@code accepted + refused + error} is a <b>lower bound</b> on total attempts, not an exact identity:
@@ -41,11 +40,8 @@ public interface ConnectionStats {
     /** Records one accepted connection (successful CONNACK). */
     void onConnectionAccepted();
 
-    /**
-     * Records one refused connection (a {@code CONNECTION_REFUSED_*} CONNACK). {@code returnCode} is
-     * carried so the PE extension can tag by reason; the CE impl ignores it (single untagged counter).
-     */
-    void onConnectionRefused(MqttConnectReturnCode returnCode);
+    /** Records one refused connection (a {@code CONNECTION_REFUSED_*} CONNACK). */
+    void onConnectionRefused();
 
     /** Records one connection-establishment error (no CONNACK — e.g. TLS handshake, framing, or IO failure). */
     void onConnectionError();
