@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -34,6 +35,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -52,6 +54,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
@@ -83,6 +86,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -112,6 +116,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
+    @Mock RateLimitService rateLimitService;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -573,6 +578,58 @@ class ApplicationPersistenceProcessorImplTest {
 
         // The ack strategy must be created once per pack and reused across retries so the cap accumulates.
         verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
+    }
+
+    @Test
+    public void givenRateLimitDisabled_whenThrottleDelivery_thenNoTokensConsumed() {
+        when(rateLimitService.isApplicationPersistedMsgsRateLimitEnabled()).thenReturn(false);
+
+        PersistedMsg publish = mock(PersistedMsg.class);
+        processor.throttleDelivery("clientId", List.of(publish, publish), () -> true);
+
+        verify(rateLimitService, never()).tryConsumeApplicationPersistedMsgs(anyString());
+    }
+
+    @Test
+    public void givenRateLimitEnabled_whenThrottleDelivery_thenConsumesOneTokenPerPublish() {
+        when(rateLimitService.isApplicationPersistedMsgsRateLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeApplicationPersistedMsgs(anyString())).thenReturn(true);
+
+        PersistedMsg publish = mock(PersistedMsg.class);
+        when(publish.getPacketType()).thenReturn(PersistedPacketType.PUBLISH);
+        PersistedMsg pubRel = mock(PersistedMsg.class);
+        when(pubRel.getPacketType()).thenReturn(PersistedPacketType.PUBREL);
+
+        processor.throttleDelivery("clientId", List.of(publish, pubRel, publish), () -> true);
+
+        verify(rateLimitService, times(2)).tryConsumeApplicationPersistedMsgs("clientId");
+    }
+
+    @Test
+    public void givenSessionInactive_whenThrottleDelivery_thenReturnsWithoutConsuming() {
+        when(rateLimitService.isApplicationPersistedMsgsRateLimitEnabled()).thenReturn(true);
+
+        PersistedMsg publish = mock(PersistedMsg.class);
+        when(publish.getPacketType()).thenReturn(PersistedPacketType.PUBLISH);
+
+        processor.throttleDelivery("clientId", List.of(publish, publish), () -> false);
+
+        verify(rateLimitService, never()).tryConsumeApplicationPersistedMsgs(anyString());
+    }
+
+    @Test
+    public void givenBucketEmptyThenRefilled_whenThrottleDelivery_thenRetriesUntilConsumed() {
+        ReflectionTestUtils.setField(processor, "pollDuration", 1L);
+        when(rateLimitService.isApplicationPersistedMsgsRateLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeApplicationPersistedMsgs(anyString()))
+                .thenReturn(false, false, true);
+
+        PersistedMsg publish = mock(PersistedMsg.class);
+        when(publish.getPacketType()).thenReturn(PersistedPacketType.PUBLISH);
+
+        processor.throttleDelivery("clientId", List.of(publish), () -> true);
+
+        verify(rateLimitService, times(3)).tryConsumeApplicationPersistedMsgs("clientId");
     }
 
     // ===== Helpers =====

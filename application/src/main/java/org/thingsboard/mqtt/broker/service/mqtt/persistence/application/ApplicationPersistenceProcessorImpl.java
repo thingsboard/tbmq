@@ -27,6 +27,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
@@ -38,6 +39,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -81,6 +83,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -112,6 +115,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationClientHelperService appClientHelperService;
     private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final RateLimitService rateLimitService;
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
     @Value("${queue.application-persisted-msg.poll-interval}")
@@ -729,6 +733,38 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private void deliverMessages(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx) {
         appMsgDeliveryStrategy.process(submitStrategy, clientSessionCtx);
+    }
+
+    void throttleDelivery(String clientId, List<PersistedMsg> messagesToDeliver, BooleanSupplier isActive) {
+        if (!rateLimitService.isApplicationPersistedMsgsRateLimitEnabled()) {
+            return;
+        }
+        int remaining = countPublishMsgs(messagesToDeliver);
+        while (remaining > 0) {
+            if (!isActive.getAsBoolean()) {
+                return;
+            }
+            if (rateLimitService.tryConsumeApplicationPersistedMsgs(clientId)) {
+                remaining--;
+            } else {
+                try {
+                    Thread.sleep(pollDuration);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+    }
+
+    private static int countPublishMsgs(List<PersistedMsg> messagesToDeliver) {
+        int count = 0;
+        for (PersistedMsg msg : messagesToDeliver) {
+            if (PersistedPacketType.PUBLISH == msg.getPacketType()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void processPubAckInSharedCtx(String clientId, int packetId, String format) {
