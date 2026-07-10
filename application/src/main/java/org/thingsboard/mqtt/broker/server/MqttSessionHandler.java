@@ -223,8 +223,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
         var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
-        // Funnel this broker-initiated close through the single chokepoint (which records it via closeInitiated,
-        // read by exceptionCaught) rather than closing the channel directly.
         clientSessionCtx.closeChannel();
     }
 
