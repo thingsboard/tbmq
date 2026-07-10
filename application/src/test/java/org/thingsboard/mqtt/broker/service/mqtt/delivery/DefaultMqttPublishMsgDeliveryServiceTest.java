@@ -230,6 +230,37 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     }
 
     @Test
+    public void givenSyncThrowNonPersistentNonRetained_whenSendAlreadyTracked_thenReportsDroppedAndRecordsNothing() {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(false);
+        when(channel.writeAndFlush(msg)).thenThrow(new RuntimeException("boom"));
+
+        service.sendAlreadyTrackedPublishMsgToClient(ctx, msg);
+
+        verify(reportClient, times(1)).reportDroppedMsgs();
+        verify(future, never()).addListener(any(GenericFutureListener.class));
+        assertEquals(0, deliveryTimer().count());
+    }
+
+    @Test
+    public void givenSyncThrowPersistentQos1_whenSendAlreadyTracked_thenNotCounted() {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_LEAST_ONCE);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(true);
+        when(channel.writeAndFlush(msg)).thenThrow(new RuntimeException("boom"));
+
+        service.sendAlreadyTrackedPublishMsgToClient(ctx, msg);
+
+        verify(reportClient, never()).reportDroppedMsgs();
+    }
+
+    @Test
     public void givenInFlightSlotNotReserved_whenSendPublish_thenNothingWrittenOrRecorded() {
         DefaultMqttPublishMsgDeliveryService service = buildService(true);
         when(ctx.addInFlightMsg(msg)).thenReturn(false);

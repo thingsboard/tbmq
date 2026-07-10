@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -512,6 +513,42 @@ class ApplicationPersistenceProcessorImplTest {
                 clientState);
 
         verify(consumer, atLeastOnce()).commitSync();
+    }
+
+    @Test
+    void processMainPack_retryAll_whenClientNeverAcksPublish_reportsDroppedOnGiveUpCommit() {
+        ApplicationAckStrategyConfiguration ackConfig = new ApplicationAckStrategyConfiguration();
+        ackConfig.setType(AckStrategyType.RETRY_ALL);
+        ackConfig.setRetries(2);
+        // Delegate to a real factory so the production RetryStrategy (with real give-up counting) is exercised.
+        ApplicationMsgAcknowledgeStrategyFactory realFactory = new ApplicationMsgAcknowledgeStrategyFactory(ackConfig);
+        when(acknowledgeStrategyFactory.newInstance("appClient")).thenAnswer(inv -> realFactory.newInstance("appClient"));
+        ReflectionTestUtils.setField(processor, "packProcessingTimeout", 30L);
+        when(submitStrategyFactory.newInstance("appClient")).thenAnswer(inv -> new BurstSubmitStrategy("appClient"));
+        // Safety net: a buggy unbounded-retry loop would never exit on its own.
+        stopProcessorAfterDeliveries(20);
+
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = mockConsumer();
+        UUID sessionId = UUID.randomUUID();
+        ClientActorStateInfo clientState = activeClientState("appClient", sessionId);
+        ClientSessionCtx clientSessionCtx = clientSessionCtx("appClient", sessionId);
+
+        // A single never-acked QoS1 PUBLISH keeps the pack pending across every retry until give-up. Delivery is
+        // stubbed out (appMsgDeliveryStrategy is a no-op mock), so it is never acked and remains in publishPendingMap.
+        // The persisted-msg ctx maps the message offset to a fixed packetId, so packet assignment is deterministic.
+        List<TbProtoQueueMsg<PublishMsgProto>> messages = List.of(
+                new TbProtoQueueMsg<>("appClient",
+                        PublishMsgProto.newBuilder().setTopicName("test/topic").setQos(1).build(),
+                        new DefaultTbQueueMsgHeaders(), 0, 0L));
+        ApplicationPersistedMsgCtx persistedMsgCtx = new ApplicationPersistedMsgCtx(Map.of(0L, 1), Collections.emptyMap());
+
+        invokeProcessMainPack(new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet()), messages, clientSessionCtx,
+                persistedMsgCtx, consumer, mock(ApplicationProcessorStats.class),
+                clientState);
+
+        // The un-acked PUBLISH must be counted exactly once as dropped, on the real give-up commit path.
+        verify(consumer, atLeastOnce()).commitSync();
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs(1);
     }
 
     @Test
