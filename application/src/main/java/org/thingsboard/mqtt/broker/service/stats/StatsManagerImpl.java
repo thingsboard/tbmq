@@ -517,9 +517,10 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: count = [{}]", StatsType.CLIENT_DISCONNECTS.getPrintName(), clientDisconnectStats.getCount());
         clientDisconnectStats.reset();
 
-        log.info("[{}] Stats: count = [{}]", StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount());
-        log.info("[{}] Stats: count = [{}]", StatsType.CONNECTION_REFUSED.getPrintName(), connectionStats.getRefusedCount());
-        log.info("[{}] Stats: count = [{}]", StatsType.CONNECTION_ERROR.getPrintName(), connectionStats.getErrorCount());
+        log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",
+                StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount(),
+                StatsType.CONNECTION_REFUSED.getPrintName(), connectionStats.getRefusedCount(),
+                StatsType.CONNECTION_ERROR.getPrintName(), connectionStats.getErrorCount());
         connectionStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
