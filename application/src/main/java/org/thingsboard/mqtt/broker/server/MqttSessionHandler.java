@@ -223,7 +223,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
         var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
-        clientSessionCtx.getChannel().close();
+        clientSessionCtx.closeChannel();
     }
 
     private void processPublish(MqttMessage msg) {
@@ -332,24 +332,48 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Prefer the address captured on the first inbound bytes; fall back to the channel so pre-CONNECT
+        // failures (e.g. SSL handshake) still identify the remote peer. clientId may be null before CONNECT.
+        InetSocketAddress remoteAddress = address != null ? address : getAddress(ctx);
         String exceptionMessage;
         if (cause.getCause() instanceof SSLHandshakeException) {
-            log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] Exception on SSL handshake. Reason - {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause.getCause() instanceof NotSslRecordException) {
-            log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] NotSslRecordException: {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause instanceof IOException) {
-            log.warn("[{}] IOException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] IOException ({}): {}. closed-by={}",
+                    sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(),
+                    connectionCloseOrigin(clientSessionCtx.isCloseInitiated()));
             exceptionMessage = cause.getMessage();
         } else if (cause instanceof ProtocolViolationException) {
-            log.warn("[{}] ProtocolViolationException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] ProtocolViolationException: {}", sessionId, clientId, remoteAddress, cause.getMessage());
             exceptionMessage = cause.getMessage();
         } else {
-            log.error("[{}] Unexpected Exception", sessionId, cause);
+            log.error("[{}][{}][{}] Unexpected Exception", sessionId, clientId, remoteAddress, cause);
             exceptionMessage = cause.getMessage();
         }
         disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, exceptionMessage));
+    }
+
+    /**
+     * Best-effort attribution of who closed the connection for an IOException surfaced on the Netty I/O thread
+     * (typically "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ
+     * received a TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use
+     * whether a broker-side close was recorded for this session (see {@link ClientSessionCtx#isCloseInitiated()})
+     * to tell the two situations apart and return a short, stable {@code closed-by} token for the log line:
+     * <ul>
+     *   <li>{@code "TBMQ"} — a broker-side close was recorded, so the reset is part of a teardown TBMQ started
+     *       (rate limit, protocol error, takeover, ...);</li>
+     *   <li>{@code "peer-or-network"} — no broker-side close was recorded, so the client or a network device
+     *       between the client and TBMQ aborted the connection (external to TBMQ).</li>
+     * </ul>
+     * It is best-effort: a reset arriving before the actor pipeline reaches {@code closeChannel()}, or a close
+     * driven by server shutdown, is not recorded and therefore reads as {@code peer-or-network}.
+     */
+    static String connectionCloseOrigin(boolean brokerCloseRecorded) {
+        return brokerCloseRecorded ? "TBMQ" : "peer-or-network";
     }
 
     @Override
