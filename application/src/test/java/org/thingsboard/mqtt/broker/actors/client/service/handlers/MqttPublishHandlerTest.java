@@ -187,6 +187,7 @@ public class MqttPublishHandlerTest {
         MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
         assertThat(disconnectMsg).isNotNull();
         assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
     @Test
@@ -205,6 +206,7 @@ public class MqttPublishHandlerTest {
         MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
         assertThat(disconnectMsg).isNotNull();
         assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
     @Test
@@ -218,6 +220,7 @@ public class MqttPublishHandlerTest {
             mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
         }
         verify(clientMqttActorManager, never()).disconnect(eq("clientId"), any());
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test

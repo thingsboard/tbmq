@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,10 +60,10 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
         try {
             long startTime = System.nanoTime();
             ChannelFuture future = ctx.getChannel().writeAndFlush(msg);
-            recordDeliveryOnSuccess(future, startTime);
+            recordDeliveryOutcome(ctx, msg, future, startTime);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain()) {
+            if (isCountableDrop(ctx, msg)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
@@ -74,32 +75,52 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
             if (added) {
                 long startTime = System.nanoTime();
                 ChannelFuture future = processor.get();
-                recordDeliveryOnSuccess(future, startTime);
+                recordDeliveryOutcome(ctx, msg, future, startTime);
             }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client", ctx.getClientId(), ctx.getSessionId(), e);
-            if (!msg.fixedHeader().isRetain()) {
+            if (isCountableDrop(ctx, msg)) {
                 tbMessageStatsReportClient.reportDroppedMsgs();
             }
         }
     }
 
     /**
-     * Records the delivery latency when the write {@link ChannelFuture} completes successfully, i.e. once the
-     * PUBLISH bytes have been written to the socket — not the synchronous cost of handing the write off to the
-     * Netty event loop, which the surrounding {@code writeAndFlush}/{@code write} calls return before completing.
+     * Handles the outcome of a write once its {@link ChannelFuture} completes.
+     * <p>
+     * On success it records the delivery latency, i.e. the time until the PUBLISH bytes have been written to the
+     * socket — not the synchronous cost of handing the write off to the Netty event loop, which the surrounding
+     * {@code writeAndFlush}/{@code write} calls return before completing.
+     * <p>
+     * On failure it reports a dropped message when the drop is countable (see {@link #isCountableDrop}):
+     * non-retained, and either non-persistent or QoS0, since a persistent-session copy of a QoS&gt;0 message
+     * remains recoverable from the store (APPLICATION: redelivered from Kafka, counted once at give-up in
+     * {@code ApplicationPersistenceProcessorImpl}; DEVICE: redelivered from Redis) whereas QoS0 is never stored
+     * and so is always a permanent loss.
+     * <p>
      * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
      * event-loop callback are not paid on the hot delivery path when metrics are turned off.
      */
-    private void recordDeliveryOnSuccess(ChannelFuture future, long startTime) {
+    private void recordDeliveryOutcome(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
         if (!statsEnabled) {
             return;
         }
         future.addListener(f -> {
             if (f.isSuccess()) {
                 deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
+            } else if (isCountableDrop(ctx, msg)) {
+                tbMessageStatsReportClient.reportDroppedMsgs();
             }
         });
+    }
+
+    // A drop is countable only when non-retained, and either non-persistent or QoS0. QoS0 is never stored, so
+    // it is a permanent loss even for a persistent session; QoS>0 to a persistent session is recoverable from
+    // the store (APPLICATION: from Kafka, counted once at give-up in ApplicationPersistenceProcessorImpl;
+    // DEVICE: redelivered from Redis) so must not be counted here too, or it would be double counted.
+    private boolean isCountableDrop(ClientSessionCtx ctx, MqttPublishMessage msg) {
+        return !msg.fixedHeader().isRetain()
+                && (!ctx.getSessionInfo().isPersistent() || msg.fixedHeader().qosLevel() == MqttQoS.AT_MOST_ONCE);
     }
 
 }

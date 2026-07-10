@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
 
@@ -173,10 +174,11 @@ public class ClientSessionCtx implements SessionContext {
     public void initPublishedInFlightCtx(FlowControlService flowControlService,
                                          MqttPublishMsgDeliveryService deliveryService,
                                          FlowControlStats stats,
+                                         TbMessageStatsReportClient tbMessageStatsReportClient,
                                          int receiveMaxValue,
                                          int delayedQueueMaxSize) {
         publishedInFlightCtx = new PublishedInFlightCtxImpl(
-                flowControlService, this, deliveryService, stats, receiveMaxValue, delayedQueueMaxSize);
+                flowControlService, this, deliveryService, stats, tbMessageStatsReportClient, receiveMaxValue, delayedQueueMaxSize);
     }
 
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {

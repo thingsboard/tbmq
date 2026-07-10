@@ -132,6 +132,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         stats.log(totalMsgCount, result, decision.isCommit());
 
                         if (decision.isCommit()) {
+                            reportDroppedMsgsOnGiveUp(result);
                             consumer.commitSync();
                             break;
                         } else {
@@ -154,6 +155,13 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
             }
             log.info("[{}] Publish Msg Consumer stopped.", consumerId);
         });
+    }
+
+    void reportDroppedMsgsOnGiveUp(PackProcessingResult result) {
+        int dropped = result.getPendingMap().size() + result.getFailedMap().size();
+        if (dropped > 0) {
+            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+        }
     }
 
     private List<TbProtoQueueMsg<PublishMsgProto>> applyRateLimits(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,

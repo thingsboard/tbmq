@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.stats.FlowControlStats;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
@@ -59,6 +62,7 @@ public class PublishedInFlightCtxImplTest {
     private ClientSessionCtx clientSessionCtx;
     private MqttPublishMsgDeliveryService deliveryService;
     private FlowControlStats stats;
+    private TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private PublishedInFlightCtxImpl ctx;
 
@@ -68,11 +72,12 @@ public class PublishedInFlightCtxImplTest {
         clientSessionCtx = mock(ClientSessionCtx.class);
         deliveryService = mock(MqttPublishMsgDeliveryService.class);
         stats = mock(FlowControlStats.class);
+        tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
 
         when(clientSessionCtx.getClientId()).thenReturn(CLIENT_ID);
         when(clientSessionCtx.isWritable()).thenReturn(true);
 
-        ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats, RECEIVE_MAX, 5);
+        ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats, tbMessageStatsReportClient, RECEIVE_MAX, 5);
     }
 
     @Test
@@ -110,6 +115,7 @@ public class PublishedInFlightCtxImplTest {
 
     @Test
     public void addInFlightMsg_delayedQueueFull_dropsAndReleasesByteBuf() {
+        stubPersistence(false);
         // Fill in-flight window
         for (int i = 1; i <= 5; i++) {
             ctx.addInFlightMsg(qos1(i));
@@ -125,6 +131,41 @@ public class PublishedInFlightCtxImplTest {
         assertFalse(result);
         assertEquals(0, overflow.payload().refCnt());
         verify(stats, times(1)).incDropOverflow();
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void addInFlightMsg_delayedQueueFull_persistentSession_notReportedAsDropped() {
+        stubPersistence(true);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));
+        }
+        for (int i = 6; i <= 10; i++) {
+            ctx.addInFlightMsg(qos1(i));
+        }
+
+        ctx.addInFlightMsg(qos1(11));
+
+        verify(stats, times(1)).incDropOverflow();
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
+    }
+
+    @Test
+    public void addInFlightMsg_delayedQueueFull_retainedMsg_notReportedAsDropped() {
+        stubPersistence(false);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill in-flight window (non-retained)
+        }
+        for (int i = 6; i <= 10; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill delay queue (non-retained)
+        }
+
+        MqttPublishMessage retainedOverflow = qos1Retained(11);
+        boolean result = ctx.addInFlightMsg(retainedOverflow);   // this one is dropped (overflow)
+
+        assertFalse(result);
+        verify(stats, times(1)).incDropOverflow();
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();  // retained ⇒ not counted
     }
 
     @Test
@@ -145,7 +186,7 @@ public class PublishedInFlightCtxImplTest {
     @Test
     public void addInFlightMsg_mqtt3xDefaultReceiveMax_alwaysReservesInFlight() {
         ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats,
-                BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
+                tbMessageStatsReportClient, BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
 
         for (int i = 1; i <= 1000; i++) {
             assertTrue(ctx.addInFlightMsg(qos1(i)));
@@ -274,6 +315,7 @@ public class PublishedInFlightCtxImplTest {
 
     @Test
     public void expireTtl_dropsExpiredAndReleasesByteBufs() throws InterruptedException {
+        stubPersistence(false);
         // Fill in-flight window so the next message is buffered (not sent in-flight).
         for (int i = 1; i <= 5; i++) {
             ctx.addInFlightMsg(qos1(i));
@@ -285,7 +327,39 @@ public class PublishedInFlightCtxImplTest {
         ctx.expireTtl(1L);
 
         verify(stats, times(1)).incDropTtl(1);
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs(1);
         assertEquals(0, expired.payload().refCnt());
+    }
+
+    @Test
+    public void expireTtl_persistentSession_notReportedAsDropped() throws InterruptedException {
+        stubPersistence(true);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));
+        }
+        ctx.addInFlightMsg(qos1(6));
+
+        Thread.sleep(20);
+        ctx.expireTtl(1L);
+
+        verify(stats, times(1)).incDropTtl(1);
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
+    public void expireTtl_mixedRetainedAndPlain_countsOnlyNonRetained() throws InterruptedException {
+        stubPersistence(false);
+        for (int i = 1; i <= 5; i++) {
+            ctx.addInFlightMsg(qos1(i));          // fill in-flight window so the next two are buffered
+        }
+        ctx.addInFlightMsg(qos1(6));              // non-retained, buffered
+        ctx.addInFlightMsg(qos1Retained(7));      // retained, buffered
+
+        Thread.sleep(20);
+        ctx.expireTtl(1L);                        // both expire
+
+        verify(stats, times(1)).incDropTtl(2);                       // flow-control meter counts both
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs(1);  // only the 1 non-retained counted
     }
 
     @Test
@@ -314,7 +388,7 @@ public class PublishedInFlightCtxImplTest {
     public void concurrentAddAndAck_isSafe() throws InterruptedException {
         // Use large window so adds don't get rejected.
         ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats,
-                BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
+                tbMessageStatsReportClient, BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
 
         int ops = 2000;
         AtomicBoolean failed = new AtomicBoolean(false);
@@ -361,7 +435,7 @@ public class PublishedInFlightCtxImplTest {
     @Test
     public void release_concurrentWithAck_isSafe() throws InterruptedException {
         ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats,
-                BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
+                tbMessageStatsReportClient, BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, 5);
 
         int ops = 1000;
         for (int i = 1; i <= ops; i++) {
@@ -402,7 +476,7 @@ public class PublishedInFlightCtxImplTest {
 
     @Test
     public void receiveMaxOne_serialDelivery() {
-        ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats, 1, 5);
+        ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats, tbMessageStatsReportClient, 1, 5);
 
         assertTrue(ctx.addInFlightMsg(qos1(1)));
 
@@ -423,10 +497,23 @@ public class PublishedInFlightCtxImplTest {
                 Unpooled.buffer(1).writeByte(0x42));
     }
 
+    private MqttPublishMessage qos1Retained(int packetId) {
+        MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, true, 0);
+        return new MqttPublishMessage(fixed,
+                new MqttPublishVariableHeader("t", packetId),
+                Unpooled.buffer(1).writeByte(0x42));
+    }
+
     private MqttPublishMessage qos0(int packetId) {
         // QoS 0 never reaches the release path, EMPTY_BUFFER is fine.
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_MOST_ONCE, false, 0);
         return new MqttPublishMessage(fixed, new MqttPublishVariableHeader("t", packetId), Unpooled.EMPTY_BUFFER);
+    }
+
+    private void stubPersistence(boolean persistent) {
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(sessionInfo.isPersistent()).thenReturn(persistent);
+        when(clientSessionCtx.getSessionInfo()).thenReturn(sessionInfo);
     }
 
 }
