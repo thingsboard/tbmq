@@ -98,6 +98,14 @@ public class DefaultMqttMessageCreatorTest {
     }
 
     @Test
+    public void givenAcceptedReturnCode_whenCreateConnAckSingleArg_thenConnectionAcceptedCounted() {
+        mqttMessageCreator.createMqttConnAckMsg(MqttConnectReturnCode.CONNECTION_ACCEPTED);
+
+        verify(connectionStats).onConnectionAccepted();
+        verify(connectionStats, Mockito.never()).onConnectionRefused(Mockito.any());
+    }
+
+    @Test
     public void givenAcceptedConnection_whenCreateConnAck_thenConnectionAcceptedCounted() {
         ClientActorStateInfo clientActorState = mockAcceptedActorState();
 

@@ -111,9 +111,15 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
-        // This single-arg overload is the refusal-only CONNACK choke point (accepts use the two-arg
-        // overload), so every call here is a refused connection.
-        connectionStats.onConnectionRefused(returnCode);
+        // This single-arg overload is the refusal path (accepts normally use the two-arg overload), but
+        // classify by the actual return code rather than by which overload was called: CONNECTION_ACCEPTED
+        // is a legal argument to this signature, so guarding on the code keeps the count correct even if a
+        // future caller routes an accept through here, instead of silently miscounting it as a refusal.
+        if (returnCode == CONNECTION_ACCEPTED) {
+            connectionStats.onConnectionAccepted();
+        } else {
+            connectionStats.onConnectionRefused(returnCode);
+        }
         return MqttMessageBuilders.connAck().returnCode(returnCode).build();
     }
 
