@@ -345,7 +345,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             log.warn("[{}][{}][{}] NotSslRecordException: {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause instanceof IOException) {
-            log.warn("[{}][{}][{}] IOException ({}): {}. Connection closed {}.",
+            log.warn("[{}][{}][{}] IOException ({}): {}. closed-by={}",
                     sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(),
                     connectionCloseOrigin(clientSessionCtx.isCloseInitiated()));
             exceptionMessage = cause.getMessage();
@@ -364,18 +364,18 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
      * (typically "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ
      * received a TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use
      * whether a broker-side close was recorded for this session (see {@link ClientSessionCtx#isCloseInitiated()})
-     * to tell the two situations apart:
+     * to tell the two situations apart and return a short, stable {@code closed-by} token for the log line:
      * <ul>
-     *   <li>recorded — the reset is part of a teardown TBMQ started (rate limit, protocol error, takeover, ...);</li>
-     *   <li>not recorded — the client or a network device between the client and TBMQ aborted the connection.</li>
+     *   <li>{@code "TBMQ"} — a broker-side close was recorded, so the reset is part of a teardown TBMQ started
+     *       (rate limit, protocol error, takeover, ...);</li>
+     *   <li>{@code "peer-or-network"} — no broker-side close was recorded, so the client or a network device
+     *       between the client and TBMQ aborted the connection (external to TBMQ).</li>
      * </ul>
      * It is best-effort: a reset arriving before the actor pipeline reaches {@code closeChannel()}, or a close
-     * driven by server shutdown, is not recorded and therefore reads as external.
+     * driven by server shutdown, is not recorded and therefore reads as {@code peer-or-network}.
      */
     static String connectionCloseOrigin(boolean brokerCloseRecorded) {
-        return brokerCloseRecorded
-                ? "by TBMQ (a broker-side close was recorded for this session; the peer's reset is part of that teardown)"
-                : "by the remote peer or a network device between the client and TBMQ (external to TBMQ; no broker-side close was recorded for this session)";
+        return brokerCloseRecorded ? "TBMQ" : "peer-or-network";
     }
 
     @Override
