@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -55,6 +56,7 @@ public class DefaultLastWillService implements LastWillService {
     private final MsgDispatcherService msgDispatcherService;
     private final RetainedMsgProcessor retainedMsgProcessor;
     private final StatsManager statsManager;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Setter
     private ScheduledExecutorService scheduler;
@@ -168,6 +170,10 @@ public class DefaultLastWillService implements LastWillService {
                     @Override
                     public void onFailure(Throwable t) {
                         log.warn("[{}][{}] Failed to acknowledge last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId(), t);
+                        // The will was accepted at CONNECT and its publisher is gone, so a produce failure is a
+                        // permanent loss with no resend — counted here, mirroring the client-PUBLISH persist-failure
+                        // accounting in MqttPublishHandler.
+                        tbMessageStatsReportClient.reportDroppedMsgs();
                     }
                 });
     }

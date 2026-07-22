@@ -19,11 +19,14 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -36,6 +39,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -50,6 +55,7 @@ public class DefaultLastWillServiceTest {
     MsgDispatcherService msgDispatcherService;
     RetainedMsgProcessor retainedMsgProcessor;
     StatsManager statsManager;
+    TbMessageStatsReportClient tbMessageStatsReportClient;
     DefaultLastWillService lastWillService;
 
     SessionInfo sessionInfo;
@@ -60,7 +66,8 @@ public class DefaultLastWillServiceTest {
         msgDispatcherService = mock(MsgDispatcherService.class);
         retainedMsgProcessor = mock(RetainedMsgProcessor.class);
         statsManager = mock(StatsManager.class);
-        lastWillService = spy(new DefaultLastWillService(msgDispatcherService, retainedMsgProcessor, statsManager));
+        tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
+        lastWillService = spy(new DefaultLastWillService(msgDispatcherService, retainedMsgProcessor, statsManager, tbMessageStatsReportClient));
 
         sessionInfo = mock(SessionInfo.class);
         savedSessionId = UUID.randomUUID();
@@ -96,6 +103,32 @@ public class DefaultLastWillServiceTest {
         removeAndExecuteLastWillIfNeeded(savedSessionId, false);
 
         verifyPersistPublishMsg(never());
+    }
+
+    @Test
+    public void givenLastWillPersistFails_whenCallbackOnFailure_thenReportsDroppedMsg() {
+        TbQueueCallback callback = persistPublishMsgAndCaptureCallback();
+
+        callback.onFailure(new RuntimeException("Kafka is not available"));
+
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void givenLastWillPersistSucceeds_whenCallbackOnSuccess_thenDoesNotReportDroppedMsg() {
+        TbQueueCallback callback = persistPublishMsgAndCaptureCallback();
+
+        callback.onSuccess(null);
+
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
+    }
+
+    private TbQueueCallback persistPublishMsgAndCaptureCallback() {
+        lastWillService.persistPublishMsg(sessionInfo, getPublishMsg(), null);
+
+        ArgumentCaptor<TbQueueCallback> callbackCaptor = ArgumentCaptor.forClass(TbQueueCallback.class);
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(PublishMsg.class), isNull(), callbackCaptor.capture());
+        return callbackCaptor.getValue();
     }
 
     private void verifyPersistPublishMsg(VerificationMode mode) {
