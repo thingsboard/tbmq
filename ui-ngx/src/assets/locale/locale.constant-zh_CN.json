@@ -353,7 +353,17 @@
         "mqtt-client-type": "MQTT 客户端类型",
         "performance-tests": "性能测试",
         "retained-messages": "Retained messages",
-        "shared-subscriptions": "Shared subscriptions"
+        "shared-subscriptions": "Shared subscriptions",
+        "connection-details": {
+            "title": "连接详情",
+            "parameter": "参数",
+            "value": "值",
+            "broker-host": "Broker 主机",
+            "ca-certificate": "CA 证书",
+            "download": "下载 CA 证书",
+            "not-configured": "未配置",
+            "ca-certificate-hint": "要启用安全的 MQTT 连接，请配置 TLS 并使用您的证书设置 MQTTS_CA_CERT。\n\n它可以是：\n- 根 CA 证书（用于证书链）\n- 自签名证书\n\n客户端将使用此证书来验证与 Broker 的安全连接"
+        }
     },
     "login": {
         "login": "登录",
