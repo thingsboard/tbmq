@@ -50,7 +50,11 @@ public class IntegrationLifecycleEventTypeCacheImpl implements IntegrationLifecy
 
     @Override
     public synchronized void remove(String integrationId) {
-        byIntegrationId.remove(integrationId);
+        if (byIntegrationId.remove(integrationId) == null) {
+            // Nothing was cached for it, so the reverse index cannot change. Keeps repeated removals (e.g. the
+            // periodic cleanup of a long-disabled integration) from rebuilding and republishing the snapshot.
+            return;
+        }
         rebuildReverseIndex();
     }
 

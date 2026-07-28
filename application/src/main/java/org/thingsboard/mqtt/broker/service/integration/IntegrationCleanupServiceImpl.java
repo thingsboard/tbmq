@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
@@ -34,6 +35,8 @@ public class IntegrationCleanupServiceImpl {
 
     private final IntegrationService integrationService;
     private final IntegrationTopicService integrationTopicService;
+    private final ClientSubscriptionService clientSubscriptionService;
+    private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
 
     @Value("#{${integrations.cleanup.ttl:604800} * 1000}")
     private long ttlMs;
@@ -54,6 +57,7 @@ public class IntegrationCleanupServiceImpl {
                 if (needsToBeRemoved(currentTs, integration)) {
                     count++;
                     log.debug("[{}][{}] Cleaning up expired disconnected integration", integration.getId(), integration.getName());
+                    stopProducingFor(integration.getIdStr());
                     deleteIntegrationTopic(integration.getIdStr());
                 }
             }
@@ -69,6 +73,26 @@ public class IntegrationCleanupServiceImpl {
         // (IntegrationTopicServiceImpl.createEventTopic) but the IE-side cleanup path never runs for a disabled
         // integration - it has no started instance to destroy - so without this the event topic would be leaked.
         integrationTopicService.deleteEventTopic(integrationId, CallbackUtil.EMPTY);
+    }
+
+    /**
+     * Detaches the integration from both streams that feed it, so the TTL actually reclaims something: topic
+     * subscriptions drive the data stream, and the lifecycle event type cache drives the events stream. Deleting
+     * the topics without this is a no-op in practice - the next matching publish recreates the data topic (its
+     * producer creates topics on send) and the next lifecycle event keeps targeting the events topic.
+     * <p>
+     * Both are restored when the integration is enabled again: saving it re-registers the subscriptions
+     * (DefaultPlatformIntegrationService.updateSubscriptions) and re-populates the cache on every node via the
+     * IntegrationLifecycleConfigProto broadcast.
+     */
+    private void stopProducingFor(String integrationId) {
+        // Guarded because clearing persists an empty subscription set cluster-wide, while this sweep runs on every
+        // node on every period for as long as the integration stays disabled. Once cleared, there is nothing to redo.
+        if (!clientSubscriptionService.getClientSubscriptions(integrationId).isEmpty()) {
+            clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
+        }
+        // Node-local and already a no-op when the integration is absent, so it needs no guard of its own.
+        lifecycleEventTypeCache.remove(integrationId);
     }
 
     private boolean needsToBeRemoved(long currentTs, Integration integration) {
