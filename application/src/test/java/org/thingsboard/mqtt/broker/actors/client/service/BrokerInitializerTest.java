@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,8 +30,12 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
+import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
@@ -54,19 +60,24 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsCo
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
+import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,6 +111,8 @@ public class BrokerInitializerTest {
     IntegrationService integrationService;
     @MockitoBean
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    @MockitoBean
+    IntegrationTopicService integrationTopicService;
     @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
     @MockitoBean
@@ -151,6 +164,51 @@ public class BrokerInitializerTest {
                 .values().stream()
                 .filter(csi -> csi.getServiceId().equals("serviceId1"))
                 .findFirst().orElse(null);
+    }
+
+    @Test
+    public void testInitIntegrationLifecycleEventCacheProvisionsEventTopic() {
+        Integration integration = newIntegration("CLIENT_CONNECTED");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache).put(integration.getIdStr(), Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+        verify(integrationTopicService).createEventTopic(integration.getIdStr());
+    }
+
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsIntegrationWithoutEventTypes() {
+        Integration integration = newIntegration();
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+        verify(integrationTopicService, never()).createEventTopic(any());
+    }
+
+    @Test
+    public void testInitIntegrationLifecycleEventCacheContinuesWhenEventTopicCreationFails() {
+        Integration failing = newIntegration("CLIENT_CONNECTED");
+        Integration succeeding = newIntegration("CLIENT_DISCONNECTED");
+        doReturn(List.of(failing, succeeding)).when(integrationService).findAllIntegrations();
+        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopic(failing.getIdStr());
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(integrationTopicService).createEventTopic(succeeding.getIdStr());
+    }
+
+    private Integration newIntegration(String... lifecycleEventTypes) {
+        Integration integration = new Integration(UUID.randomUUID());
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        ArrayNode eventTypes = configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+        for (String eventType : lifecycleEventTypes) {
+            eventTypes.add(eventType);
+        }
+        integration.setConfiguration(configuration);
+        return integration;
     }
 
     private Map<String, ClientSessionInfo> prepareSessions() {

@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsCo
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
+import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
@@ -81,6 +82,7 @@ public class BrokerInitializer {
     private final RateLimitService rateLimitService;
     private final IntegrationService integrationService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    private final IntegrationTopicService integrationTopicService;
     private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
@@ -122,7 +124,7 @@ public class BrokerInitializer {
         int cached = 0;
         for (Integration integration : integrations) {
             JsonNode configuration = integration.getConfiguration();
-            if (configuration == null || !configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+            if (!ClientLifecycleEventTypeUtil.isOptedIn(configuration)) {
                 continue;
             }
             Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
@@ -130,10 +132,25 @@ public class BrokerInitializer {
                     name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
             if (!eventTypes.isEmpty()) {
                 lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
+                createEventTopic(integration);
                 cached++;
             }
         }
         log.info("Loaded lifecycle event type cache: cached {} of {} integrations.", cached, integrations.size());
+    }
+
+    /**
+     * Provisions the dedicated lifecycle-events topic for an opted-in integration, so events have somewhere to go
+     * even if the integration is never enabled (the events producer does not create topics - see
+     * KafkaIntegrationMsgQueueFactory.createEventProducer). Best-effort: a failure here must not abort the broker
+     * startup, and the Integration Executor provisions the same topic when the integration starts.
+     */
+    private void createEventTopic(Integration integration) {
+        try {
+            integrationTopicService.createEventTopic(integration.getIdStr());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to create the lifecycle events topic", integration.getId(), integration.getName(), e);
+        }
     }
 
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {

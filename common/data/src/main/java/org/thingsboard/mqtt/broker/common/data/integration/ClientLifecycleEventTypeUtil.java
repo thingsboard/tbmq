@@ -34,6 +34,17 @@ public final class ClientLifecycleEventTypeUtil {
     public static final String LIFECYCLE_EVENT_TYPES_KEY = "lifecycleEventTypes";
 
     /**
+     * Returns {@code true} when the given integration configuration opts in for client lifecycle events,
+     * i.e. it declares a non-empty {@link #LIFECYCLE_EVENT_TYPES_KEY} array. An integration that opts in
+     * needs its dedicated events topic provisioned and gets its ids cached for event publishing.
+     */
+    public static boolean isOptedIn(JsonNode configuration) {
+        return configuration != null
+                && configuration.has(LIFECYCLE_EVENT_TYPES_KEY)
+                && !configuration.get(LIFECYCLE_EVENT_TYPES_KEY).isEmpty();
+    }
+
+    /**
      * Parses event type names into {@link ClientLifecycleEventType} values, invoking {@code onUnknown}
      * for every name that does not map to a known type. The callback decides how to react to an unknown
      * value (e.g. log a warning and skip it, or throw a validation exception).
