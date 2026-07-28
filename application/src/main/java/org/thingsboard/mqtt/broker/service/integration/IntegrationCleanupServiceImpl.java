@@ -65,6 +65,10 @@ public class IntegrationCleanupServiceImpl {
 
     public void deleteIntegrationTopic(String integrationId) {
         integrationTopicService.deleteTopic(integrationId, CallbackUtil.EMPTY);
+        // The lifecycle-events topic must be cleaned up here as well: it is provisioned by the IE
+        // (IntegrationTopicServiceImpl.createEventTopic) but the IE-side cleanup path never runs for a disabled
+        // integration - it has no started instance to destroy - so without this the event topic would be leaked.
+        integrationTopicService.deleteEventTopic(integrationId, CallbackUtil.EMPTY);
     }
 
     private boolean needsToBeRemoved(long currentTs, Integration integration) {
