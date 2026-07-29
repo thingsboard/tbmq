@@ -70,7 +70,9 @@ class IntegrationCleanupServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(service, "ttlMs", TTL_MS);
+        IntegrationExpiryChecker expiryChecker = new IntegrationExpiryChecker();
+        ReflectionTestUtils.setField(expiryChecker, "ttlMs", TTL_MS);
+        ReflectionTestUtils.setField(service, "expiryChecker", expiryChecker);
     }
 
     @Test
@@ -198,18 +200,13 @@ class IntegrationCleanupServiceImplTest {
 
     @Test
     void givenCleanupDisabled_whenCleanUp_thenDoesNothing() {
-        ReflectionTestUtils.setField(service, "ttlMs", 0L);
+        IntegrationExpiryChecker disabled = new IntegrationExpiryChecker();
+        ReflectionTestUtils.setField(disabled, "ttlMs", 0L);
+        ReflectionTestUtils.setField(service, "expiryChecker", disabled);
 
         service.cleanUp();
 
         verifyNoInteractions(integrationService, integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
-    }
-
-    @Test
-    void givenCleanupDisabled_whenNeedsToBeRemoved_thenFalseEvenForLongDisabledIntegration() {
-        ReflectionTestUtils.setField(service, "ttlMs", 0L);
-
-        assertThat(service.needsToBeRemoved(expiredDisabledIntegration())).isFalse();
     }
 
     @Test

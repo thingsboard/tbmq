@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -46,14 +45,12 @@ public class IntegrationCleanupServiceImpl {
     private final IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     private final InternodeNotificationsService internodeNotificationsService;
-
-    @Value("#{${integrations.cleanup.ttl:604800} * 1000}")
-    private long ttlMs;
+    private final IntegrationExpiryChecker expiryChecker;
 
     @Scheduled(fixedRateString = "${integrations.cleanup.period}", timeUnit = TimeUnit.SECONDS)
     public void cleanUp() {
-        if (ttlMs <= 0) {
-            log.debug("Integrations cleanup is disabled: {}ms", ttlMs);
+        if (!expiryChecker.isCleanupEnabled()) {
+            log.debug("Integrations cleanup is disabled");
             return;
         }
         log.info("Starting cleaning up expired disconnected integrations");
@@ -78,7 +75,7 @@ public class IntegrationCleanupServiceImpl {
     }
 
     private boolean cleanUpIfExpired(Integration integration) {
-        if (!needsToBeRemoved(integration)) {
+        if (!expiryChecker.isExpired(integration)) {
             return false;
         }
         // The row is re-read before the destructive part, because detaching is no longer self-correcting: acting on a
@@ -86,7 +83,7 @@ public class IntegrationCleanupServiceImpl {
         // integration enabled since, leaving it running while silently receiving nothing until it is saved again.
         // Only expired candidates pay for this read, and they are rare.
         Integration current = integrationService.findIntegrationById(integration.getId());
-        if (current == null || !needsToBeRemoved(current)) {
+        if (current == null || !expiryChecker.isExpired(current)) {
             log.debug("[{}][{}] No longer expired, skipping", integration.getId(), integration.getName());
             return false;
         }
@@ -187,19 +184,5 @@ public class IntegrationCleanupServiceImpl {
                                 .setDeleted(true)
                                 .build())
                         .build());
-    }
-
-    /**
-     * Whether the sweep considers this integration expired, i.e. disabled for longer than
-     * {@code integrations.cleanup.ttl}. Exposed so that {@code BrokerInitializer} does not re-attach an integration
-     * that this sweep has already detached, which would resume its lifecycle events until the next period.
-     */
-    public boolean needsToBeRemoved(Integration integration) {
-        // No integration expires while the cleanup is disabled, otherwise a zero ttl would read as "expired always".
-        return ttlMs > 0 && !integration.isEnabled() && isExpired(integration);
-    }
-
-    private boolean isExpired(Integration integration) {
-        return integration.getDisconnectedTime() + ttlMs < System.currentTimeMillis();
     }
 }

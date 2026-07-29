@@ -40,7 +40,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationCleanupServiceImpl;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationExpiryChecker;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -111,7 +111,7 @@ public class BrokerInitializerTest {
     @MockitoBean
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     @MockitoBean
-    IntegrationCleanupServiceImpl integrationCleanupService;
+    IntegrationExpiryChecker expiryChecker;
     @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
     @MockitoBean
@@ -208,7 +208,7 @@ public class BrokerInitializerTest {
     public void testInitIntegrationLifecycleEventCacheSkipsExpiredIntegration() {
         Integration integration = newIntegration("CLIENT_CONNECTED");
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
-        doReturn(true).when(integrationCleanupService).needsToBeRemoved(integration);
+        doReturn(true).when(expiryChecker).isExpired(integration);
 
         brokerInitializer.initIntegrationLifecycleEventCache();
 
