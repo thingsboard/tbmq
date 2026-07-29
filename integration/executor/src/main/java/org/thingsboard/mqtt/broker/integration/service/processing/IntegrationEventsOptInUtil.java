@@ -24,13 +24,11 @@ import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleM
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class IntegrationEventsOptInUtil {
 
+    /**
+     * Null-safe adapter over {@link ClientLifecycleEventTypeUtil#isOptedIn(JsonNode)} for an integration that may
+     * not have been initialized yet, so the opt-in predicate stays defined in a single place.
+     */
     public static boolean isOptedIn(IntegrationLifecycleMsg lifecycleMsg) {
-        if (lifecycleMsg == null) {
-            return false;
-        }
-        JsonNode configuration = lifecycleMsg.getConfiguration();
-        return configuration != null
-                && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
-                && !configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY).isEmpty();
+        return lifecycleMsg != null && ClientLifecycleEventTypeUtil.isOptedIn(lifecycleMsg.getConfiguration());
     }
 }

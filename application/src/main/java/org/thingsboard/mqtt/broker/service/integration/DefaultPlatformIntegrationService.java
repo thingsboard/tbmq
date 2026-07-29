@@ -84,7 +84,11 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             removeSubscriptions(integration.getIdStr());
             sendToIntegrationExecutor(integration, ComponentLifecycleEvent.DELETED);
             if (!integration.isEnabled()) {
-                integrationCleanupService.deleteIntegrationTopic(integration.getIdStr());
+                // A disabled integration has no started instance in the Integration Executor, so its
+                // IntegrationManagerServiceImpl.processStop is a no-op and destroyAndClearData - which deletes both
+                // topics - never runs. When it is enabled the executor owns the teardown and defers the deletion
+                // until its consumers are detached, so this must not run for it.
+                integrationCleanupService.deleteIntegrationTopics(integration.getIdStr());
             }
         }
     }
@@ -125,10 +129,9 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
         JsonNode configuration = integration.getConfiguration();
 
         JsonNode topicFilters = configuration.get("topicFilters");
-        JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
 
         boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
-        boolean hasLifecycleEvents = lifecycleEventTypes != null && !lifecycleEventTypes.isEmpty();
+        boolean hasLifecycleEvents = ClientLifecycleEventTypeUtil.isOptedIn(configuration);
 
         if (!hasTopicFilters && !hasLifecycleEvents) {
             log.error("[{}][{}] Neither topic filters nor lifecycle event types are configured",

@@ -35,8 +35,13 @@ public final class ClientLifecycleEventTypeUtil {
 
     /**
      * Returns {@code true} when the given integration configuration opts in for client lifecycle events,
-     * i.e. it declares a non-empty {@link #LIFECYCLE_EVENT_TYPES_KEY} array. An integration that opts in
+     * i.e. it declares a non-empty {@link #LIFECYCLE_EVENT_TYPES_KEY} value. An integration that opts in
      * needs its dedicated events topic provisioned and gets its ids cached for event publishing.
+     * <p>
+     * Deliberately does not require an array: {@code IntegrationServiceImpl.validateDataImpl} rejects a
+     * non-array on save, so anything else can only reach here from an already stored or externally supplied
+     * configuration, and treating it as opted in keeps such a configuration validated rather than silently
+     * skipped. Only absent, null and empty values are read as opted out.
      */
     public static boolean isOptedIn(JsonNode configuration) {
         return configuration != null

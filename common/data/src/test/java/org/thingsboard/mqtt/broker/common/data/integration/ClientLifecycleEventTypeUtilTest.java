@@ -15,10 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.common.data.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,6 +49,27 @@ class ClientLifecycleEventTypeUtilTest {
     @Test
     void givenNullConfig_whenIsOptedIn_thenFalse() {
         assertThat(ClientLifecycleEventTypeUtil.isOptedIn(null)).isFalse();
+    }
+
+    /**
+     * Any non-empty value counts, not just an array - see the javadoc. A non-array can only reach here from an
+     * already stored or externally supplied configuration, and reading it as opted in keeps it validated rather
+     * than silently skipped.
+     */
+    @Test
+    void givenConfigWithNonArrayEventTypes_whenIsOptedIn_thenTrue() {
+        ObjectNode configuration = MAPPER.createObjectNode();
+        configuration.putObject(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY).put("CLIENT_CONNECTED", true);
+
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn(configuration)).isTrue();
+    }
+
+    @Test
+    void givenConfigWithNullEventTypes_whenIsOptedIn_thenFalse() {
+        ObjectNode configuration = MAPPER.createObjectNode();
+        configuration.putNull(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn(configuration)).isFalse();
     }
 
 }

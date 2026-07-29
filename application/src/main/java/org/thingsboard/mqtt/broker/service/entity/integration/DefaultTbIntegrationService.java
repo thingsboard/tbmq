@@ -79,11 +79,13 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
 
     /**
      * Provisions the dedicated lifecycle-events topic as soon as an integration opts in, before the config is
-     * broadcast and any node starts publishing events. The events producer deliberately does not create topics
-     * (see KafkaIntegrationMsgQueueFactory.createEventProducer): events are sent synchronously on the MQTT
-     * processing thread, where a blocking admin call - or a missing topic stalling the send for max.block.ms -
-     * is not acceptable. The Integration Executor also provisions it on start, so this only covers the window
-     * before the integration is first enabled; both calls are idempotent.
+     * broadcast and any node starts publishing events - see
+     * {@link IntegrationTopicService#createEventTopic(String)} for why nothing else provisions it.
+     * <p>
+     * Deliberately unconditional rather than the cached variant or restricted to disabled integrations: the
+     * broadcast reaches every node before the Integration Executor has started an enabled integration, and the
+     * topic cache can report an already deleted topic as existing - which is exactly the state right after the
+     * cleanup sweep of an integration that this save is re-enabling.
      */
     private void createEventTopicIfOptedIn(Integration integration) {
         if (!ClientLifecycleEventTypeUtil.isOptedIn(integration.getConfiguration())) {
@@ -103,7 +105,7 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
                 .setIntegrationId(integration.getIdStr())
                 .setDeleted(false);
         JsonNode configuration = integration.getConfiguration();
-        if (configuration != null && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+        if (ClientLifecycleEventTypeUtil.isOptedIn(configuration)) {
             configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
                     .forEach(node -> builder.addLifecycleEventTypes(node.asText()));
         }
