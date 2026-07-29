@@ -22,18 +22,25 @@ import java.util.Set;
 public interface IntegrationSubscriptionUpdateService {
 
     /**
-     * Applies the given subscription set to the integration, returning {@code true} when anything was actually
-     * persisted. An update that would be a no-op is skipped, so a caller invoked repeatedly (e.g. the periodic
-     * cleanup) does not keep rewriting the same state. Prefer {@link #clearSubscriptions(String)} over passing an
-     * empty set.
+     * Applies the given subscription set to the integration. An empty set clears all of them.
      */
-    boolean processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
+    void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
 
     /**
-     * Removes all of the integration's subscriptions, returning {@code true} when it had any - i.e. when this call
-     * actually detached it from the data stream. Skipped when it had none, since persisting an empty set rewrites the
-     * same state cluster-wide.
+     * Removes all of the integration's subscriptions and persists the empty set unconditionally.
+     * <p>
+     * Deliberately does not check whether this node currently sees any: that view is node-local and eventually
+     * consistent, so skipping the write would let the persisted subscriptions outlive a deleted integration and come
+     * back on the next restart. Use {@link #hasSubscriptions(String)} when a caller needs to know whether there was
+     * anything to clear.
      */
-    boolean clearSubscriptions(String integrationId);
+    void clearSubscriptions(String integrationId);
+
+    /**
+     * Whether this node currently sees any subscriptions for the integration. A node-local, eventually-consistent
+     * read: only safe for a caller that can tolerate a stale answer, e.g. the periodic cleanup deciding whether an
+     * integration disabled for the whole TTL is still attached to the data stream.
+     */
+    boolean hasSubscriptions(String integrationId);
 
 }

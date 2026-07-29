@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
-import java.util.Collections;
 import java.util.Set;
 
 @Slf4j
@@ -34,7 +33,7 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
     private final ClientSubscriptionService clientSubscriptionService;
 
     @Override
-    public boolean processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> newSubscriptions) {
+    public void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> newSubscriptions) {
         Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(integrationId);
 
         if (log.isDebugEnabled()) {
@@ -43,41 +42,40 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
         }
 
         if (newSubscriptions.isEmpty()) {
-            if (currentSubscriptions.isEmpty()) {
-                // Nothing to clear: persisting an empty set would rewrite the same state cluster-wide.
-                return false;
-            }
-            clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
-            return true;
+            clearSubscriptions(integrationId);
+            return;
         }
 
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentSubscriptions, newSubscriptions);
-        // Non-short-circuiting on purpose: both halves of the update have to run, so this must not become ||.
-        return processUnsubscribe(integrationId, subscriptionsUpdate) | processSubscribe(integrationId, subscriptionsUpdate);
+        processUnsubscribe(integrationId, subscriptionsUpdate);
+        processSubscribe(integrationId, subscriptionsUpdate);
     }
 
     @Override
-    public boolean clearSubscriptions(String integrationId) {
-        return processSubscriptionsUpdate(integrationId, Collections.emptySet());
+    public void clearSubscriptions(String integrationId) {
+        clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
     }
 
-    private boolean processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    @Override
+    public boolean hasSubscriptions(String integrationId) {
+        return !clientSubscriptionService.getClientSubscriptions(integrationId).isEmpty();
+    }
+
+    private void processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> removedSubscriptions = subscriptionsUpdate.getToUnsubscribe();
         if (CollectionUtils.isEmpty(removedSubscriptions)) {
-            return false;
+            return;
         }
         Set<String> unsubscribeTopics = TopicSubscriptionsUtil.getUnsubscribeTopics(removedSubscriptions);
         clientSubscriptionService.unsubscribeAndPersist(integrationId, unsubscribeTopics);
-        return true;
     }
 
-    private boolean processSubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    private void processSubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> addedSubscriptions = subscriptionsUpdate.getToSubscribe();
         if (CollectionUtils.isEmpty(addedSubscriptions)) {
-            return false;
+            return;
         }
         clientSubscriptionService.subscribeAndPersist(integrationId, addedSubscriptions);
-        return true;
     }
 
 }

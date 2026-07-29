@@ -89,7 +89,7 @@ class IntegrationCleanupServiceImplTest {
     void givenExpiredDisabledIntegrationWithSubscriptions_whenCleanUp_thenDetachesAndDeletesBothTopics() {
         Integration integration = givenIntegrations(expiredDisabledIntegration());
         String integrationId = integration.getIdStr();
-        when(integrationSubscriptionUpdateService.clearSubscriptions(integrationId)).thenReturn(true);
+        when(integrationSubscriptionUpdateService.hasSubscriptions(integrationId)).thenReturn(true);
 
         service.cleanUp();
 
@@ -119,7 +119,7 @@ class IntegrationCleanupServiceImplTest {
     @Test
     void givenNothingCachedForIntegration_whenCleanUp_thenDoesNotBroadcast() {
         Integration integration = givenIntegrations(expiredDisabledIntegration());
-        when(integrationSubscriptionUpdateService.clearSubscriptions(integration.getIdStr())).thenReturn(true);
+        when(integrationSubscriptionUpdateService.hasSubscriptions(integration.getIdStr())).thenReturn(true);
         // lifecycleEventTypeCache.remove returns false: nothing was cached on this node
 
         service.cleanUp();
@@ -147,7 +147,8 @@ class IntegrationCleanupServiceImplTest {
 
         service.cleanUp();
 
-        verify(integrationSubscriptionUpdateService).clearSubscriptions(integration.getIdStr());
+        verify(integrationSubscriptionUpdateService).hasSubscriptions(integration.getIdStr());
+        verify(integrationSubscriptionUpdateService, never()).clearSubscriptions(integration.getIdStr());
         verify(lifecycleEventTypeCache).remove(integration.getIdStr());
         verifyNoInteractions(integrationTopicService);
     }
@@ -215,8 +216,8 @@ class IntegrationCleanupServiceImplTest {
         Integration next = expiredDisabledIntegration();
         givenIntegrations(failing, next);
         doThrow(new RuntimeException("kafka admin timeout"))
-                .when(integrationSubscriptionUpdateService).clearSubscriptions(failing.getIdStr());
-        when(integrationSubscriptionUpdateService.clearSubscriptions(next.getIdStr())).thenReturn(true);
+                .when(integrationSubscriptionUpdateService).hasSubscriptions(failing.getIdStr());
+        when(integrationSubscriptionUpdateService.hasSubscriptions(next.getIdStr())).thenReturn(true);
 
         service.cleanUp();
 

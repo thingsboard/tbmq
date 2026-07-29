@@ -157,12 +157,15 @@ public class IntegrationCleanupServiceImpl {
      * {@code IntegrationLifecycleConfigProto} broadcast.
      */
     private boolean stopProducingFor(String integrationId) {
-        boolean subscriptionsCleared = integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
+        boolean wasSubscribed = integrationSubscriptionUpdateService.hasSubscriptions(integrationId);
+        if (wasSubscribed) {
+            integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
+        }
         boolean eventTypesEvicted = lifecycleEventTypeCache.remove(integrationId);
         if (eventTypesEvicted) {
             evictEventTypesClusterWide(integrationId);
         }
-        return subscriptionsCleared || eventTypesEvicted;
+        return wasSubscribed || eventTypesEvicted;
     }
 
     /**

@@ -104,21 +104,30 @@ public class IntegrationSubscriptionUpdateServiceImplTest {
         verify(clientSubscriptionService, never()).subscribeAndPersist(any(), any());
     }
 
+    /**
+     * getClientSubscriptions is node-local and eventually consistent - empty before initClientSubscriptions runs, and
+     * otherwise only as fresh as this node's subscription consumer. Skipping the tombstone on that basis would let the
+     * persisted subscriptions outlive a deleted integration and come back on the next restart.
+     */
     @Test
-    public void givenNoCurrentTopicSubscriptions_whenProcessSubscriptionsUpdateWithEmptySet_thenDoesNotRepersist() {
-        doReturn(Set.of()).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+    public void givenNoCurrentTopicSubscriptions_whenClearSubscriptions_thenStillPersistsTheEmptySet() {
+        integrationSubscriptionUpdateService.clearSubscriptions("integrationId");
 
-        boolean changed = integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of());
-
-        assertFalse(changed);
-        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any());
+        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
     }
 
     @Test
-    public void givenCurrentTopicSubscriptions_whenProcessSubscriptionsUpdate_thenReportsChanged() {
+    public void givenCurrentTopicSubscriptions_whenHasSubscriptions_thenTrue() {
         doReturn(Set.of(getTopicSubs("topic1"))).when(clientSubscriptionService).getClientSubscriptions("integrationId");
 
-        assertTrue(integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of()));
+        assertTrue(integrationSubscriptionUpdateService.hasSubscriptions("integrationId"));
+    }
+
+    @Test
+    public void givenNoCurrentTopicSubscriptions_whenHasSubscriptions_thenFalse() {
+        doReturn(Set.of()).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+
+        assertFalse(integrationSubscriptionUpdateService.hasSubscriptions("integrationId"));
     }
 
     private TopicSubscription getTopicSubs(String topic) {
