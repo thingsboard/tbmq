@@ -361,6 +361,8 @@ queue:
   integration-uplink:
     # Poll interval for messages from 'tbmq.ie.uplink' topic (in ms).
     poll-interval: "${TB_IE_UPLINK_POLL_INTERVAL:100}"
+    # Timeout for processing a pack of messages from 'tbmq.ie.uplink' topic (in ms).
+    pack-processing-timeout: "${TB_IE_UPLINK_PACK_PROCESSING_TIMEOUT:20000}"
   integration-uplink-notifications:
     # Poll interval for messages from 'tbmq.ie.uplink.notifications' topics (in ms).
     poll-interval: "${TB_IE_UPLINK_NOTIFICATIONS_POLL_INTERVAL:100}"
