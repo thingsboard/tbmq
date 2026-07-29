@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationUplinkQueueProvider;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
@@ -35,10 +36,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class IntegrationUplinkConsumerTest {
@@ -67,6 +77,40 @@ class IntegrationUplinkConsumerTest {
         }).when(tbmqIntegrationApiService).handle(any(), any());
     }
 
+    /**
+     * The pack must be awaited before the offsets are committed, otherwise the next pack overlaps the current one and
+     * an integration present in both can be applied out of order - which is the whole point of the chaining. Calling
+     * processPack and awaitPackProcessing directly cannot catch a commit hoisted above the await.
+     */
+    @Test
+    void givenPendingPack_whenLaunchConsumer_thenCommitsOnlyAfterTheLastCallbackFires() {
+        captureHandling();
+        ReflectionTestUtils.setField(consumer, "pollDuration", 10L);
+        ReflectionTestUtils.setField(consumer, "packProcessingTimeout", 30_000L);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ReflectionTestUtils.setField(consumer, "consumerExecutor", executor);
+
+        @SuppressWarnings("unchecked")
+        TbQueueConsumer<TbProtoQueueMsg<UplinkIntegrationMsgProto>> queueConsumer = mock(TbQueueConsumer.class);
+        var msg = eventMsg(UUID.randomUUID());
+        when(queueConsumer.poll(anyLong())).thenReturn(List.of(msg)).thenReturn(List.of());
+
+        try {
+            consumer.launchConsumer(queueConsumer);
+
+            await().atMost(5, TimeUnit.SECONDS).until(() -> !callbacks.isEmpty());
+            // The loop is parked in awaitPackProcessing, so nothing may have been committed yet.
+            verify(queueConsumer, never()).commitSync();
+
+            callbacks.get(0).onSuccess();
+
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> verify(queueConsumer).commitSync());
+        } finally {
+            ReflectionTestUtils.setField(consumer, "stopped", true);
+            executor.shutdownNow();
+        }
+    }
+
     @Test
     void givenTwoEventsOfSameIntegration_whenProcessPack_thenSecondIsHandledOnlyAfterFirstCompletes() {
         captureHandling();
@@ -74,7 +118,7 @@ class IntegrationUplinkConsumerTest {
         var first = eventMsg(integrationId);
         var second = eventMsg(integrationId);
 
-        consumer.processPack(List.of(first, second));
+        consumer.processPack(consumer.groupByMessageKey(List.of(first, second)));
 
         assertThat(handled).containsExactly(first);
 
@@ -90,7 +134,7 @@ class IntegrationUplinkConsumerTest {
         var first = eventMsg(integrationId);
         var second = eventMsg(integrationId);
 
-        consumer.processPack(List.of(first, second));
+        consumer.processPack(consumer.groupByMessageKey(List.of(first, second)));
         callbacks.get(0).onFailure(new RuntimeException("boom"));
 
         assertThat(handled).containsExactly(first, second);
@@ -102,7 +146,7 @@ class IntegrationUplinkConsumerTest {
         var first = eventMsg(UUID.randomUUID());
         var second = eventMsg(UUID.randomUUID());
 
-        consumer.processPack(List.of(first, second));
+        consumer.processPack(consumer.groupByMessageKey(List.of(first, second)));
 
         // Neither waits for the other; the order they are dispatched in is deliberately unspecified.
         assertThat(handled).containsExactlyInAnyOrder(first, second);
@@ -114,7 +158,7 @@ class IntegrationUplinkConsumerTest {
         var serviceInfo = serviceInfoMsg();
         var event = eventMsg(UUID.randomUUID());
 
-        consumer.processPack(List.of(serviceInfo, event));
+        consumer.processPack(consumer.groupByMessageKey(List.of(serviceInfo, event)));
 
         assertThat(handled).containsExactlyInAnyOrder(serviceInfo, event);
     }
@@ -124,7 +168,7 @@ class IntegrationUplinkConsumerTest {
         captureHandling();
         UUID integrationId = UUID.randomUUID();
 
-        var pack = consumer.processPack(List.of(eventMsg(integrationId), eventMsg(integrationId)));
+        var pack = consumer.processPack(consumer.groupByMessageKey(List.of(eventMsg(integrationId), eventMsg(integrationId))));
 
         assertThat(pack).isNotDone();
         callbacks.get(0).onSuccess();

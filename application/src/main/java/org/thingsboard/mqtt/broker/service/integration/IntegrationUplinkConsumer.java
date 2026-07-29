@@ -36,12 +36,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -89,7 +87,8 @@ public class IntegrationUplinkConsumer {
         integrationManagerService.proceedGracefulShutdown();
     }
 
-    private void launchConsumer(TbQueueConsumer<TbProtoQueueMsg<UplinkIntegrationMsgProto>> consumer) {
+    // Package-private so a test can drive one loop iteration and assert the commit follows the await.
+    void launchConsumer(TbQueueConsumer<TbProtoQueueMsg<UplinkIntegrationMsgProto>> consumer) {
         consumerExecutor.submit(() -> {
             while (!stopped) {
                 try {
@@ -98,9 +97,10 @@ public class IntegrationUplinkConsumer {
                         continue;
                     }
 
+                    Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byMessageKey = groupByMessageKey(msgs);
                     // Awaited before committing so the next pack cannot overlap the current one and reorder
                     // the events of an integration that appears in both.
-                    awaitPackProcessing(processPack(msgs), keysOf(msgs));
+                    awaitPackProcessing(processPack(byMessageKey), byMessageKey.keySet());
                     consumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
@@ -132,9 +132,13 @@ public class IntegrationUplinkConsumer {
      * integration too is stricter than required. They are chained anyway because the event type only becomes known
      * once the serialized payload is decoded, which happens in the handler - telling them apart here would mean
      * decoding every event twice. {@code max.poll.records} for this topic bounds how long a single chain can get.
+     * <p>
+     * Deliberately a CompletableFuture chain rather than the PackProcessingContext shape the device, application and
+     * IE-side consumers use: those need a pending map and a latch to drive retry and ack strategies, and this stream
+     * has neither - uplink packs are not retried.
      */
-    CompletableFuture<Void> processPack(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
-        return CompletableFuture.allOf(groupByIntegration(msgs).values().stream()
+    CompletableFuture<Void> processPack(Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byMessageKey) {
+        return CompletableFuture.allOf(byMessageKey.values().stream()
                 .map(this::processSequentially)
                 .toArray(CompletableFuture[]::new));
     }
@@ -162,14 +166,24 @@ public class IntegrationUplinkConsumer {
      * (DefaultIntegrationApiService.sendEventData) and to a random UUID for service info, so anything not tied to an
      * integration lands in a group of its own and is never ordered against something else.
      */
-    private Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> groupByIntegration(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
-        Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byIntegration = new LinkedHashMap<>();
+    Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> groupByMessageKey(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
+        Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byMessageKey = new LinkedHashMap<>();
         for (TbProtoQueueMsg<UplinkIntegrationMsgProto> msg : msgs) {
-            byIntegration.computeIfAbsent(msg.getKey(), __ -> new ArrayList<>()).add(msg);
+            byMessageKey.computeIfAbsent(msg.getKey(), __ -> new ArrayList<>()).add(msg);
         }
-        return byIntegration;
+        return byMessageKey;
     }
 
+    /**
+     * Chains the group so each message is handled only after the previous one's callback fires.
+     * <p>
+     * Note where each link runs: the callback completes on a DB thread, not on the consumer thread - a DB read-pool
+     * thread for a lifecycle event, and the events insert queue's own worker thread for anything else, since
+     * TbSqlBlockingQueue sets the future inside its drain loop and a direct-executor listener runs synchronously
+     * there. In the second case the next message's insert is submitted from the insert queue's own thread, which is
+     * safe only because that queue is unbounded and its add never blocks. Bounding it for backpressure would
+     * deadlock this chain with no error.
+     */
     private CompletableFuture<Void> processSequentially(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> group) {
         CompletableFuture<Void> chain = CompletableFuture.completedFuture(null);
         for (TbProtoQueueMsg<UplinkIntegrationMsgProto> msg : group) {
@@ -201,10 +215,6 @@ public class IntegrationUplinkConsumer {
             processed.complete(null);
         }
         return processed;
-    }
-
-    private static Set<String> keysOf(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
-        return msgs.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
     }
 
     private void launchNotificationsConsumer(TbQueueConsumer<TbProtoQueueMsg<UplinkIntegrationNotificationMsgProto>> notificationsConsumer) {
