@@ -157,6 +157,10 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             Event event = JavaSerDesUtil.decode(proto.getEvent().toByteArray());
             if (event == null) {
                 log.warn("[{}] Could not convert proto to event {}", entityId, proto);
+                // Nothing to save, but the callback must still be completed - IntegrationUplinkConsumer waits on it
+                // before processing the next event of this integration. Reported as an error since the payload is
+                // malformed, consistently with the unsupported event source above.
+                callback.onError(new IllegalArgumentException("Could not convert proto to event"));
                 return;
             }
             log.trace("Process saveEvent from IE: [{}][{}]", entityId, event);
@@ -189,6 +193,10 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
                         log.debug("[{}] Updating integration status: {}", integration, value);
                         integrationService.saveIntegrationStatus(integration, value);
                     }
+                    // Must be signalled only after the status is written: IntegrationUplinkConsumer sequences a
+                    // pack's events per integration on this callback, so completing it early would let the next
+                    // event of the same integration overwrite the status out of order.
+                    callback.onSuccess(null);
                 }, callback::onError);
             } else {
                 withCallback(saveEventFuture, callback::onSuccess, callback::onError);

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anySet;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -215,6 +217,59 @@ class DefaultPlatformIntegrationServiceTest {
         platformIntegrationService.processUplinkData(eventProto, callback);
 
         verify(eventService, times(1)).saveAsync(any());
+    }
+
+    @Test
+    void givenLifecycleEvent_whenProcessUplinkData_thenCompletesCallbackAfterStatusUpdate() {
+        when(integrationService.findIntegrationByIdAsync(integrationId)).thenReturn(Futures.immediateFuture(integration));
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(lifecycleEventProto(ComponentLifecycleEvent.STARTED), callback);
+
+        InOrder inOrder = inOrder(integrationService, callback);
+        inOrder.verify(integrationService).saveIntegrationStatus(eq(integration), any());
+        inOrder.verify(callback).onSuccess(null);
+    }
+
+    @Test
+    void givenLifecycleEventOfUnknownIntegration_whenProcessUplinkData_thenCompletesCallback() {
+        when(integrationService.findIntegrationByIdAsync(integrationId)).thenReturn(Futures.immediateFuture(null));
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(lifecycleEventProto(ComponentLifecycleEvent.STOPPED), callback);
+
+        verify(integrationService, never()).saveIntegrationStatus(any(), any());
+        verify(callback).onSuccess(null);
+    }
+
+    @Test
+    void givenUndecodableEvent_whenProcessUplinkData_thenCompletesCallback() {
+        IntegrationEventProto eventProto = IntegrationEventProto.newBuilder()
+                .setEventSourceIdMSB(integrationId.getMostSignificantBits())
+                .setEventSourceIdLSB(integrationId.getLeastSignificantBits())
+                .setSource(TbEventSourceProto.INTEGRATION)
+                .setEvent(ByteString.EMPTY)
+                .build();
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(eventProto, callback);
+
+        verify(eventService, never()).saveAsync(any());
+        verify(callback).onError(any());
+    }
+
+    private IntegrationEventProto lifecycleEventProto(ComponentLifecycleEvent lcEventType) {
+        LifecycleEvent event = LifecycleEvent.builder()
+                .entityId(integrationId)
+                .lcEventType(lcEventType.name())
+                .success(true)
+                .build();
+        return IntegrationEventProto.newBuilder()
+                .setEventSourceIdMSB(integrationId.getMostSignificantBits())
+                .setEventSourceIdLSB(integrationId.getLeastSignificantBits())
+                .setSource(TbEventSourceProto.INTEGRATION)
+                .setEvent(ByteString.copyFrom(JavaSerDesUtil.encode(event)))
+                .build();
     }
 
 }

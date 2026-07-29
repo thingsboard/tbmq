@@ -36,6 +36,9 @@ public class TbmqIntegrationApiServiceImpl implements TbmqIntegrationApiService 
             platformIntegrationService.processUplinkData(msg.getEventProto(), new IntegrationApiCallback(callback));
         } else if (msg.hasServiceInfoProto()) {
             platformIntegrationService.processServiceInfo(msg.getServiceInfoProto());
+            // Processing is synchronous here, but the callback must still be completed: IntegrationUplinkConsumer
+            // waits on it before moving on within a pack.
+            callback.onSuccess();
         } else {
             callback.onFailure(new IllegalArgumentException("Unsupported integration msg!"));
         }
