@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -84,6 +85,33 @@ class IntegrationCleanupServiceImplTest {
 
         verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
         verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    /**
+     * IntegrationTopicServiceImpl.deleteTopic deletes the consumer group before the callback-bearing topic delete and
+     * rethrows on anything but GroupIdNotFoundException, so a shared try would let one failure skip the other topic -
+     * and the sweep would never retry, having already detached the integration.
+     */
+    @Test
+    void givenDataTopicDeletionThrows_whenDeleteIntegrationTopics_thenStillDeletesTheEventTopic() {
+        String integrationId = UUID.randomUUID().toString();
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+
+        service.deleteIntegrationTopics(integrationId);
+
+        verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    @Test
+    void givenEventTopicDeletionThrows_whenDeleteIntegrationTopics_thenDoesNotPropagate() {
+        String integrationId = UUID.randomUUID().toString();
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+
+        assertThatCode(() -> service.deleteIntegrationTopics(integrationId)).doesNotThrowAnyException();
+
+        verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
     }
 
     @Test

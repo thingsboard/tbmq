@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsSe
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 @Component
 @Slf4j
@@ -115,8 +116,24 @@ public class IntegrationCleanupServiceImpl {
      * Integration Executor cannot do it in that case.
      */
     public void deleteIntegrationTopics(String integrationId) {
-        integrationTopicService.deleteTopic(integrationId, deleteCallback(integrationId, "data"));
-        integrationTopicService.deleteEventTopic(integrationId, deleteCallback(integrationId, "lifecycle events"));
+        deleteTopicQuietly(integrationId, "data", integrationTopicService::deleteTopic);
+        deleteTopicQuietly(integrationId, "lifecycle events", integrationTopicService::deleteEventTopic);
+    }
+
+    /**
+     * Each deletion is isolated from the other. Only the topic delete itself is callback-based: the consumer group is
+     * deleted first and synchronously, and rethrows on anything but GroupIdNotFoundException. Without this a failure
+     * on the first topic would skip the second - and neither the sweep, which has already detached the integration
+     * and so short-circuits, nor the delete path, where the row is gone, would ever retry.
+     */
+    private void deleteTopicQuietly(String integrationId, String topicKind, BiConsumer<String, BasicCallback> deletion) {
+        BasicCallback callback = deleteCallback(integrationId, topicKind);
+        try {
+            deletion.accept(integrationId, callback);
+        } catch (Exception e) {
+            // Routed through the same callback so a synchronous missing-topic error is logged like an asynchronous one.
+            callback.onFailure(e);
+        }
     }
 
     private BasicCallback deleteCallback(String integrationId, String topicKind) {
