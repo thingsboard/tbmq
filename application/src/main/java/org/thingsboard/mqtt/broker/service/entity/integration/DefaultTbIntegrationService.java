@@ -30,7 +30,6 @@ import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
-import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 @Slf4j
 @Service
@@ -41,14 +40,12 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
     private final PlatformIntegrationService platformIntegrationService;
     private final RateLimitService rateLimitService;
     private final InternodeNotificationsService internodeNotificationsService;
-    private final IntegrationTopicService integrationTopicService;
 
     @Override
     public Integration save(Integration integration, User currentUser) {
         boolean created = integration.getId() == null;
         Integration result = integrationService.saveIntegration(integration);
         platformIntegrationService.processIntegrationUpdate(result, created);
-        createEventTopicIfOptedIn(result);
         internodeNotificationsService.broadcast(
                 InternodeNotificationProto.newBuilder()
                         .setIntegrationLifecycleConfigProto(toLifecycleConfigProto(result))
@@ -75,29 +72,6 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
     @Override
     public void restart(Integration integration, User currentUser) throws ThingsboardException {
         platformIntegrationService.processIntegrationRestart(integration);
-    }
-
-    /**
-     * Provisions the dedicated lifecycle-events topic as soon as an integration opts in, before the config is
-     * broadcast and any node starts publishing events - see
-     * {@link IntegrationTopicService#createEventTopic(String)} for why nothing else provisions it.
-     * <p>
-     * Deliberately unconditional rather than the cached variant or restricted to disabled integrations: the
-     * broadcast reaches every node before the Integration Executor has started an enabled integration, and the
-     * topic cache can report an already deleted topic as existing - which is exactly the state right after the
-     * cleanup sweep of an integration that this save is re-enabling.
-     */
-    private void createEventTopicIfOptedIn(Integration integration) {
-        if (!ClientLifecycleEventTypeUtil.isOptedIn(integration.getConfiguration())) {
-            return;
-        }
-        try {
-            integrationTopicService.createEventTopic(integration.getIdStr());
-        } catch (Exception e) {
-            // The integration is already persisted; failing the request would be misleading. Events published
-            // before the topic exists are dropped and counted, and the IE recreates it once the integration starts.
-            log.warn("[{}][{}] Failed to create the lifecycle events topic", integration.getId(), integration.getName(), e);
-        }
     }
 
     private IntegrationLifecycleConfigProto toLifecycleConfigProto(Integration integration) {

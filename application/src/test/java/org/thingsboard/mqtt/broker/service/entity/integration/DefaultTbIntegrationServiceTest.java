@@ -16,9 +16,7 @@
 package org.thingsboard.mqtt.broker.service.entity.integration;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,15 +27,8 @@ import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
-import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DefaultTbIntegrationServiceTest {
@@ -52,49 +43,9 @@ class DefaultTbIntegrationServiceTest {
     RateLimitService rateLimitService;
     @Mock
     InternodeNotificationsService internodeNotificationsService;
-    @Mock
-    IntegrationTopicService integrationTopicService;
 
     @InjectMocks
     DefaultTbIntegrationService service;
-
-    /**
-     * The topic has to exist before the config reaches the other nodes, since they start publishing events as soon
-     * as they apply it - so the ordering is part of the fix, not an implementation detail.
-     */
-    @Test
-    void givenIntegrationOptedInForLifecycleEvents_whenSave_thenCreatesEventTopicBeforeBroadcast() {
-        Integration integration = newIntegration(true);
-        when(integrationService.saveIntegration(integration)).thenReturn(integration);
-
-        service.save(integration, null);
-
-        InOrder inOrder = inOrder(integrationTopicService, internodeNotificationsService);
-        inOrder.verify(integrationTopicService).createEventTopic(INTEGRATION_ID.toString());
-        inOrder.verify(internodeNotificationsService).broadcast(any());
-    }
-
-    @Test
-    void givenIntegrationWithoutLifecycleEvents_whenSave_thenDoesNotCreateEventTopic() {
-        Integration integration = newIntegration(false);
-        when(integrationService.saveIntegration(integration)).thenReturn(integration);
-
-        service.save(integration, null);
-
-        verify(integrationTopicService, never()).createEventTopic(any());
-    }
-
-    @Test
-    void givenEventTopicCreationFails_whenSave_thenSaveStillSucceeds() {
-        Integration integration = newIntegration(true);
-        when(integrationService.saveIntegration(integration)).thenReturn(integration);
-        when(integrationTopicService.createEventTopic(INTEGRATION_ID.toString()))
-                .thenThrow(new RuntimeException("Kafka is down"));
-
-        service.save(integration, null);
-
-        verify(internodeNotificationsService).broadcast(any());
-    }
 
     private Integration newIntegration(boolean optedInForLifecycleEvents) {
         Integration integration = new Integration(INTEGRATION_ID);

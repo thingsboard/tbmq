@@ -25,8 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
-import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -97,28 +95,6 @@ public class IntegrationControllerTest extends AbstractControllerTest {
 
         Integration foundIntegration = doGet("/api/integration/" + savedIntegration.getId().toString(), Integration.class);
         Assert.assertEquals(foundIntegration.getName(), savedIntegration.getName());
-    }
-
-    /**
-     * End-to-end counterpart of DefaultTbIntegrationServiceTest: the lifecycle-events topic is not provisioned by
-     * its producer, so saving an opted-in integration has to leave a real topic behind in Kafka - even though the
-     * integration was never enabled and the Integration Executor never started it.
-     */
-    @Test
-    public void testSaveIntegrationOptedInForLifecycleEventsCreatesEventTopic() throws Exception {
-        Integration integration = new Integration();
-        integration.setName("My lifecycle events integration");
-        integration.setType(IntegrationType.HTTP);
-        ObjectNode configuration = (ObjectNode) getIntegrationConfiguration();
-        configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
-                .add(ClientLifecycleEventType.CLIENT_CONNECTED.name());
-        integration.setConfiguration(configuration);
-
-        Integration savedIntegration = doPost("/api/integration", integration, Integration.class);
-
-        String eventTopic = integrationHelperService.getIntegrationEventTopic(savedIntegration.getIdStr());
-        // getNumberOfPartitions wraps a describeTopics failure in a RuntimeException, so not throwing is the assertion
-        assertThatCode(() -> queueAdmin.getNumberOfPartitions(eventTopic)).doesNotThrowAnyException();
     }
 
     @Test

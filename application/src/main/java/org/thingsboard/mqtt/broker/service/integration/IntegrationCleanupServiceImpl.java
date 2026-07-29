@@ -148,9 +148,8 @@ public class IntegrationCleanupServiceImpl {
 
     /**
      * Detaches the integration from both streams that feed it, so the TTL actually reclaims something: topic
-     * subscriptions drive the data stream, and the lifecycle event type cache drives the events stream. Deleting
-     * the topics without this is a no-op in practice - the next matching publish recreates the data topic (its
-     * producer creates topics on send) and the next lifecycle event keeps targeting the events topic.
+     * subscriptions drive the data stream, and the lifecycle event type cache drives the events stream. Deleting the
+     * topics without this is a no-op in practice - both producers recreate their topic on the next send.
      * <p>
      * Returns {@code true} when something was actually detached, i.e. the integration was still producing. Both are
      * restored when the integration is enabled again: saving it re-registers the subscriptions

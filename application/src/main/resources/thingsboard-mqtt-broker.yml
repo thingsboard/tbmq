@@ -630,10 +630,9 @@ queue:
       topic-properties: "${TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.event` topics.
       additional-consumer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
-      # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.event` topics. Lifecycle events are
-      # sent synchronously on the MQTT processing thread (same path as a regular publish), so a slow or unavailable Kafka
-      # can stall that thread for up to max.block.ms before the send fails, after which the event is dropped and counted.
-      # Lower max.block.ms to tighten that bound at the cost of more dropped events under Kafka pressure.
+      # Lifecycle events are produced synchronously on the MQTT processing thread, so an unavailable Kafka or a full
+      # producer buffer can stall that thread for up to max.block.ms before the send fails and the event is dropped
+      # and counted. Lower it to tighten that bound at the cost of more dropped events under Kafka pressure.
       additional-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
     internode-notifications:
       # Prefix for topics used to send system notifications to Broker nodes.

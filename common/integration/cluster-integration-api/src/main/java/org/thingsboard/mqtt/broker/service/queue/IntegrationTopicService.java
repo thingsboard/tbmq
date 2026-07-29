@@ -28,14 +28,11 @@ public interface IntegrationTopicService {
     String getConsumerGroup(String integrationId);
 
     /**
-     * Provisions the integration's dedicated lifecycle-events topic.
+     * Provisions the integration's dedicated lifecycle-events topic, so the Integration Executor's events consumer
+     * has a topic to subscribe to before the first event arrives. The producer side needs no such call: the events
+     * producer creates the topic on send, exactly like the data producer.
      * <p>
-     * Unlike the data stream, the events stream never provisions its topic implicitly: its producer is configured
-     * with {@code createTopicIfNotExists(false)} (see {@code KafkaIntegrationMsgQueueFactory.createEventProducer})
-     * because events are sent synchronously on the MQTT processing thread, where a blocking admin call is not
-     * acceptable - and where a missing topic stalls the send for {@code max.block.ms} before the event is dropped.
-     * Every path that registers an opt-in is therefore responsible for calling this, off the hot path. All such
-     * calls are idempotent.
+     * Idempotent.
      */
     String createEventTopic(String integrationId);
 
