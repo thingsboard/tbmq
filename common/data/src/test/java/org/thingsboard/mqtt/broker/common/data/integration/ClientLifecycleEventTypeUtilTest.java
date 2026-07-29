@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class ClientLifecycleEventTypeUtilTest {
 
     @Test
     void givenNullConfig_whenIsOptedIn_thenFalse() {
-        assertThat(ClientLifecycleEventTypeUtil.isOptedIn(null)).isFalse();
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn((JsonNode) null)).isFalse();
     }
 
     /**
@@ -70,6 +71,27 @@ class ClientLifecycleEventTypeUtilTest {
         configuration.putNull(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
 
         assertThat(ClientLifecycleEventTypeUtil.isOptedIn(configuration)).isFalse();
+    }
+
+    @Test
+    void givenNullLifecycleMsg_whenIsOptedIn_thenFalse() {
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn((IntegrationLifecycleMsg) null)).isFalse();
+    }
+
+    @Test
+    void givenLifecycleMsgWithNullConfiguration_whenIsOptedIn_thenFalse() {
+        IntegrationLifecycleMsg lifecycleMsg = IntegrationLifecycleMsg.builder().configuration(null).build();
+
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn(lifecycleMsg)).isFalse();
+    }
+
+    @Test
+    void givenLifecycleMsgWithEventTypes_whenIsOptedIn_thenTrue() {
+        ObjectNode configuration = MAPPER.createObjectNode();
+        configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY).add("CLIENT_CONNECTED");
+        IntegrationLifecycleMsg lifecycleMsg = IntegrationLifecycleMsg.builder().configuration(configuration).build();
+
+        assertThat(ClientLifecycleEventTypeUtil.isOptedIn(lifecycleMsg)).isTrue();
     }
 
 }
