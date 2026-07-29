@@ -56,7 +56,6 @@ export class ChartLegendComponent implements OnInit {
     showLatest: true
   });
   readonly chart = input<ECharts | null>(null);
-  readonly series = input<ChartSeries[]>([]);
   readonly chartKey = input<ChartKey>();
   readonly entityIds = input<string[]>([]);
   readonly visibleEntityIds = input<string[]>();
@@ -99,10 +98,9 @@ export class ChartLegendComponent implements OnInit {
     return formatLargeNumber(value);
   }
 
-  updateLegend(): void {
+  updateLegend(series: ChartSeries[]): void {
     this.legendData = [];
-    const series = this.series() || [];
-    for (const s of series) {
+    for (const s of series || []) {
       const data = s.data;
       this.legendData.push({
         min: data?.length ? Math.floor(calculateMin(data)) : 0,

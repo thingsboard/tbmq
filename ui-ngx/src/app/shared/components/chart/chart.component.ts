@@ -459,7 +459,7 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChang
   }
 
   private updateLegend() {
-    this.legendComp?.updateLegend();
+    this.legendComp?.updateLegend(this.series);
   }
 
   private checkMaxAllowedDataLength(data) {
