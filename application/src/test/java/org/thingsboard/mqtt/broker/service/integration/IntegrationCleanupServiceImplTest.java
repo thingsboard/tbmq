@@ -22,8 +22,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -45,13 +43,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class IntegrationCleanupServiceImplTest {
 
     static final long TTL_MS = TimeUnit.DAYS.toMillis(7);
@@ -258,6 +257,29 @@ class IntegrationCleanupServiceImplTest {
         verifyNoInteractions(integrationService, integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
     }
 
+    /**
+     * The loop must advance the page link and stop on the last page. With a single-page stub neither the advance nor
+     * the exit condition is ever executed.
+     */
+    @Test
+    void givenTwoPagesOfIntegrations_whenCleanUp_thenSweepsBothAndStops() {
+        Integration first = expiredDisabledIntegration();
+        Integration second = expiredDisabledIntegration();
+        when(integrationService.findIntegrations(any(PageLink.class)))
+                .thenReturn(new PageData<>(List.of(first), 2, 2, true))
+                .thenReturn(new PageData<>(List.of(second), 2, 2, false));
+        when(integrationService.findIntegrationById(first.getId())).thenReturn(first);
+        when(integrationService.findIntegrationById(second.getId())).thenReturn(second);
+        when(integrationSubscriptionUpdateService.hasSubscriptions(first.getIdStr())).thenReturn(true);
+        when(integrationSubscriptionUpdateService.hasSubscriptions(second.getIdStr())).thenReturn(true);
+
+        service.cleanUp();
+
+        verify(integrationTopicService).deleteTopic(eq(first.getIdStr()), any(BasicCallback.class));
+        verify(integrationTopicService).deleteTopic(eq(second.getIdStr()), any(BasicCallback.class));
+        verify(integrationService, times(2)).findIntegrations(any(PageLink.class));
+    }
+
     @Test
     void givenFailingIntegration_whenCleanUp_thenKeepsSweepingTheRest() {
         Integration failing = expiredDisabledIntegration();
@@ -278,8 +300,9 @@ class IntegrationCleanupServiceImplTest {
         when(integrationService.findIntegrations(any(PageLink.class)))
                 .thenReturn(new PageData<>(List.of(integrations), 1, integrations.length, false));
         for (Integration integration : integrations) {
-            // by default the re-read before detaching returns the same state
-            when(integrationService.findIntegrationById(integration.getId())).thenReturn(integration);
+            // by default the re-read before detaching returns the same state; lenient because the tests that stop
+            // before the re-read must still fail on any other unnecessary stubbing
+            lenient().when(integrationService.findIntegrationById(integration.getId())).thenReturn(integration);
         }
         return integrations[0];
     }

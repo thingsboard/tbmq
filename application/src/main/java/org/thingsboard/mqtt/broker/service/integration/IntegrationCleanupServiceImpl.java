@@ -17,9 +17,10 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -140,7 +141,7 @@ public class IntegrationCleanupServiceImpl {
         return CallbackUtil.createCallback(
                 () -> log.debug("[{}] Deleted the {} topic", integrationId, topicKind),
                 t -> {
-                    if (isTopicMissing(t)) {
+                    if (ExceptionUtils.hasCause(t, UnknownTopicOrPartitionException.class)) {
                         // Expected: an integration that never opted into lifecycle events has no events topic, and a
                         // sweep on another node may have won the race. Deleting unconditionally keeps a topic left
                         // over from a since-removed opt-in reclaimable, so this is not worth gating on the opt-in.
@@ -149,18 +150,6 @@ public class IntegrationCleanupServiceImpl {
                     }
                     log.warn("[{}] Failed to delete the {} topic", integrationId, topicKind, t);
                 });
-    }
-
-    private static boolean isTopicMissing(Throwable t) {
-        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
-            if (cause instanceof UnknownTopicOrPartitionException) {
-                return true;
-            }
-            if (cause.getCause() == cause) {
-                break;
-            }
-        }
-        return false;
     }
 
     /**
