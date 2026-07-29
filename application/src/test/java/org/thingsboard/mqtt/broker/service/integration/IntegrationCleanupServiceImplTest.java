@@ -131,6 +131,10 @@ class IntegrationCleanupServiceImplTest {
         doThrow(new RuntimeException(new ExecutionException(new UnknownTopicOrPartitionException("Topic missing"))))
                 .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
         Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
+        // The class's effective level is WARN (root), so DEBUG must be raised here to observe the expected message -
+        // otherwise this test could pass vacuously even if the callback were never reached at all.
+        Level originalLevel = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
@@ -139,9 +143,11 @@ class IntegrationCleanupServiceImplTest {
 
             assertThat(appender.list)
                     .as("a topic-missing error wrapped inside other exceptions must still be treated as expected")
-                    .noneMatch(event -> event.getLevel() == Level.WARN);
+                    .noneMatch(event -> event.getLevel() == Level.WARN)
+                    .anyMatch(event -> event.getLevel() == Level.DEBUG && event.getFormattedMessage().contains("does not exist"));
         } finally {
             logger.detachAppender(appender);
+            logger.setLevel(originalLevel);
         }
     }
 
@@ -330,6 +336,11 @@ class IntegrationCleanupServiceImplTest {
         verify(integrationTopicService).deleteTopic(eq(first.getIdStr()), any(BasicCallback.class));
         verify(integrationTopicService).deleteTopic(eq(second.getIdStr()), any(BasicCallback.class));
         verify(integrationService, times(2)).findIntegrations(any(PageLink.class));
+        ArgumentCaptor<PageLink> pageLinkCaptor = ArgumentCaptor.forClass(PageLink.class);
+        verify(integrationService, times(2)).findIntegrations(pageLinkCaptor.capture());
+        List<PageLink> pageLinks = pageLinkCaptor.getAllValues();
+        // The second call must use the next page, not a repeat of the first - otherwise the sweep never terminates.
+        assertThat(pageLinks.get(1).getPage()).isEqualTo(pageLinks.get(0).getPage() + 1);
     }
 
     @Test
