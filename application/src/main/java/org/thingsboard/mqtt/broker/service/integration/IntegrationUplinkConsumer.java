@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.callback.TbCallback;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationResponseProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationNotificationMsgProto;
@@ -33,14 +32,16 @@ import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationUplinkQ
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -99,7 +100,7 @@ public class IntegrationUplinkConsumer {
 
                     // Awaited before committing so the next pack cannot overlap the current one and reorder
                     // the events of an integration that appears in both.
-                    awaitPackProcessing(processPack(msgs));
+                    awaitPackProcessing(processPack(msgs), keysOf(msgs));
                     consumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
@@ -126,20 +127,28 @@ public class IntegrationUplinkConsumer {
      * integration's events already arrive ordered within one partition. Overlapping their asynchronous processing
      * throws that ordering away and lets an older event win - e.g. a STOPPED left over from a previous IE run
      * overwriting the status of the newer STARTED, which leaves a running integration displayed as pending.
+     * <p>
+     * Only the lifecycle events carry that status, so chaining the statistics and error events of the same
+     * integration too is stricter than required. They are chained anyway because the event type only becomes known
+     * once the serialized payload is decoded, which happens in the handler - telling them apart here would mean
+     * decoding every event twice. {@code max.poll.records} for this topic bounds how long a single chain can get.
      */
     CompletableFuture<Void> processPack(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
-        return CompletableFuture.allOf(groupByIntegration(msgs).stream()
+        return CompletableFuture.allOf(groupByIntegration(msgs).values().stream()
                 .map(this::processSequentially)
                 .toArray(CompletableFuture[]::new));
     }
 
-    void awaitPackProcessing(CompletableFuture<Void> pack) {
+    void awaitPackProcessing(CompletableFuture<Void> pack, Collection<String> integrationIds) {
         try {
             pack.get(packProcessingTimeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             // Deliberately proceeds to the commit: uplink packs are not retried today (see the TODO in handle),
             // and blocking the consumer indefinitely would stall every integration behind one stuck event.
-            log.warn("Timed out after {} ms awaiting the ie uplink pack processing", packProcessingTimeout);
+            // The per-integration ordering guarantee lapses here, though: the abandoned chains keep running while
+            // the next pack is dispatched, so an integration present in both can again be applied out of order.
+            // The ids are logged so that a status that ends up stale can be traced back to this line.
+            log.warn("Timed out after {} ms awaiting the ie uplink pack processing of {}", packProcessingTimeout, integrationIds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while awaiting the ie uplink pack processing");
@@ -148,20 +157,17 @@ public class IntegrationUplinkConsumer {
         }
     }
 
-    private List<List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> groupByIntegration(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
-        List<List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> groups = new ArrayList<>();
-        Map<UUID, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byIntegration = new LinkedHashMap<>();
+    /**
+     * Groups by the queue message key, which the IE sets to the integration id for events
+     * (DefaultIntegrationApiService.sendEventData) and to a random UUID for service info, so anything not tied to an
+     * integration lands in a group of its own and is never ordered against something else.
+     */
+    private Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> groupByIntegration(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
+        Map<String, List<TbProtoQueueMsg<UplinkIntegrationMsgProto>>> byIntegration = new LinkedHashMap<>();
         for (TbProtoQueueMsg<UplinkIntegrationMsgProto> msg : msgs) {
-            UUID integrationId = getIntegrationId(msg.getValue());
-            if (integrationId == null) {
-                // Not tied to an integration (e.g. service info) - there is nothing to order it against.
-                groups.add(List.of(msg));
-            } else {
-                byIntegration.computeIfAbsent(integrationId, __ -> new ArrayList<>()).add(msg);
-            }
+            byIntegration.computeIfAbsent(msg.getKey(), __ -> new ArrayList<>()).add(msg);
         }
-        groups.addAll(byIntegration.values());
-        return groups;
+        return byIntegration;
     }
 
     private CompletableFuture<Void> processSequentially(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> group) {
@@ -197,12 +203,8 @@ public class IntegrationUplinkConsumer {
         return processed;
     }
 
-    private static UUID getIntegrationId(UplinkIntegrationMsgProto msg) {
-        if (!msg.hasEventProto()) {
-            return null;
-        }
-        IntegrationEventProto eventProto = msg.getEventProto();
-        return new UUID(eventProto.getEventSourceIdMSB(), eventProto.getEventSourceIdLSB());
+    private static Set<String> keysOf(List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> msgs) {
+        return msgs.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
     }
 
     private void launchNotificationsConsumer(TbQueueConsumer<TbProtoQueueMsg<UplinkIntegrationNotificationMsgProto>> notificationsConsumer) {

@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -136,7 +137,7 @@ class IntegrationUplinkConsumerTest {
         ReflectionTestUtils.setField(consumer, "packProcessingTimeout", 50L);
 
         long startTime = System.currentTimeMillis();
-        consumer.awaitPackProcessing(new CompletableFuture<>());
+        consumer.awaitPackProcessing(new CompletableFuture<>(), Set.of("ie-1"));
 
         assertThat(System.currentTimeMillis() - startTime).isGreaterThanOrEqualTo(50L);
     }
@@ -146,7 +147,7 @@ class IntegrationUplinkConsumerTest {
         ReflectionTestUtils.setField(consumer, "packProcessingTimeout", 50L);
         Thread.currentThread().interrupt();
 
-        consumer.awaitPackProcessing(new CompletableFuture<>());
+        consumer.awaitPackProcessing(new CompletableFuture<>(), Set.of("ie-1"));
 
         // Also clears the flag, so it does not leak into the following tests.
         assertThat(Thread.interrupted()).isTrue();
