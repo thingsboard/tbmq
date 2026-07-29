@@ -162,28 +162,33 @@ public class IntegrationCleanupServiceImpl {
             integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
         }
         boolean eventTypesEvicted = lifecycleEventTypeCache.remove(integrationId);
-        if (eventTypesEvicted) {
+        boolean detached = wasSubscribed || eventTypesEvicted;
+        if (detached) {
+            // Deliberately not gated on eventTypesEvicted: this node's cache being empty says nothing about the
+            // other nodes'. The startup skip leaves it empty on a node that restarted after the expiry, while its
+            // subscriptions still come back from the subscriptions topic - so the node that reclaims the topics is
+            // not necessarily the node that had the event types cached. An idempotent no-op where nothing is cached.
             evictEventTypesClusterWide(integrationId);
         }
-        return wasSubscribed || eventTypesEvicted;
+        return detached;
     }
 
     /**
      * The event type cache is node-local, while the topics are deleted for the whole cluster, so evicting only here
-     * would leave every other node publishing lifecycle events into a topic that no longer exists - and since the
-     * events producer does not create topics, each of those sends stalls the MQTT processing thread for
-     * {@code max.block.ms} until that node's own sweep runs, up to {@code integrations.cleanup.period} later.
+     * would leave every other node publishing lifecycle events into a topic that no longer exists - recreating it on
+     * send and undoing the reclaim until that node's own sweep runs, up to
+     * {@code integrations.cleanup.period} later.
      * <p>
-     * Reuses the {@code deleted} flag of {@link IntegrationLifecycleConfigProto}, which
-     * {@code IntegrationLifecycleEventTypeCacheImpl.processIntegrationLifecycleConfig} routes to an eviction. The
-     * broadcast re-applies it to this node as an idempotent no-op, which is why the local result is taken first.
+     * Sent as an opt-in with no event types rather than as a delete: the integration row survives a sweep, and
+     * {@code IntegrationLifecycleEventTypeCacheImpl.put} already maps an empty list to the same eviction. Reusing the
+     * {@code deleted} flag would mislead the next handler added for this proto.
      */
     private void evictEventTypesClusterWide(String integrationId) {
         internodeNotificationsService.broadcast(
                 InternodeNotificationProto.newBuilder()
                         .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
                                 .setIntegrationId(integrationId)
-                                .setDeleted(true)
+                                .setDeleted(false)
                                 .build())
                         .build());
     }

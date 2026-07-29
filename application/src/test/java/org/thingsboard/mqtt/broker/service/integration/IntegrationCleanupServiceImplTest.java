@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
@@ -112,15 +113,34 @@ class IntegrationCleanupServiceImplTest {
 
         ArgumentCaptor<InternodeNotificationProto> captor = ArgumentCaptor.forClass(InternodeNotificationProto.class);
         verify(internodeNotificationsService).broadcast(captor.capture());
-        assertThat(captor.getValue().getIntegrationLifecycleConfigProto().getIntegrationId()).isEqualTo(integration.getIdStr());
-        assertThat(captor.getValue().getIntegrationLifecycleConfigProto().getDeleted()).isTrue();
+        IntegrationLifecycleConfigProto broadcast = captor.getValue().getIntegrationLifecycleConfigProto();
+        assertThat(broadcast.getIntegrationId()).isEqualTo(integration.getIdStr());
+        // Not a delete: the row survives, so the eviction is expressed as an opt-in with no event types.
+        assertThat(broadcast.getDeleted()).isFalse();
+        assertThat(broadcast.getLifecycleEventTypesList()).isEmpty();
     }
 
+    /**
+     * The sweeping node can legitimately have nothing cached while another node still does: the startup skip leaves
+     * the events cache empty on a node that restarted after the expiry, while its subscriptions come back from the
+     * subscriptions topic. Gating the broadcast on the local eviction would delete both topics cluster-wide without
+     * telling the nodes that are still publishing.
+     */
     @Test
-    void givenNothingCachedForIntegration_whenCleanUp_thenDoesNotBroadcast() {
+    void givenOnlySubscriptionsDetachedOnThisNode_whenCleanUp_thenStillBroadcastsTheEviction() {
         Integration integration = givenIntegrations(expiredDisabledIntegration());
         when(integrationSubscriptionUpdateService.hasSubscriptions(integration.getIdStr())).thenReturn(true);
         // lifecycleEventTypeCache.remove returns false: nothing was cached on this node
+
+        service.cleanUp();
+
+        verify(internodeNotificationsService).broadcast(any(InternodeNotificationProto.class));
+    }
+
+    @Test
+    void givenAlreadyDetachedIntegration_whenCleanUp_thenDoesNotBroadcast() {
+        givenIntegrations(expiredDisabledIntegration());
+        // both hasSubscriptions and remove report nothing: an earlier sweep already did the work
 
         service.cleanUp();
 
