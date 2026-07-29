@@ -15,15 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.entity.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,7 +42,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DefaultTbIntegrationServiceTest {
 
-    static final ObjectMapper MAPPER = new ObjectMapper();
     static final UUID INTEGRATION_ID = UUID.fromString("0198e1a0-1111-2222-3333-444455556666");
 
     @Mock
@@ -57,14 +58,20 @@ class DefaultTbIntegrationServiceTest {
     @InjectMocks
     DefaultTbIntegrationService service;
 
+    /**
+     * The topic has to exist before the config reaches the other nodes, since they start publishing events as soon
+     * as they apply it - so the ordering is part of the fix, not an implementation detail.
+     */
     @Test
-    void givenIntegrationOptedInForLifecycleEvents_whenSave_thenCreatesEventTopic() {
+    void givenIntegrationOptedInForLifecycleEvents_whenSave_thenCreatesEventTopicBeforeBroadcast() {
         Integration integration = newIntegration(true);
         when(integrationService.saveIntegration(integration)).thenReturn(integration);
 
         service.save(integration, null);
 
-        verify(integrationTopicService).createEventTopic(INTEGRATION_ID.toString());
+        InOrder inOrder = inOrder(integrationTopicService, internodeNotificationsService);
+        inOrder.verify(integrationTopicService).createEventTopic(INTEGRATION_ID.toString());
+        inOrder.verify(internodeNotificationsService).broadcast(any());
     }
 
     @Test
@@ -91,7 +98,7 @@ class DefaultTbIntegrationServiceTest {
 
     private Integration newIntegration(boolean optedInForLifecycleEvents) {
         Integration integration = new Integration(INTEGRATION_ID);
-        ObjectNode configuration = MAPPER.createObjectNode();
+        ObjectNode configuration = JacksonUtil.newObjectNode();
         configuration.putArray("topicFilters").add("#");
         if (optedInForLifecycleEvents) {
             configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY).add("CLIENT_CONNECTED");

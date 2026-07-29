@@ -15,26 +15,31 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
-import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -42,7 +47,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class IntegrationCleanupServiceImplTest {
 
-    static final String INTEGRATION_ID = "0198e1a0-1111-2222-3333-444455556666";
     static final long TTL_MS = TimeUnit.DAYS.toMillis(7);
 
     @Mock
@@ -50,63 +54,146 @@ class IntegrationCleanupServiceImplTest {
     @Mock
     IntegrationTopicService integrationTopicService;
     @Mock
-    ClientSubscriptionService clientSubscriptionService;
+    IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     @Mock
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
 
     @InjectMocks
     IntegrationCleanupServiceImpl service;
 
-    @Test
-    void givenIntegrationId_whenDeleteIntegrationTopic_thenDeletesBothDataAndEventTopics() {
-        service.deleteIntegrationTopic(INTEGRATION_ID);
-
-        verify(integrationTopicService).deleteTopic(INTEGRATION_ID, CallbackUtil.EMPTY);
-        verify(integrationTopicService).deleteEventTopic(INTEGRATION_ID, CallbackUtil.EMPTY);
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(service, "ttlMs", TTL_MS);
     }
 
     @Test
-    void givenExpiredDisabledIntegrationWithSubscriptions_whenCleanUp_thenStopsProducingIntoBothStreams() {
-        Integration integration = givenExpiredDisabledIntegration();
+    void givenIntegrationId_whenDeleteIntegrationTopics_thenDeletesBothDataAndEventTopics() {
+        String integrationId = UUID.randomUUID().toString();
+
+        service.deleteIntegrationTopics(integrationId);
+
+        verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    @Test
+    void givenExpiredDisabledIntegrationWithSubscriptions_whenCleanUp_thenDetachesAndDeletesBothTopics() {
+        Integration integration = expiredDisabledIntegration();
         String integrationId = integration.getIdStr();
-        when(clientSubscriptionService.getClientSubscriptions(integrationId))
-                .thenReturn(Set.of(new IntegrationTopicSubscription("#")));
+        givenIntegrations(integration);
+        when(integrationSubscriptionUpdateService.processSubscriptionsUpdate(integrationId, Collections.emptySet())).thenReturn(true);
 
         service.cleanUp();
 
-        verify(clientSubscriptionService).clearSubscriptionsAndPersist(integrationId);
+        verify(integrationSubscriptionUpdateService).processSubscriptionsUpdate(integrationId, Collections.emptySet());
         verify(lifecycleEventTypeCache).remove(integrationId);
-        verify(integrationTopicService).deleteTopic(integrationId, CallbackUtil.EMPTY);
-        verify(integrationTopicService).deleteEventTopic(integrationId, CallbackUtil.EMPTY);
+        verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
     }
 
     @Test
-    void givenAlreadyCleanedUpIntegration_whenCleanUp_thenDoesNotRepersistEmptySubscriptions() {
-        Integration integration = givenExpiredDisabledIntegration();
-        when(clientSubscriptionService.getClientSubscriptions(integration.getIdStr())).thenReturn(Set.of());
+    void givenExpiredDisabledEventsOnlyIntegration_whenCleanUp_thenDetachesAndDeletesBothTopics() {
+        Integration integration = expiredDisabledIntegration();
+        String integrationId = integration.getIdStr();
+        givenIntegrations(integration);
+        // nothing to unsubscribe, but the events stream is still attached
+        when(lifecycleEventTypeCache.remove(integrationId)).thenReturn(true);
 
         service.cleanUp();
 
-        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any());
+        verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    @Test
+    void givenAlreadyDetachedIntegration_whenCleanUp_thenSkipsTopicDeletion() {
+        Integration integration = expiredDisabledIntegration();
+        givenIntegrations(integration);
+        // both report nothing detached: an earlier sweep already did the work
+
+        service.cleanUp();
+
+        verify(integrationSubscriptionUpdateService).processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        verify(lifecycleEventTypeCache).remove(integration.getIdStr());
+        verifyNoInteractions(integrationTopicService);
     }
 
     @Test
     void givenEnabledIntegration_whenCleanUp_thenLeavesItAlone() {
-        Integration integration = givenExpiredDisabledIntegration();
-        integration.setEnabled(true);
+        Integration integration = newIntegration(true, System.currentTimeMillis() - TTL_MS - 1);
+        givenIntegrations(integration);
 
         service.cleanUp();
 
-        verifyNoInteractions(clientSubscriptionService, lifecycleEventTypeCache, integrationTopicService);
+        verifyNoInteractions(integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
     }
 
-    private Integration givenExpiredDisabledIntegration() {
-        ReflectionTestUtils.setField(service, "ttlMs", TTL_MS);
+    @Test
+    void givenNotYetExpiredDisabledIntegration_whenCleanUp_thenLeavesItAlone() {
+        Integration integration = newIntegration(false, System.currentTimeMillis() - TTL_MS + TimeUnit.HOURS.toMillis(1));
+        givenIntegrations(integration);
+
+        service.cleanUp();
+
+        verifyNoInteractions(integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
+    }
+
+    @Test
+    void givenCleanupDisabled_whenCleanUp_thenDoesNothing() {
+        ReflectionTestUtils.setField(service, "ttlMs", 0L);
+
+        service.cleanUp();
+
+        verifyNoInteractions(integrationService, integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
+    }
+
+    @Test
+    void givenFailingIntegration_whenCleanUp_thenKeepsSweepingTheRest() {
+        Integration failing = expiredDisabledIntegration();
+        Integration next = expiredDisabledIntegration();
+        givenIntegrations(failing, next);
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(integrationSubscriptionUpdateService).processSubscriptionsUpdate(failing.getIdStr(), Collections.emptySet());
+        when(integrationSubscriptionUpdateService.processSubscriptionsUpdate(next.getIdStr(), Collections.emptySet())).thenReturn(true);
+
+        service.cleanUp();
+
+        verify(integrationTopicService, never()).deleteTopic(eq(failing.getIdStr()), any(BasicCallback.class));
+        verify(integrationTopicService).deleteTopic(eq(next.getIdStr()), any(BasicCallback.class));
+        verify(integrationTopicService).deleteEventTopic(eq(next.getIdStr()), any(BasicCallback.class));
+    }
+
+    /**
+     * Every integration is re-read immediately before it is examined, so that one enabled while the sweep is running
+     * is not detached on the strength of a stale reading.
+     */
+    @Test
+    void givenSeveralIntegrations_whenCleanUp_thenFetchesThemOneAtATime() {
+        givenIntegrations(expiredDisabledIntegration(), expiredDisabledIntegration());
+
+        service.cleanUp();
+
+        verify(integrationService, times(2)).findIntegrations(any(PageLink.class));
+    }
+
+    private void givenIntegrations(Integration... integrations) {
+        // one integration per page, mirroring CLEANUP_PAGE_SIZE
+        var stubbing = when(integrationService.findIntegrations(any(PageLink.class)));
+        for (int i = 0; i < integrations.length; i++) {
+            boolean hasNext = i < integrations.length - 1;
+            stubbing = stubbing.thenReturn(new PageData<>(List.of(integrations[i]), integrations.length, integrations.length, hasNext));
+        }
+    }
+
+    private Integration expiredDisabledIntegration() {
+        return newIntegration(false, System.currentTimeMillis() - TTL_MS - 1);
+    }
+
+    private Integration newIntegration(boolean enabled, long disconnectedTime) {
         Integration integration = new Integration(UUID.randomUUID());
         integration.setName("test-integration");
-        integration.setEnabled(false);
-        integration.setDisconnectedTime(System.currentTimeMillis() - TTL_MS - 1);
-        when(integrationService.findAllIntegrations()).thenReturn(List.of(integration));
+        integration.setEnabled(enabled);
+        integration.setDisconnectedTime(disconnectedTime);
         return integration;
     }
 
