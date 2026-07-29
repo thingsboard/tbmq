@@ -85,8 +85,12 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
         throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
     }
 
+    /**
+     * Unlike the data topic, TBMQ provisions the lifecycle-events topic itself - the events producer does not create
+     * it (see {@code KafkaIntegrationMsgQueueFactory.createEventProducer}) - so the broker needs these configs too.
+     */
     @Override
     public Map<String, String> getIeEventMsgTopicConfigs() {
-        throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
+        return integrationMsgQueueFactory.getEventTopicConfigs();
     }
 }
