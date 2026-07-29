@@ -62,6 +62,18 @@ class IntegrationTopicServiceImplTest {
     }
 
     @Test
+    void givenIntegrationId_whenCreateEventTopicIfNotExists_thenDelegatesToCachedCreate() {
+        Map<String, String> cfg = Map.of("retention.ms", "60000");
+        when(integrationHelperService.getIntegrationEventTopic(INTEGRATION_ID)).thenReturn(EVENT_TOPIC);
+        when(integrationMsgQueueProvider.getIeEventMsgTopicConfigs()).thenReturn(cfg);
+
+        String topic = service.createEventTopicIfNotExists(INTEGRATION_ID);
+
+        assertThat(topic).isEqualTo(EVENT_TOPIC);
+        verify(queueAdmin).createTopicIfNotExists(EVENT_TOPIC, cfg);
+    }
+
+    @Test
     void givenIntegrationId_whenDeleteEventTopic_thenDeletesGroupAndTopic() throws Exception {
         when(integrationHelperService.getIntegrationEventConsumerGroup(INTEGRATION_ID)).thenReturn(EVENT_GROUP);
         when(integrationHelperService.getIntegrationEventTopic(INTEGRATION_ID)).thenReturn(EVENT_TOPIC);

@@ -132,7 +132,7 @@ public class BrokerInitializer {
                     name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
             if (!eventTypes.isEmpty()) {
                 lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
-                createEventTopic(integration);
+                createEventTopicSafely(integration);
                 cached++;
             }
         }
@@ -140,14 +140,18 @@ public class BrokerInitializer {
     }
 
     /**
-     * Provisions the dedicated lifecycle-events topic for an opted-in integration, so events have somewhere to go
-     * even if the integration is never enabled (the events producer does not create topics - see
-     * KafkaIntegrationMsgQueueFactory.createEventProducer). Best-effort: a failure here must not abort the broker
-     * startup, and the Integration Executor provisions the same topic when the integration starts.
+     * Provisions the dedicated lifecycle-events topic for an integration already stored when this node starts, so
+     * events have somewhere to go even if the integration is never enabled - see
+     * {@link IntegrationTopicService#createEventTopic(String)} for why nothing else provisions it. This covers
+     * integrations that opted in before the provisioning on save existed.
+     * <p>
+     * Uses the cached variant: this runs ahead of the MQTT bootstraps, and the topic cache is freshly loaded at
+     * startup, so the whole loop costs a single {@code listTopics()} instead of one admin round-trip per
+     * integration. Best-effort - a failure here must not abort the broker startup.
      */
-    private void createEventTopic(Integration integration) {
+    private void createEventTopicSafely(Integration integration) {
         try {
-            integrationTopicService.createEventTopic(integration.getIdStr());
+            integrationTopicService.createEventTopicIfNotExists(integration.getIdStr());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to create the lifecycle events topic", integration.getId(), integration.getName(), e);
         }

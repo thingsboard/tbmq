@@ -27,7 +27,25 @@ public interface IntegrationTopicService {
 
     String getConsumerGroup(String integrationId);
 
+    /**
+     * Provisions the integration's dedicated lifecycle-events topic.
+     * <p>
+     * Unlike the data stream, the events stream never provisions its topic implicitly: its producer is configured
+     * with {@code createTopicIfNotExists(false)} (see {@code KafkaIntegrationMsgQueueFactory.createEventProducer})
+     * because events are sent synchronously on the MQTT processing thread, where a blocking admin call is not
+     * acceptable - and where a missing topic stalls the send for {@code max.block.ms} before the event is dropped.
+     * Every path that registers an opt-in is therefore responsible for calling this, off the hot path. All such
+     * calls are idempotent.
+     */
     String createEventTopic(String integrationId);
+
+    /**
+     * Same as {@link #createEventTopic(String)}, but consults the cached topic list first and so costs no admin
+     * round-trip once the topic is known to exist. Suited to bulk provisioning where the cache is fresh; prefer
+     * {@link #createEventTopic(String)} when the topic may have been deleted by another node, since the cache can
+     * report a deleted topic as existing for up to {@code queue.kafka.admin.topics-cache-ttl-ms}.
+     */
+    String createEventTopicIfNotExists(String integrationId);
 
     void deleteEventTopic(String integrationId, BasicCallback callback);
 

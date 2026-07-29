@@ -174,7 +174,7 @@ public class BrokerInitializerTest {
         brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache).put(integration.getIdStr(), Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
-        verify(integrationTopicService).createEventTopic(integration.getIdStr());
+        verify(integrationTopicService).createEventTopicIfNotExists(integration.getIdStr());
     }
 
     @Test
@@ -185,7 +185,23 @@ public class BrokerInitializerTest {
         brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        verify(integrationTopicService, never()).createEventTopic(any());
+        verify(integrationTopicService, never()).createEventTopicIfNotExists(any());
+    }
+
+    /**
+     * The integration is opted in as far as the predicate is concerned, but none of its names maps to a known type,
+     * so both the cache put and the topic creation must be suppressed - the one branch where the opt-in check and
+     * the parsed event types disagree.
+     */
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsIntegrationWithOnlyUnknownEventTypes() {
+        Integration integration = newIntegration("NOT_A_REAL_TYPE");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+        verify(integrationTopicService, never()).createEventTopicIfNotExists(any());
     }
 
     @Test
@@ -193,11 +209,11 @@ public class BrokerInitializerTest {
         Integration failing = newIntegration("CLIENT_CONNECTED");
         Integration succeeding = newIntegration("CLIENT_DISCONNECTED");
         doReturn(List.of(failing, succeeding)).when(integrationService).findAllIntegrations();
-        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopic(failing.getIdStr());
+        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopicIfNotExists(failing.getIdStr());
 
         brokerInitializer.initIntegrationLifecycleEventCache();
 
-        verify(integrationTopicService).createEventTopic(succeeding.getIdStr());
+        verify(integrationTopicService).createEventTopicIfNotExists(succeeding.getIdStr());
     }
 
     private Integration newIntegration(String... lifecycleEventTypes) {
