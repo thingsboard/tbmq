@@ -110,7 +110,7 @@ public class IntegrationSubscriptionUpdateServiceImplTest {
      * persisted subscriptions outlive a deleted integration and come back on the next restart.
      */
     @Test
-    public void givenNoCurrentTopicSubscriptions_whenClearSubscriptions_thenStillPersistsTheEmptySet() {
+    public void whenClearSubscriptions_thenAlwaysPersistsTheEmptySet() {
         integrationSubscriptionUpdateService.clearSubscriptions("integrationId");
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
