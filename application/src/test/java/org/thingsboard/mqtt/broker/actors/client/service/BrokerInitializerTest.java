@@ -61,7 +61,6 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsCo
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
-import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
@@ -76,7 +75,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -112,8 +110,6 @@ public class BrokerInitializerTest {
     IntegrationService integrationService;
     @MockitoBean
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
-    @MockitoBean
-    IntegrationTopicService integrationTopicService;
     @MockitoBean
     IntegrationCleanupServiceImpl integrationCleanupService;
     @MockitoBean
@@ -170,14 +166,13 @@ public class BrokerInitializerTest {
     }
 
     @Test
-    public void testInitIntegrationLifecycleEventCacheProvisionsEventTopic() {
+    public void testInitIntegrationLifecycleEventCacheCachesOptedInIntegration() {
         Integration integration = newIntegration("CLIENT_CONNECTED");
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
+        brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache).put(integration.getIdStr(), Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
-        Assert.assertEquals(List.of(integration), toProvision);
     }
 
     @Test
@@ -185,26 +180,24 @@ public class BrokerInitializerTest {
         Integration integration = newIntegration();
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
+        brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        Assert.assertTrue(toProvision.isEmpty());
     }
 
     /**
      * The integration is opted in as far as the predicate is concerned, but none of its names maps to a known type,
-     * so both the cache put and the topic creation must be suppressed - the one branch where the opt-in check and
-     * the parsed event types disagree.
+     * so the cache put must be suppressed - the one branch where the opt-in check and the parsed event types
+     * disagree.
      */
     @Test
     public void testInitIntegrationLifecycleEventCacheSkipsIntegrationWithOnlyUnknownEventTypes() {
         Integration integration = newIntegration("NOT_A_REAL_TYPE");
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
+        brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        Assert.assertTrue(toProvision.isEmpty());
     }
 
     /**
@@ -217,21 +210,9 @@ public class BrokerInitializerTest {
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
         doReturn(true).when(integrationCleanupService).needsToBeRemoved(integration);
 
-        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
+        brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        Assert.assertTrue(toProvision.isEmpty());
-    }
-
-    @Test
-    public void testProvisionEventTopicsContinuesWhenEventTopicCreationFails() {
-        Integration failing = newIntegration("CLIENT_CONNECTED");
-        Integration succeeding = newIntegration("CLIENT_DISCONNECTED");
-        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopic(failing.getIdStr());
-
-        brokerInitializer.provisionEventTopics(List.of(failing, succeeding));
-
-        verify(integrationTopicService).createEventTopic(succeeding.getIdStr());
     }
 
     private Integration newIntegration(String... lifecycleEventTypes) {
