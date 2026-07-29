@@ -29,10 +29,12 @@ import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventT
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationCleanupServiceImpl;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -55,6 +57,7 @@ import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +86,7 @@ public class BrokerInitializer {
     private final IntegrationService integrationService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     private final IntegrationTopicService integrationTopicService;
+    private final IntegrationCleanupServiceImpl integrationCleanupService;
     private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
@@ -98,7 +102,7 @@ public class BrokerInitializer {
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.info("Initializing Client Sessions and Subscriptions.");
         try {
-            initIntegrationLifecycleEventCache();
+            provisionEventTopicsAsync(initIntegrationLifecycleEventCache());
             Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
             initClientSubscriptions(allClientSessions);
 
@@ -119,12 +123,26 @@ public class BrokerInitializer {
         }
     }
 
-    void initIntegrationLifecycleEventCache() {
+    /**
+     * Populates the node-local lifecycle event type cache and returns the integrations whose events topic has to be
+     * provisioned. Runs before the MQTT bootstraps, since a client connecting before it completes would not have its
+     * lifecycle events published.
+     */
+    List<Integration> initIntegrationLifecycleEventCache() {
         List<Integration> integrations = integrationService.findAllIntegrations();
         int cached = 0;
+        List<Integration> toProvision = new ArrayList<>();
         for (Integration integration : integrations) {
             JsonNode configuration = integration.getConfiguration();
             if (!ClientLifecycleEventTypeUtil.isOptedIn(configuration)) {
+                continue;
+            }
+            if (integrationCleanupService.needsToBeRemoved(integration)) {
+                // The cleanup sweep already detached this integration, or is about to. Re-attaching it here would
+                // resume lifecycle events for it until the next sweep - up to integrations.cleanup.period later -
+                // and would make the sweep redo its full work after every restart.
+                log.debug("[{}][{}] Expired disconnected integration, not attaching it to the events stream",
+                        integration.getId(), integration.getName());
                 continue;
             }
             Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(
@@ -132,29 +150,47 @@ public class BrokerInitializer {
                     name -> log.warn("[{}] Unknown lifecycle event type: {}", integration.getId(), name));
             if (!eventTypes.isEmpty()) {
                 lifecycleEventTypeCache.put(integration.getIdStr(), eventTypes);
-                createEventTopicSafely(integration);
+                toProvision.add(integration);
                 cached++;
             }
         }
         log.info("Loaded lifecycle event type cache: cached {} of {} integrations.", cached, integrations.size());
+        return toProvision;
     }
 
     /**
-     * Provisions the dedicated lifecycle-events topic for an integration already stored when this node starts, so
-     * events have somewhere to go even if the integration is never enabled - see
-     * {@link IntegrationTopicService#createEventTopic(String)} for why nothing else provisions it. This covers
-     * integrations that opted in before the provisioning on save existed.
-     * <p>
-     * Uses the cached variant: this runs ahead of the MQTT bootstraps, and the topic cache is freshly loaded at
-     * startup, so the whole loop costs a single {@code listTopics()} instead of one admin round-trip per
-     * integration. Best-effort - a failure here must not abort the broker startup.
+     * Provisions the events topics on a background thread, because the backfill this exists for is exactly the case
+     * where none of them exist yet: one blocking admin round-trip per integration, from a listener that sits at
+     * {@code @Order(1)}, ahead of the MQTT bootstraps. Nothing downstream waits for it - an event published before its
+     * topic exists is dropped and counted, the same as it would be without the backfill at all.
      */
-    private void createEventTopicSafely(Integration integration) {
-        try {
-            integrationTopicService.createEventTopicIfNotExists(integration.getIdStr());
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to create the lifecycle events topic", integration.getId(), integration.getName(), e);
+    void provisionEventTopicsAsync(List<Integration> integrations) {
+        if (integrations.isEmpty()) {
+            return;
         }
+        ThingsBoardThreadFactory.forName("ie-event-topics-provisioning")
+                .newThread(() -> provisionEventTopics(integrations))
+                .start();
+    }
+
+    /**
+     * Provisions the dedicated lifecycle-events topic for the integrations already stored when this node starts, so
+     * events have somewhere to go even if the integration is never enabled - see
+     * {@link IntegrationTopicService#createEventTopic(String)} for why nothing else provisions it. This is what covers
+     * integrations that opted in before the provisioning on save existed. Best-effort per integration.
+     */
+    void provisionEventTopics(List<Integration> integrations) {
+        int provisioned = 0;
+        for (Integration integration : integrations) {
+            try {
+                integrationTopicService.createEventTopic(integration.getIdStr());
+                provisioned++;
+            } catch (Exception e) {
+                log.warn("[{}][{}] Failed to create the lifecycle events topic",
+                        integration.getId(), integration.getName(), e);
+            }
+        }
+        log.info("Provisioned {} of {} lifecycle events topics.", provisioned, integrations.size());
     }
 
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {

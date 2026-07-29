@@ -75,14 +75,6 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
     }
 
     @Override
-    public String createEventTopicIfNotExists(String integrationId) {
-        log.debug("[{}] Creating IE event topic if not exists", integrationId);
-        String eventTopic = integrationHelperService.getIntegrationEventTopic(integrationId);
-        queueAdmin.createTopicIfNotExists(eventTopic, integrationMsgQueueProvider.getIeEventMsgTopicConfigs());
-        return eventTopic;
-    }
-
-    @Override
     public void deleteEventTopic(String integrationId, BasicCallback callback) {
         log.debug("[{}] Deleting IE event topic", integrationId);
         deleteEventConsumerGroup(integrationId);

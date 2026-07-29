@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationCleanupServiceImpl;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -114,6 +115,8 @@ public class BrokerInitializerTest {
     @MockitoBean
     IntegrationTopicService integrationTopicService;
     @MockitoBean
+    IntegrationCleanupServiceImpl integrationCleanupService;
+    @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
     @MockitoBean
     ClientSessionEventConsumer clientSessionEventConsumer;
@@ -171,10 +174,10 @@ public class BrokerInitializerTest {
         Integration integration = newIntegration("CLIENT_CONNECTED");
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        brokerInitializer.initIntegrationLifecycleEventCache();
+        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache).put(integration.getIdStr(), Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
-        verify(integrationTopicService).createEventTopicIfNotExists(integration.getIdStr());
+        Assert.assertEquals(List.of(integration), toProvision);
     }
 
     @Test
@@ -182,10 +185,10 @@ public class BrokerInitializerTest {
         Integration integration = newIntegration();
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        brokerInitializer.initIntegrationLifecycleEventCache();
+        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        verify(integrationTopicService, never()).createEventTopicIfNotExists(any());
+        Assert.assertTrue(toProvision.isEmpty());
     }
 
     /**
@@ -198,22 +201,37 @@ public class BrokerInitializerTest {
         Integration integration = newIntegration("NOT_A_REAL_TYPE");
         doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
 
-        brokerInitializer.initIntegrationLifecycleEventCache();
+        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
 
         verify(lifecycleEventTypeCache, never()).put(any(), any());
-        verify(integrationTopicService, never()).createEventTopicIfNotExists(any());
+        Assert.assertTrue(toProvision.isEmpty());
+    }
+
+    /**
+     * An integration the cleanup sweep considers expired must not be re-attached to the events stream, otherwise a
+     * restart would resume its lifecycle events until the next sweep and make that sweep redo its full work.
+     */
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsExpiredIntegration() {
+        Integration integration = newIntegration("CLIENT_CONNECTED");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+        doReturn(true).when(integrationCleanupService).needsToBeRemoved(integration);
+
+        List<Integration> toProvision = brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+        Assert.assertTrue(toProvision.isEmpty());
     }
 
     @Test
-    public void testInitIntegrationLifecycleEventCacheContinuesWhenEventTopicCreationFails() {
+    public void testProvisionEventTopicsContinuesWhenEventTopicCreationFails() {
         Integration failing = newIntegration("CLIENT_CONNECTED");
         Integration succeeding = newIntegration("CLIENT_DISCONNECTED");
-        doReturn(List.of(failing, succeeding)).when(integrationService).findAllIntegrations();
-        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopicIfNotExists(failing.getIdStr());
+        doThrow(new RuntimeException("Kafka is down")).when(integrationTopicService).createEventTopic(failing.getIdStr());
 
-        brokerInitializer.initIntegrationLifecycleEventCache();
+        brokerInitializer.provisionEventTopics(List.of(failing, succeeding));
 
-        verify(integrationTopicService).createEventTopicIfNotExists(succeeding.getIdStr());
+        verify(integrationTopicService).createEventTopic(succeeding.getIdStr());
     }
 
     private Integration newIntegration(String... lifecycleEventTypes) {

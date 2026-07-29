@@ -39,14 +39,6 @@ public interface IntegrationTopicService {
      */
     String createEventTopic(String integrationId);
 
-    /**
-     * Same as {@link #createEventTopic(String)}, but consults the cached topic list first and so costs no admin
-     * round-trip once the topic is known to exist. Suited to bulk provisioning where the cache is fresh; prefer
-     * {@link #createEventTopic(String)} when the topic may have been deleted by another node, since the cache can
-     * report a deleted topic as existing for up to {@code queue.kafka.admin.topics-cache-ttl-ms}.
-     */
-    String createEventTopicIfNotExists(String integrationId);
-
     void deleteEventTopic(String integrationId, BasicCallback callback);
 
     String getEventConsumerGroup(String integrationId);
