@@ -46,7 +46,6 @@ import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -146,13 +145,13 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
             integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
         } else {
-            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+            integrationSubscriptionUpdateService.clearSubscriptions(integration.getIdStr());
         }
     }
 
     @Override
     public void removeSubscriptions(String integrationId) {
-        integrationSubscriptionUpdateService.processSubscriptionsUpdate(integrationId, Collections.emptySet());
+        integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
     }
 
     private void saveEvent(UUID entityId, IntegrationEventProto proto, IntegrationApiCallback callback) {

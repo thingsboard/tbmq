@@ -23,9 +23,17 @@ public interface IntegrationSubscriptionUpdateService {
 
     /**
      * Applies the given subscription set to the integration, returning {@code true} when anything was actually
-     * persisted. An update that would be a no-op - most notably clearing an integration that has no subscriptions -
-     * is skipped, so a caller invoked repeatedly (e.g. the periodic cleanup) does not keep rewriting the same state.
+     * persisted. An update that would be a no-op is skipped, so a caller invoked repeatedly (e.g. the periodic
+     * cleanup) does not keep rewriting the same state. Prefer {@link #clearSubscriptions(String)} over passing an
+     * empty set.
      */
     boolean processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
+
+    /**
+     * Removes all of the integration's subscriptions, returning {@code true} when it had any - i.e. when this call
+     * actually detached it from the data stream. Skipped when it had none, since persisting an empty set rewrites the
+     * same state cluster-wide.
+     */
+    boolean clearSubscriptions(String integrationId);
 
 }

@@ -50,6 +50,14 @@ public final class ClientLifecycleEventTypeUtil {
     }
 
     /**
+     * Null-safe {@link #isOptedIn(JsonNode)} for an integration that may not have been initialized yet, so the
+     * Integration Executor shares one definition of the predicate with the broker.
+     */
+    public static boolean isOptedIn(IntegrationLifecycleMsg lifecycleMsg) {
+        return lifecycleMsg != null && isOptedIn(lifecycleMsg.getConfiguration());
+    }
+
+    /**
      * Parses event type names into {@link ClientLifecycleEventType} values, invoking {@code onUnknown}
      * for every name that does not map to a known type. The callback decides how to react to an unknown
      * value (e.g. log a warning and skip it, or throw a validation exception).

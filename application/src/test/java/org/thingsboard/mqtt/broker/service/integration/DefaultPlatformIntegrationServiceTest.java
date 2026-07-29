@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -124,12 +123,31 @@ class DefaultPlatformIntegrationServiceTest {
         verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.UPDATED));
     }
 
+    /**
+     * The integration is disabled, so the Integration Executor has no started instance to destroy and its cleanup
+     * path never runs - this broker-side deletion is the only thing that reclaims the topics.
+     */
     @Test
     void testProcessIntegrationDelete_Removed() {
         platformIntegrationService.processIntegrationDelete(integration, true);
 
-        verify(integrationSubscriptionUpdateService, times(1)).processSubscriptionsUpdate(anyString(), eq(Collections.emptySet()));
+        verify(integrationSubscriptionUpdateService, times(1)).clearSubscriptions(integration.getIdStr());
         verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.DELETED));
+        verify(integrationCleanupService, times(1)).deleteIntegrationTopics(integration.getIdStr());
+    }
+
+    /**
+     * An enabled integration is torn down by the Integration Executor, which stops its consumers before deleting the
+     * topics - deleting them here as well would do it from under those consumers.
+     */
+    @Test
+    void testProcessIntegrationDelete_RemovedWhileEnabled() {
+        integration.setEnabled(true);
+
+        platformIntegrationService.processIntegrationDelete(integration, true);
+
+        verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.DELETED));
+        verify(integrationCleanupService, never()).deleteIntegrationTopics(anyString());
     }
 
     @Test
@@ -200,7 +218,7 @@ class DefaultPlatformIntegrationServiceTest {
     void testRemoveSubscriptions() {
         platformIntegrationService.removeSubscriptions(integration.getIdStr());
 
-        verify(integrationSubscriptionUpdateService, times(1)).processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        verify(integrationSubscriptionUpdateService, times(1)).clearSubscriptions(integration.getIdStr());
     }
 
     @Test

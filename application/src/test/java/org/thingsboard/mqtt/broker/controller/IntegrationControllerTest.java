@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.service.util.IntegrationHelperService;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -116,8 +117,8 @@ public class IntegrationControllerTest extends AbstractControllerTest {
         Integration savedIntegration = doPost("/api/integration", integration, Integration.class);
 
         String eventTopic = integrationHelperService.getIntegrationEventTopic(savedIntegration.getIdStr());
-        // throws if the topic does not exist
-        Assert.assertTrue(queueAdmin.getNumberOfPartitions(eventTopic) > 0);
+        // getNumberOfPartitions wraps a describeTopics failure in a RuntimeException, so not throwing is the assertion
+        assertThatCode(() -> queueAdmin.getNumberOfPartitions(eventTopic)).doesNotThrowAnyException();
     }
 
     @Test

@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
+import java.util.Collections;
 import java.util.Set;
 
 @Slf4j
@@ -51,9 +52,13 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
         }
 
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentSubscriptions, newSubscriptions);
-        boolean unsubscribed = processUnsubscribe(integrationId, subscriptionsUpdate);
-        boolean subscribed = processSubscribe(integrationId, subscriptionsUpdate);
-        return unsubscribed || subscribed;
+        // Non-short-circuiting on purpose: both halves of the update have to run, so this must not become ||.
+        return processUnsubscribe(integrationId, subscriptionsUpdate) | processSubscribe(integrationId, subscriptionsUpdate);
+    }
+
+    @Override
+    public boolean clearSubscriptions(String integrationId) {
+        return processSubscriptionsUpdate(integrationId, Collections.emptySet());
     }
 
     private boolean processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
