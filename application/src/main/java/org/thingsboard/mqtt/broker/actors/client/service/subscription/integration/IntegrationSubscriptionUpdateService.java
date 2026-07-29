@@ -21,6 +21,11 @@ import java.util.Set;
 
 public interface IntegrationSubscriptionUpdateService {
 
-    void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
+    /**
+     * Applies the given subscription set to the integration, returning {@code true} when anything was actually
+     * persisted. An update that would be a no-op - most notably clearing an integration that has no subscriptions -
+     * is skipped, so a caller invoked repeatedly (e.g. the periodic cleanup) does not keep rewriting the same state.
+     */
+    boolean processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
 
 }

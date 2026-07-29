@@ -33,7 +33,7 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
     private final ClientSubscriptionService clientSubscriptionService;
 
     @Override
-    public void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> newSubscriptions) {
+    public boolean processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> newSubscriptions) {
         Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(integrationId);
 
         if (log.isDebugEnabled()) {
@@ -42,30 +42,37 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
         }
 
         if (newSubscriptions.isEmpty()) {
+            if (currentSubscriptions.isEmpty()) {
+                // Nothing to clear: persisting an empty set would rewrite the same state cluster-wide.
+                return false;
+            }
             clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
-            return;
+            return true;
         }
 
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentSubscriptions, newSubscriptions);
-        processUnsubscribe(integrationId, subscriptionsUpdate);
-        processSubscribe(integrationId, subscriptionsUpdate);
+        boolean unsubscribed = processUnsubscribe(integrationId, subscriptionsUpdate);
+        boolean subscribed = processSubscribe(integrationId, subscriptionsUpdate);
+        return unsubscribed || subscribed;
     }
 
-    private void processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    private boolean processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> removedSubscriptions = subscriptionsUpdate.getToUnsubscribe();
         if (CollectionUtils.isEmpty(removedSubscriptions)) {
-            return;
+            return false;
         }
         Set<String> unsubscribeTopics = TopicSubscriptionsUtil.getUnsubscribeTopics(removedSubscriptions);
         clientSubscriptionService.unsubscribeAndPersist(integrationId, unsubscribeTopics);
+        return true;
     }
 
-    private void processSubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    private boolean processSubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> addedSubscriptions = subscriptionsUpdate.getToSubscribe();
         if (CollectionUtils.isEmpty(addedSubscriptions)) {
-            return;
+            return false;
         }
         clientSubscriptionService.subscribeAndPersist(integrationId, addedSubscriptions);
+        return true;
     }
 
 }

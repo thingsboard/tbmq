@@ -24,7 +24,12 @@ public interface IntegrationLifecycleEventTypeCache {
 
     void put(String integrationId, Set<ClientLifecycleEventType> eventTypes);
 
-    void remove(String integrationId);
+    /**
+     * Evicts the integration, returning {@code true} when something was actually cached for it. Lets a caller that
+     * needs to know whether the integration was still attached to the events stream (e.g. the periodic cleanup)
+     * avoid a separate lookup.
+     */
+    boolean remove(String integrationId);
 
     Set<String> getIntegrationIds(ClientLifecycleEventType eventType);
 

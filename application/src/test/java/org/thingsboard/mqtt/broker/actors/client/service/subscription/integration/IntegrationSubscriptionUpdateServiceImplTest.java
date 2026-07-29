@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -101,6 +102,23 @@ public class IntegrationSubscriptionUpdateServiceImplTest {
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
         verify(clientSubscriptionService, never()).unsubscribeAndPersist(any(), any());
         verify(clientSubscriptionService, never()).subscribeAndPersist(any(), any());
+    }
+
+    @Test
+    public void givenNoCurrentTopicSubscriptions_whenProcessSubscriptionsUpdateWithEmptySet_thenDoesNotRepersist() {
+        doReturn(Set.of()).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+
+        boolean changed = integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of());
+
+        assertFalse(changed);
+        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any());
+    }
+
+    @Test
+    public void givenCurrentTopicSubscriptions_whenProcessSubscriptionsUpdate_thenReportsChanged() {
+        doReturn(Set.of(getTopicSubs("topic1"))).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+
+        assertTrue(integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of()));
     }
 
     private TopicSubscription getTopicSubs(String topic) {

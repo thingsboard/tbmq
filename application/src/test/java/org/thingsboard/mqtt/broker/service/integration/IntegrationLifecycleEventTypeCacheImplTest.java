@@ -23,6 +23,8 @@ import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +49,26 @@ public class IntegrationLifecycleEventTypeCacheImplTest {
         Set<String> first = cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
         Set<String> second = cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_DISCONNECTED);
         assertSame(first, second); // allocation-free reads share one empty set
+    }
+
+    @Test
+    public void givenUncachedIntegration_whenRemove_thenReportsNothingRemovedAndKeepsTheSnapshot() {
+        cache.put("ie-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+        Set<String> snapshot = cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
+
+        assertFalse(cache.remove("unknown-id"));
+        // the reverse index cannot change, so it must not have been rebuilt
+        assertSame(snapshot, cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED));
+    }
+
+    @Test
+    public void givenCachedIntegration_whenRemove_thenReportsRemovedAndRebuildsTheSnapshot() {
+        cache.put("ie-1", Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+        Set<String> snapshot = cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED);
+
+        assertTrue(cache.remove("ie-1"));
+        assertNotSame(snapshot, cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED));
+        assertTrue(cache.getIntegrationIds(ClientLifecycleEventType.CLIENT_CONNECTED).isEmpty());
     }
 
     @Test
