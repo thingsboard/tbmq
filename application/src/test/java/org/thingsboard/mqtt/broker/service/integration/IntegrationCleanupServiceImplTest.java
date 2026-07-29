@@ -15,6 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -36,6 +42,7 @@ import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,6 +118,51 @@ class IntegrationCleanupServiceImplTest {
         assertThatCode(() -> service.deleteIntegrationTopics(integrationId)).doesNotThrowAnyException();
 
         verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    /**
+     * The exception reaching this callback may be wrapped, either by the Kafka future or by
+     * IntegrationTopicServiceImpl.deleteConsumerGroup's rethrow, so a bare instanceof would log a routine missing
+     * topic as a warning.
+     */
+    @Test
+    void givenTopicMissingExceptionWrappedTwoLevelsDeep_whenDeleteIntegrationTopics_thenLogsAtDebugNotWarn() {
+        String integrationId = UUID.randomUUID().toString();
+        doThrow(new RuntimeException(new ExecutionException(new UnknownTopicOrPartitionException("Topic missing"))))
+                .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.deleteIntegrationTopics(integrationId);
+
+            assertThat(appender.list)
+                    .as("a topic-missing error wrapped inside other exceptions must still be treated as expected")
+                    .noneMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void givenUnrelatedException_whenDeleteIntegrationTopics_thenStillLogsWarn() {
+        String integrationId = UUID.randomUUID().toString();
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.deleteIntegrationTopics(integrationId);
+
+            assertThat(appender.list)
+                    .as("an unrelated failure must still be logged at WARN - the predicate has not become always-true")
+                    .anyMatch(event -> event.getLevel() == Level.WARN);
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 
     @Test

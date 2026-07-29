@@ -141,7 +141,7 @@ public class IntegrationCleanupServiceImpl {
         return CallbackUtil.createCallback(
                 () -> log.debug("[{}] Deleted the {} topic", integrationId, topicKind),
                 t -> {
-                    if (ExceptionUtils.hasCause(t, UnknownTopicOrPartitionException.class)) {
+                    if (ExceptionUtils.throwableOfType(t, UnknownTopicOrPartitionException.class) != null) {
                         // Expected: an integration that never opted into lifecycle events has no events topic, and a
                         // sweep on another node may have won the race. Deleting unconditionally keeps a topic left
                         // over from a since-removed opt-in reclaimable, so this is not worth gating on the opt-in.
