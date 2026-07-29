@@ -18,9 +18,12 @@ package org.thingsboard.mqtt.broker.service.integration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -28,23 +31,25 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class IntegrationCleanupServiceImplTest {
 
     static final long TTL_MS = TimeUnit.DAYS.toMillis(7);
@@ -57,6 +62,8 @@ class IntegrationCleanupServiceImplTest {
     IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     @Mock
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    @Mock
+    InternodeNotificationsService internodeNotificationsService;
 
     @InjectMocks
     IntegrationCleanupServiceImpl service;
@@ -78,24 +85,50 @@ class IntegrationCleanupServiceImplTest {
 
     @Test
     void givenExpiredDisabledIntegrationWithSubscriptions_whenCleanUp_thenDetachesAndDeletesBothTopics() {
-        Integration integration = expiredDisabledIntegration();
+        Integration integration = givenIntegrations(expiredDisabledIntegration());
         String integrationId = integration.getIdStr();
-        givenIntegrations(integration);
-        when(integrationSubscriptionUpdateService.processSubscriptionsUpdate(integrationId, Collections.emptySet())).thenReturn(true);
+        when(integrationSubscriptionUpdateService.clearSubscriptions(integrationId)).thenReturn(true);
 
         service.cleanUp();
 
-        verify(integrationSubscriptionUpdateService).processSubscriptionsUpdate(integrationId, Collections.emptySet());
+        verify(integrationSubscriptionUpdateService).clearSubscriptions(integrationId);
         verify(lifecycleEventTypeCache).remove(integrationId);
         verify(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
         verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
     }
 
+    /**
+     * The event type cache is node-local while the topics are deleted cluster-wide, so the eviction has to reach the
+     * other nodes - otherwise they keep publishing lifecycle events into a topic that no longer exists.
+     */
+    @Test
+    void givenEvictedEventTypes_whenCleanUp_thenBroadcastsTheEvictionToTheCluster() {
+        Integration integration = givenIntegrations(expiredDisabledIntegration());
+        when(lifecycleEventTypeCache.remove(integration.getIdStr())).thenReturn(true);
+
+        service.cleanUp();
+
+        ArgumentCaptor<InternodeNotificationProto> captor = ArgumentCaptor.forClass(InternodeNotificationProto.class);
+        verify(internodeNotificationsService).broadcast(captor.capture());
+        assertThat(captor.getValue().getIntegrationLifecycleConfigProto().getIntegrationId()).isEqualTo(integration.getIdStr());
+        assertThat(captor.getValue().getIntegrationLifecycleConfigProto().getDeleted()).isTrue();
+    }
+
+    @Test
+    void givenNothingCachedForIntegration_whenCleanUp_thenDoesNotBroadcast() {
+        Integration integration = givenIntegrations(expiredDisabledIntegration());
+        when(integrationSubscriptionUpdateService.clearSubscriptions(integration.getIdStr())).thenReturn(true);
+        // lifecycleEventTypeCache.remove returns false: nothing was cached on this node
+
+        service.cleanUp();
+
+        verifyNoInteractions(internodeNotificationsService);
+    }
+
     @Test
     void givenExpiredDisabledEventsOnlyIntegration_whenCleanUp_thenDetachesAndDeletesBothTopics() {
-        Integration integration = expiredDisabledIntegration();
+        Integration integration = givenIntegrations(expiredDisabledIntegration());
         String integrationId = integration.getIdStr();
-        givenIntegrations(integration);
         // nothing to unsubscribe, but the events stream is still attached
         when(lifecycleEventTypeCache.remove(integrationId)).thenReturn(true);
 
@@ -107,21 +140,19 @@ class IntegrationCleanupServiceImplTest {
 
     @Test
     void givenAlreadyDetachedIntegration_whenCleanUp_thenSkipsTopicDeletion() {
-        Integration integration = expiredDisabledIntegration();
-        givenIntegrations(integration);
+        Integration integration = givenIntegrations(expiredDisabledIntegration());
         // both report nothing detached: an earlier sweep already did the work
 
         service.cleanUp();
 
-        verify(integrationSubscriptionUpdateService).processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        verify(integrationSubscriptionUpdateService).clearSubscriptions(integration.getIdStr());
         verify(lifecycleEventTypeCache).remove(integration.getIdStr());
         verifyNoInteractions(integrationTopicService);
     }
 
     @Test
     void givenEnabledIntegration_whenCleanUp_thenLeavesItAlone() {
-        Integration integration = newIntegration(true, System.currentTimeMillis() - TTL_MS - 1);
-        givenIntegrations(integration);
+        givenIntegrations(newIntegration(true, System.currentTimeMillis() - TTL_MS - 1));
 
         service.cleanUp();
 
@@ -130,8 +161,35 @@ class IntegrationCleanupServiceImplTest {
 
     @Test
     void givenNotYetExpiredDisabledIntegration_whenCleanUp_thenLeavesItAlone() {
-        Integration integration = newIntegration(false, System.currentTimeMillis() - TTL_MS + TimeUnit.HOURS.toMillis(1));
-        givenIntegrations(integration);
+        givenIntegrations(newIntegration(false, System.currentTimeMillis() - TTL_MS + TimeUnit.HOURS.toMillis(1)));
+
+        service.cleanUp();
+
+        verifyNoInteractions(integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
+    }
+
+    /**
+     * The page may have been fetched before a loop of blocking admin calls, so the destructive part must act on the
+     * re-read row: an integration enabled since must be left running with its subscriptions and event types intact.
+     */
+    @Test
+    void givenIntegrationEnabledSinceItWasFetched_whenCleanUp_thenLeavesItAlone() {
+        Integration stale = expiredDisabledIntegration();
+        givenIntegrations(stale);
+        Integration current = newIntegration(true, stale.getDisconnectedTime());
+        current.setId(stale.getId());
+        when(integrationService.findIntegrationById(stale.getId())).thenReturn(current);
+
+        service.cleanUp();
+
+        verifyNoInteractions(integrationSubscriptionUpdateService, lifecycleEventTypeCache, integrationTopicService);
+    }
+
+    @Test
+    void givenIntegrationDeletedSinceItWasFetched_whenCleanUp_thenLeavesItAlone() {
+        Integration stale = expiredDisabledIntegration();
+        givenIntegrations(stale);
+        when(integrationService.findIntegrationById(stale.getId())).thenReturn(null);
 
         service.cleanUp();
 
@@ -148,13 +206,20 @@ class IntegrationCleanupServiceImplTest {
     }
 
     @Test
+    void givenCleanupDisabled_whenNeedsToBeRemoved_thenFalseEvenForLongDisabledIntegration() {
+        ReflectionTestUtils.setField(service, "ttlMs", 0L);
+
+        assertThat(service.needsToBeRemoved(expiredDisabledIntegration())).isFalse();
+    }
+
+    @Test
     void givenFailingIntegration_whenCleanUp_thenKeepsSweepingTheRest() {
         Integration failing = expiredDisabledIntegration();
         Integration next = expiredDisabledIntegration();
         givenIntegrations(failing, next);
         doThrow(new RuntimeException("kafka admin timeout"))
-                .when(integrationSubscriptionUpdateService).processSubscriptionsUpdate(failing.getIdStr(), Collections.emptySet());
-        when(integrationSubscriptionUpdateService.processSubscriptionsUpdate(next.getIdStr(), Collections.emptySet())).thenReturn(true);
+                .when(integrationSubscriptionUpdateService).clearSubscriptions(failing.getIdStr());
+        when(integrationSubscriptionUpdateService.clearSubscriptions(next.getIdStr())).thenReturn(true);
 
         service.cleanUp();
 
@@ -163,26 +228,14 @@ class IntegrationCleanupServiceImplTest {
         verify(integrationTopicService).deleteEventTopic(eq(next.getIdStr()), any(BasicCallback.class));
     }
 
-    /**
-     * Every integration is re-read immediately before it is examined, so that one enabled while the sweep is running
-     * is not detached on the strength of a stale reading.
-     */
-    @Test
-    void givenSeveralIntegrations_whenCleanUp_thenFetchesThemOneAtATime() {
-        givenIntegrations(expiredDisabledIntegration(), expiredDisabledIntegration());
-
-        service.cleanUp();
-
-        verify(integrationService, times(2)).findIntegrations(any(PageLink.class));
-    }
-
-    private void givenIntegrations(Integration... integrations) {
-        // one integration per page, mirroring CLEANUP_PAGE_SIZE
-        var stubbing = when(integrationService.findIntegrations(any(PageLink.class)));
-        for (int i = 0; i < integrations.length; i++) {
-            boolean hasNext = i < integrations.length - 1;
-            stubbing = stubbing.thenReturn(new PageData<>(List.of(integrations[i]), integrations.length, integrations.length, hasNext));
+    private Integration givenIntegrations(Integration... integrations) {
+        when(integrationService.findIntegrations(any(PageLink.class)))
+                .thenReturn(new PageData<>(List.of(integrations), 1, integrations.length, false));
+        for (Integration integration : integrations) {
+            // by default the re-read before detaching returns the same state
+            when(integrationService.findIntegrationById(integration.getId())).thenReturn(integration);
         }
+        return integrations[0];
     }
 
     private Integration expiredDisabledIntegration() {

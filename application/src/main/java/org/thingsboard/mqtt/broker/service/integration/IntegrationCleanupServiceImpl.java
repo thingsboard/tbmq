@@ -20,16 +20,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -37,19 +41,11 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class IntegrationCleanupServiceImpl {
 
-    /**
-     * Integrations are fetched one at a time on purpose. The sweep is destructive - it detaches the integration from
-     * both streams - and each iteration issues blocking admin calls, so a snapshot taken before the loop would let a
-     * stale {@code enabled=false} reading detach an integration that has since been enabled, leaving it running with
-     * no subscriptions and no lifecycle events until it is saved again. Re-reading per integration also keeps the
-     * sweep's footprint constant regardless of how many integrations exist.
-     */
-    private static final int CLEANUP_PAGE_SIZE = 1;
-
     private final IntegrationService integrationService;
     private final IntegrationTopicService integrationTopicService;
     private final IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    private final InternodeNotificationsService internodeNotificationsService;
 
     @Value("#{${integrations.cleanup.ttl:604800} * 1000}")
     private long ttlMs;
@@ -64,12 +60,12 @@ public class IntegrationCleanupServiceImpl {
 
         int count = 0;
         try {
-            PageLink pageLink = new PageLink(CLEANUP_PAGE_SIZE);
+            PageLink pageLink = new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE);
             PageData<Integration> pageData;
             do {
                 pageData = integrationService.findIntegrations(pageLink);
                 for (Integration integration : pageData.getData()) {
-                    if (cleanUp(integration)) {
+                    if (cleanUpIfExpired(integration)) {
                         count++;
                     }
                 }
@@ -81,28 +77,37 @@ public class IntegrationCleanupServiceImpl {
         log.info("Cleaning up of [{}] expired disconnected integrations is finished", count);
     }
 
-    private boolean cleanUp(Integration integration) {
-        if (!needsToBeRemoved(System.currentTimeMillis(), integration)) {
+    private boolean cleanUpIfExpired(Integration integration) {
+        if (!needsToBeRemoved(integration)) {
+            return false;
+        }
+        // The row is re-read before the destructive part, because detaching is no longer self-correcting: acting on a
+        // page fetched before a loop of blocking admin calls could clear the subscriptions and event types of an
+        // integration enabled since, leaving it running while silently receiving nothing until it is saved again.
+        // Only expired candidates pay for this read, and they are rare.
+        Integration current = integrationService.findIntegrationById(integration.getId());
+        if (current == null || !needsToBeRemoved(current)) {
+            log.debug("[{}][{}] No longer expired, skipping", integration.getId(), integration.getName());
             return false;
         }
         try {
-            log.debug("[{}][{}] Cleaning up expired disconnected integration", integration.getId(), integration.getName());
-            if (!stopProducingFor(integration.getIdStr())) {
+            log.debug("[{}][{}] Cleaning up expired disconnected integration", current.getId(), current.getName());
+            if (!stopProducingFor(current.getIdStr())) {
                 // An earlier sweep already detached it, so nothing feeds either topic any more and there is nothing
                 // left to reclaim. Without this the sweep would re-issue four admin calls per expired integration,
                 // on every node, for as long as the integration stays disabled. A topic whose deletion failed back
                 // then is left behind until the integration is deleted, which is a better trade than repeating the
                 // whole sweep indefinitely - the failure is logged by the delete callback.
-                log.debug("[{}][{}] Already detached from both streams, skipping", integration.getId(), integration.getName());
+                log.debug("[{}][{}] Already detached from both streams, skipping", current.getId(), current.getName());
                 return false;
             }
-            deleteIntegrationTopics(integration.getIdStr());
+            deleteIntegrationTopics(current.getIdStr());
             return true;
         } catch (Exception e) {
             // Per integration: a failure here (e.g. a Kafka admin timeout on a consumer group delete) must not
             // skip every remaining expired integration until the next period.
             log.warn("[{}][{}] Failed to clean up expired disconnected integration",
-                    integration.getId(), integration.getName(), e);
+                    current.getId(), current.getName(), e);
             return false;
         }
     }
@@ -120,7 +125,28 @@ public class IntegrationCleanupServiceImpl {
     private BasicCallback deleteCallback(String integrationId, String topicKind) {
         return CallbackUtil.createCallback(
                 () -> log.debug("[{}] Deleted the {} topic", integrationId, topicKind),
-                t -> log.warn("[{}] Failed to delete the {} topic", integrationId, topicKind, t));
+                t -> {
+                    if (isTopicMissing(t)) {
+                        // Expected: an integration that never opted into lifecycle events has no events topic, and a
+                        // sweep on another node may have won the race. Deleting unconditionally keeps a topic left
+                        // over from a since-removed opt-in reclaimable, so this is not worth gating on the opt-in.
+                        log.debug("[{}] The {} topic does not exist", integrationId, topicKind);
+                        return;
+                    }
+                    log.warn("[{}] Failed to delete the {} topic", integrationId, topicKind, t);
+                });
+    }
+
+    private static boolean isTopicMissing(Throwable t) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (cause instanceof UnknownTopicOrPartitionException) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                break;
+            }
+        }
+        return false;
     }
 
     /**
@@ -135,16 +161,45 @@ public class IntegrationCleanupServiceImpl {
      * {@code IntegrationLifecycleConfigProto} broadcast.
      */
     private boolean stopProducingFor(String integrationId) {
-        boolean subscriptionsCleared = integrationSubscriptionUpdateService.processSubscriptionsUpdate(integrationId, Collections.emptySet());
+        boolean subscriptionsCleared = integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
         boolean eventTypesEvicted = lifecycleEventTypeCache.remove(integrationId);
+        if (eventTypesEvicted) {
+            evictEventTypesClusterWide(integrationId);
+        }
         return subscriptionsCleared || eventTypesEvicted;
     }
 
-    private boolean needsToBeRemoved(long currentTs, Integration integration) {
-        return !integration.isEnabled() && isExpired(integration, currentTs);
+    /**
+     * The event type cache is node-local, while the topics are deleted for the whole cluster, so evicting only here
+     * would leave every other node publishing lifecycle events into a topic that no longer exists - and since the
+     * events producer does not create topics, each of those sends stalls the MQTT processing thread for
+     * {@code max.block.ms} until that node's own sweep runs, up to {@code integrations.cleanup.period} later.
+     * <p>
+     * Reuses the {@code deleted} flag of {@link IntegrationLifecycleConfigProto}, which
+     * {@code IntegrationLifecycleEventTypeCacheImpl.processIntegrationLifecycleConfig} routes to an eviction. The
+     * broadcast re-applies it to this node as an idempotent no-op, which is why the local result is taken first.
+     */
+    private void evictEventTypesClusterWide(String integrationId) {
+        internodeNotificationsService.broadcast(
+                InternodeNotificationProto.newBuilder()
+                        .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
+                                .setIntegrationId(integrationId)
+                                .setDeleted(true)
+                                .build())
+                        .build());
     }
 
-    private boolean isExpired(Integration integration, long currentTs) {
-        return integration.getDisconnectedTime() + ttlMs < currentTs;
+    /**
+     * Whether the sweep considers this integration expired, i.e. disabled for longer than
+     * {@code integrations.cleanup.ttl}. Exposed so that {@code BrokerInitializer} does not re-attach an integration
+     * that this sweep has already detached, which would resume its lifecycle events until the next period.
+     */
+    public boolean needsToBeRemoved(Integration integration) {
+        // No integration expires while the cleanup is disabled, otherwise a zero ttl would read as "expired always".
+        return ttlMs > 0 && !integration.isEnabled() && isExpired(integration);
+    }
+
+    private boolean isExpired(Integration integration) {
+        return integration.getDisconnectedTime() + ttlMs < System.currentTimeMillis();
     }
 }
