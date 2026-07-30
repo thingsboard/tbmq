@@ -21,6 +21,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -42,17 +43,47 @@ import java.util.function.BiConsumer;
 @RequiredArgsConstructor
 public class IntegrationCleanupServiceImpl {
 
+    /**
+     * Deliberately not zero, which is what a fixed-rate task without one gets: Spring registers {@code @Scheduled}
+     * tasks on ContextRefreshedEvent and submits the first run right there, before the ApplicationReadyEvent that
+     * drives BrokerInitializer - so the first sweep after every restart would read node-local state that is not
+     * loaded yet. The readiness check in {@link #cleanUp()} is what makes that safe; this delay is what keeps a node
+     * restarting more often than {@code integrations.cleanup.period} reclaiming at all, since the check alone would
+     * skip every first sweep and push the reclaim a full period past each start.
+     * <p>
+     * Generous rather than tight, because nothing needs the sweep to be prompt - the ttl it enforces defaults to a
+     * week - so the only thing worth sizing for is clearing a slow startup on a large node.
+     */
+    static final long INITIAL_DELAY_SEC = 600;
+
     private final IntegrationService integrationService;
     private final IntegrationTopicService integrationTopicService;
     private final IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     private final InternodeNotificationsService internodeNotificationsService;
     private final IntegrationExpiryChecker expiryChecker;
+    // Read only for its initialization flag - the subscriptions themselves go through
+    // integrationSubscriptionUpdateService. Same use as in HistoricalStatsTotalConsumer.checkAllStatsServicesReady.
+    private final ClientSubscriptionService clientSubscriptionService;
 
-    @Scheduled(fixedRateString = "${integrations.cleanup.period}", timeUnit = TimeUnit.SECONDS)
+    @Scheduled(initialDelay = INITIAL_DELAY_SEC, fixedRateString = "${integrations.cleanup.period}", timeUnit = TimeUnit.SECONDS)
     public void cleanUp() {
         if (!expiryChecker.isCleanupEnabled()) {
             log.debug("Integrations cleanup is disabled");
+            return;
+        }
+        if (!clientSubscriptionService.isInitialized()) {
+            // An unloaded subscriptions map answers "no subscriptions" for every integration rather than failing
+            // (ClientSubscriptionServiceImpl.getClientSubscriptions), and stopProducingFor cannot tell that apart
+            // from an earlier sweep having detached the integration: it would report every expired integration as
+            // already detached and reclaim nothing, while a concurrent ClientSubscriptionServiceImpl.init could
+            // still have its clear land between that map being populated and the subscription trie being rebuilt.
+            // Sweeping nothing is the honest outcome; INITIAL_DELAY_SEC is what normally keeps this unreached.
+            //
+            // The lifecycle event type cache needs no such check: an empty entry there for an expired integration
+            // is the steady state rather than a load-in-progress artifact, since
+            // BrokerInitializer.initIntegrationLifecycleEventCache deliberately never re-attaches one.
+            log.info("Skipping the integrations cleanup: subscriptions are not initialized yet");
             return;
         }
         log.info("Starting cleaning up expired disconnected integrations");

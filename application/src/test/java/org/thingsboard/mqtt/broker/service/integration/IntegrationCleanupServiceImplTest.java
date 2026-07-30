@@ -29,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
@@ -72,6 +73,8 @@ class IntegrationCleanupServiceImplTest {
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
     @Mock
     InternodeNotificationsService internodeNotificationsService;
+    @Mock
+    ClientSubscriptionService clientSubscriptionService;
 
     @InjectMocks
     IntegrationCleanupServiceImpl service;
@@ -81,6 +84,26 @@ class IntegrationCleanupServiceImplTest {
         IntegrationExpiryChecker expiryChecker = new IntegrationExpiryChecker();
         ReflectionTestUtils.setField(expiryChecker, "ttlMs", TTL_MS);
         ReflectionTestUtils.setField(service, "expiryChecker", expiryChecker);
+        // Lenient: the disabled-cleanup test returns before the readiness check.
+        lenient().when(clientSubscriptionService.isInitialized()).thenReturn(true);
+    }
+
+    /**
+     * {@code @Scheduled} registers the first run on ContextRefreshedEvent, before the ApplicationReadyEvent that
+     * drives BrokerInitializer, so the sweep can run while this node's subscriptions are still unloaded.
+     * ClientSubscriptionServiceImpl.getClientSubscriptions answers an empty set until then, which
+     * {@link IntegrationCleanupServiceImpl} cannot tell apart from an earlier sweep having detached the integration:
+     * every expired integration would be skipped as "already detached", reclaiming nothing for a whole
+     * {@code integrations.cleanup.period}. Sweeping nothing at all is the honest outcome.
+     */
+    @Test
+    void givenSubscriptionsNotLoadedYet_whenCleanUp_thenSkipsTheSweepEntirely() {
+        when(clientSubscriptionService.isInitialized()).thenReturn(false);
+
+        service.cleanUp();
+
+        verifyNoInteractions(integrationService, integrationSubscriptionUpdateService, lifecycleEventTypeCache,
+                integrationTopicService, internodeNotificationsService);
     }
 
     @Test
