@@ -33,8 +33,11 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsSe
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,6 +96,30 @@ class DefaultTbIntegrationServiceTest {
         InOrder inOrder = inOrder(integrationService, internodeNotificationsService);
         inOrder.verify(integrationService).deleteIntegration(integration);
         inOrder.verify(internodeNotificationsService).broadcast(any(InternodeNotificationProto.class));
+    }
+
+    /**
+     * Putting the eviction first is what closes the leak window, but it also puts a Redis read
+     * (InternodeNotificationsHelperImpl.getServiceIds) and a Kafka admin call - the internode notifications producer
+     * has createTopicIfNotExists left at its default - ahead of the cleanup, so the broadcast is not fire-and-forget.
+     * Without the finally, a blip in either would leave the row gone while the subscriptions were never cleared, the
+     * Integration Executor was never told to stop, and neither topic was ever deleted: a permanent leak, since the
+     * sweep only ever reaches topics through their row. That is strictly worse than the stale caches on the other
+     * nodes that the ordering exists to avoid.
+     */
+    @Test
+    void givenBroadcastFails_whenDelete_thenStillRunsTheCleanup() {
+        Integration integration = newIntegration();
+        when(integrationService.deleteIntegration(integration)).thenReturn(true);
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(internodeNotificationsService).broadcast(any(InternodeNotificationProto.class));
+
+        // Still propagates: the caller has to learn that the rest of the cluster was not notified.
+        assertThatThrownBy(() -> service.delete(integration, null))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("kafka admin timeout");
+
+        verify(platformIntegrationService).processIntegrationDelete(integration, true);
     }
 
     private Integration newIntegration() {

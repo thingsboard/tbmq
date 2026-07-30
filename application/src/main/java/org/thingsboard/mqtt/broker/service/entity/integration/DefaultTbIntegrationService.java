@@ -70,14 +70,24 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
         // narrows it on the others - broadcast returns once the notification is produced, not once they applied it.
         // Unconditional and safe here: with the row already gone there is no re-enable for the eviction to race,
         // unlike in the sweep, whose row survives.
-        internodeNotificationsService.broadcast(
-                InternodeNotificationProto.newBuilder()
-                        .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
-                                .setIntegrationId(integration.getIdStr())
-                                .setDeleted(true)
-                                .build())
-                        .build());
-        platformIntegrationService.processIntegrationDelete(integration, removed);
+        //
+        // The finally is what keeps the ordering affordable. Broadcasting is not fire-and-forget - it reads the
+        // service registry from Redis and produces to Kafka, whose admin call rethrows - and with the row already
+        // gone, a propagating failure would leave the subscriptions feeding the data topic, the Integration Executor
+        // never told to stop, and neither topic ever deleted. Stale caches on the other nodes are the lesser loss.
+        // The local eviction above survives such a failure regardless: broadcast applies it before it reads the
+        // registry or sends anything.
+        try {
+            internodeNotificationsService.broadcast(
+                    InternodeNotificationProto.newBuilder()
+                            .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
+                                    .setIntegrationId(integration.getIdStr())
+                                    .setDeleted(true)
+                                    .build())
+                            .build());
+        } finally {
+            platformIntegrationService.processIntegrationDelete(integration, removed);
+        }
     }
 
     @Override
