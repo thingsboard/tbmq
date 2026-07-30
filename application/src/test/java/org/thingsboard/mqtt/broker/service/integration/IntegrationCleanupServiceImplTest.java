@@ -61,6 +61,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class IntegrationCleanupServiceImplTest {
 
+    // The checker holds the ttl in the configured unit, seconds, and converts on use; the disconnected timestamps
+    // below are epoch millis, so both forms are needed.
+    static final long TTL_SEC = TimeUnit.DAYS.toSeconds(7);
     static final long TTL_MS = TimeUnit.DAYS.toMillis(7);
 
     @Mock
@@ -82,7 +85,7 @@ class IntegrationCleanupServiceImplTest {
     @BeforeEach
     void setUp() {
         IntegrationExpiryChecker expiryChecker = new IntegrationExpiryChecker();
-        ReflectionTestUtils.setField(expiryChecker, "ttlMs", TTL_MS);
+        ReflectionTestUtils.setField(expiryChecker, "ttlSec", TTL_SEC);
         ReflectionTestUtils.setField(service, "expiryChecker", expiryChecker);
         // Lenient: the disabled-cleanup test returns before the readiness check.
         lenient().when(clientSubscriptionService.isInitialized()).thenReturn(true);
@@ -333,7 +336,7 @@ class IntegrationCleanupServiceImplTest {
     @Test
     void givenCleanupDisabled_whenCleanUp_thenDoesNothing() {
         IntegrationExpiryChecker disabled = new IntegrationExpiryChecker();
-        ReflectionTestUtils.setField(disabled, "ttlMs", 0L);
+        ReflectionTestUtils.setField(disabled, "ttlSec", 0L);
         ReflectionTestUtils.setField(service, "expiryChecker", disabled);
 
         service.cleanUp();

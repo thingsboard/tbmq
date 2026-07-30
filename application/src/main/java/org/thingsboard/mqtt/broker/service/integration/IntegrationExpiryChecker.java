@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Single source of the "has this integration been disabled long enough to reclaim?" predicate, shared by the periodic
  * cleanup sweep and by the startup load that must not re-attach an integration the sweep has already detached.
@@ -29,11 +31,17 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 @Component
 public class IntegrationExpiryChecker {
 
-    @Value("#{${integrations.cleanup.ttl:604800} * 1000}")
-    private long ttlMs;
+    /**
+     * Kept in the configured unit and converted where it is used, rather than resolved as
+     * {@code #{${integrations.cleanup.ttl:604800} * 1000}}. Placeholder substitution runs before SpEL evaluation, so
+     * that expression multiplied two int literals, and SpEL only widens to long when an operand already is one - a ttl
+     * past roughly 24.8 days wrapped negative and disabled the cleanup outright, visible only as a debug line.
+     */
+    @Value("${integrations.cleanup.ttl:604800}")
+    private long ttlSec;
 
     public boolean isCleanupEnabled() {
-        return ttlMs > 0;
+        return ttlSec > 0;
     }
 
     /**
@@ -43,8 +51,12 @@ public class IntegrationExpiryChecker {
      * No integration expires while the cleanup is disabled, otherwise a zero ttl would read as "expired always".
      */
     public boolean isExpired(Integration integration) {
+        // Compared as elapsed time rather than as disconnectedTime + ttl: TimeUnit saturates a huge ttl to
+        // Long.MAX_VALUE instead of wrapping, and that sum would then overflow into the past and expire every
+        // integration at once. Subtracting two epoch millis cannot overflow, so the saturated value reads as
+        // "never expires", which is the safe direction for a misconfiguration.
         return isCleanupEnabled()
                 && !integration.isEnabled()
-                && integration.getDisconnectedTime() + ttlMs < System.currentTimeMillis();
+                && System.currentTimeMillis() - integration.getDisconnectedTime() > TimeUnit.SECONDS.toMillis(ttlSec);
     }
 }

@@ -27,6 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class IntegrationExpiryCheckerTest {
 
+    // The checker holds the ttl in the configured unit, seconds, and converts on use; the disconnected timestamps
+    // below are epoch millis, so both forms are needed.
+    static final long TTL_SEC = TimeUnit.DAYS.toSeconds(7);
     static final long TTL_MS = TimeUnit.DAYS.toMillis(7);
 
     IntegrationExpiryChecker checker;
@@ -34,7 +37,7 @@ class IntegrationExpiryCheckerTest {
     @BeforeEach
     void setUp() {
         checker = new IntegrationExpiryChecker();
-        ReflectionTestUtils.setField(checker, "ttlMs", TTL_MS);
+        ReflectionTestUtils.setField(checker, "ttlSec", TTL_SEC);
     }
 
     @Test
@@ -44,14 +47,14 @@ class IntegrationExpiryCheckerTest {
 
     @Test
     void givenZeroTtl_whenIsCleanupEnabled_thenFalse() {
-        ReflectionTestUtils.setField(checker, "ttlMs", 0L);
+        ReflectionTestUtils.setField(checker, "ttlSec", 0L);
 
         assertThat(checker.isCleanupEnabled()).isFalse();
     }
 
     @Test
     void givenNegativeTtl_whenIsCleanupEnabled_thenFalse() {
-        ReflectionTestUtils.setField(checker, "ttlMs", -1L);
+        ReflectionTestUtils.setField(checker, "ttlSec", -1L);
 
         assertThat(checker.isCleanupEnabled()).isFalse();
     }
@@ -78,7 +81,7 @@ class IntegrationExpiryCheckerTest {
      */
     @Test
     void givenCleanupDisabled_whenIsExpired_thenFalseEvenForLongDisabledIntegration() {
-        ReflectionTestUtils.setField(checker, "ttlMs", 0L);
+        ReflectionTestUtils.setField(checker, "ttlSec", 0L);
 
         assertThat(checker.isExpired(newIntegration(false, System.currentTimeMillis() - TTL_MS - 1))).isFalse();
     }

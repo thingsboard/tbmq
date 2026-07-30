@@ -56,7 +56,7 @@ class DefaultIntegrationRateLimitServiceTest {
         // Set private field values for testing
         ReflectionTestUtils.setField(rateLimitServiceImpl, "eventRateLimitsEnabled", true);
         ReflectionTestUtils.setField(rateLimitServiceImpl, "integrationEventsRateLimitsConf", "100:1,1000:60");
-        ReflectionTestUtils.setField(rateLimitServiceImpl, "deduplicationDurationMs", 60000L);
+        ReflectionTestUtils.setField(rateLimitServiceImpl, "deduplicationDurationMinutes", 1L);
 
         integrationId = UUID.randomUUID();
     }
