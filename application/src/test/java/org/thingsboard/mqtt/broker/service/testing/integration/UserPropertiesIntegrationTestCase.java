@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -57,45 +58,77 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     static final String SUB_CLIENT_ID_APP = "subClientIdApp";
     static final String PUB_CLIENT_ID_DEV = "pubClientIdDev";
     static final String SUB_CLIENT_ID_DEV = "subClientIdDev";
+    static final String PUB_CLIENT_ID_DEV_CLEAN = "pubClientIdDevCleanStart";
+    static final String SUB_CLIENT_ID_DEV_CLEAN = "subClientIdDevCleanStart";
     static final String DEFAULT_USER_NAME = "defaultUserName";
     static final String MY_TOPIC = "my/topic";
+
+    // Delivery to a persisted session goes through Kafka, which can take considerably longer than
+    // the in-memory path on a loaded CI agent.
+    private static final int DELIVERY_TIMEOUT_SEC = 30;
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
 
-    private MqttClientCredentials appPubCredentials;
-    private MqttClientCredentials appSubCredentials;
-    private MqttClientCredentials devPubCredentials;
-    private MqttClientCredentials devSubCredentials;
-    private MqttClientCredentials defaultCredentials;
+    private final List<MqttClientCredentials> credentials = new ArrayList<>();
 
-    private MqttClient appSubClient;
-    private MqttClient devSubClient;
+    // Clients are registered here as soon as they are created, so that @After closes them even when a
+    // test fails before its own disconnect. A client left connected keeps both its session on the
+    // broker and its Paho file persistence directory open, and since that directory is derived from
+    // the client id and the server URI, the next client created with the same client id shares it:
+    // whichever of the two is closed first deletes the directory and the other one then fails with
+    // "Untranslated MqttException - RC: 0" on its receiver thread.
+    private final List<MqttClient> clients = new ArrayList<>();
+    private final List<MqttAsyncClient> asyncClients = new ArrayList<>();
+
+    // Sub client of a persisted session test. Its session outlives the connection, so it has to be
+    // dropped in @After to not leave a subscription behind for the other test classes.
+    private MqttClient persistedSubClient;
 
     @Before
-    public void beforeTest() throws Exception {
-        appPubCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(PUB_CLIENT_ID_APP, null));
-        appSubCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(SUB_CLIENT_ID_APP, null));
-        devPubCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV, null));
-        devSubCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(SUB_CLIENT_ID_DEV, null));
-        defaultCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, DEFAULT_USER_NAME));
+    public void beforeTest() {
+        saveCredentials(TestUtils.createApplicationClientCredentials(PUB_CLIENT_ID_APP, null));
+        saveCredentials(TestUtils.createApplicationClientCredentials(SUB_CLIENT_ID_APP, null));
+        saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV, null));
+        saveCredentials(TestUtils.createDeviceClientCredentials(SUB_CLIENT_ID_DEV, null));
+        saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV_CLEAN, null));
+        saveCredentials(TestUtils.createDeviceClientCredentials(SUB_CLIENT_ID_DEV_CLEAN, null));
+        saveCredentials(TestUtils.createDeviceClientCredentials(null, DEFAULT_USER_NAME));
         enableBasicProvider();
     }
 
     @After
-    public void clear() throws Exception {
-        clearAndDisconnect(appSubClient);
-        clearAndDisconnect(devSubClient);
-
-        credentialsService.deleteCredentials(appPubCredentials.getId());
-        credentialsService.deleteCredentials(appSubCredentials.getId());
-        credentialsService.deleteCredentials(devPubCredentials.getId());
-        credentialsService.deleteCredentials(devSubCredentials.getId());
-        credentialsService.deleteCredentials(defaultCredentials.getId());
+    public void clear() {
+        clearSession(persistedSubClient);
+        clients.forEach(this::disconnectAndClose);
+        asyncClients.forEach(this::disconnectAndClose);
+        credentials.forEach(c -> credentialsService.deleteCredentials(c.getId()));
     }
 
-    private void clearAndDisconnect(MqttClient client) throws Exception {
-        if (client != null) {
+    private void saveCredentials(MqttClientCredentials credentials) {
+        this.credentials.add(credentialsService.saveCredentials(credentials));
+    }
+
+    private MqttClient newClient(String clientId) throws MqttException {
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, clientId);
+        clients.add(client);
+        return client;
+    }
+
+    private MqttAsyncClient newAsyncClient(String clientId) throws MqttException {
+        MqttAsyncClient client = new MqttAsyncClient(SERVER_URI + mqttPort, clientId,
+                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+        asyncClients.add(client);
+        return client;
+    }
+
+    // Reconnecting with clean start is what makes the broker drop the persisted session. The client
+    // authenticates by client id, so no credentials have to be set on the connection options.
+    private void clearSession(MqttClient client) {
+        if (client == null) {
+            return;
+        }
+        try {
             if (client.isConnected()) {
                 client.disconnect();
             }
@@ -103,29 +136,59 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
             options.setCleanStart(true);
             client.connect(options);
             client.disconnect();
+        } catch (Exception e) {
+            log.warn("[{}] Failed to clear the session", client.getClientId(), e);
+        }
+    }
+
+    // Cleanup must never throw: it would mask the failure of the test itself and, worse, skip the
+    // cleanup of the clients that come after this one.
+    private void disconnectAndClose(MqttClient client) {
+        try {
+            if (client.isConnected()) {
+                client.disconnect();
+            }
             client.close();
+        } catch (Exception e) {
+            log.warn("[{}] Failed to close the client", client.getClientId(), e);
+        }
+    }
+
+    private void disconnectAndClose(MqttAsyncClient client) {
+        try {
+            if (client.isConnected()) {
+                // The last will clients are killed by the broker on keep alive expiry, so the client
+                // side can still see the connection as alive here. Wait with a timeout to never hang.
+                client.disconnect().waitForCompletion(TimeUnit.SECONDS.toMillis(5));
+            }
+            client.close();
+        } catch (Exception e) {
+            log.warn("[{}] Failed to close the client", client.getClientId(), e);
         }
     }
 
     @Test
     public void testUserPropertiesCleanSession() throws Throwable {
-        devSubClient = processTest(SUB_CLIENT_ID_DEV, PUB_CLIENT_ID_DEV, true, 1);
+        processTest(SUB_CLIENT_ID_DEV_CLEAN, PUB_CLIENT_ID_DEV_CLEAN, true, 1);
     }
 
     @Test
     public void testUserPropertiesDevPersistedSession() throws Throwable {
-        devSubClient = processTest(SUB_CLIENT_ID_DEV, PUB_CLIENT_ID_DEV, false, 2);
+        processTest(SUB_CLIENT_ID_DEV, PUB_CLIENT_ID_DEV, false, 2);
     }
 
     @Test
     public void testUserPropertiesAppPersistedSession() throws Throwable {
-        appSubClient = processTest(SUB_CLIENT_ID_APP, PUB_CLIENT_ID_APP, false, 2);
+        processTest(SUB_CLIENT_ID_APP, PUB_CLIENT_ID_APP, false, 2);
     }
 
-    private MqttClient processTest(String subClientId, String pubClientId, boolean cleanStart, int qos) throws Exception {
+    private void processTest(String subClientId, String pubClientId, boolean cleanStart, int qos) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, subClientId);
+        MqttClient subClient = newClient(subClientId);
+        if (!cleanStart) {
+            persistedSubClient = subClient;
+        }
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setCleanStart(cleanStart);
         subClient.connect(options);
@@ -139,27 +202,21 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, qos)};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, pubClientId);
+        MqttClient pubClient = newClient(pubClientId);
         pubClient.connect();
 
         MqttMessage message = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, qos, false, MQTT_PROPERTIES);
         pubClient.publish(MY_TOPIC, message);
 
-        boolean await = latch.await(10, TimeUnit.SECONDS);
-        Assert.assertTrue(await);
-
-        pubClient.disconnect();
-        pubClient.close();
-        subClient.disconnect();
-
-        return subClient;
+        boolean await = latch.await(DELIVERY_TIMEOUT_SEC, TimeUnit.SECONDS);
+        Assert.assertTrue("[" + subClientId + "] Did not receive the msg in " + DELIVERY_TIMEOUT_SEC + " seconds", await);
     }
 
     @Test
     public void testUserPropertiesOnLastWillMsg() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
+        MqttClient subClient = newClient("subClientLastWill");
         MqttConnectionOptions subCliOptions = new MqttConnectionOptions();
         subCliOptions.setUserName(DEFAULT_USER_NAME);
         subClient.connect(subCliOptions);
@@ -176,8 +233,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill",
-                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+        MqttAsyncClient pubClient = newAsyncClient("pubClientLastWill");
 
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 2, false, MQTT_PROPERTIES));
@@ -188,17 +244,13 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(await);
-
-        subClient.disconnect();
-        subClient.close();
     }
 
     @Test
     public void testUserPropertiesOnLastWillRetainedMsg() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWillRetained",
-                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+        MqttAsyncClient pubClient = newAsyncClient("pubClientLastWillRetained");
 
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setWill(MY_TOPIC, new MqttMessage("willRetained".getBytes(StandardCharsets.UTF_8), 2, true, MQTT_PROPERTIES));
@@ -210,7 +262,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertFalse(await);
 
-        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWillRetained");
+        MqttClient subClient = newClient("subClientLastWillRetained");
         MqttConnectionOptions subCliOptions = new MqttConnectionOptions();
         subCliOptions.setUserName(DEFAULT_USER_NAME);
         subClient.connect(subCliOptions);
@@ -232,9 +284,6 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
         boolean retainedAwait = retainedWillLatch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(retainedAwait);
-
-        subClient.disconnect();
-        subClient.close();
 
         clearRetainedMsg();
     }
