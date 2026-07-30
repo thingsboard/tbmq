@@ -92,16 +92,18 @@ public class IntegrationSubscriptionUpdateServiceImplTest {
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any());
     }
 
+    /**
+     * Also pins the empty-set path to never read the current subscriptions: that read only feeds the non-empty
+     * diffing logic below it, and the delegating clearSubscriptions call has no use for it.
+     */
     @Test
     public void givenCurrentTopicSubscriptions_whenProcessSubscriptionsUpdate_thenClearSubscriptions() {
-        Set<TopicSubscription> currentTopicSubscriptions = Set.of(getTopicSubs("topic1"));
-        doReturn(currentTopicSubscriptions).when(clientSubscriptionService).getClientSubscriptions("integrationId");
-
         integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of());
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
         verify(clientSubscriptionService, never()).unsubscribeAndPersist(any(), any());
         verify(clientSubscriptionService, never()).subscribeAndPersist(any(), any());
+        verify(clientSubscriptionService, never()).getClientSubscriptions(any());
     }
 
     /**
