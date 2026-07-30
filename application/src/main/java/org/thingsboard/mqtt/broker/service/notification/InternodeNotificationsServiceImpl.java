@@ -54,25 +54,17 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     }
 
     /**
-     * The local update is applied first and unconditionally, ahead of the service registry read: it is in-process, so
-     * it has no business depending on Redis being reachable, on this node being currently registered, or on any remote
-     * send succeeding. {@code DefaultTbIntegrationService.delete} relies on exactly that to close its events-topic
-     * leak window on the deleting node, and {@code getServiceIds} maps an unordered Redis hash
-     * (TbmqSystemInfoService.getTbmqServiceIds), so this node's own id can come last.
-     * <p>
-     * Per-node sends are isolated from each other. The registry read and the local update are not: a failure in either
-     * means nothing was notified at all, which the caller should see rather than have logged away. Applying locally
-     * first does mean a local handler that throws - {@code MqttAuthProviderNotificationManagerImpl} parses the
-     * configuration JSON, so it can - now sends to nobody instead of to whichever nodes happened to precede this one
-     * in an unordered list. That is the better failure: an all-or-nothing broadcast the caller is told about, rather
-     * than an arbitrary subset of the cluster silently diverging from the rest.
+     * The local update goes first and unconditionally, ahead of the registry read: it is in-process, so it must not
+     * depend on Redis, on this node being registered, or on any remote send - TbmqSystemInfoService.getTbmqServiceIds
+     * maps an unordered hash, so this node's own id can come last. Per-node sends are isolated from each other; a
+     * failure in the registry read or the local update still propagates, since then nothing was notified at all.
      */
     @Override
     public void broadcast(InternodeNotificationProto notificationProto) {
         applyLocally(notificationProto);
         for (String serviceId : helper.getServiceIds()) {
             if (isMyNode(serviceId)) {
-                // Already applied in-process above; this node consumes only what other nodes send it.
+                // Already applied in-process; this node only consumes what others send it.
                 continue;
             }
             broadcastToNode(serviceId, notificationProto);
@@ -107,10 +99,8 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     }
 
     /**
-     * Contained on failure, so one unreachable node cannot drop the notification for the nodes after it in the list.
-     * The send is not fire-and-forget: TbKafkaProducerTemplate.send calls createTopicIfNotExists first - wired for
-     * this producer by KafkaInternodeNotificationsQueueFactory.createProducer with the flag left at its default - and
-     * TbKafkaAdmin.createTopic rethrows as a RuntimeException, while KafkaProducer.send can throw synchronously too.
+     * Contained on failure, so one unreachable node cannot drop the notification for the nodes after it. The send can
+     * throw: TbKafkaProducerTemplate.send calls createTopicIfNotExists first, and TbKafkaAdmin.createTopic rethrows.
      */
     private void broadcastToNode(String serviceId, InternodeNotificationProto notificationProto) {
         String topic = helper.getServiceTopic(serviceId);

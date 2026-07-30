@@ -99,13 +99,9 @@ class DefaultTbIntegrationServiceTest {
     }
 
     /**
-     * Putting the eviction first is what closes the leak window, but it also puts a Redis read
-     * (InternodeNotificationsHelperImpl.getServiceIds) and a Kafka admin call - the internode notifications producer
-     * has createTopicIfNotExists left at its default - ahead of the cleanup, so the broadcast is not fire-and-forget.
-     * Without the finally, a blip in either would leave the row gone while the subscriptions were never cleared, the
-     * Integration Executor was never told to stop, and neither topic was ever deleted: a permanent leak, since the
-     * sweep only ever reaches topics through their row. That is strictly worse than the stale caches on the other
-     * nodes that the ordering exists to avoid.
+     * Putting the eviction first also puts a Redis read and a Kafka admin call ahead of the cleanup. Without the
+     * finally, a blip in either leaves the row gone with neither topic ever deleted - a leak the sweep cannot reclaim,
+     * since it only reaches topics through their row.
      */
     @Test
     void givenBroadcastFails_whenDelete_thenStillRunsTheCleanup() {

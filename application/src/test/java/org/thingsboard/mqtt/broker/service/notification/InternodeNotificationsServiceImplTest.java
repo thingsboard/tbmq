@@ -255,10 +255,8 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     /**
-     * The send is not fire-and-forget: TbKafkaProducerTemplate.send calls createTopicIfNotExists first - wired for
-     * this producer by KafkaInternodeNotificationsQueueFactory.createProducer, with the flag left at its default -
-     * and TbKafkaAdmin.createTopic rethrows as a RuntimeException. KafkaProducer.send can throw synchronously too.
-     * Without isolation, one unreachable node silently drops the notification for every node after it in the list.
+     * The send can throw - createTopicIfNotExists runs first and TbKafkaAdmin.createTopic rethrows - so without
+     * isolation one unreachable node silently drops the notification for every node after it in the list.
      */
     @Test
     public void testBroadcast_WhenSendFailsForOneNode_ThenStillSendsToTheRest() {
@@ -276,9 +274,8 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     /**
-     * TbmqSystemInfoService.getTbmqServiceIds maps an unordered Redis hash, so this node's own id can come last -
-     * which used to make the in-process update hostage to every remote send ahead of it. That is what
-     * DefaultTbIntegrationService.delete relies on to close the events-topic leak window on the deleting node.
+     * getTbmqServiceIds maps an unordered Redis hash, so this node's own id can come last - which used to make the
+     * in-process update hostage to every remote send ahead of it. DefaultTbIntegrationService.delete relies on it.
      */
     @Test
     public void testBroadcast_WhenSendFailsForANodeListedFirst_ThenStillAppliesLocally() {
@@ -301,8 +298,8 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     /**
-     * getServiceIds is a live Redis read (TbmqSystemInfoService.getTbmqServiceIds), so the local update must not
-     * depend on it either. It still propagates - notifying nobody is worth telling the caller about.
+     * getServiceIds is a live Redis read, so the local update must not depend on it either. It still propagates -
+     * notifying nobody is worth telling the caller about.
      */
     @Test
     public void testBroadcast_WhenTheServiceRegistryReadFails_ThenStillAppliesLocally() {
@@ -324,8 +321,7 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     /**
-     * A stale registry that has lost this node - it re-registers periodically - is no reason to skip a purely
-     * in-process update for a change that originated here.
+     * A stale registry that has lost this node is no reason to skip an in-process update that originated here.
      */
     @Test
     public void testBroadcast_WhenThisNodeIsMissingFromTheRegistry_ThenStillAppliesLocally() {
@@ -347,8 +343,7 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     /**
-     * Isolating the sends must not make them silent: an unreachable node has to leave the same trace whether the
-     * failure arrives synchronously or through the producer callback.
+     * Isolating the sends must not make them silent, whichever way the failure arrives.
      */
     @Test
     public void testBroadcast_WhenSendFailsSynchronously_ThenLogsItLikeAnAsynchronousFailure() {

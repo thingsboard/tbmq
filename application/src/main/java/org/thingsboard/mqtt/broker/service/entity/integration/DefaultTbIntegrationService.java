@@ -71,12 +71,9 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
         // Unconditional and safe here: with the row already gone there is no re-enable for the eviction to race,
         // unlike in the sweep, whose row survives.
         //
-        // The finally is what keeps the ordering affordable. Broadcasting is not fire-and-forget - it reads the
-        // service registry from Redis and produces to Kafka, whose admin call rethrows - and with the row already
-        // gone, a propagating failure would leave the subscriptions feeding the data topic, the Integration Executor
-        // never told to stop, and neither topic ever deleted. Stale caches on the other nodes are the lesser loss.
-        // The local eviction above survives such a failure regardless: broadcast applies it before it reads the
-        // registry or sends anything.
+        // The finally is what makes that ordering affordable: broadcast reads Redis and produces to Kafka, whose admin
+        // call rethrows, and with the row gone a skipped cleanup would leak both topics permanently. The local eviction
+        // still happens - broadcast applies it before it reads the registry or sends anything.
         try {
             internodeNotificationsService.broadcast(
                     InternodeNotificationProto.newBuilder()

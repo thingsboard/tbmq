@@ -389,9 +389,8 @@ class IntegrationCleanupServiceImplTest {
     }
 
     /**
-     * The re-read is a database call made in the middle of the sweep, so it can fail on its own - a pool exhausted or
-     * a statement timing out - rather than only returning stale or missing rows. Outside the per-integration try it
-     * would reach cleanUp's catch and abandon every remaining candidate and every remaining page, not just this one.
+     * The re-read can fail on its own - a pool exhausted, a statement timing out - not just return a stale or missing
+     * row. Outside the per-integration try it reaches cleanUp's catch and abandons every remaining candidate and page.
      */
     @Test
     void givenTheReReadFails_whenCleanUp_thenKeepsSweepingTheRest() {

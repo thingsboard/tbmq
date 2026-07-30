@@ -112,12 +112,11 @@ public class IntegrationCleanupServiceImpl {
             return false;
         }
         try {
-            // The row is re-read before the destructive part, because detaching is no longer self-correcting: acting
-            // on a page fetched before a loop of blocking admin calls could clear the subscriptions and event types of
-            // an integration enabled since, leaving it running while silently receiving nothing until it is saved
-            // again. Only expired candidates pay for this read, and they are rare. Inside the try because it is a
-            // database call like any other: outside it, a pool exhausted or a statement timing out mid-sweep would
-            // reach cleanUp's catch and abandon every remaining candidate and page.
+            // The row is re-read before the destructive part, because detaching is no longer self-correcting: acting on
+            // a page fetched before a loop of blocking admin calls could clear the subscriptions and event types of an
+            // integration enabled since, leaving it running while silently receiving nothing until it is saved again.
+            // Only expired candidates pay for this read, and they are rare. Inside the try because it is a database
+            // call like any other, and a failure here must not abandon the rest of the sweep.
             Integration current = integrationService.findIntegrationById(integration.getId());
             if (current == null || !expiryChecker.isExpired(current)) {
                 log.debug("[{}][{}] No longer expired, skipping", integration.getId(), integration.getName());
@@ -137,8 +136,7 @@ public class IntegrationCleanupServiceImpl {
             return true;
         } catch (Exception e) {
             // Per integration: a failure here (e.g. a Kafka admin timeout on a consumer group delete) must not
-            // skip every remaining expired integration until the next period. Logged from the page's row rather than
-            // the re-read one, which the failure may have been.
+            // skip every remaining expired integration until the next period.
             log.warn("[{}][{}] Failed to clean up expired disconnected integration",
                     integration.getId(), integration.getName(), e);
             return false;
