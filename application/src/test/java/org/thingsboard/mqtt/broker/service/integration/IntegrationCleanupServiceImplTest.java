@@ -28,6 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
@@ -378,6 +379,27 @@ class IntegrationCleanupServiceImplTest {
         givenIntegrations(failing, next);
         doThrow(new RuntimeException("kafka admin timeout"))
                 .when(integrationSubscriptionUpdateService).hasSubscriptions(failing.getIdStr());
+        when(integrationSubscriptionUpdateService.hasSubscriptions(next.getIdStr())).thenReturn(true);
+
+        service.cleanUp();
+
+        verify(integrationTopicService, never()).deleteTopic(eq(failing.getIdStr()), any(BasicCallback.class));
+        verify(integrationTopicService).deleteTopic(eq(next.getIdStr()), any(BasicCallback.class));
+        verify(integrationTopicService).deleteEventTopic(eq(next.getIdStr()), any(BasicCallback.class));
+    }
+
+    /**
+     * The re-read is a database call made in the middle of the sweep, so it can fail on its own - a pool exhausted or
+     * a statement timing out - rather than only returning stale or missing rows. Outside the per-integration try it
+     * would reach cleanUp's catch and abandon every remaining candidate and every remaining page, not just this one.
+     */
+    @Test
+    void givenTheReReadFails_whenCleanUp_thenKeepsSweepingTheRest() {
+        Integration failing = expiredDisabledIntegration();
+        Integration next = expiredDisabledIntegration();
+        givenIntegrations(failing, next);
+        doThrow(new QueryTimeoutException("statement timeout"))
+                .when(integrationService).findIntegrationById(failing.getId());
         when(integrationSubscriptionUpdateService.hasSubscriptions(next.getIdStr())).thenReturn(true);
 
         service.cleanUp();
