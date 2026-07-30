@@ -59,7 +59,17 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
         if (removed) {
             rateLimitService.decrementApplicationClientsCount();
         }
-        platformIntegrationService.processIntegrationDelete(integration, removed);
+        // Detach the events stream before processIntegrationDelete deletes the topics. The event type cache is
+        // node-local while the topics go for the whole cluster, and nothing on the publish path checks whether the
+        // integration still exists, so a node that still has the event types cached recreates the events topic on its
+        // next event through the producer's createTopicIfNotExists. That leak is permanent: the row is gone, and the
+        // cleanup sweep only ever reaches a topic through its row. IntegrationCleanupServiceImpl.cleanUpIfExpired
+        // orders the two the same way.
+        //
+        // This closes the window on this node, where the broadcast evicts in-process and synchronously, and only
+        // narrows it on the others - broadcast returns once the notification is produced, not once they applied it.
+        // Unconditional and safe here: with the row already gone there is no re-enable for the eviction to race,
+        // unlike in the sweep, whose row survives.
         internodeNotificationsService.broadcast(
                 InternodeNotificationProto.newBuilder()
                         .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
@@ -67,6 +77,7 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
                                 .setDeleted(true)
                                 .build())
                         .build());
+        platformIntegrationService.processIntegrationDelete(integration, removed);
     }
 
     @Override
