@@ -133,6 +133,9 @@ class IntegrationCleanupServiceImplTest {
         Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
         // The class's effective level is WARN (root), so DEBUG must be raised here to observe the expected message -
         // otherwise this test could pass vacuously even if the callback were never reached at all.
+        // Mutating this shared Logback logger's level is safe only because this module has no junit-platform.properties
+        // enabling concurrent test execution, unlike common/data and integration/executor - if that ever changes here,
+        // this and the next test need isolating too.
         Level originalLevel = logger.getLevel();
         logger.setLevel(Level.DEBUG);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
@@ -335,7 +338,6 @@ class IntegrationCleanupServiceImplTest {
 
         verify(integrationTopicService).deleteTopic(eq(first.getIdStr()), any(BasicCallback.class));
         verify(integrationTopicService).deleteTopic(eq(second.getIdStr()), any(BasicCallback.class));
-        verify(integrationService, times(2)).findIntegrations(any(PageLink.class));
         ArgumentCaptor<PageLink> pageLinkCaptor = ArgumentCaptor.forClass(PageLink.class);
         verify(integrationService, times(2)).findIntegrations(pageLinkCaptor.capture());
         List<PageLink> pageLinks = pageLinkCaptor.getAllValues();

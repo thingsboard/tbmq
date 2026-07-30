@@ -31,11 +31,11 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationUplinkQueueProvider;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -63,8 +63,10 @@ class IntegrationUplinkConsumerTest {
     @InjectMocks
     IntegrationUplinkConsumer consumer;
 
-    private final List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> handled = new ArrayList<>();
-    private final List<TbCallback> callbacks = new ArrayList<>();
+    // CopyOnWriteArrayList, not ArrayList: the background executor writes these while the test thread reads them
+    // via awaitility, with no happens-before edge between the two threads otherwise.
+    private final List<TbProtoQueueMsg<UplinkIntegrationMsgProto>> handled = new CopyOnWriteArrayList<>();
+    private final List<TbCallback> callbacks = new CopyOnWriteArrayList<>();
 
     /**
      * Captures the callbacks without completing them, so the test controls when a message finishes processing.
