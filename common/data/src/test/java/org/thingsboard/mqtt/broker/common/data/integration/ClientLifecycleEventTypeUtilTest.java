@@ -53,8 +53,10 @@ class ClientLifecycleEventTypeUtilTest {
     }
 
     /**
-     * Any non-empty value counts, not just an array - see the javadoc. A non-array can only reach here from an
-     * already stored or externally supplied configuration, and reading it as opted in keeps it validated rather
+     * Any non-empty container counts, not just an array - see the javadoc. Must use an object here rather than a
+     * scalar: Jackson's {@code ValueNode.isEmpty()} always returns {@code true} for a bare string or number
+     * regardless of content, so that would read as opted out, not opted in. A non-array can only reach here from
+     * an already stored or externally supplied configuration, and reading it as opted in keeps it validated rather
      * than silently skipped.
      */
     @Test

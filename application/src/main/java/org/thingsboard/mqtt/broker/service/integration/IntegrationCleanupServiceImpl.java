@@ -173,7 +173,13 @@ public class IntegrationCleanupServiceImpl {
             // Deliberately not gated on eventTypesEvicted: this node's cache being empty says nothing about the
             // other nodes'. The startup skip leaves it empty on a node that restarted after the expiry, while its
             // subscriptions still come back from the subscriptions topic - so the node that reclaims the topics is
-            // not necessarily the node that had the event types cached. An idempotent no-op where nothing is cached.
+            // not necessarily the node that had the event types cached. IntegrationLifecycleEventTypeCacheImpl.put
+            // always rebuilds the reverse index for this call, even where nothing was cached locally - unlike
+            // remove(), it does not skip on a miss - but every node's cache still converges to the same "nothing"
+            // regardless. This does race a concurrent re-enable: if this empty broadcast lands after a save's
+            // populated one on some node, that node stops publishing events for an enabled integration until the
+            // next save or restart. The findIntegrationById re-read above narrows the window to microseconds; it is
+            // inherent to last-writer-wins, not something to fix here.
             evictEventTypesClusterWide(integrationId);
         }
         return detached;

@@ -41,7 +41,9 @@ public final class ClientLifecycleEventTypeUtil {
      * Deliberately does not require an array: {@code IntegrationServiceImpl.validateDataImpl} rejects a
      * non-array on save, so anything else can only reach here from an already stored or externally supplied
      * configuration, and treating it as opted in keeps such a configuration validated rather than silently
-     * skipped. Only absent, null and empty values are read as opted out.
+     * skipped. Absent, null and empty container values read as opted out - and so does a bare scalar (e.g. a
+     * string or number), since Jackson's {@code ValueNode.isEmpty()} unconditionally returns {@code true}
+     * regardless of content. Only a non-empty array or object opts in.
      */
     public static boolean isOptedIn(JsonNode configuration) {
         return configuration != null
