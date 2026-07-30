@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,12 +30,17 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
+import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationExpiryChecker;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -59,14 +66,17 @@ import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,6 +110,8 @@ public class BrokerInitializerTest {
     IntegrationService integrationService;
     @MockitoBean
     IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    @MockitoBean
+    IntegrationExpiryChecker expiryChecker;
     @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
     @MockitoBean
@@ -151,6 +163,67 @@ public class BrokerInitializerTest {
                 .values().stream()
                 .filter(csi -> csi.getServiceId().equals("serviceId1"))
                 .findFirst().orElse(null);
+    }
+
+    @Test
+    public void testInitIntegrationLifecycleEventCacheCachesOptedInIntegration() {
+        Integration integration = newIntegration("CLIENT_CONNECTED");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache).put(integration.getIdStr(), Set.of(ClientLifecycleEventType.CLIENT_CONNECTED));
+    }
+
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsIntegrationWithoutEventTypes() {
+        Integration integration = newIntegration();
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+    }
+
+    /**
+     * The integration is opted in as far as the predicate is concerned, but none of its names maps to a known type,
+     * so the cache put must be suppressed - the one branch where the opt-in check and the parsed event types
+     * disagree.
+     */
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsIntegrationWithOnlyUnknownEventTypes() {
+        Integration integration = newIntegration("NOT_A_REAL_TYPE");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+    }
+
+    /**
+     * An integration the cleanup sweep considers expired must not be re-attached to the events stream, otherwise a
+     * restart would resume its lifecycle events until the next sweep and make that sweep redo its full work.
+     */
+    @Test
+    public void testInitIntegrationLifecycleEventCacheSkipsExpiredIntegration() {
+        Integration integration = newIntegration("CLIENT_CONNECTED");
+        doReturn(List.of(integration)).when(integrationService).findAllIntegrations();
+        doReturn(true).when(expiryChecker).isExpired(integration);
+
+        brokerInitializer.initIntegrationLifecycleEventCache();
+
+        verify(lifecycleEventTypeCache, never()).put(any(), any());
+    }
+
+    private Integration newIntegration(String... lifecycleEventTypes) {
+        Integration integration = new Integration(UUID.randomUUID());
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        ArrayNode eventTypes = configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+        for (String eventType : lifecycleEventTypes) {
+            eventTypes.add(eventType);
+        }
+        integration.setConfiguration(configuration);
+        return integration;
     }
 
     private Map<String, ClientSessionInfo> prepareSessions() {

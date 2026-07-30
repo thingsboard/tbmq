@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
@@ -209,7 +210,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private void startProcessingEventsIfOptedIn(TbPlatformIntegration integration) {
         String integrationId = integration.getIntegrationId();
-        if (!IntegrationEventsOptInUtil.isOptedIn(integration.getLifecycleMsg())) {
+        if (!ClientLifecycleEventTypeUtil.isOptedIn(integration.getLifecycleMsg())) {
             log.debug("[{}] Integration is not opted in for lifecycle events. Skipping events consumer start", integrationId);
             return;
         }

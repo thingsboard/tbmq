@@ -15,12 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.notification;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
@@ -40,8 +45,11 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStat
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -244,6 +252,121 @@ public class InternodeNotificationsServiceImplTest {
 
         verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+    }
+
+    /**
+     * The send can throw - createTopicIfNotExists runs first and TbKafkaAdmin.createTopic rethrows - so without
+     * isolation one unreachable node silently drops the notification for every node after it in the list.
+     */
+    @Test
+    public void testBroadcast_WhenSendFailsForOneNode_ThenStillSendsToTheRest() {
+        InternodeNotificationProto proto = InternodeNotificationProto.getDefaultInstance();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeA", "nodeB", "nodeC"));
+        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+        when(helper.getServiceTopic("nodeC")).thenReturn("topicC");
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(producer).send(eq("topicB"), isNull(), any(), any(TbQueueCallback.class));
+
+        service.broadcast(proto);
+
+        verify(producer).send(eq("topicC"), isNull(), any(), any(TbQueueCallback.class));
+    }
+
+    /**
+     * getTbmqServiceIds maps an unordered Redis hash, so this node's own id can come last - which used to make the
+     * in-process update hostage to every remote send ahead of it. DefaultTbIntegrationService.delete relies on it.
+     */
+    @Test
+    public void testBroadcast_WhenSendFailsForANodeListedFirst_ThenStillAppliesLocally() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .setDeleted(true)
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeB", "nodeA"));
+        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(producer).send(eq("topicB"), isNull(), any(), any(TbQueueCallback.class));
+
+        service.broadcast(proto);
+
+        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+    }
+
+    /**
+     * getServiceIds is a live Redis read, so the local update must not depend on it either. It still propagates -
+     * notifying nobody is worth telling the caller about.
+     */
+    @Test
+    public void testBroadcast_WhenTheServiceRegistryReadFails_ThenStillAppliesLocally() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .setDeleted(true)
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        when(helper.getServiceIds()).thenThrow(new RuntimeException("redis is unavailable"));
+
+        assertThatThrownBy(() -> service.broadcast(proto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("redis is unavailable");
+
+        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+    }
+
+    /**
+     * A stale registry that has lost this node is no reason to skip an in-process update that originated here.
+     */
+    @Test
+    public void testBroadcast_WhenThisNodeIsMissingFromTheRegistry_ThenStillAppliesLocally() {
+        IntegrationLifecycleConfigProto configProto = IntegrationLifecycleConfigProto.newBuilder()
+                .setIntegrationId("integration-1")
+                .setDeleted(true)
+                .build();
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setIntegrationLifecycleConfigProto(configProto)
+                .build();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeB"));
+        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+
+        service.broadcast(proto);
+
+        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+        verify(producer).send(eq("topicB"), isNull(), any(), any(TbQueueCallback.class));
+    }
+
+    /**
+     * Isolating the sends must not make them silent, whichever way the failure arrives.
+     */
+    @Test
+    public void testBroadcast_WhenSendFailsSynchronously_ThenLogsItLikeAnAsynchronousFailure() {
+        InternodeNotificationProto proto = InternodeNotificationProto.getDefaultInstance();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeB"));
+        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+        doThrow(new RuntimeException("kafka admin timeout"))
+                .when(producer).send(eq("topicB"), isNull(), any(), any(TbQueueCallback.class));
+
+        Logger logger = (Logger) LoggerFactory.getLogger(InternodeNotificationsServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.broadcast(proto);
+
+            assertThat(appender.list)
+                    .anyMatch(event -> event.getLevel() == Level.WARN
+                            && event.getFormattedMessage().contains("Failed to send notification"));
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 
     @Test

@@ -32,8 +32,6 @@ import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotifi
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
-import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -55,33 +53,44 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
         this.internodeNotificationsProducer = internodeNotificationsQueueFactory.createProducer(serviceInfoProvider.getServiceId());
     }
 
+    /**
+     * The local update goes first and unconditionally, ahead of the registry read: it is in-process, so it must not
+     * depend on Redis, on this node being registered, or on any remote send - TbmqSystemInfoService.getTbmqServiceIds
+     * maps an unordered hash, so this node's own id can come last. Per-node sends are isolated from each other; a
+     * failure in the registry read or the local update still propagates, since then nothing was notified at all.
+     */
     @Override
     public void broadcast(InternodeNotificationProto notificationProto) {
-        List<String> serviceIds = helper.getServiceIds();
-        for (String serviceId : serviceIds) {
-            if (!isMyNode(serviceId)) {
-                broadcastToNode(serviceId, notificationProto);
+        applyLocally(notificationProto);
+        for (String serviceId : helper.getServiceIds()) {
+            if (isMyNode(serviceId)) {
+                // Already applied in-process; this node only consumes what others send it.
                 continue;
             }
-            if (notificationProto.hasMqttAuthSettingsProto()) {
-                log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
-                authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
-                continue;
-            }
-            if (notificationProto.hasMqttAuthProviderProto()) {
-                log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
-                mqttClientAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
-                continue;
-            }
-            if (notificationProto.hasClientSessionStatsCleanupProto()) {
-                log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
-                clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
-                continue;
-            }
-            if (notificationProto.hasIntegrationLifecycleConfigProto()) {
-                log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
-                integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
-            }
+            broadcastToNode(serviceId, notificationProto);
+        }
+    }
+
+    private void applyLocally(InternodeNotificationProto notificationProto) {
+        String serviceId = serviceInfoProvider.getServiceId();
+        if (notificationProto.hasMqttAuthSettingsProto()) {
+            log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
+            authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
+            return;
+        }
+        if (notificationProto.hasMqttAuthProviderProto()) {
+            log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
+            mqttClientAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
+            return;
+        }
+        if (notificationProto.hasClientSessionStatsCleanupProto()) {
+            log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
+            clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
+            return;
+        }
+        if (notificationProto.hasIntegrationLifecycleConfigProto()) {
+            log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
+            integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
         }
     }
 
@@ -89,9 +98,13 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
         return serviceInfoProvider.getServiceId().equals(serviceId);
     }
 
+    /**
+     * Contained on failure, so one unreachable node cannot drop the notification for the nodes after it. The send can
+     * throw: TbKafkaProducerTemplate.send calls createTopicIfNotExists first, and TbKafkaAdmin.createTopic rethrows.
+     */
     private void broadcastToNode(String serviceId, InternodeNotificationProto notificationProto) {
         String topic = helper.getServiceTopic(serviceId);
-        internodeNotificationsProducer.send(topic, null, new TbProtoQueueMsg<>(serviceId, notificationProto), new TbQueueCallback() {
+        TbQueueCallback callback = new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 if (log.isTraceEnabled()) {
@@ -103,7 +116,13 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
             public void onFailure(Throwable t) {
                 log.warn("[{}] Failed to send notification for broker node {}.", serviceId, notificationProto, t);
             }
-        });
+        };
+        try {
+            internodeNotificationsProducer.send(topic, null, new TbProtoQueueMsg<>(serviceId, notificationProto), callback);
+        } catch (Exception e) {
+            // Routed through the same callback so a synchronous failure is logged like an asynchronous one.
+            callback.onFailure(e);
+        }
     }
 
     @PreDestroy

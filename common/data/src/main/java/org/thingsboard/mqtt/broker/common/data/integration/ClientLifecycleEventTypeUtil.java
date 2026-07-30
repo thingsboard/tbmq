@@ -34,6 +34,32 @@ public final class ClientLifecycleEventTypeUtil {
     public static final String LIFECYCLE_EVENT_TYPES_KEY = "lifecycleEventTypes";
 
     /**
+     * Returns {@code true} when the given integration configuration opts in for client lifecycle events,
+     * i.e. it declares a non-empty {@link #LIFECYCLE_EVENT_TYPES_KEY} value. An integration that opts in
+     * needs its dedicated events topic provisioned and gets its ids cached for event publishing.
+     * <p>
+     * Deliberately does not require an array: {@code IntegrationServiceImpl.validateDataImpl} rejects a
+     * non-array on save, so anything else can only reach here from an already stored or externally supplied
+     * configuration, and treating it as opted in keeps such a configuration validated rather than silently
+     * skipped. Absent, null and empty container values read as opted out - and so does a bare scalar (e.g. a
+     * string or number), since Jackson's {@code ValueNode.isEmpty()} unconditionally returns {@code true}
+     * regardless of content. Only a non-empty array or object opts in.
+     */
+    public static boolean isOptedIn(JsonNode configuration) {
+        return configuration != null
+                && configuration.has(LIFECYCLE_EVENT_TYPES_KEY)
+                && !configuration.get(LIFECYCLE_EVENT_TYPES_KEY).isEmpty();
+    }
+
+    /**
+     * Null-safe {@link #isOptedIn(JsonNode)} for an integration that may not have been initialized yet, so the
+     * Integration Executor shares one definition of the predicate with the broker.
+     */
+    public static boolean isOptedIn(IntegrationLifecycleMsg lifecycleMsg) {
+        return lifecycleMsg != null && isOptedIn(lifecycleMsg.getConfiguration());
+    }
+
+    /**
      * Parses event type names into {@link ClientLifecycleEventType} values, invoking {@code onUnknown}
      * for every name that does not map to a known type. The callback decides how to react to an unknown
      * value (e.g. log a warning and skip it, or throw a validation exception).

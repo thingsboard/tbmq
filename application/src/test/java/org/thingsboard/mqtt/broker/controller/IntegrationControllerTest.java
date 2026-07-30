@@ -19,11 +19,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.Futures;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -32,11 +36,17 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
+import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -49,6 +59,11 @@ public class IntegrationControllerTest extends AbstractControllerTest {
 
     @MockBean
     private IntegrationManagerService integrationManagerService;
+
+    @Autowired
+    private TbQueueAdmin queueAdmin;
+    @Autowired
+    private IntegrationTopicService integrationTopicService;
 
     @Before
     public void beforeTest() throws Exception {
@@ -113,6 +128,37 @@ public class IntegrationControllerTest extends AbstractControllerTest {
 
         doGet("/api/integration/" + savedIntegration.getId().toString())
                 .andExpect(status().isNotFound());
+    }
+
+    /**
+     * The leak this covers: cleanup used to delete only the data topic, permanently so for a deleted disabled
+     * integration. Both topics have to be provisioned explicitly here because neither exists yet for a disabled
+     * integration - each is normally created lazily, by its own producer on the first send, or by the Integration
+     * Executor when it starts the integration, and a disabled integration does neither.
+     */
+    @Test
+    public void testDeleteDisabledIntegrationDeletesBothTopics() throws Exception {
+        Integration integration = new Integration();
+        integration.setName("My deleted integration");
+        integration.setType(IntegrationType.HTTP);
+        ObjectNode configuration = (ObjectNode) getIntegrationConfiguration();
+        configuration.putArray(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
+                .add(ClientLifecycleEventType.CLIENT_CONNECTED.name());
+        integration.setConfiguration(configuration);
+        Integration savedIntegration = doPost("/api/integration", integration, Integration.class);
+
+        String dataTopic = integrationTopicService.createTopic(savedIntegration.getIdStr());
+        String eventTopic = integrationTopicService.createEventTopic(savedIntegration.getIdStr());
+        assertThatCode(() -> queueAdmin.getNumberOfPartitions(dataTopic)).doesNotThrowAnyException();
+        assertThatCode(() -> queueAdmin.getNumberOfPartitions(eventTopic)).doesNotThrowAnyException();
+
+        doDelete("/api/integration/" + savedIntegration.getIdStr()).andExpect(status().isOk());
+
+        // The deletion is asynchronous - queueAdmin.deleteTopic completes its callback off a Kafka future.
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(dataTopic)).hasRootCauseInstanceOf(UnknownTopicOrPartitionException.class);
+            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(eventTopic)).hasRootCauseInstanceOf(UnknownTopicOrPartitionException.class);
+        });
     }
 
     @Test

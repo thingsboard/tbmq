@@ -59,14 +59,32 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
         if (removed) {
             rateLimitService.decrementApplicationClientsCount();
         }
-        platformIntegrationService.processIntegrationDelete(integration, removed);
-        internodeNotificationsService.broadcast(
-                InternodeNotificationProto.newBuilder()
-                        .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
-                                .setIntegrationId(integration.getIdStr())
-                                .setDeleted(true)
-                                .build())
-                        .build());
+        // Detach the events stream before processIntegrationDelete deletes the topics. The event type cache is
+        // node-local while the topics go for the whole cluster, and nothing on the publish path checks whether the
+        // integration still exists, so a node that still has the event types cached recreates the events topic on its
+        // next event through the producer's createTopicIfNotExists. That leak is permanent: the row is gone, and the
+        // cleanup sweep only ever reaches a topic through its row. IntegrationCleanupServiceImpl.cleanUpIfExpired
+        // orders the two the same way.
+        //
+        // This closes the window on this node, where the broadcast evicts in-process and synchronously, and only
+        // narrows it on the others - broadcast returns once the notification is produced, not once they applied it.
+        // Unconditional and safe here: with the row already gone there is no re-enable for the eviction to race,
+        // unlike in the sweep, whose row survives.
+        //
+        // The finally is what makes that ordering affordable: broadcast reads Redis and produces to Kafka, whose admin
+        // call rethrows, and with the row gone a skipped cleanup would leak both topics permanently. The local eviction
+        // still happens - broadcast applies it before it reads the registry or sends anything.
+        try {
+            internodeNotificationsService.broadcast(
+                    InternodeNotificationProto.newBuilder()
+                            .setIntegrationLifecycleConfigProto(IntegrationLifecycleConfigProto.newBuilder()
+                                    .setIntegrationId(integration.getIdStr())
+                                    .setDeleted(true)
+                                    .build())
+                            .build());
+        } finally {
+            platformIntegrationService.processIntegrationDelete(integration, removed);
+        }
     }
 
     @Override
@@ -79,7 +97,7 @@ public class DefaultTbIntegrationService extends AbstractTbEntityService impleme
                 .setIntegrationId(integration.getIdStr())
                 .setDeleted(false);
         JsonNode configuration = integration.getConfiguration();
-        if (configuration != null && configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+        if (ClientLifecycleEventTypeUtil.isOptedIn(configuration)) {
             configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)
                     .forEach(node -> builder.addLifecycleEventTypes(node.asText()));
         }

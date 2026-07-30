@@ -114,14 +114,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         }
         JsonNode clientConfiguration = lifecycleMsg.getConfiguration().get("clientConfiguration");
         doValidateConfiguration(clientConfiguration, allowLocalNetworkHosts);
-        if (isLifecycleEventsEnabled(lifecycleMsg.getConfiguration())) {
+        if (ClientLifecycleEventTypeUtil.isOptedIn(lifecycleMsg.getConfiguration())) {
             doValidateLifecycleEventsDelivery(clientConfiguration);
         }
-    }
-
-    private static boolean isLifecycleEventsEnabled(JsonNode configuration) {
-        JsonNode types = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
-        return types != null && !types.isEmpty();
     }
 
     @Override

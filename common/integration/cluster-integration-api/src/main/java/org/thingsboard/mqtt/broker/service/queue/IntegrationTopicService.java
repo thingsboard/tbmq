@@ -27,6 +27,13 @@ public interface IntegrationTopicService {
 
     String getConsumerGroup(String integrationId);
 
+    /**
+     * Provisions the integration's dedicated lifecycle-events topic, so the Integration Executor's events consumer
+     * has a topic to subscribe to before the first event arrives. The producer side needs no such call: the events
+     * producer creates the topic on send, exactly like the data producer.
+     * <p>
+     * Idempotent.
+     */
     String createEventTopic(String integrationId);
 
     void deleteEventTopic(String integrationId, BasicCallback callback);

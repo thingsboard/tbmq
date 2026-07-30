@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.integration.service.limit.RateLimitService;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -40,8 +41,15 @@ public class DefaultIntegrationRateLimitService implements IntegrationRateLimitS
     @Value("${event.error.rate-limits.integration}")
     private String integrationEventsRateLimitsConf;
 
-    @Value("#{${event.error.rate-limits.ttl-minutes} * 60 * 1000}")
-    private long deduplicationDurationMs;
+    /**
+     * Kept in the configured unit and converted where it is used, rather than resolved as
+     * {@code #{${event.error.rate-limits.ttl-minutes} * 60 * 1000}}. Placeholder substitution runs before SpEL
+     * evaluation, so that expression multiplied int literals, and SpEL only widens to long when an operand already is
+     * one - anything past roughly 24.8 days wrapped negative. {@code DeduplicationUtil.alreadyProcessed} compares a
+     * non-negative elapsed span against it, so a negative duration silently turns deduplication off entirely.
+     */
+    @Value("${event.error.rate-limits.ttl-minutes}")
+    private long deduplicationDurationMinutes;
 
     private final @Lazy RateLimitService rateLimitService;
 
@@ -75,7 +83,8 @@ public class DefaultIntegrationRateLimitService implements IntegrationRateLimitS
 
     @Override
     public boolean alreadyProcessed(UUID entityId) {
-        return DeduplicationUtil.alreadyProcessed(DeduplicationKey.of(entityId), deduplicationDurationMs);
+        return DeduplicationUtil.alreadyProcessed(DeduplicationKey.of(entityId),
+                TimeUnit.MINUTES.toMillis(deduplicationDurationMinutes));
     }
 
     @Data(staticConstructor = "of")

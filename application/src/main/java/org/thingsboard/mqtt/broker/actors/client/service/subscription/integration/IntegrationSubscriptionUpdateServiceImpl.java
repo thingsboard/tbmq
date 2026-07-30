@@ -34,6 +34,13 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
 
     @Override
     public void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> newSubscriptions) {
+        if (newSubscriptions.isEmpty()) {
+            clearSubscriptions(integrationId);
+            return;
+        }
+
+        // Read only on the non-empty path - the empty-set branch above delegates to clearSubscriptions and never
+        // needs the current state, so it should not pay for this node-local lookup.
         Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(integrationId);
 
         if (log.isDebugEnabled()) {
@@ -41,14 +48,19 @@ public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubs
                     integrationId, newSubscriptions, currentSubscriptions);
         }
 
-        if (newSubscriptions.isEmpty()) {
-            clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
-            return;
-        }
-
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentSubscriptions, newSubscriptions);
         processUnsubscribe(integrationId, subscriptionsUpdate);
         processSubscribe(integrationId, subscriptionsUpdate);
+    }
+
+    @Override
+    public void clearSubscriptions(String integrationId) {
+        clientSubscriptionService.clearSubscriptionsAndPersist(integrationId);
+    }
+
+    @Override
+    public boolean hasSubscriptions(String integrationId) {
+        return !clientSubscriptionService.getClientSubscriptions(integrationId).isEmpty();
     }
 
     private void processUnsubscribe(String integrationId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {

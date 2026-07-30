@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.integration.IntegrationSubscriptionUpdateService;
@@ -41,7 +42,6 @@ import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,6 +51,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anySet;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -122,12 +123,31 @@ class DefaultPlatformIntegrationServiceTest {
         verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.UPDATED));
     }
 
+    /**
+     * The integration is disabled, so the Integration Executor has no started instance to destroy and its cleanup
+     * path never runs - this broker-side deletion is the only thing that reclaims the topics.
+     */
     @Test
     void testProcessIntegrationDelete_Removed() {
         platformIntegrationService.processIntegrationDelete(integration, true);
 
-        verify(integrationSubscriptionUpdateService, times(1)).processSubscriptionsUpdate(anyString(), eq(Collections.emptySet()));
+        verify(integrationSubscriptionUpdateService, times(1)).clearSubscriptions(integration.getIdStr());
         verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.DELETED));
+        verify(integrationCleanupService, times(1)).deleteIntegrationTopics(integration.getIdStr());
+    }
+
+    /**
+     * An enabled integration is torn down by the Integration Executor, which stops its consumers before deleting the
+     * topics - deleting them here as well would do it from under those consumers.
+     */
+    @Test
+    void testProcessIntegrationDelete_RemovedWhileEnabled() {
+        integration.setEnabled(true);
+
+        platformIntegrationService.processIntegrationDelete(integration, true);
+
+        verify(ieDownlinkQueueService, times(1)).send(eq(integration), eq(ComponentLifecycleEvent.DELETED));
+        verify(integrationCleanupService, never()).deleteIntegrationTopics(anyString());
     }
 
     @Test
@@ -198,7 +218,7 @@ class DefaultPlatformIntegrationServiceTest {
     void testRemoveSubscriptions() {
         platformIntegrationService.removeSubscriptions(integration.getIdStr());
 
-        verify(integrationSubscriptionUpdateService, times(1)).processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+        verify(integrationSubscriptionUpdateService, times(1)).clearSubscriptions(integration.getIdStr());
     }
 
     @Test
@@ -215,6 +235,59 @@ class DefaultPlatformIntegrationServiceTest {
         platformIntegrationService.processUplinkData(eventProto, callback);
 
         verify(eventService, times(1)).saveAsync(any());
+    }
+
+    @Test
+    void givenLifecycleEvent_whenProcessUplinkData_thenCompletesCallbackAfterStatusUpdate() {
+        when(integrationService.findIntegrationByIdAsync(integrationId)).thenReturn(Futures.immediateFuture(integration));
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(lifecycleEventProto(ComponentLifecycleEvent.STARTED), callback);
+
+        InOrder inOrder = inOrder(integrationService, callback);
+        inOrder.verify(integrationService).saveIntegrationStatus(eq(integration), any());
+        inOrder.verify(callback).onSuccess(null);
+    }
+
+    @Test
+    void givenLifecycleEventOfUnknownIntegration_whenProcessUplinkData_thenCompletesCallback() {
+        when(integrationService.findIntegrationByIdAsync(integrationId)).thenReturn(Futures.immediateFuture(null));
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(lifecycleEventProto(ComponentLifecycleEvent.STOPPED), callback);
+
+        verify(integrationService, never()).saveIntegrationStatus(any(), any());
+        verify(callback).onSuccess(null);
+    }
+
+    @Test
+    void givenUndecodableEvent_whenProcessUplinkData_thenCompletesCallback() {
+        IntegrationEventProto eventProto = IntegrationEventProto.newBuilder()
+                .setEventSourceIdMSB(integrationId.getMostSignificantBits())
+                .setEventSourceIdLSB(integrationId.getLeastSignificantBits())
+                .setSource(TbEventSourceProto.INTEGRATION)
+                .setEvent(ByteString.EMPTY)
+                .build();
+        IntegrationApiCallback callback = mock(IntegrationApiCallback.class);
+
+        platformIntegrationService.processUplinkData(eventProto, callback);
+
+        verify(eventService, never()).saveAsync(any());
+        verify(callback).onError(any());
+    }
+
+    private IntegrationEventProto lifecycleEventProto(ComponentLifecycleEvent lcEventType) {
+        LifecycleEvent event = LifecycleEvent.builder()
+                .entityId(integrationId)
+                .lcEventType(lcEventType.name())
+                .success(true)
+                .build();
+        return IntegrationEventProto.newBuilder()
+                .setEventSourceIdMSB(integrationId.getMostSignificantBits())
+                .setEventSourceIdLSB(integrationId.getLeastSignificantBits())
+                .setSource(TbEventSourceProto.INTEGRATION)
+                .setEvent(ByteString.copyFrom(JavaSerDesUtil.encode(event)))
+                .build();
     }
 
 }

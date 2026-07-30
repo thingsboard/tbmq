@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationExpiryChecker;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -81,6 +82,7 @@ public class BrokerInitializer {
     private final RateLimitService rateLimitService;
     private final IntegrationService integrationService;
     private final IntegrationLifecycleEventTypeCache lifecycleEventTypeCache;
+    private final IntegrationExpiryChecker expiryChecker;
     private final ClientsLimitProperties clientsLimitProperties;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
@@ -117,12 +119,24 @@ public class BrokerInitializer {
         }
     }
 
+    /**
+     * Populates the node-local lifecycle event type cache. Runs before the MQTT bootstraps, since a client
+     * connecting before it completes would not have its lifecycle events published.
+     */
     void initIntegrationLifecycleEventCache() {
         List<Integration> integrations = integrationService.findAllIntegrations();
         int cached = 0;
         for (Integration integration : integrations) {
             JsonNode configuration = integration.getConfiguration();
-            if (configuration == null || !configuration.has(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY)) {
+            if (!ClientLifecycleEventTypeUtil.isOptedIn(configuration)) {
+                continue;
+            }
+            if (expiryChecker.isExpired(integration)) {
+                // The cleanup sweep already detached this integration, or is about to. Re-attaching it here would
+                // resume lifecycle events for it until the next sweep - up to integrations.cleanup.period later -
+                // and would make the sweep redo its full work after every restart.
+                log.debug("[{}][{}] Expired disconnected integration, not attaching it to the events stream",
+                        integration.getId(), integration.getName());
                 continue;
             }
             Set<ClientLifecycleEventType> eventTypes = ClientLifecycleEventTypeUtil.parse(

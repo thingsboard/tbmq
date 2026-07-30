@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -91,16 +92,44 @@ public class IntegrationSubscriptionUpdateServiceImplTest {
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any());
     }
 
+    /**
+     * Also pins the empty-set path to never read the current subscriptions: that read only feeds the non-empty
+     * diffing logic below it, and the delegating clearSubscriptions call has no use for it.
+     */
     @Test
     public void givenCurrentTopicSubscriptions_whenProcessSubscriptionsUpdate_thenClearSubscriptions() {
-        Set<TopicSubscription> currentTopicSubscriptions = Set.of(getTopicSubs("topic1"));
-        doReturn(currentTopicSubscriptions).when(clientSubscriptionService).getClientSubscriptions("integrationId");
-
         integrationSubscriptionUpdateService.processSubscriptionsUpdate("integrationId", Set.of());
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
         verify(clientSubscriptionService, never()).unsubscribeAndPersist(any(), any());
         verify(clientSubscriptionService, never()).subscribeAndPersist(any(), any());
+        verify(clientSubscriptionService, never()).getClientSubscriptions(any());
+    }
+
+    /**
+     * getClientSubscriptions is node-local and eventually consistent - empty before initClientSubscriptions runs, and
+     * otherwise only as fresh as this node's subscription consumer. Skipping the tombstone on that basis would let the
+     * persisted subscriptions outlive a deleted integration and come back on the next restart.
+     */
+    @Test
+    public void whenClearSubscriptions_thenAlwaysPersistsTheEmptySet() {
+        integrationSubscriptionUpdateService.clearSubscriptions("integrationId");
+
+        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist("integrationId");
+    }
+
+    @Test
+    public void givenCurrentTopicSubscriptions_whenHasSubscriptions_thenTrue() {
+        doReturn(Set.of(getTopicSubs("topic1"))).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+
+        assertTrue(integrationSubscriptionUpdateService.hasSubscriptions("integrationId"));
+    }
+
+    @Test
+    public void givenNoCurrentTopicSubscriptions_whenHasSubscriptions_thenFalse() {
+        doReturn(Set.of()).when(clientSubscriptionService).getClientSubscriptions("integrationId");
+
+        assertFalse(integrationSubscriptionUpdateService.hasSubscriptions("integrationId"));
     }
 
     private TopicSubscription getTopicSubs(String topic) {

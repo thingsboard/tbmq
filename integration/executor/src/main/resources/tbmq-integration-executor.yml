@@ -153,7 +153,10 @@ queue:
       # Kafka topic properties separated by semicolon for the `tbmq.ie.uplink` topic.
       topic-properties: "${TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.uplink` topic.
-      additional-consumer-config: "${TB_KAFKA_IE_UPLINK_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Unused on this side - the executor only produces to this topic - but kept in step with the broker so the two
+      # files stay diffable. TBMQ processes a pack's events one at a time per integration to keep their order, so
+      # max.poll.records bounds how long a single integration's chain can get within one pack.
+      additional-consumer-config: "${TB_KAFKA_IE_UPLINK_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.uplink` topic.
       additional-producer-config: "${TB_KAFKA_IE_UPLINK_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-uplink-notifications:

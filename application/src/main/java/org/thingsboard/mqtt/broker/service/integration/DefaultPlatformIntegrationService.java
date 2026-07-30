@@ -46,7 +46,6 @@ import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -84,7 +83,11 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             removeSubscriptions(integration.getIdStr());
             sendToIntegrationExecutor(integration, ComponentLifecycleEvent.DELETED);
             if (!integration.isEnabled()) {
-                integrationCleanupService.deleteIntegrationTopic(integration.getIdStr());
+                // A disabled integration has no started instance in the Integration Executor, so its
+                // IntegrationManagerServiceImpl.processStop is a no-op and destroyAndClearData - which deletes both
+                // topics - never runs. When it is enabled the executor owns the teardown and defers the deletion
+                // until its consumers are detached, so this must not run for it.
+                integrationCleanupService.deleteIntegrationTopics(integration.getIdStr());
             }
         }
     }
@@ -125,10 +128,9 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
         JsonNode configuration = integration.getConfiguration();
 
         JsonNode topicFilters = configuration.get("topicFilters");
-        JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
 
         boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
-        boolean hasLifecycleEvents = lifecycleEventTypes != null && !lifecycleEventTypes.isEmpty();
+        boolean hasLifecycleEvents = ClientLifecycleEventTypeUtil.isOptedIn(configuration);
 
         if (!hasTopicFilters && !hasLifecycleEvents) {
             log.error("[{}][{}] Neither topic filters nor lifecycle event types are configured",
@@ -143,13 +145,13 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             topicFiltersArrayNode.forEach(topicFilter -> subscriptions.add(new IntegrationTopicSubscription(topicFilter.asText())));
             integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), subscriptions);
         } else {
-            integrationSubscriptionUpdateService.processSubscriptionsUpdate(integration.getIdStr(), Collections.emptySet());
+            integrationSubscriptionUpdateService.clearSubscriptions(integration.getIdStr());
         }
     }
 
     @Override
     public void removeSubscriptions(String integrationId) {
-        integrationSubscriptionUpdateService.processSubscriptionsUpdate(integrationId, Collections.emptySet());
+        integrationSubscriptionUpdateService.clearSubscriptions(integrationId);
     }
 
     private void saveEvent(UUID entityId, IntegrationEventProto proto, IntegrationApiCallback callback) {
@@ -157,6 +159,10 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
             Event event = JavaSerDesUtil.decode(proto.getEvent().toByteArray());
             if (event == null) {
                 log.warn("[{}] Could not convert proto to event {}", entityId, proto);
+                // Nothing to save, but the callback must still be completed - IntegrationUplinkConsumer waits on it
+                // before processing the next event of this integration. Reported as an error since the payload is
+                // malformed, consistently with the unsupported event source above.
+                callback.onError(new IllegalArgumentException("Could not convert proto to event"));
                 return;
             }
             log.trace("Process saveEvent from IE: [{}][{}]", entityId, event);
@@ -189,6 +195,10 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
                         log.debug("[{}] Updating integration status: {}", integration, value);
                         integrationService.saveIntegrationStatus(integration, value);
                     }
+                    // Must be signalled only after the status is written: IntegrationUplinkConsumer sequences a
+                    // pack's events per integration on this callback, so completing it early would let the next
+                    // event of the same integration overwrite the status out of order.
+                    callback.onSuccess(null);
                 }, callback::onError);
             } else {
                 withCallback(saveEventFuture, callback::onSuccess, callback::onError);

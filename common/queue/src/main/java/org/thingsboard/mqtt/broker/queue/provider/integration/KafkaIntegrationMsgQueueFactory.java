@@ -95,9 +95,6 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
         producerBuilder.admin(queueAdmin);
         producerBuilder.topicConfigs(eventTopicConfigs);
         producerBuilder.statsManager(producerStatsManager);
-        // IE owns events-topic provisioning (IntegrationTopicServiceImpl.createEventTopic); best-effort
-        // production on the MQTT hot path must not block on a synchronous admin topic-creation call.
-        producerBuilder.createTopicIfNotExists(false);
         return producerBuilder.build();
     }
 
