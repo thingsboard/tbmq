@@ -630,9 +630,14 @@ queue:
       topic-properties: "${TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.event` topics.
       additional-consumer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
-      # Lifecycle events are produced synchronously on the MQTT processing thread, so an unavailable Kafka or a full
-      # producer buffer can stall that thread for up to max.block.ms before the send fails and the event is dropped
-      # and counted. Lower it to tighten that bound at the cost of more dropped events under Kafka pressure.
+      # Additional Kafka producer configs separated by semicolon for the `tbmq.ie.event` topics.
+      # Lifecycle events are produced synchronously on the MQTT processing thread. Before the first send to a given
+      # integration's event topic, the producer provisions it through the admin client, which can block on
+      # queue.kafka.admin.command-timeout (30 s default) twice - once to list existing topics, once to create the
+      # missing one - a bound that dwarfs max.block.ms below it. A failed topic listing during a Kafka outage is
+      # cached empty for queue.kafka.admin.topics-cache-ttl-ms (300 s default, floored at 60 s), so every event sent
+      # in that window still pays a fresh topic-creation attempt. Lower max.block.ms to tighten the smaller,
+      # producer-side bound at the cost of more dropped events under Kafka pressure.
       additional-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
     internode-notifications:
       # Prefix for topics used to send system notifications to Broker nodes.
@@ -704,8 +709,10 @@ integrations:
   cleanup:
     # Execution period of the cleanup task for disconnected integrations (in s). Defaults to three hours.
     period: "${INTEGRATIONS_CLEANUP_PERIOD_SEC:10800}"
-    # Administration TTL for cleaning up disconnected integrations (in s). The cleanup removes topics that persist messages.
-    # Defaults to one week. A value of 0 or negative disables this TTL.
+    # Administration TTL for cleaning up disconnected integrations (in s). The cleanup deletes both of the
+    # integration's topics, clears its subscriptions, and evicts its lifecycle event types cluster-wide - the
+    # integration stops producing altogether, not just loses its topics. Defaults to one week. A value of 0 or
+    # negative disables this TTL.
     ttl: "${INTEGRATIONS_CLEANUP_TTL_SEC:604800}"
 
 # Database time series parameters
