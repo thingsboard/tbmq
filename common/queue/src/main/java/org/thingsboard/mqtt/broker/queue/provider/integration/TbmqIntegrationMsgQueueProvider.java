@@ -72,7 +72,7 @@ public class TbmqIntegrationMsgQueueProvider implements IntegrationMsgQueueProvi
 
     @Override
     public Map<String, String> getTopicConfigs() {
-        throw new RuntimeException(TBMQ_NOT_IMPLEMENTED);
+        return integrationMsgQueueFactory.getTopicConfigs();
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.Futures;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,9 +37,8 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
-import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
-import org.thingsboard.mqtt.broker.service.util.IntegrationHelperService;
+import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,9 +63,7 @@ public class IntegrationControllerTest extends AbstractControllerTest {
     @Autowired
     private TbQueueAdmin queueAdmin;
     @Autowired
-    private IntegrationHelperService integrationHelperService;
-    @Autowired
-    private IntegrationMsgQueueFactory integrationMsgQueueFactory;
+    private IntegrationTopicService integrationTopicService;
 
     @Before
     public void beforeTest() throws Exception {
@@ -134,11 +132,9 @@ public class IntegrationControllerTest extends AbstractControllerTest {
 
     /**
      * The leak this covers: cleanup used to delete only the data topic, permanently so for a deleted disabled
-     * integration. Both topics have to be provisioned explicitly because neither exists yet - each is created by its
-     * own producer on the first send, or by the Integration Executor when it starts the integration, and a disabled
-     * integration does neither. They are created straight through the queue admin with the producers' own configs,
-     * which is what those first sends would do: IntegrationTopicService.createTopic is not usable here, since its
-     * data-topic configs come from TbmqIntegrationMsgQueueProvider, which deliberately throws on the broker side.
+     * integration. Both topics have to be provisioned explicitly here because neither exists yet for a disabled
+     * integration - each is normally created lazily, by its own producer on the first send, or by the Integration
+     * Executor when it starts the integration, and a disabled integration does neither.
      */
     @Test
     public void testDeleteDisabledIntegrationDeletesBothTopics() throws Exception {
@@ -151,10 +147,8 @@ public class IntegrationControllerTest extends AbstractControllerTest {
         integration.setConfiguration(configuration);
         Integration savedIntegration = doPost("/api/integration", integration, Integration.class);
 
-        String dataTopic = integrationHelperService.getIntegrationTopic(savedIntegration.getIdStr());
-        String eventTopic = integrationHelperService.getIntegrationEventTopic(savedIntegration.getIdStr());
-        queueAdmin.createTopic(dataTopic, integrationMsgQueueFactory.getTopicConfigs());
-        queueAdmin.createTopic(eventTopic, integrationMsgQueueFactory.getEventTopicConfigs());
+        String dataTopic = integrationTopicService.createTopic(savedIntegration.getIdStr());
+        String eventTopic = integrationTopicService.createEventTopic(savedIntegration.getIdStr());
         assertThatCode(() -> queueAdmin.getNumberOfPartitions(dataTopic)).doesNotThrowAnyException();
         assertThatCode(() -> queueAdmin.getNumberOfPartitions(eventTopic)).doesNotThrowAnyException();
 
@@ -162,8 +156,8 @@ public class IntegrationControllerTest extends AbstractControllerTest {
 
         // The deletion is asynchronous - queueAdmin.deleteTopic completes its callback off a Kafka future.
         await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(dataTopic)).isInstanceOf(RuntimeException.class);
-            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(eventTopic)).isInstanceOf(RuntimeException.class);
+            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(dataTopic)).hasRootCauseInstanceOf(UnknownTopicOrPartitionException.class);
+            assertThatThrownBy(() -> queueAdmin.getNumberOfPartitions(eventTopic)).hasRootCauseInstanceOf(UnknownTopicOrPartitionException.class);
         });
     }
 
