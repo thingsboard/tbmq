@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
@@ -69,14 +70,16 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
         lenient().when(ctx.getChannel()).thenReturn(channel);
     }
 
-    private DefaultMqttPublishMsgDeliveryService buildService(boolean statsEnabled) {
+    private DefaultMqttPublishMsgDeliveryService buildService(boolean statsEnabled, boolean historicalDataReportEnabled) {
         meterRegistry = new SimpleMeterRegistry();
         StatsFactory statsFactory = new DefaultStatsFactory(meterRegistry);
         TimerStats timerStats = new TimerStats(statsFactory);
         StatsManager statsManager = mock(StatsManager.class);
         when(statsManager.isEnabled()).thenReturn(statsEnabled);
         when(statsManager.getDeliveryTimerStats()).thenReturn(timerStats);
-        return new DefaultMqttPublishMsgDeliveryService(reportClient, statsManager);
+        HistoricalDataReportProperties historicalDataReportProperties = new HistoricalDataReportProperties();
+        historicalDataReportProperties.setEnabled(historicalDataReportEnabled);
+        return new DefaultMqttPublishMsgDeliveryService(reportClient, statsManager, historicalDataReportProperties);
     }
 
     private Timer deliveryTimer() {
@@ -99,7 +102,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenStatsEnabled_whenSendPublish_thenDeliveryRecordedOnFutureCompletionNotSynchronously() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         when(ctx.addInFlightMsg(msg)).thenReturn(true);
         when(channel.writeAndFlush(msg)).thenReturn(future);
         when(future.isSuccess()).thenReturn(true);
@@ -115,7 +118,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenAsyncFailureNonPersistentNonRetained_whenSendPublish_thenReportsDroppedAndNoDelivery() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
@@ -134,7 +137,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenAsyncFailurePersistent_whenSendPublish_thenNotCounted() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
@@ -152,7 +155,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenAsyncFailureQos0Persistent_whenSendPublish_thenReportsDropped() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_MOST_ONCE);
@@ -172,7 +175,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenAsyncFailureRetained_whenSendPublish_thenNotCounted() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(true);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
@@ -187,8 +190,8 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     }
 
     @Test
-    public void givenStatsDisabled_whenSendPublish_thenNoListenerAttachedButMessageStillWritten() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(false);
+    public void givenStatsAndHistoricalDisabled_whenSendPublish_thenNoListenerAttachedButMessageStillWritten() {
+        DefaultMqttPublishMsgDeliveryService service = buildService(false, false);
         when(ctx.addInFlightMsg(msg)).thenReturn(true);
         when(channel.writeAndFlush(msg)).thenReturn(future);
 
@@ -202,8 +205,45 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void givenStatsDisabledAndHistoricalEnabled_whenAsyncFailure_thenStillReportsDropped() throws Exception {
+        DefaultMqttPublishMsgDeliveryService service = buildService(false, true);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(false);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenReturn(future);
+        when(future.isSuccess()).thenReturn(false);
+
+        service.sendPublishMsgToClient(ctx, msg);
+        captureListener().operationComplete(future);
+
+        // Prometheus meters are off, but the historical dropped-msgs stat is not gated on stats.enabled.
+        verify(reportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenStatsEnabledAndHistoricalDisabled_whenAsyncFailure_thenStillReportsDropped() throws Exception {
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, false);
+        MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
+        when(fixedHeader.isRetain()).thenReturn(false);
+        when(msg.fixedHeader()).thenReturn(fixedHeader);
+        stubPersistence(false);
+        when(ctx.addInFlightMsg(msg)).thenReturn(true);
+        when(channel.writeAndFlush(msg)).thenReturn(future);
+        when(future.isSuccess()).thenReturn(false);
+
+        service.sendPublishMsgToClient(ctx, msg);
+        captureListener().operationComplete(future);
+
+        verify(reportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void givenStatsEnabled_whenSendPublishWithoutFlush_thenWritesWithoutFlushAndRecordsOnCompletion() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         when(ctx.addInFlightMsg(msg)).thenReturn(true);
         when(channel.write(msg)).thenReturn(future);
         when(future.isSuccess()).thenReturn(true);
@@ -218,7 +258,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     public void givenStatsEnabled_whenSendAlreadyTracked_thenRecordsOnCompletion() throws Exception {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         when(channel.writeAndFlush(msg)).thenReturn(future);
         when(future.isSuccess()).thenReturn(true);
 
@@ -231,7 +271,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     public void givenSyncThrowNonPersistentNonRetained_whenSendAlreadyTracked_thenReportsDroppedAndRecordsNothing() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
@@ -247,7 +287,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     public void givenSyncThrowPersistentQos1_whenSendAlreadyTracked_thenNotCounted() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_LEAST_ONCE);
@@ -262,7 +302,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     public void givenInFlightSlotNotReserved_whenSendPublish_thenNothingWrittenOrRecorded() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         when(ctx.addInFlightMsg(msg)).thenReturn(false);
 
         service.sendPublishMsgToClient(ctx, msg);
@@ -275,7 +315,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     public void givenWriteThrowsSynchronously_whenSendPublishNonRetained_thenReportsDroppedAndRecordsNothing() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(msg.fixedHeader()).thenReturn(fixedHeader);
@@ -292,7 +332,7 @@ public class DefaultMqttPublishMsgDeliveryServiceTest {
 
     @Test
     public void givenSyncThrowQos0Persistent_whenSendPublish_thenReportsDropped() {
-        DefaultMqttPublishMsgDeliveryService service = buildService(true);
+        DefaultMqttPublishMsgDeliveryService service = buildService(true, true);
         MqttFixedHeader fixedHeader = mock(MqttFixedHeader.class);
         when(fixedHeader.isRetain()).thenReturn(false);
         when(fixedHeader.qosLevel()).thenReturn(MqttQoS.AT_MOST_ONCE);

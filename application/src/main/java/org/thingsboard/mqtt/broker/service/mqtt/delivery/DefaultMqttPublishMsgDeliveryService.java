@@ -21,6 +21,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
@@ -35,14 +36,17 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final DeliveryTimerStats deliveryTimerStats;
-    private final boolean statsEnabled;
+    private final boolean deliveryOutcomeTracked;
 
     @Autowired
     public DefaultMqttPublishMsgDeliveryService(TbMessageStatsReportClient tbMessageStatsReportClient,
-                                                StatsManager statsManager) {
+                                                StatsManager statsManager,
+                                                HistoricalDataReportProperties historicalDataReportProperties) {
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
-        this.statsEnabled = statsManager.isEnabled();
+        // Both flags are read once here: they are independent switches, and HistoricalDataReportProperties is
+        // @Validated, so repeated getter calls on the delivery path would go through a CGLIB proxy.
+        this.deliveryOutcomeTracked = statsManager.isEnabled() || historicalDataReportProperties.isEnabled();
     }
 
     @Override
@@ -98,11 +102,15 @@ public class DefaultMqttPublishMsgDeliveryService implements MqttPublishMsgDeliv
      * {@code ApplicationPersistenceProcessorImpl}; DEVICE: redelivered from Redis) whereas QoS0 is never stored
      * and so is always a permanent loss.
      * <p>
-     * The listener is attached only when stats are enabled, so that a per-message listener allocation and an
-     * event-loop callback are not paid on the hot delivery path when metrics are turned off.
+     * The listener is attached only when {@code stats.enabled} or {@code historical-data-report.enabled} is on, so
+     * that a per-message listener allocation and an event-loop callback are not paid on the hot delivery path when
+     * both metric systems are turned off. Both flags matter: the two systems are independent switches, and
+     * {@link TbMessageStatsReportClient#reportDroppedMsgs()} feeds each of them (the Micrometer counter and the
+     * historical stat), so gating on {@code stats.enabled} alone would drop these failures from the historical
+     * timeseries whenever Prometheus meters are off.
      */
     private void recordDeliveryOutcome(ClientSessionCtx ctx, MqttPublishMessage msg, ChannelFuture future, long startTime) {
-        if (!statsEnabled) {
+        if (!deliveryOutcomeTracked) {
             return;
         }
         future.addListener(f -> {
