@@ -37,8 +37,6 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
     @Value("${mqtt.version-3-1.max-client-id-length}")
     private int maxClientIdLength;
-    @Value("${historical-data-report.enabled:true}")
-    private boolean historicalDataReportEnabled;
     @Value("${listener.proxy_enabled:false}")
     private boolean globalProxyProtocolEnabled;
 
@@ -69,9 +67,7 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
         pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        if (historicalDataReportEnabled) {
-            pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient()));
-        }
+        pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient()));
 
         MqttSessionHandler handler = handlerFactory.create(sslHandler, getChannelInitializerName());
 
