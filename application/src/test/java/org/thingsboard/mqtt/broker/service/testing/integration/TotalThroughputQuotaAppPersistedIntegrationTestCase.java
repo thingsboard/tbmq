@@ -56,8 +56,13 @@ import static org.junit.Assert.assertTrue;
  *     draws. The grant is therefore exactly min(6, local 2 + bounded credit 2) = 4: 4 messages are delivered, 2 are
  *     excluded from the submit strategy and reported as droppedMsgs, and the pack commits all 6 Kafka offsets.</li>
  * </ul>
- * The counts are still asserted as a bound: should Kafka ever split the 6-message backlog across polls, each poll would
- * be its own bulk charge and more messages could squeeze through on fresh credit.
+ * That single bulk charge is load-bearing, not incidental. {@code applyThroughputQuota} runs once PER PACK, i.e. once
+ * per {@code consumer.poll()}, so a backlog split across two polls is two bulk charges: the second one re-arms the full
+ * block of credit and a 4+2, 3+3 or 2+4 split would deliver all 6 - the invariant ceiling for the replay is
+ * capacity(10) - ingress(6) + blockSize(2) = exactly 6, which is what {@code < 6} asserts against. The publisher's
+ * PUBACK only proves the message reached {@code tbmq.msg.all}; the write to the per-client APPLICATION topic happens
+ * later on the dispatcher hop, while the reconnecting consumer assigns its partition and polls with no group-join
+ * delay. The test therefore settles the backlog before reconnecting so the replay is one pack and one bulk charge.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -129,6 +134,13 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
         }
         pub.disconnect();
         pub.close();
+        // Let the whole backlog land on the per-client APPLICATION topic before the consumer starts. A PUBACK only
+        // proves arrival at tbmq.msg.all - the per-client topic write happens later on the dispatcher hop, and the
+        // reconnecting consumer assigns its partition and polls immediately. Reconnecting too early can therefore
+        // split the 6 messages across two polls, and since applyThroughputQuota charges once PER PACK the second pack
+        // re-arms the block credit and all 6 get delivered, breaking the `< 6` assertion. At 1 token per 60 s this
+        // settle adds ~0.017 tokens, so it leaves the ingress ledger untouched.
+        Thread.sleep(1000);
 
         persistedClient.connect(appOptions);                // pack replay: one bulk charge grants 2 local + 2 credit
         Thread.sleep(5000);
