@@ -24,6 +24,8 @@ import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpres
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -47,6 +49,9 @@ public class ActorSystemContext {
 
     private final DeviceActorConfiguration deviceActorConfiguration;
     private final ClientActorConfiguration clientActorConfiguration;
+
+    private final ThroughputQuotaService throughputQuotaService;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
         log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
