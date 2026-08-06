@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -112,6 +113,7 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
+    @Mock ThroughputQuotaService throughputQuotaService;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -121,6 +123,7 @@ class ApplicationPersistenceProcessorImplTest {
         ReflectionTestUtils.setField(processor, "pollDuration", 100L);
         ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
         ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
+        lenient().when(throughputQuotaService.tryConsumeOutgoing(anyInt())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -575,7 +578,50 @@ class ApplicationPersistenceProcessorImplTest {
         verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
     }
 
+    @Test
+    void applyThroughputQuota_whenFullyGranted_keepsPackUnchanged() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
+        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+
+        processor.applyThroughputQuota(strategy, "client");
+
+        assertThat(strategy.getOrderedMessages()).hasSize(2);
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
+    void applyThroughputQuota_whenPartiallyGranted_dropsPublishTailKeepsPubRels() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        PersistedPubRelMsg pubRel = new PersistedPubRelMsg(9, 90L);
+        PersistedPublishMsg first = publishMsg(1, 100);
+        strategy.init(new ArrayList<>(List.of(pubRel, first, publishMsg(2, 101), publishMsg(3, 102))));
+        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(1);
+
+        processor.applyThroughputQuota(strategy, "client");
+
+        assertThat(strategy.getOrderedMessages()).containsExactly(pubRel, first);
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(2);
+    }
+
+    @Test
+    void applyThroughputQuota_whenOnlyPubRels_skipsQuotaEntirely() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        strategy.init(new ArrayList<>(List.of(new PersistedPubRelMsg(9, 90L))));
+
+        processor.applyThroughputQuota(strategy, "client");
+
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        assertThat(strategy.getOrderedMessages()).hasSize(1);
+    }
+
     // ===== Helpers =====
+
+    private PersistedPublishMsg publishMsg(int packetId, long offset) {
+        return new PersistedPublishMsg(
+                PublishMsg.builder().packetId(packetId).topicName("topic").payload(new byte[0]).build(),
+                offset, false);
+    }
 
     @SuppressWarnings("unchecked")
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mockConsumer() {
