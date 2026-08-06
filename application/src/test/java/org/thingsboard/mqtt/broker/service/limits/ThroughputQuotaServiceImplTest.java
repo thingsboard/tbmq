@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.StubThroughputQuotaStats;
+import org.thingsboard.mqtt.broker.service.stats.ThroughputQuotaStats;
 
 import java.util.List;
 import java.util.Queue;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -174,5 +176,45 @@ public class ThroughputQuotaServiceImplTest {
 
         Thread.sleep(60); // DRY_BACKOFF_NANOS is 50 ms
         assertTrue("after backoff, credit resumes and a new draw is scheduled", service.tryConsumeIncoming());
+    }
+
+    @Test
+    public void givenRedisFailure_whenDraw_thenFailsOpenAndCountsDegraded() {
+        ThroughputQuotaStats quotaStats = mock(ThroughputQuotaStats.class);
+        when(statsManager.getThroughputQuotaStats()).thenReturn(quotaStats);
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+
+        service.init(); // warm-up draw fails -> fail-open window opens
+
+        assertTrue(service.tryConsumeIncoming());
+        assertEquals(1000, service.tryConsumeOutgoing(1000)); // everything granted, nothing queued
+        verify(quotaStats).incrementRedisDegraded();
+    }
+
+    @Test
+    public void givenPositiveLocalBalance_whenReturnTick_thenReturnedToBucketAndZeroed() {
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.init(); // local = 10
+        assertEquals(3, service.tryConsumeOutgoing(3)); // local = 7
+
+        service.returnUnusedTokens();
+
+        verify(rateLimitCacheService).returnTotalMsgs(7L);
+        // returned budget is gone locally: next consume needs a fresh draw (mock grants 10 again)
+        assertTrue(service.tryConsumeIncoming());
+    }
+
+    @Test
+    public void givenCreditDeficit_whenReturnTick_thenNothingReturned() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        service.init(); // warm-up queued, local 0
+        assertTrue(service.tryConsumeIncoming()); // local = -1 (credit)
+
+        service.returnUnusedTokens();
+
+        verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
     }
 }
