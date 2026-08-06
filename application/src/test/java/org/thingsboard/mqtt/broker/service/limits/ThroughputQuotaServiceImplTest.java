@@ -33,6 +33,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -169,6 +170,7 @@ public class ThroughputQuotaServiceImplTest {
 
         assertEquals(10, service.tryConsumeOutgoing(10)); // exhausts local -> draw#2 returns 0 -> dry backoff opens
         assertFalse("dry backoff must refuse without credit", service.tryConsumeIncoming());
+        verify(rateLimitCacheService, times(2)).tryConsumeTotalMsgs(anyLong()); // dry window: refusals must not reach Redis
 
         Thread.sleep(60); // DRY_BACKOFF_NANOS is 50 ms
         assertTrue("after backoff, credit resumes and a new draw is scheduled", service.tryConsumeIncoming());
