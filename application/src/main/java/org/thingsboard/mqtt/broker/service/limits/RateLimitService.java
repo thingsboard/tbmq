@@ -46,10 +46,6 @@ public interface RateLimitService {
 
     boolean isDevicePersistedMsgsLimitEnabled();
 
-    long tryConsumeTotalMsgs(long limit);
-
-    boolean isTotalMsgsLimitEnabled();
-
     void initSessionCount(int count);
 
     void initApplicationClientsCount(int count);

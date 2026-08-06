@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
-import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 import java.util.UUID;
@@ -42,7 +41,6 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     private final IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
-    private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     private final RateLimitCacheService rateLimitCacheService;
     private final ClientsLimitProperties clientsLimitProperties;
@@ -173,16 +171,6 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Override
     public boolean isDevicePersistedMsgsLimitEnabled() {
         return devicePersistedMsgsRateLimitsConfiguration.isEnabled();
-    }
-
-    @Override
-    public long tryConsumeTotalMsgs(long limit) {
-        return rateLimitCacheService.tryConsumeTotalMsgs(limit);
-    }
-
-    @Override
-    public boolean isTotalMsgsLimitEnabled() {
-        return totalMsgsRateLimitsConfiguration.isEnabled();
     }
 
     @Override
