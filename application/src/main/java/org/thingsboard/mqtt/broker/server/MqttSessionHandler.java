@@ -45,7 +45,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -56,8 +55,8 @@ import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -85,7 +84,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final RateLimitBatchProcessor rateLimitBatchProcessor;
+    private final ThroughputQuotaService throughputQuotaService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ConnectionStats connectionStats;
     private final ClientSessionCtx clientSessionCtx;
@@ -100,7 +99,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.clientLogger = mqttHandlerCtx.getClientLogger();
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
-        this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
+        this.throughputQuotaService = mqttHandlerCtx.getThroughputQuotaService();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
         this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
@@ -242,26 +241,17 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             return;
         }
 
-        MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, publishMsg);
-
-        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
-            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
+        if (!throughputQuotaService.tryConsumeIncoming()) {
+            tbMessageStatsReportClient.reportDroppedMsgs();
+            processMsgOnRateLimits(
+                    publishMsg.variableHeader().packetId(),
+                    publishMsg.fixedHeader().qosLevel().value(),
+                    TOTAL_RATE_LIMITS_DETECTED
+            );
             return;
         }
 
-        rateLimitBatchProcessor.addMessage(
-                mqttPublishMsg,
-                msgToProcess -> clientMqttActorManager.processMqttMsg(clientId, msgToProcess),
-                msgToDrop -> {
-                    tbMessageStatsReportClient.reportDroppedMsgs();
-                    processMsgOnRateLimits(
-                            msgToDrop.getPublishMsg().getPacketId(),
-                            msgToDrop.getPublishMsg().getQos(),
-                            TOTAL_RATE_LIMITS_DETECTED
-                    );
-                    msgToDrop.release();
-                }
-        );
+        clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, publishMsg));
     }
 
     private void processMsgOnRateLimits(int packetId, int qos, String message) {
