@@ -72,6 +72,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ThroughputQuotaStats getThroughputQuotaStats() {
+        return StubThroughputQuotaStats.STUB_THROUGHPUT_QUOTA_STATS;
+    }
+
+    @Override
     public ConnectionStats getConnectionStats() {
         return StubConnectionStats.STUB_CONNECTION_STATS;
     }
