@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import org.junit.Before;
@@ -31,7 +32,10 @@ import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +56,9 @@ public class RateLimitRedisCacheServiceImplTest {
     @MockitoBean
     private BucketProxy bucketProxy;
 
+    @MockitoBean(name = "totalMsgsBucketConfiguration")
+    private BucketConfiguration totalMsgsBucketConfiguration;
+
     @MockitoBean
     private CacheProperties cacheProperties;
 
@@ -67,6 +74,7 @@ public class RateLimitRedisCacheServiceImplTest {
         when(cacheProperties.prefixKey(anyString())).thenAnswer(inv -> inv.getArgument(0));
         when(clientsLimitProperties.isSessionsLimitEnabled()).thenReturn(true);
         when(clientsLimitProperties.isApplicationClientsLimitEnabled()).thenReturn(true);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any())).thenReturn(bucketProxy);
         rateLimitRedisCacheService.init();
     }
 
@@ -160,6 +168,21 @@ public class RateLimitRedisCacheServiceImplTest {
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 
         verify(valueOperations, never()).decrement(anyString());
+    }
+
+    @Test
+    public void testReturnTotalMsgs() {
+        rateLimitRedisCacheService.returnTotalMsgs(25L);
+
+        verify(bucketProxy).addTokens(25L);
+    }
+
+    @Test
+    public void testReturnTotalMsgsWithNonPositiveCount() {
+        rateLimitRedisCacheService.returnTotalMsgs(0L);
+        rateLimitRedisCacheService.returnTotalMsgs(-5L);
+
+        verify(bucketProxy, never()).addTokens(anyLong());
     }
 
 }

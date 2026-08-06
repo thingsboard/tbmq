@@ -141,6 +141,14 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         return tryConsume(totalMsgsBucketProxy, limit);
     }
 
+    @Override
+    public void returnTotalMsgs(long tokens) {
+        if (tokens <= 0 || totalMsgsBucketProxy == null) {
+            return;
+        }
+        totalMsgsBucketProxy.addTokens(tokens);
+    }
+
     private long tryConsume(Bucket bucket, long limit) {
         if (limit <= 0) {
             return 0;
