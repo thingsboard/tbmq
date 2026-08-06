@@ -202,6 +202,8 @@ public class ThroughputQuotaServiceImplTest {
         service.returnUnusedTokens();
 
         verify(rateLimitCacheService).returnTotalMsgs(7L);
+        service.returnUnusedTokens(); // second tick must be a no-op: balance was zeroed
+        verify(rateLimitCacheService, times(1)).returnTotalMsgs(anyLong());
         // returned budget is gone locally: next consume needs a fresh draw (mock grants 10 again)
         assertTrue(service.tryConsumeIncoming());
     }
