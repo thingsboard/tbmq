@@ -15,9 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.StubThroughputQuotaStats;
@@ -31,8 +36,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -85,6 +92,20 @@ public class ThroughputQuotaServiceImplTest {
         @Override
         public boolean awaitTermination(long timeout, TimeUnit unit) {
             return true;
+        }
+    }
+
+    /** Blows up on the first submission (the wedge scenario), then behaves like a plain ManualExecutor. */
+    static class OneShotThrowingExecutor extends ManualExecutor {
+        boolean thrown;
+
+        @Override
+        public void execute(Runnable command) {
+            if (!thrown) {
+                thrown = true;
+                throw new IllegalStateException("executor blew up");
+            }
+            super.execute(command);
         }
     }
 
@@ -190,6 +211,82 @@ public class ThroughputQuotaServiceImplTest {
         assertTrue(service.tryConsumeIncoming());
         assertEquals(1000, service.tryConsumeOutgoing(1000)); // everything granted, nothing queued
         verify(quotaStats).incrementRedisDegraded();
+    }
+
+    @Test
+    public void givenRedisDown_whenFailOpenWindowLapsesWithDrawInFlight_thenKeepsGrantingUntilDrawCompletes() throws InterruptedException {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init(); // warm-up draw queued
+        executor.runAll(); // it fails: the node is marked degraded and the fail-open window opens
+
+        Thread.sleep(1100); // FAIL_OPEN_NANOS is 1 s: the window has lapsed
+
+        assertEquals("bounded credit is spent first", 10, service.tryConsumeOutgoing(10)); // queues the next draw
+        // that draw is in flight against a Redis that is still down and will only re-arm the window when
+        // its socket finally times out (seconds): until then the quota must stay open on the degraded flag
+        assertTrue("degraded node must not refuse while a failing draw is in flight", service.tryConsumeIncoming());
+        assertEquals(500, service.tryConsumeOutgoing(500));
+
+        doReturn(10L).when(rateLimitCacheService).tryConsumeTotalMsgs(anyLong());
+        executor.runAll(); // the pending draw finally succeeds: the flag clears, the deficit is repaid
+
+        assertEquals("the repaid deficit leaves exactly one block grantable", 10, service.tryConsumeOutgoing(50));
+        assertFalse("with Redis healthy again, an exhausted node must refuse", service.tryConsumeIncoming());
+    }
+
+    @Test
+    public void givenHealthyDryDraw_whenCreditExhausted_thenStillRefuses() throws InterruptedException {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);
+        service.init();
+        executor.runAll(); // a draw that completed dry proves Redis is healthy: no fail-open
+
+        assertFalse("a completed dry draw must not open the quota", service.tryConsumeIncoming());
+
+        Thread.sleep(60); // DRY_BACKOFF_NANOS is 50 ms
+        assertEquals(10, service.tryConsumeOutgoing(10)); // spends the credit and queues the next draw
+        assertFalse("credit exhausted with a healthy draw in flight must refuse", service.tryConsumeIncoming());
+    }
+
+    @Test
+    public void givenDrawSchedulingThrows_whenNextExhaustion_thenSingleFlightReleasedAndDrawRuns() {
+        OneShotThrowingExecutor executor = new OneShotThrowingExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
+
+        assertThrows(IllegalStateException.class, service::init); // warm-up draw scheduling blows up
+
+        assertTrue(service.tryConsumeIncoming()); // exhausts the local balance -> schedules a draw again
+        assertEquals("the single-flight latch must have been released", 1, executor.tasks.size());
+        executor.runAll();
+        verify(rateLimitCacheService).tryConsumeTotalMsgs(10L);
+    }
+
+    @Test
+    public void givenRepeatedDryDraws_whenClamping_thenWarnsOncePerInterval() {
+        service.drawExecutor = new ManualExecutor();
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);
+        service.init();
+
+        Logger logger = (Logger) LoggerFactory.getLogger(ThroughputQuotaServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.draw(10);
+            service.draw(10);
+
+            assertEquals("the clamp WARN must be rate limited to one line per interval", 1L,
+                    appender.list.stream()
+                            .filter(event -> event.getLevel() == Level.WARN)
+                            .filter(event -> event.getFormattedMessage().contains("Total throughput quota exhausted"))
+                            .count());
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 
     @Test

@@ -40,6 +40,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     static final long DRY_BACKOFF_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
     static final long FAIL_OPEN_NANOS = TimeUnit.SECONDS.toNanos(1);
+    static final long CLAMP_WARN_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(60);
 
     private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     private final ThroughputLimitProvider throughputLimitProvider;
@@ -51,9 +52,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     @Value("${mqtt.rate-limits.total.lease-return-ms:1000}")
     long leaseReturnMs;
 
-    // test seams: init() creates them only when still null
-    ExecutorService drawExecutor;
-    ScheduledExecutorService leaseReturnScheduler;
+    // test seams: init() creates them only when still null; volatile so the caller threads that read
+    // them see the fully constructed executors and not a stale null
+    volatile ExecutorService drawExecutor;
+    volatile ScheduledExecutorService leaseReturnScheduler;
 
     private volatile boolean enabled;
     private volatile int blockSize;
@@ -61,6 +63,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     private final AtomicBoolean drawInFlight = new AtomicBoolean(false);
     private volatile long dryUntilNanos;
     private volatile long failOpenUntilNanos;
+    // Redis is unreachable: written by the draw thread, read by every caller. Cleared by ANY completed
+    // draw, so it can never latch on; at startup it is false, so a node whose very first draw is still
+    // failing rides the bounded credit until that draw returns - one block, deliberately accepted.
+    private volatile boolean redisDegraded;
+    private volatile long lastClampWarnNanos;
     private ThroughputQuotaStats stats;
 
     @PostConstruct
@@ -72,6 +79,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         long now = System.nanoTime();
         dryUntilNanos = now;
         failOpenUntilNanos = now;
+        lastClampWarnNanos = now - CLAMP_WARN_INTERVAL_NANOS - 1; // the very first clamp warns immediately
         blockSize = configuredBlockSize > 0 ? configuredBlockSize : deriveDefaultBlockSize();
         stats = statsManager.getThroughputQuotaStats();
         if (drawExecutor == null) {
@@ -121,7 +129,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             long available = current - creditFloor;
             if (available <= 0) {
                 scheduleDrawIfNeeded(n);
-                return 0;
+                // the fail-open window above lapses while the next draw is still hanging on an unreachable
+                // Redis, so without this the quota would turn fail-closed for that draw's whole duration
+                return redisDegraded ? n : 0;
             }
             int granted = (int) Math.min(n, available);
             if (localTokens.compareAndSet(current, current - granted)) {
@@ -145,24 +155,41 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             drawExecutor.execute(() -> draw(drawSize));
         } catch (RejectedExecutionException e) {
             drawInFlight.set(false); // shutting down
+        } catch (Throwable t) {
+            drawInFlight.set(false); // never wedge the single-flight latch: a stuck latch stops every future draw
+            throw t;
         }
     }
 
     void draw(long drawSize) {
         try {
             long granted = rateLimitCacheService.tryConsumeTotalMsgs(drawSize);
+            redisDegraded = false; // the draw completed - dry or not, Redis answered
             if (granted > 0) {
                 localTokens.addAndGet(granted); // repays any credit deficit first
             } else {
                 dryUntilNanos = System.nanoTime() + DRY_BACKOFF_NANOS;
+                warnQuotaClamped();
             }
         } catch (Exception e) {
+            redisDegraded = true;
             failOpenUntilNanos = System.nanoTime() + FAIL_OPEN_NANOS;
             stats.incrementRedisDegraded();
             log.warn("Failed to draw total throughput quota tokens from Redis, failing open for {} ms",
                     TimeUnit.NANOSECONDS.toMillis(FAIL_OPEN_NANOS), e);
         } finally {
             drawInFlight.set(false);
+        }
+    }
+
+    private void warnQuotaClamped() {
+        long now = System.nanoTime();
+        // draws are single-flight, so this is effectively single-threaded; a racing pair would at worst
+        // log the line twice, which is cheaper than synchronising the draw path
+        if (now - lastClampWarnNanos > CLAMP_WARN_INTERVAL_NANOS) {
+            lastClampWarnNanos = now;
+            log.warn("Total throughput quota exhausted - refusing PUBLISH packets until the shared budget refills " +
+                    "(see droppedMsgs and throughputQuotaDegraded metrics)");
         }
     }
 
