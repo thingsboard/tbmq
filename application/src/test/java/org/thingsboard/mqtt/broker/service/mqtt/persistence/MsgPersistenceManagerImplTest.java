@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -52,6 +53,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -84,6 +86,8 @@ public class MsgPersistenceManagerImplTest {
     ClientLogger clientLogger;
     @MockitoBean
     RateLimitService rateLimitService;
+    @MockitoBean
+    ThroughputQuotaService throughputQuotaService;
     @MockitoBean
     IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
     @MockitoBean
@@ -196,6 +200,95 @@ public class MsgPersistenceManagerImplTest {
         verify(deviceMsgQueuePublisher, times(3)).sendMsg(
                 any(), any(), any());
         verify(callbackWrapper, never()).onSuccess();
+    }
+
+    @Test
+    public void givenIntegrationSubscriptions_whenQuotaGrantsAll_thenSendAllAndReportNoDrops() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "int1", ClientType.INTEGRATION),
+                createSubscription("tf2", 2, "int2", ClientType.INTEGRATION),
+                createSubscription("tf3", 1, "int3", ClientType.INTEGRATION)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(3);
+
+        msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(integrationMsgQueuePublisher, times(3)).sendMsg(any(), any(), any());
+        verify(callbackWrapper, never()).onSuccess();
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
+    public void givenIntegrationSubscriptions_whenQuotaGrantsPartially_thenSendGrantedPrefixAndSettleRest() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "int1", ClientType.INTEGRATION),
+                createSubscription("tf2", 2, "int2", ClientType.INTEGRATION),
+                createSubscription("tf3", 1, "int3", ClientType.INTEGRATION)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(1);
+
+        msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
+
+        ArgumentCaptor<String> clientIdCaptor = ArgumentCaptor.forClass(String.class);
+        verify(integrationMsgQueuePublisher, times(1)).sendMsg(clientIdCaptor.capture(), any(), any());
+        assertEquals("int1", clientIdCaptor.getValue());
+        verify(callbackWrapper).onBatchSuccess(eq(2));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(eq(2));
+    }
+
+    @Test
+    public void givenIntegrationSubscriptions_whenQuotaGrantsNothing_thenDropAll() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "int1", ClientType.INTEGRATION),
+                createSubscription("tf2", 2, "int2", ClientType.INTEGRATION),
+                createSubscription("tf3", 1, "int3", ClientType.INTEGRATION)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(0);
+
+        msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(integrationMsgQueuePublisher, never()).sendMsg(any(), any(), any());
+        verify(callbackWrapper).onBatchSuccess(eq(3));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(eq(3));
+    }
+
+    @Test
+    public void givenIntegrationSubscriptions_whenProcessPublish_thenChargeQuotaAndSend() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
+        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
+                false,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptySet(),
+                List.of(
+                        createSubscription("tf1", 1, "int1", ClientType.INTEGRATION),
+                        createSubscription("tf2", 2, "int2", ClientType.INTEGRATION)
+                )
+        );
+
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, mock(PublishMsgCallback.class));
+
+        verify(throughputQuotaService).tryConsumeOutgoing(eq(2));
+        verify(integrationMsgQueuePublisher, times(2)).sendMsg(any(), any(), any());
     }
 
     @Test

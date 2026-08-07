@@ -17,9 +17,10 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 /**
  * Cluster-wide total throughput quota — the single policy owner for the billed unit: MQTT PUBLISH
- * packets processed, incoming and outgoing combined (spec: docs/superpowers/specs/
- * 2026-08-06-total-throughput-quota-design.md). Charges are node-local atomic operations; the
- * shared Redis bucket is only touched by asynchronous block draws, never by callers.
+ * packets processed, incoming and outgoing combined; messages routed to integration subscribers
+ * count as outgoing (spec: docs/superpowers/specs/2026-08-06-total-throughput-quota-design.md).
+ * Charges are node-local atomic operations; the shared Redis bucket is only touched by asynchronous
+ * block draws, never by callers.
  */
 public interface ThroughputQuotaService {
 

@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -66,6 +67,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final ThroughputQuotaService throughputQuotaService;
     private final IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
@@ -113,9 +115,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             }
         }
         if (integrationSubscriptions != null) {
-            for (Subscription integrationSubscription : integrationSubscriptions) {
-                sendIntegrationMsg(integrationSubscription, publishMsgWithId, callbackWrapper);
-            }
+            processIntegrationSubscriptionsWithThroughputQuota(integrationSubscriptions, publishMsgWithId, callbackWrapper);
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
@@ -151,6 +151,29 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 callbackWrapper.onSuccess();
             }
         }
+    }
+
+    void processIntegrationSubscriptionsWithThroughputQuota(List<Subscription> integrationSubscriptions,
+                                                            PublishMsgWithId publishMsgWithId,
+                                                            PublishMsgCallback callbackWrapper) {
+        int totalCount = integrationSubscriptions.size();
+        int granted = throughputQuotaService.tryConsumeOutgoing(totalCount);
+
+        if (granted == totalCount) {
+            for (Subscription integrationSubscription : integrationSubscriptions) {
+                sendIntegrationMsg(integrationSubscription, publishMsgWithId, callbackWrapper);
+            }
+            return;
+        }
+
+        int dropped = totalCount - granted;
+        log.trace("Total throughput quota exceeded. Dropping {} integration messages", dropped);
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+
+        for (int i = 0; i < granted; i++) {
+            sendIntegrationMsg(integrationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        callbackWrapper.onBatchSuccess(dropped);
     }
 
     private void processDeviceSubscriptions(List<Subscription> deviceSubscriptions, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {

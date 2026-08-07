@@ -1010,13 +1010,13 @@ mqtt:
   rate-limits:
     total:
       # Enables or disables the cluster-wide total throughput quota. The quota counts MQTT PUBLISH packets processed by
-      # the broker — both incoming (from publishers) and outgoing (to subscribers) — against one budget shared by the
-      # whole cluster. A publish delivered to N subscribers costs N+1 packets; persisted-session replay and QoS 1/2
-      # retransmissions are counted; a shared subscription group is counted once per message. On overuse, incoming
-      # publishes are refused (MQTT 5: PUBACK/PUBREC with reason code 0x97 QUOTA_EXCEEDED; MQTT 3.x: disconnect) and
-      # outgoing deliveries are dropped and reported in the droppedMsgs statistic. An accepted QoS 1/2 publish may still
-      # have its deliveries dropped later. If Redis is unavailable, the quota fails open and traffic passes unmetered
-      # (see the throughputQuotaDegraded metric).
+      # the broker — both incoming (from publishers) and outgoing (to subscribers, including messages routed to
+      # integrations) — against one budget shared by the whole cluster. A publish delivered to N subscribers costs N+1
+      # packets; persisted-session replay and QoS 1/2 retransmissions are counted; a shared subscription group is
+      # counted once per message. On overuse, incoming publishes are refused (MQTT 5: PUBACK/PUBREC with reason code
+      # 0x97 QUOTA_EXCEEDED; MQTT 3.x: disconnect) and outgoing deliveries are dropped and reported in the droppedMsgs
+      # statistic. An accepted QoS 1/2 publish may still have its deliveries dropped later. If Redis is unavailable, the
+      # quota fails open and traffic passes unmetered (see the throughputQuotaDegraded metric).
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
       # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth's capacity is the
       # burst allowance (the volume of excess absorbed without drops) and refills over the given period, so the
