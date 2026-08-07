@@ -491,7 +491,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.msg.retained` topic.
       additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.retained` topic.
-      additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session:
       # Topic for persisting client sessions.
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:tbmq.client.session}"
@@ -500,7 +500,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.client.session` topic.
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.client.session` topic.
-      additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:}"
     client-subscriptions:
       # Topic for persisting client subscriptions.
       topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:tbmq.client.subscriptions}"
@@ -509,7 +509,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.client.subscriptions` topic.
       additional-consumer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.client.subscriptions` topic.
-      additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event:
       # Topic for sending client session event requests.
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
