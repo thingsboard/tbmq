@@ -97,7 +97,7 @@ export const HelpLinks = {
     clientType: helpBaseUrl + docsPath + '/user-guide/mqtt-client-type/',
     connectToThingsBoard: helpBaseUrl + docsPath + '/user-guide/integrations/how-to-connect-thingsboard-to-tbmq/',
     perfTest100m: helpBaseUrl + docsPath + '/reference/100m-connections-performance-test/',
-    configuration: helpBaseUrl + docsPath + '/install/config/',
+    configuration: helpBaseUrl + docsPath + '/installation/config/',
     architecture: helpBaseUrl + docsPath + '/architecture/',
     pricing: helpBaseUrl + '/pricing/?section=tbmq-options&product=tbmq-ce',
     cleanPersistentSessions: helpBaseUrl + docsPath + '/user-guide/clean-persistent-sessions/',
