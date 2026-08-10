@@ -20,6 +20,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.ClientActorContext;
@@ -63,7 +64,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -662,6 +665,32 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.processQuotaDeferredRetry();     // resumes in order
         assertTrue(persistedDeviceActorMessageProcessor.getDeliveryQueue().isEmpty());
+
+        InOrder inOrder = inOrder(mqttMsgDeliveryService);
+        inOrder.verify(mqttMsgDeliveryService).sendPublishMsgToClient(any(), argThat(m -> m.getPacketId() == 1), anyBoolean());
+        inOrder.verify(mqttMsgDeliveryService).sendPublishMsgToClient(any(), argThat(m -> m.getPacketId() == 2), anyBoolean());
+    }
+
+    @Test
+    public void givenQuotaRetryScheduled_whenLiveMessageArrives_thenEnqueuedBehindBacklogInsteadOfSent() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1))
+                .thenReturn(new QuotaGrant(0, false))   // defers packet 1, schedules the retry
+                .thenReturn(new QuotaGrant(1, false));  // would grant the live message if it were ever consulted
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        persistedDeviceActorMessageProcessor.setActorCtx(mock(TbActorCtx.class));
+
+        persistedDeviceActorMessageProcessor.deliverPersistedMsg(publish(1)); // defers -> quotaRetryScheduled = true
+
+        DevicePublishMsg liveMsg = publish(2);
+        persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(liveMsg));
+
+        // the live message must not overtake the older deferred one: no charge, no send, just enqueued behind it
+        verify(throughputQuotaService, times(1)).tryConsumeOutgoingDeferrable(1);
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        assertEquals("deferred backlog stays ahead of the live arrival",
+                2, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+        assertEquals(1, persistedDeviceActorMessageProcessor.getDeliveryQueue().peekFirst().getPacketId().intValue());
+        assertEquals(2, persistedDeviceActorMessageProcessor.getDeliveryQueue().peekLast().getPacketId().intValue());
     }
 
     @Test

@@ -195,6 +195,13 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (msgExpiryResult.isExpired()) {
             return;
         }
+        if (!fromDeliveryQueue && quotaRetryScheduled) {
+            // a retry is already in flight for an older deferred message: queue behind it instead
+            // of consulting the quota out of turn, so a live message can never overtake a message
+            // that was deferred before it arrived. The pending retry is guaranteed to drain it.
+            deliveryQueue.addLast(publishMsg);
+            return;
+        }
         QuotaGrant grant = throughputQuotaService.tryConsumeOutgoingDeferrable(1);
         if (grant.granted() == 0) {
             if (grant.exhausted()) {
