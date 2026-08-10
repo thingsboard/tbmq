@@ -103,17 +103,27 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         }
     }
 
+    // granted in the low 32 bits, the exhausted flag above them: lets the two per-packet entry points
+    // stay allocation-free while the deferrable one unpacks into a QuotaGrant
+    private static final long EXHAUSTED_BIT = 1L << 32;
+
     @Override
     public boolean tryConsumeIncoming() {
-        return tryConsume(1) == 1;
+        return (int) tryConsume(1) == 1;
     }
 
     @Override
     public int tryConsumeOutgoing(int n) {
-        return tryConsume(n);
+        return (int) tryConsume(n);
     }
 
-    private int tryConsume(int n) {
+    @Override
+    public QuotaGrant tryConsumeOutgoingDeferrable(int n) {
+        long result = tryConsume(n);
+        return new QuotaGrant((int) result, (result & EXHAUSTED_BIT) != 0);
+    }
+
+    private long tryConsume(int n) {
         if (!enabled || n <= 0) {
             return Math.max(0, n);
         }
@@ -121,9 +131,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (now - failOpenUntilNanos < 0) {
             return n; // Redis is degraded: fail open, never queue, never stall
         }
+        // a draw that found the bucket dry is the ONLY justification for destroying a message
+        boolean dry = now - dryUntilNanos < 0;
         // while a draw may still help, demand is granted on bounded credit down to -blockSize;
         // once a draw confirmed the bucket dry, refuse locally until the backoff elapses
-        long creditFloor = now - dryUntilNanos < 0 ? 0L : -(long) blockSize;
+        long creditFloor = dry ? 0L : -(long) blockSize;
         while (true) {
             long current = localTokens.get();
             long available = current - creditFloor;
@@ -131,14 +143,14 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
                 scheduleDrawIfNeeded(n);
                 // the fail-open window above lapses while the next draw is still hanging on an unreachable
                 // Redis, so without this the quota would turn fail-closed for that draw's whole duration
-                return redisDegraded ? n : 0;
+                return redisDegraded ? n : (dry ? EXHAUSTED_BIT : 0L);
             }
             int granted = (int) Math.min(n, available);
             if (localTokens.compareAndSet(current, current - granted)) {
                 if (current - granted <= 0) {
                     scheduleDrawIfNeeded(blockSize);
                 }
-                return granted;
+                return granted | (granted < n && dry ? EXHAUSTED_BIT : 0L);
             }
         }
     }

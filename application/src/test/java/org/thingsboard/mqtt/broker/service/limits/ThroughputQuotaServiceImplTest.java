@@ -316,4 +316,73 @@ public class ThroughputQuotaServiceImplTest {
 
         verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
     }
+
+    @Test
+    public void givenLocalPoolShortButBucketNotDry_whenTryConsumeDeferrable_thenNotExhausted() {
+        service.drawExecutor = new ManualExecutor();          // draw is captured, never runs
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
+        service.init();
+
+        // warm-up draw is queued but not run, so the node holds 0 tokens and is NOT dry
+        QuotaGrant grant = service.tryConsumeOutgoingDeferrable(100);
+
+        assertEquals("granted is capped by the credit floor", 10, grant.granted());
+        assertFalse("bucket never reported dry, so the remainder is deferrable", grant.exhausted());
+    }
+
+    @Test
+    public void givenBucketReportedDry_whenTryConsumeDeferrable_thenExhausted() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);   // bucket empty
+        service.init();
+        executor.runAll();                                    // the draw reports dry, arming dryUntilNanos
+
+        QuotaGrant grant = service.tryConsumeOutgoingDeferrable(100);
+
+        assertEquals(0, grant.granted());
+        assertTrue("a draw confirmed the bucket dry, so the remainder is terminal", grant.exhausted());
+    }
+
+    @Test
+    public void givenPartialGrantWhileDry_whenTryConsumeDeferrable_thenExhausted() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(3L, 0L);
+        service.init();
+        executor.runAll();                                    // first draw grants 3 -> local = 3
+        service.tryConsumeOutgoingDeferrable(3);              // spend them, arming a follow-up draw
+        executor.runAll();                                    // follow-up draw returns 0 -> dry
+
+        QuotaGrant grant = service.tryConsumeOutgoingDeferrable(5);
+
+        assertEquals("nothing left and dry means no credit", 0, grant.granted());
+        assertTrue(grant.exhausted());
+    }
+
+    @Test
+    public void givenRedisDegraded_whenTryConsumeDeferrable_thenFullGrantAndNotExhausted() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        executor.runAll();                                    // draw blows up -> fail open
+
+        QuotaGrant grant = service.tryConsumeOutgoingDeferrable(50);
+
+        assertEquals("fail open grants everything", 50, grant.granted());
+        assertFalse(grant.exhausted());
+    }
+
+    @Test
+    public void givenQuotaDisabled_whenTryConsumeDeferrable_thenFullGrantAndNotExhausted() {
+        configuration.setEnabled(false);
+        service.init();
+
+        QuotaGrant grant = service.tryConsumeOutgoingDeferrable(7);
+
+        assertEquals(7, grant.granted());
+        assertFalse(grant.exhausted());
+        verifyNoInteractions(rateLimitCacheService);
+    }
 }

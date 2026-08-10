@@ -39,4 +39,19 @@ public interface ThroughputQuotaService {
      * terminally settle the remainder
      */
     int tryConsumeOutgoing(int n);
+
+    /**
+     * How long a caller waits before re-charging a deferred remainder (in ms). An order of magnitude
+     * above the measured draw round-trip, so one wait normally suffices. A constant rather than a
+     * property for the same reason {@code DRY_BACKOFF_NANOS} is: operators have no basis to tune it.
+     */
+    long DEFER_RETRY_MS = 10;
+
+    /**
+     * Charges {@code n} outgoing PUBLISH packets, reporting whether an ungranted remainder is
+     * terminal. Use this instead of {@link #tryConsumeOutgoing(int)} only where the caller can defer
+     * and retry; the returned {@code exhausted} flag is the sole signal permitted to destroy a
+     * persisted message.
+     */
+    QuotaGrant tryConsumeOutgoingDeferrable(int n);
 }
