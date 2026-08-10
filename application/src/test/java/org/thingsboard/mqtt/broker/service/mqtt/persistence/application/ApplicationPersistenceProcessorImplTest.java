@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.QuotaGrant;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -53,6 +54,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
@@ -114,6 +116,8 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
     @Mock ThroughputQuotaService throughputQuotaService;
+    @Mock ApplicationAckStrategy ackStrategy;
+    @Mock TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -123,7 +127,8 @@ class ApplicationPersistenceProcessorImplTest {
         ReflectionTestUtils.setField(processor, "pollDuration", 100L);
         ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
         ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
-        lenient().when(throughputQuotaService.tryConsumeOutgoing(anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(throughputQuotaService.tryConsumeOutgoingDeferrable(anyInt()))
+                .thenAnswer(inv -> new QuotaGrant(inv.getArgument(0), false));
     }
 
     @Test
@@ -582,26 +587,44 @@ class ApplicationPersistenceProcessorImplTest {
     void applyThroughputQuota_whenFullyGranted_keepsPackUnchanged() {
         BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
         strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
-        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(2)).thenReturn(new QuotaGrant(2, false));
 
-        processor.applyThroughputQuota(strategy, "client");
+        Map<Integer, PersistedMsg> deferred = processor.applyThroughputQuota(strategy, "client");
 
         assertThat(strategy.getOrderedMessages()).hasSize(2);
+        assertThat(deferred).isEmpty();
         verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
     }
 
     @Test
-    void applyThroughputQuota_whenPartiallyGranted_dropsPublishTailKeepsPubRels() {
+    void applyThroughputQuota_whenExhausted_dropsPublishTailKeepsPubRels() {
         BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
         PersistedPubRelMsg pubRel = new PersistedPubRelMsg(9, 90L);
         PersistedPublishMsg first = publishMsg(1, 100);
         strategy.init(new ArrayList<>(List.of(pubRel, first, publishMsg(2, 101), publishMsg(3, 102))));
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(1);
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(3)).thenReturn(new QuotaGrant(1, true));
 
-        processor.applyThroughputQuota(strategy, "client");
+        Map<Integer, PersistedMsg> deferred = processor.applyThroughputQuota(strategy, "client");
 
         assertThat(strategy.getOrderedMessages()).containsExactly(pubRel, first);
+        assertThat(deferred).isEmpty();
         verify(tbMessageStatsReportClient).reportDroppedMsgs(2);
+    }
+
+    @Test
+    void applyThroughputQuota_whenLocalShortfall_defersTailWithoutReportingDrops() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        PersistedPublishMsg first = publishMsg(1, 100);
+        PersistedPublishMsg second = publishMsg(2, 101);
+        PersistedPublishMsg third = publishMsg(3, 102);
+        strategy.init(new ArrayList<>(List.of(first, second, third)));
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(3)).thenReturn(new QuotaGrant(1, false));
+
+        Map<Integer, PersistedMsg> deferred = processor.applyThroughputQuota(strategy, "client");
+
+        assertThat(strategy.getOrderedMessages()).containsExactly(first);
+        assertThat(deferred).containsOnlyKeys(2, 3);
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
     }
 
     @Test
@@ -609,10 +632,29 @@ class ApplicationPersistenceProcessorImplTest {
         BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
         strategy.init(new ArrayList<>(List.of(new PersistedPubRelMsg(9, 90L))));
 
-        processor.applyThroughputQuota(strategy, "client");
+        Map<Integer, PersistedMsg> deferred = processor.applyThroughputQuota(strategy, "client");
 
-        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoingDeferrable(anyInt());
         assertThat(strategy.getOrderedMessages()).hasSize(1);
+        assertThat(deferred).isEmpty();
+    }
+
+    @Test
+    void tryCommitPack_whenRemainderDeferred_doesNotCommitAndReArmsStrategy() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        PersistedPublishMsg deferredMsg = publishMsg(2, 101);
+        strategy.init(new ArrayList<>(List.of(publishMsg(1, 100))));
+        ApplicationProcessorStats stats = mock(ApplicationProcessorStats.class);
+        ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(
+                strategy, new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet()), stats);
+        when(ackStrategy.analyze(any())).thenReturn(new ApplicationProcessingDecision(true, Map.of()));
+
+        boolean packDone = processor.tryCommitPack("client", consumer, stats, ackStrategy, strategy, ctx,
+                1, 0, Map.of(2, deferredMsg));
+
+        assertThat(packDone).isFalse();
+        verify(consumer, never()).commitSync();
+        assertThat(strategy.getOrderedMessages()).containsExactly(deferredMsg);
     }
 
     // ===== Helpers =====

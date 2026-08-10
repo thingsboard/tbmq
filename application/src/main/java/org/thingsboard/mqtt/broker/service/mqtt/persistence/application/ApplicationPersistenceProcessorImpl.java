@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.QuotaGrant;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -465,7 +466,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
-            applyThroughputQuota(submitStrategy, clientId);
+            Map<Integer, PersistedMsg> quotaDeferred = applyThroughputQuota(submitStrategy, clientId);
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -478,7 +479,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx,
+                    totalPublishMsgs, totalPubRelMsgs, quotaDeferred)) {
+                break;
+            }
+            // a round that delivered nothing has no acks to await, so without this the loop would spin
+            // against a local pool that only refills once per draw
+            if (totalPublishMsgs == 0 && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
                 break;
             }
         }
@@ -571,7 +578,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
-            applyThroughputQuota(submitStrategy, clientId);
+            Map<Integer, PersistedMsg> quotaDeferred = applyThroughputQuota(submitStrategy, clientId);
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -584,7 +591,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
             }
 
-            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) {
+            if (tryCommitPack(clientId, consumer, stats, ackStrategy, submitStrategy, ctx,
+                    totalPublishMsgs, totalPubRelMsgs, quotaDeferred)) {
+                break;
+            }
+            // a round that delivered nothing has no acks to await, so without this the loop would spin
+            // against a local pool that only refills once per draw
+            if (totalPublishMsgs == 0 && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
                 break;
             }
         }
@@ -660,14 +673,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return subscription == null ? publishMsgQos : MqttQosUtil.downgradeQos(subscription, publishMsgQos);
     }
 
-    private boolean tryCommitPack(String clientId,
-                                  TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
-                                  ApplicationProcessorStats stats,
-                                  ApplicationAckStrategy ackStrategy,
-                                  ApplicationSubmitStrategy submitStrategy,
-                                  ApplicationPackProcessingCtx ctx,
-                                  int totalPublishMsgs,
-                                  int totalPubRelMsgs) {
+    boolean tryCommitPack(String clientId,
+                          TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
+                          ApplicationProcessorStats stats,
+                          ApplicationAckStrategy ackStrategy,
+                          ApplicationSubmitStrategy submitStrategy,
+                          ApplicationPackProcessingCtx ctx,
+                          int totalPublishMsgs,
+                          int totalPubRelMsgs,
+                          Map<Integer, PersistedMsg> quotaDeferred) {
         log.trace("[{}] Analyzing pack processing result", clientId);
 
         ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
@@ -675,17 +689,33 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
 
-        if (decision.isCommit()) {
+        if (decision.isCommit() && quotaDeferred.isEmpty()) {
             reportSkippedMessagesIfAny(clientId, result);
             log.debug("[{}] Committing pack", clientId);
             ctx.clear();
             consumer.commitSync();
             return true;
+        }
+        // Kafka commits the whole polled position at once, so a quota-deferred remainder must go out
+        // BEFORE the commit - committing now would settle offsets for messages never delivered.
+        if (decision.isCommit()) {
+            log.debug("[{}] Holding pack commit for {} quota-deferred message(s)", clientId, quotaDeferred.size());
+            ctx.clear();
+            // Everything else in this pack is acked and done; re-arm with only the deferred tail.
+            submitStrategy.init(new ArrayList<>(quotaDeferred.values()));
         } else {
             if (isDebugEnabled) {
                 log.debug("[{}] Reprocessing {} message(s)", clientId, decision.getReprocessMap().size());
             }
+            // ApplicationSubmitStrategy#update() only keeps packetIds already present in submitStrategy's
+            // current (quota-trimmed) list, so it cannot reinsert the deferred tail on its own: re-arm with
+            // the still-unacked messages first, in their original pack order, then append the deferred tail.
             submitStrategy.update(decision.getReprocessMap());
+            if (!quotaDeferred.isEmpty()) {
+                List<PersistedMsg> next = new ArrayList<>(submitStrategy.getOrderedMessages());
+                next.addAll(quotaDeferred.values());
+                submitStrategy.init(next);
+            }
         }
         return false;
     }
@@ -719,7 +749,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return ", PUBLISH offsets [" + minOffset + ".." + maxOffset + "]";
     }
 
-    void applyThroughputQuota(ApplicationSubmitStrategy submitStrategy, String clientId) {
+    Map<Integer, PersistedMsg> applyThroughputQuota(ApplicationSubmitStrategy submitStrategy, String clientId) {
         List<PersistedMsg> orderedMessages = submitStrategy.getOrderedMessages();
         int publishCount = 0;
         for (PersistedMsg msg : orderedMessages) {
@@ -728,19 +758,27 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
         }
         if (publishCount == 0) {
-            return;
+            return Map.of();
         }
-        int granted = throughputQuotaService.tryConsumeOutgoing(publishCount);
-        if (granted >= publishCount) {
-            return;
+        QuotaGrant grant = throughputQuotaService.tryConsumeOutgoingDeferrable(publishCount);
+        if (grant.granted() >= publishCount) {
+            return Map.of();
         }
-        int dropped = publishCount - granted;
-        Map<Integer, PersistedMsg> keepMap = Maps.newLinkedHashMapWithExpectedSize(orderedMessages.size() - dropped);
+        int granted = grant.granted();
+        int excluded = publishCount - granted;
+        Map<Integer, PersistedMsg> keepMap = Maps.newLinkedHashMapWithExpectedSize(orderedMessages.size() - excluded);
+        Map<Integer, PersistedMsg> deferredMap = grant.exhausted()
+                ? Map.of() : Maps.newLinkedHashMapWithExpectedSize(excluded);
         int keptPublishes = 0;
         for (PersistedMsg msg : orderedMessages) {
             if (PersistedPacketType.PUBLISH == msg.getPacketType()) {
                 if (keptPublishes == granted) {
-                    // quota-refused tail: excluded from delivery; the pack's commitSync() settles its offsets
+                    // refused tail: excluded from THIS round's delivery either way. When the bucket is
+                    // dry that is terminal and the pack's commitSync() settles its offsets; when the
+                    // shortfall is node-local it is carried to the next round instead.
+                    if (!grant.exhausted()) {
+                        deferredMap.put(msg.getPacketId(), msg);
+                    }
                     continue;
                 }
                 keptPublishes++;
@@ -748,8 +786,25 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             keepMap.put(msg.getPacketId(), msg);
         }
         submitStrategy.update(keepMap);
-        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
-        log.debug("[{}] Dropped {} PUBLISH message(s) from application pack on total throughput quota", clientId, dropped);
+        if (grant.exhausted()) {
+            tbMessageStatsReportClient.reportDroppedMsgs(excluded);
+            log.debug("[{}] Dropped {} PUBLISH message(s) from application pack on total throughput quota",
+                    clientId, excluded);
+        } else {
+            log.debug("[{}] Deferred {} PUBLISH message(s) from application pack on a quota shortfall",
+                    clientId, excluded);
+        }
+        return deferredMap;
+    }
+
+    private boolean awaitQuotaRefill() {
+        try {
+            Thread.sleep(ThroughputQuotaService.DEFER_RETRY_MS);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false; // shutting down
+        }
     }
 
     private ApplicationPackProcessingCtx createPackProcessingCtx(ApplicationSubmitStrategy submitStrategy,
