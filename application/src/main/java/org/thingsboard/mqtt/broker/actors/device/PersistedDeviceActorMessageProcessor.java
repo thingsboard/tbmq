@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEven
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.QuotaDeferredRetryMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.device.retry.ExponentialBackoffPolicy;
@@ -45,6 +46,7 @@ import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.QuotaGrant;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
@@ -55,9 +57,9 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -81,7 +83,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final Set<Integer> inFlightPacketIds = Sets.newConcurrentHashSet();
     private final ConcurrentMap<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = Maps.newConcurrentMap();
 
-    private final Queue<DevicePublishMsg> deliveryQueue = new LinkedList<>();
+    private final Deque<DevicePublishMsg> deliveryQueue = new LinkedList<>();
     private final AtomicInteger unacknowledgedMsgCounter = new AtomicInteger(0);
     private final RetryPolicy backoffPolicy = new ExponentialBackoffPolicy(1);
 
@@ -90,6 +92,11 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private volatile UUID stopActorCommandUUID;
     @Setter
     private volatile boolean channelWritable = true;
+    @Setter
+    private volatile TbActorCtx actorCtx;
+    // actor-thread confined: guards against N deferred messages scheduling N retries, and tells
+    // processDeliveryQueue to stop draining so nothing overtakes the deferred message
+    private boolean quotaRetryScheduled;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
         super(systemContext);
@@ -108,6 +115,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         clientLogger.logEvent(clientId, this.getClass(), "Processing device connect");
         sessionCtx = msg.getSessionCtx();
         stopActorCommandUUID = null;
+        this.actorCtx = actorCtx;
         findAndDeliverPersistedMessages(actorCtx);
     }
 
@@ -179,16 +187,21 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.trace("[{}] Processing incoming msg on Channel non-writable {}", clientId, msg);
             return;
         }
-        processPublishMsg(msg.getPublishMsg());
+        processPublishMsg(msg.getPublishMsg(), false);
     }
 
-    private void processPublishMsg(DevicePublishMsg publishMsg) {
+    private void processPublishMsg(DevicePublishMsg publishMsg, boolean fromDeliveryQueue) {
         MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
         if (msgExpiryResult.isExpired()) {
             return;
         }
-        if (throughputQuotaService.tryConsumeOutgoing(1) == 0) {
-            settleQuotaDroppedMsg(publishMsg);
+        QuotaGrant grant = throughputQuotaService.tryConsumeOutgoingDeferrable(1);
+        if (grant.granted() == 0) {
+            if (grant.exhausted()) {
+                settleQuotaDroppedMsg(publishMsg);  // bucket confirmed dry: terminal, as before
+            } else {
+                deferQuotaRefusedMsg(publishMsg, fromDeliveryQueue);
+            }
             return;
         }
         // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
@@ -221,6 +234,33 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                         log.warn("[{}] Failed to remove quota-dropped persisted msg {}", targetClientId, targetPacketId, throwable);
                     }
                 });
+    }
+
+    private void deferQuotaRefusedMsg(DevicePublishMsg publishMsg, boolean fromDeliveryQueue) {
+        // NOT removed from the store and NOT counted as dropped: the cluster has budget, this node
+        // simply has not drawn it yet. The message is persisted before the actor ever sees it, so
+        // re-queueing is enough to make the refusal non-terminal.
+        if (fromDeliveryQueue) {
+            deliveryQueue.addFirst(publishMsg);   // it was just polled from the head; put it back
+        } else {
+            deliveryQueue.addLast(publishMsg);    // a live message is the newest: it belongs last
+        }
+        if (quotaRetryScheduled) {
+            return; // one retry drains the whole queue
+        }
+        quotaRetryScheduled = true;
+        log.debug("[{}] Total throughput quota shortfall, deferring persisted msg {} for {} ms",
+                clientId, publishMsg.getPacketId(), ThroughputQuotaService.DEFER_RETRY_MS);
+        systemContext.scheduleMsgWithDelay(actorCtx, new QuotaDeferredRetryMsg(),
+                ThroughputQuotaService.DEFER_RETRY_MS);
+    }
+
+    void processQuotaDeferredRetry() {
+        quotaRetryScheduled = false;
+        if (sessionCtx == null) {
+            return; // disconnected: the backlog stays persisted and replays on the next session
+        }
+        processDeliveryQueue();
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
@@ -358,10 +398,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         });
     }
 
-    private void processDeliveryQueue() {
+    void processDeliveryQueue() {
         log.debug("[{}] Start delivery queue processing", clientId);
         try {
-            while (!deliveryQueue.isEmpty()) {
+            while (!deliveryQueue.isEmpty() && !quotaRetryScheduled) {
                 DevicePublishMsg msg = deliveryQueue.poll();
                 if (msg == null) {
                     break;
@@ -379,7 +419,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
         switch (persistedMessage.getPacketType()) {
-            case PUBLISH -> processPublishMsg(persistedMessage);
+            case PUBLISH -> processPublishMsg(persistedMessage, true);
             case PUBREL -> processPubRelMsg(persistedMessage.getPacketId());
         }
     }
@@ -395,6 +435,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private void clearContext() {
         deliveryQueue.clear();
         unacknowledgedMsgCounter.set(0);
+        quotaRetryScheduled = false;
     }
 
     private void disconnect(String message) {

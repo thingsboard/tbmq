@@ -94,6 +94,9 @@ public class PersistedDeviceActor extends ContextAwareActor {
             case DEVICE_DELIVER_PERSISTED_MESSAGES_MSG:
                 processor.processDeliverPersistedMessages((DeliverPersistedMessagesEventMsg) msg);
                 break;
+            case DEVICE_QUOTA_DEFERRED_RETRY_MSG:
+                processor.processQuotaDeferredRetry();
+                break;
             default:
                 return false;
         }

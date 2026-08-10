@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEven
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.QuotaDeferredRetryMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -39,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.QuotaGrant;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
@@ -66,6 +68,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -78,6 +81,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     PersistedDeviceActorMessageProcessor persistedDeviceActorMessageProcessor;
 
+    ActorSystemContext systemContext;
     DeviceMsgService deviceMsgService;
     MqttMsgDeliveryService mqttMsgDeliveryService;
     ClientMqttActorManager clientMqttActorManager;
@@ -89,7 +93,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Before
     public void setUp() throws Exception {
-        ActorSystemContext actorSystemContext = mock(ActorSystemContext.class);
+        systemContext = mock(ActorSystemContext.class);
 
         deviceMsgService = mock(DeviceMsgService.class);
         mqttMsgDeliveryService = mock(MqttMsgDeliveryService.class);
@@ -99,20 +103,21 @@ public class PersistedDeviceActorMessageProcessorTest {
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
         ClientActorContext clientActorContext = mock(ClientActorContext.class);
 
-        when(actorSystemContext.getDeviceMsgService()).thenReturn(deviceMsgService);
-        when(actorSystemContext.getMqttMsgDeliveryService()).thenReturn(mqttMsgDeliveryService);
-        when(actorSystemContext.getClientActorContext()).thenReturn(clientActorContext);
+        when(systemContext.getDeviceMsgService()).thenReturn(deviceMsgService);
+        when(systemContext.getMqttMsgDeliveryService()).thenReturn(mqttMsgDeliveryService);
+        when(systemContext.getClientActorContext()).thenReturn(clientActorContext);
         when(clientActorContext.getClientLogger()).thenReturn(clientLogger);
-        when(actorSystemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
-        when(actorSystemContext.getSharedSubscriptionCacheService()).thenReturn(sharedSubscriptionCacheService);
+        when(systemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
+        when(systemContext.getSharedSubscriptionCacheService()).thenReturn(sharedSubscriptionCacheService);
 
         throughputQuotaService = mock(ThroughputQuotaService.class);
         tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
-        when(actorSystemContext.getThroughputQuotaService()).thenReturn(throughputQuotaService);
-        when(actorSystemContext.getTbMessageStatsReportClient()).thenReturn(tbMessageStatsReportClient);
-        lenient().when(throughputQuotaService.tryConsumeOutgoing(anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        when(systemContext.getThroughputQuotaService()).thenReturn(throughputQuotaService);
+        when(systemContext.getTbMessageStatsReportClient()).thenReturn(tbMessageStatsReportClient);
+        lenient().when(throughputQuotaService.tryConsumeOutgoingDeferrable(anyInt()))
+                .thenAnswer(inv -> new QuotaGrant(inv.getArgument(0), false));
 
-        this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(actorSystemContext, CLIENT_ID));
+        this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(systemContext, CLIENT_ID));
     }
 
     @After
@@ -305,7 +310,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenQuotaExhausted_whenDeliverPersistedMsg_thenSettleWithoutSendOrCounterMutation() {
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, true));
         when(deviceMsgService.removePersistedMessage(CLIENT_ID, 5)).thenReturn(CompletableFuture.completedFuture(null));
         persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
 
@@ -326,7 +331,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenQuotaExhaustedForSharedSubMsg_whenDeliver_thenRemoveByShareKeyAndOriginalPacketId() {
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, true));
         when(deviceMsgService.removePersistedMessage(SS_TEST_KEY, 5)).thenReturn(CompletableFuture.completedFuture(null));
         persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
         persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription()
@@ -592,6 +597,90 @@ public class PersistedDeviceActorMessageProcessorTest {
         persistedDeviceActorMessageProcessor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));
         assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
         verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+    }
+
+    @Test
+    public void givenLocalShortfall_whenDeliverPersistedMsg_thenDeferWithoutRemovingOrDropping() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, false));
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        persistedDeviceActorMessageProcessor.setActorCtx(mock(TbActorCtx.class));
+
+        DevicePublishMsg msg = DevicePublishMsg.builder()
+                .packetId(5)
+                .packetType(PersistedPacketType.PUBLISH)
+                .time(System.currentTimeMillis())
+                .properties(new MqttProperties())
+                .build();
+        persistedDeviceActorMessageProcessor.deliverPersistedMsg(msg);
+
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(deviceMsgService, never()).removePersistedMessage(any(), anyInt());
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
+        assertEquals("the message is queued for retry, not destroyed",
+                1, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+        assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
+        assertEquals(0, persistedDeviceActorMessageProcessor.getUnacknowledgedMsgCounter().get());
+    }
+
+    @Test
+    public void givenLocalShortfall_whenManyMessagesDeferred_thenOneRetryScheduled() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, false));
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
+        persistedDeviceActorMessageProcessor.setActorCtx(actorCtx);
+
+        for (int packetId = 1; packetId <= 3; packetId++) {
+            persistedDeviceActorMessageProcessor.deliverPersistedMsg(DevicePublishMsg.builder()
+                    .packetId(packetId)
+                    .packetType(PersistedPacketType.PUBLISH)
+                    .time(System.currentTimeMillis())
+                    .properties(new MqttProperties())
+                    .build());
+        }
+
+        verify(systemContext, times(1)).scheduleMsgWithDelay(
+                eq(actorCtx), any(QuotaDeferredRetryMsg.class), eq(ThroughputQuotaService.DEFER_RETRY_MS));
+        assertEquals(3, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+    }
+
+    @Test
+    public void givenDeferredMsgAtQueueHead_whenDrainResumes_thenOrderPreserved() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1))
+                .thenReturn(new QuotaGrant(0, false))   // first attempt defers packet 1
+                .thenReturn(new QuotaGrant(1, false))   // retry delivers packet 1
+                .thenReturn(new QuotaGrant(1, false));  // then packet 2
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        persistedDeviceActorMessageProcessor.setActorCtx(mock(TbActorCtx.class));
+
+        persistedDeviceActorMessageProcessor.getDeliveryQueue().addLast(publish(1));
+        persistedDeviceActorMessageProcessor.getDeliveryQueue().addLast(publish(2));
+
+        persistedDeviceActorMessageProcessor.processDeliveryQueue();          // defers on packet 1, stops
+        assertEquals("drain stops at the deferral instead of overtaking it",
+                2, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+        assertEquals(1, persistedDeviceActorMessageProcessor.getDeliveryQueue().peekFirst().getPacketId().intValue());
+
+        persistedDeviceActorMessageProcessor.processQuotaDeferredRetry();     // resumes in order
+        assertTrue(persistedDeviceActorMessageProcessor.getDeliveryQueue().isEmpty());
+    }
+
+    @Test
+    public void givenDisconnected_whenQuotaRetryFires_thenNothingDelivered() {
+        persistedDeviceActorMessageProcessor.setSessionCtx(null);
+        persistedDeviceActorMessageProcessor.getDeliveryQueue().addLast(publish(1));
+
+        persistedDeviceActorMessageProcessor.processQuotaDeferredRetry();
+
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+    }
+
+    private DevicePublishMsg publish(int packetId) {
+        return DevicePublishMsg.builder()
+                .packetId(packetId)
+                .packetType(PersistedPacketType.PUBLISH)
+                .time(System.currentTimeMillis())
+                .properties(new MqttProperties())
+                .build();
     }
 
 }
