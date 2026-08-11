@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
-import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -51,22 +50,33 @@ import static org.junit.Assert.assertEquals;
  * terminal drop shows up here as a delivered count permanently stuck below {@link #BACKLOG} - the two paths are
  * equivalent observables for what this test needs to prove.
  * <p>
- * Ledger arithmetic, shared by both methods below (capacity 100, block size 2, lease return disabled, refill
- * 1 token per 6 s - negligible over this test's runtime):
+ * Ledger arithmetic (capacity 100, block size 2, lease return disabled, refill 1 token per 6 s - negligible over
+ * this test's runtime). The two {@code @Test} methods below share ONE Spring context
+ * ({@code DirtiesContext.ClassMode.AFTER_CLASS}), so the throughput quota service's warm-up draw runs exactly ONCE
+ * for the whole class, at boot - not once per method - and JUnit is free to run either method first. The
+ * boot/ingress/replay walkthrough below is therefore only exact for whichever method happens to run first; the
+ * second method starts its own ingress from whatever the first method's replay left in local/bucket, not from a
+ * fresh boot:
  * <ul>
- *     <li>boot: the warm-up draw takes one block, leaving local = 2 and bucket = 98;</li>
- *     <li>ingress: 10 publishes 50 ms apart. Every second charge empties the node and triggers a draw of one block
- *     that lands well inside the 50 ms pacing, so the draws at charges 2, 4, 6, 8 and 10 take the bucket
- *     98 -> 96 -> 94 -> 92 -> 90 -> 88 and leave local = 2 when the subscriber reconnects;</li>
- *     <li>replay: the backlog of 10 is far above local (2) + one block of bounded credit (2) = 4, so every one of
- *     the two persistence paths below MUST hit at least one refusal. What decides the outcome is whether the bucket
- *     is dry when that refusal happens - here it holds 88, orders of magnitude more than the backlog could ever
- *     drain, so no draw can ever come back empty and every refusal this test can produce is a node-local shortfall,
- *     never a genuine exhaustion. A shortfall must defer and retry, not settle terminally; that is exactly what
- *     Tasks 1-3 changed, and what a pre-fix broker gets wrong.</li>
+ *     <li>boot (once per class, not per method): the warm-up draw takes one block, leaving local = 2 and
+ *     bucket = 98;</li>
+ *     <li>ingress (per method): 10 publishes 50 ms apart. Every second charge empties the node and triggers a draw
+ *     of one block that lands well inside the 50 ms pacing, so the draws at charges 2, 4, 6, 8 and 10 pull 10 tokens
+ *     out of the bucket and leave local = 2 when the subscriber reconnects - for the first method to run, that is
+ *     bucket 98 -> 88;</li>
+ *     <li>replay (per method): the backlog of 10 is far above local (2) + one block of bounded credit (2) = 4, so
+ *     each of the two persistence paths below MUST hit at least one refusal.</li>
  * </ul>
+ * What actually makes both methods correct regardless of run order is a headroom invariant, not the exact figures
+ * above: the one-time warm-up spends 2 tokens, each method's ingress draws about 10 more, and each method's own
+ * replay-driven re-draws are bounded by its own backlog to roughly another 10 - so even after BOTH methods have run,
+ * total consumption is a few dozen tokens against a 100-token capacity that refills negligibly over the test's
+ * runtime. The bucket can therefore never actually run dry in either method, in either order: at every replay it
+ * still holds many times the 10-message backlog's worst-case demand, so no draw this test can trigger ever comes
+ * back empty, and every refusal it produces is a node-local shortfall - never a genuine exhaustion. A shortfall must
+ * defer and retry, not settle terminally; that is exactly what Tasks 1-3 changed, and what a pre-fix broker gets
+ * wrong.
  */
-@Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaDeferralIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
@@ -147,14 +157,15 @@ public class TotalThroughputQuotaDeferralIntegrationTestCase extends AbstractPub
 
         publishBacklog("quota/defer/device", DEVICE_PUB_FOR_DEVICE_CLIENT, getConnectOptions(true, DEV_USERNAME));
 
-        // replay: the device actor charges 1 PER MESSAGE in a tight loop. local (2) plus one block of bounded credit
-        // (2) covers only 4 of the 10 outright; beyond that, whether a given message's charge lands before or after
-        // the in-flight draw against the healthy 88-token bucket replenishes local is a timing race, not a bucket
-        // limit - the bucket never goes dry here, so every charge that loses that race is a node-local shortfall.
-        // Pre-fix, a losing charge was treated exactly like genuine exhaustion and the message was destroyed on the
-        // spot, so some prefix of the backlog was lost and never redelivered (observed: as few as 6 of 10 survived).
-        // Post-fix a losing charge is re-queued and retried every 10 ms until the draw lands, so nothing needs to win
-        // the race and all 10 arrive.
+        // replay: the device actor charges 1 PER MESSAGE in a tight loop. Exactly how much of the backlog is covered
+        // by local balance plus bounded credit depends on whether this method ran first or second in the class (see
+        // the class javadoc), but the bucket has so much headroom over the backlog's demand either way that no draw
+        // here can ever come back empty. So whether a given charge lands before or after the in-flight draw
+        // replenishes local is only ever a timing race, not a bucket limit, and every charge that loses that race is
+        // a node-local shortfall. Pre-fix, a losing charge was treated exactly like genuine exhaustion and the
+        // message was destroyed on the spot, so some prefix of the backlog was lost and never redelivered (observed
+        // pre-fix: as few as 6 of 10 survived). Post-fix a losing charge is re-queued and retried every 10 ms until
+        // the draw lands, so nothing needs to win the race and all 10 arrive.
         deviceSubClient.connect(persistent);
         Awaitility.await("full backlog delivered")
                 .atMost(30, TimeUnit.SECONDS)
@@ -173,11 +184,14 @@ public class TotalThroughputQuotaDeferralIntegrationTestCase extends AbstractPub
 
         publishBacklog("quota/defer/app", DEVICE_PUB_FOR_APP_CLIENT, getConnectOptions(true, DEV_USERNAME));
 
-        // replay: one bulk charge for the whole pack asks for 10, is granted local(2) + one block of credit(2) = 4,
-        // and the refused remainder of 6 is a node-local shortfall (the bucket holds 88, nowhere near dry). Pre-fix,
-        // that remainder was excluded from delivery and the pack committed anyway (4 delivered, 6 lost forever);
-        // post-fix the commit is held and the deferred remainder is retried within the same pack every 10 ms until
-        // the shared bucket answers, so the pack settles - possibly over several internal rounds - at all 10.
+        // replay: one bulk charge for the whole pack asks for 10. As the class javadoc explains, exactly how much of
+        // that is covered by local balance plus bounded credit depends on whether this method ran first or second,
+        // but the refused remainder is always a node-local shortfall - the bucket has far more headroom than a
+        // 10-message backlog could ever drain, so this charge's draw can never come back empty. Pre-fix, that
+        // remainder was excluded from delivery and the pack committed anyway, permanently losing it (observed
+        // pre-fix: only 4 of 10 survived); post-fix the commit is held and the deferred remainder is retried within
+        // the same pack every 10 ms until the shared bucket answers, so the pack settles - possibly over several
+        // internal rounds - at all 10.
         appSubClient.connect(appOptions);
         Awaitility.await("full pack delivered across deferred rounds")
                 .atMost(30, TimeUnit.SECONDS)
