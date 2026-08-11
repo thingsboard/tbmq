@@ -58,18 +58,22 @@ import static org.junit.Assert.assertTrue;
  *     left the deferral would - correctly - deliver all 6.</li>
  * </ul>
  * Settling the whole backlog into a single pack before reconnecting is still load-bearing, even though a pack can now
- * take more than one internal round: {@code applyThroughputQuota} is scoped to one {@code consumer.poll()}, and a
- * deferral makes the SAME pack call it again - exactly what happens above, where round one's bulk charge grants 4 and
- * defers the remaining 2, and a later round in that same pack finds the bucket still dry and settles them terminally,
- * all under one {@code commitSync()}. What must not happen is the backlog arriving across TWO separate polls, i.e. two
- * independent packs with two independent commit decisions. Under the old, capacity-10 ledger a second poll's draw
- * could still pull real tokens out of the 2 left in the bucket, so a split delivered all 6; here the bucket is drained
- * to exactly 0, so a split pack has no more real tokens to draw than a single one does - the ceiling is still
- * capacity(8) - ingress(6) + blockSize(2) = exactly 4, the same total the single-pack replay delivers, just spread
- * across two commits instead of one. The publisher's PUBACK only proves the message reached {@code tbmq.msg.all}; the
- * write to the per-client APPLICATION topic happens later on the dispatcher hop, while the reconnecting consumer
- * assigns its partition and polls with no group-join delay. The test therefore settles the backlog before reconnecting
- * so the replay is a single pack.
+ * take more than one internal round: {@code applyThroughputQuota} operates on one {@code consumer.poll()}'s batch,
+ * though it can be called more than once against that SAME batch when a round defers instead of exhausting - exactly
+ * what happens above, where round one's bulk charge grants 4 and defers the remaining 2, and a later round in that
+ * same pack finds the bucket still dry and settles them terminally, all under one {@code commitSync()}. What must not
+ * happen is the backlog arriving across TWO separate polls, i.e. two independent packs with two independent commit
+ * decisions. Under the old, capacity-10 ledger a second poll's draw could still pull real tokens out of the 2 left in
+ * the bucket, so a split reliably delivered all 6; here the bucket is drained to exactly 0, so a split can no longer
+ * inflate the total that way, but it is not pinned to a single number either. Whichever charge first drains
+ * {@code localTokens} to <= 0 arms a draw, and whether the SECOND charge lands before or after that draw resolves
+ * decides whether it is granted, deferred or refused as exhausted: a 4-then-2 split still totals 4, but a 2-then-4 or
+ * 3-then-3 split can total as little as 2 or 3 - the second charge's draw has a full ack-plus-commit-plus-poll() round
+ * trip to resolve before it arrives, so it plausibly wins the race. The single-pack settle exists precisely to avoid
+ * that ambiguity, not to pin the split case to any one of these totals. The publisher's PUBACK only proves the message
+ * reached {@code tbmq.msg.all}; the write to the per-client APPLICATION topic happens later on the dispatcher hop,
+ * while the reconnecting consumer assigns its partition and polls with no group-join delay. The test therefore
+ * settles the backlog before reconnecting so the replay is a single pack.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -146,8 +150,9 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
         // reconnecting consumer assigns its partition and polls immediately. Reconnecting too early can therefore
         // split the 6 messages across two polls, i.e. two independent packs with two independent commit decisions,
         // which breaks the clean single-pack, single-commitSync() story the class javadoc's arithmetic relies on
-        // (delivery is still capped at 4 either way, since the bucket is genuinely empty). At 1 token per 75 s this
-        // settle adds ~0.013 tokens, so it leaves the ingress ledger untouched.
+        // (the total for a split is no longer pinned to 6, but it is not pinned to any other single number either -
+        // see the class javadoc). At 1 token per 75 s this settle adds ~0.013 tokens, so it leaves the ingress ledger
+        // untouched.
         Thread.sleep(1000);
 
         persistedClient.connect(appOptions);                // pack replay: one bulk charge grants 2 local + 2 credit
