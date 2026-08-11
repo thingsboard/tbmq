@@ -255,18 +255,33 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (quotaRetryScheduled) {
             return; // one retry drains the whole queue
         }
-        quotaRetryScheduled = true;
         log.debug("[{}] Total throughput quota shortfall, deferring persisted msg {} for {} ms",
                 clientId, publishMsg.getPacketId(), ThroughputQuotaService.DEFER_RETRY_MS);
-        systemContext.scheduleMsgWithDelay(actorCtx, new QuotaDeferredRetryMsg(),
-                ThroughputQuotaService.DEFER_RETRY_MS);
+        try {
+            systemContext.scheduleMsgWithDelay(actorCtx, new QuotaDeferredRetryMsg(),
+                    ThroughputQuotaService.DEFER_RETRY_MS);
+            quotaRetryScheduled = true;  // latch only once a retry is really pending
+        } catch (Exception e) {
+            // the scheduler rejects once the actor system is shutting down. Latching anyway would gate the
+            // drain for the rest of the session, and keeping the backlog queued with no retry behind it would
+            // spin processDeliveryQueue, so let it go: nothing was removed from the store, and it replays on
+            // the next session just like the disconnected case below.
+            log.warn("[{}] Failed to schedule the quota-deferred retry, dropping {} queued msg(s) for replay",
+                    clientId, deliveryQueue.size(), e);
+            deliveryQueue.clear();
+        }
     }
 
     void processQuotaDeferredRetry() {
-        quotaRetryScheduled = false;
         if (sessionCtx == null) {
-            return; // disconnected: the backlog stays persisted and replays on the next session
+            // Disconnected while the retry was in flight. The queue must not survive: it would hold messages
+            // with no retry pending, so a live message of the next session could overtake them and the
+            // connect-time replay would duplicate them. Nothing is lost - a deferral never removes the
+            // message from the store, so the replay re-finds it.
+            clearContext();
+            return;
         }
+        quotaRetryScheduled = false;
         processDeliveryQueue();
     }
 

@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,6 +67,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -691,6 +693,66 @@ public class PersistedDeviceActorMessageProcessorTest {
                 2, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
         assertEquals(1, persistedDeviceActorMessageProcessor.getDeliveryQueue().peekFirst().getPacketId().intValue());
         assertEquals(2, persistedDeviceActorMessageProcessor.getDeliveryQueue().peekLast().getPacketId().intValue());
+    }
+
+    @Test(timeout = 10_000)
+    public void givenSchedulerRejectsRetry_whenQuotaShortfall_thenNeitherLatchesNorSpins() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, false));
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
+        persistedDeviceActorMessageProcessor.setActorCtx(actorCtx);
+        doThrow(new RejectedExecutionException("actor system shutting down"))
+                .when(systemContext).scheduleMsgWithDelay(
+                        eq(actorCtx), any(QuotaDeferredRetryMsg.class), eq(ThroughputQuotaService.DEFER_RETRY_MS));
+        persistedDeviceActorMessageProcessor.getDeliveryQueue().addLast(publish(1));
+
+        persistedDeviceActorMessageProcessor.processDeliveryQueue();
+
+        assertFalse("a latch with no retry behind it would gate the drain for the rest of the session",
+                persistedDeviceActorMessageProcessor.isQuotaRetryScheduled());
+        assertTrue("and a backlog left queued with no retry pending would spin this drain loop",
+                persistedDeviceActorMessageProcessor.getDeliveryQueue().isEmpty());
+        verify(deviceMsgService, never()).removePersistedMessage(any(), anyInt());
+    }
+
+    @Test
+    public void givenQuotaRetryScheduled_whenProcessDeviceDisconnect_thenBacklogAndRetryLatchCleared() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, false));
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        persistedDeviceActorMessageProcessor.setActorCtx(mock(TbActorCtx.class));
+
+        persistedDeviceActorMessageProcessor.deliverPersistedMsg(publish(1)); // defers -> latch set, queue populated
+        assertTrue(persistedDeviceActorMessageProcessor.isQuotaRetryScheduled());
+        assertEquals(1, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+
+        persistedDeviceActorMessageProcessor.processDeviceDisconnect(mock(TbActorCtx.class));
+
+        assertFalse("the next session must not start with the retry latch still set",
+                persistedDeviceActorMessageProcessor.isQuotaRetryScheduled());
+        assertTrue("the backlog belongs to the closed session and replays from the store",
+                persistedDeviceActorMessageProcessor.getDeliveryQueue().isEmpty());
+    }
+
+    @Test
+    public void givenDisconnectedBacklog_whenQuotaRetryFires_thenQueueClearedSoNoRetryIsLeftPending() {
+        when(throughputQuotaService.tryConsumeOutgoingDeferrable(1)).thenReturn(new QuotaGrant(0, false));
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
+        persistedDeviceActorMessageProcessor.setActorCtx(mock(TbActorCtx.class));
+        // a findPersistedMessages() that was in flight when the client disconnected still delivers its event
+        persistedDeviceActorMessageProcessor.processDeviceDisconnect(mock(TbActorCtx.class));
+        persistedDeviceActorMessageProcessor.processDeliverPersistedMessages(
+                new DeliverPersistedMessagesEventMsg(List.of(publish(1))));
+        assertTrue("the late event deferred while disconnected", persistedDeviceActorMessageProcessor.isQuotaRetryScheduled());
+        assertEquals(1, persistedDeviceActorMessageProcessor.getDeliveryQueue().size());
+
+        persistedDeviceActorMessageProcessor.processQuotaDeferredRetry();
+
+        assertFalse(persistedDeviceActorMessageProcessor.isQuotaRetryScheduled());
+        // a populated queue with no retry pending would let a live message of the next session overtake
+        // these and let the connect-time replay duplicate them
+        assertTrue("a queue left populated without a pending retry would stall and duplicate",
+                persistedDeviceActorMessageProcessor.getDeliveryQueue().isEmpty());
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
