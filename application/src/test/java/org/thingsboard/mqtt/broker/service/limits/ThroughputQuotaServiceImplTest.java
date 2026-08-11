@@ -342,6 +342,10 @@ public class ThroughputQuotaServiceImplTest {
 
         assertEquals(0, grant.granted());
         assertTrue("a draw confirmed the bucket dry, so the remainder is terminal", grant.exhausted());
+        // the exhausted flag lives above the low 32 bits, so narrowing to int must leave the four
+        // non-deferring charge sites with a grant of 0 - never the flag bit itself
+        assertEquals("the exhausted flag must never leak into the granted count",
+                0, service.tryConsumeOutgoing(100));
     }
 
     @Test
