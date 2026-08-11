@@ -655,6 +655,33 @@ class ApplicationPersistenceProcessorImplTest {
         assertThat(packDone).isFalse();
         verify(consumer, never()).commitSync();
         assertThat(strategy.getOrderedMessages()).containsExactly(deferredMsg);
+        // packetId=1 was never acked (decision.isCommit()=true here means "give up", not "all acked");
+        // it must be reported as dropped now, since it is discarded from the strategy for good below.
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(1);
+    }
+
+    @Test
+    void tryCommitPack_whenRetryingWithDeferredRemainder_mergesReprocessMapThenDeferredTailInOrder() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        PersistedPublishMsg first = publishMsg(1, 100);
+        PersistedPublishMsg second = publishMsg(2, 101);
+        strategy.init(new ArrayList<>(List.of(first, second)));
+        ApplicationProcessorStats stats = mock(ApplicationProcessorStats.class);
+        ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(
+                strategy, new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet()), stats);
+        // packetId=1 is still unacked and must be retried with a DUP copy; packetId=2 was excluded from
+        // this round entirely by the quota and is carried forward as the deferred remainder.
+        PersistedPublishMsg dupOfFirst = publishMsg(1, 100);
+        PersistedPublishMsg deferredMsg = publishMsg(3, 102);
+        when(ackStrategy.analyze(any()))
+                .thenReturn(new ApplicationProcessingDecision(false, Map.of(1, dupOfFirst)));
+
+        boolean packDone = processor.tryCommitPack("client", consumer, stats, ackStrategy, strategy, ctx,
+                2, 0, Map.of(3, deferredMsg));
+
+        assertThat(packDone).isFalse();
+        verify(consumer, never()).commitSync();
+        assertThat(strategy.getOrderedMessages()).containsExactly(dupOfFirst, deferredMsg);
     }
 
     // ===== Helpers =====

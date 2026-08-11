@@ -687,9 +687,17 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
         ApplicationProcessingDecision decision = ackStrategy.analyze(result);
 
-        stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
+        // decision.isCommit() alone does not mean the pack is truly done: SkipStrategy always commits,
+        // and RetryStrategy commits on give-up, both possibly with un-acked messages still in `result`.
+        // The pack is only actually final when there is also no quota-deferred remainder to hold it open for.
+        boolean packFinal = decision.isCommit() && quotaDeferred.isEmpty();
 
-        if (decision.isCommit() && quotaDeferred.isEmpty()) {
+        // a held round that delivered nothing is not an iteration worth counting
+        if (totalPublishMsgs > 0 || totalPubRelMsgs > 0) {
+            stats.log(totalPublishMsgs, totalPubRelMsgs, result, packFinal);
+        }
+
+        if (packFinal) {
             reportSkippedMessagesIfAny(clientId, result);
             log.debug("[{}] Committing pack", clientId);
             ctx.clear();
@@ -699,9 +707,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // Kafka commits the whole polled position at once, so a quota-deferred remainder must go out
         // BEFORE the commit - committing now would settle offsets for messages never delivered.
         if (decision.isCommit()) {
+            // this decision gave up on whatever is still pending (see comment above); report it now,
+            // since the remainder is about to be dropped from the strategy for good.
+            reportSkippedMessagesIfAny(clientId, result);
             log.debug("[{}] Holding pack commit for {} quota-deferred message(s)", clientId, quotaDeferred.size());
             ctx.clear();
-            // Everything else in this pack is acked and done; re-arm with only the deferred tail.
+            // Everything else in this pack is acked or just given up on (reported above); re-arm with
+            // only the deferred tail.
             submitStrategy.init(new ArrayList<>(quotaDeferred.values()));
         } else {
             if (isDebugEnabled) {
