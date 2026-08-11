@@ -467,6 +467,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
             Map<Integer, PersistedMsg> quotaDeferred = applyThroughputQuota(submitStrategy, clientId);
+            boolean nothingToDeliver = submitStrategy.getOrderedMessages().isEmpty();
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -483,9 +484,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     totalPublishMsgs, totalPubRelMsgs, quotaDeferred)) {
                 break;
             }
-            // a round that delivered nothing has no acks to await, so without this the loop would spin
-            // against a local pool that only refills once per draw
-            if (totalPublishMsgs == 0 && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
+            // the quota trimmed this round down to nothing, so there is nothing to await: without this the
+            // loop would spin against a local pool that only refills once per draw
+            if (nothingToDeliver && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
                 break;
             }
         }
@@ -579,6 +580,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
             Map<Integer, PersistedMsg> quotaDeferred = applyThroughputQuota(submitStrategy, clientId);
+            boolean nothingToDeliver = submitStrategy.getOrderedMessages().isEmpty();
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -595,9 +597,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     totalPublishMsgs, totalPubRelMsgs, quotaDeferred)) {
                 break;
             }
-            // a round that delivered nothing has no acks to await, so without this the loop would spin
-            // against a local pool that only refills once per draw
-            if (totalPublishMsgs == 0 && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
+            // the quota trimmed this round down to nothing, so there is nothing to await: without this the
+            // loop would spin against a local pool that only refills once per draw
+            if (nothingToDeliver && !quotaDeferred.isEmpty() && !awaitQuotaRefill()) {
                 break;
             }
         }
@@ -692,8 +694,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // The pack is only actually final when there is also no quota-deferred remainder to hold it open for.
         boolean packFinal = decision.isCommit() && quotaDeferred.isEmpty();
 
-        // a held round that delivered nothing is not an iteration worth counting
-        if (totalPublishMsgs > 0 || totalPubRelMsgs > 0) {
+        // a held round that delivered nothing is not an iteration worth counting. Every round that ends the
+        // pack still logs, even with both counters at 0: a pack of only QoS 0 shared-subscription messages
+        // or of only expired messages has always counted as a successful iteration and must keep doing so.
+        if (packFinal || totalPublishMsgs > 0 || totalPubRelMsgs > 0) {
             stats.log(totalPublishMsgs, totalPubRelMsgs, result, packFinal);
         }
 
