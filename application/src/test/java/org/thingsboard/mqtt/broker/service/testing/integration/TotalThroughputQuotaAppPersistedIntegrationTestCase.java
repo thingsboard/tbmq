@@ -45,31 +45,38 @@ import static org.junit.Assert.assertTrue;
  * Proves that a quota-truncated APPLICATION pack still settles: the refused tail is excluded from delivery, the pack
  * commits its offsets instead of stalling or retrying forever, and the dropped messages never come back.
  * <p>
- * Ledger arithmetic (capacity 10, block size 2, lease return disabled, refill 1 token per 60 s - negligible here):
+ * Ledger arithmetic (capacity 8, block size 2, lease return disabled, refill 1 token per 75 s - negligible here):
  * <ul>
- *     <li>boot: the warm-up draw takes one block, leaving local = 2 and bucket = 8;</li>
+ *     <li>boot: the warm-up draw takes one block, leaving local = 2 and bucket = 6;</li>
  *     <li>ingress: 6 publishes 50 ms apart. Every second charge empties the node and triggers a draw of one block that
- *     lands well inside the 50 ms pacing, so the draws at charges 2, 4 and 6 take the bucket 8 -> 6 -> 4 -> 2 and leave
+ *     lands well inside the 50 ms pacing, so the draws at charges 2, 4 and 6 take the bucket 6 -> 4 -> 2 -> 0 and leave
  *     local = 2 when the APPLICATION subscriber reconnects;</li>
- *     <li>replay: unlike the device path, the application processor charges the whole delivery round in ONE bulk
- *     {@code tryConsumeOutgoing(6)} that is settled by a single atomic CAS - there is no pacing race with the async
- *     draws. The grant is therefore exactly min(6, local 2 + bounded credit 2) = 4: 4 messages are delivered, 2 are
- *     excluded from the submit strategy and reported as droppedMsgs, and the pack commits all 6 Kafka offsets.</li>
+ *     <li>replay: one bulk charge grants min(6, local 2 + bounded credit 2) = 4. The 2-message remainder is NOT
+ *     destroyed on the spot - it schedules a draw, and because the bucket is empty that draw reports dry and arms the
+ *     backoff, so the retry sees an exhausted quota and settles the remainder terminally: 2 reported as droppedMsgs,
+ *     all 6 Kafka offsets committed. The bucket must be genuinely empty for this to be a terminal drop; with tokens
+ *     left the deferral would - correctly - deliver all 6.</li>
  * </ul>
- * That single bulk charge is load-bearing, not incidental. {@code applyThroughputQuota} runs once PER PACK, i.e. once
- * per {@code consumer.poll()}, so a backlog split across two polls is two bulk charges: the second one re-arms the full
- * block of credit and a 4+2, 3+3 or 2+4 split would deliver all 6 - the invariant ceiling for the replay is
- * capacity(10) - ingress(6) + blockSize(2) = exactly 6, which is what {@code < 6} asserts against. The publisher's
- * PUBACK only proves the message reached {@code tbmq.msg.all}; the write to the per-client APPLICATION topic happens
- * later on the dispatcher hop, while the reconnecting consumer assigns its partition and polls with no group-join
- * delay. The test therefore settles the backlog before reconnecting so the replay is one pack and one bulk charge.
+ * Settling the whole backlog into a single pack before reconnecting is still load-bearing, even though a pack can now
+ * take more than one internal round: {@code applyThroughputQuota} is scoped to one {@code consumer.poll()}, and a
+ * deferral makes the SAME pack call it again - exactly what happens above, where round one's bulk charge grants 4 and
+ * defers the remaining 2, and a later round in that same pack finds the bucket still dry and settles them terminally,
+ * all under one {@code commitSync()}. What must not happen is the backlog arriving across TWO separate polls, i.e. two
+ * independent packs with two independent commit decisions. Under the old, capacity-10 ledger a second poll's draw
+ * could still pull real tokens out of the 2 left in the bucket, so a split delivered all 6; here the bucket is drained
+ * to exactly 0, so a split pack has no more real tokens to draw than a single one does - the ceiling is still
+ * capacity(8) - ingress(6) + blockSize(2) = exactly 4, the same total the single-pack replay delivers, just spread
+ * across two commits instead of one. The publisher's PUBACK only proves the message reached {@code tbmq.msg.all}; the
+ * write to the per-client APPLICATION topic happens later on the dispatcher hop, while the reconnecting consumer
+ * assigns its partition and polls with no group-join delay. The test therefore settles the backlog before reconnecting
+ * so the replay is a single pack.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaAppPersistedIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.rate-limits.total.enabled=true",
-        "mqtt.rate-limits.total.config=10:600",
+        "mqtt.rate-limits.total.config=8:600",
         "mqtt.rate-limits.total.block-size=2",
         "mqtt.rate-limits.total.lease-return-ms=600000"
 })
@@ -128,7 +135,7 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
 
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
         pub.connect(getConnectOptions(true, DEV_USERNAME));
-        for (int i = 0; i < 6; i++) {                       // ingress: 6 charges leave local = 2 and bucket = 2
+        for (int i = 0; i < 6; i++) {                       // ingress: 6 charges leave local = 2 and bucket = 0
             pub.publish("quota/app", ("m_" + i).getBytes(), 1, false);
             Thread.sleep(50);                               // pacing so each async draw lands before the next charge
         }
@@ -137,9 +144,10 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
         // Let the whole backlog land on the per-client APPLICATION topic before the consumer starts. A PUBACK only
         // proves arrival at tbmq.msg.all - the per-client topic write happens later on the dispatcher hop, and the
         // reconnecting consumer assigns its partition and polls immediately. Reconnecting too early can therefore
-        // split the 6 messages across two polls, and since applyThroughputQuota charges once PER PACK the second pack
-        // re-arms the block credit and all 6 get delivered, breaking the `< 6` assertion. At 1 token per 60 s this
-        // settle adds ~0.017 tokens, so it leaves the ingress ledger untouched.
+        // split the 6 messages across two polls, i.e. two independent packs with two independent commit decisions,
+        // which breaks the clean single-pack, single-commitSync() story the class javadoc's arithmetic relies on
+        // (delivery is still capped at 4 either way, since the bucket is genuinely empty). At 1 token per 75 s this
+        // settle adds ~0.013 tokens, so it leaves the ingress ledger untouched.
         Thread.sleep(1000);
 
         persistedClient.connect(appOptions);                // pack replay: one bulk charge grants 2 local + 2 credit
