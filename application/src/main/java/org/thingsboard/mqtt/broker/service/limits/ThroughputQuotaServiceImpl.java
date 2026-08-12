@@ -104,6 +104,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
     public boolean tryConsumeIncoming() {
         return tryConsume(1) == 1;
     }

@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
@@ -94,6 +95,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -123,6 +125,7 @@ class ApplicationPersistenceProcessorImplTest {
         ReflectionTestUtils.setField(processor, "pollDuration", 100L);
         ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
         ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
+        lenient().when(throughputQuotaService.isEnabled()).thenReturn(true);
         lenient().when(throughputQuotaService.tryConsumeOutgoingWaiting(anyInt())).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -614,6 +617,19 @@ class ApplicationPersistenceProcessorImplTest {
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
         verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
         assertThat(strategy.getOrderedMessages()).hasSize(1);
+    }
+
+    // the default configuration: not one pack may pay for counting its PUBLISH packets when nothing will be charged
+    @Test
+    void applyThroughputQuota_whenQuotaDisabled_touchesNeitherPackNorQuota() {
+        when(throughputQuotaService.isEnabled()).thenReturn(false);
+        ApplicationSubmitStrategy strategy = mock(ApplicationSubmitStrategy.class);
+
+        processor.applyThroughputQuota(strategy, "client");
+
+        verifyNoInteractions(strategy);
+        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
     }
 
     // a pack round must charge through the WAITING variant: the plain charge caps the grant at the node-local pool plus

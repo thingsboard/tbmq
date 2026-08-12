@@ -720,6 +720,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     void applyThroughputQuota(ApplicationSubmitStrategy submitStrategy, String clientId) {
+        if (!throughputQuotaService.isEnabled()) {
+            // counting the PUBLISH packets is O(pack) and runs on every pack round of every APPLICATION client, so it
+            // is not worth paying on the default configuration, where the charge below would grant everything anyway
+            return;
+        }
         List<PersistedMsg> orderedMessages = submitStrategy.getOrderedMessages();
         int publishCount = 0;
         for (PersistedMsg msg : orderedMessages) {

@@ -26,6 +26,14 @@ package org.thingsboard.mqtt.broker.service.limits;
 public interface ThroughputQuotaService {
 
     /**
+     * Whether the quota is configured to charge at all. Purely an optimisation hook: it lets a caller skip
+     * preparatory work — counting charge units, building collections — that a disabled quota would throw away.
+     * The charge methods below are safe to call either way and grant everything when the quota is off, so no
+     * caller has to consult this for correctness.
+     */
+    boolean isEnabled();
+
+    /**
      * Charges one incoming PUBLISH packet.
      *
      * @return true if granted; false if the packet must be refused (caller performs the terminal
