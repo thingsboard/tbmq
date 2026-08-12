@@ -91,11 +91,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (deviceSubscriptions != null) {
-            if (rateLimitService.isDevicePersistedMsgsLimitEnabled()) {
-                processDeviceSubscriptionsWithRateLimits(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            } else {
-                processDeviceSubscriptions(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            }
+            // the narrower device-persisted-msgs limit truncates first; the total quota then pays only for what
+            // actually gets stored, so it never bills for messages that limit already dropped
+            List<Subscription> admittedDeviceSubscriptions = rateLimitService.isDevicePersistedMsgsLimitEnabled()
+                    ? applyDevicePersistedMsgsLimit(deviceSubscriptions, callbackWrapper)
+                    : deviceSubscriptions;
+            processDeviceSubscriptionsWithThroughputQuota(admittedDeviceSubscriptions, publishMsgWithId, callbackWrapper);
         }
         if (applicationSubscriptions != null) {
             processApplicationSubscriptionsWithThroughputQuota(applicationSubscriptions, publishMsgWithId, callbackWrapper);
@@ -110,36 +111,33 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
-    void processDeviceSubscriptionsWithRateLimits(List<Subscription> deviceSubscriptions,
-                                                  PublishMsgWithId publishMsgWithId,
-                                                  PublishMsgCallback callbackWrapper) {
+    List<Subscription> applyDevicePersistedMsgsLimit(List<Subscription> deviceSubscriptions,
+                                                     PublishMsgCallback callbackWrapper) {
         int totalCount = deviceSubscriptions.size();
         int availableTokens = (int) rateLimitService.tryConsumeDevicePersistedMsgs(totalCount);
-
         if (availableTokens >= totalCount) {
-            processDeviceSubscriptions(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            return;
+            return deviceSubscriptions;
         }
-
         int dropped = totalCount - Math.max(availableTokens, 0);
-        if (dropped > 0) {
-            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
-        }
-
-        if (availableTokens <= 0) {
-            log.trace("No available tokens left for device persisted messages bucket. Dropping {} messages", totalCount);
-            callbackWrapper.onBatchSuccess(totalCount);
-            return;
-        }
-
         log.trace("Hitting device persisted messages rate limits. Dropping {} messages", dropped);
-        for (int i = 0; i < totalCount; i++) {
-            if (i < availableTokens) {
-                sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
-            } else {
-                callbackWrapper.onSuccess();
-            }
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+        callbackWrapper.onBatchSuccess(dropped);
+        // a view over the caller's list, not a copy: safe because nothing downstream mutates either one
+        return availableTokens <= 0 ? List.of() : deviceSubscriptions.subList(0, availableTokens);
+    }
+
+    void processDeviceSubscriptionsWithThroughputQuota(List<Subscription> deviceSubscriptions,
+                                                       PublishMsgWithId publishMsgWithId,
+                                                       PublishMsgCallback callbackWrapper) {
+        int totalCount = deviceSubscriptions.size();
+        if (totalCount == 0) {
+            return; // the device limit took everything: nothing left to charge for
         }
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        for (int i = 0; i < granted; i++) {
+            sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
 
     void processApplicationSubscriptionsWithThroughputQuota(List<Subscription> applicationSubscriptions,
@@ -206,12 +204,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             sendIntegrationMsg(integrationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
         }
         callbackWrapper.onBatchSuccess(dropped);
-    }
-
-    private void processDeviceSubscriptions(List<Subscription> deviceSubscriptions, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
-        for (Subscription subscription : deviceSubscriptions) {
-            sendDeviceMsg(subscription, publishMsgWithId, callbackWrapper);
-        }
     }
 
     private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {

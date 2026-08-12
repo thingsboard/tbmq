@@ -146,7 +146,7 @@ public class MsgPersistenceManagerImplTest {
     }
 
     @Test
-    public void given1TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcess1SendAndOtherCallbacks() {
+    public void given1TokenAvailable_whenApplyDevicePersistedMsgsLimit_thenAdmit1AndSettleTheRest() {
         PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
 
         List<Subscription> subscriptions = List.of(
@@ -154,20 +154,18 @@ public class MsgPersistenceManagerImplTest {
                 createSubscription("tf2", 2, "client2", ClientType.DEVICE),
                 createSubscription("tf3", 1, "client3", ClientType.DEVICE)
         );
-        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
-        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
         when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(1L);
 
-        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+        List<Subscription> admitted = msgPersistenceManager.applyDevicePersistedMsgsLimit(subscriptions, callbackWrapper);
 
-        verify(deviceMsgQueuePublisher, times(1)).sendMsg(
-                any(), any(), any());
-        verify(callbackWrapper, times(2)).onSuccess();
+        assertEquals(subscriptions.subList(0, 1), admitted);
+        verify(callbackWrapper).onBatchSuccess(eq(2));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(eq(2));
     }
 
     @Test
-    public void given0TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessNoSendsAndAllCallbacks() {
+    public void given0TokenAvailable_whenApplyDevicePersistedMsgsLimit_thenAdmitNothingAndSettleAll() {
         PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
 
         List<Subscription> subscriptions = List.of(
@@ -175,20 +173,18 @@ public class MsgPersistenceManagerImplTest {
                 createSubscription("tf2", 2, "client2", ClientType.DEVICE),
                 createSubscription("tf3", 1, "client3", ClientType.DEVICE)
         );
-        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
-        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
         when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(0L);
 
-        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+        List<Subscription> admitted = msgPersistenceManager.applyDevicePersistedMsgsLimit(subscriptions, callbackWrapper);
 
-        verify(deviceMsgQueuePublisher, never()).sendMsg(
-                any(), any(), any());
+        assertEquals(List.of(), admitted);
         verify(callbackWrapper).onBatchSuccess(eq(3));
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(eq(3));
     }
 
     @Test
-    public void givenAllTokensAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessAllSendsAndNoCallbacks() {
+    public void givenAllTokensAvailable_whenApplyDevicePersistedMsgsLimit_thenAdmitAllAndSettleNothing() {
         PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
 
         List<Subscription> subscriptions = List.of(
@@ -196,16 +192,15 @@ public class MsgPersistenceManagerImplTest {
                 createSubscription("tf2", 2, "client2", ClientType.DEVICE),
                 createSubscription("tf3", 1, "client3", ClientType.DEVICE)
         );
-        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
-        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
         when(rateLimitService.tryConsumeDevicePersistedMsgs(anyLong())).thenReturn(3L);
 
-        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+        List<Subscription> admitted = msgPersistenceManager.applyDevicePersistedMsgsLimit(subscriptions, callbackWrapper);
 
-        verify(deviceMsgQueuePublisher, times(3)).sendMsg(
-                any(), any(), any());
+        assertEquals(subscriptions, admitted);
         verify(callbackWrapper, never()).onSuccess();
+        verify(callbackWrapper, never()).onBatchSuccess(anyInt());
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
     }
 
     @Test
@@ -295,6 +290,84 @@ public class MsgPersistenceManagerImplTest {
 
         verify(throughputQuotaService).tryConsumeOutgoing(eq(2));
         verify(integrationMsgQueuePublisher, times(2)).sendMsg(any(), any(), any());
+    }
+
+    @Test
+    public void givenDeviceLimitTruncates_whenProcessPublish_thenQuotaIsChargedForSurvivorsOnly() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeDevicePersistedMsgs(3)).thenReturn(2L);
+
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(
+                UUID.randomUUID(), PublishMsgProto.getDefaultInstance(), new DefaultTbQueueMsgHeaders());
+        PersistentMsgSubscriptions subscriptions = new PersistentMsgSubscriptions(
+                false,
+                List.of(
+                        createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
+                        createSubscription("topic2", 1, "devClientId2", ClientType.DEVICE),
+                        createSubscription("topic3", 1, "devClientId3", ClientType.DEVICE)
+                ),
+                Collections.emptyList(),
+                Collections.emptySet(),
+                Collections.emptyList()
+        );
+
+        msgPersistenceManager.processPublish(publishMsgWithId, subscriptions, mock(PublishMsgCallback.class));
+
+        // 2 survived the device limit, so the quota must be charged 2 - never the original 3
+        verify(throughputQuotaService).tryConsumeOutgoingWaiting(2);
+        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(3);
+        verify(deviceMsgQueuePublisher, times(2)).sendMsg(any(), any(), any());
+    }
+
+    @Test
+    public void givenDeviceLimitDropsAll_whenProcessPublish_thenQuotaIsNotChargedAtAll() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeDevicePersistedMsgs(2)).thenReturn(0L);
+
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(
+                UUID.randomUUID(), PublishMsgProto.getDefaultInstance(), new DefaultTbQueueMsgHeaders());
+        PersistentMsgSubscriptions subscriptions = new PersistentMsgSubscriptions(
+                false,
+                List.of(
+                        createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
+                        createSubscription("topic2", 1, "devClientId2", ClientType.DEVICE)
+                ),
+                Collections.emptyList(),
+                Collections.emptySet(),
+                Collections.emptyList()
+        );
+
+        msgPersistenceManager.processPublish(publishMsgWithId, subscriptions, mock(PublishMsgCallback.class));
+
+        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
+        verify(deviceMsgQueuePublisher, never()).sendMsg(any(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(2);
+    }
+
+    @Test
+    public void givenPartialQuotaGrant_whenProcessPublish_thenPersistsOnlyGrantedDeviceSubscriptions() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(1);
+
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(
+                UUID.randomUUID(), PublishMsgProto.getDefaultInstance(), new DefaultTbQueueMsgHeaders());
+        PersistentMsgSubscriptions subscriptions = new PersistentMsgSubscriptions(
+                false,
+                List.of(
+                        createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
+                        createSubscription("topic2", 1, "devClientId2", ClientType.DEVICE)
+                ),
+                Collections.emptyList(),
+                Collections.emptySet(),
+                Collections.emptyList()
+        );
+
+        msgPersistenceManager.processPublish(publishMsgWithId, subscriptions, mock(PublishMsgCallback.class));
+
+        ArgumentCaptor<String> sent = ArgumentCaptor.forClass(String.class);
+        verify(deviceMsgQueuePublisher, times(1)).sendMsg(sent.capture(), any(), any());
+        assertEquals(List.of("devClientId1"), sent.getAllValues());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(1);
     }
 
     @Test
