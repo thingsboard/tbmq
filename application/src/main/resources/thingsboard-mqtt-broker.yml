@@ -1009,26 +1009,36 @@ mqtt:
         buffered-msg-count: "${MQTT_APP_BUFFERED_MSG_COUNT:10}"
   rate-limits:
     total:
-      # Enables or disables the cluster-wide total throughput quota. The quota counts MQTT PUBLISH packets processed by
-      # the broker — both incoming (from publishers) and outgoing (to subscribers, including messages routed to
-      # integrations) — against one budget shared by the whole cluster. A publish delivered to N subscribers costs N+1
-      # packets; persisted-session replay and QoS 1/2 retransmissions are counted; a shared subscription group is
-      # counted once per message. On overuse, incoming publishes are refused (MQTT 5: PUBACK/PUBREC with reason code
-      # 0x97 QUOTA_EXCEEDED; MQTT 3.x: disconnect) and outgoing deliveries are dropped and reported in the droppedMsgs
-      # statistic. An accepted QoS 1/2 publish may still have its deliveries dropped later. If Redis is unavailable, the
-      # quota fails open and traffic passes unmetered (see the throughputQuotaDegraded metric).
+      # Enables or disables the cluster-wide total throughput quota. The quota counts MQTT PUBLISH packets against one
+      # budget shared by the whole cluster, and charges them when the publish is processed — before it is stored. A
+      # publish costs 1 packet for the incoming message plus 1 for every subscriber, shared subscription group and
+      # integration it is routed to. Once a message has been charged and stored it is delivered without any further
+      # charge: a persistent session that reconnects after being offline receives its whole backlog as fast as the
+      # cluster can deliver it, however large, and QoS 1/2 retransmissions are free. The one exception is a retained
+      # message sent to a client that subscribes later — that is a new outgoing packet which nothing has paid for yet,
+      # so it is charged when the subscription is made.
+      # On overuse, incoming publishes are refused (MQTT 5: PUBACK/PUBREC with reason code 0x97 QUOTA_EXCEEDED;
+      # MQTT 3.x: disconnect) and the copies for subscribers beyond the remaining budget are never stored, which is
+      # reported in the droppedMsgs statistic. If Redis is unavailable, the quota fails open and traffic passes
+      # unmetered (see the throughputQuotaDegraded metric).
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
-      # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth's capacity is the
-      # burst allowance (the volume of excess absorbed without drops) and refills over the given period, so the
-      # sustained rate is capacity / seconds. Example: 60000:60 allows 1000 messages per second sustained with a
-      # one-minute burst allowance. The default 1000:1,50000:60 allows ~833 messages per second sustained with only one
-      # second of burst headroom.
+      # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth refills
+      # continuously over the given period, so the sustained rate is capacity / seconds and the capacity is the volume
+      # of unused budget that accumulates for a burst. Example: 60000:60 allows 1000 messages per second sustained, and
+      # after 10 idle seconds a burst of 10000 is available at once. The default 1000:1,50000:60 allows ~833 messages
+      # per second sustained.
+      # IMPORTANT: the capacity is also the largest amount a SINGLE publish can charge, and when more than one bandwidth
+      # is configured the smallest available capacity applies. With the default, a publish routed to more than 1000
+      # subscribers is therefore always truncated, even on an idle cluster. If any topic in your deployment fans out to
+      # more subscribers than that, configure a single bandwidth whose capacity exceeds your widest fan-out —
+      # 50000:60 keeps the same ~833 messages per second sustained while allowing a 50000-subscriber fan-out.
       # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
       # capacity:seconds bandwidth is configured, granting one full interval of fresh budget.
       config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
       # Number of quota tokens a broker node draws from Redis per replenishment round-trip. Defaults to 0, which derives
       # max(1, sustainedRate / 10) from the config above. Larger blocks reduce Redis calls but let idle nodes hold more
-      # of the cluster budget between lease-return ticks.
+      # of the cluster budget between lease-return ticks. A publish whose fan-out exceeds the node's drawn tokens draws
+      # the shortfall on demand, so this value does not cap a single publish.
       block-size: "${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
       # Period of the background tick that returns a node's unused drawn tokens to the shared Redis bucket (in ms).
       # Defaults to 1000. Set to 0 to disable the return tick.
