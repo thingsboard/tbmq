@@ -110,7 +110,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
         when(actorSystemContext.getThroughputQuotaService()).thenReturn(throughputQuotaService);
         when(actorSystemContext.getTbMessageStatsReportClient()).thenReturn(tbMessageStatsReportClient);
-        lenient().when(throughputQuotaService.tryConsumeOutgoing(anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(throughputQuotaService.tryConsumeOutgoingWaiting(anyInt())).thenAnswer(inv -> inv.getArgument(0));
 
         this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(actorSystemContext, CLIENT_ID));
     }
@@ -305,7 +305,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenQuotaExhausted_whenDeliverPersistedMsg_thenSettleWithoutSendOrCounterMutation() {
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(1)).thenReturn(0);
         when(deviceMsgService.removePersistedMessage(CLIENT_ID, 5)).thenReturn(CompletableFuture.completedFuture(null));
         persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
 
@@ -322,11 +322,14 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
         assertEquals(0, persistedDeviceActorMessageProcessor.getUnacknowledgedMsgCounter().get());
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
+        // the replay must charge through the WAITING variant: the plain charge caps the grant at the node-local pool
+        // plus one block, which is what used to destroy a backlog the cluster still had budget for
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
     }
 
     @Test
     public void givenQuotaExhaustedForSharedSubMsg_whenDeliver_thenRemoveByShareKeyAndOriginalPacketId() {
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(1)).thenReturn(0);
         when(deviceMsgService.removePersistedMessage(SS_TEST_KEY, 5)).thenReturn(CompletableFuture.completedFuture(null));
         persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
         persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription()

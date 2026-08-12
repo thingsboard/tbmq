@@ -123,7 +123,7 @@ class ApplicationPersistenceProcessorImplTest {
         ReflectionTestUtils.setField(processor, "pollDuration", 100L);
         ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
         ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
-        lenient().when(throughputQuotaService.tryConsumeOutgoing(anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(throughputQuotaService.tryConsumeOutgoingWaiting(anyInt())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -582,7 +582,7 @@ class ApplicationPersistenceProcessorImplTest {
     void applyThroughputQuota_whenFullyGranted_keepsPackUnchanged() {
         BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
         strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
-        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
 
         processor.applyThroughputQuota(strategy, "client");
 
@@ -596,7 +596,7 @@ class ApplicationPersistenceProcessorImplTest {
         PersistedPubRelMsg pubRel = new PersistedPubRelMsg(9, 90L);
         PersistedPublishMsg first = publishMsg(1, 100);
         strategy.init(new ArrayList<>(List.of(pubRel, first, publishMsg(2, 101), publishMsg(3, 102))));
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(1);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(1);
 
         processor.applyThroughputQuota(strategy, "client");
 
@@ -612,7 +612,21 @@ class ApplicationPersistenceProcessorImplTest {
         processor.applyThroughputQuota(strategy, "client");
 
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
         assertThat(strategy.getOrderedMessages()).hasSize(1);
+    }
+
+    // a pack round must charge through the WAITING variant: the plain charge caps the grant at the node-local pool plus
+    // one block, which is what used to destroy the refused tail of a pack the cluster still had budget for
+    @Test
+    void applyThroughputQuota_neverUsesThePlainCharge() {
+        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
+        strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
+
+        processor.applyThroughputQuota(strategy, "client");
+
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
     }
 
     // ===== Helpers =====
