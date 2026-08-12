@@ -23,6 +23,7 @@ import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
@@ -47,8 +48,12 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
                                           JedisBasedProxyManager<String> jedisBasedProxyManager,
-                                          @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
-                                          @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration,
+                                          @Autowired(required = false)
+                                          @Qualifier("devicePersistedMsgsBucketConfiguration")
+                                          BucketConfiguration devicePersistedMsgsBucketConfiguration,
+                                          @Autowired(required = false)
+                                          @Qualifier("totalMsgsBucketConfiguration")
+                                          BucketConfiguration totalMsgsBucketConfiguration,
                                           CacheProperties cacheProperties,
                                           ClientsLimitProperties clientsLimitProperties) {
         this.redisTemplate = redisTemplate;
