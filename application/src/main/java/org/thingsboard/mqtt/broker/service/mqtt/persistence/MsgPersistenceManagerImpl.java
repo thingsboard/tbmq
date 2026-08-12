@@ -187,23 +187,11 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                                                             PublishMsgWithId publishMsgWithId,
                                                             PublishMsgCallback callbackWrapper) {
         int totalCount = integrationSubscriptions.size();
-        int granted = throughputQuotaService.tryConsumeOutgoing(totalCount);
-
-        if (granted == totalCount) {
-            for (Subscription integrationSubscription : integrationSubscriptions) {
-                sendIntegrationMsg(integrationSubscription, publishMsgWithId, callbackWrapper);
-            }
-            return;
-        }
-
-        int dropped = totalCount - granted;
-        log.trace("Total throughput quota exceeded. Dropping {} integration messages", dropped);
-        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
-
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
         for (int i = 0; i < granted; i++) {
             sendIntegrationMsg(integrationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
         }
-        callbackWrapper.onBatchSuccess(dropped);
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
 
     private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {

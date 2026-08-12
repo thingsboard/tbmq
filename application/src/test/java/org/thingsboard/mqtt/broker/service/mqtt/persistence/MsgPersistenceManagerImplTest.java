@@ -215,7 +215,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(3);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(3);
 
         msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
 
@@ -236,7 +236,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(1);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(1);
 
         msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
 
@@ -259,7 +259,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
 
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(0);
 
         msgPersistenceManager.processIntegrationSubscriptionsWithThroughputQuota(subscriptions, publishMsgWithId, callbackWrapper);
 
@@ -271,7 +271,7 @@ public class MsgPersistenceManagerImplTest {
     @Test
     public void givenIntegrationSubscriptions_whenProcessPublish_thenChargeQuotaAndSend() {
         when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
-        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
 
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
@@ -288,7 +288,7 @@ public class MsgPersistenceManagerImplTest {
 
         msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, mock(PublishMsgCallback.class));
 
-        verify(throughputQuotaService).tryConsumeOutgoing(eq(2));
+        verify(throughputQuotaService).tryConsumeOutgoingWaiting(eq(2));
         verify(integrationMsgQueuePublisher, times(2)).sendMsg(any(), any(), any());
     }
 
@@ -503,6 +503,33 @@ public class MsgPersistenceManagerImplTest {
 
         verify(applicationMsgQueuePublisher, times(2)).sendMsg(any(), any(), any());
         verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
+    }
+
+    @Test
+    public void givenIntegrationSubscriptions_whenProcessPublish_thenChargesViaTheWaitingVariant() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(1);
+
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(
+                UUID.randomUUID(), PublishMsgProto.getDefaultInstance(), new DefaultTbQueueMsgHeaders());
+        PersistentMsgSubscriptions subscriptions = new PersistentMsgSubscriptions(
+                false,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptySet(),
+                List.of(
+                        createSubscription("topic1", 1, "ieClientId1", ClientType.INTEGRATION),
+                        createSubscription("topic2", 1, "ieClientId2", ClientType.INTEGRATION)
+                )
+        );
+
+        msgPersistenceManager.processPublish(publishMsgWithId, subscriptions, mock(PublishMsgCallback.class));
+
+        verify(throughputQuotaService).tryConsumeOutgoingWaiting(2);
+        // the lease-capped variant must be gone: it would truncate a wide integration fan-out to blockSize
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(integrationMsgQueuePublisher, times(1)).sendMsg(any(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs(1);
     }
 
     @Test
