@@ -221,6 +221,26 @@ public class RateLimitRedisCacheServiceImplTest {
     }
 
     @Test
+    public void givenStoredDeviceConfigurationDiffers_whenInit_thenDeviceConfigurationIsReplacedOnTheDeviceKey() {
+        clearInvocations(bucketProxy);
+        BucketConfiguration devicePersistedMsgsBucketConfiguration = mock(BucketConfiguration.class);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE), any()))
+                .thenReturn(bucketProxy);
+        BucketConfiguration stored = mock(BucketConfiguration.class);
+        when(stored.equalsByContent(devicePersistedMsgsBucketConfiguration)).thenReturn(false);
+        when(jedisBasedProxyManager.getProxyConfiguration(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE))
+                .thenReturn(Optional.of(stored));
+
+        new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager,
+                devicePersistedMsgsBucketConfiguration, null, cacheProperties, clientsLimitProperties).init();
+
+        // Both buckets go through the same helper, so what this pins is the argument pairing in init(): the device
+        // configuration must be applied to the device key, and the disabled total limit must not be touched.
+        verify(bucketProxy).replaceConfiguration(devicePersistedMsgsBucketConfiguration, TokensInheritanceStrategy.PROPORTIONALLY);
+        verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any());
+    }
+
+    @Test
     public void givenDisabledLimit_whenInit_thenBucketProxyIsNotCreated() {
         // devicePersistedMsgsBucketConfiguration is not registered as a bean in this context, so the
         // constructor receives null for it and the device bucket must never be touched.
