@@ -56,6 +56,8 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
     private static final long LARGE_BURST_CAPACITY = 2000L;
     private static final long LARGE_SUSTAINED_CAPACITY = 100000L;
 
+    private static final Duration REFILL_PERIOD_PER_TOKEN = Duration.ofHours(1);
+
     @Autowired
     private JedisBasedProxyManager<String> jedisBasedProxyManager;
     @Autowired
@@ -154,30 +156,41 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
     }
 
     private static BucketConfiguration bucketConfiguration(long capacity) {
-        // A 24-hour refill period (~0.23 tokens/s) keeps the token count stable for the duration of the test.
         return BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder()
                         .capacity(capacity)
-                        .refillGreedy(capacity, Duration.ofHours(24))
+                        .refillGreedy(capacity, refillPeriodFor(capacity))
                         .build())
                 .build();
     }
 
     private static BucketConfiguration twoBandwidthConfiguration(long burstCapacity, long sustainedCapacity) {
-        // Models the SHAPE of the shipped default ("<burst>:1,<sustained>:60") - a small short-period burst
-        // bandwidth plus a large long-period sustained one - but with hour-scale periods instead of the literal
-        // 1s/60s. With the real periods a greedy refill regenerates the whole bucket within a second, so any token
-        // assertion would be meaningless; what this test pins is bandwidth MATCHING, which the period does not
-        // affect. Neither bandwidth gets an id, exactly like AbstractMsgsRateLimitsConfiguration builds them.
+        // Models the SHAPE of the shipped default ("<burst>:1,<sustained>:60") - a small burst bandwidth plus a large
+        // sustained one - but with far longer periods than the literal 1s/60s. With the real periods a greedy refill
+        // regenerates the whole bucket within a second, so any token assertion would be meaningless; what this test
+        // pins is bandwidth MATCHING, which the period does not affect. Neither bandwidth gets an id, exactly like
+        // AbstractMsgsRateLimitsConfiguration builds them.
         return BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder()
                         .capacity(burstCapacity)
-                        .refillGreedy(burstCapacity, Duration.ofHours(24))
+                        .refillGreedy(burstCapacity, refillPeriodFor(burstCapacity))
                         .build())
                 .addLimit(Bandwidth.builder()
                         .capacity(sustainedCapacity)
-                        .refillGreedy(sustainedCapacity, Duration.ofHours(48))
+                        .refillGreedy(sustainedCapacity, refillPeriodFor(sustainedCapacity))
                         .build())
                 .build();
+    }
+
+    /**
+     * A greedy refill regenerates one token every {@code refillPeriod / capacity}, so a fixed period would make a
+     * large bandwidth tick far faster than a small one - with a shared 48-hour period the 50000-token sustained
+     * bandwidth gained a token every 3.5s, which is well inside the stall budget of a CI box running Kafka, Postgres
+     * and Valkey containers, and enough to break the exact per-bandwidth token assertions in this class. Scaling the
+     * period to the capacity instead pins every bandwidth at one token per {@link #REFILL_PERIOD_PER_TOKEN}, whatever
+     * the capacities are, so no bandwidth can gain a token mid-test.
+     */
+    private static Duration refillPeriodFor(long capacity) {
+        return REFILL_PERIOD_PER_TOKEN.multipliedBy(capacity);
     }
 }
