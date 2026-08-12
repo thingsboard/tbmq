@@ -108,11 +108,6 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
     public boolean tryConsumeIncoming() {
         return tryConsume(1) == 1;
     }
@@ -125,11 +120,6 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     @Override
     public int tryConsumeOutgoing(int n) {
         return tryConsume(n);
-    }
-
-    @Override
-    public boolean tryConsumeOutgoingWaiting() {
-        return tryConsumeOutgoingWaiting(1) == 1;
     }
 
     @Override

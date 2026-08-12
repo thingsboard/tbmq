@@ -246,6 +246,10 @@ public class ThroughputQuotaServiceImplTest {
     // The waiting charge draws synchronously for exactly what it needs, so it must not also take credit: the credit
     // would leave a deficit repayable only by a second, concurrent draw, which is how this path came to issue two
     // Redis calls per shortfall and run them against each other.
+    //
+    // This is also what keeps prepaid charging honest, so it is not quota-service trivia to be deleted: the persistent
+    // fan-out charges its whole width in one bulk call, and a charge that could only ever grant localTokens + blockSize
+    // would make the node's lease - not the cluster budget - the ceiling on how many subscribers a publish can reach.
     @Test
     public void givenShortPool_whenWaitingCharge_thenOneDrawAndNoSecondQueued() {
         ManualExecutor executor = new ManualExecutor();
