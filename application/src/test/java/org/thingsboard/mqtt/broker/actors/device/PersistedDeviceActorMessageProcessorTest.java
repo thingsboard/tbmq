@@ -38,8 +38,6 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -62,7 +60,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -84,8 +81,6 @@ public class PersistedDeviceActorMessageProcessorTest {
     ClientLogger clientLogger;
     DeviceActorConfiguration deviceActorConfig;
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
-    ThroughputQuotaService throughputQuotaService;
-    TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Before
     public void setUp() throws Exception {
@@ -105,12 +100,6 @@ public class PersistedDeviceActorMessageProcessorTest {
         when(clientActorContext.getClientLogger()).thenReturn(clientLogger);
         when(actorSystemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
         when(actorSystemContext.getSharedSubscriptionCacheService()).thenReturn(sharedSubscriptionCacheService);
-
-        throughputQuotaService = mock(ThroughputQuotaService.class);
-        tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
-        when(actorSystemContext.getThroughputQuotaService()).thenReturn(throughputQuotaService);
-        when(actorSystemContext.getTbMessageStatsReportClient()).thenReturn(tbMessageStatsReportClient);
-        lenient().when(throughputQuotaService.tryConsumeOutgoingWaiting()).thenReturn(true);
 
         this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(actorSystemContext, CLIENT_ID));
     }
@@ -301,51 +290,6 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(mqttMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
 
         assertEquals(1, persistedDeviceActorMessageProcessor.getInFlightPacketIds().size());
-    }
-
-    @Test
-    public void givenQuotaExhausted_whenDeliverPersistedMsg_thenSettleWithoutSendOrCounterMutation() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting()).thenReturn(false);
-        when(deviceMsgService.removePersistedMessage(CLIENT_ID, 5)).thenReturn(CompletableFuture.completedFuture(null));
-        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
-
-        DevicePublishMsg msg = DevicePublishMsg.builder()
-                .packetId(5)
-                .packetType(PersistedPacketType.PUBLISH)
-                .time(System.currentTimeMillis())
-                .properties(new MqttProperties())
-                .build();
-        persistedDeviceActorMessageProcessor.deliverPersistedMsg(msg);
-
-        verify(mqttMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
-        verify(deviceMsgService).removePersistedMessage(CLIENT_ID, 5);
-        verify(tbMessageStatsReportClient).reportDroppedMsgs();
-        assertEquals(0, persistedDeviceActorMessageProcessor.getUnacknowledgedMsgCounter().get());
-        assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
-        // the replay must charge through the WAITING variant: the plain charge caps the grant at the node-local pool
-        // plus one block, which is what used to destroy a backlog the cluster still had budget for
-        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
-        verify(throughputQuotaService, never()).tryConsumeOutgoing();
-    }
-
-    @Test
-    public void givenQuotaExhaustedForSharedSubMsg_whenDeliver_thenRemoveByShareKeyAndOriginalPacketId() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting()).thenReturn(false);
-        when(deviceMsgService.removePersistedMessage(SS_TEST_KEY, 5)).thenReturn(CompletableFuture.completedFuture(null));
-        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
-        persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription()
-                .put(77, new SharedSubscriptionPublishPacket(SS_TEST_KEY, 5));
-
-        DevicePublishMsg msg = DevicePublishMsg.builder()
-                .packetId(77)
-                .packetType(PersistedPacketType.PUBLISH)
-                .time(System.currentTimeMillis())
-                .properties(new MqttProperties())
-                .build();
-        persistedDeviceActorMessageProcessor.deliverPersistedMsg(msg);
-
-        verify(deviceMsgService).removePersistedMessage(SS_TEST_KEY, 5);
-        verify(tbMessageStatsReportClient).reportDroppedMsgs();
     }
 
     @Test

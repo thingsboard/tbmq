@@ -44,8 +44,6 @@ import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -75,8 +73,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final ClientLogger clientLogger;
     private final DeviceActorConfiguration deviceActorConfig;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
-    private final ThroughputQuotaService throughputQuotaService;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private final Set<Integer> inFlightPacketIds = Sets.newConcurrentHashSet();
     private final ConcurrentMap<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = Maps.newConcurrentMap();
@@ -99,8 +95,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
         this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
-        this.throughputQuotaService = systemContext.getThroughputQuotaService();
-        this.tbMessageStatsReportClient = systemContext.getTbMessageStatsReportClient();
     }
 
     public void processDeviceConnect(TbActorCtx actorCtx, DeviceConnectedEventMsg msg) {
@@ -187,10 +181,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (msgExpiryResult.isExpired()) {
             return;
         }
-        if (!throughputQuotaService.tryConsumeOutgoingWaiting()) {
-            settleQuotaDroppedMsg(publishMsg);
-            return;
-        }
         // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
         boolean isDup = inFlightPacketIds.contains(publishMsg.getPacketId());
         if (!isDup) {
@@ -207,20 +197,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.warn("[{}] Failed to send PUBLISH msg", clientId, e);
             if (sessionCtx != null) disconnect("Failed to send PUBLISH msg");
         }
-    }
-
-    private void settleQuotaDroppedMsg(DevicePublishMsg publishMsg) {
-        SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(publishMsg.getPacketId());
-        String targetClientId = getTargetClientId(packet);
-        int targetPacketId = getTargetPacketId(packet, publishMsg.getPacketId());
-        log.debug("[{}] Dropping persisted msg {} on total throughput quota", targetClientId, targetPacketId);
-        tbMessageStatsReportClient.reportDroppedMsgs();
-        deviceMsgService.removePersistedMessage(targetClientId, targetPacketId)
-                .whenComplete((__, throwable) -> {
-                    if (throwable != null) {
-                        log.warn("[{}] Failed to remove quota-dropped persisted msg {}", targetClientId, targetPacketId, throwable);
-                    }
-                });
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
