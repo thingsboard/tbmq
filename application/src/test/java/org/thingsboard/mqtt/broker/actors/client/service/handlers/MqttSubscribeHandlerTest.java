@@ -68,6 +68,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -711,7 +712,7 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenQuotaGrantsAll_whenApplyRateLimits_thenReturnAll() {
-        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(2);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
         List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertEquals(2, retainedMsgs.size());
@@ -719,7 +720,7 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenQuotaExhausted_whenApplyRateLimits_thenReturnEmpty() {
-        when(throughputQuotaService.tryConsumeOutgoing(2)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(0);
         List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertTrue(retainedMsgs.isEmpty());
@@ -727,10 +728,19 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenQuotaPartiallyGranted_whenApplyRateLimits_thenTruncate() {
-        when(throughputQuotaService.tryConsumeOutgoing(3)).thenReturn(2);
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(2);
         List<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2), newRetainedMsg("payload3", 3)));
         assertEquals(2, result.size());
+    }
+
+    // the retained path must never fall back to the plain charge: that is exactly the narrowing that used to cap a
+    // retained set at the node-local pool plus one block while the cluster still had budget for the whole set
+    @Test
+    public void givenRetainedMsgs_whenApplyRateLimits_thenNeverUsesThePlainCharge() {
+        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
+        mqttSubscribeHandler.applyRateLimits(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
     }
 
     private List<TopicSubscription> getTopicSubscriptions() {

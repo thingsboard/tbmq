@@ -19,8 +19,9 @@ package org.thingsboard.mqtt.broker.service.limits;
  * Cluster-wide total throughput quota — the single policy owner for the billed unit: MQTT PUBLISH
  * packets processed, incoming and outgoing combined; messages routed to integration subscribers
  * count as outgoing (spec: docs/superpowers/specs/2026-08-06-total-throughput-quota-design.md).
- * Charges are node-local atomic operations; the shared Redis bucket is only touched by asynchronous
- * block draws, never by callers.
+ * Charges are node-local atomic operations backed by asynchronous block draws against the shared Redis
+ * bucket. The one exception is {@link #tryConsumeOutgoingWaiting(int)}, which draws on the calling thread
+ * so that a transient node-local shortfall cannot destroy messages the cluster still has budget for.
  */
 public interface ThroughputQuotaService {
 
@@ -42,9 +43,16 @@ public interface ThroughputQuotaService {
 
     /**
      * Charges {@code n} outgoing PUBLISH packets, drawing from the shared bucket ON THE CALLING THREAD when
-     * the node-local pool falls short. For background delivery loops only (the APPLICATION pack consumer and
-     * the persisted-device dispatcher) — never for the Netty ingress path, where a Redis round trip would
-     * stall every other socket on that event loop.
+     * the node-local pool falls short. Never call this from the Netty ingress path, where a Redis round trip
+     * would stall every other socket on that event loop. The three permitted callers, and what each pays:
+     * <ul>
+     *     <li>the APPLICATION pack consumer and the persisted-device dispatcher — dedicated background
+     *     delivery threads, so a draw only delays the loop that needed the tokens;</li>
+     *     <li>retained delivery on SUBSCRIBE, which runs on the {@code client-subscriptions} Kafka producer's
+     *     single I/O thread (the persist callback). A draw there also delays other clients' SUBACKs, which is
+     *     accepted because it is ONE bulk draw per retained-matching SUBSCRIBE rather than one per message,
+     *     and a Redis failure opens the fail-open window that makes this method return immediately.</li>
+     * </ul>
      *
      * @return the granted count in {@code [0..n]}; a remainder here means the shared bucket is genuinely
      * dry, so callers may settle it terminally

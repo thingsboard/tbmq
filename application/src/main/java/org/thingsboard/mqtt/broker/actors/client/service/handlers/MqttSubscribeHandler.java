@@ -214,7 +214,11 @@ public class MqttSubscribeHandler {
 
     List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
         int totalMsgCount = retainedMsgList.size();
-        int granted = throughputQuotaService.tryConsumeOutgoing(totalMsgCount);
+        // wait for a right-sized draw: a retained set is one bulk charge, so the plain charge would cap the whole
+        // set at the node-local pool plus one block and silently truncate a subscriber that the cluster had budget
+        // for. See tryConsumeOutgoingWaiting for why blocking this thread (the subscription-persist callback) is
+        // acceptable here.
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalMsgCount);
         if (granted >= totalMsgCount) {
             return retainedMsgList;
         }
