@@ -113,6 +113,53 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         return tryConsume(n);
     }
 
+    @Override
+    public int tryConsumeOutgoingWaiting(int n) {
+        int granted = tryConsume(n);
+        if (!enabled || granted >= n) {
+            return granted;
+        }
+        long now = System.nanoTime();
+        if (now - failOpenUntilNanos < 0) {
+            return granted; // Redis degraded: tryConsume already failed open, there is nothing to wait for
+        }
+        if (now - dryUntilNanos < 0) {
+            return granted; // a completed draw reported the shared bucket dry: this refusal is genuine
+        }
+        // The local pool fell short while the shared bucket may still hold budget - the case that used to
+        // destroy acknowledged messages. Draw here rather than hand back a partial grant the caller must
+        // discard: this is a background delivery loop, so one Redis round trip is far cheaper than data loss.
+        return granted + drawOnCallerThread(n - granted);
+    }
+
+    private int drawOnCallerThread(int shortfall) {
+        // draw a whole block even for a small shortfall, exactly as scheduleDrawIfNeeded does: a device replay
+        // charges 1 per message, so drawing only the shortfall would cost one Redis round trip PER MESSAGE
+        // and throw away the amortisation the block design exists for.
+        long drawSize = Math.max(blockSize, shortfall);
+        try {
+            long drawn = rateLimitCacheService.tryConsumeTotalMsgs(drawSize);
+            redisDegraded = false; // the draw completed - dry or not, Redis answered
+            if (drawn <= 0) {
+                dryUntilNanos = System.nanoTime() + DRY_BACKOFF_NANOS;
+                warnQuotaClamped();
+                return 0;
+            }
+            int granted = (int) Math.min(shortfall, drawn);
+            if (drawn > granted) {
+                localTokens.addAndGet(drawn - granted); // keep the rest of the block local so draws amortise
+            }
+            return granted;
+        } catch (Exception e) {
+            redisDegraded = true;
+            failOpenUntilNanos = System.nanoTime() + FAIL_OPEN_NANOS;
+            stats.incrementRedisDegraded();
+            log.warn("Failed to draw total throughput quota tokens from Redis, failing open for {} ms",
+                    TimeUnit.NANOSECONDS.toMillis(FAIL_OPEN_NANOS), e);
+            return shortfall; // fail open, consistent with tryConsume
+        }
+    }
+
     private int tryConsume(int n) {
         if (!enabled || n <= 0) {
             return Math.max(0, n);

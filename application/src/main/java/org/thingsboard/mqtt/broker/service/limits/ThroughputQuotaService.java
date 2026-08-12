@@ -39,4 +39,15 @@ public interface ThroughputQuotaService {
      * terminally settle the remainder
      */
     int tryConsumeOutgoing(int n);
+
+    /**
+     * Charges {@code n} outgoing PUBLISH packets, drawing from the shared bucket ON THE CALLING THREAD when
+     * the node-local pool falls short. For background delivery loops only (the APPLICATION pack consumer and
+     * the persisted-device dispatcher) — never for the Netty ingress path, where a Redis round trip would
+     * stall every other socket on that event loop.
+     *
+     * @return the granted count in {@code [0..n]}; a remainder here means the shared bucket is genuinely
+     * dry, so callers may settle it terminally
+     */
+    int tryConsumeOutgoingWaiting(int n);
 }

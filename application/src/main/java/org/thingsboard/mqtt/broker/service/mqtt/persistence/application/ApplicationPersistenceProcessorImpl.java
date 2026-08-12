@@ -730,7 +730,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         if (publishCount == 0) {
             return;
         }
-        int granted = throughputQuotaService.tryConsumeOutgoing(publishCount);
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(publishCount);
         if (granted >= publishCount) {
             return;
         }
