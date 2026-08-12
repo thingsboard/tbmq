@@ -144,6 +144,18 @@ public class ThroughputQuotaServiceImplTest {
         verifyNoInteractions(rateLimitCacheService);
     }
 
+    // init() returns before creating the draw executor when the quota is off, so any bookkeeping that reaches it on a
+    // disabled service dereferences null and throws into the caller - here the publish dispatcher, which charges the
+    // persistent fan-out through this method on EVERY publish. A disabled quota must grant and do nothing else.
+    @Test
+    public void givenQuotaDisabled_whenWaitingCharge_thenGrantedWithoutTouchingTheDrawExecutor() {
+        configuration.setEnabled(false);
+        service.init();
+
+        assertEquals(5, service.tryConsumeOutgoingWaiting(5));
+        verifyNoInteractions(rateLimitCacheService);
+    }
+
     @Test
     public void givenDerivedBlockSize_whenInit_thenTenthOfMinSustainedRate() {
         // 100:1 -> 100 msg/s -> block 10 (warm-up draw request proves it)

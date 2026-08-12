@@ -124,8 +124,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     @Override
     public int tryConsumeOutgoingWaiting(int n) {
-        // covers the quota being disabled and a non-positive n too: tryConsume grants both in full, so
-        // neither can reach the draw below
+        if (!enabled) {
+            // the persistent fan-out charges through here on every publish, so the default configuration must not pay
+            // for any of the bookkeeping below - none of which is even initialised when the quota is off
+            return Math.max(0, n);
+        }
+        // covers a non-positive n too: tryConsume grants it in full, so it cannot reach the draw below
         int granted = tryConsume(n, false);
         if (granted >= n) {
             // satisfied without drawing, so nothing here repays whatever credit that took: hand the top-up back
@@ -232,6 +236,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     private void scheduleDrawIfNeeded(long shortfall) {
+        if (!enabled) {
+            // sole owner of drawExecutor, which init() never creates when the quota is off. Guarding here rather than
+            // only at the call sites keeps a disabled service safe whatever reaches it.
+            return;
+        }
         if (System.nanoTime() - dryUntilNanos < 0) {
             return; // bucket known dry: no Redis traffic during the backoff window
         }
