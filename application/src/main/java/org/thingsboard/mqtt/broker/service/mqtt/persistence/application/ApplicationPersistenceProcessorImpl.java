@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -28,7 +27,6 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
@@ -40,7 +38,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -116,7 +113,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ApplicationClientHelperService appClientHelperService;
     private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
-    private final ThroughputQuotaService throughputQuotaService;
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
     @Value("${queue.application-persisted-msg.poll-interval}")
@@ -465,7 +461,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isClientSessionActive(sessionId, clientState)) {
-            applyThroughputQuota(submitStrategy, clientId);
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -571,7 +566,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPubRelMsgCtx newPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
         while (isJobActive(job)) {
-            applyThroughputQuota(submitStrategy, clientId);
             ApplicationPackProcessingCtx ctx = createPackProcessingCtx(submitStrategy, newPubRelMsgCtx, stats);
             int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
             int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -717,44 +711,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             maxOffset = Math.max(maxOffset, msg.getPacketOffset());
         }
         return ", PUBLISH offsets [" + minOffset + ".." + maxOffset + "]";
-    }
-
-    void applyThroughputQuota(ApplicationSubmitStrategy submitStrategy, String clientId) {
-        if (!throughputQuotaService.isEnabled()) {
-            // counting the PUBLISH packets is O(pack) and runs on every pack round of every APPLICATION client, so it
-            // is not worth paying on the default configuration, where the charge below would grant everything anyway
-            return;
-        }
-        List<PersistedMsg> orderedMessages = submitStrategy.getOrderedMessages();
-        int publishCount = 0;
-        for (PersistedMsg msg : orderedMessages) {
-            if (PersistedPacketType.PUBLISH == msg.getPacketType()) {
-                publishCount++;
-            }
-        }
-        if (publishCount == 0) {
-            return;
-        }
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(publishCount);
-        if (granted >= publishCount) {
-            return;
-        }
-        int dropped = publishCount - granted;
-        Map<Integer, PersistedMsg> keepMap = Maps.newLinkedHashMapWithExpectedSize(orderedMessages.size() - dropped);
-        int keptPublishes = 0;
-        for (PersistedMsg msg : orderedMessages) {
-            if (PersistedPacketType.PUBLISH == msg.getPacketType()) {
-                if (keptPublishes == granted) {
-                    // quota-refused tail: excluded from delivery; the pack's commitSync() settles its offsets
-                    continue;
-                }
-                keptPublishes++;
-            }
-            keepMap.put(msg.getPacketId(), msg);
-        }
-        submitStrategy.update(keepMap);
-        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
-        log.debug("[{}] Dropped {} PUBLISH message(s) from application pack on total throughput quota", clientId, dropped);
     }
 
     private ApplicationPackProcessingCtx createPackProcessingCtx(ApplicationSubmitStrategy submitStrategy,

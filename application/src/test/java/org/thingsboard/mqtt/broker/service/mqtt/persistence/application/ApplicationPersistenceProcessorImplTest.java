@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationMainProcessingState;
@@ -51,7 +50,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.BurstSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
@@ -95,7 +93,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -115,7 +112,6 @@ class ApplicationPersistenceProcessorImplTest {
     @Mock ApplicationClientHelperService appClientHelperService;
     @Mock AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     @Mock TbMessageStatsReportClient tbMessageStatsReportClient;
-    @Mock ThroughputQuotaService throughputQuotaService;
 
     @InjectMocks
     ApplicationPersistenceProcessorImpl processor;
@@ -125,8 +121,6 @@ class ApplicationPersistenceProcessorImplTest {
         ReflectionTestUtils.setField(processor, "pollDuration", 100L);
         ReflectionTestUtils.setField(processor, "packProcessingTimeout", 2000L);
         ReflectionTestUtils.setField(processor, "validateSharedTopicFilter", true);
-        lenient().when(throughputQuotaService.isEnabled()).thenReturn(true);
-        lenient().when(throughputQuotaService.tryConsumeOutgoingWaiting(anyInt())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -579,73 +573,6 @@ class ApplicationPersistenceProcessorImplTest {
 
         // The ack strategy must be created once per pack and reused across retries so the cap accumulates.
         verify(acknowledgeStrategyFactory, times(1)).newInstance("appClient");
-    }
-
-    @Test
-    void applyThroughputQuota_whenFullyGranted_keepsPackUnchanged() {
-        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
-        strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
-
-        processor.applyThroughputQuota(strategy, "client");
-
-        assertThat(strategy.getOrderedMessages()).hasSize(2);
-        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs(anyInt());
-    }
-
-    @Test
-    void applyThroughputQuota_whenPartiallyGranted_dropsPublishTailKeepsPubRels() {
-        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
-        PersistedPubRelMsg pubRel = new PersistedPubRelMsg(9, 90L);
-        PersistedPublishMsg first = publishMsg(1, 100);
-        strategy.init(new ArrayList<>(List.of(pubRel, first, publishMsg(2, 101), publishMsg(3, 102))));
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(1);
-
-        processor.applyThroughputQuota(strategy, "client");
-
-        assertThat(strategy.getOrderedMessages()).containsExactly(pubRel, first);
-        verify(tbMessageStatsReportClient).reportDroppedMsgs(2);
-    }
-
-    @Test
-    void applyThroughputQuota_whenOnlyPubRels_skipsQuotaEntirely() {
-        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
-        strategy.init(new ArrayList<>(List.of(new PersistedPubRelMsg(9, 90L))));
-
-        processor.applyThroughputQuota(strategy, "client");
-
-        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
-        verify(throughputQuotaService, never()).tryConsumeOutgoing();
-        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
-        assertThat(strategy.getOrderedMessages()).hasSize(1);
-    }
-
-    // the default configuration: not one pack may pay for counting its PUBLISH packets when nothing will be charged
-    @Test
-    void applyThroughputQuota_whenQuotaDisabled_touchesNeitherPackNorQuota() {
-        when(throughputQuotaService.isEnabled()).thenReturn(false);
-        ApplicationSubmitStrategy strategy = mock(ApplicationSubmitStrategy.class);
-
-        processor.applyThroughputQuota(strategy, "client");
-
-        verifyNoInteractions(strategy);
-        verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
-        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
-        verify(throughputQuotaService, never()).tryConsumeOutgoing();
-    }
-
-    // a pack round must charge through the WAITING variant: the plain charge caps the grant at the node-local pool plus
-    // one block, which is what used to destroy the refused tail of a pack the cluster still had budget for
-    @Test
-    void applyThroughputQuota_neverUsesThePlainCharge() {
-        BurstSubmitStrategy strategy = new BurstSubmitStrategy("client");
-        strategy.init(new ArrayList<>(List.of(publishMsg(1, 100), publishMsg(2, 101))));
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
-
-        processor.applyThroughputQuota(strategy, "client");
-
-        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
-        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     // ===== Helpers =====
