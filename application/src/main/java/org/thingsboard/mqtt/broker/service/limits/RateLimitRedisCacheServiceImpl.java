@@ -87,6 +87,7 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
             // The limit is disabled, so there is no configuration to compare against. Any existing bucket is
             // deliberately left in place: removing it would let a single misconfigured node wipe the bucket the
             // rest of the cluster is metering against.
+            log.info("[{}] The {} rate limit is disabled, any bucket already stored under this key is left untouched", key, name);
             return null;
         }
         BucketProxy proxy = jedisBasedProxyManager.getProxy(key, () -> configuration);
@@ -99,7 +100,9 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
                     proxy.replaceConfiguration(configuration, TokensInheritanceStrategy.PROPORTIONALLY);
                     log.info("[{}] Replaced stale {} rate limit configuration {} with {}", key, name, stored, configuration);
                 });
-        log.info("[{}] Effective {} rate limit configuration: {}", key, name, configuration);
+        // This is what the node asked for, not necessarily what is stored: in a cluster whose nodes disagree the
+        // last writer wins, so re-reading the key here would still not give a durable answer.
+        log.info("[{}] Configured {} rate limit configuration: {}", key, name, configuration);
         return proxy;
     }
 
