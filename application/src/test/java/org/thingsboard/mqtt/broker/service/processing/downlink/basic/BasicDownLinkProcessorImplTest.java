@@ -84,7 +84,7 @@ public class BasicDownLinkProcessorImplTest {
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(1);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(true);
 
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
@@ -126,7 +126,7 @@ public class BasicDownLinkProcessorImplTest {
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(1);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(true);
 
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
@@ -154,7 +154,7 @@ public class BasicDownLinkProcessorImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(false);
 
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
@@ -169,7 +169,7 @@ public class BasicDownLinkProcessorImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
-        when(throughputQuotaService.tryConsumeOutgoing(1)).thenReturn(0);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(false);
 
         basicDownLinkProcessor.process(subscription, publishMsgProto);
 

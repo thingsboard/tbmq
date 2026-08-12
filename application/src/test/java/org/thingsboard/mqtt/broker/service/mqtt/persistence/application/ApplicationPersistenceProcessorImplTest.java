@@ -615,6 +615,7 @@ class ApplicationPersistenceProcessorImplTest {
         processor.applyThroughputQuota(strategy, "client");
 
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
         verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
         assertThat(strategy.getOrderedMessages()).hasSize(1);
     }
@@ -630,6 +631,7 @@ class ApplicationPersistenceProcessorImplTest {
         verifyNoInteractions(strategy);
         verify(throughputQuotaService, never()).tryConsumeOutgoingWaiting(anyInt());
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     // a pack round must charge through the WAITING variant: the plain charge caps the grant at the node-local pool plus
@@ -643,6 +645,7 @@ class ApplicationPersistenceProcessorImplTest {
         processor.applyThroughputQuota(strategy, "client");
 
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     // ===== Helpers =====

@@ -42,6 +42,14 @@ public interface ThroughputQuotaService {
     boolean tryConsumeIncoming();
 
     /**
+     * Charges one outgoing PUBLISH packet.
+     *
+     * @return true if granted; false if the packet must be dropped (caller performs the terminal
+     * drop action, including any droppedMsgs reporting)
+     */
+    boolean tryConsumeOutgoing();
+
+    /**
      * Charges {@code n} outgoing PUBLISH packets.
      *
      * @return the granted count in {@code [0..n]}; callers deliver the granted prefix and
@@ -66,4 +74,13 @@ public interface ThroughputQuotaService {
      * dry, so callers may settle it terminally
      */
     int tryConsumeOutgoingWaiting(int n);
+
+    /**
+     * Charges one outgoing PUBLISH packet, waiting on a draw as {@link #tryConsumeOutgoingWaiting(int)} does.
+     * Subject to the same caller restrictions.
+     *
+     * @return true if granted; false only when the shared bucket is genuinely dry, so the caller may settle
+     * the packet terminally
+     */
+    boolean tryConsumeOutgoingWaiting();
 }

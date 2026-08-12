@@ -51,7 +51,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             dropMessage();
             return;
         }
-        if (throughputQuotaService.tryConsumeOutgoing(1) == 0) {
+        if (!throughputQuotaService.tryConsumeOutgoing()) {
             dropMessage();
             return;
         }
@@ -70,7 +70,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             dropMessage();
             return;
         }
-        if (throughputQuotaService.tryConsumeOutgoing(1) == 0) {
+        if (!throughputQuotaService.tryConsumeOutgoing()) {
             dropMessage();
             return;
         }

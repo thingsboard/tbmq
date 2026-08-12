@@ -187,7 +187,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (msgExpiryResult.isExpired()) {
             return;
         }
-        if (throughputQuotaService.tryConsumeOutgoingWaiting(1) == 0) {
+        if (!throughputQuotaService.tryConsumeOutgoingWaiting()) {
             settleQuotaDroppedMsg(publishMsg);
             return;
         }

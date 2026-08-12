@@ -114,8 +114,18 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     @Override
+    public boolean tryConsumeOutgoing() {
+        return tryConsume(1) == 1;
+    }
+
+    @Override
     public int tryConsumeOutgoing(int n) {
         return tryConsume(n);
+    }
+
+    @Override
+    public boolean tryConsumeOutgoingWaiting() {
+        return tryConsumeOutgoingWaiting(1) == 1;
     }
 
     @Override

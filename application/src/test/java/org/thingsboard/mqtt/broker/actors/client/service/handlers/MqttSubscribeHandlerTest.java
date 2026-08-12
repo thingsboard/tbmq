@@ -741,6 +741,7 @@ public class MqttSubscribeHandlerTest {
         when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
         mqttSubscribeHandler.applyRateLimits(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     private List<TopicSubscription> getTopicSubscriptions() {
