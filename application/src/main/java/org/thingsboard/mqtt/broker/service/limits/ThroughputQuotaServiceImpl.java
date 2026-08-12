@@ -67,7 +67,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // draw, so it can never latch on; at startup it is false, so a node whose very first draw is still
     // failing rides the bounded credit until that draw returns - one block, deliberately accepted.
     private volatile boolean redisDegraded;
-    private volatile long lastClampWarnNanos;
+    private final AtomicLong lastClampWarnNanos = new AtomicLong();
     private ThroughputQuotaStats stats;
 
     @PostConstruct
@@ -79,7 +79,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         long now = System.nanoTime();
         dryUntilNanos = now;
         failOpenUntilNanos = now;
-        lastClampWarnNanos = now - CLAMP_WARN_INTERVAL_NANOS - 1; // the very first clamp warns immediately
+        lastClampWarnNanos.set(now - CLAMP_WARN_INTERVAL_NANOS - 1); // the very first clamp warns immediately
         blockSize = configuredBlockSize > 0 ? configuredBlockSize : deriveDefaultBlockSize();
         stats = statsManager.getThroughputQuotaStats();
         if (drawExecutor == null) {
@@ -115,8 +115,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     @Override
     public int tryConsumeOutgoingWaiting(int n) {
+        // covers the quota being disabled and a non-positive n too: tryConsume grants both in full, so
+        // neither can reach the draw below
         int granted = tryConsume(n);
-        if (!enabled || granted >= n) {
+        if (granted >= n) {
             return granted;
         }
         long now = System.nanoTime();
@@ -231,10 +233,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     private void warnQuotaClamped() {
         long now = System.nanoTime();
-        // draws are single-flight, so this is effectively single-threaded; a racing pair would at worst
-        // log the line twice, which is cheaper than synchronising the draw path
-        if (now - lastClampWarnNanos > CLAMP_WARN_INTERVAL_NANOS) {
-            lastClampWarnNanos = now;
+        // no longer reached only from the single-flight draw thread: tryConsumeOutgoingWaiting draws on the
+        // caller's thread, so an exhausted bucket can bring every delivery thread through here at once.
+        // CAS the timestamp so exactly one of them per interval wins the right to log, instead of relying
+        // on a single writer as the plain read-then-write did.
+        long last = lastClampWarnNanos.get();
+        if (now - last > CLAMP_WARN_INTERVAL_NANOS && lastClampWarnNanos.compareAndSet(last, now)) {
             log.warn("Total throughput quota exhausted - refusing PUBLISH packets until the shared budget refills " +
                     "(see droppedMsgs and throughputQuotaDegraded metrics)");
         }
