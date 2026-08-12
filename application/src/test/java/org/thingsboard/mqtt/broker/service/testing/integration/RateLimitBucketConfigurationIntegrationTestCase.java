@@ -32,6 +32,8 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
+import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitRedisCacheServiceImpl;
 
@@ -136,8 +138,11 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
     private void initServiceWith(String cachePrefix, BucketConfiguration totalMsgsConfiguration) {
         CacheProperties cacheProperties = new CacheProperties();
         cacheProperties.setCachePrefix(cachePrefix);
+        // The configuration is handed in directly rather than taken from the properties beans, so both limits read as
+        // disabled here; that is what keeps init()'s enabled-but-unconfigured guard out of the way.
         new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
-                totalMsgsConfiguration, cacheProperties, clientsLimitProperties).init();
+                totalMsgsConfiguration, cacheProperties, clientsLimitProperties,
+                new DevicePersistedMsgsRateLimitsConfiguration(), new TotalMsgsRateLimitsConfiguration()).init();
     }
 
     private long storedCapacity(String key) {

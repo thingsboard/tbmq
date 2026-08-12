@@ -31,10 +31,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
+import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -65,6 +69,12 @@ public class RateLimitRedisCacheServiceImplTest {
 
     @MockitoBean
     private ClientsLimitProperties clientsLimitProperties;
+
+    @MockitoBean
+    private DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
+
+    @MockitoBean
+    private TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
 
     @MockitoSpyBean
     private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
@@ -181,7 +191,8 @@ public class RateLimitRedisCacheServiceImplTest {
                 .thenReturn(Optional.empty());
 
         new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
-                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration).init();
 
         verify(bucketProxy, never()).replaceConfiguration(any(), any());
     }
@@ -198,7 +209,8 @@ public class RateLimitRedisCacheServiceImplTest {
                 .thenReturn(Optional.of(stored));
 
         new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
-                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration).init();
 
         verify(bucketProxy, never()).replaceConfiguration(any(), any());
     }
@@ -215,7 +227,8 @@ public class RateLimitRedisCacheServiceImplTest {
                 .thenReturn(Optional.of(stored));
 
         new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
-                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration).init();
 
         verify(bucketProxy).replaceConfiguration(totalMsgsBucketConfiguration, TokensInheritanceStrategy.PROPORTIONALLY);
     }
@@ -232,7 +245,8 @@ public class RateLimitRedisCacheServiceImplTest {
                 .thenReturn(Optional.of(stored));
 
         new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager,
-                devicePersistedMsgsBucketConfiguration, null, cacheProperties, clientsLimitProperties).init();
+                devicePersistedMsgsBucketConfiguration, null, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration).init();
 
         // Both buckets go through the same helper, so what this pins is the argument pairing in init(): the device
         // configuration must be applied to the device key, and the disabled total limit must not be touched.
@@ -248,6 +262,47 @@ public class RateLimitRedisCacheServiceImplTest {
                 .getProxy(eq(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE), any());
         verify(jedisBasedProxyManager, never())
                 .getProxyConfiguration(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE);
+    }
+
+    @Test
+    public void givenTotalMsgsLimitEnabledButNoConfigurationInjected_whenInit_thenStartupFails() {
+        // The state a renamed @Bean method leaves behind: the properties say the limit is on, but the qualified
+        // BucketConfiguration never arrived. Starting up here would mean an NPE per published message instead.
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        RateLimitRedisCacheServiceImpl service = new RateLimitRedisCacheServiceImpl(redisTemplate,
+                jedisBasedProxyManager, null, null, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration);
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, service::init);
+
+        assertTrue(e.getMessage().contains("mqtt.rate-limits.total.enabled is true"));
+        assertTrue(e.getMessage().contains(RateLimitRedisCacheServiceImpl.TOTAL_MSGS_BUCKET_CONFIGURATION_BEAN));
+        verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any());
+    }
+
+    @Test
+    public void givenDevicePersistedMsgsLimitEnabledButNoConfigurationInjected_whenInit_thenStartupFails() {
+        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        RateLimitRedisCacheServiceImpl service = new RateLimitRedisCacheServiceImpl(redisTemplate,
+                jedisBasedProxyManager, null, null, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration);
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, service::init);
+
+        assertTrue(e.getMessage().contains("mqtt.rate-limits.device-persisted-messages.enabled is true"));
+        assertTrue(e.getMessage().contains(RateLimitRedisCacheServiceImpl.DEVICE_PERSISTED_MSGS_BUCKET_CONFIGURATION_BEAN));
+    }
+
+    @Test
+    public void givenLimitDisabledAndNoConfigurationInjected_whenInit_thenStartupSucceeds() {
+        // The ordinary default deployment: both limits off, no BucketConfiguration beans at all. The guard above
+        // must not turn that into a startup failure.
+        new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null,
+                cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration).init();
+
+        verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any());
+        verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE), any());
     }
 
 }

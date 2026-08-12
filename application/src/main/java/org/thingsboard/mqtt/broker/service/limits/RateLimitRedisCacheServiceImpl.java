@@ -29,10 +29,15 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
+import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 
 @Slf4j
 @Service
 public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
+
+    static final String DEVICE_PERSISTED_MSGS_BUCKET_CONFIGURATION_BEAN = "devicePersistedMsgsBucketConfiguration";
+    static final String TOTAL_MSGS_BUCKET_CONFIGURATION_BEAN = "totalMsgsBucketConfiguration";
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final JedisBasedProxyManager<String> jedisBasedProxyManager;
@@ -40,6 +45,8 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     private final BucketConfiguration totalMsgsBucketConfiguration;
     private final CacheProperties cacheProperties;
     private final ClientsLimitProperties clientsLimitProperties;
+    private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
+    private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
 
     private BucketProxy devicePersistedMsgsBucketProxy;
     private BucketProxy totalMsgsBucketProxy;
@@ -49,23 +56,34 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
                                           JedisBasedProxyManager<String> jedisBasedProxyManager,
                                           @Autowired(required = false)
-                                          @Qualifier("devicePersistedMsgsBucketConfiguration")
+                                          @Qualifier(DEVICE_PERSISTED_MSGS_BUCKET_CONFIGURATION_BEAN)
                                           BucketConfiguration devicePersistedMsgsBucketConfiguration,
                                           @Autowired(required = false)
-                                          @Qualifier("totalMsgsBucketConfiguration")
+                                          @Qualifier(TOTAL_MSGS_BUCKET_CONFIGURATION_BEAN)
                                           BucketConfiguration totalMsgsBucketConfiguration,
                                           CacheProperties cacheProperties,
-                                          ClientsLimitProperties clientsLimitProperties) {
+                                          ClientsLimitProperties clientsLimitProperties,
+                                          DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration,
+                                          TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration) {
         this.redisTemplate = redisTemplate;
         this.jedisBasedProxyManager = jedisBasedProxyManager;
         this.devicePersistedMsgsBucketConfiguration = devicePersistedMsgsBucketConfiguration;
         this.totalMsgsBucketConfiguration = totalMsgsBucketConfiguration;
         this.cacheProperties = cacheProperties;
         this.clientsLimitProperties = clientsLimitProperties;
+        this.devicePersistedMsgsRateLimitsConfiguration = devicePersistedMsgsRateLimitsConfiguration;
+        this.totalMsgsRateLimitsConfiguration = totalMsgsRateLimitsConfiguration;
     }
 
     @PostConstruct
     public void init() {
+        verifyBucketConfigurationPresent(devicePersistedMsgsRateLimitsConfiguration.isEnabled(),
+                devicePersistedMsgsBucketConfiguration,
+                "mqtt.rate-limits.device-persisted-messages", DEVICE_PERSISTED_MSGS_BUCKET_CONFIGURATION_BEAN);
+        verifyBucketConfigurationPresent(totalMsgsRateLimitsConfiguration.isEnabled(),
+                totalMsgsBucketConfiguration,
+                "mqtt.rate-limits.total", TOTAL_MSGS_BUCKET_CONFIGURATION_BEAN);
+
         var devicePersistedMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE);
         var totalMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.TOTAL_MSGS_LIMIT_CACHE);
 
@@ -79,6 +97,22 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         }
         if (clientsLimitProperties.isApplicationClientsLimitEnabled()) {
             appClientsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        }
+    }
+
+    /**
+     * A limit's enabled flag and its {@link BucketConfiguration} bean are two independent derivations of the same
+     * {@code mqtt.rate-limits.*.enabled} property: the flag comes from the properties bean, the configuration from a
+     * {@code @Conditional @Bean} that reaches the constructor BY NAME through {@code @Qualifier}. Nothing forces the
+     * two to agree - renaming the bean method being the obvious way to break it - and the consequence is not graceful
+     * degradation: every caller passes its {@code isXxxLimitEnabled()} guard and then meters against a null bucket,
+     * which is an NPE per published message on the hot path. Refuse to start instead.
+     */
+    private static void verifyBucketConfigurationPresent(boolean limitEnabled, BucketConfiguration configuration,
+                                                         String propertyPrefix, String expectedBeanName) {
+        if (limitEnabled && configuration == null) {
+            throw new IllegalStateException(propertyPrefix + ".enabled is true but no BucketConfiguration was injected;"
+                    + " expected a bean named '" + expectedBeanName + "'");
         }
     }
 
