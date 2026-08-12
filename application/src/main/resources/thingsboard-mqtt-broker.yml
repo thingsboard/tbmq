@@ -1019,6 +1019,8 @@ mqtt:
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
       # Limits the total count of incoming and outgoing messages per time interval (in s). Comma-separated list of limit:seconds pairs.
       # Example: 1000 messages per second or 50000 messages per minute.
+      # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
+      # limit:seconds pair is configured, granting one full interval of fresh budget.
       config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
     incoming-publish:
       # Enables or disables publish rate limits per client for incoming messages to the broker.
@@ -1037,6 +1039,8 @@ mqtt:
       enabled: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
       # Limits the count of Device clients persisted messages per time interval (in s). Comma-separated list of limit:seconds pairs.
       # Example: 100 messages per second or 1000 messages per minute.
+      # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
+      # limit:seconds pair is configured, granting one full interval of fresh budget.
       config: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_CONFIG:100:1,1000:60}"
   # Total limit of sessions (connected + disconnected) stored on the broker, applied collectively across the cluster, not per node.
   # For example, when set to 1000, the entire cluster can store 1000 sessions in total. This is a soft limit, meaning slightly more sessions may be stored.
