@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitRedisCacheServiceImpl;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +50,11 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
 
     private static final long SMALL_CAPACITY = 1000L;
     private static final long LARGE_CAPACITY = 20000L;
+
+    private static final long SMALL_BURST_CAPACITY = 1000L;
+    private static final long SMALL_SUSTAINED_CAPACITY = 50000L;
+    private static final long LARGE_BURST_CAPACITY = 2000L;
+    private static final long LARGE_SUSTAINED_CAPACITY = 100000L;
 
     @Autowired
     private JedisBasedProxyManager<String> jedisBasedProxyManager;
@@ -72,7 +78,8 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
         initServiceWith(prefix, bucketConfiguration(LARGE_CAPACITY));
 
         assertThat(storedCapacity(key)).isEqualTo(LARGE_CAPACITY);
-        // PROPORTIONALLY preserves the fill ratio: half of the small bucket becomes half of the large one.
+        // PROPORTIONALLY preserves the fill ratio - but only because this configuration has a SINGLE bandwidth, so
+        // bucket4j can pair the old bandwidth with the new one. See the two-bandwidth test below for the general case.
         assertThat(jedisBasedProxyManager.getProxy(key, () -> bucketConfiguration(LARGE_CAPACITY)).getAvailableTokens())
                 .isBetween(LARGE_CAPACITY / 2 - 10, LARGE_CAPACITY / 2 + 10);
     }
@@ -95,6 +102,35 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
                 .isBetween(SMALL_CAPACITY / 2 - 10, SMALL_CAPACITY / 2 + 10);
     }
 
+    @Test
+    public void givenExistingTwoBandwidthBucket_whenConfiguredCapacityChanges_thenTokensAreReInitializedToFull() {
+        String prefix = "itest-" + UUID.randomUUID() + "-";
+        String key = prefix + CacheConstants.TOTAL_MSGS_LIMIT_CACHE;
+
+        // The shipped defaults are two bandwidths (mqtt.rate-limits.total.config = "1000:1,50000:60"), so this is
+        // the shape a real deployment reconfigures.
+        initServiceWith(prefix, twoBandwidthConfiguration(SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY));
+        BucketProxy proxy = jedisBasedProxyManager.getProxy(key,
+                () -> twoBandwidthConfiguration(SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY));
+        assertThat(proxy.tryConsume(SMALL_BURST_CAPACITY / 2)).isTrue();
+        assertThat(storedCapacities(key)).containsExactly(SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY);
+        assertThat(availableTokensPerBandwidth(key, SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY))
+                .containsExactly(SMALL_BURST_CAPACITY / 2, SMALL_SUSTAINED_CAPACITY - SMALL_BURST_CAPACITY / 2);
+
+        // The operator edits the yml and restarts: same key, both capacities doubled.
+        initServiceWith(prefix, twoBandwidthConfiguration(LARGE_BURST_CAPACITY, LARGE_SUSTAINED_CAPACITY));
+
+        assertThat(storedCapacities(key)).containsExactly(LARGE_BURST_CAPACITY, LARGE_SUSTAINED_CAPACITY);
+        // PROPORTIONALLY does NOT preserve the fill ratio here. BucketState64BitsInteger#replaceConfiguration pairs
+        // an old bandwidth with a new one only when the new bandwidth carries a non-null id, or when BOTH
+        // configurations have fewer than two null-id bandwidths. AbstractMsgsRateLimitsConfiguration builds
+        // bandwidths without ids, so with two of them nothing matches and every bandwidth is re-initialized to
+        // calculateInitialTokens(...) - i.e. back to full capacity. A reconfiguration therefore hands the whole
+        // cluster a fresh budget instead of carrying the spent tokens over.
+        assertThat(availableTokensPerBandwidth(key, LARGE_BURST_CAPACITY, LARGE_SUSTAINED_CAPACITY))
+                .containsExactly(LARGE_BURST_CAPACITY, LARGE_SUSTAINED_CAPACITY);
+    }
+
     private void initServiceWith(String cachePrefix, BucketConfiguration totalMsgsConfiguration) {
         CacheProperties cacheProperties = new CacheProperties();
         cacheProperties.setCachePrefix(cachePrefix);
@@ -106,12 +142,41 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
         return jedisBasedProxyManager.getProxyConfiguration(key).orElseThrow().getBandwidths()[0].getCapacity();
     }
 
+    private long[] storedCapacities(String key) {
+        return Arrays.stream(jedisBasedProxyManager.getProxyConfiguration(key).orElseThrow().getBandwidths())
+                .mapToLong(Bandwidth::getCapacity)
+                .toArray();
+    }
+
+    private long[] availableTokensPerBandwidth(String key, long burstCapacity, long sustainedCapacity) {
+        return jedisBasedProxyManager.getProxy(key, () -> twoBandwidthConfiguration(burstCapacity, sustainedCapacity))
+                .asVerbose().getAvailableTokens().getDiagnostics().getAvailableTokensPerEachBandwidth();
+    }
+
     private static BucketConfiguration bucketConfiguration(long capacity) {
         // A 24-hour refill period (~0.23 tokens/s) keeps the token count stable for the duration of the test.
         return BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder()
                         .capacity(capacity)
                         .refillGreedy(capacity, Duration.ofHours(24))
+                        .build())
+                .build();
+    }
+
+    private static BucketConfiguration twoBandwidthConfiguration(long burstCapacity, long sustainedCapacity) {
+        // Models the SHAPE of the shipped default ("<burst>:1,<sustained>:60") - a small short-period burst
+        // bandwidth plus a large long-period sustained one - but with hour-scale periods instead of the literal
+        // 1s/60s. With the real periods a greedy refill regenerates the whole bucket within a second, so any token
+        // assertion would be meaningless; what this test pins is bandwidth MATCHING, which the period does not
+        // affect. Neither bandwidth gets an id, exactly like AbstractMsgsRateLimitsConfiguration builds them.
+        return BucketConfiguration.builder()
+                .addLimit(Bandwidth.builder()
+                        .capacity(burstCapacity)
+                        .refillGreedy(burstCapacity, Duration.ofHours(24))
+                        .build())
+                .addLimit(Bandwidth.builder()
+                        .capacity(sustainedCapacity)
+                        .refillGreedy(sustainedCapacity, Duration.ofHours(48))
                         .build())
                 .build();
     }
