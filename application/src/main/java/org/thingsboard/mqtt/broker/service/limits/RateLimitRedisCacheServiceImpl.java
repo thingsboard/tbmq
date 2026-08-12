@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.TokensInheritanceStrategy;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import jakarta.annotation.PostConstruct;
@@ -63,10 +64,10 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         var devicePersistedMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE);
         var totalMsgsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.TOTAL_MSGS_LIMIT_CACHE);
 
-        this.devicePersistedMsgsBucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
-                jedisBasedProxyManager.getProxy(devicePersistedMsgsLimitCacheKey, () -> devicePersistedMsgsBucketConfiguration);
-        this.totalMsgsBucketProxy = totalMsgsBucketConfiguration == null ? null :
-                jedisBasedProxyManager.getProxy(totalMsgsLimitCacheKey, () -> totalMsgsBucketConfiguration);
+        this.devicePersistedMsgsBucketProxy = initBucketProxy(devicePersistedMsgsLimitCacheKey,
+                devicePersistedMsgsBucketConfiguration, "device persisted messages");
+        this.totalMsgsBucketProxy = initBucketProxy(totalMsgsLimitCacheKey,
+                totalMsgsBucketConfiguration, "total messages");
 
         if (clientsLimitProperties.isSessionsLimitEnabled()) {
             clientSessionsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
@@ -74,6 +75,27 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         if (clientsLimitProperties.isApplicationClientsLimitEnabled()) {
             appClientsLimitCacheKey = cacheProperties.prefixKey(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
         }
+    }
+
+    private BucketProxy initBucketProxy(String key, BucketConfiguration configuration, String name) {
+        if (configuration == null) {
+            // The limit is disabled, so there is no configuration to compare against. Any existing bucket is
+            // deliberately left in place: removing it would let a single misconfigured node wipe the bucket the
+            // rest of the cluster is metering against.
+            return null;
+        }
+        BucketProxy proxy = jedisBasedProxyManager.getProxy(key, () -> configuration);
+        // getProxy() consults the supplier ONLY when the key is absent, and the bucket key carries no TTL, so an
+        // existing bucket keeps the configuration it was first created with forever. Without the replacement
+        // below, editing mqtt.rate-limits.* has no effect on any deployment that has already run once.
+        jedisBasedProxyManager.getProxyConfiguration(key)
+                .filter(stored -> !stored.equalsByContent(configuration))
+                .ifPresent(stored -> {
+                    proxy.replaceConfiguration(configuration, TokensInheritanceStrategy.PROPORTIONALLY);
+                    log.info("[{}] Replaced stale {} rate limit configuration {} with {}", key, name, stored, configuration);
+                });
+        log.info("[{}] Effective {} rate limit configuration: {}", key, name, configuration);
+        return proxy;
     }
 
     @Override

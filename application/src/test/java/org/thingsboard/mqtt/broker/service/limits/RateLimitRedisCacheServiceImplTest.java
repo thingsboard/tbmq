@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.TokensInheritanceStrategy;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import org.junit.Before;
@@ -30,8 +32,14 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,6 +75,7 @@ public class RateLimitRedisCacheServiceImplTest {
         when(cacheProperties.prefixKey(anyString())).thenAnswer(inv -> inv.getArgument(0));
         when(clientsLimitProperties.isSessionsLimitEnabled()).thenReturn(true);
         when(clientsLimitProperties.isApplicationClientsLimitEnabled()).thenReturn(true);
+        when(jedisBasedProxyManager.getProxyConfiguration(anyString())).thenReturn(Optional.empty());
         rateLimitRedisCacheService.init();
     }
 
@@ -160,6 +169,65 @@ public class RateLimitRedisCacheServiceImplTest {
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 
         verify(valueOperations, never()).decrement(anyString());
+    }
+
+    @Test
+    public void givenNoStoredConfiguration_whenInit_thenConfigurationIsNotReplaced() {
+        clearInvocations(bucketProxy);
+        BucketConfiguration totalMsgsBucketConfiguration = mock(BucketConfiguration.class);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any()))
+                .thenReturn(bucketProxy);
+        when(jedisBasedProxyManager.getProxyConfiguration(CacheConstants.TOTAL_MSGS_LIMIT_CACHE))
+                .thenReturn(Optional.empty());
+
+        new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+
+        verify(bucketProxy, never()).replaceConfiguration(any(), any());
+    }
+
+    @Test
+    public void givenStoredConfigurationMatches_whenInit_thenConfigurationIsNotReplaced() {
+        clearInvocations(bucketProxy);
+        BucketConfiguration totalMsgsBucketConfiguration = mock(BucketConfiguration.class);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any()))
+                .thenReturn(bucketProxy);
+        BucketConfiguration stored = mock(BucketConfiguration.class);
+        when(stored.equalsByContent(totalMsgsBucketConfiguration)).thenReturn(true);
+        when(jedisBasedProxyManager.getProxyConfiguration(CacheConstants.TOTAL_MSGS_LIMIT_CACHE))
+                .thenReturn(Optional.of(stored));
+
+        new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+
+        verify(bucketProxy, never()).replaceConfiguration(any(), any());
+    }
+
+    @Test
+    public void givenStoredConfigurationDiffers_whenInit_thenConfigurationIsReplacedProportionally() {
+        clearInvocations(bucketProxy);
+        BucketConfiguration totalMsgsBucketConfiguration = mock(BucketConfiguration.class);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any()))
+                .thenReturn(bucketProxy);
+        BucketConfiguration stored = mock(BucketConfiguration.class);
+        when(stored.equalsByContent(totalMsgsBucketConfiguration)).thenReturn(false);
+        when(jedisBasedProxyManager.getProxyConfiguration(CacheConstants.TOTAL_MSGS_LIMIT_CACHE))
+                .thenReturn(Optional.of(stored));
+
+        new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null,
+                totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties).init();
+
+        verify(bucketProxy).replaceConfiguration(totalMsgsBucketConfiguration, TokensInheritanceStrategy.PROPORTIONALLY);
+    }
+
+    @Test
+    public void givenDisabledLimit_whenInit_thenBucketProxyIsNotCreated() {
+        // devicePersistedMsgsBucketConfiguration is not registered as a bean in this context, so the
+        // constructor receives null for it and the device bucket must never be touched.
+        verify(jedisBasedProxyManager, never())
+                .getProxy(eq(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE), any());
+        verify(jedisBasedProxyManager, never())
+                .getProxyConfiguration(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE);
     }
 
 }
