@@ -491,7 +491,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.msg.retained` topic.
       additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.retained` topic.
-      additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session:
       # Topic for persisting client sessions.
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:tbmq.client.session}"
@@ -500,7 +500,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.client.session` topic.
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.client.session` topic.
-      additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:}"
     client-subscriptions:
       # Topic for persisting client subscriptions.
       topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:tbmq.client.subscriptions}"
@@ -509,7 +509,7 @@ queue:
       # Additional Kafka consumer configs separated by semicolon for the `tbmq.client.subscriptions` topic.
       additional-consumer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.client.subscriptions` topic.
-      additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
+      additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event:
       # Topic for sending client session event requests.
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
@@ -1023,6 +1023,8 @@ mqtt:
       # sustained rate is capacity / seconds. Example: 60000:60 allows 1000 messages per second sustained with a
       # one-minute burst allowance. The default 1000:1,50000:60 allows ~833 messages per second sustained with only one
       # second of burst headroom.
+      # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
+      # capacity:seconds bandwidth is configured, granting one full interval of fresh budget.
       config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
       # Number of quota tokens a broker node draws from Redis per replenishment round-trip. Defaults to 0, which derives
       # max(1, sustainedRate / 10) from the config above. Larger blocks reduce Redis calls but let idle nodes hold more
@@ -1048,6 +1050,8 @@ mqtt:
       enabled: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
       # Limits the count of Device clients persisted messages per time interval (in s). Comma-separated list of limit:seconds pairs.
       # Example: 100 messages per second or 1000 messages per minute.
+      # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
+      # limit:seconds pair is configured, granting one full interval of fresh budget.
       config: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_CONFIG:100:1,1000:60}"
   # Total limit of sessions (connected + disconnected) stored on the broker, applied collectively across the cluster, not per node.
   # For example, when set to 1000, the entire cluster can store 1000 sessions in total. This is a soft limit, meaning slightly more sessions may be stored.
