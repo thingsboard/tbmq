@@ -98,21 +98,10 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             }
         }
         if (applicationSubscriptions != null) {
-            if (applicationSubscriptions.size() == 1) {
-                sendApplicationMsg(applicationSubscriptions.get(0), publishMsgWithId, callbackWrapper);
-            } else {
-                for (Subscription applicationSubscription : applicationSubscriptions) {
-                    sendApplicationMsg(applicationSubscription, publishMsgWithId, callbackWrapper);
-                }
-            }
+            processApplicationSubscriptionsWithThroughputQuota(applicationSubscriptions, publishMsgWithId, callbackWrapper);
         }
         if (sharedTopics != null) {
-            for (String sharedTopic : sharedTopics) {
-                applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                        sharedTopic,
-                        new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
-                        callbackWrapper);
-            }
+            processSharedTopicsWithThroughputQuota(sharedTopics, publishMsgWithId, callbackWrapper);
         }
         if (integrationSubscriptions != null) {
             processIntegrationSubscriptionsWithThroughputQuota(integrationSubscriptions, publishMsgWithId, callbackWrapper);
@@ -151,6 +140,49 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 callbackWrapper.onSuccess();
             }
         }
+    }
+
+    void processApplicationSubscriptionsWithThroughputQuota(List<Subscription> applicationSubscriptions,
+                                                            PublishMsgWithId publishMsgWithId,
+                                                            PublishMsgCallback callbackWrapper) {
+        int totalCount = applicationSubscriptions.size();
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        for (int i = 0; i < granted; i++) {
+            sendApplicationMsg(applicationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
+    }
+
+    void processSharedTopicsWithThroughputQuota(Set<String> sharedTopics,
+                                                PublishMsgWithId publishMsgWithId,
+                                                PublishMsgCallback callbackWrapper) {
+        PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
+        int totalCount = sharedTopics.size();
+        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        int sent = 0;
+        for (String sharedTopic : sharedTopics) {
+            if (sent == granted) {
+                break;
+            }
+            applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                    sharedTopic,
+                    new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
+                    callbackWrapper);
+            sent++;
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
+    }
+
+    // callbackCount was computed over the FULL fan-out before the quota trimmed it, so every subscription the
+    // quota refused still owes the wrapper a completion. Skip this and the publish is neither delivered nor
+    // acknowledged: the wrapper never counts down to zero and the offset is never committed.
+    private void settleQuotaDropped(int dropped, PublishMsgCallback callbackWrapper) {
+        if (dropped <= 0) {
+            return;
+        }
+        log.trace("Total throughput quota exceeded. Dropping {} persisted messages", dropped);
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+        callbackWrapper.onBatchSuccess(dropped);
     }
 
     void processIntegrationSubscriptionsWithThroughputQuota(List<Subscription> integrationSubscriptions,
