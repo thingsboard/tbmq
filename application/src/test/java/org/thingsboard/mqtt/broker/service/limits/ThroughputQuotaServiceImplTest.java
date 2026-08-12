@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.StubThroughputQuotaStats;
@@ -32,13 +33,19 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -234,6 +241,60 @@ public class ThroughputQuotaServiceImplTest {
 
         assertEquals("the repaid deficit leaves exactly one block grantable", 10, service.tryConsumeOutgoing(50));
         assertFalse("with Redis healthy again, an exhausted node must refuse", service.tryConsumeIncoming());
+    }
+
+    // The waiting charge draws synchronously for exactly what it needs, so it must not also take credit: the credit
+    // would leave a deficit repayable only by a second, concurrent draw, which is how this path came to issue two
+    // Redis calls per shortfall and run them against each other.
+    @Test
+    public void givenShortPool_whenWaitingCharge_thenOneDrawAndNoSecondQueued() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenAnswer(inv -> inv.getArgument(0));
+        service.init();
+        executor.runAll(); // the warm-up draw lands: block 10 tokens local
+        clearInvocations(rateLimitCacheService);
+
+        int granted = service.tryConsumeOutgoingWaiting(50);
+
+        assertEquals("the pool plus one synchronous draw must cover the whole demand", 50, granted);
+        verify(rateLimitCacheService, times(1)).tryConsumeTotalMsgs(anyLong());
+        assertTrue("the waiting charge must not also queue an asynchronous draw", executor.tasks.isEmpty());
+        AtomicLong localTokens = (AtomicLong) ReflectionTestUtils.getField(service, "localTokens");
+        assertEquals("that same draw must repay the credit the call took, or the node would deliver tokens it "
+                + "never paid the shared bucket for", 0L, localTokens.get());
+    }
+
+    // Two draws can be in flight at once, so a slow success must not clear a degraded state that a newer failure set.
+    @Test
+    public void givenDrawInFlight_whenAnotherDrawFails_thenStaleSuccessKeepsDegraded() throws Exception {
+        CountDownLatch asyncDrawStarted = new CountDownLatch(1);
+        CountDownLatch failureRecorded = new CountDownLatch(1);
+        AtomicInteger call = new AtomicInteger();
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenAnswer(inv -> {
+            if (call.getAndIncrement() == 0) {          // the warm-up draw, on the draw executor
+                asyncDrawStarted.countDown();
+                failureRecorded.await(5, TimeUnit.SECONDS); // still in flight while the caller's draw fails
+                return 10L;                             // then answers successfully: a STALE success
+            }
+            throw new RuntimeException("redis down");   // the caller-thread draw
+        });
+        ExecutorService drawPool = Executors.newSingleThreadExecutor();
+        service.drawExecutor = drawPool;
+        try {
+            service.init();
+            assertTrue(asyncDrawStarted.await(5, TimeUnit.SECONDS));
+
+            service.tryConsumeOutgoingWaiting(50); // draws on this thread, fails, marks the node degraded
+            failureRecorded.countDown();
+            drawPool.shutdown();
+            assertTrue(drawPool.awaitTermination(5, TimeUnit.SECONDS)); // the stale success has landed
+
+            assertEquals("a success that started before the failure must not clear the degraded flag",
+                    true, ReflectionTestUtils.getField(service, "redisDegraded"));
+        } finally {
+            drawPool.shutdownNow();
+        }
     }
 
     @Test
