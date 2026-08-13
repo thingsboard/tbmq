@@ -1032,8 +1032,13 @@ mqtt:
       # ceiling to the smallest capacity among them (bucket4j requires every bandwidth to hold the tokens for a single
       # charge), so 1000:1,50000:60 would sustain the same ~833 per second but truncate any fan-out above 1000, even on
       # an idle cluster.
-      # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
-      # capacity:seconds bandwidth is configured, granting one full interval of fresh budget.
+      # To allow a smaller burst without capping the fan-out, keep ONE bandwidth and shorten the period at the same
+      # ratio rather than adding a second one: 5000:6 sustains the same ~833 messages per second as 50000:60 with a
+      # tenth of the burst. Your widest fan-out is the floor on capacity, so a burst ceiling below it cannot be
+      # expressed — one publish must always be able to charge for every subscriber it reaches.
+      # Applied on broker start. Changing this value carries the spent tokens over proportionally while a single
+      # bandwidth is configured; with more than one it resets the token counters across the cluster instead, granting
+      # one full interval of fresh budget.
       config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:50000:60}"
       # Number of quota tokens a broker node draws from Redis per replenishment round-trip. Defaults to 0, which derives
       # max(1, sustainedRate / 10) from the config above. Larger blocks reduce Redis calls but let idle nodes hold more
