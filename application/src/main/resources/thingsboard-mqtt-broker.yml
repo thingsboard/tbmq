@@ -1025,7 +1025,8 @@ mqtt:
       # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth refills
       # continuously over the given period, so the sustained rate is capacity / seconds and the capacity is the volume
       # of unused budget that accumulates for a burst. The default 50000:60 allows ~833 messages per second sustained,
-      # and after 10 idle seconds a burst of 8333 is available at once.
+      # and after 10 idle seconds a burst of 8333 is available at once. The maximum burst is the WHOLE capacity, so
+      # after a full idle minute the default admits 50000 messages at once — 60x the sustained rate.
       # The capacity is also the largest amount a SINGLE publish can charge, because a publish pays for its whole
       # fan-out at once — keep it above your widest fan-out. Note that configuring MORE THAN ONE bandwidth lowers that
       # ceiling to the smallest capacity among them (bucket4j requires every bandwidth to hold the tokens for a single
