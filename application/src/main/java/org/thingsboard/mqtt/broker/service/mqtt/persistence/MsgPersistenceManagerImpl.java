@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -157,16 +158,13 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
         int totalCount = sharedTopics.size();
         int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
-        int sent = 0;
-        for (String sharedTopic : sharedTopics) {
-            if (sent == granted) {
-                break;
-            }
+        // an explicit iterator so the granted prefix is bounded in the loop header, as in the sibling charge sites
+        Iterator<String> sharedTopicIterator = sharedTopics.iterator();
+        for (int i = 0; i < granted && sharedTopicIterator.hasNext(); i++) {
             applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                    sharedTopic,
+                    sharedTopicIterator.next(),
                     new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
                     callbackWrapper);
-            sent++;
         }
         settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
