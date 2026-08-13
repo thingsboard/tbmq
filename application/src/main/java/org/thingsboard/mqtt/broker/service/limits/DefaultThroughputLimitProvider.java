@@ -15,25 +15,31 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.Bandwidth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class DefaultThroughputLimitProvider implements ThroughputLimitProvider {
+
+    private static final long NANOS_PER_SECOND = TimeUnit.SECONDS.toNanos(1);
 
     private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
 
     @Override
     public long getSustainedRatePerSec() {
         long minRatePerSec = Long.MAX_VALUE;
-        for (String limitSrc : totalMsgsRateLimitsConfiguration.getConfig().split(BrokerConstants.COMMA)) {
-            String[] parts = limitSrc.split(BrokerConstants.COLON);
-            long capacity = Long.parseLong(parts[0]);
-            long durationInSeconds = Long.parseLong(parts[1]);
-            minRatePerSec = Math.min(minRatePerSec, Math.max(1, capacity / durationInSeconds));
+        // read the rate off the parsed bandwidths rather than re-splitting the config string, so this cannot
+        // disagree with the parser that builds the bucket about what is valid
+        for (Bandwidth bandwidth : totalMsgsRateLimitsConfiguration.parseBandwidths()) {
+            // the config format is capacity:SECONDS, so the division is exact; the floor at 1 keeps a slow
+            // bandwidth from deriving a zero block size
+            long periodSeconds = Math.max(1, bandwidth.getRefillPeriodNanos() / NANOS_PER_SECOND);
+            minRatePerSec = Math.min(minRatePerSec, Math.max(1, bandwidth.getRefillTokens() / periodSeconds));
         }
         return minRatePerSec;
     }

@@ -25,6 +25,8 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public abstract class AbstractMsgsRateLimitsConfiguration {
@@ -34,7 +36,20 @@ public abstract class AbstractMsgsRateLimitsConfiguration {
 
     protected BucketConfiguration getBucketConfiguration() {
         ConfigurationBuilder builder = BucketConfiguration.builder();
-        for (String limitSrc : config.split(BrokerConstants.COMMA)) {
+        for (Bandwidth bandwidth : parseBandwidths()) {
+            builder.addLimit(bandwidth);
+        }
+        return builder.build();
+    }
+
+    /**
+     * The single place the {@code capacity:seconds} config string is parsed. Public because the bucket is not the
+     * only thing derived from it: the sustained rate is read off these bandwidths too.
+     */
+    public List<Bandwidth> parseBandwidths() {
+        String[] limits = config.split(BrokerConstants.COMMA);
+        List<Bandwidth> bandwidths = new ArrayList<>(limits.length);
+        for (String limitSrc : limits) {
             String[] parts = limitSrc.split(BrokerConstants.COLON);
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid limitSrc format: " + limitSrc);
@@ -43,12 +58,12 @@ public abstract class AbstractMsgsRateLimitsConfiguration {
             long capacity = Long.parseLong(parts[0]);
             long durationInSeconds = Long.parseLong(parts[1]);
 
-            builder.addLimit(Bandwidth.builder()
+            bandwidths.add(Bandwidth.builder()
                     .capacity(capacity)
                     .refillGreedy(capacity, Duration.ofSeconds(durationInSeconds))
                     .build());
         }
-        return builder.build();
+        return bandwidths;
     }
 
     protected abstract static class OnEnabledCondition implements Condition {
