@@ -30,9 +30,9 @@ import static org.junit.Assert.assertEquals;
  * it.
  * <p>
  * This is a characterisation test of a library behaviour the shipped default and the yml guidance depend on, not a
- * driver for new code: it is what stops
- * {@code thingsboard-mqtt-broker.yml}'s "configure a single bandwidth whose capacity exceeds your widest fan-out" from
- * silently drifting away from what the parser and bucket4j actually do.
+ * driver for new code. It pins both halves of that guidance: that the single-bandwidth default really does let one
+ * publish charge a wide fan-out, and that the multi-bandwidth form the yml warns about really does cap it at the
+ * smallest capacity. Neither claim can drift away from what the parser and bucket4j actually do without failing here.
  * <p>
  * Both cases go through {@link AbstractMsgsRateLimitsConfiguration#getBucketConfiguration()} from the config STRING, so
  * what is pinned is our parsing of the value that really ships, not just bucket4j in the abstract.
@@ -42,21 +42,21 @@ public class TotalMsgsRateLimitsBucketShapeTest {
     private static final int WIDE_FAN_OUT = 5000;
 
     @Test
-    public void givenTheShippedMultiBandwidthDefault_whenOnePublishChargesAWideFanOut_thenCappedByTheTightestBandwidth() {
-        Bucket bucket = localBucketFor("1000:1,50000:60");
+    public void givenTheShippedSingleBandwidthDefault_whenOnePublishChargesAWideFanOut_thenGrantedInFull() {
+        Bucket bucket = localBucketFor("50000:60");
 
-        // the 50000:60 burst cannot rescue a charge larger than the 1000:1 bandwidth: bucket4j takes the tokens from
-        // every bandwidth, so the tight per-second one caps a single publish at 1000 subscribers even on an idle cluster
-        assertEquals(1000, bucket.tryConsumeAsMuchAsPossible(WIDE_FAN_OUT));
+        // what ships: ~833 msgs/s sustained with no per-publish ceiling below the configured capacity, so a wide
+        // fan-out is bounded by the cluster budget rather than by the bucket's shape
+        assertEquals(WIDE_FAN_OUT, bucket.tryConsumeAsMuchAsPossible(WIDE_FAN_OUT));
     }
 
     @Test
-    public void givenASingleBandwidth_whenOnePublishChargesAWideFanOut_thenGrantedInFull() {
-        Bucket bucket = localBucketFor("50000:60");
+    public void givenAMultiBandwidthConfig_whenOnePublishChargesAWideFanOut_thenCappedByTheTightestBandwidth() {
+        Bucket bucket = localBucketFor("1000:1,50000:60");
 
-        // the alternative the yml recommends for wide fan-outs: same ~833 msgs/s sustained, no per-publish ceiling
-        // below the configured capacity
-        assertEquals(WIDE_FAN_OUT, bucket.tryConsumeAsMuchAsPossible(WIDE_FAN_OUT));
+        // the trap the yml warns about, and why the default is not this: bucket4j takes tokens from EVERY bandwidth,
+        // so at the same ~833 msgs/s the tight 1000:1 one caps a single publish at 1000 even on an idle cluster
+        assertEquals(1000, bucket.tryConsumeAsMuchAsPossible(WIDE_FAN_OUT));
     }
 
     private Bucket localBucketFor(String config) {

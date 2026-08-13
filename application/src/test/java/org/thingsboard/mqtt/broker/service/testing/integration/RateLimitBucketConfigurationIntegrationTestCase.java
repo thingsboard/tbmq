@@ -111,8 +111,9 @@ public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPub
         String prefix = "itest-" + UUID.randomUUID() + "-";
         String key = prefix + CacheConstants.TOTAL_MSGS_LIMIT_CACHE;
 
-        // The shipped defaults are two bandwidths (mqtt.rate-limits.total.config = "1000:1,50000:60"), so this is
-        // the shape a real deployment reconfigures.
+        // mqtt.rate-limits.total.config accepts a comma-separated list, so a deployment may well be running two
+        // bandwidths even though the shipped default is a single one - and that is the shape whose reconfiguration
+        // behaves surprisingly, which is what this pins.
         initServiceWith(prefix, twoBandwidthConfiguration(SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY));
         BucketProxy proxy = jedisBasedProxyManager.getProxy(key,
                 () -> twoBandwidthConfiguration(SMALL_BURST_CAPACITY, SMALL_SUSTAINED_CAPACITY));

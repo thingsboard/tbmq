@@ -1024,24 +1024,25 @@ mqtt:
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
       # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth refills
       # continuously over the given period, so the sustained rate is capacity / seconds and the capacity is the volume
-      # of unused budget that accumulates for a burst. Example: 60000:60 allows 1000 messages per second sustained, and
-      # after 10 idle seconds a burst of 10000 is available at once. The default 1000:1,50000:60 allows ~833 messages
-      # per second sustained.
-      # IMPORTANT: the capacity is also the largest amount a SINGLE publish can charge, and when more than one bandwidth
-      # is configured the smallest available capacity applies. With the default, a publish routed to more than 1000
-      # subscribers is therefore always truncated, even on an idle cluster. If any topic in your deployment fans out to
-      # more subscribers than that, configure a single bandwidth whose capacity exceeds your widest fan-out —
-      # 50000:60 keeps the same ~833 messages per second sustained while allowing a 50000-subscriber fan-out.
+      # of unused budget that accumulates for a burst. The default 50000:60 allows ~833 messages per second sustained,
+      # and after 10 idle seconds a burst of 8333 is available at once.
+      # The capacity is also the largest amount a SINGLE publish can charge, because a publish pays for its whole
+      # fan-out at once — keep it above your widest fan-out. Note that configuring MORE THAN ONE bandwidth lowers that
+      # ceiling to the smallest capacity among them (bucket4j requires every bandwidth to hold the tokens for a single
+      # charge), so 1000:1,50000:60 would sustain the same ~833 per second but truncate any fan-out above 1000, even on
+      # an idle cluster.
       # Applied on broker start. Changing this value resets the token counters across the cluster when more than one
       # capacity:seconds bandwidth is configured, granting one full interval of fresh budget.
-      config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
+      config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:50000:60}"
       # Number of quota tokens a broker node draws from Redis per replenishment round-trip. Defaults to 0, which derives
       # max(1, sustainedRate / 10) from the config above. Larger blocks reduce Redis calls but let idle nodes hold more
       # of the cluster budget between lease-return ticks. A publish whose fan-out exceeds the node's drawn tokens draws
       # the shortfall on demand, so this value does not cap a single publish.
       block-size: "${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
       # Period of the background tick that returns a node's unused drawn tokens to the shared Redis bucket (in ms).
-      # Defaults to 1000. Set to 0 to disable the return tick.
+      # Defaults to 1000. Set to 0 to disable the return tick — but note that a node which draws a block and then goes
+      # quiet then holds those tokens indefinitely, so the cluster's effective budget shrinks by the sum of every idle
+      # node's lease. Leave the tick on unless traffic is even across all nodes.
       lease-return-ms: "${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
     incoming-publish:
       # Enables or disables publish rate limits per client for incoming messages to the broker.
