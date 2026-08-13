@@ -705,31 +705,31 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
-    public void givenEmptyRetainedList_whenApplyRateLimits_thenReturnEmpty() {
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of());
+    public void givenEmptyRetainedList_whenApplyThroughputQuota_thenReturnEmpty() {
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of());
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenQuotaGrantsAll_whenApplyRateLimits_thenReturnAll() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
+    public void givenQuotaGrantsAll_whenApplyThroughputQuota_thenReturnAll() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertEquals(2, retainedMsgs.size());
     }
 
     @Test
-    public void givenQuotaExhausted_whenApplyRateLimits_thenReturnEmpty() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(0);
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
+    public void givenQuotaExhausted_whenApplyThroughputQuota_thenReturnEmpty() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(0);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenQuotaPartiallyGranted_whenApplyRateLimits_thenTruncate() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(3)).thenReturn(2);
-        List<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(List.of(
+    public void givenQuotaPartiallyGranted_whenApplyThroughputQuota_thenTruncate() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(3)).thenReturn(2);
+        List<RetainedMsg> result = mqttSubscribeHandler.applyThroughputQuota(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2), newRetainedMsg("payload3", 3)));
         assertEquals(2, result.size());
     }
@@ -737,9 +737,9 @@ public class MqttSubscribeHandlerTest {
     // the retained path must never fall back to the plain charge: that is exactly the narrowing that used to cap a
     // retained set at the node-local pool plus one block while the cluster still had budget for the whole set
     @Test
-    public void givenRetainedMsgs_whenApplyRateLimits_thenNeverUsesThePlainCharge() {
-        when(throughputQuotaService.tryConsumeOutgoingWaiting(2)).thenReturn(2);
-        mqttSubscribeHandler.applyRateLimits(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
+    public void givenRetainedMsgs_whenApplyThroughputQuota_thenNeverUsesThePlainCharge() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        mqttSubscribeHandler.applyThroughputQuota(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
         verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }

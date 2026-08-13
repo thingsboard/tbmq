@@ -16,16 +16,15 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 /**
- * Cluster-wide total throughput quota — the single policy owner for the billed unit: MQTT PUBLISH
- * packets processed, incoming and outgoing combined; messages routed to integration subscribers
- * count as outgoing (spec: docs/superpowers/specs/2026-08-12-prepaid-quota-charging-design.md).
- * Packets are charged at ADMISSION, before they are stored: a publish costs 1 for the incoming message
- * plus 1 per persistent subscriber, shared subscription group and integration it fans out to, all charged
- * on the publish path. Delivery of a stored message is never charged again, so backlog replay and QoS 1/2
- * retransmissions are free.
- * Charges are node-local atomic operations backed by asynchronous block draws against the shared Redis
- * bucket. The one exception is {@link #tryConsumeOutgoingWaiting(int)}, which draws on the calling thread
- * so that a transient node-local shortfall cannot truncate a fan-out the cluster still has budget for.
+ * Cluster-wide quota over MQTT PUBLISH packets, incoming and outgoing combined; a copy routed to an
+ * integration counts as outgoing.
+ * <p>
+ * Packets are charged at ADMISSION, before they are stored: a publish costs 1 for the incoming message plus
+ * 1 per persistent subscriber, shared subscription group and integration it fans out to. Delivering a stored
+ * message is never charged again, so backlog replay and QoS 1/2 retransmissions are free.
+ * <p>
+ * Charges are node-local atomic operations refilled by asynchronous block draws against the shared Redis
+ * bucket, so no charge touches Redis on the calling thread except {@link #tryConsumeOutgoingBlocking(int)}.
  */
 public interface ThroughputQuotaService {
 
@@ -46,36 +45,22 @@ public interface ThroughputQuotaService {
     boolean tryConsumeOutgoing();
 
     /**
-     * Charges {@code n} outgoing PUBLISH packets without ever touching Redis, so the grant is capped at the
-     * node-local pool plus one block of bounded credit.
-     * <p>
-     * RETAINED DELIBERATELY, despite having no production caller since the fan-out charges moved to
-     * {@link #tryConsumeOutgoingWaiting(int)}: it is the only non-blocking bulk charge in this API — the method
-     * to reach for if the retained-delivery path should ever stop blocking the subscription-persist I/O thread —
-     * and {@code ThroughputQuotaServiceImplTest} uses it to drain the local pool while asserting something else.
-     * Not dead code to be swept.
+     * Charges {@code n} outgoing PUBLISH packets without touching Redis, so the grant is capped by the node-local
+     * pool. Kept as the non-blocking bulk charge for callers that must not block; currently used only by tests.
      *
-     * @return the granted count in {@code [0..n]}; callers deliver the granted prefix and
-     * terminally settle the remainder
+     * @return the granted count in {@code [0..n]}; the caller delivers that prefix and settles the remainder
      */
     int tryConsumeOutgoing(int n);
 
     /**
-     * Charges {@code n} outgoing PUBLISH packets, drawing from the shared bucket ON THE CALLING THREAD when
-     * the node-local pool falls short, so a wide fan-out is bounded by the cluster budget rather than by the
-     * node's lease. Never call this from the Netty ingress path, where a Redis round trip would stall every
-     * other socket on that event loop. The two permitted callers:
-     * <ul>
-     *     <li>the persistent fan-out in {@code MsgPersistenceManagerImpl}, on the publish-dispatcher Kafka
-     *     consumer thread, where blocking is normal and delays only that partition's dispatch;</li>
-     *     <li>retained delivery on SUBSCRIBE, which runs on the {@code client-subscriptions} Kafka producer's
-     *     single I/O thread (the persist callback). A draw there also delays other clients' SUBACKs, which is
-     *     accepted because it is ONE bulk draw per retained-matching SUBSCRIBE rather than one per message,
-     *     and a Redis failure opens the fail-open window that makes this method return immediately.</li>
-     * </ul>
+     * Charges {@code n} outgoing PUBLISH packets, drawing from the shared bucket ON THE CALLING THREAD when the
+     * node-local pool falls short, so a wide fan-out is bounded by the cluster budget rather than by this node's
+     * lease. Only for background paths where a Redis round trip is acceptable - the persistent fan-out and retained
+     * delivery on SUBSCRIBE. Never call it from the Netty ingress path: it would stall every socket on that event
+     * loop.
      *
-     * @return the granted count in {@code [0..n]}; a remainder means the shared bucket is genuinely dry, so
-     * callers settle it terminally
+     * @return the granted count in {@code [0..n]}; a remainder means the shared bucket is dry, so the caller
+     * settles it terminally
      */
-    int tryConsumeOutgoingWaiting(int n);
+    int tryConsumeOutgoingBlocking(int n);
 }

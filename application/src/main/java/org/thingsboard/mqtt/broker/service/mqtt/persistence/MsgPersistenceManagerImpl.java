@@ -91,8 +91,8 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (deviceSubscriptions != null) {
-            // the narrower device-persisted-msgs limit truncates first; the total quota then pays only for what
-            // actually gets stored, so it never bills for messages that limit already dropped
+            // the narrower device-persisted-msgs limit truncates first, so the quota is never charged for copies
+            // that limit already dropped
             List<Subscription> admittedDeviceSubscriptions = rateLimitService.isDevicePersistedMsgsLimitEnabled()
                     ? applyDevicePersistedMsgsLimit(deviceSubscriptions, callbackWrapper)
                     : deviceSubscriptions;
@@ -122,7 +122,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         log.trace("Hitting device persisted messages rate limits. Dropping {} messages", dropped);
         tbMessageStatsReportClient.reportDroppedMsgs(dropped);
         callbackWrapper.onBatchSuccess(dropped);
-        // a view over the caller's list, not a copy: safe because nothing downstream mutates either one
+        // a view over the caller's list, not a copy: nothing downstream mutates either one
         return availableTokens <= 0 ? List.of() : deviceSubscriptions.subList(0, availableTokens);
     }
 
@@ -133,7 +133,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (totalCount == 0) {
             return; // the device limit took everything: nothing left to charge for
         }
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
         for (int i = 0; i < granted; i++) {
             sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
         }
@@ -144,7 +144,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                                                             PublishMsgWithId publishMsgWithId,
                                                             PublishMsgCallback callbackWrapper) {
         int totalCount = applicationSubscriptions.size();
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
         for (int i = 0; i < granted; i++) {
             sendApplicationMsg(applicationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
         }
@@ -156,7 +156,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                                                 PublishMsgCallback callbackWrapper) {
         PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
         int totalCount = sharedTopics.size();
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
         int sent = 0;
         for (String sharedTopic : sharedTopics) {
             if (sent == granted) {
@@ -171,9 +171,8 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
 
-    // callbackCount was computed over the FULL fan-out before the quota trimmed it, so every subscription the
-    // quota refused still owes the wrapper a completion. Skip this and the publish is neither delivered nor
-    // acknowledged: the wrapper never counts down to zero and the offset is never committed.
+    // callbackCount was computed over the FULL fan-out, so every subscription the quota refused still owes the
+    // wrapper a completion. Without this the wrapper never reaches zero and the offset is never committed.
     private void settleQuotaDropped(int dropped, PublishMsgCallback callbackWrapper) {
         if (dropped <= 0) {
             return;
@@ -187,7 +186,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                                                             PublishMsgWithId publishMsgWithId,
                                                             PublishMsgCallback callbackWrapper) {
         int totalCount = integrationSubscriptions.size();
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalCount);
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
         for (int i = 0; i < granted; i++) {
             sendIntegrationMsg(integrationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
         }

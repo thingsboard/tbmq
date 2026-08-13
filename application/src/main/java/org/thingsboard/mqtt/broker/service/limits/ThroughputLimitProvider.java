@@ -15,12 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-/**
- * Edition seam for the total throughput quota (spec §4.3). CE derives the sustained rate from the
- * mqtt.rate-limits.total.config bandwidths; PE overrides this with the licensed message rate.
- * The Redis bucket configuration itself keeps flowing through the existing
- * totalMsgsBucketConfiguration bean — this seam only feeds block-size auto-sizing.
- */
 public interface ThroughputLimitProvider {
 
     long getSustainedRatePerSec();

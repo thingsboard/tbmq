@@ -325,10 +325,9 @@ public class RateLimitRedisCacheServiceImplTest {
         verify(bucketProxy, never()).addTokens(anyLong());
     }
 
-    // No BucketConfiguration is registered as a bean in this context, so the service built by setUp holds a null
-    // total-messages proxy - which is what lets the tests above assert that the proxy is never created. The
-    // lease-return tests need a real proxy, so they build their own service with its own configuration mock, the same
-    // way the configuration tests above do, rather than adding a bean that would defeat those assertions.
+    // The service built by setUp holds a null total-messages proxy, which is what lets the tests above assert the
+    // proxy is never created. The lease-return tests need a real one, so they build their own service rather than
+    // registering a bean that would defeat those assertions.
     private RateLimitRedisCacheServiceImpl serviceWithTotalMsgsBucket() {
         BucketConfiguration totalMsgsBucketConfiguration = mock(BucketConfiguration.class);
         when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any())).thenReturn(bucketProxy);

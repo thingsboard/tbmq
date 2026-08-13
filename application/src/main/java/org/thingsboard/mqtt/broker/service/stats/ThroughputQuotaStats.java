@@ -16,13 +16,11 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 /**
- * Tracks silent degradations of the cluster-wide total throughput quota as a cumulative
- * {@code throughputQuotaDegraded} Prometheus counter tagged {@code cause=redis}. The quota fails
- * OPEN on Redis errors — traffic passes unmetered and nothing lands in {@code droppedMsgs} — so
- * this counter is the only signal that enforcement has quietly stopped.
+ * Counts silent degradations of the total throughput quota as {@code throughputQuotaDegraded{cause=redis}}.
+ * The quota fails OPEN on Redis errors - traffic passes unmetered and nothing lands in {@code droppedMsgs} -
+ * so this counter is the only signal that enforcement has stopped.
  * <p>
- * Obtained from {@link StatsManager}, so it shares the {@code stats.enabled} master switch; when
- * stats are disabled the stub implementation is a no-op and nothing is exposed.
+ * Obtained from {@link StatsManager}, so it shares the {@code stats.enabled} switch.
  */
 public interface ThroughputQuotaStats {
 
@@ -31,8 +29,7 @@ public interface ThroughputQuotaStats {
     int getCount();
 
     /**
-     * Clears the per-interval count read by {@link #getCount()}. The cumulative Prometheus counter
-     * is unaffected and stays monotonic.
+     * Clears the per-interval count read by {@link #getCount()}. The Prometheus counter stays monotonic.
      */
     void reset();
 }

@@ -52,8 +52,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     @Value("${mqtt.rate-limits.total.lease-return-ms:1000}")
     long leaseReturnMs;
 
-    // test seams: init() creates them only when still null; volatile so the caller threads that read
-    // them see the fully constructed executors and not a stale null
+    // test seams: init() creates them only when still null. Volatile so callers see fully constructed executors.
     volatile ExecutorService drawExecutor;
     volatile ScheduledExecutorService leaseReturnScheduler;
 
@@ -63,11 +62,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     private final AtomicBoolean drawInFlight = new AtomicBoolean(false);
     private volatile long dryUntilNanos;
     private volatile long failOpenUntilNanos;
-    // Redis is unreachable: written by the draw thread, read by every caller. Cleared by ANY completed
-    // draw, so it can never latch on; at startup it is false, so a node whose very first draw is still
-    // failing rides the bounded credit until that draw returns - one block, deliberately accepted.
+    // Redis is unreachable. Any completed draw clears it, so it can never latch on.
     private volatile boolean redisDegraded;
-    // when the most recent draw failure was recorded, so a draw that started earlier cannot clear redisDegraded
+    // timestamp of the last draw failure, so a draw that started earlier cannot clear redisDegraded
     private volatile long lastDrawFailureNanos;
     private final AtomicLong lastClampWarnNanos = new AtomicLong();
     private ThroughputQuotaStats stats;
@@ -81,9 +78,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         long now = System.nanoTime();
         dryUntilNanos = now;
         failOpenUntilNanos = now;
-        lastDrawFailureNanos = now; // no failure yet: every draw that starts from here on is newer than this
+        lastDrawFailureNanos = now; // no failure yet, so every draw from here on is newer than this
 
-        lastClampWarnNanos.set(now - CLAMP_WARN_INTERVAL_NANOS - 1); // the very first clamp warns immediately
+        lastClampWarnNanos.set(now - CLAMP_WARN_INTERVAL_NANOS - 1); // so the first clamp warns immediately
         blockSize = configuredBlockSize > 0 ? configuredBlockSize : deriveDefaultBlockSize();
         stats = statsManager.getThroughputQuotaStats();
         if (drawExecutor == null) {
@@ -123,41 +120,35 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     @Override
-    public int tryConsumeOutgoingWaiting(int n) {
+    public int tryConsumeOutgoingBlocking(int n) {
         if (!enabled) {
-            // the persistent fan-out charges through here on every publish, so the default configuration must not pay
-            // for any of the bookkeeping below - none of which is even initialised when the quota is off
+            // every publish charges its fan-out through here, so a disabled quota must do no bookkeeping at all -
+            // none of it is even initialised
             return Math.max(0, n);
         }
-        // covers a non-positive n too: tryConsume grants it in full, so it cannot reach the draw below
+        // a non-positive n is granted in full by tryConsume, so it never reaches the draw below
         int granted = tryConsume(n, false);
         if (granted >= n) {
-            // satisfied without drawing, so nothing here repays whatever credit that took: hand the top-up back
-            // to the background draw, exactly as an ordinary charge would have done
             repayCreditIfOwed();
             return granted;
         }
         long now = System.nanoTime();
         if (now - failOpenUntilNanos < 0) {
-            return granted; // Redis degraded: tryConsume already failed open, there is nothing to wait for
+            return granted; // Redis degraded: tryConsume already failed open, nothing to draw
         }
         if (now - dryUntilNanos < 0) {
-            return granted; // a completed draw reported the shared bucket dry: this refusal is genuine
+            return granted; // a completed draw found the shared bucket dry, so this refusal is genuine
         }
-        // The local pool fell short while the shared bucket may still hold budget - the case that used to
-        // destroy acknowledged messages. Draw here rather than hand back a partial grant the caller must
-        // discard: this is a background delivery loop, so one Redis round trip is far cheaper than data loss.
+        // the local pool fell short while the shared bucket may still hold budget - draw rather than hand back a
+        // partial grant the caller would have to discard
         return granted + drawOnCallerThread(n - granted);
     }
 
     private int drawOnCallerThread(int shortfall) {
-        // Draw a whole block even for a small shortfall, exactly as scheduleDrawIfNeeded does: a device replay
-        // charges 1 per message, so drawing only the shortfall would cost one Redis round trip PER MESSAGE
-        // and throw away the amortisation the block design exists for.
-        // Cover the outstanding credit deficit as well. This one round trip has to do the job the suppressed
-        // asynchronous draw used to do, or the credit the same call just granted itself would never be paid for -
-        // tokens delivered but never taken from the shared bucket. The read is a racy estimate and that is fine:
-        // over-drawing lands in the pool, under-drawing leaves the remainder for the next draw.
+        // draw a whole block even for a small shortfall, so a replay charging 1 per message does not cost one
+        // round trip per message. The deficit is covered too: this call replaces the draw tryConsume did not
+        // schedule, and without it the credit just granted would never be paid for. A racy read is fine - an
+        // over-draw lands in the pool, an under-draw leaves the rest for the next draw.
         long deficit = Math.max(0L, -localTokens.get());
         long drawSize = Math.max(blockSize, shortfall + deficit);
         long startedAt = System.nanoTime();
@@ -186,11 +177,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     /**
-     * @param scheduleDraw whether an exhausted pool should kick off an asynchronous draw. True for every ordinary
-     *                     charge: the thread must not touch Redis, so the draw that refills the pool and repays the
-     *                     credit has to happen in the background. The waiting charge passes false and takes
-     *                     responsibility itself - it is about to draw synchronously, and that draw repays the credit
-     *                     too, so scheduling here would only add a second Redis call racing the first.
+     * @param scheduleDraw whether an exhausted pool should kick off an asynchronous draw. True for ordinary charges,
+     *                     which must not touch Redis themselves. The blocking charge passes false because it is about
+     *                     to draw synchronously, and scheduling here would only race a second Redis call against it.
      */
     private int tryConsume(int n, boolean scheduleDraw) {
         if (!enabled || n <= 0) {
@@ -200,8 +189,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (now - failOpenUntilNanos < 0) {
             return n; // Redis is degraded: fail open, never queue, never stall
         }
-        // while a draw may still help, demand is granted on bounded credit down to -blockSize;
-        // once a draw confirmed the bucket dry, refuse locally until the backoff elapses
+        // grant on bounded credit down to -blockSize while a draw may still help; once a draw confirmed the bucket
+        // dry, refuse locally until the backoff elapses
         long creditFloor = now - dryUntilNanos < 0 ? 0L : -(long) blockSize;
         while (true) {
             long current = localTokens.get();
@@ -210,8 +199,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
                 if (scheduleDraw) {
                     scheduleDrawIfNeeded(n);
                 }
-                // the fail-open window above lapses while the next draw is still hanging on an unreachable
-                // Redis, so without this the quota would turn fail-closed for that draw's whole duration
+                // the fail-open window lapses while the next draw still hangs on an unreachable Redis; without
+                // this check the quota would turn fail-CLOSED for that draw's whole duration
                 return redisDegraded ? n : 0;
             }
             int granted = (int) Math.min(n, available);
@@ -224,11 +213,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         }
     }
 
-    // The waiting charge suppresses tryConsume's own scheduling, so when it returns without drawing it has to put
-    // the top-up back: a pool left at or below zero owes the shared bucket for the credit it granted.
+    // The blocking charge suppresses tryConsume's scheduling, so when it returns without drawing it must put the
+    // top-up back: a pool at or below zero owes the shared bucket for the credit it granted.
     private void repayCreditIfOwed() {
         if (System.nanoTime() - failOpenUntilNanos < 0) {
-            return; // failing open spends no real budget, so nothing is owed and Redis is unreachable anyway
+            return; // failing open spends no real budget, so nothing is owed
         }
         if (localTokens.get() <= 0) {
             scheduleDrawIfNeeded(blockSize);
@@ -253,7 +242,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         } catch (RejectedExecutionException e) {
             drawInFlight.set(false); // shutting down
         } catch (Throwable t) {
-            drawInFlight.set(false); // never wedge the single-flight latch: a stuck latch stops every future draw
+            drawInFlight.set(false); // never wedge the latch: a stuck one would stop every future draw
             throw t;
         }
     }
@@ -276,11 +265,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         }
     }
 
-    // Redis answered this draw - dry or not - so the node is not cut off. Two draws can still be in flight at once
-    // (an ingress-scheduled one alongside a waiting caller's), so write order must not decide the flag: a draw that
-    // started BEFORE an outage and only now returned would otherwise clear the degraded state a newer failure just
-    // established, and the node would turn fail-CLOSED once the fail-open window lapsed - precisely the case the
-    // flag exists to prevent. Only clear it when no failure has been recorded since this draw began.
+    // Redis answered, so the node is not cut off. Two draws can be in flight at once (an ingress-scheduled one
+    // alongside a blocking caller's), so clear the flag only when no failure was recorded since this draw began -
+    // otherwise a slow success that started before an outage would clear a newer failure's degraded state.
     private void markRedisAnswered(long drawStartedNanos) {
         if (lastDrawFailureNanos - drawStartedNanos < 0) {
             redisDegraded = false;
@@ -289,8 +276,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     private void markRedisFailed(Exception e) {
         long now = System.nanoTime();
-        // stamp the failure before raising the flag, so a draw completing concurrently cannot read a stale
-        // timestamp, decide it is newer than the failure, and clear what we are about to set
+        // stamp before raising the flag, so a concurrently completing draw cannot read a stale timestamp and
+        // clear what we are about to set
         lastDrawFailureNanos = now;
         redisDegraded = true;
         failOpenUntilNanos = now + FAIL_OPEN_NANOS;
@@ -301,10 +288,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     private void warnQuotaClamped() {
         long now = System.nanoTime();
-        // no longer reached only from the single-flight draw thread: tryConsumeOutgoingWaiting draws on the
-        // caller's thread, so an exhausted bucket can bring every delivery thread through here at once.
-        // CAS the timestamp so exactly one of them per interval wins the right to log, instead of relying
-        // on a single writer as the plain read-then-write did.
+        // an exhausted bucket can bring every delivery thread through here at once, so CAS the timestamp: exactly
+        // one of them per interval wins the right to log
         long last = lastClampWarnNanos.get();
         if (now - last > CLAMP_WARN_INTERVAL_NANOS && lastClampWarnNanos.compareAndSet(last, now)) {
             log.warn("Total throughput quota exhausted - refusing PUBLISH packets until the shared budget refills " +
@@ -323,7 +308,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         try {
             rateLimitCacheService.returnTotalMsgs(current);
         } catch (Exception e) {
-            localTokens.addAndGet(current); // keep the budget locally rather than losing it
+            // Deliberately over-grants: addTokens is not idempotent, so a call that timed out AFTER Redis applied it
+            // leaves these tokens both here and in the shared bucket. Accepted over dropping them, which is equally
+            // permanent and shrinks the configured budget.
+            localTokens.addAndGet(current);
             log.debug("Failed to return unused total throughput quota tokens to Redis", e);
         }
     }

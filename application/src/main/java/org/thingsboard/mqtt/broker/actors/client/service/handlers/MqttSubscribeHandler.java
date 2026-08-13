@@ -206,19 +206,17 @@ public class MqttSubscribeHandler {
         if (CollectionUtils.isEmpty(retainedMsgList)) {
             return;
         }
-        retainedMsgList = applyRateLimits(retainedMsgList);
+        retainedMsgList = applyThroughputQuota(retainedMsgList);
         if (!CollectionUtils.isEmpty(retainedMsgList)) {
             retainedMsgList.forEach(retainedMsg -> mqttMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
         }
     }
 
-    List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
+    List<RetainedMsg> applyThroughputQuota(List<RetainedMsg> retainedMsgList) {
         int totalMsgCount = retainedMsgList.size();
-        // wait for a right-sized draw: a retained set is one bulk charge, so the plain charge would cap the whole
-        // set at the node-local pool plus one block and silently truncate a subscriber that the cluster had budget
-        // for. See tryConsumeOutgoingWaiting for why blocking this thread (the subscription-persist callback) is
-        // acceptable here.
-        int granted = throughputQuotaService.tryConsumeOutgoingWaiting(totalMsgCount);
+        // a retained set is ONE bulk charge, so the non-blocking charge would cap it at the node-local pool and
+        // truncate a subscriber the cluster had budget for
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalMsgCount);
         if (granted >= totalMsgCount) {
             return retainedMsgList;
         }
@@ -227,7 +225,8 @@ public class MqttSubscribeHandler {
             return Collections.emptyList();
         }
         log.debug("Hitting total throughput quota on retained msg processing. Skipping {} messages", totalMsgCount - granted);
-        // deliberately NO droppedMsgs report: the message stays in the retain store and re-sends on the next matching SUBSCRIBE
+        // deliberately NO droppedMsgs report: the retain store is untouched, so the next matching SUBSCRIBE with
+        // retain handling 0 gets the full set again
         return retainedMsgList.subList(0, granted);
     }
 

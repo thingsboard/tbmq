@@ -134,6 +134,25 @@ public class ThroughputQuotaServiceImplTest {
         assertEquals(833, new DefaultThroughputLimitProvider(configuration).getSustainedRatePerSec());
     }
 
+    // block-size auto-sizing derives from this number, so the switch to a single-bandwidth default must not have
+    // moved the derived block under deployments that never set one
+    @Test
+    public void givenDefaultProvider_whenShippedSingleBandwidthConfig_thenSameSustainedRate() {
+        configuration.setConfig("50000:60");
+        assertEquals(833, new DefaultThroughputLimitProvider(configuration).getSustainedRatePerSec());
+    }
+
+    // the provider used to re-split the config string without the bucket builder's parts.length check, so a
+    // malformed entry died here with an ArrayIndexOutOfBoundsException. Both paths now share one parser.
+    @Test
+    public void givenMalformedConfig_whenDerivingSustainedRate_thenSameClearErrorAsTheBucketBuilder() {
+        configuration.setConfig("1000");
+        DefaultThroughputLimitProvider provider = new DefaultThroughputLimitProvider(configuration);
+
+        assertThrows(IllegalArgumentException.class, provider::getSustainedRatePerSec);
+        assertThrows(IllegalArgumentException.class, configuration::totalMsgsBucketConfiguration);
+    }
+
     @Test
     public void givenQuotaDisabled_whenTryConsume_thenAlwaysGrantedWithoutRedis() {
         configuration.setEnabled(false);
@@ -144,15 +163,14 @@ public class ThroughputQuotaServiceImplTest {
         verifyNoInteractions(rateLimitCacheService);
     }
 
-    // init() returns before creating the draw executor when the quota is off, so any bookkeeping that reaches it on a
-    // disabled service dereferences null and throws into the caller - here the publish dispatcher, which charges the
-    // persistent fan-out through this method on EVERY publish. A disabled quota must grant and do nothing else.
+    // init() never creates the draw executor when the quota is off, so bookkeeping that reaches it would NPE into
+    // the publish dispatcher - which charges the fan-out through here on EVERY publish. Grant and do nothing else.
     @Test
-    public void givenQuotaDisabled_whenWaitingCharge_thenGrantedWithoutTouchingTheDrawExecutor() {
+    public void givenQuotaDisabled_whenBlockingCharge_thenGrantedWithoutTouchingTheDrawExecutor() {
         configuration.setEnabled(false);
         service.init();
 
-        assertEquals(5, service.tryConsumeOutgoingWaiting(5));
+        assertEquals(5, service.tryConsumeOutgoingBlocking(5));
         verifyNoInteractions(rateLimitCacheService);
     }
 
@@ -255,15 +273,11 @@ public class ThroughputQuotaServiceImplTest {
         assertFalse("with Redis healthy again, an exhausted node must refuse", service.tryConsumeIncoming());
     }
 
-    // The waiting charge draws synchronously for exactly what it needs, so it must not also take credit: the credit
-    // would leave a deficit repayable only by a second, concurrent draw, which is how this path came to issue two
-    // Redis calls per shortfall and run them against each other.
-    //
-    // This is also what keeps prepaid charging honest, so it is not quota-service trivia to be deleted: the persistent
-    // fan-out charges its whole width in one bulk call, and a charge that could only ever grant localTokens + blockSize
-    // would make the node's lease - not the cluster budget - the ceiling on how many subscribers a publish can reach.
+    // One shortfall must cost exactly one Redis call: taking credit as well would leave a deficit that only a second,
+    // concurrent draw could repay. This is also what keeps the node's lease from becoming the ceiling on how many
+    // subscribers a publish can reach.
     @Test
-    public void givenShortPool_whenWaitingCharge_thenOneDrawAndNoSecondQueued() {
+    public void givenShortPool_whenBlockingCharge_thenOneDrawAndNoSecondQueued() {
         ManualExecutor executor = new ManualExecutor();
         service.drawExecutor = executor;
         when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenAnswer(inv -> inv.getArgument(0));
@@ -271,11 +285,11 @@ public class ThroughputQuotaServiceImplTest {
         executor.runAll(); // the warm-up draw lands: block 10 tokens local
         clearInvocations(rateLimitCacheService);
 
-        int granted = service.tryConsumeOutgoingWaiting(50);
+        int granted = service.tryConsumeOutgoingBlocking(50);
 
         assertEquals("the pool plus one synchronous draw must cover the whole demand", 50, granted);
         verify(rateLimitCacheService, times(1)).tryConsumeTotalMsgs(anyLong());
-        assertTrue("the waiting charge must not also queue an asynchronous draw", executor.tasks.isEmpty());
+        assertTrue("the blocking charge must not also queue an asynchronous draw", executor.tasks.isEmpty());
         AtomicLong localTokens = (AtomicLong) ReflectionTestUtils.getField(service, "localTokens");
         assertEquals("that same draw must repay the credit the call took, or the node would deliver tokens it "
                 + "never paid the shared bucket for", 0L, localTokens.get());
@@ -301,7 +315,7 @@ public class ThroughputQuotaServiceImplTest {
             service.init();
             assertTrue(asyncDrawStarted.await(5, TimeUnit.SECONDS));
 
-            service.tryConsumeOutgoingWaiting(50); // draws on this thread, fails, marks the node degraded
+            service.tryConsumeOutgoingBlocking(50); // draws on this thread, fails, marks the node degraded
             failureRecorded.countDown();
             drawPool.shutdown();
             assertTrue(drawPool.awaitTermination(5, TimeUnit.SECONDS)); // the stale success has landed
