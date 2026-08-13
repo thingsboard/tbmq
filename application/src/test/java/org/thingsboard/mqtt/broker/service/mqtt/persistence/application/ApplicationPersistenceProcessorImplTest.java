@@ -577,12 +577,6 @@ class ApplicationPersistenceProcessorImplTest {
 
     // ===== Helpers =====
 
-    private PersistedPublishMsg publishMsg(int packetId, long offset) {
-        return new PersistedPublishMsg(
-                PublishMsg.builder().packetId(packetId).topicName("topic").payload(new byte[0]).build(),
-                offset, false);
-    }
-
     @SuppressWarnings("unchecked")
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> mockConsumer() {
         return mock(TbQueueControlledOffsetConsumer.class);
