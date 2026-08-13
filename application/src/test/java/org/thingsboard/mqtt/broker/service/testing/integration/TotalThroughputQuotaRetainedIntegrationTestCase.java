@@ -15,20 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 
@@ -38,62 +35,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 /**
- * Proves the three retained-message contracts of the total throughput quota: a retained set is delivered IN FULL
- * whenever the shared bucket holds the budget for it - even when the node-local pool alone could not cover it - it is
- * truncated only once the shared bucket is genuinely dry, and that truncation is not a drop: it reports no droppedMsgs
- * and leaves the retain store untouched, so the very same messages are re-sent to the next subscriber.
+ * Three retained-message contracts, one per phase: a retained set is delivered IN FULL whenever the shared bucket
+ * can cover it, even when the node-local pool alone could not; it truncates only once the bucket is genuinely dry;
+ * and that truncation is not a drop - no droppedMsgs, and the retain store is left intact for the next subscriber.
  * <p>
- * The first contract is the one that fails without a waiting draw on the retained path. A retained set is ONE bulk
- * charge, and a plain charge can never grant more than {@code localTokens + blockSize}, so a wildcard SUBSCRIBE used to
- * be capped at ~2 of the 5 messages here no matter how much budget the cluster held - silently, and identically for
- * every later subscriber, which made the remainder effectively unreachable.
+ * Arithmetic (capacity 20, refill 4 tokens/s, block size 1, lease return disabled). The 5 setup publishes each draw
+ * a token inside the 50 ms pacing, so none is refused. Phase 1: one wildcard SUBSCRIBE is ONE bulk charge of 5, and
+ * the local pool covers at most 2, so the rest can only come from drawing on the spot - without that, a subscriber
+ * would silently get ~2 of 5 however much budget the cluster held. Phase 2: the bucket is drained, so the same
+ * SUBSCRIBE must truncate. Phase 3: after a refill it is granted in full again, which is only possible if the store
+ * survived.
  * <p>
- * Ledger arithmetic (capacity 20, full refill every 5 s = 4 tokens/s, block size 1, lease return disabled):
- * <ul>
- *     <li>boot: the warm-up draw takes one token, leaving local = 1;</li>
- *     <li>setup: 5 retained publishes 50 ms apart. Each ingress charge empties the node and triggers a draw of one
- *     token that lands well inside the pacing, so local stays at 1 and no publish is ever refused. The bucket keeps
- *     ample headroom - well above the 5 the first subscriber needs;</li>
- *     <li>phase 1: ONE wildcard SUBSCRIBE is ONE bulk charge of 5. The local pool covers at most local (&lt;= 1) plus
- *     one block of bounded credit, so the shortfall of ~3 can only be covered by drawing from the shared bucket on the
- *     spot. All five must arrive;</li>
- *     <li>phase 2: the shared bucket is drained directly through {@link RateLimitCacheService} - the cheapest faithful
- *     stand-in for a second cluster node having spent the budget, and it perturbs neither droppedMsgs nor the retain
- *     store. The next wildcard SUBSCRIBE now finds nothing to draw, so it must truncate;</li>
- *     <li>phase 3: a 6 s pause refills the bucket to capacity; the same wildcard SUBSCRIBE is granted in full again,
- *     which can only happen if the truncation left the retain store intact.</li>
- * </ul>
- * The droppedMsgs ledger is opened only once the retain store is populated: the five setup publishes have no subscriber
- * yet, and a PUBLISH matching no subscription is counted as dropped by the dispatcher independently of the quota.
+ * The droppedMsgs ledger opens only once the store is populated: the setup publishes have no subscriber yet, and the
+ * dispatcher counts a PUBLISH matching no subscription as dropped independently of the quota.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaRetainedIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.rate-limits.total.enabled=true",
         "mqtt.rate-limits.total.config=20:5",
-        "mqtt.rate-limits.total.block-size=1",
-        "mqtt.rate-limits.total.lease-return-ms=600000"
+        "mqtt.rate-limits.total.block-size=1"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 
     private static final String TOPIC_PREFIX = "quota/retained/";
     private static final String WILDCARD_FILTER = TOPIC_PREFIX + "#";
     private static final int RETAINED_COUNT = 5;
-    private static final long DRAIN_TOKENS = 10_000;
-
-    @Autowired
-    private MeterRegistry meterRegistry;
-    @Autowired
-    private RateLimitCacheService rateLimitCacheService;
 
     @Test
     public void givenRetainedMessages_whenQuotaTruncates_thenNoDroppedMsgsAndStoreIntact() throws Throwable {
+        double droppedBeforeSetupPublishes = droppedMsgs();
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, "quota_retained_pub");
         pub.connect(new MqttConnectOptions());
         for (int i = 0; i < RETAINED_COUNT; i++) {          // ingress: 5 paced charges, each covered by a fresh draw
@@ -102,12 +77,10 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractPub
         }
         pub.disconnect();
         pub.close();
-        // let the dispatcher finish the five publishes before the baseline is taken: none of them has a subscriber yet,
-        // and MsgDispatcherServiceImpl#processPublishMsg counts a PUBLISH with no matching subscription as a dropped
-        // message. That accounting predates the quota and is not what this test measures, so the ledger below starts
-        // once the retain store is populated and covers only the retained DELIVERY path.
-        Thread.sleep(1000);
-        // the historical droppedMsgs counter is zeroed by the reporting scheduler; this Micrometer counter is monotonic
+        // the setup publishes have no subscriber yet, and the dispatcher counts a PUBLISH matching no subscription
+        // as dropped - accounting that predates the quota. Wait for exactly those five, then open the real ledger,
+        // so the assertions below cover only the retained DELIVERY path.
+        awaitDroppedMsgsAtLeast("retain store populated", droppedBeforeSetupPublishes + RETAINED_COUNT);
         double droppedBeforeRetainedDelivery = droppedMsgs();
 
         // phase 1 - one wildcard SUBSCRIBE is one bulk charge of 5 that outruns the node-local pool, so it is only
@@ -123,20 +96,18 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractPub
         assertEquals("with budget the retained set is delivered exactly once", RETAINED_COUNT, receivedA.get());
         disconnectAndClose(subA);
 
-        // phase 2 - with the shared bucket drained there is nothing left to draw, so the refusal is genuine and the
-        // retained set MUST truncate. How much of the prefix survives depends on the node-local pool at that instant
-        // (bounded credit may still cover a message or two), so only the truncation itself is asserted here; the
-        // granted-prefix shape is pinned by MqttSubscribeHandlerTest#givenQuotaPartiallyGranted_...
-        long drained = rateLimitCacheService.tryConsumeTotalMsgs(DRAIN_TOKENS);
-        log.info("Drained {} tokens from the shared bucket to force a genuine refusal", drained);
-        // without this the phase would still "pass" if the drain silently took nothing: the truncation assertion below
-        // is a negative one, and an undrained bucket that simply delivered slowly would satisfy it for the wrong reason
-        assertTrue("the drain must actually empty the shared bucket", drained > 0);
+        // phase 2 - nothing left to draw, so the refusal is genuine and the set MUST truncate. How much survives
+        // depends on the node-local pool at that instant, so only the truncation itself is asserted; the prefix
+        // shape is pinned by MqttSubscribeHandlerTest. The drain asserts it took something, or an undrained bucket
+        // delivering slowly would satisfy the negative check below for the wrong reason.
+        drainSharedBucket("to force a genuine refusal");
         double droppedBeforeTruncation = droppedMsgs();
         AtomicInteger receivedB = new AtomicInteger();
         MqttClient subB = new MqttClient(SERVER_URI + mqttPort, "quota_retained_sub_b");
         subB.connect(new MqttConnectOptions());
         subscribeWildcard(subB, (t, m) -> receivedB.incrementAndGet());
+        // fixed: a PARTIAL delivery of unknown size has no target count to poll for - only elapsed time can
+        // establish that the rest is never coming
         Thread.sleep(2000);
         int truncated = receivedB.get();
         assertTrue("a dry shared bucket must truncate the retained set, but got " + truncated,
@@ -145,7 +116,9 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractPub
                 droppedBeforeTruncation, droppedMsgs(), 0.0);
         disconnectAndClose(subB);
 
-        // phase 3 - the truncated messages were never consumed: after a refill the store still serves all five
+        // phase 3 - the truncated messages were never consumed: after a refill the store still serves all five.
+        // fixed: waits on the bucket refilling (20:5, so 5 s), and the shared balance cannot be read without
+        // consuming the very budget this phase needs
         Thread.sleep(6000);
         AtomicInteger receivedC = new AtomicInteger();
         CountDownLatch latchC = new CountDownLatch(RETAINED_COUNT);
@@ -178,9 +151,5 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractPub
             client.disconnect();
         }
         client.close();
-    }
-
-    private double droppedMsgs() {
-        return meterRegistry.get(DROPPED_MSGS).counter().count();
     }
 }

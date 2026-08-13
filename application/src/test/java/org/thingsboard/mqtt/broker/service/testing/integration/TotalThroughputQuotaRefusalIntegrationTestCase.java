@@ -18,16 +18,14 @@ package org.thingsboard.mqtt.broker.service.testing.integration;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.junit.FixMethodOrder;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.List;
@@ -40,24 +38,29 @@ import static org.junit.Assert.assertTrue;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaRefusalIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.rate-limits.total.enabled=true",
         "mqtt.rate-limits.total.config=5:600",
-        "mqtt.rate-limits.total.block-size=1",
-        "mqtt.rate-limits.total.lease-return-ms=600000"
+        "mqtt.rate-limits.total.block-size=1"
 })
 @DaoSqlTest
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
+
+    // Both cases need the cluster budget already spent. Draining here, rather than letting one test spend it for
+    // the next, keeps them independent and runnable alone.
+    @Before
+    public void emptySharedBucket() {
+        ensureSharedBucketEmpty();
+    }
 
     @Test
-    public void a_givenMqtt3Publisher_whenQuotaExhausted_thenDisconnected() throws Throwable {
+    public void givenMqtt3Publisher_whenQuotaExhausted_thenDisconnected() throws Throwable {
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "quota_refusal_v3");
         MqttConnectOptions options = new MqttConnectOptions();
         options.setAutomaticReconnect(false);
         pubClient.connect(options);
 
-        // capacity 5 + 1 block of credit: at most 6 publishes pass, the next refusal disconnects a 3.x client
+        // the shared bucket is empty, so only the node's warm-up block and its one block of credit can pass:
+        // a couple of publishes get through and the first refusal disconnects a 3.x client
         for (int i = 0; i < 20; i++) {
             try {
                 pubClient.publish("quota/refusal", ("data_" + i).getBytes(), 1, false);
@@ -73,7 +76,7 @@ public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractPubS
     }
 
     @Test
-    public void b_givenMqtt5Publisher_whenQuotaExhausted_thenQuotaExceededReasonCodeAndStillConnected() throws Throwable {
+    public void givenMqtt5Publisher_whenQuotaExhausted_thenQuotaExceededReasonCodeAndStillConnected() throws Throwable {
         org.eclipse.paho.mqttv5.client.MqttClient pubClient =
                 new org.eclipse.paho.mqttv5.client.MqttClient(SERVER_URI + mqttPort, "quota_refusal_v5");
         List<Integer> reasonCodes = new CopyOnWriteArrayList<>();
@@ -112,7 +115,7 @@ public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractPubS
             Thread.sleep(50);
         }
 
-        // 0x97 = 151 = QUOTA_EXCEEDED; the bucket was exhausted by test a_, so refusals MUST appear
+        // 0x97 = 151 = QUOTA_EXCEEDED; the bucket was emptied in setup, so refusals MUST appear
         assertTrue("expected at least one QUOTA_EXCEEDED puback", reasonCodes.contains(151));
         assertTrue(pubClient.isConnected());
         pubClient.disconnect();

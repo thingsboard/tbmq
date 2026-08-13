@@ -15,75 +15,59 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 /**
- * The primary prepaid case: a publish is charged for its whole fan-out BEFORE any copy is stored, so when the budget
- * cannot cover every subscriber the fan-out is truncated at admission rather than at delivery.
+ * The primary prepaid case: a publish is charged for its whole fan-out BEFORE any copy is stored, so a budget short
+ * of the fan-out truncates it at admission. The contract is the accounting identity
+ * {@code delivered + droppedMsgs == subscriber count} - a copy that is neither stored nor reported is exactly the
+ * silent loss prepaid charging exists to prevent - plus the fact that refused copies never arrive later, since they
+ * were never stored.
  * <p>
- * What must hold, and what this pins:
- * <ul>
- *     <li>the fan-out is split into a delivered prefix and a reported-dropped remainder, with nothing unaccounted for:
- *     {@code delivered + droppedMsgs == subscriber count}. That identity is the whole contract - a copy that is neither
- *     stored nor reported is exactly the silent loss prepaid charging exists to prevent;</li>
- *     <li>the truncation is genuine: some subscribers get the message and some get nothing;</li>
- *     <li>the refused copies are never stored, so they do not arrive later. There is no deferral at any charge site any
- *     more, and a subscriber above the cut stays empty however long it waits or however often it reconnects.</li>
- * </ul>
- * WHICH subscribers win is deliberately not asserted: truncation drops the tail of the subscription list, and that list
- * order is not something a client controls. The count is the contract.
+ * WHICH subscribers win is deliberately not asserted: truncation drops the tail of the subscription list, which is
+ * not something a client controls. The count is the contract.
  * <p>
- * Ledger arithmetic (capacity 100, block size 4, lease return disabled, refill 0.17 tokens/s - negligible here): the
- * warm-up draw leaves local = 4, the shared bucket is then drained directly through {@link RateLimitCacheService} so the
- * node has nothing left to draw, and the single publish charges 1 for ingress plus 10 for the fan-out against a pool
- * that can cover only part of it. The exact size of the granted prefix depends on the block size and the bounded credit,
- * so it is asserted as a strict truncation plus the accounting identity rather than as a fixed number.
+ * Arithmetic (capacity 100, block size 4, lease return disabled): the warm-up draw leaves local = 4, the bucket is
+ * drained so nothing can be drawn, and the single publish charges 1 for ingress plus 10 for the fan-out against a
+ * pool that covers only part of it. The granted prefix depends on the block size and bounded credit, so it is
+ * asserted as a strict truncation rather than a fixed number.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaFanOutIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.rate-limits.total.enabled=true",
         "mqtt.rate-limits.total.config=100:600",
-        "mqtt.rate-limits.total.block-size=4",
-        "mqtt.rate-limits.total.lease-return-ms=600000"
+        "mqtt.rate-limits.total.block-size=4"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 
     private static final String TOPIC = "quota/fanout";
     private static final int SUBSCRIBERS = 10;
-    private static final long DRAIN_TOKENS = 10_000;
-
-    @Autowired
-    private MeterRegistry meterRegistry;
-    @Autowired
-    private RateLimitCacheService rateLimitCacheService;
 
     private final List<MqttClient> persistedSubscribers = new ArrayList<>();
 
@@ -109,11 +93,7 @@ public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractPubSu
         }
 
         // the node holds only its warm-up block once the shared bucket is empty, so the fan-out cannot be covered
-        long drained = rateLimitCacheService.tryConsumeTotalMsgs(DRAIN_TOKENS);
-        log.info("Drained {} tokens from the shared bucket before the wide publish", drained);
-        // without this the truncation assertions below could be satisfied by a bucket that was never actually emptied
-        assertTrue("the drain must actually empty the shared bucket", drained > 0);
-        // the historical droppedMsgs counter is zeroed by the reporting scheduler; this Micrometer counter is monotonic
+        drainSharedBucket("before the wide publish");
         double droppedBefore = droppedMsgs();
 
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, "quota_fanout_pub");
@@ -121,7 +101,13 @@ public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractPubSu
         pubOptions.setAutomaticReconnect(false);
         pub.connect(pubOptions);
         pub.publish(TOPIC, "wide".getBytes(), 1, false);
-        Thread.sleep(5000);
+        // poll the accounting identity itself instead of sleeping a fixed 5 s: every subscriber copy ends up either
+        // delivered or reported dropped, so the split is final the moment the two add up to the fan-out width. The
+        // matcher form reports the sum it did reach, which is the number worth seeing if this ever times out.
+        Awaitility.await("fan-out split settled")
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> received.get() + (int) Math.round(droppedMsgs() - droppedBefore),
+                        greaterThanOrEqualTo(SUBSCRIBERS));
 
         int delivered = received.get();
         int dropped = (int) Math.round(droppedMsgs() - droppedBefore);
@@ -137,6 +123,8 @@ public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractPubSu
             subscriber.disconnect();
             subscriber.connect(persistent);
         }
+        // a fixed wait, deliberately: this asserts that nothing MORE arrives, and there is no counter whose movement
+        // could end the wait early - only elapsed time can build confidence in a negative
         Thread.sleep(3000);
         assertEquals("quota-refused copies must never be delivered later", delivered, received.get());
 
@@ -145,9 +133,5 @@ public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractPubSu
         assertTrue("the publisher must stay connected: its own publish was accepted", pub.isConnected());
         pub.disconnect();
         pub.close();
-    }
-
-    private double droppedMsgs() {
-        return meterRegistry.get(DROPPED_MSGS).counter().count();
     }
 }

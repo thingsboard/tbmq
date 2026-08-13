@@ -15,9 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -33,7 +31,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
@@ -44,47 +41,33 @@ import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 /**
- * Proves the two shared-subscription contracts of prepaid charging: a shared subscription group costs ONE outgoing
- * packet per message however many members it has, charged when the publish is processed - and the delivery of those
- * stored messages to the group is then free.
+ * A shared subscription group costs ONE outgoing packet per message however many members it has, charged at the
+ * publish - and delivering those stored messages to the group is then free.
  * <p>
- * The budget is what does the proving here, not the assertions alone. All three candidate charging models are
- * distinguishable at capacity 30 with {@value #MSG_COUNT} messages:
- * <ul>
- *     <li>per unique shared TOPIC, charged once at the fan-out - the shipped model: 1 ingress + 1 group = 2 per message,
- *     24 tokens. Fits, so nothing may be dropped and every message must arrive;</li>
- *     <li>per group MEMBER at the fan-out: 1 + 3 = 4 per message, 48 tokens. Would exhaust the budget and report the
- *     excess as droppedMsgs;</li>
- *     <li>per topic at the fan-out PLUS a second charge when the shared pack is delivered - the model this redesign
- *     removed: 3 per message, 36 tokens. Also would not fit.</li>
- * </ul>
- * Ledger arithmetic (capacity 30, full refill every 600 s = 0.05 tokens/s - negligible over the run, block size 4,
- * lease return disabled): the 24 tokens the correct model needs are drawn in blocks of 4, so the node can leave at most
- * 3 unused in its local pool - a worst case of 27 debited against the shared bucket's 30.
+ * The budget does the proving, not the assertions alone: at capacity 30 with {@value #MSG_COUNT} messages the three
+ * candidate charging models are distinguishable. Per unique shared TOPIC (the shipped model) is 2 per message = 24
+ * tokens and fits, so nothing may be dropped; per group MEMBER would be 4 per message = 48; charging the shared
+ * pack again at delivery would be 3 per message = 36. Only the first fits, so any droppedMsgs here means the wrong
+ * model. Block size 4 means the node can leave at most 3 unused, a worst case of 27 against the bucket's 30.
  * <p>
- * Each message goes to exactly ONE member of the group, so the delivered total across all members is the message count.
- * That is asserted as an equality: a group charged once must not be delivered once per member either.
+ * Each message reaches exactly ONE member, so the delivered total is asserted as an equality: charged once must
+ * also mean delivered once.
  */
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TotalThroughputQuotaSharedGroupIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.rate-limits.total.enabled=true",
         "mqtt.rate-limits.total.config=30:600",
-        "mqtt.rate-limits.total.block-size=4",
-        "mqtt.rate-limits.total.lease-return-ms=600000"
+        "mqtt.rate-limits.total.block-size=4"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 
     private static final String TOPIC = "quota/shared";
     private static final String SHARED_FILTER = "$share/qg/quota/shared";
@@ -100,8 +83,6 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
     private ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     @Autowired
     private ApplicationTopicService applicationTopicService;
-    @Autowired
-    private MeterRegistry meterRegistry;
 
     private final List<MqttClientCredentials> credentials = new ArrayList<>();
     private final List<MqttClient> members = new ArrayList<>();
@@ -114,8 +95,8 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
         }
         credentials.add(credentialsService.saveCredentials(
                 TestUtils.createDeviceClientCredentials(PUBLISHING_CLIENT, PUB_USERNAME)));
-        // a persistent APPLICATION client may only join a shared subscription that has been provisioned, so the entity
-        // and its Kafka topic have to exist before the SUBSCRIBE or the broker answers 0x80
+        // a persistent APPLICATION client may only join a provisioned shared subscription, so the entity and its
+        // Kafka topic must exist before the SUBSCRIBE or the broker answers 0x80
         ApplicationSharedSubscription subscription = applicationSharedSubscriptionService.findSharedSubscriptionByTopic(TOPIC);
         if (subscription == null) {
             ApplicationSharedSubscription toSave = new ApplicationSharedSubscription();
@@ -153,7 +134,6 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
             member.subscribe(SHARED_FILTER, 1);
         }
 
-        // the historical droppedMsgs counter is zeroed by the reporting scheduler; this Micrometer counter is monotonic
         double droppedBefore = droppedMsgs();
 
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
@@ -167,9 +147,9 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
         pub.disconnect();
         pub.close();
 
-        Awaitility.await("shared group delivery")
-                .atMost(30, TimeUnit.SECONDS)
-                .until(totalReceived::get, greaterThanOrEqualTo(MSG_COUNT));
+        awaitReceived("shared group delivery", totalReceived, MSG_COUNT);
+        // fixed: the assertion below is an equality, so it also rules out a message reaching MORE than one member -
+        // and only elapsed time without the count moving can establish that
         Thread.sleep(1000);
         assertEquals("each message must reach exactly one group member, and none may be lost",
                 MSG_COUNT, totalReceived.get());
@@ -205,9 +185,5 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
         options.setCleanSession(cleanSession);
         options.setUserName(APP_USERNAME + index);
         return options;
-    }
-
-    private double droppedMsgs() {
-        return meterRegistry.get(DROPPED_MSGS).counter().count();
     }
 }
