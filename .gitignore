@@ -36,6 +36,6 @@ rebuild-docker.sh
 */.run/**
 .run/**
 .run
-/docs/superpowers/
+/docs/
 
 

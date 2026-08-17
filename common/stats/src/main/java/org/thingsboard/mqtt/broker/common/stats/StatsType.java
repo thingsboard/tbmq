@@ -77,6 +77,7 @@ public enum StatsType {
     CONNECTION_ACCEPTED("connectionAccepted"),
     CONNECTION_REFUSED("connectionRefused"),
     CONNECTION_ERROR("connectionError"),
+    THROUGHPUT_QUOTA_DEGRADED("throughputQuotaDegraded"),
     ;
 
     private final String printName;

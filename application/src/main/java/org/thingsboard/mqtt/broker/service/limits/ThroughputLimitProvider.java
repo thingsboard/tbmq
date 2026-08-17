@@ -15,24 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-public interface RateLimitCacheService {
+public interface ThroughputLimitProvider {
 
-    void initSessionCount(int count);
-
-    void initApplicationClientsCount(int count);
-
-    long incrementSessionCount();
-
-    long incrementApplicationClientsCount();
-
-    void decrementSessionCount();
-
-    void decrementApplicationClientsCount();
-
-    long tryConsumeDevicePersistedMsgs(long limit);
-
-    long tryConsumeTotalMsgs(long limit);
-
-    void returnTotalMsgs(long tokens);
-
+    long getSustainedRatePerSec();
 }

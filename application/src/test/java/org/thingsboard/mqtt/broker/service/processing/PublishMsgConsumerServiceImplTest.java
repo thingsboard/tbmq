@@ -22,7 +22,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.UUID;
@@ -53,7 +52,6 @@ public class PublishMsgConsumerServiceImplTest {
                 mock(SubmitStrategyFactory.class),
                 mock(ServiceInfoProvider.class),
                 mock(StatsManager.class),
-                mock(RateLimitService.class),
                 reportClient);
     }
 

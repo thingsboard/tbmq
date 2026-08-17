@@ -56,6 +56,12 @@ public interface StatsManager {
     ClientDisconnectStats getClientDisconnectStats();
 
     /**
+     * Returns the total-throughput-quota degradation stats. When stats are disabled the stub manager
+     * returns a no-op instance.
+     */
+    ThroughputQuotaStats getThroughputQuotaStats();
+
+    /**
      * Returns the connection-outcome stats. Shares the {@code stats.enabled} master switch; when stats
      * are disabled the stub manager returns a no-op instance.
      */

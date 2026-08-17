@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -37,6 +38,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ThroughputQuotaService throughputQuotaService;
 
     @Override
     public void process(String clientId, PublishMsgProto msg) {
@@ -46,6 +48,10 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             return;
         }
         if (!rateLimitService.checkOutgoingLimits(clientId, msg)) {
+            dropMessage();
+            return;
+        }
+        if (!throughputQuotaService.tryConsumeOutgoing()) {
             dropMessage();
             return;
         }
@@ -61,6 +67,10 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             return;
         }
         if (!rateLimitService.checkOutgoingLimits(subscription.getClientId(), msg)) {
+            dropMessage();
+            return;
+        }
+        if (!throughputQuotaService.tryConsumeOutgoing()) {
             dropMessage();
             return;
         }

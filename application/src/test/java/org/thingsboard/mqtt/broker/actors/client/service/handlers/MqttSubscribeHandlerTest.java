@@ -45,7 +45,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -68,7 +68,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -104,7 +104,7 @@ public class MqttSubscribeHandlerTest {
     @MockitoBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
     @MockitoBean
-    RateLimitService rateLimitService;
+    ThroughputQuotaService throughputQuotaService;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoSpyBean
@@ -705,65 +705,43 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
-    public void givenEmptyRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnEmptyResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of());
-
+    public void givenEmptyRetainedList_whenApplyThroughputQuota_thenReturnEmpty() {
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of());
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnAllMsgs() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2)
-        ));
-
+    public void givenQuotaGrantsAll_whenApplyThroughputQuota_thenReturnAll() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertEquals(2, retainedMsgs.size());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsWithNoTokensLeft_thenReturnEmptyResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2)
-        ));
-
+    public void givenQuotaExhausted_whenApplyThroughputQuota_thenReturnEmpty() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(0);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimits_thenReturnExpectedResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(2L);
-
-        List<RetainedMsg> retainedMsgSet = List.of(
-                newRetainedMsg("msg1", 1), newRetainedMsg("msg2", 2)
-        );
-        List<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(retainedMsgSet);
-
+    public void givenQuotaPartiallyGranted_whenApplyThroughputQuota_thenTruncate() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(3)).thenReturn(2);
+        List<RetainedMsg> result = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2), newRetainedMsg("payload3", 3)));
         assertEquals(2, result.size());
-        assertTrue(result.containsAll(retainedMsgSet));
     }
 
+    // the retained path must never fall back to the plain charge: that is exactly the narrowing that used to cap a
+    // retained set at the node-local pool plus one block while the cluster still had budget for the whole set
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsAndPartlyTokensAvailable_thenReturnExpectedResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(1L);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2),
-                newRetainedMsg("msg3", 0)
-        ));
-
-        assertEquals(1, retainedMsgs.size());
+    public void givenRetainedMsgs_whenApplyThroughputQuota_thenNeverUsesThePlainCharge() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        mqttSubscribeHandler.applyThroughputQuota(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     private List<TopicSubscription> getTopicSubscriptions() {

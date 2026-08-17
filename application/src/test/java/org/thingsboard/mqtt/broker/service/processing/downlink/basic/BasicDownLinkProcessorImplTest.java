@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -52,6 +53,8 @@ public class BasicDownLinkProcessorImplTest {
     RateLimitService rateLimitService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockitoBean
+    ThroughputQuotaService throughputQuotaService;
 
     @MockitoSpyBean
     BasicDownLinkProcessorImpl basicDownLinkProcessor;
@@ -81,6 +84,7 @@ public class BasicDownLinkProcessorImplTest {
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(true);
 
         basicDownLinkProcessor.process(clientId, publishMsgProto);
 
@@ -122,6 +126,7 @@ public class BasicDownLinkProcessorImplTest {
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(true);
 
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
 
@@ -138,6 +143,35 @@ public class BasicDownLinkProcessorImplTest {
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(false);
 
         basicDownLinkProcessor.process(getSubscription(clientId), publishMsgProto);
+
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
+    }
+
+    @Test
+    public void givenTotalQuotaExhausted_whenProcess_thenDropMsg() {
+        String clientId = "clientId";
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
+        when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
+        when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(false);
+
+        basicDownLinkProcessor.process(clientId, publishMsgProto);
+
+        verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
+    }
+
+    @Test
+    public void givenTotalQuotaExhausted_whenProcessWithSubscription_thenDropMsg() {
+        String clientId = "clientId";
+        Subscription subscription = getSubscription(clientId);
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
+        when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
+        when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
+        when(throughputQuotaService.tryConsumeOutgoing()).thenReturn(false);
+
+        basicDownLinkProcessor.process(subscription, publishMsgProto);
 
         verify(mqttMsgDeliveryService, never()).sendPublishMsgProtoToClient(any(), any(), any());
         verify(tbMessageStatsReportClient).reportDroppedMsgs();

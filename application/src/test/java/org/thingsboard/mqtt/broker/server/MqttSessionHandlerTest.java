@@ -37,8 +37,8 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -78,7 +78,7 @@ public class MqttSessionHandlerTest {
                 mock(ClientLogger.class),
                 mock(RateLimitService.class),
                 mqttMessageGenerator,
-                mock(RateLimitBatchProcessor.class),
+                mock(ThroughputQuotaService.class),
                 mock(TbMessageStatsReportClient.class),
                 statsManager);
         handlerCtx.setMaxInFlightMsgs(1000);

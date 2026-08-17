@@ -40,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -303,6 +304,39 @@ public class RateLimitRedisCacheServiceImplTest {
 
         verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any());
         verify(jedisBasedProxyManager, never()).getProxy(eq(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE), any());
+    }
+
+    @Test
+    public void testReturnTotalMsgs() {
+        RateLimitRedisCacheServiceImpl service = serviceWithTotalMsgsBucket();
+
+        service.returnTotalMsgs(25L);
+
+        verify(bucketProxy).addTokens(25L);
+    }
+
+    @Test
+    public void testReturnTotalMsgsWithNonPositiveCount() {
+        RateLimitRedisCacheServiceImpl service = serviceWithTotalMsgsBucket();
+
+        service.returnTotalMsgs(0L);
+        service.returnTotalMsgs(-5L);
+
+        verify(bucketProxy, never()).addTokens(anyLong());
+    }
+
+    // The service built by setUp holds a null total-messages proxy, which is what lets the tests above assert the
+    // proxy is never created. The lease-return tests need a real one, so they build their own service rather than
+    // registering a bean that would defeat those assertions.
+    private RateLimitRedisCacheServiceImpl serviceWithTotalMsgsBucket() {
+        BucketConfiguration totalMsgsBucketConfiguration = mock(BucketConfiguration.class);
+        when(jedisBasedProxyManager.getProxy(eq(CacheConstants.TOTAL_MSGS_LIMIT_CACHE), any())).thenReturn(bucketProxy);
+        RateLimitRedisCacheServiceImpl service = new RateLimitRedisCacheServiceImpl(redisTemplate,
+                jedisBasedProxyManager, null, totalMsgsBucketConfiguration, cacheProperties, clientsLimitProperties,
+                devicePersistedMsgsRateLimitsConfiguration, totalMsgsRateLimitsConfiguration);
+        service.init();
+        clearInvocations(bucketProxy);
+        return service;
     }
 
 }

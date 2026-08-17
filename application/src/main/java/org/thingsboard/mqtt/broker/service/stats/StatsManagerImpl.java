@@ -85,6 +85,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
     private ClientDisconnectStats clientDisconnectStats;
+    private ThroughputQuotaStats throughputQuotaStats;
     private ConnectionStats connectionStats;
 
     @Value("${stats.application-processor.enabled}")
@@ -106,6 +107,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
         this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
         this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
+        this.throughputQuotaStats = new DefaultThroughputQuotaStats(statsFactory);
         this.connectionStats = new DefaultConnectionStats(statsFactory);
     }
 
@@ -141,6 +143,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public ClientDisconnectStats getClientDisconnectStats() {
         return clientDisconnectStats;
+    }
+
+    @Override
+    public ThroughputQuotaStats getThroughputQuotaStats() {
+        return throughputQuotaStats;
     }
 
     @Override
@@ -516,6 +523,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         log.info("[{}] Stats: count = [{}]", StatsType.CLIENT_DISCONNECTS.getPrintName(), clientDisconnectStats.getCount());
         clientDisconnectStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.THROUGHPUT_QUOTA_DEGRADED.getPrintName(), throughputQuotaStats.getCount());
+        throughputQuotaStats.reset();
 
         log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",
                 StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount(),

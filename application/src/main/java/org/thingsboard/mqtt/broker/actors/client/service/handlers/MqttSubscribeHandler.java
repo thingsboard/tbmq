@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -75,7 +75,7 @@ public class MqttSubscribeHandler {
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
-    private final RateLimitService rateLimitService;
+    private final ThroughputQuotaService throughputQuotaService;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
@@ -206,31 +206,28 @@ public class MqttSubscribeHandler {
         if (CollectionUtils.isEmpty(retainedMsgList)) {
             return;
         }
-        retainedMsgList = applyRateLimits(retainedMsgList);
+        retainedMsgList = applyThroughputQuota(retainedMsgList);
         if (!CollectionUtils.isEmpty(retainedMsgList)) {
             retainedMsgList.forEach(retainedMsg -> mqttMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
         }
     }
 
-    List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
-        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
-            return retainedMsgList;
-        }
-
+    List<RetainedMsg> applyThroughputQuota(List<RetainedMsg> retainedMsgList) {
         int totalMsgCount = retainedMsgList.size();
-        int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(totalMsgCount);
-
-        if (availableTokens >= totalMsgCount) {
+        // a retained set is ONE bulk charge, so the non-blocking charge would cap it at the node-local pool and
+        // truncate a subscriber the cluster had budget for
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalMsgCount);
+        if (granted >= totalMsgCount) {
             return retainedMsgList;
         }
-
-        if (availableTokens <= 0) {
-            log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", totalMsgCount);
+        if (granted <= 0) {
+            log.debug("Total throughput quota exhausted during retained msg processing. Skipping {} messages", totalMsgCount);
             return Collections.emptyList();
         }
-
-        log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", totalMsgCount - availableTokens);
-        return retainedMsgList.subList(0, availableTokens);
+        log.debug("Hitting total throughput quota on retained msg processing. Skipping {} messages", totalMsgCount - granted);
+        // deliberately NO droppedMsgs report: the retain store is untouched, so the next matching SUBSCRIBE with
+        // retain handling 0 gets the full set again
+        return retainedMsgList.subList(0, granted);
     }
 
     List<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,

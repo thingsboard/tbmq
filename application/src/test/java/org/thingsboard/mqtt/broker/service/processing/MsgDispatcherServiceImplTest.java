@@ -30,7 +30,6 @@ import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
@@ -58,7 +57,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -86,8 +84,6 @@ public class MsgDispatcherServiceImplTest {
     SharedSubscriptionCacheServiceImpl sharedSubscriptionCacheService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
-    @MockitoBean
-    RateLimitService rateLimitService;
     @MockitoSpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
@@ -96,75 +92,6 @@ public class MsgDispatcherServiceImplTest {
     @Before
     public void setUp() {
         clientSessionInfo = mock(ClientSessionInfo.class);
-
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-    }
-
-    @Test
-    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitDisabled() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-
-        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
-                newValueWithTopicFilter("c1", 0, "t1"),
-                newValueWithTopicFilter("c2", 1, "t2"),
-                newValueWithTopicFilter("c3", 2, "t3")
-        );
-        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
-
-        assertEquals(list, result);
-    }
-
-    @Test
-    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitReached() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(eq(3L))).thenReturn(0L);
-
-        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
-                newValueWithTopicFilter("c1", 0, "t1"),
-                newValueWithTopicFilter("c2", 1, "t2"),
-                newValueWithTopicFilter("c3", 2, "t3")
-        );
-        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
-
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotUsed() {
-        // the limit is set to (size - 1) since one token
-        // was already consumed on retrieval from 'tbmq.msg.all' queue.
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(eq(2L))).thenReturn(2L);
-
-        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
-                newValueWithTopicFilter("c1", 0, "t1"),
-                newValueWithTopicFilter("c2", 1, "t2"),
-                newValueWithTopicFilter("c3", 2, "t3")
-        );
-        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
-
-        assertEquals(list, result);
-    }
-
-    @Test
-    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(eq(4L))).thenReturn(1L);
-
-        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
-                newValueWithTopicFilter("c1", 0, "t1"),
-                newValueWithTopicFilter("c2", 1, "t2"),
-                newValueWithTopicFilter("c3", 2, "t3"),
-                newValueWithTopicFilter("c4", 0, "t4"),
-                newValueWithTopicFilter("c5", 1, "t5")
-        );
-        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
-
-        assertEquals(2, result.size());
-        assertEquals("t1", result.get(0).getTopicFilter());
-        assertEquals("c1", result.get(0).getValue().getClientId());
-        assertEquals("t2", result.get(1).getTopicFilter());
-        assertEquals("c2", result.get(1).getValue().getClientId());
     }
 
     @Test

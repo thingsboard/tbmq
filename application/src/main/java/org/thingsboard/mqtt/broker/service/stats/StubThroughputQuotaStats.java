@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.limits;
+package org.thingsboard.mqtt.broker.service.stats;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+public class StubThroughputQuotaStats implements ThroughputQuotaStats {
 
-import java.util.function.Consumer;
+    public static final StubThroughputQuotaStats STUB_THROUGHPUT_QUOTA_STATS = new StubThroughputQuotaStats();
 
-public interface RateLimitBatchProcessor {
+    private StubThroughputQuotaStats() {
+    }
 
-    void addMessage(MqttPublishMsg message, Consumer<MqttPublishMsg> onSuccess, Consumer<MqttPublishMsg> onRateLimits);
+    @Override
+    public void incrementRedisDegraded() {
+    }
 
+    @Override
+    public int getCount() {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
+    }
 }
