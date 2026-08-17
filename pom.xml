@@ -52,14 +52,14 @@
         <log4j2.version>2.25.5</log4j2.version> <!-- to fix CVE-2026-49844. TODO: remove when fixed in spring-boot-dependencies -->
         <protobuf.version>3.25.5</protobuf.version>
         <grpc.version>1.68.1</grpc.version>
-        <lombok.version>1.18.40</lombok.version>
+        <lombok.version>1.18.46</lombok.version>
         <bytebuddy.version>1.18.4</bytebuddy.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <dbunit.version>2.7.3</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
         <kafka.version>3.9.2</kafka.version> <!-- to fix CVE-2026-35554 -->
         <lz4.version>1.11.2</lz4.version> <!-- transitive via kafka-clients, to fix CVE-2026-59949. TODO: remove when fixed in kafka-clients -->
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.wiremock.version>1.0-alpha-13</testcontainers.wiremock.version>
         <winsw.version>2.0.1</winsw.version>
         <surefire.version>3.2.5</surefire.version>
