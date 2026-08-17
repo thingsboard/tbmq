@@ -15,21 +15,27 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.STATS_NAME_TAG;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.SUCCESSFUL_MSGS;
 
 /**
  * Shared scaffolding for the total-throughput-quota integration suites: the droppedMsgs ledger, the shared-bucket
@@ -49,7 +55,18 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 public abstract class AbstractTotalThroughputQuotaIntegrationTest extends AbstractPubSubIntegrationTest {
 
     protected static final long DRAIN_TOKENS = 10_000;
-    private static final long AWAIT_TIMEOUT_SEC = 30;
+    protected static final long AWAIT_TIMEOUT_SEC = 30;
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(10);
+    private static final Duration SLOW_POLL_INTERVAL = Duration.ofMillis(200);
+
+    /**
+     * The one wait the suites cannot turn into an event: how long a negative - nothing MORE may arrive - is given
+     * before it is believed. Nothing moves while the contract holds, so only elapsed quiet time can establish it,
+     * and every such site pays this same deliberately chosen price rather than an ad-hoc one. It buys confidence
+     * rather than proof: a redelivery slower than this would still slip through, which is why the suites also pin
+     * the mechanism - committed offsets, an empty store - through the assertions around it.
+     */
+    private static final Duration SETTLE = Duration.ofMillis(1500);
 
     @Autowired
     protected MeterRegistry meterRegistry;
@@ -102,5 +119,85 @@ public abstract class AbstractTotalThroughputQuotaIntegrationTest extends Abstra
         Awaitility.await(alias)
                 .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
                 .until(this::droppedMsgs, greaterThanOrEqualTo(expected));
+    }
+
+    /**
+     * Publishes the consumer has finished processing, off the monotonic Micrometer counter behind
+     * {@code incomingPublishMsg.consumed}. A pack is only logged once every one of its callbacks has resolved, so
+     * this moving is proof that a publish has been charged for its whole fan-out AND persisted - the observable
+     * that lets the suites wait on the event rather than guess at a duration.
+     */
+    protected double publishesProcessed() {
+        return meterRegistry.find(StatsType.PUBLISH_MSG_CONSUMER.getPrintName())
+                .tag(STATS_NAME_TAG, SUCCESSFUL_MSGS)
+                .counters().stream()
+                .mapToDouble(Counter::count)
+                .sum();
+    }
+
+    /**
+     * Paces a publish loop on the event rather than the clock: the next ingress charge is only made once the
+     * previous publish has been charged for its fan-out, which is also what draws the node-local pool back up. The
+     * ingress charge never draws itself - it grants on bounded credit and schedules an asynchronous draw - so an
+     * unpaced loop can outrun the pool and be refused with the shared bucket still full.
+     */
+    protected void pacePublish(double processedBefore, int publishIndex) {
+        awaitPublishesProcessed("publish " + publishIndex + " charged and stored", processedBefore + publishIndex + 1);
+    }
+
+    private void awaitPublishesProcessed(String alias, double expected) {
+        Awaitility.await(alias)
+                .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
+                .pollDelay(Duration.ZERO)
+                .pollInterval(POLL_INTERVAL)
+                .until(this::publishesProcessed, greaterThanOrEqualTo(expected));
+    }
+
+    /**
+     * A negative: the count must be at {@code expected} and STAY there for {@link #SETTLE}. Written as an invariant
+     * rather than a sleep followed by an assertion, so an overshoot that is corrected before the read cannot slip
+     * past, and so a failure reports which wait it was.
+     */
+    protected void assertNothingMoreArrives(String alias, AtomicInteger received, int expected) {
+        Awaitility.await(alias)
+                .during(SETTLE)
+                .atMost(SETTLE.plusSeconds(AWAIT_TIMEOUT_SEC))
+                .pollDelay(Duration.ZERO)
+                .pollInterval(POLL_INTERVAL)
+                .until(received::get, equalTo(expected));
+    }
+
+    /**
+     * Reads a partial delivery whose size is not known in advance, and so has no target count to poll for: waits
+     * out an initial quiet window, then requires the count to stop moving. Strictly stronger than reading whatever
+     * a fixed sleep happened to leave, because a still-growing delivery keeps the wait going.
+     */
+    protected int awaitDeliverySettled(String alias, AtomicInteger received) {
+        AtomicInteger previous = new AtomicInteger(Integer.MIN_VALUE);
+        Awaitility.await(alias)
+                .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
+                .pollDelay(SETTLE)
+                .pollInterval(SLOW_POLL_INTERVAL)
+                .until(() -> received.get() == previous.getAndSet(received.get()));
+        return received.get();
+    }
+
+    /**
+     * Waits for the shared bucket to hold {@code tokens} again after a drain, probing without spending: whatever a
+     * probe takes it hands straight back. The alternative is sleeping the bandwidth's whole refill period, which
+     * has to assume the worst case and then pays it on every run.
+     */
+    protected void awaitSharedBucketRefilled(String alias, long tokens) {
+        Awaitility.await(alias)
+                .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
+                .pollDelay(Duration.ZERO)
+                .pollInterval(SLOW_POLL_INTERVAL)
+                .until(() -> probeSharedBucket(tokens));
+    }
+
+    private boolean probeSharedBucket(long tokens) {
+        long taken = rateLimitCacheService.tryConsumeTotalMsgs(tokens);
+        rateLimitCacheService.returnTotalMsgs(taken);
+        return taken == tokens;
     }
 }

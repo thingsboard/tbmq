@@ -135,6 +135,7 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
         }
 
         double droppedBefore = droppedMsgs();
+        double processedBefore = publishesProcessed();
 
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
         MqttConnectOptions pubOptions = new MqttConnectOptions();
@@ -142,17 +143,16 @@ public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends Abstract
         pub.connect(pubOptions);
         for (int i = 0; i < MSG_COUNT; i++) {              // 2 charges each: incoming plus ONE charge for the group
             pub.publish(TOPIC, ("msg_" + i).getBytes(), 1, false);
-            Thread.sleep(50);                             // pacing so each async draw lands before the next charge
+            pacePublish(processedBefore, i);
         }
         pub.disconnect();
         pub.close();
 
         awaitReceived("shared group delivery", totalReceived, MSG_COUNT);
-        // fixed: the assertion below is an equality, so it also rules out a message reaching MORE than one member -
-        // and only elapsed time without the count moving can establish that
-        Thread.sleep(1000);
-        assertEquals("each message must reach exactly one group member, and none may be lost",
-                MSG_COUNT, totalReceived.get());
+        // an equality, so it also rules out a message reaching MORE than one member - which is why the count has to
+        // be held at the expected value for a while rather than read the moment it first gets there
+        assertNothingMoreArrives("each message must reach exactly one group member, and none may be lost",
+                totalReceived, MSG_COUNT);
         // 24 tokens of the 30 available. Charging per member (48) or charging the pack delivery a second time (36)
         // would both have exhausted the budget and reported the excess here
         assertEquals("a shared group costs ONE outgoing packet per message, and its delivery costs nothing more",

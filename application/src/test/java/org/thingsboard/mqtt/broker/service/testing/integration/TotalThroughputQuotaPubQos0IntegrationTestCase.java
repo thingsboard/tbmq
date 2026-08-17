@@ -140,11 +140,10 @@ public class TotalThroughputQuotaPubQos0IntegrationTestCase extends AbstractTota
             assertTrue("the session must survive the reconnect, or this test is not exercising the persistent route",
                     token.getSessionPresent());
         }
-        // a fixed wait, deliberately: this asserts that nothing MORE arrives, and there is no counter whose movement
-        // could end the wait early - only elapsed time can build confidence in a negative
-        Thread.sleep(3000);
-        assertEquals("a QoS 0 publish stores nothing, so no copy may be delivered on reconnect",
-                delivered, received.get());
+        // a timed wait, unavoidably: this asserts that nothing MORE arrives, and there is no counter whose movement
+        // could end the wait early - only elapsed quiet time can build confidence in a negative
+        assertNothingMoreArrives("a QoS 0 publish stores nothing, so no copy may be delivered on reconnect",
+                received, delivered);
 
         // the fan-out was refused, not the publish: the ingress charge was granted, so the publisher keeps its session
         assertTrue("the publisher must stay connected: its own publish was accepted", pub.isConnected());

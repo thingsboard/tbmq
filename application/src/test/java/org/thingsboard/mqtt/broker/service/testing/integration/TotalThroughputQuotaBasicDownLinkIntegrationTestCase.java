@@ -122,8 +122,7 @@ public class TotalThroughputQuotaBasicDownLinkIntegrationTestCase extends Abstra
                 SUBSCRIBERS, delivered + dropped);
 
         // nothing was stored for a non-persistent subscriber, so a refused copy has nowhere to come back from
-        Thread.sleep(3000);
-        assertEquals("quota-refused copies must never arrive later", delivered, received.get());
+        assertNothingMoreArrives("quota-refused copies must never arrive later", received, delivered);
 
         // the fan-out was refused, not the publish: the ingress charge was granted, so the publisher keeps its session
         assertTrue("the publisher must stay connected: its own publish was accepted", pub.isConnected());

@@ -123,10 +123,9 @@ public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractTotal
             subscriber.disconnect();
             subscriber.connect(persistent);
         }
-        // a fixed wait, deliberately: this asserts that nothing MORE arrives, and there is no counter whose movement
-        // could end the wait early - only elapsed time can build confidence in a negative
-        Thread.sleep(3000);
-        assertEquals("quota-refused copies must never be delivered later", delivered, received.get());
+        // a timed wait, unavoidably: this asserts that nothing MORE arrives, and there is no counter whose movement
+        // could end the wait early - only elapsed quiet time can build confidence in a negative
+        assertNothingMoreArrives("quota-refused copies must never be delivered later", received, delivered);
 
         // the over-budget fan-out must not cost the publisher its connection: only the copies were refused, and the
         // ingress charge that decides the publisher's fate was granted

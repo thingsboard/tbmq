@@ -41,12 +41,12 @@ import static org.junit.Assert.assertTrue;
  * can cover it, even when the node-local pool alone could not; it truncates only once the bucket is genuinely dry;
  * and that truncation is not a drop - no droppedMsgs, and the retain store is left intact for the next subscriber.
  * <p>
- * Arithmetic (capacity 20, refill 4 tokens/s, block size 1, lease return disabled). The 5 setup publishes each draw
- * a token inside the 50 ms pacing, so none is refused. Phase 1: one wildcard SUBSCRIBE is ONE bulk charge of 5, and
- * the local pool covers at most 2, so the rest can only come from drawing on the spot - without that, a subscriber
- * would silently get ~2 of 5 however much budget the cluster held. Phase 2: the bucket is drained, so the same
- * SUBSCRIBE must truncate. Phase 3: after a refill it is granted in full again, which is only possible if the store
- * survived.
+ * Arithmetic (capacity 20, refill 4 tokens/s, block size 1, lease return disabled). Each setup publish waits for the
+ * previous one to be charged, so a fresh draw covers it and none is refused. Phase 1: one wildcard SUBSCRIBE is ONE
+ * bulk charge of 5, and the local pool covers at most 2, so the rest can only come from drawing on the spot -
+ * without that, a subscriber would silently get ~2 of 5 however much budget the cluster held. Phase 2: the bucket
+ * is drained, so the same SUBSCRIBE must truncate. Phase 3: after a refill it is granted in full again, which is
+ * only possible if the store survived.
  * <p>
  * The droppedMsgs ledger opens only once the store is populated: the setup publishes have no subscriber yet, and the
  * dispatcher counts a PUBLISH matching no subscription as dropped independently of the quota.
@@ -69,11 +69,12 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTot
     @Test
     public void givenRetainedMessages_whenQuotaTruncates_thenNoDroppedMsgsAndStoreIntact() throws Throwable {
         double droppedBeforeSetupPublishes = droppedMsgs();
+        double processedBefore = publishesProcessed();
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, "quota_retained_pub");
         pub.connect(new MqttConnectOptions());
         for (int i = 0; i < RETAINED_COUNT; i++) {          // ingress: 5 paced charges, each covered by a fresh draw
             pub.publish(TOPIC_PREFIX + i, ("r_" + i).getBytes(), 1, true);
-            Thread.sleep(50);
+            pacePublish(processedBefore, i);
         }
         pub.disconnect();
         pub.close();
@@ -92,8 +93,7 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTot
         subscribeWildcard(subA, countingListener(receivedA, latchA));
         assertTrue("a bulk retained charge the shared bucket can cover must be delivered in full, but got "
                 + receivedA.get(), latchA.await(10, TimeUnit.SECONDS));
-        Thread.sleep(500);
-        assertEquals("with budget the retained set is delivered exactly once", RETAINED_COUNT, receivedA.get());
+        assertNothingMoreArrives("with budget the retained set is delivered exactly once", receivedA, RETAINED_COUNT);
         disconnectAndClose(subA);
 
         // phase 2 - nothing left to draw, so the refusal is genuine and the set MUST truncate. How much survives
@@ -106,10 +106,9 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTot
         MqttClient subB = new MqttClient(SERVER_URI + mqttPort, "quota_retained_sub_b");
         subB.connect(new MqttConnectOptions());
         subscribeWildcard(subB, (t, m) -> receivedB.incrementAndGet());
-        // fixed: a PARTIAL delivery of unknown size has no target count to poll for - only elapsed time can
-        // establish that the rest is never coming
-        Thread.sleep(2000);
-        int truncated = receivedB.get();
+        // a PARTIAL delivery of unknown size has no target count to poll for, so the wait is on the count coming to
+        // a stop rather than on it reaching a number
+        int truncated = awaitDeliverySettled("retained truncation settled", receivedB);
         assertTrue("a dry shared bucket must truncate the retained set, but got " + truncated,
                 truncated < RETAINED_COUNT);
         assertEquals("retained truncation must NOT report droppedMsgs",
@@ -117,9 +116,10 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTot
         disconnectAndClose(subB);
 
         // phase 3 - the truncated messages were never consumed: after a refill the store still serves all five.
-        // fixed: waits on the bucket refilling (20:5, so 5 s), and the shared balance cannot be read without
-        // consuming the very budget this phase needs
-        Thread.sleep(6000);
+        // The refill is greedy, so rather than sleeping the bandwidth's whole 5 s period the wait probes for the
+        // tokens this phase needs and hands them straight back: 5 for the bulk charge plus the one block of credit
+        // phase 2 left the node owing, which its draw repays first
+        awaitSharedBucketRefilled("shared bucket refilled for the third subscriber", RETAINED_COUNT + 1);
         AtomicInteger receivedC = new AtomicInteger();
         CountDownLatch latchC = new CountDownLatch(RETAINED_COUNT);
         MqttClient subC = new MqttClient(SERVER_URI + mqttPort, "quota_retained_sub_c");
@@ -127,8 +127,7 @@ public class TotalThroughputQuotaRetainedIntegrationTestCase extends AbstractTot
         subscribeWildcard(subC, countingListener(receivedC, latchC));
         assertTrue("retain store intact: the next subscriber must get everything, but got " + receivedC.get(),
                 latchC.await(10, TimeUnit.SECONDS));
-        Thread.sleep(500);
-        assertEquals("retain store intact: the next subscriber gets everything", RETAINED_COUNT, receivedC.get());
+        assertNothingMoreArrives("retain store intact: the next subscriber gets everything", receivedC, RETAINED_COUNT);
         disconnectAndClose(subC);
 
         assertEquals("no phase of the retained delivery path may report droppedMsgs",

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.Before;
@@ -30,8 +31,8 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
@@ -60,18 +61,22 @@ public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractTota
         pubClient.connect(options);
 
         // the shared bucket is empty, so only the node's warm-up block and its one block of credit can pass:
-        // a couple of publishes get through and the first refusal disconnects a 3.x client
+        // a couple of publishes get through and the first refusal disconnects a 3.x client. Deliberately unpaced -
+        // these two suites are the only ones that WANT the loop to outrun the pool, and pacing merely delayed the
+        // refusal by letting the dry-backoff window lapse between publishes
         for (int i = 0; i < 20; i++) {
             try {
                 pubClient.publish("quota/refusal", ("data_" + i).getBytes(), 1, false);
-                Thread.sleep(50); // let the async draw settle so credit accounting is deterministic
             } catch (Exception e) {
                 log.info("Publish failed as expected after quota refusal", e);
                 break;
             }
         }
 
-        assertFalse(pubClient.isConnected());
+        // the broker's DISCONNECT and Paho noticing it are two different threads, so poll rather than read once
+        Awaitility.await("the 3.x publisher is disconnected on the first refusal")
+                .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
+                .until(() -> !pubClient.isConnected());
         pubClient.close();
     }
 
@@ -112,11 +117,13 @@ public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractTota
 
         for (int i = 0; i < 10; i++) {
             pubClient.publish("quota/refusal5", ("data_" + i).getBytes(), 1, false);
-            Thread.sleep(50);
         }
 
-        // 0x97 = 151 = QUOTA_EXCEEDED; the bucket was emptied in setup, so refusals MUST appear
-        assertTrue("expected at least one QUOTA_EXCEEDED puback", reasonCodes.contains(151));
+        // 0x97 = 151 = QUOTA_EXCEEDED; the bucket was emptied in setup, so refusals MUST appear. Polled because
+        // the reason codes are collected on Paho's callback thread, which the publish loop does not wait for
+        Awaitility.await("at least one QUOTA_EXCEEDED puback")
+                .atMost(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS)
+                .until(() -> reasonCodes.contains(151));
         assertTrue(pubClient.isConnected());
         pubClient.disconnect();
         pubClient.close();

@@ -114,20 +114,20 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
         persistedClient.disconnect();
 
         double droppedBeforePublish = droppedMsgs();
+        double processedBefore = publishesProcessed();
 
         MqttClient pub = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
         pub.connect(getConnectOptions(true, DEV_USERNAME));
         for (int i = 0; i < BACKLOG_SIZE; i++) {            // 2 charges each: incoming plus the APPLICATION fan-out
             pub.publish(TOPIC, ("m_" + i).getBytes(), 1, false);
-            Thread.sleep(50);                              // pacing so each async draw lands before the next charge
+            pacePublish(processedBefore, i);
         }
         pub.disconnect();
         pub.close();
-        // a fixed wait, deliberately: the backlog must be stored before the drain, and "stored" has no counter to
-        // poll - the subscriber is offline, so nothing observable moves. Draining too early would charge the tail
-        // after the bucket is empty and fail the assertion below for the wrong reason.
-        Thread.sleep(1000);
-        // nothing was truncated at admission, so all 20 are stored - which is what makes the expected replay count
+        // the pacing above also settles the last publish, so the whole backlog is charged and stored by here:
+        // draining any earlier would charge the tail against an empty bucket and fail the assertion below for the
+        // wrong reason.
+        // Nothing was truncated at admission, so all 20 are stored - which is what makes the expected replay count
         // below the full backlog rather than a number derived from a partial grant
         assertEquals("the configured budget must admit the whole backlog at publish time",
                 droppedBeforePublish, droppedMsgs(), 0.0);
@@ -138,16 +138,15 @@ public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends Abstrac
 
         persistedClient.connect(appOptions);               // replay: already paid for, so the quota must not be consulted
         awaitReceived("APPLICATION backlog replay", received, BACKLOG_SIZE);
-        // fixed: guards against OVER-delivery, so it can only be satisfied by time passing without the count moving
-        Thread.sleep(1000);
+        // no settling wait here: OVER-delivery is caught by the held equality after the reconnect below, which any
+        // extra copy would break just as surely
         assertEquals("a stored backlog is replayed in full regardless of quota state", BACKLOG_SIZE, received.get());
         assertEquals("replaying an already-charged backlog must not report droppedMsgs",
                 droppedBeforeReplay, droppedMsgs(), 0.0);
 
         persistedClient.disconnect();
         persistedClient.connect(appOptions);               // committed offsets: nothing is delivered twice
-        Thread.sleep(3000);                                // fixed: another negative - nothing may arrive at all
-        assertEquals("a fully delivered backlog must not be redelivered", BACKLOG_SIZE, received.get());
+        assertNothingMoreArrives("a fully delivered backlog must not be redelivered", received, BACKLOG_SIZE);
     }
 
     private boolean isConnected() {
