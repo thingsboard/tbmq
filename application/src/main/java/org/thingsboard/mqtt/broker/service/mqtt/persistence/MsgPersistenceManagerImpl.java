@@ -155,16 +155,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     void processSharedTopicsWithThroughputQuota(Set<String> sharedTopics,
                                                 PublishMsgWithId publishMsgWithId,
                                                 PublishMsgCallback callbackWrapper) {
-        PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
         int totalCount = sharedTopics.size();
         int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
         // an explicit iterator so the granted prefix is bounded in the loop header, as in the sibling charge sites
         Iterator<String> sharedTopicIterator = sharedTopics.iterator();
         for (int i = 0; i < granted && sharedTopicIterator.hasNext(); i++) {
-            applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                    sharedTopicIterator.next(),
-                    new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
-                    callbackWrapper);
+            sendSharedTopicMsg(sharedTopicIterator.next(), publishMsgWithId, callbackWrapper);
         }
         settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
@@ -205,6 +201,14 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         applicationMsgQueuePublisher.sendMsg(
                 applicationSubscription.getClientId(),
                 new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsg, getAppMsgHeaders(publishMsgWithId)),
+                callbackWrapper);
+    }
+
+    private void sendSharedTopicMsg(String sharedTopic, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        PublishMsgProto publishMsg = ProtoConverter.createReceiverPublishMsg(publishMsgWithId.getPublishMsgProto());
+        applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                sharedTopic,
+                new TbProtoQueueMsg<>(publishMsg, getAppMsgHeaders(publishMsgWithId)),
                 callbackWrapper);
     }
 
