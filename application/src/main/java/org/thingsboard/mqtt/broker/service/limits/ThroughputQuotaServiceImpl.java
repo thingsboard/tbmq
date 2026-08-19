@@ -56,17 +56,21 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     volatile ExecutorService drawExecutor;
     volatile ScheduledExecutorService leaseReturnScheduler;
 
-    private volatile boolean enabled;
-    private volatile int blockSize;
     private final AtomicLong localTokens = new AtomicLong(0);
     private final AtomicBoolean drawInFlight = new AtomicBoolean(false);
+    private final AtomicLong lastClampWarnNanos = new AtomicLong();
+
+    private volatile boolean enabled;
+    private volatile int blockSize;
+    // How far the local pool may go negative. Separate from blockSize because the two answer different questions:
+    // blockSize is how much to fetch per Redis round-trip, this is how big an arriving burst the node can absorb.
+    private volatile int burstAllowance;
     private volatile long dryUntilNanos;
     private volatile long failOpenUntilNanos;
     // Redis is unreachable. Any completed draw clears it, so it can never latch on.
     private volatile boolean redisDegraded;
     // timestamp of the last draw failure, so a draw that started earlier cannot clear redisDegraded
     private volatile long lastDrawFailureNanos;
-    private final AtomicLong lastClampWarnNanos = new AtomicLong();
     private ThroughputQuotaStats stats;
 
     @PostConstruct
@@ -82,6 +86,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
         lastClampWarnNanos.set(now - CLAMP_WARN_INTERVAL_NANOS - 1); // so the first clamp warns immediately
         blockSize = configuredBlockSize > 0 ? configuredBlockSize : deriveDefaultBlockSize();
+        burstAllowance = deriveBurstAllowance();
         stats = statsManager.getThroughputQuotaStats();
         if (drawExecutor == null) {
             drawExecutor = ThingsBoardExecutors.initSingleExecutorService("throughput-quota-draw");
@@ -90,7 +95,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             leaseReturnScheduler = ThingsBoardExecutors.newSingleScheduledThreadPool("throughput-quota-lease-return");
             leaseReturnScheduler.scheduleAtFixedRate(this::returnUnusedTokens, leaseReturnMs, leaseReturnMs, TimeUnit.MILLISECONDS);
         }
-        log.info("Total throughput quota enabled, block size: {}", blockSize);
+        log.info("Total throughput quota enabled, block size: {}, burst allowance: {}", blockSize, burstAllowance);
         scheduleDrawIfNeeded(blockSize); // warm-up so the first packets do not ride on credit
     }
 
@@ -189,9 +194,18 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (now - failOpenUntilNanos < 0) {
             return n; // Redis is degraded: fail open, never queue, never stall
         }
-        // grant on bounded credit down to -blockSize while a draw may still help; once a draw confirmed the bucket
-        // dry, refuse locally until the backoff elapses
-        long creditFloor = now - dryUntilNanos < 0 ? 0L : -(long) blockSize;
+        // Grant on bounded credit while a draw may still help; once a draw confirmed the bucket dry, refuse locally
+        // until the backoff elapses.
+        // How deep that credit goes is what separates the two families of caller. A charge that schedules a draw
+        // cannot wait for it - ingress runs on the Netty event loop - so it refuses the moment credit runs out, which
+        // makes this floor, not the licensed rate, its instantaneous admission limit: a burst wider than the floor is
+        // refused however much budget the cluster still holds. Hence burstAllowance, wide enough for a second of the
+        // configured rate. The blocking charge passes false because it is about to draw synchronously; it can pay
+        // rather than borrow, so it keeps the narrower floor and settles its shortfall in the same call.
+        // Enforcement is unaffected by the wider floor: a deficit is repaid out of the shared bucket before the pool
+        // can turn positive again, so the licensed rate still binds over any window. Only the instantaneous overshoot
+        // grows, and it is bounded by the floor.
+        long creditFloor = now - dryUntilNanos < 0 ? 0L : -(long) (scheduleDraw ? burstAllowance : blockSize);
         while (true) {
             long current = localTokens.get();
             long available = current - creditFloor;
@@ -236,7 +250,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (!drawInFlight.compareAndSet(false, true)) {
             return; // single-flight: one draw at a time per node
         }
-        long drawSize = Math.max(blockSize, shortfall);
+        // Cover the credit already granted as well as the caller's shortfall. Without the deficit a burst that ran
+        // the pool down repays one blockSize per round-trip, so the pool stays negative - and the node keeps
+        // refusing - for as many round-trips as the burst was wide. A racy read is fine: an over-draw lands in the
+        // pool, an under-draw leaves the rest for the next draw.
+        long deficit = Math.max(0L, -localTokens.get());
+        long drawSize = Math.max(blockSize, shortfall + deficit);
         try {
             drawExecutor.execute(() -> draw(drawSize));
         } catch (RejectedExecutionException e) {
@@ -318,5 +337,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
 
     int deriveDefaultBlockSize() {
         return (int) Math.min(Integer.MAX_VALUE, Math.max(1, throughputLimitProvider.getSustainedRatePerSec() / 10));
+    }
+
+    // One second of the configured budget: the widest burst that can arrive within a Redis round-trip and still be
+    // something the cluster is entitled to serve. Never below blockSize, so a node can always absorb what one draw
+    // brings it.
+    int deriveBurstAllowance() {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(blockSize, throughputLimitProvider.getSustainedRatePerSec()));
     }
 }

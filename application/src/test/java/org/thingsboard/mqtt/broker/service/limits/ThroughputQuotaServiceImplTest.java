@@ -201,15 +201,50 @@ public class ThroughputQuotaServiceImplTest {
         when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
         service.init(); // warm-up draw queued but NOT run: local stays 0
 
-        // credit floor is -blockSize (-10): exactly 10 packets ride on credit
-        for (int i = 0; i < 10; i++) {
+        // credit floor is -burstAllowance (-100): exactly that many packets ride on credit
+        int burstAllowance = service.deriveBurstAllowance();
+        for (int i = 0; i < burstAllowance; i++) {
             assertTrue("packet " + i + " should be granted on credit", service.tryConsumeIncoming());
         }
         assertFalse("credit exhausted, must refuse", service.tryConsumeIncoming());
         assertEquals("single-flight: only the warm-up draw may be queued", 1, executor.tasks.size());
 
-        executor.runAll(); // draw completes with 10 -> repays the deficit exactly
+        executor.runAll(); // draw completes with 10 -> repays part of the deficit
         assertTrue(service.tryConsumeIncoming()); // fresh credit available again
+    }
+
+    // The defect this pins: ingress runs on the Netty event loop and so can never wait for Redis, which makes
+    // node-local credit - not the licensed rate - what admits an arriving burst. With the floor tied to blockSize, a
+    // burst one packet wider than a block was refused while the shared bucket still held most of a second's budget.
+    @Test
+    public void givenABurstWiderThanTheBlock_whenNoDrawCanLand_thenAllGrantedFromCredit() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
+        service.init(); // warm-up draw queued but NOT run, so no draw can land mid-burst
+
+        int burst = service.deriveDefaultBlockSize() + 1;
+        for (int i = 0; i < burst; i++) {
+            assertTrue("packet " + i + " of a burst the cluster has budget for must not be refused",
+                    service.tryConsumeIncoming());
+        }
+    }
+
+    // A burst leaves the pool deep in credit. Repaying one block per round-trip would keep it negative - and the node
+    // refusing - for as many round-trips as the burst was wide, so a draw has to cover what was actually borrowed.
+    @Test
+    public void givenABurstRanUpADeficit_whenTheDrawIsScheduled_thenItCoversTheWholeDeficit() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenReturn(10L);
+        service.init();
+        executor.runAll(); // warm-up lands: local = 10
+        clearInvocations(rateLimitCacheService);
+
+        service.tryConsumeOutgoing(60); // 10 local + 50 on credit
+        executor.runAll();
+
+        verify(rateLimitCacheService).tryConsumeTotalMsgs(60L); // the 50 borrowed plus one block
     }
 
     @Test
@@ -218,8 +253,8 @@ public class ThroughputQuotaServiceImplTest {
         service.drawExecutor = MoreExecutors.newDirectExecutorService();
         service.init(); // local = 10
 
-        // 10 local + 10 credit = 20 available; ask for 25
-        assertEquals(20, service.tryConsumeOutgoing(25));
+        // 10 local + 100 credit = 110 available; ask for 125
+        assertEquals(110, service.tryConsumeOutgoing(125));
     }
 
     @Test
@@ -260,7 +295,10 @@ public class ThroughputQuotaServiceImplTest {
 
         Thread.sleep(1100); // FAIL_OPEN_NANOS is 1 s: the window has lapsed
 
-        assertEquals("bounded credit is spent first", 10, service.tryConsumeOutgoing(10)); // queues the next draw
+        int burstAllowance = service.deriveBurstAllowance();
+        // queues the next draw. Spending the WHOLE credit matters: what follows must exercise the degraded
+        // short-circuit, and with credit left it would be answered from credit instead.
+        assertEquals("bounded credit is spent first", burstAllowance, service.tryConsumeOutgoing(burstAllowance));
         // that draw is in flight against a Redis that is still down and will only re-arm the window when
         // its socket finally times out (seconds): until then the quota must stay open on the degraded flag
         assertTrue("degraded node must not refuse while a failing draw is in flight", service.tryConsumeIncoming());
@@ -338,7 +376,8 @@ public class ThroughputQuotaServiceImplTest {
         assertFalse("a completed dry draw must not open the quota", service.tryConsumeIncoming());
 
         Thread.sleep(60); // DRY_BACKOFF_NANOS is 50 ms
-        assertEquals(10, service.tryConsumeOutgoing(10)); // spends the credit and queues the next draw
+        int burstAllowance = service.deriveBurstAllowance();
+        assertEquals(burstAllowance, service.tryConsumeOutgoing(burstAllowance)); // spends the credit, queues a draw
         assertFalse("credit exhausted with a healthy draw in flight must refuse", service.tryConsumeIncoming());
     }
 
@@ -353,7 +392,8 @@ public class ThroughputQuotaServiceImplTest {
         assertTrue(service.tryConsumeIncoming()); // exhausts the local balance -> schedules a draw again
         assertEquals("the single-flight latch must have been released", 1, executor.tasks.size());
         executor.runAll();
-        verify(rateLimitCacheService).tryConsumeTotalMsgs(10L);
+        // one block plus the single packet of credit the grant above took
+        verify(rateLimitCacheService).tryConsumeTotalMsgs(11L);
     }
 
     @Test
