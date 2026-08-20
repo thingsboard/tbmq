@@ -60,7 +60,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     long degradedGraceMs;
 
     // Probe cadence while Redis is down. A seam like the executors below, so a test can shorten it instead of
-    // sleeping out the full interval.
+    // sleeping out the full interval - but unlike them deliberately NOT volatile: production never writes it after
+    // construction (init() leaves it alone), and a test assigns it on the same thread that then drives the charges,
+    // so program order already guarantees visibility. The executors are volatile because init() creates them at
+    // runtime and OTHER threads must see them fully constructed.
     long degradedProbeIntervalNanos = DEGRADED_PROBE_INTERVAL_NANOS;
 
     // test seams: init() creates them only when still null. Volatile so callers see fully constructed executors.
