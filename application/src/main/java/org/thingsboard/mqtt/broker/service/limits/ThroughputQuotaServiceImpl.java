@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 
 @Slf4j
 @Service
@@ -66,6 +67,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // runtime and OTHER threads must see them fully constructed.
     long degradedProbeIntervalNanos = DEGRADED_PROBE_INTERVAL_NANOS;
 
+    // Clock seam with the same contract as the interval above: production never writes it, a test assigns it before
+    // driving traffic. It is what lets the grace and window arithmetic be tested without wall-clock sleeps.
+    LongSupplier nanoTime = System::nanoTime;
+
     // test seams: init() creates them only when still null. Volatile so callers see fully constructed executors.
     volatile ExecutorService drawExecutor;
     volatile ScheduledExecutorService leaseReturnScheduler;
@@ -92,7 +97,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (!enabled) {
             return;
         }
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         dryUntilNanos = now;
         redisHealth.set(RedisHealth.healthy(now));
 
@@ -154,7 +159,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             repayCreditIfOwed();
             return granted;
         }
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         RedisHealth health = redisHealth.get();
         if (health.graceExpired(now, degradedGraceNanos)) {
             // tryConsume has already refused on the deadline. Probe for recovery on the draw executor rather than
@@ -181,12 +186,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         // over-draw lands in the pool, an under-draw leaves the rest for the next draw.
         long deficit = Math.max(0L, -localTokens.get());
         long drawSize = Math.max(blockSize, shortfall + deficit);
-        long startedAt = System.nanoTime();
+        long startedAt = nanoTime.getAsLong();
         try {
             long drawn = rateLimitCacheService.tryConsumeTotalMsgs(drawSize);
             markRedisAnswered(startedAt);
             if (drawn <= 0) {
-                dryUntilNanos = System.nanoTime() + DRY_BACKOFF_NANOS;
+                dryUntilNanos = nanoTime.getAsLong() + DRY_BACKOFF_NANOS;
                 warnQuotaClamped();
                 return 0;
             }
@@ -198,7 +203,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             return granted;
         } catch (Exception e) {
             // fail open, consistent with tryConsume - including its deadline: bridge a blip, refuse an outage
-            return markRedisFailed(e).graceExpired(System.nanoTime(), degradedGraceNanos) ? 0 : shortfall;
+            return markRedisFailed(e).graceExpired(nanoTime.getAsLong(), degradedGraceNanos) ? 0 : shortfall;
         }
     }
 
@@ -215,7 +220,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (!enabled || n <= 0) {
             return Math.max(0, n);
         }
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         // one snapshot for the whole charge, so the grace, the window and the degraded flag cannot disagree mid-call
         RedisHealth health = redisHealth.get();
         // Redis has been unreachable long enough that this is an outage, not a blip: stop granting on the fail-open
@@ -268,7 +273,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // The blocking charge suppresses tryConsume's scheduling, so when it returns without drawing it must put the
     // top-up back: a pool at or below zero owes the shared bucket for the credit it granted.
     private void repayCreditIfOwed() {
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         RedisHealth health = redisHealth.get();
         // Past the grace the pool lends nothing, so whatever the charge just spent was real budget and a drained
         // pool genuinely owes a refill: the fail-open window must not suppress the top-up there.
@@ -286,11 +291,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             // only at the call sites keeps a disabled service safe whatever reaches it.
             return;
         }
-        if (System.nanoTime() - dryUntilNanos < 0) {
+        if (nanoTime.getAsLong() - dryUntilNanos < 0) {
             return; // bucket known dry: no Redis traffic during the backoff window
         }
         RedisHealth health = redisHealth.get();
-        if (health.degraded() && System.nanoTime() - health.lastFailureNanos() < degradedProbeIntervalNanos) {
+        if (health.degraded() && nanoTime.getAsLong() - health.lastFailureNanos() < degradedProbeIntervalNanos) {
             return; // Redis is unreachable: one probe per interval, not one per refused packet
         }
         if (!drawInFlight.compareAndSet(false, true)) {
@@ -313,14 +318,14 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     void draw(long drawSize) {
-        long startedAt = System.nanoTime();
+        long startedAt = nanoTime.getAsLong();
         try {
             long granted = rateLimitCacheService.tryConsumeTotalMsgs(drawSize);
             markRedisAnswered(startedAt);
             if (granted > 0) {
                 localTokens.addAndGet(granted); // repays any credit deficit first
             } else {
-                dryUntilNanos = System.nanoTime() + DRY_BACKOFF_NANOS;
+                dryUntilNanos = nanoTime.getAsLong() + DRY_BACKOFF_NANOS;
                 warnQuotaClamped();
             }
         } catch (Exception e) {
@@ -335,12 +340,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // it armed would grant every charge in full for the rest of the second, unmetered traffic at the exact moment
     // enforcement should resume.
     private void markRedisAnswered(long drawStartedNanos) {
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         redisHealth.updateAndGet(health -> health.answered(drawStartedNanos, now));
     }
 
     private RedisHealth markRedisFailed(Exception e) {
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         RedisHealth health = redisHealth.updateAndGet(h -> h.failed(now));
         stats.incrementRedisDegraded();
         // Say which way the quota is currently failing. Claiming "failing open" while the node is in fact refusing
@@ -357,7 +362,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     private void warnQuotaClamped() {
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         // an exhausted bucket can bring every delivery thread through here at once, so CAS the timestamp: exactly
         // one of them per interval wins the right to log
         long last = lastClampWarnNanos.get();
