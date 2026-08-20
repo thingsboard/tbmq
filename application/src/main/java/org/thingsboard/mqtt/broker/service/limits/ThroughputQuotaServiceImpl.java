@@ -78,6 +78,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     private final AtomicLong localTokens = new AtomicLong(0);
     private final AtomicBoolean drawInFlight = new AtomicBoolean(false);
     private final AtomicLong lastClampWarnNanos = new AtomicLong();
+    // one atomic snapshot instead of coordinated volatile fields, so the compound transitions (a stale success must
+    // not clear a newer failure, the grace is stamped once per outage) hold by construction - see RedisHealth
+    private final AtomicReference<RedisHealth> redisHealth = new AtomicReference<>(RedisHealth.healthy(0));
 
     private volatile boolean enabled;
     private volatile int blockSize;
@@ -85,9 +88,6 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // blockSize is how much to fetch per Redis round-trip, this is how big an arriving burst the node can absorb.
     private volatile int burstAllowance;
     private volatile long dryUntilNanos;
-    // one atomic snapshot instead of coordinated volatile fields, so the compound transitions (a stale success must
-    // not clear a newer failure, the grace is stamped once per outage) hold by construction - see RedisHealth
-    private final AtomicReference<RedisHealth> redisHealth = new AtomicReference<>(RedisHealth.healthy(0));
     private volatile long degradedGraceNanos;
     private ThroughputQuotaStats stats;
 
