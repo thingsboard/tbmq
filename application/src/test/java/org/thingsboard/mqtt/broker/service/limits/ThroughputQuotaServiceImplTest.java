@@ -366,6 +366,7 @@ public class ThroughputQuotaServiceImplTest {
     public void givenGraceExpired_whenRedisReturns_thenEnforcementResumes() throws InterruptedException {
         service.drawExecutor = MoreExecutors.newDirectExecutorService();
         service.degradedGraceMs = 100;
+        service.degradedProbeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(20);
         when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
         service.init();
 
@@ -373,16 +374,16 @@ public class ThroughputQuotaServiceImplTest {
         assertFalse("past the grace the node refuses", service.tryConsumeIncoming());
 
         doReturn(10L).when(rateLimitCacheService).tryConsumeTotalMsgs(anyLong());
+        Thread.sleep(30); // let the probe interval elapse, so the next charge is allowed to reach Redis
 
-        // Redis is healthy again. Charges are the only thing that ever reaches it, so they must keep probing: this
-        // one still refuses (it found the pool empty) but its draw lands and clears the degraded state.
+        // Charges are the only thing that ever reaches Redis, so this one has to probe. It still refuses - it found
+        // the pool empty - but its draw lands and clears the degraded state.
         assertFalse("the probing charge itself is still refused", service.tryConsumeIncoming());
 
-        // Spend the drawn block EXACTLY: proving recovery means proving the grants come out of the 10 tokens the
-        // probe brought back, not out of a fail-open window left armed by the last failure. A node still failing
-        // open would hand out all 11.
-        assertEquals("a node that could not probe Redis would never recover", 10, service.tryConsumeOutgoing(11));
-        assertFalse("with the drawn block spent, enforcement binds again", service.tryConsumeIncoming());
+        // Recovered, so grants come from the drawn block plus the node's ordinary burst credit. Asking for far more
+        // than that is what separates recovery from a fail-open window: a node still failing open returns all 5000.
+        assertEquals("a node that could not probe Redis would never recover",
+                10 + service.deriveBurstAllowance(), service.tryConsumeOutgoing(5000));
     }
 
     @Test

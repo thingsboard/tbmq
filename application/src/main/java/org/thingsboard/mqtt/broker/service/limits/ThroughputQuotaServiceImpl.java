@@ -58,6 +58,10 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     @Value("${mqtt.rate-limits.total.degraded-grace-ms:30000}")
     long degradedGraceMs;
 
+    // Probe cadence while Redis is down. A seam like the executors below, so a test can shorten it instead of
+    // sleeping out the full interval.
+    long degradedProbeIntervalNanos = DEGRADED_PROBE_INTERVAL_NANOS;
+
     // test seams: init() creates them only when still null. Volatile so callers see fully constructed executors.
     volatile ExecutorService drawExecutor;
     volatile ScheduledExecutorService leaseReturnScheduler;
@@ -285,7 +289,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (System.nanoTime() - dryUntilNanos < 0) {
             return; // bucket known dry: no Redis traffic during the backoff window
         }
-        if (redisDegraded && System.nanoTime() - lastDrawFailureNanos < DEGRADED_PROBE_INTERVAL_NANOS) {
+        if (redisDegraded && System.nanoTime() - lastDrawFailureNanos < degradedProbeIntervalNanos) {
             return; // Redis is unreachable: one probe per interval, not one per refused packet
         }
         if (!drawInFlight.compareAndSet(false, true)) {
