@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -126,6 +127,9 @@ public class ThroughputQuotaServiceImplTest {
         when(statsManager.getThroughputQuotaStats()).thenReturn(StubThroughputQuotaStats.STUB_THROUGHPUT_QUOTA_STATS);
         service = new ThroughputQuotaServiceImpl(
                 configuration, new DefaultThroughputLimitProvider(configuration), rateLimitCacheService, statsManager);
+        // @Value is not processed here, so mirror the shipped default: without it the field would be 0, which is the
+        // "fail closed the instant Redis goes away" setting and would silently change what every fail-open test means.
+        service.degradedGraceMs = 30_000;
     }
 
     @Test
@@ -271,6 +275,265 @@ public class ThroughputQuotaServiceImplTest {
         assertTrue("after backoff, credit resumes and a new draw is scheduled", service.tryConsumeIncoming());
     }
 
+    // Fail-open is a bridge over a Redis blip, not a licence to serve unmetered traffic for as long as Redis stays
+    // down: the 1 s window is re-armed by every failed draw, so without a deadline on the CONTINUOUS outage the
+    // quota would never resume enforcing.
+    @Test
+    public void givenRedisDownPastGrace_whenConsuming_thenStopsGrantingFreely() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 100;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        service.init(); // warm-up draw fails -> degraded, the grace starts
+
+        assertTrue("within the grace the quota must still fail open", service.tryConsumeIncoming());
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(150)); // past the grace, with the fail-open window still armed
+
+        assertFalse("past the grace an unreachable shared bucket must stop granting", service.tryConsumeIncoming());
+        assertEquals("no bulk charge may ride on a grace that has expired", 0, service.tryConsumeOutgoing(1000));
+    }
+
+    // The deadline must measure ONE continuous outage. A node that loses Redis for a moment every so often is
+    // healthy between the blips, so each new outage starts its own grace rather than inheriting what an earlier one
+    // already spent - otherwise an intermittent Redis eventually locks the quota permanently closed.
+    @Test
+    public void givenIntermittentRedis_whenADrawSucceedsBetween_thenTheGraceClockRestarts() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 200;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init(); // fails -> the first outage's grace starts here
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(150)); // 150 of the 200 ms consumed
+
+        doReturn(5L).when(rateLimitCacheService).tryConsumeTotalMsgs(anyLong());
+        service.draw(10); // Redis answers: the outage is over, local pool holds 5
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(10));
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("down again"));
+        service.draw(10); // a NEW outage begins
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(100)); // 260 ms since the FIRST failure, 100 into the new grace
+
+        // 5 local + 100 burst credit is the most a non-degraded node could grant, so 1000 proves fail-open is live
+        assertEquals("a fresh outage gets a fresh grace, not the remains of the previous one",
+                1000, service.tryConsumeOutgoing(1000));
+    }
+
+    // The failure mode this pins is the original bug in miniature: the fail-open WINDOW is re-armed by every failed
+    // draw, which is why it never ends. The grace must not inherit that property - it is anchored to when the outage
+    // started, not to the most recent attempt, or traffic keeps buying itself another grace.
+    @Test
+    public void givenRedisDown_whenLaterDrawsAlsoFail_thenTheGraceStillExpires() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 1500;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init(); // stamps the start of the outage
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(1100)); // FAIL_OPEN_NANOS is 1 s: the window has lapsed
+
+        assertTrue("still inside the grace", service.tryConsumeIncoming()); // this charge runs another failing draw
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(500)); // 1.6 s into a 1.5 s grace
+
+        assertFalse("a failed draw must not push the deadline out - the grace measures the outage, not the attempt",
+                service.tryConsumeIncoming());
+    }
+
+    // The blocking charge runs on an actor or consumer thread, and drawOnCallerThread blocks it on the Jedis socket
+    // for up to redis.standalone.connectTimeout (ships at 30 s). Past the grace the answer is already "refuse", so
+    // it must neither borrow nor block - but it still has to leave a probe behind, or a node whose only traffic is
+    // persisted fan-out would never discover that Redis came back.
+    @Test
+    public void givenGraceExpired_whenBlockingCharge_thenRefusesWithoutDrawingOnCallerThread() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        service.degradedGraceMs = 1200;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        executor.runAll(); // the warm-up draw fails: the outage starts here
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(1300)); // past the grace, and past the fail-open window
+        clearInvocations(rateLimitCacheService);
+
+        assertEquals("past the grace the blocking charge grants nothing", 0, service.tryConsumeOutgoingBlocking(50));
+        verify(rateLimitCacheService, never()).tryConsumeTotalMsgs(anyLong()); // nothing ran on this thread
+        assertEquals("a recovery probe must still be queued for the draw executor", 1, executor.tasks.size());
+    }
+
+    // Refusing past the grace is only half the contract: the node must still notice Redis coming back. Recovery has
+    // to be driven through the public charge methods, because those are the only things production calls - a test
+    // that hand-invokes draw() would pass even if no charge could ever reach Redis again.
+    @Test
+    public void givenGraceExpired_whenRedisReturns_thenEnforcementResumes() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 100;
+        service.degradedProbeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(20);
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(150));
+        assertFalse("past the grace the node refuses", service.tryConsumeIncoming());
+
+        doReturn(10L).when(rateLimitCacheService).tryConsumeTotalMsgs(anyLong());
+        clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(30)); // the probe interval elapses: the next charge may reach Redis
+
+        // Charges are the only thing that ever reaches Redis, so this one has to probe. It still refuses - it found
+        // the pool empty - but its draw lands and clears the degraded state.
+        assertFalse("the probing charge itself is still refused", service.tryConsumeIncoming());
+
+        // Recovered, so grants come from the drawn block plus the node's ordinary burst credit. Asking for far more
+        // than that is what separates recovery from a fail-open window: a node still failing open returns all 5000.
+        assertEquals("a node that could not probe Redis would never recover",
+                10 + service.deriveBurstAllowance(), service.tryConsumeOutgoing(5000));
+    }
+
+    private AtomicLong pool() {
+        return (AtomicLong) ReflectionTestUtils.getField(service, "localTokens");
+    }
+
+    // --- a degraded node and the tokens it already owns. A zero grace is "expired from the first failure", which
+    //     makes these deterministic: no wall-clock wait for the deadline. ---
+
+    @Test
+    public void givenDegradedNodeWithOwnedTokens_whenReturnTick_thenTokensAreKeptLocal() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init(); // warm-up draw fails -> degraded
+        pool().set(25); // drawn before the outage
+
+        service.returnUnusedTokens();
+
+        verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
+        assertEquals("the tick zeroes the pool before the Redis call, so against a hanging socket it would strand "
+                + "the only tokens a grace-expired node may still spend", 25, pool().get());
+    }
+
+    @Test
+    public void givenGraceExpiredWithOwnedTokens_whenConsuming_thenSpendsOnlyWhatWasDrawn() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 0;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        pool().set(5);
+
+        assertEquals("tokens the node actually drew must still be granted", 3, service.tryConsumeOutgoing(3));
+        assertEquals("the remainder of the pool - and not one packet of credit", 2, service.tryConsumeOutgoing(10));
+        assertFalse("pool spent: past the grace the node lends nothing", service.tryConsumeIncoming());
+    }
+
+    // repayCreditIfOwed's grace-expired side: a blocking charge that fully grants from owned tokens drains the
+    // pool, and the fail-open window - armed by the outage's own failures - must not suppress the top-up, because
+    // past the grace the spend was real budget.
+    @Test
+    public void givenGraceExpired_whenBlockingChargeGrantsFromOwnedTokens_thenTheDrainedPoolSchedulesTheTopUp() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        service.degradedGraceMs = 0;
+        service.degradedProbeIntervalNanos = 0; // the probe gate must not hide the scheduling under test
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        executor.runAll(); // warm-up draw fails: degraded, grace over, fail-open window freshly armed
+        pool().set(30);
+
+        assertEquals("owned tokens grant in full without a caller-thread draw",
+                30, service.tryConsumeOutgoingBlocking(30));
+
+        assertEquals("the drained pool owes a refill: the armed window must not suppress the top-up",
+                1, executor.tasks.size());
+        verify(rateLimitCacheService, times(1)).tryConsumeTotalMsgs(anyLong()); // the warm-up only
+    }
+
+    // --- the grace clamp's boundaries. ---
+
+    @Test
+    public void givenNegativeGrace_whenInit_thenWarnsAndBehavesAsZero() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = -5;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        Logger logger = (Logger) LoggerFactory.getLogger(ThroughputQuotaServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.init(); // the clamp warns, then the warm-up draw fails
+
+            assertEquals("a negative grace must be called out at startup", 1L,
+                    appender.list.stream()
+                            .filter(event -> event.getLevel() == Level.WARN)
+                            .filter(event -> event.getFormattedMessage().contains("degraded-grace-ms is negative"))
+                            .count());
+        } finally {
+            logger.detachAppender(appender);
+        }
+        assertFalse("clamped to 0: the first failed draw must already refuse", service.tryConsumeIncoming());
+    }
+
+    // the yml promises that 0 "refuses the moment a draw fails"
+    @Test
+    public void givenZeroGrace_whenTheFirstDrawFails_thenRefusesImmediately() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 0;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        service.init(); // the warm-up draw fails
+
+        assertFalse("no fail-open moment at all with a zero grace", service.tryConsumeIncoming());
+        assertEquals(0, service.tryConsumeOutgoing(1000));
+    }
+
+    // The failure WARN's two wordings are operator-facing: claiming "failing open" while the node is in fact
+    // refusing every PUBLISH points the on-call at the wrong cause, so the branch selection is pinned, not
+    // just commented.
+    @Test
+    public void givenDrawFailures_whenWarning_thenTheWordingNamesTheCurrentFailureDirection() {
+        AtomicLong clock = new AtomicLong();
+        service.nanoTime = clock::get;
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 100;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        Logger logger = (Logger) LoggerFactory.getLogger(ThroughputQuotaServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.init(); // the warm-up failure lands within the grace
+
+            assertEquals("within the grace the WARN must say the quota is failing open",
+                    1L, warnsContaining(appender, "failing open"));
+            assertEquals(0L, warnsContaining(appender, "refused until Redis answers"));
+
+            clock.addAndGet(TimeUnit.MILLISECONDS.toNanos(150)); // past the grace
+            service.draw(10); // another failing draw, now on the other side of the deadline
+
+            assertEquals("past the grace the WARN must say packets are refused",
+                    1L, warnsContaining(appender, "refused until Redis answers"));
+            assertEquals("and must not claim to be failing open",
+                    1L, warnsContaining(appender, "failing open"));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    private long warnsContaining(ListAppender<ILoggingEvent> appender, String fragment) {
+        return appender.list.stream()
+                .filter(event -> event.getLevel() == Level.WARN)
+                .filter(event -> event.getFormattedMessage().contains(fragment))
+                .count();
+    }
+
     @Test
     public void givenRedisFailure_whenDraw_thenFailsOpenAndCountsDegraded() {
         ThroughputQuotaStats quotaStats = mock(ThroughputQuotaStats.class);
@@ -358,8 +621,8 @@ public class ThroughputQuotaServiceImplTest {
             drawPool.shutdown();
             assertTrue(drawPool.awaitTermination(5, TimeUnit.SECONDS)); // the stale success has landed
 
-            assertEquals("a success that started before the failure must not clear the degraded flag",
-                    true, ReflectionTestUtils.getField(service, "redisDegraded"));
+            assertTrue("a success that started before the failure must not clear the degraded flag",
+                    service.redisHealth().degraded());
         } finally {
             drawPool.shutdownNow();
         }
@@ -446,5 +709,95 @@ public class ThroughputQuotaServiceImplTest {
         service.returnUnusedTokens();
 
         verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
+    }
+
+    // --- RedisHealth transitions. These are the compound rules the service used to keep across four volatile
+    //     fields by write-ordering convention; as pure functions on one immutable snapshot, the interleavings that
+    //     needed latches (or were impossible to pin at all) become plain argument values. ---
+
+    @Test
+    public void givenHealthy_whenADrawFails_thenTheOutageStartsAtThatFailure() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(100).failed(500);
+
+        assertTrue(health.degraded());
+        assertEquals(500, health.degradedSinceNanos());
+        assertEquals(500, health.lastFailureNanos());
+    }
+
+    @Test
+    public void givenDegraded_whenLaterDrawsAlsoFail_thenTheOutageStartDoesNotSlide() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100).failed(900).failed(2_000);
+
+        assertEquals("the grace measures the outage, not the latest attempt", 100, health.degradedSinceNanos());
+        assertEquals("probing keys off the most recent attempt", 2_000, health.lastFailureNanos());
+    }
+
+    // The interleaving the old volatile fields could not exclude: a success that read the failure timestamp
+    // BEFORE the failure stamped it could still clear the flag afterwards. As a CAS transition the decision
+    // re-runs against the failed state, so the stale success leaves it untouched.
+    @Test
+    public void givenAFailureLandedAfterTheDrawStarted_whenThatDrawSucceeds_thenDegradedIsKept() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertSame("a stale success must leave the state untouched", health, health.answered(50, 200));
+    }
+
+    @Test
+    public void givenTheDrawStartedAfterTheLastFailure_whenItSucceeds_thenHealthyAgain() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100).answered(150, 200);
+
+        assertFalse(health.degraded());
+    }
+
+    @Test
+    public void givenRecovered_whenCheckingFailingOpen_thenTheWindowIsDisarmedImmediately() {
+        ThroughputQuotaServiceImpl.RedisHealth degraded =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("each failure arms the reprieve", degraded.failingOpen(101, Long.MAX_VALUE));
+        assertFalse("recovery must disarm it, or the rest of the second passes unmetered",
+                degraded.answered(150, 200).failingOpen(201, Long.MAX_VALUE));
+    }
+
+    // the precedence the combined predicate encodes: an armed window must NOT grant once the grace is over.
+    // Consulted alone, the window is re-armed by every probe failure and would fail open for the whole outage -
+    // which is why the record keeps it private.
+    @Test
+    public void givenGraceExpired_whenTheWindowIsStillArmed_thenFailingOpenIsOff() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("inside both the grace and the window", health.failingOpen(150, 100));
+        assertFalse("grace expiry must trump the armed window", health.failingOpen(150, 50));
+    }
+
+    @Test
+    public void givenANewOutageAfterARecovery_whenTheGraceIsChecked_thenItRunsFromTheNewOutage() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0)
+                .failed(100).answered(150, 200) // the first outage ends
+                .failed(300);                   // a new one begins
+
+        assertFalse("a fresh outage gets a fresh grace", health.graceExpired(350, 100));
+        assertTrue(health.graceExpired(401, 100));
+    }
+
+    @Test
+    public void givenHealthy_whenTheGraceIsChecked_thenItNeverExpires() {
+        assertFalse("a healthy node never consults the clock",
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).graceExpired(Long.MAX_VALUE / 2, 0));
+    }
+
+    // elapsed == grace must count as expired: the ">=" is what makes a zero grace refuse at the failure instant,
+    // and a refactor to ">" would silently break exactly that promise
+    @Test
+    public void givenTheGraceBoundary_whenChecked_thenElapsedEqualToTheGraceIsExpired() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("zero grace: already expired at the failure instant", health.graceExpired(100, 0));
+        assertFalse("one nano short of the grace is still inside it", health.graceExpired(149, 50));
+        assertTrue("exactly the grace is past it", health.graceExpired(150, 50));
     }
 }

@@ -1019,8 +1019,9 @@ mqtt:
       # so it is charged when the subscription is made.
       # On overuse, incoming publishes are refused (MQTT 5: PUBACK/PUBREC with reason code 0x97 QUOTA_EXCEEDED;
       # MQTT 3.x: disconnect) and the copies for subscribers beyond the remaining budget are never stored, which is
-      # reported in the droppedMsgs statistic. If Redis is unavailable, the quota fails open and traffic passes
-      # unmetered (see the throughputQuotaDegraded metric).
+      # reported in the droppedMsgs statistic. If Redis becomes unavailable the quota keeps granting for
+      # degraded-grace-ms so a failover passes unnoticed, then stops granting rather than serve unmetered traffic
+      # indefinitely (see the throughputQuotaDegraded metric and degraded-grace-ms below).
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
       # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths. Each bandwidth refills
       # continuously over the given period, so the sustained rate is capacity / seconds and the capacity is the volume
@@ -1050,6 +1051,16 @@ mqtt:
       # quiet then holds those tokens indefinitely, so the cluster's effective budget shrinks by the sum of every idle
       # node's lease. Leave the tick on unless traffic is even across all nodes.
       lease-return-ms: "${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
+      # How long the quota keeps granting after it loses the shared Redis bucket (in ms). Defaults to 30000, which
+      # covers a Redis Cluster or Sentinel failover, so a node rides out the switch without refusing anything. Past
+      # this the node stops granting: it cannot tell how much budget the cluster has left, and continuing would serve
+      # unmetered traffic for as long as Redis stays away. The window measures ONE continuous outage — it starts when
+      # the first draw fails and is NOT extended by later failures — and any successful draw resets it, so an
+      # intermittent Redis never accumulates toward the deadline.
+      # Raising it trades enforcement for availability; 0 refuses the moment a draw fails. Note that once the window
+      # has elapsed, publishes are refused exactly as they are on a spent budget: reported in droppedMsgs, MQTT 5
+      # clients get 0x97 QUOTA_EXCEEDED and MQTT 3.x clients are disconnected.
+      degraded-grace-ms: "${MQTT_TOTAL_RATE_LIMITS_DEGRADED_GRACE_MS:30000}"
     incoming-publish:
       # Enables or disables publish rate limits per client for incoming messages to the broker.
       enabled: "${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"

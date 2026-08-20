@@ -19,6 +19,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
@@ -26,6 +27,7 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.util.Attribute;
@@ -50,6 +52,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +63,10 @@ public class MqttSessionHandlerTest {
     static final InetSocketAddress REMOTE = new InetSocketAddress("10.0.0.7", 51000);
 
     MqttMessageGenerator mqttMessageGenerator;
+    RateLimitService rateLimitService;
+    ThroughputQuotaService throughputQuotaService;
+    ClientMqttActorManager clientMqttActorManager;
+    TbMessageStatsReportClient tbMessageStatsReportClient;
     ConnectionStats connectionStats;
     MqttSessionHandler handler;
     ChannelHandlerContext ctx;
@@ -70,16 +77,20 @@ public class MqttSessionHandlerTest {
     @SuppressWarnings("unchecked")
     public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
+        rateLimitService = mock(RateLimitService.class);
+        throughputQuotaService = mock(ThroughputQuotaService.class);
         StatsManager statsManager = mock(StatsManager.class);
         connectionStats = mock(ConnectionStats.class);
         when(statsManager.getConnectionStats()).thenReturn(connectionStats);
+        clientMqttActorManager = mock(ClientMqttActorManager.class);
+        tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
         MqttHandlerCtx handlerCtx = new MqttHandlerCtx(
-                mock(ClientMqttActorManager.class),
+                clientMqttActorManager,
                 mock(ClientLogger.class),
-                mock(RateLimitService.class),
+                rateLimitService,
                 mqttMessageGenerator,
-                mock(ThroughputQuotaService.class),
-                mock(TbMessageStatsReportClient.class),
+                throughputQuotaService,
+                tbMessageStatsReportClient,
                 statsManager);
         handlerCtx.setMaxInFlightMsgs(1000);
         handler = new MqttSessionHandler(handlerCtx, null, BrokerConstants.TCP);
@@ -89,6 +100,36 @@ public class MqttSessionHandlerTest {
         addressAttr = mock(Attribute.class);
         when(ctx.channel()).thenReturn(channel);
         when(channel.attr(MqttSessionHandler.ADDRESS)).thenReturn(addressAttr);
+    }
+
+    // --- quota refusals. MQTT 3.x has no reason code for "try again later", so a refused publish can only be
+    //     signalled by disconnecting; MQTT 5 gets 0x97 QUOTA_EXCEEDED instead. The value of pinning this is the
+    //     negative half: a refusal must never reach the actor, or the quota would not be a limit at all. ---
+
+    private void arrangeRefusedPublish() {
+        when(addressAttr.get()).thenReturn(REMOTE);
+        ClientSessionCtx sessionCtx = (ClientSessionCtx) ReflectionTestUtils.getField(handler, "clientSessionCtx");
+        sessionCtx.setChannel(ctx);
+        sessionCtx.setMqttVersion(MqttVersion.MQTT_3_1_1);
+        // a PUBLISH before CONNECT is a protocol violation, so the session has to look established
+        ReflectionTestUtils.setField(handler, "clientId", "v3-publisher");
+        when(rateLimitService.checkIncomingLimits(any(), any(), any())).thenReturn(true);
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(false);
+    }
+
+    @Test
+    public void channelRead_publishRefusedByQuota_disconnectsMqtt3SessionAndDropsPacket() {
+        arrangeRefusedPublish();
+
+        handler.channelRead(ctx, MqttMessageBuilders.publish()
+                .topicName("test/topic")
+                .qos(MqttQoS.AT_MOST_ONCE)
+                .payload(Unpooled.EMPTY_BUFFER)
+                .build());
+
+        verify(clientMqttActorManager).disconnect(any(), any());
+        verify(clientMqttActorManager, never()).processMqttMsg(any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
     }
 
     // --- close-origin token: a short, stable classification (not prose) so logs stay greppable
