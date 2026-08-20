@@ -387,6 +387,101 @@ public class ThroughputQuotaServiceImplTest {
                 10 + service.deriveBurstAllowance(), service.tryConsumeOutgoing(5000));
     }
 
+    private AtomicLong pool() {
+        return (AtomicLong) ReflectionTestUtils.getField(service, "localTokens");
+    }
+
+    // --- a degraded node and the tokens it already owns. A zero grace is "expired from the first failure", which
+    //     makes these deterministic: no wall-clock wait for the deadline. ---
+
+    @Test
+    public void givenDegradedNodeWithOwnedTokens_whenReturnTick_thenTokensAreKeptLocal() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init(); // warm-up draw fails -> degraded
+        pool().set(25); // drawn before the outage
+
+        service.returnUnusedTokens();
+
+        verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
+        assertEquals("the tick zeroes the pool before the Redis call, so against a hanging socket it would strand "
+                + "the only tokens a grace-expired node may still spend", 25, pool().get());
+    }
+
+    @Test
+    public void givenGraceExpiredWithOwnedTokens_whenConsuming_thenSpendsOnlyWhatWasDrawn() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 0;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        pool().set(5);
+
+        assertEquals("tokens the node actually drew must still be granted", 3, service.tryConsumeOutgoing(3));
+        assertEquals("the remainder of the pool - and not one packet of credit", 2, service.tryConsumeOutgoing(10));
+        assertFalse("pool spent: past the grace the node lends nothing", service.tryConsumeIncoming());
+    }
+
+    // repayCreditIfOwed's grace-expired side: a blocking charge that fully grants from owned tokens drains the
+    // pool, and the fail-open window - armed by the outage's own failures - must not suppress the top-up, because
+    // past the grace the spend was real budget.
+    @Test
+    public void givenGraceExpired_whenBlockingChargeGrantsFromOwnedTokens_thenTheDrainedPoolSchedulesTheTopUp() {
+        ManualExecutor executor = new ManualExecutor();
+        service.drawExecutor = executor;
+        service.degradedGraceMs = 0;
+        service.degradedProbeIntervalNanos = 0; // the probe gate must not hide the scheduling under test
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+        service.init();
+        executor.runAll(); // warm-up draw fails: degraded, grace over, fail-open window freshly armed
+        pool().set(30);
+
+        assertEquals("owned tokens grant in full without a caller-thread draw",
+                30, service.tryConsumeOutgoingBlocking(30));
+
+        assertEquals("the drained pool owes a refill: the armed window must not suppress the top-up",
+                1, executor.tasks.size());
+        verify(rateLimitCacheService, times(1)).tryConsumeTotalMsgs(anyLong()); // the warm-up only
+    }
+
+    // --- the grace clamp's boundaries. ---
+
+    @Test
+    public void givenNegativeGrace_whenInit_thenWarnsAndBehavesAsZero() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = -5;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        Logger logger = (Logger) LoggerFactory.getLogger(ThroughputQuotaServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.init(); // the clamp warns, then the warm-up draw fails
+
+            assertEquals("a negative grace must be called out at startup", 1L,
+                    appender.list.stream()
+                            .filter(event -> event.getLevel() == Level.WARN)
+                            .filter(event -> event.getFormattedMessage().contains("degraded-grace-ms is negative"))
+                            .count());
+        } finally {
+            logger.detachAppender(appender);
+        }
+        assertFalse("clamped to 0: the first failed draw must already refuse", service.tryConsumeIncoming());
+    }
+
+    // the yml promises that 0 "refuses the moment a draw fails"
+    @Test
+    public void givenZeroGrace_whenTheFirstDrawFails_thenRefusesImmediately() {
+        service.drawExecutor = MoreExecutors.newDirectExecutorService();
+        service.degradedGraceMs = 0;
+        when(rateLimitCacheService.tryConsumeTotalMsgs(anyLong())).thenThrow(new RuntimeException("redis down"));
+
+        service.init(); // the warm-up draw fails
+
+        assertFalse("no fail-open moment at all with a zero grace", service.tryConsumeIncoming());
+        assertEquals(0, service.tryConsumeOutgoing(1000));
+    }
+
     @Test
     public void givenRedisFailure_whenDraw_thenFailsOpenAndCountsDegraded() {
         ThroughputQuotaStats quotaStats = mock(ThroughputQuotaStats.class);
@@ -630,5 +725,16 @@ public class ThroughputQuotaServiceImplTest {
     public void givenHealthy_whenTheGraceIsChecked_thenItNeverExpires() {
         assertFalse("a healthy node never consults the clock",
                 ThroughputQuotaServiceImpl.RedisHealth.healthy(0).graceExpired(Long.MAX_VALUE / 2, 0));
+    }
+
+    // elapsed == grace must count as expired: the ">=" is what makes a zero grace refuse at the failure instant,
+    // and a refactor to ">" would silently break exactly that promise
+    @Test
+    public void givenTheGraceBoundary_whenChecked_thenElapsedEqualToTheGraceIsExpired() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("zero grace: already expired at the failure instant", health.graceExpired(100, 0));
+        assertFalse("one nano short of the grace is still inside it", health.graceExpired(149, 50));
+        assertTrue("exactly the grace is past it", health.graceExpired(150, 50));
     }
 }
