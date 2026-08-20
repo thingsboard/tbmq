@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -473,8 +474,8 @@ public class ThroughputQuotaServiceImplTest {
             drawPool.shutdown();
             assertTrue(drawPool.awaitTermination(5, TimeUnit.SECONDS)); // the stale success has landed
 
-            assertEquals("a success that started before the failure must not clear the degraded flag",
-                    true, ReflectionTestUtils.getField(service, "redisDegraded"));
+            assertTrue("a success that started before the failure must not clear the degraded flag",
+                    service.redisHealth().degraded());
         } finally {
             drawPool.shutdownNow();
         }
@@ -561,5 +562,73 @@ public class ThroughputQuotaServiceImplTest {
         service.returnUnusedTokens();
 
         verify(rateLimitCacheService, never()).returnTotalMsgs(anyLong());
+    }
+
+    // --- RedisHealth transitions. These are the compound rules the service used to keep across four volatile
+    //     fields by write-ordering convention; as pure functions on one immutable snapshot, the interleavings that
+    //     needed latches (or were impossible to pin at all) become plain argument values. ---
+
+    @Test
+    public void givenHealthy_whenADrawFails_thenTheOutageStartsAtThatFailure() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(100).failed(500);
+
+        assertTrue(health.degraded());
+        assertEquals(500, health.degradedSinceNanos());
+        assertEquals(500, health.lastFailureNanos());
+    }
+
+    @Test
+    public void givenDegraded_whenLaterDrawsAlsoFail_thenTheOutageStartDoesNotSlide() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100).failed(900).failed(2_000);
+
+        assertEquals("the grace measures the outage, not the latest attempt", 100, health.degradedSinceNanos());
+        assertEquals("probing keys off the most recent attempt", 2_000, health.lastFailureNanos());
+    }
+
+    // The interleaving the old volatile fields could not exclude: a success that read the failure timestamp
+    // BEFORE the failure stamped it could still clear the flag afterwards. As a CAS transition the decision
+    // re-runs against the failed state, so the stale success leaves it untouched.
+    @Test
+    public void givenAFailureLandedAfterTheDrawStarted_whenThatDrawSucceeds_thenDegradedIsKept() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertSame("a stale success must leave the state untouched", health, health.answered(50, 200));
+    }
+
+    @Test
+    public void givenTheDrawStartedAfterTheLastFailure_whenItSucceeds_thenHealthyAgain() {
+        ThroughputQuotaServiceImpl.RedisHealth health =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100).answered(150, 200);
+
+        assertFalse(health.degraded());
+    }
+
+    @Test
+    public void givenRecovered_whenTheWindowIsRead_thenItIsClosedImmediately() {
+        ThroughputQuotaServiceImpl.RedisHealth degraded =
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("each failure arms the reprieve", degraded.failOpenWindowActive(101));
+        assertFalse("recovery must disarm it, or the rest of the second passes unmetered",
+                degraded.answered(150, 200).failOpenWindowActive(201));
+    }
+
+    @Test
+    public void givenANewOutageAfterARecovery_whenTheGraceIsChecked_thenItRunsFromTheNewOutage() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0)
+                .failed(100).answered(150, 200) // the first outage ends
+                .failed(300);                   // a new one begins
+
+        assertFalse("a fresh outage gets a fresh grace", health.graceExpired(350, 100));
+        assertTrue(health.graceExpired(401, 100));
+    }
+
+    @Test
+    public void givenHealthy_whenTheGraceIsChecked_thenItNeverExpires() {
+        assertFalse("a healthy node never consults the clock",
+                ThroughputQuotaServiceImpl.RedisHealth.healthy(0).graceExpired(Long.MAX_VALUE / 2, 0));
     }
 }

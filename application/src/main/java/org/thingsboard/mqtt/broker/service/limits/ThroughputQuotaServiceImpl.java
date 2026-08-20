@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
@@ -76,14 +77,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // blockSize is how much to fetch per Redis round-trip, this is how big an arriving burst the node can absorb.
     private volatile int burstAllowance;
     private volatile long dryUntilNanos;
-    private volatile long failOpenUntilNanos;
-    // Redis is unreachable. Any completed draw clears it, so it can never latch on.
-    private volatile boolean redisDegraded;
-    // timestamp of the last draw failure, so a draw that started earlier cannot clear redisDegraded
-    private volatile long lastDrawFailureNanos;
-    // start of the CURRENT continuous outage, stamped only on the healthy -> degraded transition. Deliberately not
-    // reset when the outage ends: redisDegraded already gates every read of it, and the next failure re-stamps.
-    private volatile long degradedSinceNanos;
+    // one atomic snapshot instead of coordinated volatile fields, so the compound transitions (a stale success must
+    // not clear a newer failure, the grace is stamped once per outage) hold by construction - see RedisHealth
+    private final AtomicReference<RedisHealth> redisHealth = new AtomicReference<>(RedisHealth.healthy(0));
     private volatile long degradedGraceNanos;
     private ThroughputQuotaStats stats;
 
@@ -95,12 +91,9 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         }
         long now = System.nanoTime();
         dryUntilNanos = now;
-        failOpenUntilNanos = now;
-        lastDrawFailureNanos = now; // no failure yet, so every draw from here on is newer than this
+        redisHealth.set(RedisHealth.healthy(now));
 
         lastClampWarnNanos.set(now - CLAMP_WARN_INTERVAL_NANOS - 1); // so the first clamp warns immediately
-        redisDegraded = false;
-        degradedSinceNanos = now; // every other piece of degraded state is reset here; these two belong with it
         if (degradedGraceMs < 0) {
             log.warn("mqtt.rate-limits.total.degraded-grace-ms is negative ({}), treating it as 0: the quota will " +
                     "refuse PUBLISH packets as soon as a single draw fails", degradedGraceMs);
@@ -159,14 +152,15 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             return granted;
         }
         long now = System.nanoTime();
-        if (degradationGraceExpired(now)) {
+        RedisHealth health = redisHealth.get();
+        if (health.graceExpired(now, degradedGraceNanos)) {
             // tryConsume has already refused on the deadline. Probe for recovery on the draw executor rather than
             // here: this method runs on the CALLER's thread - an actor or consumer - and drawOnCallerThread would
             // block it on the dead Jedis socket for the whole connect timeout to learn what it already knows.
             scheduleDrawIfNeeded(blockSize);
             return granted;
         }
-        if (now - failOpenUntilNanos < 0) {
+        if (health.failOpenWindowActive(now)) {
             return granted; // Redis degraded: tryConsume already failed open, nothing to draw
         }
         if (now - dryUntilNanos < 0) {
@@ -200,9 +194,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             }
             return granted;
         } catch (Exception e) {
-            markRedisFailed(e);
             // fail open, consistent with tryConsume - including its deadline: bridge a blip, refuse an outage
-            return degradationGraceExpired(System.nanoTime()) ? 0 : shortfall;
+            return markRedisFailed(e).graceExpired(System.nanoTime(), degradedGraceNanos) ? 0 : shortfall;
         }
     }
 
@@ -220,11 +213,13 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             return Math.max(0, n);
         }
         long now = System.nanoTime();
+        // one snapshot for the whole charge, so the grace, the window and the degraded flag cannot disagree mid-call
+        RedisHealth health = redisHealth.get();
         // Redis has been unreachable long enough that this is an outage, not a blip: stop granting on the fail-open
         // window and on credit. Deliberately NOT an early return - the draw further down is the only thing that ever
         // notices Redis coming back, so short-circuiting here would make the refusal permanent.
-        boolean graceExpired = degradationGraceExpired(now);
-        if (!graceExpired && now - failOpenUntilNanos < 0) {
+        boolean graceExpired = health.graceExpired(now, degradedGraceNanos);
+        if (!graceExpired && health.failOpenWindowActive(now)) {
             return n; // Redis is degraded but within the grace: fail open, never queue, never stall
         }
         // Grant on bounded credit while a draw may still help; once a draw confirmed the bucket dry, refuse locally
@@ -255,7 +250,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
                 }
                 // the fail-open window lapses while the next draw still hangs on an unreachable Redis; without
                 // this check the quota would turn fail-CLOSED for that draw's whole duration
-                return redisDegraded ? n : 0;
+                return health.degraded() ? n : 0;
             }
             int granted = (int) Math.min(n, available);
             if (localTokens.compareAndSet(current, current - granted)) {
@@ -270,9 +265,11 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // The blocking charge suppresses tryConsume's scheduling, so when it returns without drawing it must put the
     // top-up back: a pool at or below zero owes the shared bucket for the credit it granted.
     private void repayCreditIfOwed() {
+        long now = System.nanoTime();
+        RedisHealth health = redisHealth.get();
         // Past the grace the pool lends nothing, so whatever the charge just spent was real budget and a drained
         // pool genuinely owes a refill: the fail-open window must not suppress the top-up there.
-        if (!degradationGraceExpired(System.nanoTime()) && System.nanoTime() - failOpenUntilNanos < 0) {
+        if (!health.graceExpired(now, degradedGraceNanos) && health.failOpenWindowActive(now)) {
             return; // failing open spends no real budget, so nothing is owed
         }
         if (localTokens.get() <= 0) {
@@ -289,7 +286,8 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         if (System.nanoTime() - dryUntilNanos < 0) {
             return; // bucket known dry: no Redis traffic during the backoff window
         }
-        if (redisDegraded && System.nanoTime() - lastDrawFailureNanos < degradedProbeIntervalNanos) {
+        RedisHealth health = redisHealth.get();
+        if (health.degraded() && System.nanoTime() - health.lastFailureNanos() < degradedProbeIntervalNanos) {
             return; // Redis is unreachable: one probe per interval, not one per refused packet
         }
         if (!drawInFlight.compareAndSet(false, true)) {
@@ -329,50 +327,22 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         }
     }
 
-    // Redis answered, so the node is not cut off. Two draws can be in flight at once (an ingress-scheduled one
-    // alongside a blocking caller's), so clear the flag only when no failure was recorded since this draw began -
-    // otherwise a slow success that started before an outage would clear a newer failure's degraded state.
+    // Redis answered, so the node is not cut off. See RedisHealth#answered for the staleness rule; recovery also
+    // closes the fail-open window by construction, because the window is derived from the degraded flag - leaving
+    // it armed would grant every charge in full for the rest of the second, unmetered traffic at the exact moment
+    // enforcement should resume.
     private void markRedisAnswered(long drawStartedNanos) {
-        if (lastDrawFailureNanos - drawStartedNanos < 0) {
-            redisDegraded = false;
-            // Disarm the window this flag owns. Leaving it armed grants every charge in full for the rest of the
-            // second - unmetered traffic at the exact moment enforcement should resume.
-            failOpenUntilNanos = System.nanoTime();
-            // Re-stamp rather than zero: if a racing failure re-raises the flag without stamping, inheriting "just
-            // now" costs one grace period, while inheriting 0 would fail the node closed instantly.
-            degradedSinceNanos = failOpenUntilNanos;
-        }
-    }
-
-    /**
-     * Whether the node has been cut off from the shared bucket for longer than the configured grace. Reading
-     * {@code redisDegraded} first is what bounds the whole thing: a healthy node never consults the clock, and a
-     * recovered one stops consulting it the moment a draw lands.
-     */
-    private boolean degradationGraceExpired(long now) {
-        // subtract rather than compare against a sum: degradedSinceNanos is a nanoTime reading, so an added
-        // duration can overflow and invert the test - which would fail CLOSED on the first blip for exactly the
-        // operator who configured a very long grace to avoid that.
-        return redisDegraded && now - degradedSinceNanos >= degradedGraceNanos;
-    }
-
-    private void markRedisFailed(Exception e) {
         long now = System.nanoTime();
-        // stamp before raising the flag, so a concurrently completing draw cannot read a stale timestamp and
-        // clear what we are about to set
-        lastDrawFailureNanos = now;
-        if (!redisDegraded) {
-            // first failure of THIS outage starts the grace clock. Guarding on the flag is what makes the deadline
-            // measure one continuous outage rather than sliding forward with every failed draw - which is exactly
-            // how the fail-open window itself never expires.
-            degradedSinceNanos = now;
-        }
-        redisDegraded = true;
-        failOpenUntilNanos = now + FAIL_OPEN_NANOS;
+        redisHealth.updateAndGet(health -> health.answered(drawStartedNanos, now));
+    }
+
+    private RedisHealth markRedisFailed(Exception e) {
+        long now = System.nanoTime();
+        RedisHealth health = redisHealth.updateAndGet(h -> h.failed(now));
         stats.incrementRedisDegraded();
         // Say which way the quota is currently failing. Claiming "failing open" while the node is in fact refusing
         // every PUBLISH would point an operator at exactly the wrong cause during a total publish outage.
-        if (degradationGraceExpired(now)) {
+        if (health.graceExpired(now, degradedGraceNanos)) {
             log.warn("Failed to draw total throughput quota tokens from Redis; the {} ms degraded grace has elapsed, " +
                     "so PUBLISH packets are refused until Redis answers again",
                     TimeUnit.NANOSECONDS.toMillis(degradedGraceNanos), e);
@@ -380,6 +350,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             log.warn("Failed to draw total throughput quota tokens from Redis, failing open for {} ms",
                     TimeUnit.NANOSECONDS.toMillis(FAIL_OPEN_NANOS), e);
         }
+        return health;
     }
 
     private void warnQuotaClamped() {
@@ -394,7 +365,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     }
 
     void returnUnusedTokens() {
-        if (redisDegraded) {
+        if (redisHealth.get().degraded()) {
             // this zeroes the pool BEFORE the Redis call and only restores it in the catch, so against a socket that
             // hangs rather than refuses the node would sit on an empty pool for the whole read timeout - and past the
             // grace it lends nothing, so every packet in that window is refused although the tokens were owned.
@@ -427,5 +398,60 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
     // brings it.
     int deriveBurstAllowance() {
         return (int) Math.min(Integer.MAX_VALUE, Math.max(blockSize, throughputLimitProvider.getSustainedRatePerSec()));
+    }
+
+    RedisHealth redisHealth() {
+        return redisHealth.get();
+    }
+
+    /**
+     * The node's view of Redis, kept as ONE immutable snapshot swapped by CAS. The three values carry compound
+     * rules - a stale success must not clear a newer failure, the grace clock is stamped once per continuous
+     * outage - and separate volatile fields can only keep such rules by write-ordering convention, which a
+     * preempted reader can still interleave. A CAS transition re-runs against whatever a racing writer left,
+     * so the rules hold by construction.
+     *
+     * @param degraded           Redis is unreachable; any completed draw clears it, so it can never latch on
+     * @param degradedSinceNanos start of the CURRENT continuous outage; never read while healthy
+     * @param lastFailureNanos   time of the last failed draw, so a draw that started earlier cannot clear degraded
+     */
+    record RedisHealth(boolean degraded, long degradedSinceNanos, long lastFailureNanos) {
+
+        static RedisHealth healthy(long now) {
+            return new RedisHealth(false, now, now); // lastFailure = now: every draw from here on is newer
+        }
+
+        /** A draw failed. Only the healthy -> degraded transition stamps the outage start: the grace measures one
+         * continuous outage rather than sliding forward with every failed draw - which is exactly how the fail-open
+         * window itself never expires. */
+        RedisHealth failed(long now) {
+            return new RedisHealth(true, degraded ? degradedSinceNanos : now, now);
+        }
+
+        /** A draw succeeded. Two draws can be in flight at once (an ingress-scheduled one alongside a blocking
+         * caller's), so clear degraded only when no failure was recorded since this draw began - a slow success
+         * that started before an outage must not clear the newer failure's state. */
+        RedisHealth answered(long drawStartedNanos, long now) {
+            if (lastFailureNanos - drawStartedNanos >= 0) {
+                return this; // stale success
+            }
+            return healthy(now);
+        }
+
+        /** The short reprieve after each failed draw, derived instead of stored: while degraded it is always
+         * lastFailure + FAIL_OPEN_NANOS, and recovery closes it because the flag drops - a stored copy existed
+         * only to be disarmed in lockstep. */
+        boolean failOpenWindowActive(long now) {
+            // subtract rather than compare against a sum: these are nanoTime readings, so an added duration can
+            // overflow and invert the test
+            return degraded && now - lastFailureNanos < FAIL_OPEN_NANOS;
+        }
+
+        /** Whether the node has been cut off from the shared bucket for longer than the configured grace. Reading
+         * {@code degraded} first is what bounds the whole thing: a healthy node never consults the clock, and a
+         * recovered one stops consulting it the moment a draw lands. */
+        boolean graceExpired(long now, long graceNanos) {
+            return degraded && now - degradedSinceNanos >= graceNanos;
+        }
     }
 }
