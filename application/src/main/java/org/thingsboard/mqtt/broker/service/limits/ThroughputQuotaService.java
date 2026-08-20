@@ -59,8 +59,8 @@ public interface ThroughputQuotaService {
      * delivery on SUBSCRIBE. Never call it from the Netty ingress path: it would stall every socket on that event
      * loop.
      *
-     * @return the granted count in {@code [0..n]}; a remainder means the shared bucket is dry, so the caller
-     * settles it terminally
+     * @return the granted count in {@code [0..n]}; a remainder means the shared bucket is dry, or unreachable
+     * past the degraded grace, so the caller settles it terminally
      */
     int tryConsumeOutgoingBlocking(int n);
 }

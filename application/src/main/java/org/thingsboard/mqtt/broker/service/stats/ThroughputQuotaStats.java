@@ -16,9 +16,12 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 /**
- * Counts silent degradations of the total throughput quota as {@code throughputQuotaDegraded{cause=redis}}.
- * The quota fails OPEN on Redis errors - traffic passes unmetered and nothing lands in {@code droppedMsgs} -
- * so this counter is the only signal that enforcement has stopped.
+ * Counts failed draws against the shared Redis bucket as {@code throughputQuotaDegraded{cause=redis}}.
+ * Within {@code mqtt.rate-limits.total.degraded-grace-ms} the quota fails OPEN on Redis errors - traffic passes
+ * unmetered and nothing lands in {@code droppedMsgs} - so inside that window this counter is the only signal that
+ * enforcement has stopped. Past the grace the node refuses PUBLISH packets instead, and those refusals do land in
+ * {@code droppedMsgs}. Draws run only when traffic charges the quota, so the counter stays flat on an idle node:
+ * alert on Redis reachability and treat this counter as corroboration, not as the outage alarm.
  * <p>
  * Obtained from {@link StatsManager}, so it shares the {@code stats.enabled} switch.
  */
