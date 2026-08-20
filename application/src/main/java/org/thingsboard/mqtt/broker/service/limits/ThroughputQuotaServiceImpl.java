@@ -168,7 +168,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             scheduleDrawIfNeeded(blockSize);
             return granted;
         }
-        if (health.failOpenWindowActive(now)) {
+        if (health.failingOpen(now, degradedGraceNanos)) {
             return granted; // Redis degraded: tryConsume already failed open, nothing to draw
         }
         if (now - dryUntilNanos < 0) {
@@ -227,7 +227,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         // window and on credit. Deliberately NOT an early return - the draw further down is the only thing that ever
         // notices Redis coming back, so short-circuiting here would make the refusal permanent.
         boolean graceExpired = health.graceExpired(now, degradedGraceNanos);
-        if (!graceExpired && health.failOpenWindowActive(now)) {
+        if (health.failingOpen(now, degradedGraceNanos)) {
             return n; // Redis is degraded but within the grace: fail open, never queue, never stall
         }
         // Grant on bounded credit while a draw may still help; once a draw confirmed the bucket dry, refuse locally
@@ -277,7 +277,7 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
         RedisHealth health = redisHealth.get();
         // Past the grace the pool lends nothing, so whatever the charge just spent was real budget and a drained
         // pool genuinely owes a refill: the fail-open window must not suppress the top-up there.
-        if (!health.graceExpired(now, degradedGraceNanos) && health.failOpenWindowActive(now)) {
+        if (health.failingOpen(now, degradedGraceNanos)) {
             return; // failing open spends no real budget, so nothing is owed
         }
         if (localTokens.get() <= 0) {
@@ -447,10 +447,20 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             return healthy(now);
         }
 
+        /**
+         * Whether the quota is currently failing open: inside the short reprieve each failed draw arms, AND still
+         * inside the grace. The precedence lives here so no call site can consult the window alone - during an
+         * outage the probe cycle re-arms the window every few seconds, so window-without-grace is structurally the
+         * unbounded fail-open this deadline exists to end. That is why {@link #failOpenWindowActive} is private.
+         */
+        boolean failingOpen(long now, long graceNanos) {
+            return !graceExpired(now, graceNanos) && failOpenWindowActive(now);
+        }
+
         /** The short reprieve after each failed draw, derived instead of stored: while degraded it is always
          * lastFailure + FAIL_OPEN_NANOS, and recovery closes it because the flag drops - a stored copy existed
          * only to be disarmed in lockstep. */
-        boolean failOpenWindowActive(long now) {
+        private boolean failOpenWindowActive(long now) {
             // subtract rather than compare against a sum: these are nanoTime readings, so an added duration can
             // overflow and invert the test
             return degraded && now - lastFailureNanos < FAIL_OPEN_NANOS;

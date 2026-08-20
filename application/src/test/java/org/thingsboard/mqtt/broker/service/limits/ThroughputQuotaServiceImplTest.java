@@ -754,13 +754,24 @@ public class ThroughputQuotaServiceImplTest {
     }
 
     @Test
-    public void givenRecovered_whenTheWindowIsRead_thenItIsClosedImmediately() {
+    public void givenRecovered_whenCheckingFailingOpen_thenTheWindowIsDisarmedImmediately() {
         ThroughputQuotaServiceImpl.RedisHealth degraded =
                 ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
 
-        assertTrue("each failure arms the reprieve", degraded.failOpenWindowActive(101));
+        assertTrue("each failure arms the reprieve", degraded.failingOpen(101, Long.MAX_VALUE));
         assertFalse("recovery must disarm it, or the rest of the second passes unmetered",
-                degraded.answered(150, 200).failOpenWindowActive(201));
+                degraded.answered(150, 200).failingOpen(201, Long.MAX_VALUE));
+    }
+
+    // the precedence the combined predicate encodes: an armed window must NOT grant once the grace is over.
+    // Consulted alone, the window is re-armed by every probe failure and would fail open for the whole outage -
+    // which is why the record keeps it private.
+    @Test
+    public void givenGraceExpired_whenTheWindowIsStillArmed_thenFailingOpenIsOff() {
+        ThroughputQuotaServiceImpl.RedisHealth health = ThroughputQuotaServiceImpl.RedisHealth.healthy(0).failed(100);
+
+        assertTrue("inside both the grace and the window", health.failingOpen(150, 100));
+        assertFalse("grace expiry must trump the armed window", health.failingOpen(150, 50));
     }
 
     @Test
