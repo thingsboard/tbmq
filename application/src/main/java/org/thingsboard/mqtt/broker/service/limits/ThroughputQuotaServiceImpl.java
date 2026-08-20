@@ -291,11 +291,12 @@ public class ThroughputQuotaServiceImpl implements ThroughputQuotaService {
             // only at the call sites keeps a disabled service safe whatever reaches it.
             return;
         }
-        if (nanoTime.getAsLong() - dryUntilNanos < 0) {
+        long now = nanoTime.getAsLong();
+        if (now - dryUntilNanos < 0) {
             return; // bucket known dry: no Redis traffic during the backoff window
         }
         RedisHealth health = redisHealth.get();
-        if (health.degraded() && nanoTime.getAsLong() - health.lastFailureNanos() < degradedProbeIntervalNanos) {
+        if (health.degraded() && now - health.lastFailureNanos() < degradedProbeIntervalNanos) {
             return; // Redis is unreachable: one probe per interval, not one per refused packet
         }
         if (!drawInFlight.compareAndSet(false, true)) {
