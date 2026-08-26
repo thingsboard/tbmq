@@ -156,7 +156,7 @@
         "authorization-dynamic-hint": "Opcionalmente puedes extraer reglas de publicación y suscripción desde claims de JWT:<ul><li>Si están presentes, el broker usa los patrones de topic para autorizar.</li><li>Si faltan o son inválidos, se usarán las Reglas por defecto.</li><li>El valor debe ser un <b>array JSON de strings</b> con patrones de topic, p. ej., <code>[\"sensors/.*\", \"updates/.*\"]</code></li></ul>",
         "authorization-default": "Reglas de autorización por defecto",
         "client-type": "Tipo de cliente",
-        "client-type-hint": "Configura cómo el broker determina el <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>tipo de cliente</a> durante la autenticación basándose en claims de JWT:<ul><li>Por defecto, todos los clientes reciben el tipo seleccionado - <b>{{type}}</b>.</li><li>Si coinciden todas las condiciones, se asigna el tipo opuesto - <b>{{targetType}}</b>.</li></ul>Ejemplo: si el tipo por defecto es <b>{{type}}</b> y la condición <code>{your_claim} = {your_value}</code> está configurada, el cliente será <b>{{targetType}}</b> cuando <code>{your_claim}</code> exista y coincida con <code>{your_value}</code>.",
+        "client-type-hint": "Configura cómo el broker determina el <a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>tipo de cliente</a> durante la autenticación basándose en claims de JWT:<ul><li>Por defecto, todos los clientes reciben el tipo seleccionado - <b>{{type}}</b>.</li><li>Si coinciden todas las condiciones, se asigna el tipo opuesto - <b>{{targetType}}</b>.</li></ul>Ejemplo: si el tipo por defecto es <b>{{type}}</b> y la condición <code>{your_claim} = {your_value}</code> está configurada, el cliente será <b>{{targetType}}</b> cuando <code>{your_claim}</code> exista y coincida con <code>{your_value}</code>.",
         "claim": "Claim",
         "claims": "Claims de autenticación",
         "claims-hint": "Las condiciones basadas en claims permiten verificaciones adicionales:<ul><li>Tras validar firma y vigencia, el broker verifica que cada claim coincida con su valor esperado.</li><li>Usa <b>${username}</b> y <b>${clientId}</b> para coincidir dinámicamente.</li><li>Si algún claim no coincide, la autenticación falla.</li></ul>Ejemplos:<ul><li><code>sub = ${clientId}</code> — asegura que el subject del token coincida con el client ID.</li><li><code>env = prod</code> — permite el token solo si <code>env</code> es <code>prod</code>.</li></ul>",
@@ -777,7 +777,7 @@
         "user-name-required": "User Name es obligatorio.",
         "hint-client-type-application": "Usa tipo 'Application' para clientes que suelen suscribirse a topics con alta tasa de mensajes y requieren persistencia, p. ej., <b>aplicaciones IoT</b>.",
         "hint-client-type-device": "Usa tipo 'Device' para clientes que suelen publicar muchos mensajes y suscribirse a pocos topics, p. ej., <b>dispositivos IoT</b>.",
-        "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Leer más</a>.",
+        "hint-client-type-read-more": "<a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>Leer más</a>.",
         "hint-credentials-type-basic": "<b>'Basic'</b> es autenticación basada en combinaciones de <b>Client ID, Username y/o Password</b>:<ul><li><b>Client ID</b> - verifica que el cliente tenga ese clientId;</li><li><b>Username</b> - verifica que tenga ese username;</li><li><b>Client ID y username</b>;</li><li><b>Username y password</b>;</li><li><b>Client ID y password</b>;</li><li><b>Client ID, username y password</b>.</li></ul>",
         "hint-credentials-type-ssl": "<b>'X.509 Certificate Chain'</b> es autenticación bidireccional segura sobre TLS.",
         "hint-credentials-type-scram": "<b>'SCRAM'</b> es un método mejorado para clientes MQTT 5 que usa desafío-respuesta con credenciales hasheadas.",
@@ -921,7 +921,7 @@
         "name": "Nombre",
         "name-required": "Nombre es obligatorio.",
         "name-max-length": "El nombre debe tener menos de 256",
-        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> son entidades TBMQ para gestionar la función de suscripciones compartidas MQTT. Úsalas con clientes <b>Application</b>. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Leer más.</a>",
+        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> son entidades TBMQ para gestionar la función de suscripciones compartidas MQTT. Úsalas con clientes <b>Application</b>. <a href='https://tbmq.io/docs/user-guide/shared-subscriptions/' target='_blank'>Leer más.</a>",
         "hint-topic-filter": "El formato es '$share/ShareName/TopicFilter'. Si es '$share/group1/city/+/home/#', establece Topic Filter como 'city/+/home/#'",
         "hint-partitions": "Se recomienda igualar o multiplicar por X el número de particiones según clientes esperados.",
         "hint-shared-subscription-notes": "<li><i>Topic Filter</i> y <i>Partitions</i> no se pueden cambiar tras la creación.</li><li>Funciona con MQTT v5 y v3.x</li>",
@@ -948,7 +948,7 @@
         "delete-retained-messages-text": "Cuidado, tras confirmar se eliminarán los seleccionados y no se podrán recuperar los datos.",
         "clear-empty-retained-message-nodes": "Limpiar nodos vacíos de retained message",
         "clear-empty-retained-message-nodes-title": "¿Limpiar nodos vacíos?",
-        "clear-empty-retained-message-nodes-text": "Cuidado, tras confirmar se limpiarán todos los <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>nodos vacíos</a>.",
+        "clear-empty-retained-message-nodes-text": "Cuidado, tras confirmar se limpiarán todos los <a target='_blank' href='https://tbmq.io/docs/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>nodos vacíos</a>.",
         "details": "Detalles del retained message",
         "search": "Buscar por Topic",
         "selected-retained-messages": "{ count, plural, =1 {1 Retained message} other {# Retained messages} } seleccionados",
@@ -1171,19 +1171,19 @@
             },
             "step-2": {
                 "title": "Añadir Application Credentials",
-                "text": "Vamos a añadir Credentials para conectar el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client.\nEstas Credentials se utilizarán para suscribirse a los mensajes publicados por otros MQTT Clients.\n\nPara continuar, haga clic en el botón <b>Add Application Credentials</b> a continuación y confirme la acción haciendo clic en el botón <b>Add</b>.\n"
+                "text": "Vamos a añadir Credentials para conectar el <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client.\nEstas Credentials se utilizarán para suscribirse a los mensajes publicados por otros MQTT Clients.\n\nPara continuar, haga clic en el botón <b>Add Application Credentials</b> a continuación y confirme la acción haciendo clic en el botón <b>Add</b>.\n"
             },
             "step-3": {
                 "title": "Añadir Device Credentials",
-                "text": "Ahora vamos a añadir Credentials para conectar el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client.\nEsto permitirá publicar mensajes en <b>TBMQ</b>.\nPor favor, haga clic en el botón <b>Add Device Credentials</b>.\n"
+                "text": "Ahora vamos a añadir Credentials para conectar el <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client.\nEsto permitirá publicar mensajes en <b>TBMQ</b>.\nPor favor, haga clic en el botón <b>Add Device Credentials</b>.\n"
             },
             "step-4": {
                 "title": "Suscribirse al Topic",
-                "text": "Para suscribir el <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nal MQTT Topic `tbmq/demo/+`, utilizaremos el MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nPor favor, copie y pegue el siguiente código en una pestaña de la terminal:"
+                "text": "Para suscribir el <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nal MQTT Topic `tbmq/demo/+`, utilizaremos el MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nPor favor, copie y pegue el siguiente código en una pestaña de la terminal:"
             },
             "step-5": {
                 "title": "Publicar mensaje",
-                "text": "Para publicar un mensaje desde el <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nal Topic `tbmq/demo/topic`, abra una nueva pestaña en la terminal y pegue el siguiente comando:",
+                "text": "Para publicar un mensaje desde el <a target='_blank' rel='noopener noreferrer' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nal Topic `tbmq/demo/topic`, abra una nueva pestaña en la terminal y pegue el siguiente comando:",
                 "after-command": "Una vez ejecute este comando, debería ver el mensaje publicado en la pestaña de la terminal del Client suscrito."
             },
             "step-6": {
@@ -1342,7 +1342,7 @@
     "subscription": {
         "add-subscription": "Agregar suscripción",
         "clear-empty-subscription-nodes": "Limpiar nodos de suscripción vacíos",
-        "clear-empty-subscription-nodes-text": "Cuidado, se limpiarán todos los nodos de <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>suscripción</a> vacíos.",
+        "clear-empty-subscription-nodes-text": "Cuidado, se limpiarán todos los nodos de <a target='_blank' href='https://tbmq.io/docs/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>suscripción</a> vacíos.",
         "clear-empty-subscription-nodes-title": "¿Limpiar nodos de suscripción vacíos?",
         "color": "Color",
         "copy-topic": "Copiar topic filter",

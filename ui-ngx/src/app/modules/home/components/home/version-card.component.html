@@ -18,7 +18,7 @@
 <div class="tb-home-card-container tb-home-padding flex flex-col">
   <section class="title-container mb-1 flex flex-row items-center justify-between">
     <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-    <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
+    <a (click)="gotoDocs(contactUsLink)" translate>version.contact-us</a>
   </section>
   <section class="cards">
     @if (updatesAvailable) {
@@ -49,7 +49,7 @@
           <span>{{ latestReleaseVersion }}</span>
           <button [class.lt-md:!hidden]="true" mat-raised-button color="primary"
             [disabled]="!updatesAvailable"
-            (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
+            (click)="gotoDocs(upgradeInstructionsLink)"
             matTooltip="{{'version.upgrade-instructions' | translate}}">
             {{'version.upgrade' | translate}}
           </button>

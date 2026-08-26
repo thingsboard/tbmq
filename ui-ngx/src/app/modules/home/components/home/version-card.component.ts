@@ -16,6 +16,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { HomePageTitleType } from '@shared/models/home-page.model';
+import { HelpLinks } from '@shared/models/constants';
 import { ConfigService } from '@core/http/config.service';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { TranslateModule } from '@ngx-translate/core';
@@ -32,6 +33,8 @@ import { MatTooltip } from '@angular/material/tooltip';
 export class VersionCardComponent implements OnInit {
 
   cardType = HomePageTitleType.VERSION;
+  contactUsLink = HelpLinks.linksMap.contactUs;
+  upgradeInstructionsLink = HelpLinks.linksMap.upgradeInstructions;
   updatesAvailable: boolean;
   currentReleaseVersion: string;
   latestReleaseVersion: string;
@@ -50,8 +53,8 @@ export class VersionCardComponent implements OnInit {
       });
     }
 
-  gotoDocs(page: string){
-    window.open(`https://thingsboard.io/${page}`, '_blank');
+  gotoDocs(link: string){
+    window.open(link, '_blank');
   }
 
   gotoGithub(version: string){

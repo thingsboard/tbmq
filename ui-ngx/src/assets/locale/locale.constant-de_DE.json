@@ -156,7 +156,7 @@
         "authorization-dynamic-hint": "Sie können optional Autorisierungsregeln für Publish/Subscribe aus JWT-Claims extrahieren:<ul><li>Falls gesetzt, verwendet der Broker die in den Claims gefundenen Topic zur Steuerung der Client-Autorisierung.</li><li>Falls nicht vorhanden oder ungültig, werden die Standard-Autorisierungsregeln als Fallback verwendet.</li><li>Der Claim-Wert muss ein <b>JSON-Array von Strings</b> sein, das Topic darstellt, z. B. <code>[\"sensors/.*\", \"updates/.*\"]</code></li></ul>",
         "authorization-default": "Standard-Autorisierungsregeln",
         "client-type": "Client-Typ",
-        "client-type-hint": "Konfigurieren Sie, wie der Broker den <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Client-Typ</a> anhand von JWT-Claims bestimmt:<ul><li>Standardmäßig wird allen Clients der ausgewählte Typ zugewiesen – <b>{{type}}</b>.</li><li>Wenn alle konfigurierten Claim-Bedingungen zutreffen, wird dem Client der alternative Typ zugewiesen – <b>{{targetType}}</b>.</li></ul>Beispiel: Ist der Standardtyp <b>{{type}}</b> und die Bedingung <code>{your_claim} = {your_value}</code> gesetzt, wird der Client als <b>{{targetType}}</b> klassifiziert, wenn <code>{your_claim}</code> existiert und den Wert <code>{your_value}</code> hat.",
+        "client-type-hint": "Konfigurieren Sie, wie der Broker den <a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>Client-Typ</a> anhand von JWT-Claims bestimmt:<ul><li>Standardmäßig wird allen Clients der ausgewählte Typ zugewiesen – <b>{{type}}</b>.</li><li>Wenn alle konfigurierten Claim-Bedingungen zutreffen, wird dem Client der alternative Typ zugewiesen – <b>{{targetType}}</b>.</li></ul>Beispiel: Ist der Standardtyp <b>{{type}}</b> und die Bedingung <code>{your_claim} = {your_value}</code> gesetzt, wird der Client als <b>{{targetType}}</b> klassifiziert, wenn <code>{your_claim}</code> existiert und den Wert <code>{your_value}</code> hat.",
         "claim": "Claim",
         "claims": "Authentifizierungsansprüche",
         "claims-hint": "Claim-basierte Authentifizierungsbedingungen erlauben zusätzliche Sicherheitsprüfungen basierend auf JWT-Claims:<ul><li>Nach Signatur- und Ablaufprüfung prüft der Broker, ob jeder konfigurierte Claim mit dem erwarteten Wert übereinstimmt.</li><li>Platzhalter wie <b>${username}</b> oder <b>${clientId}</b> können verwendet werden, um zur Laufzeit Benutzername oder Client-ID zuzuordnen.</li><li>Stimmt ein Claim nicht, schlägt die Authentifizierung fehl.</li></ul>Beispiele: <ul><li><code>sub = ${clientId}</code> — prüft, ob das Token-Subject der Client-ID entspricht.</li><li><code>env = prod</code> — erlaubt nur Tokens mit <code>env</code>-Claim = <code>prod</code>.</li></ul>",
@@ -777,7 +777,7 @@
         "user-name-required": "Username ist erforderlich.",
         "hint-client-type-application": "Verwenden Sie den Typ 'Application' für Clients, die in der Regel Nachrichten mit hoher Frequenz empfangen und Persistenz benötigen (z. B. <b>IoT-Anwendungen</b>).",
         "hint-client-type-device": "Verwenden Sie den Typ 'Device' für Clients, die in der Regel viele Nachrichten veröffentlichen, aber nur wenige Topics mit geringer Frequenz abonnieren (z. B. <b>IoT-Geräte</b>).",
-        "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Mehr erfahren</a>.",
+        "hint-client-type-read-more": "<a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>Mehr erfahren</a>.",
         "hint-credentials-type-basic": "<b>'Basic'</b> ist ein einseitiges Authentifizierungsverfahren auf Basis verschiedener Kombinationen aus <b>Client ID, Username und/oder Password</b>:<ul><li><b>Client ID</b> – prüft, ob die Verbindung eine Client ID enthält</li><li><b>Username</b> – prüft, ob ein Username angegeben wurde</li><li><b>Client ID und Username</b> – prüft, ob beide angegeben sind</li><li><b>Username und Password</b> – prüft, ob beide angegeben sind</li><li><b>Client ID und Password</b> – prüft, ob beide angegeben sind</li><li><b>Client ID, Username und Password</b> – prüft, ob alle drei angegeben sind</li></ul>",
         "hint-credentials-type-ssl": "<b>'X.509 Certificate Chain'</b> ist ein sicheres, zweiseitiges Authentifizierungsverfahren über TLS mit einer Kette von öffentlichen Schlüsseln.",
         "hint-credentials-type-scram": "<b>'SCRAM'</b> (Salted Challenge Response Authentication Mechanism) ist ein erweitertes Authentifizierungsverfahren für MQTT 5, das eine sichere, passwortbasierte Authentifizierung bietet.",
@@ -921,7 +921,7 @@
         "name": "Name",
         "name-required": "Name ist erforderlich.",
         "name-max-length": "Name darf höchstens 256 Zeichen lang sein",
-        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> sind TBMQ-Entities zur effektiven Verwaltung der Funktion <b>Shared Subscriptions</b> im MQTT. Bereitstellen, wenn Sie <b>Shared Subscriptions mit Application Clients</b> nutzen möchten. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Mehr erfahren.</a>",
+        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> sind TBMQ-Entities zur effektiven Verwaltung der Funktion <b>Shared Subscriptions</b> im MQTT. Bereitstellen, wenn Sie <b>Shared Subscriptions mit Application Clients</b> nutzen möchten. <a href='https://tbmq.io/docs/user-guide/shared-subscriptions/' target='_blank'>Mehr erfahren.</a>",
         "hint-topic-filter": "Das Format für einen Shared Subscription Topic Filter ist <code>$share/ShareName/TopicFilter</code>. Ist der Filter e.g. <code>$share/group1/city/+/home/#</code>, setzen Sie Topic Filter auf <code>city/+/home/#</code>.",
         "hint-partitions": "Es wird empfohlen, die Anzahl der Partitions gleich oder ein Vielfaches der erwarteten Anzahl an Clients der Shared Subscription zu wählen. Beispiel: Für 5 Clients – 5, 10 oder 15 Partitions – für eine gleichmäßige Lastverteilung.",
         "hint-shared-subscription-notes": "<li><i>Topic Filter</i> und <i>Partitions</i> können nach der Erstellung nicht geändert werden.</li><li>Application Shared Subscriptions funktionieren mit MQTT v5 und v3.x</li>",
@@ -948,7 +948,7 @@
         "delete-retained-messages-text": "Achtung: Nach der Bestätigung werden alle ausgewählten Retained Messages gelöscht und alle zugehörigen Daten unwiederbringlich entfernt.",
         "clear-empty-retained-message-nodes": "Leere Retained Message-Knoten löschen",
         "clear-empty-retained-message-nodes-title": "Leere Retained Message-Knoten löschen?",
-        "clear-empty-retained-message-nodes-text": "Achtung: Nach der Bestätigung werden alle leeren <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>Retained Message-Knoten</a> gelöscht.",
+        "clear-empty-retained-message-nodes-text": "Achtung: Nach der Bestätigung werden alle leeren <a target='_blank' href='https://tbmq.io/docs/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>Retained Message-Knoten</a> gelöscht.",
         "details": "Details zur Retained Message",
         "search": "Nach Topic suchen",
         "selected-retained-messages": "{ count, plural, =1 {1 Retained Message} other {# Retained Messages} } ausgewählt",
@@ -1171,19 +1171,19 @@
             },
             "step-2": {
                 "title": "Application Credentials hinzufügen",
-                "text": "Lassen Sie uns Credentials hinzufügen, um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client zu verbinden.\nDiese Credentials werden verwendet, um Nachrichten zu abonnieren, die von anderen MQTT Clients veröffentlicht werden.\n\nUm fortzufahren, klicken Sie bitte unten auf die Schaltfläche <b>Add Application Credentials</b> und bestätigen Sie die Aktion durch Klicken auf <b>Add</b>.\n"
+                "text": "Lassen Sie uns Credentials hinzufügen, um den <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client zu verbinden.\nDiese Credentials werden verwendet, um Nachrichten zu abonnieren, die von anderen MQTT Clients veröffentlicht werden.\n\nUm fortzufahren, klicken Sie bitte unten auf die Schaltfläche <b>Add Application Credentials</b> und bestätigen Sie die Aktion durch Klicken auf <b>Add</b>.\n"
             },
             "step-3": {
                 "title": "Device Credentials hinzufügen",
-                "text": "Lassen Sie uns nun Credentials hinzufügen, um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client zu verbinden.\nDies ermöglicht das Veröffentlichen von Nachrichten an <b>TBMQ</b>.\nBitte klicken Sie auf die Schaltfläche <b>Add Device Credentials</b>.\n"
+                "text": "Lassen Sie uns nun Credentials hinzufügen, um den <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client zu verbinden.\nDies ermöglicht das Veröffentlichen von Nachrichten an <b>TBMQ</b>.\nBitte klicken Sie auf die Schaltfläche <b>Add Device Credentials</b>.\n"
             },
             "step-4": {
                 "title": "Topic abonnieren",
-                "text": "Um den <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nfür das MQTT Topic `tbmq/demo/+` zu abonnieren, verwenden wir den MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nBitte kopieren Sie den folgenden Code und fügen Sie ihn in einen Terminal-Tab ein:"
+                "text": "Um den <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client\nfür das MQTT Topic `tbmq/demo/+` zu abonnieren, verwenden wir den MQTT Client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a>.\nBitte kopieren Sie den folgenden Code und fügen Sie ihn in einen Terminal-Tab ein:"
             },
             "step-5": {
                 "title": "Nachricht veröffentlichen",
-                "text": "Um eine Nachricht vom <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nan das Topic `tbmq/demo/topic` zu veröffentlichen, öffnen Sie einen neuen Tab im Terminal und fügen Sie den folgenden Befehl ein:",
+                "text": "Um eine Nachricht vom <a target='_blank' rel='noopener noreferrer' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client\nan das Topic `tbmq/demo/topic` zu veröffentlichen, öffnen Sie einen neuen Tab im Terminal und fügen Sie den folgenden Befehl ein:",
                 "after-command": "Sobald Sie diesen Befehl ausführen, sollten Sie die veröffentlichte Nachricht im Terminal-Tab des abonnierten Clients sehen."
             },
             "step-6": {
@@ -1342,7 +1342,7 @@
     "subscription": {
         "add-subscription": "Subscription hinzufügen",
         "clear-empty-subscription-nodes": "Leere Subscription-Knoten löschen",
-        "clear-empty-subscription-nodes-text": "Achtung: Nach der Bestätigung werden alle leeren <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>Subscription</a>-Knoten gelöscht.",
+        "clear-empty-subscription-nodes-text": "Achtung: Nach der Bestätigung werden alle leeren <a target='_blank' href='https://tbmq.io/docs/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>Subscription</a>-Knoten gelöscht.",
         "clear-empty-subscription-nodes-title": "Leere Subscription-Knoten löschen?",
         "color": "Farbe",
         "copy-topic": "Topic-Filter kopieren",
