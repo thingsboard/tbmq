@@ -5,14 +5,14 @@
 ![banner](https://github.com/user-attachments/assets/35a09f17-76fc-47fc-8add-7ab46d7f6d90)
 
 <div align="center">
- 
+
 # Scalable, fault-tolerant, and durable messaging for millions of MQTT clients.
 
 </div>
 <br>
 <div align="center">
- 
-🖥️ [Live Demo](https://demo.tbmq.io/signup)&ensp;•&ensp;💡 [Get started](https://thingsboard.io/docs/mqtt-broker/getting-started/)&ensp;•&ensp;🌐 [Website](https://thingsboard.io/products/mqtt-broker/)&ensp;•&ensp;📚 [Documentation](https://thingsboard.io/docs/mqtt-broker/)&ensp;•&ensp;🔗 [Slack](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ)
+
+🖥️ [Live Demo](https://demo.tbmq.io/signup)&ensp;•&ensp;💡 [Get started](https://tbmq.io/docs/getting-started/)&ensp;•&ensp;🌐 [Website](https://tbmq.io/)&ensp;•&ensp;📚 [Documentation](https://tbmq.io/docs/)&ensp;•&ensp;🔗 [Slack](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ)
 
 </div>
 
@@ -35,18 +35,18 @@ Validate your IoT fleet against our high-performance **public MQTT broker**. Vis
 | **Username**     | `demo`          |
 | **Password**     | *(leave empty)* |
 
-> **ℹ️ Sandbox Limitations:** The **[Live Dashboard](https://demo.tbmq.io/)** provides **read-only access** to TBMQ PE features. 
+> **ℹ️ Sandbox Limitations:** The **[Live Dashboard](https://demo.tbmq.io/)** provides **read-only access** to TBMQ PE features.
 > While you can monitor active sessions and throughput in real-time, configuration is locked.
-> To deploy a fully configurable cluster with administrative rights, **[Install TBMQ PE](https://thingsboard.io/docs/pe/mqtt-broker/install/installation-options/)**.
+> To deploy a fully configurable cluster with administrative rights, **[Install TBMQ PE](https://tbmq.io/docs/pe/installation/)**.
 
 ## 🚀 Installation options
 TBMQ offers flexible installation options tailored for both development and large-scale production environments:
 
-* [**Docker**](https://thingsboard.io/docs/mqtt-broker/install/cluster/docker-compose-setup/) for quick local or on-premise setups.
-* **Kubernetes (K8s)** deployments on [AWS](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/), [Azure](https://thingsboard.io/docs/mqtt-broker/install/cluster/azure-cluster-setup/) or [GCP](https://thingsboard.io/docs/mqtt-broker/install/cluster/gcp-cluster-setup/).
-* [**Helm Charts**](https://thingsboard.io/docs/mqtt-broker/install/cluster/helm-cluster-setup-options/) for streamlined Kubernetes installation.
+* [**Docker**](https://tbmq.io/docs/installation/cluster/docker-compose-setup/) for quick local or on-premise setups.
+* **Kubernetes (K8s)** deployments on [AWS](https://tbmq.io/docs/installation/cluster/aws-cluster-setup/), [Azure](https://tbmq.io/docs/installation/cluster/azure-cluster-setup/) or [GCP](https://tbmq.io/docs/installation/cluster/gcp-cluster-setup/).
+* [**Helm Charts**](https://tbmq.io/docs/installation/?installationType=helm) for streamlined Kubernetes installation.
 
-➡️ **[View all installation options and guides ➜](https://thingsboard.io/docs/mqtt-broker/install/installation-options/)**
+➡️ **[View all installation options and guides ➜](https://tbmq.io/docs/installation/)**
 
 <br>
 
@@ -81,11 +81,11 @@ Password:
 sysadmin
 ```
 
-Consult the full [guide](https://thingsboard.io/docs/mqtt-broker/install/docker/) for comprehensive instructions, troubleshooting guidance, and advanced configuration details.
+Consult the full [guide](https://tbmq.io/docs/installation/docker/) for comprehensive instructions, troubleshooting guidance, and advanced configuration details.
 
 ## 💡 Getting started with TBMQ
 
-Check out our [Getting Started guide](https://thingsboard.io/docs/mqtt-broker/getting-started/) to learn the basics of TBMQ. In minutes, you will learn to:
+Check out our [Getting Started guide](https://tbmq.io/docs/getting-started/) to learn the basics of TBMQ. In minutes, you will learn to:
 
 * **Connect** MQTT clients to TBMQ.
 * **Configure** authentication and authorization.
@@ -138,7 +138,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/reference/100m-connections-performance-test">Read more ➜</a>
+        <a href="https://tbmq.io/docs/reference/100m-connections-performance-test/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -153,7 +153,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/reference/3m-throughput-single-node-performance-test">Read more ➜</a>
+        <a href="https://tbmq.io/docs/reference/3m-throughput-single-node-performance-test/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -170,7 +170,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/architecture/">Read more ➜</a>
+        <a href="https://tbmq.io/docs/architecture/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -185,7 +185,7 @@ Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionall
       </div>
       <br>
       <div align="center">
-        <a href="https://thingsboard.io/docs/mqtt-broker/architecture/">Read more ➜</a>
+        <a href="https://tbmq.io/docs/architecture/">Read more ➜</a>
       </div>
       <br>
     </td>
@@ -200,7 +200,7 @@ Gain full visibility over your IoT ecosystem with the user-friendly session mana
 
 <div align="center">
 
-[**Read more about client sessions ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/sessions/)
+[**Read more about client sessions ➜**](https://tbmq.io/docs/user-guide/ui/sessions/)
 
 </div>
 
@@ -212,21 +212,21 @@ Efficiently manage subscriptions with a powerful and intuitive interface, ensuri
 
 <div align="center">
 
-[**Read more about client subscriptions ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/)
+[**Read more about client subscriptions ➜**](https://tbmq.io/docs/user-guide/ui/subscriptions/)
 
 </div>
 
 ## 🔒 MQTT clients security & management
 
-Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authenticaion methods as [**Basic**](https://thingsboard.io/docs/mqtt-broker/security/authentication/basic/), [**JWT**](https://thingsboard.io/docs/mqtt-broker/security/authentication/jwt/), [**X.509 Certificate Chain**](https://thingsboard.io/docs/mqtt-broker/security/authentication/x509/) and [**SCRAM**](https://thingsboard.io/docs/mqtt-broker/security/authentication/scram/). 
+Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authenticaion methods as [**Basic**](https://tbmq.io/docs/security/authentication/basic/), [**JWT**](https://tbmq.io/docs/security/authentication/jwt/), [**X.509 Certificate Chain**](https://tbmq.io/docs/security/authentication/x509/) and [**SCRAM**](https://tbmq.io/docs/security/authentication/scram/).
 
-Manage fine-grained access with per-client ACL rules, and easily monitor or control connectivity using built-in tools for handling [**Blocked clients**](https://thingsboard.io/docs/mqtt-broker/other/blocked-client/) and [**Unauthorized clients**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/unauthorized-clients/).
+Manage fine-grained access with per-client ACL rules, and easily monitor or control connectivity using built-in tools for handling [**Blocked clients**](https://tbmq.io/docs/other/blocked-client/) and [**Unauthorized clients**](https://tbmq.io/docs/user-guide/ui/unauthorized-clients/).
 
 ![Client Credentials](https://img.thingsboard.io/mqtt-broker/product/credentials-management.webp)
 
 <div align="center">
 
-[**Read more about client credentials ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/)
+[**Read more about client credentials ➜**](https://tbmq.io/docs/user-guide/ui/mqtt-client-credentials/)
 
 </div>
 
@@ -238,7 +238,7 @@ Keep a pulse on your IoT environment by tracking key metrics in real-time, ensur
 
 <div align="center">
 
-[**Read more about monitoring tools ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring/)
+[**Read more about monitoring tools ➜**](https://tbmq.io/docs/user-guide/ui/monitoring/)
 
 </div>
 
@@ -250,7 +250,7 @@ Enable smooth data transmission between IoT devices, the broker, and external pl
 
 <div align="center">
 
-[**Read more about integrations ➜**](https://thingsboard.io/docs/mqtt-broker/integrations/)
+[**Read more about integrations ➜**](https://tbmq.io/docs/integrations/)
 
 </div>
 
@@ -262,7 +262,7 @@ Interact with your IoT devices in real-time through the WebSocket client, offeri
 
 <div align="center">
 
-[**Read more about WebSocket Client ➜**](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client)
+[**Read more about WebSocket Client ➜**](https://tbmq.io/docs/user-guide/ui/websocket-client/)
 
 </div>
 
@@ -273,7 +273,7 @@ Interact with your IoT devices in real-time through the WebSocket client, offeri
 If you find TBMQ helpful, consider giving the project a ⭐ on GitHub — it helps us grow and reach more users!
 
 For assistance, please visit our **[GitHub issues page](https://github.com/thingsboard/tbmq/issues)** and check
-the [TBMQ FAQ](https://thingsboard.io/docs/mqtt-broker/faq/).
+the [TBMQ support options](https://tbmq.io/docs/help/).
 
 ---
 
