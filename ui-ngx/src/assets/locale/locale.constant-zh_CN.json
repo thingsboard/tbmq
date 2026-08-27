@@ -156,7 +156,7 @@
         "authorization-dynamic-hint": "可从 JWT claims 中提取发布/订阅规则：<ul><li>若存在，使用其中的 topic 模式进行授权。</li><li>若缺失或无效，则回退到默认规则。</li><li>值必须是<b>字符串数组</b>，如 <code>[\"sensors/.*\", \"updates/.*\"]</code></li></ul>",
         "authorization-default": "默认授权规则",
         "client-type": "客户端类型",
-        "client-type-hint": "根据 JWT claims 确定<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>客户端类型</a>：<ul><li>默认将所有客户端设为 <b>{{type}}</b>。</li><li>若匹配所有条件，则指定为相反类型 <b>{{targetType}}</b>。</li></ul>示例：默认 <b>{{type}}</b>，配置 <code>{your_claim} = {your_value}</code>，当 claim 存在且匹配时归类为 <b>{{targetType}}</b>。",
+        "client-type-hint": "根据 JWT claims 确定<a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>客户端类型</a>：<ul><li>默认将所有客户端设为 <b>{{type}}</b>。</li><li>若匹配所有条件，则指定为相反类型 <b>{{targetType}}</b>。</li></ul>示例：默认 <b>{{type}}</b>，配置 <code>{your_claim} = {your_value}</code>，当 claim 存在且匹配时归类为 <b>{{targetType}}</b>。",
         "claim": "Claim",
         "claims": "认证 claims",
         "claims-hint": "基于 claims 的条件允许额外安全检查：<ul><li>签名和有效期校验后，校验每个 claim 是否匹配预期值。</li><li>可使用 <b>${username}</b> 与 <b>${clientId}</b> 占位符。</li><li>任一 claim 不匹配则认证失败。</li></ul>示例：<ul><li><code>sub = ${clientId}</code> 确保 token subject 等于 client ID。</li><li><code>env = prod</code> 仅当 env 为 prod 时允许。</li></ul>",
@@ -713,7 +713,7 @@
         "user-name-required": "User Name 必填。",
         "hint-client-type-application": "对高消息速率并需离线持久化的订阅客户端使用 'Application' 类型，如<b>IoT 应用</b>。",
         "hint-client-type-device": "对发布量大、订阅少的客户端使用 'Device' 类型，如<b>IoT 设备</b>。",
-        "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>了解更多</a>。",
+        "hint-client-type-read-more": "<a href='https://tbmq.io/docs/user-guide/mqtt-client-type/' target='_blank'>了解更多</a>。",
         "hint-credentials-type-basic": "<b>'Basic'</b> 基于 <b>Client ID、Username 和/或 Password</b> 的单向认证：详见组合列表。",
         "hint-credentials-type-ssl": "<b>'X.509 Certificate Chain'</b> 基于 TLS 的双向安全认证。",
         "hint-credentials-type-scram": "<b>'SCRAM'</b> 适用于 MQTT 5 的增强型基于密码的挑战-响应认证。",
@@ -857,7 +857,7 @@
         "name": "名称",
         "name-required": "名称必填。",
         "name-max-length": "名称长度应小于 256",
-        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> 用于高效管理 MQTT 共享订阅功能。计划在 <b>Application 客户端</b>上使用共享订阅时请配置。<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>了解更多</a>。",
+        "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> 用于高效管理 MQTT 共享订阅功能。计划在 <b>Application 客户端</b>上使用共享订阅时请配置。<a href='https://tbmq.io/docs/user-guide/shared-subscriptions/' target='_blank'>了解更多</a>。",
         "hint-topic-filter": "共享订阅 topic filter 格式：'$share/ShareName/TopicFilter'。若为 '$share/group1/city/+/home/#'，则设置为 'city/+/home/#'",
         "hint-partitions": "建议分区数等于或为预期客户端数量的倍数，以保证负载均衡。",
         "hint-shared-subscription-notes": "<li><i>Topic Filter</i> 与 <i>Partitions</i> 创建后不可变更。</li><li>支持 MQTT v5 与 v3.x</li>",
@@ -884,7 +884,7 @@
         "delete-retained-messages-text": "注意，确认后将删除所选且数据不可恢复。",
         "clear-empty-retained-message-nodes": "清理空的 retained message 节点",
         "clear-empty-retained-message-nodes-title": "清理空节点？",
-        "clear-empty-retained-message-nodes-text": "注意，确认后将清理所有空的<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message 节点</a>。",
+        "clear-empty-retained-message-nodes-text": "注意，确认后将清理所有空的<a target='_blank' href='https://tbmq.io/docs/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message 节点</a>。",
         "details": "Retained Message 详情",
         "search": "按 Topic 搜索",
         "selected-retained-messages": "已选择 { count, plural, =1 {1 条 Retained message} other {# 条 Retained messages} }",
@@ -1108,19 +1108,19 @@
             },
             "step-2": {
                 "title": "添加 Application Credentials",
-                "text": "让我们添加 Credentials 以连接 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client。\n这些 Credentials 将用于订阅从其他 MQTT Clients 发布的消息。\n\n要继续，请点击下方的 <b>Add Application Credentials</b> 按钮，并通过点击 <b>Add</b> 按钮确认操作。\n"
+                "text": "让我们添加 Credentials 以连接 <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client。\n这些 Credentials 将用于订阅从其他 MQTT Clients 发布的消息。\n\n要继续，请点击下方的 <b>Add Application Credentials</b> 按钮，并通过点击 <b>Add</b> 按钮确认操作。\n"
             },
             "step-3": {
                 "title": "添加 Device Credentials",
-                "text": "现在让我们添加 Credentials 以连接 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client。\n这将允许向 <b>TBMQ</b> 发布消息。\n请点击 <b>Add Device Credentials</b> 按钮。\n"
+                "text": "现在让我们添加 Credentials 以连接 <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client。\n这将允许向 <b>TBMQ</b> 发布消息。\n请点击 <b>Add Device Credentials</b> 按钮。\n"
             },
             "step-4": {
                 "title": "订阅 Topic",
-                "text": "要将 <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a> Client\n订阅到 MQTT Topic `tbmq/demo/+`，我们将使用 <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a> MQTT Client。\n请复制并将以下代码粘贴到终端选项卡中："
+                "text": "要将 <a target='_blank' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#application-client'>Application</a> Client\n订阅到 MQTT Topic `tbmq/demo/+`，我们将使用 <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target=\"_blank\">mosquitto_sub</a> MQTT Client。\n请复制并将以下代码粘贴到终端选项卡中："
             },
             "step-5": {
                 "title": "发布消息",
-                "text": "要从 <a target='_blank' rel='noopener noreferrer' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a> Client\n向 Topic `tbmq/demo/topic` 发布消息，请在终端中打开一个新选项卡并粘贴以下命令：",
+                "text": "要从 <a target='_blank' rel='noopener noreferrer' href='https://tbmq.io/docs/user-guide/mqtt-client-type/#device-client'>Device</a> Client\n向 Topic `tbmq/demo/topic` 发布消息，请在终端中打开一个新选项卡并粘贴以下命令：",
                 "after-command": "运行此命令后，您应该会在已订阅 Client 的终端选项卡中看到发布的消息。"
             },
             "step-6": {
@@ -1279,7 +1279,7 @@
     "subscription": {
         "add-subscription": "新增订阅",
         "clear-empty-subscription-nodes": "清理空的订阅节点",
-        "clear-empty-subscription-nodes-text": "注意，确认后将清理所有空的<a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>订阅</a>节点。",
+        "clear-empty-subscription-nodes-text": "注意，确认后将清理所有空的<a target='_blank' href='https://tbmq.io/docs/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>订阅</a>节点。",
         "clear-empty-subscription-nodes-title": "清理空的订阅节点？",
         "color": "颜色",
         "copy-topic": "复制 topic filter",

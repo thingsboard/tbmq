@@ -20,7 +20,7 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Constants } from '@shared/models/constants';
+import { Constants, helpBaseUrl } from '@shared/models/constants';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@core/http/auth.service';
 import { MatCard, MatCardContent } from '@angular/material/card';
@@ -45,6 +45,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class LoginComponent extends PageComponent {
 
+  siteBaseUrl = helpBaseUrl;
   passwordViolation = false;
 
   loginFormGroup = this.fb.group({
