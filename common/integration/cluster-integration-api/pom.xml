@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
 
     <name>TBMQP Server Cluster Integration API</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

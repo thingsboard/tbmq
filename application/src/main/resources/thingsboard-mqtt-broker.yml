@@ -1309,7 +1309,7 @@ swagger:
     # Contact name on the API doc UI page.
     name: "${SWAGGER_CONTACT_NAME:TBMQ team}"
     # Contact URL on the API doc UI page.
-    url: "${SWAGGER_CONTACT_URL:https://thingsboard.io/products/mqtt-broker/}"
+    url: "${SWAGGER_CONTACT_URL:https://tbmq.io/}"
     # Contact email on the API doc UI page.
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:

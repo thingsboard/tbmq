@@ -27,7 +27,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ Server Integration Modules</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
 
     <properties>
         <main.dir>${basedir}/..</main.dir>

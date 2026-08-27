@@ -28,7 +28,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ Integration Commons</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

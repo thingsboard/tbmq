@@ -30,7 +30,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ Integration Executor Microservice</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
     <description>TBMQ Integration Executor Microservice</description>
 
     <properties>

@@ -24,7 +24,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
     <inceptionYear>2016</inceptionYear>
 
     <properties>
