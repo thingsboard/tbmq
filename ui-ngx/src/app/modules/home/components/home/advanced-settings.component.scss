@@ -63,6 +63,7 @@
     grid-template-columns: 1fr 1fr;
     align-items: center;
     min-height: 32px;
+    flex-shrink: 0;
 
     &:last-child {
       border-bottom: none;
@@ -97,6 +98,11 @@
     height: 32px;
     padding: 4px;
     color: rgba(0, 0, 0, 0.54);
+
+    ::ng-deep .mat-mdc-button-touch-target {
+      width: 32px;
+      height: 32px;
+    }
   }
 
   .auth-status {
