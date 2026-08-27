@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, OnInit, viewChild } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Timewindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
@@ -31,7 +31,7 @@ import { ConfigService } from '@core/http/config.service';
   styleUrls: ['./charts.component.scss'],
   imports: [CardTitleButtonComponent, FormsModule, TranslateModule, ChartComponent]
 })
-export class ChartsComponent implements OnInit {
+export class ChartsComponent implements OnInit, OnDestroy {
 
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
   readonly chartsGrid = viewChild<ElementRef>('chartsGrid');
@@ -52,15 +52,22 @@ export class ChartsComponent implements OnInit {
   chartHeight: number;
   timewindow: Timewindow;
 
+  private resizeObserver: ResizeObserver;
+
   constructor(
     private timeService: TimeService,
     private configService: ConfigService,
+    private zone: NgZone,
   ) {
   }
 
   ngOnInit() {
     this.setTimewindow();
     this.onResize();
+  }
+
+  ngOnDestroy() {
+    this.resizeObserver?.disconnect();
   }
 
   private setTimewindow() {
@@ -70,23 +77,25 @@ export class ChartsComponent implements OnInit {
 
   private onResize() {
     const tallLayout = window.matchMedia('screen and (min-width: 1280px)');
-    const resizeObserver = new ResizeObserver(() => {
-      const containerEl = this.homeChartsContainer().nativeElement as HTMLElement;
-      const gridEl = this.chartsGrid().nativeElement as HTMLElement;
-      const w = containerEl.getBoundingClientRect().width;
-      const br = 1700;
-      const correlation = w > br ? ((w - br) / 10000) + 1.4 : 1;
-      const widthBased = Math.round((w / 10) * correlation);
-      if (!tallLayout.matches) {
-        this.chartHeight = widthBased;
-        return;
-      }
-      const chartOverhead = 32;
-      const firstItem = gridEl.firstElementChild as HTMLElement | null;
-      const itemHeight = firstItem?.getBoundingClientRect().height ?? 0;
-      const heightBased = Math.floor(itemHeight) - chartOverhead;
-      this.chartHeight = heightBased > 0 ? heightBased : widthBased;
+    this.resizeObserver = new ResizeObserver(() => {
+      this.zone.run(() => {
+        const containerEl = this.homeChartsContainer().nativeElement as HTMLElement;
+        const gridEl = this.chartsGrid().nativeElement as HTMLElement;
+        const w = containerEl.getBoundingClientRect().width;
+        const br = 1700;
+        const correlation = w > br ? ((w - br) / 10000) + 1.4 : 1;
+        const widthBased = Math.round((w / 10) * correlation);
+        if (!tallLayout.matches) {
+          this.chartHeight = widthBased;
+          return;
+        }
+        const chartOverhead = 32;
+        const firstItem = gridEl.firstElementChild as HTMLElement | null;
+        const itemHeight = firstItem?.getBoundingClientRect().height ?? 0;
+        const heightBased = Math.floor(itemHeight) - chartOverhead;
+        this.chartHeight = heightBased > 0 ? heightBased : widthBased;
+      });
     });
-    resizeObserver.observe(this.homeChartsContainer().nativeElement);
+    this.resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
 }
