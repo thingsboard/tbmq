@@ -50,8 +50,8 @@ function compose_version() {
 set -u
 
 # Define TBMQ versions
-old_version="2.2.0"
-new_version="2.3.0"
+old_version="2.3.0"
+new_version="2.4.0"
 
 # Define TBMQ images
 old_image="image: \"thingsboard/tbmq:$old_version\""
