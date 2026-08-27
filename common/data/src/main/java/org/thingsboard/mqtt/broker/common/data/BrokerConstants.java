@@ -37,15 +37,17 @@ public class BrokerConstants {
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
     public static final String RETAINED_MSGS = "retainedMsgs";
-    //TODO: delete completely PROCESSED_BYTES (with upgrade script to remove data from psql)
+    // Dead key: never incremented, only ever persisted/queried as 0. Removed from the historical
+    // key lists below so no new empty rows are written or queried.
+    // TODO: drop this constant once an upgrade script purges the existing processedBytes rows from psql.
     public static final String PROCESSED_BYTES = "processedBytes";
     public static final String INBOUND_PAYLOAD_BYTES = "inboundPayloadTraffic";
     public static final String OUTBOUND_PAYLOAD_BYTES = "outboundPayloadTraffic";
 
-    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, PROCESSED_BYTES, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
+    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
     public static final int MSG_RELATED_HISTORICAL_KEYS_COUNT = MSG_RELATED_HISTORICAL_KEYS.size();
 
-    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, RETAINED_MSGS, PROCESSED_BYTES, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
+    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, RETAINED_MSGS, INBOUND_PAYLOAD_BYTES, OUTBOUND_PAYLOAD_BYTES);
 
     public static final String RECEIVED_PUBLISH_MSGS = "receivedPubMsgs";
     public static final String QOS_0_RECEIVED_PUBLISH_MSGS = "qos0ReceivedPubMsgs";

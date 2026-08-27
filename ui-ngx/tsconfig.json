@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
     "module": "es2020",
@@ -57,10 +57,6 @@
         "node_modules/jstree/dist/jstree.min.js"
       ]
     },
-    "lib": [
-      "es2020",
-      "dom"
-    ],
     "useDefineForClassFields": false
   },
   "angularCompilerOptions": {

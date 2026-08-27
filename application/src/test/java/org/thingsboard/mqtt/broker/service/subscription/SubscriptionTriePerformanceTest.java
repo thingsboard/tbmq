@@ -75,8 +75,8 @@ public class SubscriptionTriePerformanceTest {
     @Before
     public void before() {
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
-        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(new AtomicLong());
+        Mockito.when(statsManagerMock.createSubscriptionSizeGauge()).thenReturn(new AtomicInteger());
+        Mockito.when(statsManagerMock.createSubscriptionTrieNodesGauge()).thenReturn(new AtomicLong());
         this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 

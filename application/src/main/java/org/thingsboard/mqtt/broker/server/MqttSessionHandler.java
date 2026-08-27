@@ -45,7 +45,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -56,9 +55,10 @@ import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -72,7 +72,6 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CLIENT_INCOMING_MESSAGES_RATE_LIMITS_DETECTED;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_RATE_LIMITS_DETECTED;
 
 @Slf4j
@@ -85,8 +84,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final RateLimitBatchProcessor rateLimitBatchProcessor;
+    private final ThroughputQuotaService throughputQuotaService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ConnectionStats connectionStats;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -99,8 +99,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.clientLogger = mqttHandlerCtx.getClientLogger();
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
-        this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
+        this.throughputQuotaService = mqttHandlerCtx.getThroughputQuotaService();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
+        this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -110,10 +111,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             address = getAddress(ctx);
             clientSessionCtx.setAddress(address);
         }
+        if (clientSessionCtx.getChannel() == null) {
+            // The ChannelHandlerContext is stable for the connection; capture it once rather than on every message.
+            clientSessionCtx.setChannel(ctx);
+        }
         if (log.isTraceEnabled()) {
             log.trace("[{}][{}][{}] Processing msg: {}", address, clientId, sessionId, msg);
         }
-        clientSessionCtx.setChannel(ctx);
         try {
             if (!(msg instanceof MqttMessage message)) {
                 log.warn("[{}][{}] Received unknown message", clientId, sessionId);
@@ -221,14 +225,14 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
         var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
-        clientSessionCtx.getChannel().close();
+        clientSessionCtx.closeChannel();
     }
 
     private void processPublish(MqttMessage msg) {
         MqttPublishMessage publishMsg = (MqttPublishMessage) msg;
 
         if (!checkClientLimits(publishMsg)) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             processMsgOnRateLimits(
                     publishMsg.variableHeader().packetId(),
                     publishMsg.fixedHeader().qosLevel().value(),
@@ -237,26 +241,17 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             return;
         }
 
-        MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, publishMsg);
-
-        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
-            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
+        if (!throughputQuotaService.tryConsumeIncoming()) {
+            tbMessageStatsReportClient.reportDroppedMsgs();
+            processMsgOnRateLimits(
+                    publishMsg.variableHeader().packetId(),
+                    publishMsg.fixedHeader().qosLevel().value(),
+                    TOTAL_RATE_LIMITS_DETECTED
+            );
             return;
         }
 
-        rateLimitBatchProcessor.addMessage(
-                mqttPublishMsg,
-                msgToProcess -> clientMqttActorManager.processMqttMsg(clientId, msgToProcess),
-                msgToDrop -> {
-                    tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
-                    processMsgOnRateLimits(
-                            msgToDrop.getPublishMsg().getPacketId(),
-                            msgToDrop.getPublishMsg().getQos(),
-                            TOTAL_RATE_LIMITS_DETECTED
-                    );
-                    msgToDrop.release();
-                }
-        );
+        clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, publishMsg));
     }
 
     private void processMsgOnRateLimits(int packetId, int qos, String message) {
@@ -315,10 +310,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
         if (ctx.channel().isWritable()) {
             log.debug("[{}][{}] Channel is writable addr:[{}]", sessionId, clientId, address);
-            clientMqttActorManager.notifyChannelWritable(clientId, WritableChannelMsg.DEFAULT);
+            clientMqttActorManager.notifyChannelWritable(clientId, new WritableChannelMsg());
         } else {
             log.debug("[{}][{}] Channel became non-writable addr:[{}]", sessionId, clientId, address);
-            clientMqttActorManager.notifyChannelNonWritable(clientId, NonWritableChannelMsg.DEFAULT);
+            clientMqttActorManager.notifyChannelNonWritable(clientId, new NonWritableChannelMsg());
         }
         super.channelWritabilityChanged(ctx);
     }
@@ -330,24 +325,56 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Prefer the address captured on the first inbound bytes; fall back to the channel so pre-CONNECT
+        // failures (e.g. SSL handshake) still identify the remote peer. clientId may be null before CONNECT.
+        InetSocketAddress remoteAddress = address != null ? address : getAddress(ctx);
         String exceptionMessage;
         if (cause.getCause() instanceof SSLHandshakeException) {
-            log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] Exception on SSL handshake. Reason - {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause.getCause() instanceof NotSslRecordException) {
-            log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
+            log.warn("[{}][{}][{}] NotSslRecordException: {}", sessionId, clientId, remoteAddress, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
         } else if (cause instanceof IOException) {
-            log.warn("[{}] IOException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] IOException ({}): {}. closed-by={}",
+                    sessionId, clientId, remoteAddress, cause.getClass().getName(), cause.getMessage(),
+                    connectionCloseOrigin(clientSessionCtx.isCloseInitiated()));
             exceptionMessage = cause.getMessage();
         } else if (cause instanceof ProtocolViolationException) {
-            log.warn("[{}] ProtocolViolationException: {}", sessionId, cause.getMessage());
+            log.warn("[{}][{}][{}] ProtocolViolationException: {}", sessionId, clientId, remoteAddress, cause.getMessage());
             exceptionMessage = cause.getMessage();
         } else {
-            log.error("[{}] Unexpected Exception", sessionId, cause);
+            log.error("[{}][{}][{}] Unexpected Exception", sessionId, clientId, remoteAddress, cause);
             exceptionMessage = cause.getMessage();
         }
+        // Count only pre-establishment errors: clientId is still null, i.e. no CONNECT has been processed
+        // yet (no session). Post-session channel errors (clientId != null) are counted as clientDisconnects
+        // via disconnect(ON_ERROR) below. This gate deliberately leaves connectionError a lower bound: an
+        // error after CONNECT but before the session is established (clientId != null, sessionInfo == null)
+        // is counted by neither family, which is accepted to keep connectionError and clientDisconnects disjoint.
+        if (clientId == null) {
+            connectionStats.onConnectionError();
+        }
         disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, exceptionMessage));
+    }
+
+    /**
+     * Best-effort attribution of who closed the connection for an IOException surfaced on the Netty I/O thread
+     * (typically "Connection reset" / "Connection reset by peer" / "Broken pipe"). Such an error means TBMQ
+     * received a TCP RST or wrote to an already-closed socket, so it is never raised by TBMQ itself. We use
+     * whether a broker-side close was recorded for this session (see {@link ClientSessionCtx#isCloseInitiated()})
+     * to tell the two situations apart and return a short, stable {@code closed-by} token for the log line:
+     * <ul>
+     *   <li>{@code "TBMQ"} — a broker-side close was recorded, so the reset is part of a teardown TBMQ started
+     *       (rate limit, protocol error, takeover, ...);</li>
+     *   <li>{@code "peer-or-network"} — no broker-side close was recorded, so the client or a network device
+     *       between the client and TBMQ aborted the connection (external to TBMQ).</li>
+     * </ul>
+     * It is best-effort: a reset arriving before the actor pipeline reaches {@code closeChannel()}, or a close
+     * driven by server shutdown, is not recorded and therefore reads as {@code peer-or-network}.
+     */
+    static String connectionCloseOrigin(boolean brokerCloseRecorded) {
+        return brokerCloseRecorded ? "TBMQ" : "peer-or-network";
     }
 
     @Override

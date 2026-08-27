@@ -24,7 +24,7 @@ import { filter } from 'rxjs/operators';
 })
 export class BroadcastService {
 
-  private broadcastSubject: Subject<BroadcastMessage> = new Subject();
+  private broadcastSubject = new Subject<BroadcastMessage>();
 
   broadcast(name: string, ...args: Array<any>) {
     const message = {

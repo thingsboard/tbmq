@@ -56,8 +56,8 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     private int waitForClearLockMs;
 
     public ConcurrentMapSubscriptionTrie(StatsManager statsManager) {
-        this.size = statsManager.createSubscriptionSizeCounter();
-        this.nodesCount = statsManager.createSubscriptionTrieNodesCounter();
+        this.size = statsManager.createSubscriptionSizeGauge();
+        this.nodesCount = statsManager.createSubscriptionTrieNodesGauge();
     }
 
     @Override

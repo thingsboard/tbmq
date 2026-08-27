@@ -19,8 +19,9 @@ import { ConfigService } from '@core/http/config.service';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { FormsModule } from '@angular/forms';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
@@ -32,7 +33,7 @@ import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
   selector: 'tb-home-advanced-settings',
   templateUrl: './advanced-settings.component.html',
   styleUrls: ['./advanced-settings.component.scss'],
-  imports: [CardTitleButtonComponent, MatSlideToggle, FormsModule, TranslateModule, ToggleHeaderComponent, ToggleOption]
+  imports: [CardTitleButtonComponent, MatIconButton, MatTooltip, TbIconComponent, TranslateModule, ToggleHeaderComponent, ToggleOption]
 })
 export class AdvancedSettingsComponent implements OnInit {
 
@@ -90,7 +91,7 @@ export class AdvancedSettingsComponent implements OnInit {
   }
 
   switchAuthProvider(type: MqttAuthProviderType) {
-    const enabled = !this.authParams[type];
+    const enabled = this.authParams[type];
     if (!this.authProviders) {
       const pageLink = new PageLink(10);
       this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(

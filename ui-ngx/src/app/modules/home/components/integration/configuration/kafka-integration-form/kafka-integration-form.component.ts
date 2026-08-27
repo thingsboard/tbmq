@@ -29,12 +29,13 @@ import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
+  atLeastOneFilterOrEvent,
   Integration,
   KafkaIntegration,
   ToByteStandartCharsetTypes,
   ToByteStandartCharsetTypeTranslations
 } from '@shared/models/integration.models';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -51,6 +52,9 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   IntegrationTopicFiltersComponent
 } from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
+import {
+  IntegrationLifecycleEventsComponent
+} from '@home/components/integration/lifecycle-events/integration-lifecycle-events.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
@@ -62,6 +66,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
   imports: [
     ReactiveFormsModule,
     MatFormField,
+    MatError,
     MatInput,
     MatLabel,
     TranslateModule,
@@ -77,6 +82,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatIcon,
     MatTooltip,
     IntegrationTopicFiltersComponent,
+    IntegrationLifecycleEventsComponent,
     MatSlideToggle,
     CopyButtonComponent,
     HintTooltipIconComponent
@@ -117,7 +123,8 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
 
   ngOnInit() {
     this.kafkaIntegrationConfigForm = this.fb.group({
-      topicFilters: [['tbmq/#'], Validators.required],
+      topicFilters: [['tbmq/#']],
+      lifecycleEventTypes: [[]],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
         topic: ['tbmq.messages', [Validators.required]],
@@ -136,7 +143,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
         kafkaHeaders: [null, []],
         kafkaHeadersCharset: ['UTF-8', []],
       })
-    });
+    }, {validators: atLeastOneFilterOrEvent});
     this.kafkaIntegrationConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.kafkaIntegrationConfigForm.getRawValue()));
@@ -176,6 +183,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
   private updateModels(value) {
     if (this.isNew) {
       delete value.topicFilters;
+      delete value.lifecycleEventTypes;
     }
     this.propagateChange(value);
   }

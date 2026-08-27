@@ -48,6 +48,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (CA, server cert, client cert) are generated using BouncyCastle. Both the Lettuce and Jedis
  * connection paths are exercised.
  * <p>
+ * The default user is disabled and a named ACL user is required, so a successful connection also
+ * proves {@code redis.username}/{@code redis.password} are applied over the TLS handshake on both paths.
+ * <p>
  * Requires Docker to be available at runtime.
  */
 @ExtendWith(SpringExtension.class)
@@ -109,6 +112,12 @@ public class TBRedisTlsConnectionTest {
                         PosixFilePermissions.fromString("rw-r--r--"));
             }
 
+            // ACL: disable the default user and require a named user, so a successful operation
+            // proves redis.username/redis.password were applied (not anonymous access).
+            Path aclFile = CERTS_DIR.resolve("users.acl");
+            Files.writeString(aclFile, "user default off\nuser tbmq-user on >tbmq-pass ~* &* +@all\n");
+            Files.setPosixFilePermissions(aclFile, PosixFilePermissions.fromString("rw-r--r--"));
+
             VALKEY = new GenericContainer<>("valkey/valkey:8.0")
                     .withFileSystemBind(CERTS_DIR.toString(), "/tls", BindMode.READ_ONLY)
                     .withCommand("valkey-server",
@@ -117,7 +126,8 @@ public class TBRedisTlsConnectionTest {
                             "--tls-cert-file", "/tls/server.pem",
                             "--tls-key-file", "/tls/server.key",
                             "--tls-ca-cert-file", "/tls/ca.pem",
-                            "--tls-auth-clients", "yes")
+                            "--tls-auth-clients", "yes",
+                            "--aclfile", "/tls/users.acl")
                     .withExposedPorts(6379)
                     .waitingFor(Wait.forLogMessage(".*Ready to accept connections tls.*", 1));
             VALKEY.start();
@@ -134,6 +144,8 @@ public class TBRedisTlsConnectionTest {
         registry.add("redis.ssl.credentials.cert-file", () -> CERTS_DIR.resolve("ca.pem").toString());
         registry.add("redis.ssl.credentials.user-cert-file", () -> CERTS_DIR.resolve("client.pem").toString());
         registry.add("redis.ssl.credentials.user-key-file", () -> CERTS_DIR.resolve("client.key").toString());
+        registry.add("redis.username", () -> "tbmq-user");
+        registry.add("redis.password", () -> "tbmq-pass");
     }
 
     @Autowired

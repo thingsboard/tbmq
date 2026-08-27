@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.server.ip.ForwardHeadersIpAddressHandler;
 import org.thingsboard.mqtt.broker.server.wshandler.WsBinaryFrameHandler;
 import org.thingsboard.mqtt.broker.server.wshandler.WsByteBufEncoder;
 import org.thingsboard.mqtt.broker.server.wshandler.WsContinuationFrameHandler;
@@ -46,8 +47,13 @@ public abstract class AbstractMqttWsChannelInitializer extends AbstractMqttChann
         ChannelPipeline pipeline = ch.pipeline();
 
         pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(BrokerConstants.WS_MAX_CONTENT_LENGTH));
-        pipeline.addLast(new WebSocketServerProtocolHandler(BrokerConstants.WS_PATH, getSubprotocols()));
+        pipeline.addLast("aggregator", new HttpObjectAggregator(BrokerConstants.WS_MAX_CONTENT_LENGTH));
+
+        if (isForwardHeadersEnabled() && !isProxyProtocolEnabled()) {
+            pipeline.addLast("forwardHeadersIpAdrHandler", new ForwardHeadersIpAddressHandler());
+        }
+
+        pipeline.addLast("wsProtocol", new WebSocketServerProtocolHandler(BrokerConstants.WS_PATH, getSubprotocols()));
 
         pipeline.addLast(new WsBinaryFrameHandler());
         pipeline.addLast(new WsContinuationFrameHandler());

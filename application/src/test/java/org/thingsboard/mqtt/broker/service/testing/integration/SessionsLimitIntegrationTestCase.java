@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -57,23 +58,36 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
     private MqttClientCredentialsService credentialsService;
     @Autowired
     public ClientSessionService clientSessionService;
+    @Autowired
+    private RateLimitService rateLimitService;
 
     private MqttClientCredentials credentials;
+    private MqttClient client1;
+    private MqttClient client2;
 
     @Before
     public void beforeTest() {
         credentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, USER_NAME));
         enableBasicProvider();
+        // The sessions limit is cluster-wide and its counter is kept in the cache, seeded on broker start with
+        // the number of existing sessions. All integration tests share the same broker port, so a session left
+        // behind by another test class can occupy the single allowed session and make the clients of this test
+        // get rejected with QUOTA_EXCEEDED. Reset the counter to start from a deterministic state.
+        rateLimitService.initSessionCount(0);
     }
 
     @After
     public void clear() throws Exception {
+        disconnect(client1);
+        disconnect(client2);
+        awaitSessionRemoved(client1);
+        awaitSessionRemoved(client2);
         credentialsService.deleteCredentials(credentials.getId());
     }
 
     @Test
     public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClient_thenRefuseNewConnection() throws Throwable {
-        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_1"), null, externalExecutorService);
+        client1 = MqttClient.create(getConfig("test_sessions_limit_1"), null, externalExecutorService);
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
@@ -82,17 +96,15 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
             return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
         });
 
-        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null, externalExecutorService);
+        client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null, externalExecutorService);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_2");
         Assert.assertNull(clientSessionInfo2);
-
-        client1.disconnect();
     }
 
     @Test
     public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClientWithSameClientId_thenAllowConnection() throws Throwable {
-        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
+        client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
@@ -101,13 +113,27 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
             return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
         });
 
-        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
+        client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
         Assert.assertNotNull(clientSessionInfo2);
+    }
 
-        client2.disconnect();
-        client1.disconnect();
+    private void disconnect(MqttClient client) {
+        if (client != null && client.isConnected()) {
+            client.disconnect();
+        }
+    }
+
+    private void awaitSessionRemoved(MqttClient client) {
+        if (client == null) {
+            return;
+        }
+        String clientId = client.getClientConfig().getClientId();
+        // Session removal is async and it is what decrements the cluster-wide sessions counter,
+        // so wait for it to complete to not affect the next test method.
+        Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                .until(() -> clientSessionService.getClientSessionInfo(clientId) == null);
     }
 
     private MqttClientConfig getConfig(String clientId) {

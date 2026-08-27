@@ -15,217 +15,132 @@
     limitations under the License.
 
 -->
-<form [formGroup]="timewindowForm" (ngSubmit)="update()">
-  <mat-tab-group dynamicHeight="true" [class.tb-headless]="historyOnly"
-    (selectedTabChange)="onTimewindowTypeChange()" [(selectedIndex)]="timewindow.selectedTab">
-    <mat-tab label="{{ 'timewindow.realtime' | translate }}">
-      <section class="flex">
-        <section class="flex flex-1 flex-col" [class.!hidden]="!(isEdit || !timewindow.hideInterval)">
-          <div formGroupName="realtime" class="mat-content mat-padding" style="padding-top: 8px;">
-            @if (!quickIntervalOnly) {
-              <mat-radio-group
-                [class.!hidden]="!(isEdit || (!timewindow.hideLastInterval && !timewindow.hideQuickInterval))"
-                formControlName="realtimeType">
-                <mat-radio-button [value]="realtimeTypes.LAST_INTERVAL" color="primary">
-                  <section class="flex">
-                    @if (isEdit) {
-                      <section class="flex flex-col items-center justify-start" style="padding-right: 8px;">
-                        <label class="tb-small hide-label" translate>timewindow.hide</label>
-                        <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideLastInterval"
-                        (ngModelChange)="onHideLastIntervalChanged()"></mat-checkbox>
-                      </section>
-                    }
-                    <section class="flex flex-col">
-                      <span translate>timewindow.last</span>
-                      @if (timewindowForm.get('realtime.realtimeType').value === realtimeTypes.LAST_INTERVAL) {
-                        <tb-timeinterval
-                          formControlName="timewindowMs"
-                          predefinedName="timewindow.last"
-                          [required]="timewindow.selectedTab === timewindowTypes.REALTIME &&
-                                timewindowForm.get('realtime.realtimeType').value === realtimeTypes.LAST_INTERVAL"
-                          style="padding-top: 8px;"></tb-timeinterval>
-                      }
-                    </section>
-                  </section>
-                </mat-radio-button>
-                <mat-radio-button [value]="realtimeTypes.INTERVAL" color="primary">
-                  <section class="flex">
-                    @if (isEdit) {
-                      <section class="flex flex-col items-center justify-start" style="padding-right: 8px;">
-                        <label class="tb-small hide-label" translate>timewindow.hide</label>
-                        <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideQuickInterval"
-                        (ngModelChange)="onHideQuickIntervalChanged()"></mat-checkbox>
-                      </section>
-                    }
-                    <section class="flex flex-col">
-                      <span translate>timewindow.interval</span>
-                      @if (timewindowForm.get('realtime.realtimeType').value === realtimeTypes.INTERVAL) {
-                        <tb-quick-time-interval
-                          formControlName="quickInterval"
-                          onlyCurrentInterval="true"
-                          [required]="timewindow.selectedTab === timewindowTypes.REALTIME &&
-                                timewindowForm.get('realtime.realtimeType').value === realtimeTypes.INTERVAL"
-                          style="padding-top: 8px"></tb-quick-time-interval>
-                      }
-                    </section>
-                  </section>
-                </mat-radio-button>
-              </mat-radio-group>
-            }
-            @if (!isEdit && !timewindow.hideLastInterval && timewindow.hideQuickInterval) {
-              <tb-timeinterval
-                formControlName="timewindowMs"
-                predefinedName="timewindow.last"
-                required
-              style="padding-top: 8px;"></tb-timeinterval>
-            }
-            @if (quickIntervalOnly || !isEdit && timewindow.hideLastInterval && !timewindow.hideQuickInterval) {
-              <tb-quick-time-interval
-                formControlName="quickInterval"
-                onlyCurrentInterval="true"
-                required
-              style="padding-top: 8px"></tb-quick-time-interval>
-            }
-          </div>
-        </section>
-      </section>
-    </mat-tab>
-    <mat-tab label="{{ 'timewindow.history' | translate }}">
-      <section class="flex">
-        <section class="flex flex-1 flex-col" [class.!hidden]="!(isEdit || !timewindow.hideInterval)">
-          <div formGroupName="history" class="mat-content mat-padding" style="padding-top: 8px;">
-            <mat-radio-group formControlName="historyType">
-              @if (forAllTimeEnabled) {
-                <mat-radio-button [value]="historyTypes.FOR_ALL_TIME" color="primary">
-                  <section class="flex flex-col">
-                    <span translate>timewindow.for-all-time</span>
-                  </section>
-                </mat-radio-button>
-              }
-              <mat-radio-button [value]="historyTypes.LAST_INTERVAL" color="primary">
-                <section class="flex flex-col">
-                  <span translate>timewindow.last</span>
-                  @if (timewindowForm.get('history.historyType').value === historyTypes.LAST_INTERVAL) {
-                    <tb-timeinterval
-                      formControlName="timewindowMs"
-                      predefinedName="timewindow.last"
-                      class="history-time-input"
-                      [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
-                              timewindowForm.get('history.historyType').value === historyTypes.LAST_INTERVAL"
-                      style="padding-top: 8px;"></tb-timeinterval>
-                  }
-                </section>
-              </mat-radio-button>
-              <mat-radio-button [value]="historyTypes.FIXED" color="primary">
-                <section class="flex flex-col">
-                  <span translate>timewindow.time-period</span>
-                  @if (timewindowForm.get('history.historyType').value === historyTypes.FIXED) {
-                    <tb-datetime-period
-                      formControlName="fixedTimewindow"
-                      class="history-time-input"
-                      [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
-                              timewindowForm.get('history.historyType').value === historyTypes.FIXED"
-                      style="padding-top: 8px;"></tb-datetime-period>
-                    <div class="tb-error-message"
-                         [class.!hidden]="!timewindowForm.get('history.fixedTimewindow').hasError('invalidTimeFormat')">
-                      {{ 'timewindow.time-invalid' | translate }}
-                    </div>
-                  }
-                </section>
-              </mat-radio-button>
-              <mat-radio-button [value]="historyTypes.INTERVAL" color="primary">
-                <section class="flex flex-col">
-                  <span translate>timewindow.interval</span>
-                  @if (timewindowForm.get('history.historyType').value === historyTypes.INTERVAL) {
-                    <tb-quick-time-interval
-                      formControlName="quickInterval"
-                      class="history-time-input"
-                      [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
-                            timewindowForm.get('history.historyType').value === historyTypes.INTERVAL"
-                      style="padding-top: 8px"></tb-quick-time-interval>
-                  }
-                </section>
-              </mat-radio-button>
-            </mat-radio-group>
-          </div>
-        </section>
-      </section>
-      <ng-container *ngTemplateOutlet="additionalData">
-      </ng-container>
-    </mat-tab>
-  </mat-tab-group>
-  <ng-template #additionalData>
-    @if (aggregation) {
-      <div formGroupName="aggregation" class="mat-content mat-padding flex flex-col">
-        <section class="flex">
-          <section class="flex flex-col items-center justify-start" [class.!hidden]="!isEdit">
-            <label class="tb-small hide-label" translate>timewindow.hide</label>
-            <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideAggregation"
-            (ngModelChange)="onHideAggregationChanged()"></mat-checkbox>
-          </section>
-          <section class="flex flex-1 flex-col" [class.!hidden]="!(isEdit || !timewindow.hideAggregation)">
-            <mat-form-field>
-              <mat-label translate>aggregation.function</mat-label>
-              <mat-select formControlName="type" style="min-width: 150px;">
-                @for (aggregation of aggregations; track aggregation) {
-                  <mat-option [value]="aggregation">
-                    {{ aggregationTypesTranslations.get(aggregationTypes[aggregation]) | translate }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </section>
-        </section>
-        @if (timewindowForm.get('aggregation.type').value === aggregationTypes.NONE) {
-          <section class="flex">
-            <section class="flex flex-col items-center justify-start" [class.!hidden]="!isEdit">
-              <label class="tb-small hide-label" translate>timewindow.hide</label>
-              <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideAggInterval"
-              (ngModelChange)="onHideAggIntervalChanged()"></mat-checkbox>
-            </section>
-          </section>
-        }
+<form [formGroup]="timewindowForm" (ngSubmit)="update()" class="tb-timewindow-form">
+  @if (!historyOnly) {
+    <div class="tb-timewindow-form-header">
+      <tb-toggle-select class="tb-timewindow-form-type"
+                        appearance="fill"
+                        [options]="timewindowTypeOptions"
+                        formControlName="selectedTab">
+      </tb-toggle-select>
     </div>
+  }
+
+  <div class="tb-timewindow-form-content">
+    @if (timewindowForm.get('selectedTab').value === timewindowTypes.REALTIME) {
+      <section class="tb-timewindow-section">
+        <div class="tb-timewindow-section-title">{{ 'timewindow.timewindow' | translate }}</div>
+        <div formGroupName="realtime" class="tb-timewindow-section-body">
+          @if (!quickIntervalOnly) {
+            <tb-toggle-select appearance="stroked"
+                              [options]="realtimeTypeOptions"
+                              formControlName="realtimeType">
+            </tb-toggle-select>
+          }
+          @if (timewindowForm.get('realtime.realtimeType').value === realtimeTypes.LAST_INTERVAL) {
+            <tb-timeinterval
+              formControlName="timewindowMs"
+              [min]="minLastInterval"
+              subscriptSizing="dynamic"
+              [required]="timewindow.selectedTab === timewindowTypes.REALTIME &&
+                          timewindowForm.get('realtime.realtimeType').value === realtimeTypes.LAST_INTERVAL">
+            </tb-timeinterval>
+          }
+          @if (timewindowForm.get('realtime.realtimeType').value === realtimeTypes.INTERVAL) {
+            <tb-quick-time-interval
+              formControlName="quickInterval"
+              onlyCurrentInterval="true"
+              [required]="timewindow.selectedTab === timewindowTypes.REALTIME &&
+                          timewindowForm.get('realtime.realtimeType').value === realtimeTypes.INTERVAL">
+            </tb-quick-time-interval>
+          }
+        </div>
+      </section>
     }
-    @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
-      timewindow.selectedTab === timewindowTypes.REALTIME) {
-      <div formGroupName="realtime"
-        class="mat-content mat-padding flex flex-col">
-        <tb-timeinterval
-          formControlName="interval"
-          [isEdit]="isEdit"
-          [(hideFlag)]="timewindow.hideAggInterval"
-          (hideFlagChange)="onHideAggIntervalChanged()"
-          [min]="minRealtimeAggInterval()" [max]="maxRealtimeAggInterval()"
-          useCalendarIntervals
-          predefinedName="aggregation.group-interval">
-        </tb-timeinterval>
-      </div>
+
+    @if (timewindowForm.get('selectedTab').value === timewindowTypes.HISTORY) {
+      <section class="tb-timewindow-section">
+        <div class="tb-timewindow-section-title">{{ 'timewindow.timewindow' | translate }}</div>
+        <div formGroupName="history" class="tb-timewindow-section-body">
+          <tb-toggle-select appearance="stroked"
+                            [options]="historyTypeOptions"
+                            formControlName="historyType">
+          </tb-toggle-select>
+          @if (timewindowForm.get('history.historyType').value === historyTypes.LAST_INTERVAL) {
+            <tb-timeinterval
+              formControlName="timewindowMs"
+              [min]="minLastInterval"
+              subscriptSizing="dynamic"
+              [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
+                          timewindowForm.get('history.historyType').value === historyTypes.LAST_INTERVAL">
+            </tb-timeinterval>
+          }
+          @if (timewindowForm.get('history.historyType').value === historyTypes.FIXED) {
+            <tb-datetime-period
+              formControlName="fixedTimewindow"
+              [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
+                          timewindowForm.get('history.historyType').value === historyTypes.FIXED">
+            </tb-datetime-period>
+            <div class="tb-error-message"
+                 [class.!hidden]="!timewindowForm.get('history.fixedTimewindow').hasError('invalidTimeFormat')">
+              {{ 'timewindow.time-invalid' | translate }}
+            </div>
+          }
+          @if (timewindowForm.get('history.historyType').value === historyTypes.INTERVAL) {
+            <tb-quick-time-interval
+              formControlName="quickInterval"
+              [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
+                          timewindowForm.get('history.historyType').value === historyTypes.INTERVAL">
+            </tb-quick-time-interval>
+          }
+        </div>
+      </section>
     }
-    @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
-      timewindow.selectedTab === timewindowTypes.HISTORY) {
-      <div formGroupName="history"
-        class="mat-content mat-padding flex flex-col">
-        <tb-timeinterval
-          formControlName="interval"
-          [isEdit]="isEdit"
-          [(hideFlag)]="timewindow.hideAggInterval"
-          (hideFlagChange)="onHideAggIntervalChanged()"
-          [min]="minHistoryAggInterval()" [max]="maxHistoryAggInterval()"
-          predefinedName="aggregation.group-interval">
-        </tb-timeinterval>
-      </div>
-    }
-    @if (timezone) {
-      <div class="mat-content mat-padding flex">
-        <section class="flex flex-col items-center justify-start" [class.!hidden]="!isEdit">
-          <label class="tb-small hide-label" translate>timewindow.hide</label>
-          <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideTimezone"
-          (ngModelChange)="onHideTimezoneChanged()"></mat-checkbox>
+
+    @if (aggregation) {
+      <section class="tb-timewindow-section">
+        <div class="tb-timewindow-aggregation-row" formGroupName="aggregation">
+          <div class="tb-timewindow-aggregation-label">{{ 'aggregation.aggregation' | translate }}</div>
+          <mat-form-field subscriptSizing="dynamic" class="tb-timewindow-aggregation-field">
+            <mat-select formControlName="type">
+              @for (aggregationType of aggregations; track aggregationType) {
+                <mat-option [value]="aggregationType">
+                  {{ aggregationTypesTranslations.get(aggregationTypes[aggregationType]) | translate }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+      @if (timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
+           timewindow.selectedTab === timewindowTypes.REALTIME) {
+        <section class="tb-timewindow-section">
+          <div class="tb-timewindow-aggregation-row" formGroupName="realtime">
+            <div class="tb-timewindow-aggregation-label">{{ 'aggregation.group-interval' | translate }}</div>
+            <tb-timeinterval class="tb-timewindow-aggregation-field"
+              formControlName="interval"
+              [min]="minRealtimeAggInterval()" [max]="maxRealtimeAggInterval()"
+              useCalendarIntervals
+              subscriptSizing="dynamic">
+            </tb-timeinterval>
+          </div>
         </section>
-      </div>
+      }
+      @if (timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
+           timewindow.selectedTab === timewindowTypes.HISTORY) {
+        <section class="tb-timewindow-section">
+          <div class="tb-timewindow-aggregation-row" formGroupName="history">
+            <div class="tb-timewindow-aggregation-label">{{ 'aggregation.group-interval' | translate }}</div>
+            <tb-timeinterval class="tb-timewindow-aggregation-field"
+              formControlName="interval"
+              [min]="minHistoryAggInterval()" [max]="maxHistoryAggInterval()"
+              subscriptSizing="dynamic">
+            </tb-timeinterval>
+          </div>
+        </section>
+      }
     }
-  </ng-template>
+  </div>
 </form>
 <div class="tb-panel-actions flex flex-row items-center justify-end">
   <button type="button"

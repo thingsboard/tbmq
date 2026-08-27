@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import 'hammerjs';
-
 import { Component, NgZone } from '@angular/core';
 
 import { environment as env } from '@env/environment';

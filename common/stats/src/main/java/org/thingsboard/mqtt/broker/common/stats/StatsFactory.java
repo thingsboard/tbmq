@@ -32,4 +32,11 @@ public interface StatsFactory {
     MessagesStats createMessagesStats(String key, String... tags);
 
     Timer createTimer(String key, String... tags);
+
+    /**
+     * Deregisters the counter's backing Micrometer meter from the registry so it stops being
+     * scraped. Use when the entity a per-entity counter belongs to (e.g. an application client
+     * or an integration) is gone, to avoid unbounded registry/cardinality growth on churn.
+     */
+    void remove(DefaultCounter counter);
 }

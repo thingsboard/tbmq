@@ -19,7 +19,7 @@
   <section class="charts-header">
     <tb-card-title-button [cardType]="cardType" [disabled]="false"></tb-card-title-button>
   </section>
-  <section class="charts">
+  <section #chartsGrid class="charts">
     @for (chartKey of chartKeys; track chartKey) {
       <article class="chart-item">
         <tb-chart

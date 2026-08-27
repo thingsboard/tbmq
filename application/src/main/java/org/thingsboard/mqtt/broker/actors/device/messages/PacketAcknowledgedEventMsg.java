@@ -19,10 +19,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 
 @RequiredArgsConstructor
 @Getter
-public class PacketAcknowledgedEventMsg implements TbActorMsg {
+public class PacketAcknowledgedEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final int packetId;
 

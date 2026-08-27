@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Inject, Injectable } from '@angular/core';
+import { Inject, Injectable, DOCUMENT } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -23,7 +23,7 @@ import { distinctUntilChanged, map, tap, withLatestFrom } from 'rxjs';
 import { select, Store } from '@ngrx/store';
 import { selectSettingsState } from './settings.selectors';
 import { updateUserLang } from '@core/settings/settings.utils';
-import { DOCUMENT } from '@angular/common';
+
 import { AppState } from '@core/core.state';
 import { LocalStorageService } from '@core/local-storage/local-storage.service';
 

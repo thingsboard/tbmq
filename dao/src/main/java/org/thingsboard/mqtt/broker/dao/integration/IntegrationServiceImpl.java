@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -135,14 +136,32 @@ public class IntegrationServiceImpl implements IntegrationService {
                     if (integration.getType() == null) {
                         throw new DataValidationException("Integration type should be specified!");
                     }
-                    JsonNode topicFilters = integration.getConfiguration().get("topicFilters");
-                    if (topicFilters == null || topicFilters.isNull()) {
-                        throw new DataValidationException("Topic filters should be specified!");
+                    JsonNode configuration = integration.getConfiguration();
+                    JsonNode topicFilters = configuration.get("topicFilters");
+                    JsonNode lifecycleEventTypes = configuration.get(ClientLifecycleEventTypeUtil.LIFECYCLE_EVENT_TYPES_KEY);
+
+                    boolean hasTopicFilters = topicFilters != null && topicFilters.isArray() && !topicFilters.isEmpty();
+                    boolean hasLifecycleEventTypes = lifecycleEventTypes != null && lifecycleEventTypes.isArray() && !lifecycleEventTypes.isEmpty();
+
+                    if (!hasTopicFilters && !hasLifecycleEventTypes) {
+                        throw new DataValidationException("Either topic filters or lifecycle event types should be specified!");
                     }
-                    if (!topicFilters.isArray()) {
-                        throw new DataValidationException("Topic filters should be an array!");
+
+                    if (topicFilters != null && !topicFilters.isNull()) {
+                        if (!topicFilters.isArray()) {
+                            throw new DataValidationException("Topic filters should be an array!");
+                        }
+                        topicFilters.forEach(topicFilter -> topicValidationService.validateTopicFilter(topicFilter.asText()));
                     }
-                    topicFilters.forEach(topicFilter -> topicValidationService.validateTopicFilter(topicFilter.asText()));
+
+                    if (lifecycleEventTypes != null && !lifecycleEventTypes.isNull()) {
+                        if (!lifecycleEventTypes.isArray()) {
+                            throw new DataValidationException("Lifecycle event types should be an array!");
+                        }
+                        ClientLifecycleEventTypeUtil.parse(lifecycleEventTypes, name -> {
+                            throw new DataValidationException("Unknown lifecycle event type: " + name);
+                        });
+                    }
                 }
             };
 

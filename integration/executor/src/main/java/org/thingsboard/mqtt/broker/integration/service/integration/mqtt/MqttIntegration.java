@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.MqttConnectResult;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -62,6 +64,17 @@ public class MqttIntegration extends AbstractIntegration {
             if (!allowLocalNetworkHosts && isLocalNetworkHost(mqttIntegrationConfig.getHost())) {
                 throw new IllegalArgumentException("Usage of local network host for MQTT broker connection is not allowed!");
             }
+        } catch (Exception e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+        }
+    }
+
+    @Override
+    protected void doValidateLifecycleEventsDelivery(JsonNode clientConfiguration) throws ThingsboardException {
+        try {
+            // Lifecycle events have no incoming MQTT message, so they are always published to the dedicated static
+            // events topic (config.getEventsTopicName()) - require it to be set and a valid publish topic.
+            MqttConfigValidator.validateEventsTopic(getClientConfiguration(clientConfiguration, MqttIntegrationConfig.class));
         } catch (Exception e) {
             throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
         }
@@ -130,6 +143,26 @@ public class MqttIntegration extends AbstractIntegration {
                             }
                         }
                 );
+    }
+
+    @Override
+    protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
+        // Lifecycle events have no originating message, so they always go to the dedicated static events topic with
+        // fixed QoS 1 (at-least-once, do not silently drop events) and retain=false (shared stream across all clients).
+        client.publish(config.getEventsTopicName(), Unpooled.wrappedBuffer(JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8)),
+                        MqttQoS.AT_LEAST_ONCE, false)
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        log.debug("[{}][{}] lifecycle event publish success {}", getId(), getName(), config.getEventsTopicName());
+                        integrationStatistics.incMessagesProcessed();
+                        callback.onSuccess();
+                    } else {
+                        var t = future.cause();
+                        log.warn("[{}][{}] lifecycle event processException", getId(), getName(), t);
+                        handleMsgProcessingFailure(t);
+                        callback.onFailure(t);
+                    }
+                });
     }
 
     private String getMsgTopicName(PublishIntegrationMsgProto msg) {

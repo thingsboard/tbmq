@@ -33,4 +33,6 @@ public interface RateLimitCacheService {
 
     long tryConsumeTotalMsgs(long limit);
 
+    void returnTotalMsgs(long tokens);
+
 }

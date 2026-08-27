@@ -24,4 +24,12 @@ public interface MqttPublishMsgDeliveryService {
 
     void sendPublishMsgToClientWithoutFlush(ClientSessionCtx ctx, MqttPublishMessage mqttPubMsg);
 
+    /**
+     * Sends a PUBLISH whose in-flight slot is already reserved by the caller.
+     * Skips the addInFlightMsg precondition that {@link #sendPublishMsgToClient}
+     * applies, because the flow-control drain path has already reserved the slot
+     * and registered the packetId inside its own lock.
+     */
+    void sendAlreadyTrackedPublishMsgToClient(ClientSessionCtx ctx, MqttPublishMessage msg);
+
 }

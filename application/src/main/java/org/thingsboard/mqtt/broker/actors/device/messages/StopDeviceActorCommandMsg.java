@@ -19,12 +19,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 
 import java.util.UUID;
 
 @Getter
 @RequiredArgsConstructor
-public class StopDeviceActorCommandMsg implements TbActorMsg {
+public class StopDeviceActorCommandMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final UUID commandUUID;
 

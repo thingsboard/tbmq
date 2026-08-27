@@ -154,8 +154,17 @@ public class HistoricalStatsTotalConsumer {
                 throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
     }
 
-    private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
+    // Package-private (not private) so the same-package unit test can invoke it directly, like the other
+    // test seams in this class (calculatePairUsingProvidedMsg, getTotalMessageCounterPair); not an extension point.
+    void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
+        if (!totalStatsMap.containsKey(key)) {
+            // Unknown/removed historical key (e.g. a 'processedBytes' message from a not-yet-upgraded node
+            // during a rolling upgrade). Ignore it so a single stale message can't NPE and poison the whole
+            // aggregation loop — an uncommitted batch would otherwise be re-polled forever.
+            log.debug("[{}] Ignoring historical stats for unknown key {}", ENTITY_ID_TOTAL, key);
+            return;
+        }
         long msgTs = msg.getValue().getTs();
         TsMsgTotalPair pair = calculatePairUsingProvidedMsg(msg);
 
@@ -180,7 +189,7 @@ public class HistoricalStatsTotalConsumer {
                 throwable -> log.error("[{}] Failed to save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue(), throwable));
     }
 
-    protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
+    TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         TsMsgTotalPair pair = getTotalMessageCounterPair(msg);
         long msgTs = msg.getValue().getTs();
         if (pair.getTs() < msgTs) {
@@ -193,7 +202,7 @@ public class HistoricalStatsTotalConsumer {
         return pair;
     }
 
-    protected TsMsgTotalPair getTotalMessageCounterPair(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
+    TsMsgTotalPair getTotalMessageCounterPair(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
         TsMsgTotalPair msgTotalPair = totalStatsMap.get(key);
         if (msgTotalPair.isEmpty()) {

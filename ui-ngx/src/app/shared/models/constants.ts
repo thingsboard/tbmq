@@ -54,8 +54,8 @@ export const MediaBreakpoints = {
   'md-lg': 'screen and (min-width: 960px) and (max-width: 1819px)'
 };
 
-export const helpBaseUrl = 'https://thingsboard.io';
-export const docsPath = '/docs/mqtt-broker';
+export const helpBaseUrl = 'https://tbmq.io';
+export const docsPath = '/docs';
 export const HelpLinks = {
   linksMap: {
     outgoingMailSettings: helpBaseUrl + docsPath + '/user-guide/ui/settings/#mail-server-settings',
@@ -92,15 +92,17 @@ export const HelpLinks = {
     mqttProtocol: helpBaseUrl + docsPath + '/user-guide/mqtt-protocol/',
     troubleshooting: helpBaseUrl + docsPath + '/troubleshooting/',
     monitoring: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/',
-    monitoringKafkaBrokers: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/#kafka-brokers',
-    monitoringConfig: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/#config',
+    monitoringKafkaBrokers: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/',
+    monitoringConfig: helpBaseUrl + docsPath + '/user-guide/ui/monitoring/#broker-settings',
     clientType: helpBaseUrl + docsPath + '/user-guide/mqtt-client-type/',
     connectToThingsBoard: helpBaseUrl + docsPath + '/user-guide/integrations/how-to-connect-thingsboard-to-tbmq/',
     perfTest100m: helpBaseUrl + docsPath + '/reference/100m-connections-performance-test/',
-    configuration: helpBaseUrl + docsPath + '/install/config/',
+    configuration: helpBaseUrl + docsPath + '/installation/config/',
     architecture: helpBaseUrl + docsPath + '/architecture/',
-    pricing: helpBaseUrl + '/pricing/?section=tbmq-options&product=tbmq-ce',
+    pricing: helpBaseUrl + '/pricing/?product=tbmq-ce',
     cleanPersistentSessions: helpBaseUrl + docsPath + '/user-guide/clean-persistent-sessions/',
+    contactUs: helpBaseUrl + '/contact-us/',
+    upgradeInstructions: helpBaseUrl + docsPath + '/installation/upgrade-instructions/',
     releases: 'https://github.com/thingsboard/tbmq/releases'
   }
 };

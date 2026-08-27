@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 @Slf4j
 @Service
@@ -53,6 +54,31 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     @Override
     public MessagesStats createMsgDispatcherPublishStats() {
         return StubMessagesStats.STUB_MESSAGE_STATS;
+    }
+
+    @Override
+    public DroppedMsgStats getDroppedMsgStats() {
+        return StubDroppedMsgStats.STUB_DROPPED_MSG_STATS;
+    }
+
+    @Override
+    public DroppedLifecycleEventStats getDroppedLifecycleEventStats() {
+        return StubDroppedLifecycleEventStats.STUB_DROPPED_LIFECYCLE_EVENT_STATS;
+    }
+
+    @Override
+    public ClientDisconnectStats getClientDisconnectStats() {
+        return StubClientDisconnectStats.STUB_CLIENT_DISCONNECT_STATS;
+    }
+
+    @Override
+    public ThroughputQuotaStats getThroughputQuotaStats() {
+        return StubThroughputQuotaStats.STUB_THROUGHPUT_QUOTA_STATS;
+    }
+
+    @Override
+    public ConnectionStats getConnectionStats() {
+        return StubConnectionStats.STUB_CONNECTION_STATS;
     }
 
     @Override
@@ -105,17 +131,17 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public AtomicInteger createNonWritableClientsCounter() {
+    public AtomicInteger createNonWritableClientsGauge() {
         return new AtomicInteger(0);
     }
 
     @Override
-    public AtomicInteger createSubscriptionSizeCounter() {
+    public AtomicInteger createSubscriptionSizeGauge() {
         return new AtomicInteger(0);
     }
 
     @Override
-    public AtomicInteger createRetainMsgSizeCounter() {
+    public AtomicInteger createRetainMsgSizeGauge() {
         return new AtomicInteger(0);
     }
 
@@ -142,7 +168,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
+    public void registerSubscriptionsStats(LongAdder subscriptionCount) {
     }
 
     @Override
@@ -175,8 +201,18 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public ClientActorStats getClientActorStats() {
-        return StubClientActorStats.STUB_CLIENT_ACTOR_STATS;
+    public ActorStats getClientActorStats() {
+        return StubActorStats.STUB_ACTOR_STATS;
+    }
+
+    @Override
+    public ActorStats getPersistedDeviceActorStats() {
+        return StubActorStats.STUB_ACTOR_STATS;
+    }
+
+    @Override
+    public FlowControlStats getFlowControlStats() {
+        return StubFlowControlStats.STUB_FLOW_CONTROL_STATS;
     }
 
     @Override
@@ -189,12 +225,12 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public AtomicLong createSubscriptionTrieNodesCounter() {
+    public AtomicLong createSubscriptionTrieNodesGauge() {
         return new AtomicLong(0);
     }
 
     @Override
-    public AtomicLong createRetainMsgTrieNodesCounter() {
+    public AtomicLong createRetainMsgTrieNodesGauge() {
         return new AtomicLong(0);
     }
 

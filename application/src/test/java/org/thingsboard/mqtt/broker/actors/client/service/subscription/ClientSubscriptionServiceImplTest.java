@@ -20,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -33,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -83,6 +86,14 @@ public class ClientSubscriptionServiceImplTest {
     @Test
     public void givenClientTopicSubscriptions_whenInit_thenOk() {
         verify(subscriptionService, times(2)).subscribe(any(), any());
+    }
+
+    @Test
+    public void givenClientTopicSubscriptions_whenInit_thenCachesEachClientOnceAndRegistersSubscriptionsStats() {
+        // init() ran in setUp() with 2 clients: each client is subscribed, shared-cached, once,
+        // and the subscriptions gauge is registered exactly once over the backing map.
+        verify(sharedSubscriptionCacheService, times(2)).put(any(), any());
+        verify(statsManager, times(1)).registerSubscriptionsStats(any());
     }
 
     @Test
@@ -204,8 +215,127 @@ public class ClientSubscriptionServiceImplTest {
                         getTopicSubscription("topic321"),
                         getTopicSubscription("topic12345")));
 
-        int clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
+        long clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
         assertThat(clientSubscriptionsCount).isEqualTo(7);
+    }
+
+    @Test
+    public void givenSubscriptions_whenUnsubscribeInternally_thenTotalSubscriptionCountDecreases() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("topic11"), getTopicSubscription("topic12")));
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.unsubscribeInternally("clientId1", Set.of("topic11", "topic12"));
+
+        assertEquals(2, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenSubscriptions_whenClearSubscriptionsInternally_thenTotalDecreasesByClientSetSize() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        clientSubscriptionService.clearSubscriptionsInternally("clientId1");
+
+        // clientId1's two subscriptions are removed; clientId2's one remains.
+        assertEquals(1, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenClientWithMultipleSubscriptions_whenGetClientSubscriptionsCount_thenReturnsTotalNotClientCount() {
+        // setUp seeded 2 clients with 1 subscription each. Add 2 more to a single client:
+        clientSubscriptionService.subscribeInternally("clientId1",
+                Set.of(getTopicSubscription("a"), getTopicSubscription("b")));
+
+        // 2 clients, but 4 total subscriptions.
+        assertEquals(4, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenExistingSubscription_whenReSubscribedToSameFilter_thenTotalSubscriptionCountUnchanged() {
+        // setUp seeded clientId1 -> {topic1} and clientId2 -> {topic2}: 2 total.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+
+        // Re-subscribing an already-present (topicFilter+shareName-equal) subscription is a net-zero change:
+        // subscribe() removes the existing entry then re-adds it, so size() - sizeBefore == 0 and the total
+        // must not double-count. Guards the subtlest branch of the running-counter arithmetic.
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+
+        assertEquals(3, clientSubscriptionService.getClientSubscriptionsCount());
+    }
+
+    @Test
+    public void givenSubscriptions_whenUnsubscribeAndPersistWithCallback_thenDeliversRemovedSubscriptionsOnSuccess() {
+        String clientId = "clientId1"; // seeded with topic1
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic11")));
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("topic1"), callback);
+
+        Set<TopicSubscription> survivors = getAndVerifyClientSubscriptionsForClient(clientId, 1);
+        assertTrue(survivors.contains(getTopicSubscription("topic11")));
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), eq(survivors), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        assertThat(removedCaptor.getValue()).containsExactly(getTopicSubscription("topic1"));
+    }
+
+    @Test
+    public void givenSharedSubscription_whenUnsubscribeAndPersistWithCallback_thenRemovedCarriesShareName() {
+        String clientId = "sharedClientId";
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11")));
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("$share/sharedGroup/topic11"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        List<TopicSubscription> removed = removedCaptor.getValue();
+        assertEquals(1, removed.size());
+        assertEquals("topic11", removed.get(0).getTopicFilter());
+        assertEquals("sharedGroup", removed.get(0).getShareName());
+    }
+
+    @Test
+    public void givenNeverSubscribedFilter_whenUnsubscribeAndPersistWithCallback_thenRemovedIsEmpty() {
+        String clientId = "clientId1"; // seeded with topic1
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("never/subscribed"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        persistCallback.getValue().onSuccess();
+
+        ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(callback).onSuccess(removedCaptor.capture());
+        assertTrue(removedCaptor.getValue().isEmpty());
+    }
+
+    @Test
+    public void givenPersistFailure_whenUnsubscribeAndPersistWithCallback_thenPropagatesFailure() {
+        String clientId = "clientId1"; // seeded with topic1
+
+        UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
+        clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("topic1"), callback);
+
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
+        RuntimeException failure = new RuntimeException("boom");
+        persistCallback.getValue().onFailure(failure);
+
+        verify(callback).onFailure(failure);
     }
 
     private Set<TopicSubscription> getAndVerifyClientSubscriptionsForClient(String clientId, int expected) {

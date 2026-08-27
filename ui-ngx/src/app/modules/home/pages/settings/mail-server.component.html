@@ -56,7 +56,7 @@
                 </mat-select>
               </mat-form-field>
               <div class="gt-sm:flex gt-sm:flex-row gt-sm:gap-2.5">
-                <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
+                <mat-form-field class="flex flex-1 gt-sm:basis-3/5">
                   <mat-label translate>admin.smtp-host</mat-label>
                   <input matInput formControlName="smtpHost" placeholder="localhost" required/>
                   <mat-icon matSuffix
@@ -67,7 +67,7 @@
                     warning
                   </mat-icon>
                 </mat-form-field>
-                <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
+                <mat-form-field class="flex flex-1 gt-sm:basis-2/5">
                   <mat-label translate>admin.smtp-port</mat-label>
                   <input matInput #smtpPortInput formControlName="smtpPort" placeholder="25" maxlength="5" required/>
                   <mat-hint align="end">{{smtpPortInput.value?.length || 0}}/5</mat-hint>
@@ -128,7 +128,7 @@
               @if (mailSettings.get('enableProxy').value) {
                 <div>
                   <div class="gt-sm:flex gt-sm:flex-row gt-sm:gap-2">
-                    <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
+                    <mat-form-field class="flex flex-1 gt-sm:basis-3/5">
                       <mat-label translate>admin.proxy-host</mat-label>
                       <input matInput required formControlName="proxyHost">
                       <mat-icon matSuffix
@@ -139,7 +139,7 @@
                         warning
                       </mat-icon>
                     </mat-form-field>
-                    <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
+                    <mat-form-field class="flex flex-1 gt-sm:basis-2/5">
                       <mat-label translate>admin.proxy-port</mat-label>
                       <input matInput required formControlName="proxyPort" type="number" step="1" min="1" max="65535">
                       <mat-icon matSuffix

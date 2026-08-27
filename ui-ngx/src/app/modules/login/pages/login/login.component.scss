@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
+@use 'constants' as *;
 
 :host {
   display: flex;
   flex: 1 1 0;
   .tb-login-content {
     background-color: #eee;
-    --mdc-elevated-card-container-elevation: none;
+    --mat-card-elevated-container-elevation: none;
     .tb-login-form {
       @media #{$mat-gt-xs} {
         width: 480px !important;

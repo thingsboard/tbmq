@@ -30,4 +30,15 @@ public class IntegrationUtil {
         return IE_CONSUMER_GROUP_PREFIX + UUIDUtil.strUuidReplaceHyphen(integrationId);
     }
 
+    private static final String IE_EVENT_MSG_TOPIC_PREFIX = "tbmq.ie.event.";
+    private static final String IE_EVENT_CONSUMER_GROUP_PREFIX = "ie-event-consumer-group-";
+
+    public static String getIntegrationEventTopic(String integrationId) {
+        return IE_EVENT_MSG_TOPIC_PREFIX + UUIDUtil.strUuidReplaceHyphen(integrationId);
+    }
+
+    public static String getIntegrationEventConsumerGroup(String integrationId) {
+        return IE_EVENT_CONSUMER_GROUP_PREFIX + UUIDUtil.strUuidReplaceHyphen(integrationId);
+    }
+
 }

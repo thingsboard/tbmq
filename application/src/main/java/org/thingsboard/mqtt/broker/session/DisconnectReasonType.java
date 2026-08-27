@@ -56,8 +56,21 @@ public enum DisconnectReasonType {
     public static final Set<DisconnectReasonType> SERVER_DISCONNECT_EXCLUSIONS =
             EnumSet.of(ON_DISCONNECT_MSG, ON_CHANNEL_CLOSED, ON_CONNECTION_FAILURE);
 
+    /**
+     * Reasons that arrive from the client's own byte stream — a client-sent DISCONNECT packet or the
+     * TCP close that follows it. Disconnects with these reasons must be enqueued in FIFO order with
+     * previously received MQTT messages so that, for example, a QoS 0 PUBLISH sent right before a
+     * DISCONNECT (as `mosquitto_pub` does) is not skipped by the high-priority queue.
+     */
+    public static final Set<DisconnectReasonType> CLIENT_INITIATED_IN_STREAM =
+            EnumSet.of(ON_DISCONNECT_MSG, ON_DISCONNECT_AND_WILL_MSG, ON_CHANNEL_CLOSED);
+
     public boolean allowsServerDisconnect() {
         return !SERVER_DISCONNECT_EXCLUSIONS.contains(this);
+    }
+
+    public boolean preservesInFlightMessages() {
+        return CLIENT_INITIATED_IN_STREAM.contains(this);
     }
 
     public boolean allowsLastWillOnDisconnect() {

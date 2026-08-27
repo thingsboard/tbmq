@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.DefaultJedisClientConfig.Builder;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisSentineled;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -41,6 +42,9 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
 
     @Value("${redis.sentinel.sentinels:}")
     private String sentinels;
+
+    @Value("${redis.sentinel.username:}")
+    private String sentinelUsername;
 
     @Value("${redis.sentinel.password:}")
     private String sentinelPassword;
@@ -59,6 +63,11 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
+        ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
+        return new JedisSentineled(master, buildDataNodeClientConfig(), connectionPoolConfig, toHostAndPort(sentinels), buildSentinelClientConfig());
+    }
+
+    JedisClientConfig buildDataNodeClientConfig() {
         Builder masterClientConfigBuilder = DefaultJedisClientConfig.builder().database(database);
         if (StringUtils.isNotEmpty(username)) {
             masterClientConfigBuilder.user(username);
@@ -67,14 +76,23 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
             masterClientConfigBuilder.password(password);
         }
         if (sslEnabled) {
-            masterClientConfigBuilder.ssl(true).sslSocketFactory(createSslSocketFactory());
+            masterClientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
         }
+        return masterClientConfigBuilder.build();
+    }
+
+    JedisClientConfig buildSentinelClientConfig() {
         Builder sentinelClientConfigBuilder = DefaultJedisClientConfig.builder();
+        if (StringUtils.isNotEmpty(sentinelUsername)) {
+            sentinelClientConfigBuilder.user(sentinelUsername);
+        }
         if (StringUtils.isNotEmpty(sentinelPassword)) {
             sentinelClientConfigBuilder.password(sentinelPassword);
         }
-        ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
-        return new JedisSentineled(master, masterClientConfigBuilder.build(), connectionPoolConfig, toHostAndPort(sentinels), sentinelClientConfigBuilder.build());
+        if (sslEnabled) {
+            sentinelClientConfigBuilder.ssl(true).sslSocketFactory(getSslSocketFactory());
+        }
+        return sentinelClientConfigBuilder.build();
     }
 
     @Override
@@ -88,7 +106,7 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
             builder.usePooling().poolConfig(buildPoolConfig());
         }
         if (sslEnabled) {
-            builder.useSsl().sslSocketFactory(createSslSocketFactory());
+            builder.useSsl().sslSocketFactory(getSslSocketFactory());
         }
         return builder.build();
     }
@@ -103,6 +121,7 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
         var redisSentinelConfiguration = new RedisSentinelConfiguration();
         redisSentinelConfiguration.setMaster(master);
         redisSentinelConfiguration.setSentinels(getNodes(sentinels));
+        redisSentinelConfiguration.setSentinelUsername(sentinelUsername);
         redisSentinelConfiguration.setSentinelPassword(sentinelPassword);
         redisSentinelConfiguration.setUsername(username);
         redisSentinelConfiguration.setPassword(password);

@@ -142,4 +142,12 @@ public class FlowControlIntegrationTestCase extends AbstractFlowControlIntegrati
         subscriber.close();
     }
 
+    @Test
+    public void givenReceiveMaxAndOutOfOrderAcks_whenSend50Messages_thenAllDeliveredInOrder() throws Throwable {
+        MqttClient subscriber = super.givenReceiveMaxAndOutOfOrderAcks_whenSend50Messages_thenAllDeliveredInOrder(SUB_CLIENT);
+
+        subscriber.disconnect();
+        subscriber.close();
+    }
+
 }

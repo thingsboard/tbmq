@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -22,6 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -29,6 +31,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -40,7 +43,9 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.integration.AuthorizationAction;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -63,12 +68,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -98,7 +104,9 @@ public class MqttSubscribeHandlerTest {
     @MockitoBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
     @MockitoBean
-    RateLimitService rateLimitService;
+    ThroughputQuotaService throughputQuotaService;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoSpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 
@@ -385,21 +393,128 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenMqttSubscribeMsg_whenProcessSubscriptions_thenReturnExpectedResult() {
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
         when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
 
         when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
 
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
         mqttSubscribeHandler.process(ctx, msg);
 
+        // the SUBACK carrying the granted QoS codes is built and sent from the persist success callback
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
         verify(mqttMessageGenerator, times(1)).createSubAckMessage(
                 eq(1), eq(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_0, MqttReasonCodes.SubAck.GRANTED_QOS_1, MqttReasonCodes.SubAck.GRANTED_QOS_2))
         );
-        verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
         verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
+    }
+
+    @Test
+    public void givenDeniedTopics_whenCollectMqttReasonCodes_thenPublishAuthorizationDeniedPerDeniedTopic() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(false);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false);
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+
+        // a CLIENT_AUTHORIZATION_FAILED event is emitted once per denied topic, and never for an authorized one
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic1");
+        verify(integrationLifecycleEventPublisher, times(1)).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic2");
+        verify(integrationLifecycleEventPublisher, never()).publishAuthorizationDenied(ctx, AuthorizationAction.SUBSCRIBE, "topic3");
+    }
+
+    @Test
+    public void givenSubscribeWithDeniedTopic_whenProcessSucceeds_thenPublishSubscribedWithGrantedSubscriptionsOnly() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+        when(retainedMsgService.getRetainedMessages(any())).thenReturn(Collections.emptyList());
+
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false); // denied -> excluded from SUBACK grants
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        List<TopicSubscription> grantedSubscriptions = List.of(getTopicSubscription("topic1", 0), getTopicSubscription("topic3", 2));
+
+        // persistence is requested only for the granted subscriptions; drive the success callback to trigger the event
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), eq(grantedSubscriptions), callbackCaptor.capture());
+        callbackCaptor.getValue().onSuccess();
+
+        // only the granted (authorized) subscriptions are reported as CLIENT_SUBSCRIBED; the denied topic2 is excluded
+        verify(integrationLifecycleEventPublisher).publishSubscribed(ctx, grantedSubscriptions);
+    }
+
+    @Test
+    public void givenSubscribeWithDeniedTopic_whenPersistFails_thenSendSubAckWithErrorCodesAndNoEvent() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        ChannelHandlerContext channel = mock(ChannelHandlerContext.class);
+        when(ctx.getChannel()).thenReturn(channel);
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+
+        when(authorizationRuleService.isSubAuthorized(eq("topic1"), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false); // denied
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        // persistence is requested only for the granted subscriptions; drive the failure callback
+        List<TopicSubscription> grantedSubscriptions = List.of(getTopicSubscription("topic1", 0), getTopicSubscription("topic3", 2));
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), eq(grantedSubscriptions), callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new RuntimeException("persist failed"));
+
+        // on persist failure the granted entries flip to UNSPECIFIED_ERROR; the pre-validated NOT_AUTHORIZED is preserved
+        verify(mqttMessageGenerator).createSubAckMessage(eq(1), eq(List.of(
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.NOT_AUTHORIZED,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR)));
+        // the SUBACK is still sent so the client does not hang, but no CLIENT_SUBSCRIBED event is emitted
+        verify(channel).writeAndFlush(any());
+        verify(integrationLifecycleEventPublisher, never()).publishSubscribed(any(), any());
+    }
+
+    @Test
+    public void givenAllGrantedSubscribe_whenPersistFails_thenAllGrantedCodesBecomeUnspecifiedError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        when(clientSubscriptionService.getClientSubscriptions(any())).thenReturn(Collections.emptySet());
+        when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
+
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
+        mqttSubscribeHandler.process(ctx, msg);
+
+        ArgumentCaptor<BasicCallback> callbackCaptor = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(clientSubscriptionService).subscribeAndPersist(any(), any(), callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new RuntimeException("boom"));
+
+        // every granted QoS entry is replaced with UNSPECIFIED_ERROR (0x80, version-agnostic)
+        verify(mqttMessageGenerator).createSubAckMessage(eq(1), eq(List.of(
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR,
+                MqttReasonCodes.SubAck.UNSPECIFIED_ERROR)));
     }
 
     @Test
@@ -411,6 +526,19 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID), reasonCodes);
+    }
+
+    @Test
+    public void givenMqtt311_whenCollectMqttReasonCodesForInvalidTopic_thenReturnUnspecifiedError() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("#"));
+
+        List<TopicSubscription> topicSubscriptions = List.of(getTopicSubscription(BrokerConstants.MULTI_LEVEL_WILDCARD, 1));
+        MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+
+        // MQTT 3.1.1 has no 0x8F Topic Filter invalid; its only SUBACK failure code is 0x80
         assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR), reasonCodes);
     }
 
@@ -425,7 +553,7 @@ public class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.TOPIC_FILTER_INVALID, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
     }
 
     @Test
@@ -577,65 +705,43 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
-    public void givenEmptyRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnEmptyResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of());
-
+    public void givenEmptyRetainedList_whenApplyThroughputQuota_thenReturnEmpty() {
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of());
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnAllMsgs() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2)
-        ));
-
+    public void givenQuotaGrantsAll_whenApplyThroughputQuota_thenReturnAll() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertEquals(2, retainedMsgs.size());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsWithNoTokensLeft_thenReturnEmptyResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(0L);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2)
-        ));
-
+    public void givenQuotaExhausted_whenApplyThroughputQuota_thenReturnEmpty() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(0);
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
         assertTrue(retainedMsgs.isEmpty());
     }
 
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimits_thenReturnExpectedResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(2L);
-
-        List<RetainedMsg> retainedMsgSet = List.of(
-                newRetainedMsg("msg1", 1), newRetainedMsg("msg2", 2)
-        );
-        List<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(retainedMsgSet);
-
+    public void givenQuotaPartiallyGranted_whenApplyThroughputQuota_thenTruncate() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(3)).thenReturn(2);
+        List<RetainedMsg> result = mqttSubscribeHandler.applyThroughputQuota(List.of(
+                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2), newRetainedMsg("payload3", 3)));
         assertEquals(2, result.size());
-        assertTrue(result.containsAll(retainedMsgSet));
     }
 
+    // the retained path must never fall back to the plain charge: that is exactly the narrowing that used to cap a
+    // retained set at the node-local pool plus one block while the cluster still had budget for the whole set
     @Test
-    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsAndPartlyTokensAvailable_thenReturnExpectedResult() {
-        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.tryConsumeTotalMsgs(anyLong())).thenReturn(1L);
-
-        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
-                newRetainedMsg("msg1", 1),
-                newRetainedMsg("msg2", 2),
-                newRetainedMsg("msg3", 0)
-        ));
-
-        assertEquals(1, retainedMsgs.size());
+    public void givenRetainedMsgs_whenApplyThroughputQuota_thenNeverUsesThePlainCharge() {
+        when(throughputQuotaService.tryConsumeOutgoingBlocking(2)).thenReturn(2);
+        mqttSubscribeHandler.applyThroughputQuota(List.of(newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 2)));
+        verify(throughputQuotaService, never()).tryConsumeOutgoing(anyInt());
+        verify(throughputQuotaService, never()).tryConsumeOutgoing();
     }
 
     private List<TopicSubscription> getTopicSubscriptions() {

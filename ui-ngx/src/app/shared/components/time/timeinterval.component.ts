@@ -29,7 +29,7 @@ import { TimeService } from '@core/services/time.service';
 import { coerceNumberProperty } from '@angular/cdk/coercion';
 import { SubscriptSizing, MatFormField, MatLabel } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { Interval, IntervalMath, TimeInterval } from '@shared/models/time/time.models';
+import { Interval, IntervalMath, IntervalType, TimeInterval } from '@shared/models/time/time.models';
 import { isDefined } from '@core/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -37,7 +37,6 @@ import { MatInput } from '@angular/material/input';
 
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({
     selector: 'tb-timeinterval',
@@ -50,7 +49,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
             multi: true
         }
     ],
-    imports: [TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatSlideToggle]
+    imports: [TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption]
 })
 export class TimeintervalComponent implements OnInit, ControlValueAccessor {
 
@@ -62,7 +61,9 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
     const minValueData = coerceNumberProperty(min);
     if (typeof minValueData !== 'undefined' && minValueData !== this.minValue) {
       this.minValue = minValueData;
-      this.maxValue = Math.max(this.maxValue, this.minValue);
+      if (typeof this.maxValue !== 'undefined' && !isNaN(this.maxValue)) {
+        this.maxValue = Math.max(this.maxValue, this.minValue);
+      }
       this.updateView();
     }
   }
@@ -72,7 +73,9 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
     const maxValueData = coerceNumberProperty(max);
     if (typeof maxValueData !== 'undefined' && maxValueData !== this.maxValue) {
       this.maxValue = maxValueData;
-      this.minValue = Math.min(this.minValue, this.maxValue);
+      if (typeof this.minValue !== 'undefined' && !isNaN(this.minValue)) {
+        this.minValue = Math.min(this.minValue, this.maxValue);
+      }
       this.updateView(true);
     }
   }
@@ -100,6 +103,13 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
   intervals: Array<TimeInterval>;
 
   advanced = false;
+
+  readonly customIntervalValue: Interval = IntervalType.CUSTOM;
+  private readonly customTimeInterval: TimeInterval = {
+    name: 'timeinterval.custom',
+    translateParams: {},
+    value: IntervalType.CUSTOM
+  };
 
   private modelValue: Interval;
   private rendered = false;
@@ -148,6 +158,8 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
   private setInterval(interval: Interval) {
     if (!this.advanced) {
       this.interval = interval;
+    } else {
+      this.interval = IntervalType.CUSTOM;
     }
     const intervalSeconds = Math.floor(IntervalMath.numberValue(interval) / 1000);
     this.days = Math.floor(intervalSeconds / 86400);
@@ -160,6 +172,9 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
     const min = this.timeService.boundMinInterval(this.minValue);
     const max = this.timeService.boundMaxInterval(this.maxValue);
     this.intervals = this.timeService.getIntervals(this.minValue, this.maxValue, this.useCalendarIntervals());
+    if (!this.disabledAdvanced()) {
+      this.intervals = [...this.intervals, this.customTimeInterval];
+    }
     if (this.rendered) {
       let newInterval = this.modelValue;
       const newIntervalMs = IntervalMath.numberValue(newInterval);
@@ -208,18 +223,18 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
   }
 
   onIntervalChange() {
-    this.updateView();
-  }
-
-  onAdvancedChange() {
-    if (!this.advanced) {
-      this.interval = this.calculateIntervalMs();
-    } else {
-      let interval = this.interval;
-      if (!interval || typeof interval === 'number' && isNaN(interval)) {
-        interval = this.calculateIntervalMs();
+    if (this.interval === IntervalType.CUSTOM) {
+      if (!this.advanced) {
+        this.advanced = true;
+        let custom = this.calculateIntervalMs();
+        if (!custom) {
+          const min = this.timeService.boundMinInterval(this.minValue);
+          custom = typeof min === 'number' ? min : 5 * 60 * 1000;
+          this.setInterval(custom);
+        }
       }
-      this.setInterval(interval);
+    } else {
+      this.advanced = false;
     }
     this.updateView();
   }

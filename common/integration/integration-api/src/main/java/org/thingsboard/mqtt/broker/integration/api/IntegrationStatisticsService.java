@@ -28,6 +28,10 @@ public interface IntegrationStatisticsService {
 
     void clearIntegrationProcessorStats(UUID integrationId);
 
+    IntegrationProcessorStats createIntegrationEventProcessorStats(UUID integrationId);
+
+    void clearIntegrationEventProcessorStats(UUID integrationId);
+
     MessagesStats createIeUplinkPublishStats();
 
     void onIntegrationStateUpdate(IntegrationType integrationType, ComponentLifecycleEvent state, boolean success);
@@ -35,8 +39,6 @@ public interface IntegrationStatisticsService {
     void onIntegrationsCountUpdate(IntegrationType integrationType, int started, int failed);
 
     void onUplinkMsg(IntegrationType integrationType, boolean success);
-
-    void onDownlinkMsg(IntegrationType integrationType, boolean success);
 
     void printStats();
 

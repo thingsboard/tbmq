@@ -31,14 +31,14 @@
   @if (subscriptionsFormArray().controls?.length) {
     <section class="flex flex-col gap-2.5">
       <div class="flex flex-row gap-2.5">
-        <mat-label class="flex flex-1 basis-[60%]">{{ 'subscription.topic-filter' | translate }}&#42;</mat-label>
+        <mat-label class="flex flex-1 basis-3/5">{{ 'subscription.topic-filter' | translate }}&#42;</mat-label>
         <mat-label class="flex flex-1 basis-[30%]" translate>mqtt-client-session.qos</mat-label>
         <mat-label style="width: 40px"></mat-label>
         <mat-label style="width: 40px"></mat-label>
       </div>
       @for (topicFilter of subscriptionsFormArray().controls; track topicFilter) {
         <div [formGroup]="topicFilter" class="subscriptions-container flex flex-row items-center gap-2.5">
-          <mat-form-field class="flex flex-1 basis-[60%]" appearance="outline" subscriptSizing="dynamic">
+          <mat-form-field class="flex flex-1 basis-3/5" appearance="outline" subscriptSizing="dynamic">
             <input matInput name="topicFilter" formControlName="topicFilter" required
                    [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
             <mat-autocomplete #auto="matAutocomplete">

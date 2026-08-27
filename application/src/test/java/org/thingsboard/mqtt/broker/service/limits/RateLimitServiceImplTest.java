@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
-import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 import java.util.UUID;
@@ -55,8 +54,6 @@ public class RateLimitServiceImplTest {
     @MockitoBean
     DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     @MockitoBean
-    TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
-    @MockitoBean
     RateLimitCacheService rateLimitCacheService;
     @MockitoBean
     ClientsLimitProperties clientsLimitProperties;
@@ -69,7 +66,6 @@ public class RateLimitServiceImplTest {
         when(incomingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
         rateLimitService.init();
 
@@ -293,14 +289,6 @@ public class RateLimitServiceImplTest {
         when(rateLimitCacheService.tryConsumeDevicePersistedMsgs(eq(10L))).thenReturn(10L);
 
         long tokens = rateLimitService.tryConsumeDevicePersistedMsgs(10L);
-        assertEquals(10L, tokens);
-    }
-
-    @Test
-    public void givenTokensAvailable_whenTryConsumeTotalMsgs_thenSuccess() {
-        when(rateLimitCacheService.tryConsumeTotalMsgs(eq(10L))).thenReturn(10L);
-
-        long tokens = rateLimitService.tryConsumeTotalMsgs(10L);
         assertEquals(10L, tokens);
     }
 }

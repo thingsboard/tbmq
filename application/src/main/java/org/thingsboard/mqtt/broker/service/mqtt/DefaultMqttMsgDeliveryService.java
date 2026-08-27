@@ -40,8 +40,6 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Slf4j
 @Service
 public class DefaultMqttMsgDeliveryService implements MqttMsgDeliveryService {
@@ -92,7 +90,11 @@ public class DefaultMqttMsgDeliveryService implements MqttMsgDeliveryService {
                                              List<Integer> subscriptionIds) {
         if (!sessionCtx.isWritable()) {
             log.debug("[{}] Channel is not writable. Skip send Publish {}", sessionCtx.getClientId(), msg);
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            // Retained messages are recoverable from the retained-message store, so their drop is not counted —
+            // matching DefaultMqttPublishMsgDeliveryService#isCountableDrop.
+            if (!retain) {
+                tbMessageStatsReportClient.reportDroppedMsgs();
+            }
             return;
         }
         if (isTraceEnabled) {

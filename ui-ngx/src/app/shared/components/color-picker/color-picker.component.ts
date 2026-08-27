@@ -15,7 +15,7 @@
 ///
 
 import { Component, forwardRef, OnDestroy } from '@angular/core';
-import { Color, ColorPickerControl, SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, RgbaComponent, HslaComponent, ColorPresetsComponent } from '@iplab/ngx-color-picker';
+import { Color, ColorPickerControl, SaturationComponent, HueComponent, AlphaComponent, RgbaComponent, HslaComponent, ColorPresetsComponent } from '@iplab/ngx-color-picker';
 import { Subscription } from 'rxjs';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { isString } from '@core/utils';
@@ -54,7 +54,7 @@ export const colorPresetsHex =
         useValue: { appearance: 'fill' }
       }
     ],
-    imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
+    imports: [SaturationComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
 })
 export class ColorPickerComponent implements ControlValueAccessor, OnDestroy {
 

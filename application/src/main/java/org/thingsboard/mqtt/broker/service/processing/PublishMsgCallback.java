@@ -17,6 +17,14 @@ package org.thingsboard.mqtt.broker.service.processing;
 
 public interface PublishMsgCallback {
 
+    PublishMsgCallback EMPTY = new PublishMsgCallback() {
+        @Override
+        public void onSuccess() {}
+
+        @Override
+        public void onFailure(Throwable t) {}
+    };
+
     void onSuccess();
 
     default void onBatchSuccess(int totalCount) {

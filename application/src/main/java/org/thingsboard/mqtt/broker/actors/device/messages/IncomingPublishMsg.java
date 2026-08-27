@@ -20,12 +20,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
 @Getter
 @RequiredArgsConstructor
 @ToString
-public class IncomingPublishMsg implements TbActorMsg {
+public class IncomingPublishMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final DevicePublishMsg publishMsg;
 

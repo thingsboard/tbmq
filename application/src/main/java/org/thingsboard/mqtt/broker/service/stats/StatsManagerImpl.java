@@ -23,12 +23,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStatsFormatter;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -55,12 +55,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
 public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager, ConsumerStatsManager {
@@ -79,7 +79,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
-    private ClientActorStats clientActorStats;
+    private ActorStats clientActorStats;
+    private ActorStats persistedDeviceActorStats;
+    private FlowControlStats flowControlStats;
+    private DroppedMsgStats droppedMsgStats;
+    private DroppedLifecycleEventStats droppedLifecycleEventStats;
+    private ClientDisconnectStats clientDisconnectStats;
+    private ThroughputQuotaStats throughputQuotaStats;
+    private ConnectionStats connectionStats;
 
     @Value("${stats.application-processor.enabled}")
     private boolean applicationProcessorStatsEnabled;
@@ -91,7 +98,17 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.timerStats = new TimerStats(statsFactory);
         this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
         this.retainedMsgConsumerStats = new DefaultRetainedMsgConsumerStats(statsFactory);
-        this.clientActorStats = new DefaultClientActorStats(statsFactory);
+        this.clientActorStats = new DefaultActorStats(statsFactory, StatsType.CLIENT_ACTOR);
+        this.persistedDeviceActorStats = new DefaultActorStats(statsFactory, StatsType.PERSISTED_DEVICE_ACTOR);
+        DefaultFlowControlStats defaultFlowControlStats = new DefaultFlowControlStats(statsFactory);
+        this.flowControlStats = defaultFlowControlStats;
+        gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".inflightCount", defaultFlowControlStats::getInflightCount));
+        gauges.add(new Gauge(StatsType.FLOW_CONTROL.getPrintName() + ".delayedQueueSize", defaultFlowControlStats::getDelayedQueueSize));
+        this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
+        this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
+        this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
+        this.throughputQuotaStats = new DefaultThroughputQuotaStats(statsFactory);
+        this.connectionStats = new DefaultConnectionStats(statsFactory);
     }
 
     @PreDestroy
@@ -111,6 +128,31 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
         managedStats.add(stats);
         return stats;
+    }
+
+    @Override
+    public DroppedMsgStats getDroppedMsgStats() {
+        return droppedMsgStats;
+    }
+
+    @Override
+    public DroppedLifecycleEventStats getDroppedLifecycleEventStats() {
+        return droppedLifecycleEventStats;
+    }
+
+    @Override
+    public ClientDisconnectStats getClientDisconnectStats() {
+        return clientDisconnectStats;
+    }
+
+    @Override
+    public ThroughputQuotaStats getThroughputQuotaStats() {
+        return throughputQuotaStats;
+    }
+
+    @Override
+    public ConnectionStats getConnectionStats() {
+        return connectionStats;
     }
 
     @Override
@@ -184,7 +226,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}", clientId);
-        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(clientId));
+        printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(clientId));
     }
 
     @Override
@@ -195,7 +237,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             return;
         }
         for (String compoundClientId : clientIds) {
-            printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+            printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
         }
     }
 
@@ -211,38 +253,43 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
         clientIds.remove(compoundClientId);
 
-        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+        printAndRemoveApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
         if (clientIds.isEmpty()) {
             sharedSubscriptionCompoundClientIds.remove(clientId);
         }
     }
 
-    private void printApplicationStatsOnClear(ApplicationProcessorStats stats) {
+    private void printAndRemoveApplicationStatsOnClear(ApplicationProcessorStats stats) {
         if (stats != null) {
             log.info("[{}][{}] Stats on clear", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId());
             printApplicationProcessorStats(stats);
+            // Deregister the per-client counters so they stop being scraped and don't leak the
+            // Micrometer registry on client/shared-subscription churn. The appProcessor.latency
+            // timers carry no clientId tag (one shared set across all clients), so they are
+            // intentionally left registered.
+            stats.getStatsCounters().forEach(statsFactory::remove);
         }
     }
 
     @Override
-    public AtomicInteger createNonWritableClientsCounter() {
-        log.trace("Creating NonWritableClientsCounter");
+    public AtomicInteger createNonWritableClientsGauge() {
+        log.trace("Creating NonWritableClientsGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createSubscriptionSizeCounter() {
-        log.trace("Creating SubscriptionSizeCounter");
+    public AtomicInteger createSubscriptionSizeGauge() {
+        log.trace("Creating SubscriptionSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicInteger createRetainMsgSizeCounter() {
-        log.trace("Creating RetainMsgSizeCounter");
+    public AtomicInteger createRetainMsgSizeGauge() {
+        log.trace("Creating RetainMsgSizeGauge");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -278,10 +325,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
-        log.trace("Registering ClientSubscriptionsStats");
-        statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
-        gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
+    public void registerSubscriptionsStats(LongAdder subscriptionCount) {
+        log.trace("Registering SubscriptionsStats");
+        // Total subscription count across all clients — maintained incrementally by ClientSubscriptionService
+        // (see #getClientSubscriptionsCount) so this reads O(1) instead of summing every client's set per scrape.
+        // NOT the number of clients that have subscriptions.
+        statsFactory.createGauge(StatsType.SUBSCRIPTIONS.getPrintName(), subscriptionCount, LongAdder::sum);
+        gauges.add(new Gauge(StatsType.SUBSCRIPTIONS.getPrintName(), subscriptionCount::sum));
     }
 
     @Override
@@ -317,16 +367,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public AtomicLong createSubscriptionTrieNodesCounter() {
-        log.trace("Creating SubscriptionTrieNodesCounter");
+    public AtomicLong createSubscriptionTrieNodesGauge() {
+        log.trace("Creating SubscriptionTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
     @Override
-    public AtomicLong createRetainMsgTrieNodesCounter() {
-        log.trace("Creating RetainMsgTrieNodesCounter");
+    public AtomicLong createRetainMsgTrieNodesGauge() {
+        log.trace("Creating RetainMsgTrieNodesGauge");
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -335,9 +385,21 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}", queueName, queueIndex);
-        MessagesStats stats = statsFactory.createMessagesStats(StatsType.SQL_QUEUE.getPrintName() + "." + queueName,
-                "queueIndex", String.valueOf(queueIndex));
+        String statsKey = StatsType.SQL_QUEUE.getPrintName();
+        // Carry the queue name as a `queueName` tag on a single `sqlQueue` metric rather than baking it into
+        // the metric name (`sqlQueue.<queueName>`); a stable name with a bounded tag is the Prometheus-idiomatic
+        // shape and lets consumers aggregate across queues. The counters and the queueSize gauge below must
+        // share the same tag set so consumers can correlate throughput with depth per queue, so build it once.
+        String[] tags = {"queueName", queueName, "queueIndex", String.valueOf(queueIndex)};
+        MessagesStats stats = statsFactory.createMessagesStats(statsKey, tags);
         managedStats.add(stats);
+        // Export the live SQL queue depth as a Micrometer gauge (backpressure/durability signal that was
+        // previously computed and logged but never scraped). The queue::size supplier is wired later by
+        // TbSqlBlockingQueue#init, so getCurrentQueueSize() reports 0 until then. Micrometer holds only a
+        // weak reference to the gauge's state object, but the stats instance is strong-held by managedStats
+        // above for the process lifetime, so it will not be GC'd (which would make the gauge report NaN).
+        statsFactory.createGauge(statsKey + "." + StatsConstantNames.QUEUE_SIZE, stats,
+                MessagesStats::getCurrentQueueSize, tags);
         return stats;
     }
 
@@ -351,8 +413,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public Timer createCommitTimer(String clientId) {
         ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_CONSUMER.getPrintName(),
-                "consumerId", clientId,
-                "operation", "syncCommit"));
+                "consumerId", clientId));
         managedQueueConsumers.put(clientId, timer);
         return timer::logTime;
     }
@@ -378,8 +439,18 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public ClientActorStats getClientActorStats() {
+    public ActorStats getClientActorStats() {
         return clientActorStats;
+    }
+
+    @Override
+    public ActorStats getPersistedDeviceActorStats() {
+        return persistedDeviceActorStats;
+    }
+
+    @Override
+    public FlowControlStats getFlowControlStats() {
+        return flowControlStats;
     }
 
     @Override
@@ -391,11 +462,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void printStats() {
         log.info("----------------------------------------------------------------");
         for (MessagesStats stats : managedStats) {
-            String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
-                    StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
-                    StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
-                    StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
-            log.info("[{}] Stats: {}", stats.getName(), statsStr);
+            log.info("[{}] Stats: {}", stats.getName(), MessagesStatsFormatter.format(stats));
             stats.reset();
         }
 
@@ -442,23 +509,38 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: {}", StatsType.RETAINED_MSG_CONSUMER.getPrintName(), retainedMsgStatsStr);
         retainedMsgConsumerStats.reset();
 
+        String flowControlStatsStr = flowControlStats.getStatsCounters().stream()
+                .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                .collect(Collectors.joining(" "));
+        log.info("[{}] Stats: {}", StatsType.FLOW_CONTROL.getPrintName(), flowControlStatsStr);
+        flowControlStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_MSGS.getPrintName(), droppedMsgStats.getCount());
+        droppedMsgStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.DROPPED_LIFECYCLE_EVENTS.getPrintName(), droppedLifecycleEventStats.getCount());
+        droppedLifecycleEventStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.CLIENT_DISCONNECTS.getPrintName(), clientDisconnectStats.getCount());
+        clientDisconnectStats.reset();
+
+        log.info("[{}] Stats: count = [{}]", StatsType.THROUGHPUT_QUOTA_DEGRADED.getPrintName(), throughputQuotaStats.getCount());
+        throughputQuotaStats.reset();
+
+        log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",
+                StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount(),
+                StatsType.CONNECTION_REFUSED.getPrintName(), connectionStats.getRefusedCount(),
+                StatsType.CONNECTION_ERROR.getPrintName(), connectionStats.getErrorCount());
+        connectionStats.reset();
+
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder);
 
-        StringBuilder clientActorLogBuilder = new StringBuilder();
-        clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")
-                .append(clientActorStats.getQueueTimeAvg()).append(" | ")
-                .append(clientActorStats.getQueueTimeMax()).append("] ")
-        ;
-        clientActorStats.getTimers().forEach((msgType, timer) -> {
-            clientActorLogBuilder.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
-                    .append(timer.getAvg()).append("] ");
-        });
-        clientActorStats.reset();
-        log.info("Client Actor Average Stats: {}", clientActorLogBuilder);
+        printActorStats(clientActorStats, "Client Actor");
+        printActorStats(persistedDeviceActorStats, "Device Actor");
 
         StringBuilder timerLogBuilder = new StringBuilder();
         for (ResettableTimer resettableTimer : timerStats.getTimers()) {
@@ -483,6 +565,18 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             timer.reset();
         });
         log.info("Queue Consumer Commit Time Average Stats: {}", queueConsumerLogBuilder);
+    }
+
+    private void printActorStats(ActorStats stats, String label) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("msgInQueueTime").append(" = [").append(stats.getMsgCount()).append(" | ")
+                .append(stats.getQueueTimeAvg()).append(" | ")
+                .append(stats.getQueueTimeMax()).append("] ");
+        stats.getTimers().forEach((msgType, timer) ->
+                sb.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
+                        .append(timer.getAvg()).append("] "));
+        stats.reset();
+        log.info("{} Average Stats: {}", label, sb);
     }
 
     private void printApplicationProcessorStats(ApplicationProcessorStats stats) {

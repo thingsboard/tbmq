@@ -152,7 +152,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
 
         for (int i = 0; i < msgCount; i++) {
             if (i == msgCount / 2) {
-                clientMqttActorManager.notifyChannelNonWritable(appClientId, NonWritableChannelMsg.DEFAULT);
+                clientMqttActorManager.notifyChannelNonWritable(appClientId, new NonWritableChannelMsg());
             }
             publisher.publish(backpressureTopic, PAYLOAD, 1, false);
         }
@@ -160,7 +160,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         publisher.disconnect();
         publisher.close();
 
-        clientMqttActorManager.notifyChannelWritable(appClientId, WritableChannelMsg.DEFAULT);
+        clientMqttActorManager.notifyChannelWritable(appClientId, new WritableChannelMsg());
 
         boolean await = latch.await(30, TimeUnit.SECONDS);
         assertThat(await).isTrue();
@@ -210,7 +210,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
 
         for (int i = 0; i < msgCount; i++) {
             if (i == msgCount / 2) {
-                clientMqttActorManager.notifyChannelNonWritable(appClientId, NonWritableChannelMsg.DEFAULT);
+                clientMqttActorManager.notifyChannelNonWritable(appClientId, new NonWritableChannelMsg());
             }
             publisher.publish(topic, PAYLOAD, 1, false);
         }
@@ -218,7 +218,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         publisher.disconnect();
         publisher.close();
 
-        clientMqttActorManager.notifyChannelWritable(appClientId, WritableChannelMsg.DEFAULT);
+        clientMqttActorManager.notifyChannelWritable(appClientId, new WritableChannelMsg());
 
         boolean await = latch.await(30, TimeUnit.SECONDS);
         assertThat(await).isTrue();

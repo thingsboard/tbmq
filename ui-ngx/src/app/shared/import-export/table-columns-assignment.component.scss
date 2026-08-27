@@ -35,10 +35,10 @@
 
 :host ::ng-deep {
   .not-assigned .mat-mdc-select-value-text {
-    color: var(--mdc-theme-error, #f44336);
+    color: var(--mat-theme-error, #f44336);
   }
 
   .not-assigned-option .mdc-list-item__primary-text {
-    color: var(--mdc-theme-error, #f44336) !important;
+    color: var(--mat-theme-error, #f44336) !important;
   }
 }

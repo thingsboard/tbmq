@@ -34,6 +34,7 @@ import { ConfigService } from '@core/http/config.service';
 export class ChartsComponent implements OnInit {
 
   readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
+  readonly chartsGrid = viewChild<ElementRef>('chartsGrid');
 
   readonly cardType = HomePageTitleType.MONITORING;
   readonly chartKeys = [
@@ -68,11 +69,23 @@ export class ChartsComponent implements OnInit {
   }
 
   private onResize() {
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      const { width: w } = entry.contentRect;
+    const tallLayout = window.matchMedia('screen and (min-width: 1280px)');
+    const resizeObserver = new ResizeObserver(() => {
+      const containerEl = this.homeChartsContainer().nativeElement as HTMLElement;
+      const gridEl = this.chartsGrid().nativeElement as HTMLElement;
+      const w = containerEl.getBoundingClientRect().width;
       const br = 1700;
       const correlation = w > br ? ((w - br) / 10000) + 1.4 : 1;
-      this.chartHeight = Math.round((w / 10) * correlation);
+      const widthBased = Math.round((w / 10) * correlation);
+      if (!tallLayout.matches) {
+        this.chartHeight = widthBased;
+        return;
+      }
+      const chartOverhead = 32;
+      const firstItem = gridEl.firstElementChild as HTMLElement | null;
+      const itemHeight = firstItem?.getBoundingClientRect().height ?? 0;
+      const heightBased = Math.floor(itemHeight) - chartOverhead;
+      this.chartHeight = heightBased > 0 ? heightBased : widthBased;
     });
     resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }

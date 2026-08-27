@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, model } from '@angular/core';
+import { booleanAttribute, Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { QuickTimeInterval, QuickTimeIntervalTranslationMap } from '@shared/models/time/time.models';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
@@ -45,7 +45,8 @@ export class QuickTimeIntervalComponent implements ControlValueAccessor {
   rendered = false;
 
   disabled = model<boolean>();
-  readonly onlyCurrentInterval = input(false);
+  readonly onlyCurrentInterval = input(false, {transform: booleanAttribute});
+  readonly predefinedName = input<string>();
 
   private propagateChange = (_: any) => {};
 

@@ -100,6 +100,8 @@ export class CheckConnectivityDialogComponent extends
   mqttTabIndex = 0;
 
   private connectivitySettings = this.settingsService.connectivitySettings;
+  private readonly wildcardPattern = '.*';
+  private readonly defaultTopic = 'tbmq/demo/topic';
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -242,12 +244,16 @@ export class CheckConnectivityDialogComponent extends
   private setConfig(credentials: ClientCredentials): MqttCommandConfig {
     const clientType = credentials.clientType;
     const credentialsValue = JSON.parse(credentials.credentialsValue);
+    const { subTopic, pubTopic } = this.setTopics(
+      credentialsValue.authRules.subAuthRulePatterns,
+      credentialsValue.authRules.pubAuthRulePatterns
+    );
     return {
       clientId: this.setClientId(credentialsValue, clientType),
       userName: credentialsValue.userName,
       password: this.setPassword(credentials),
-      subTopic: this.setTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+'),
-      pubTopic: this.setTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic'),
+      subTopic,
+      pubTopic,
       hostname: this.connectivitySettings.mqtt.host,
       mqttPort: this.connectivitySettings.mqtt.port.toString(),
       cleanSession: clientType === ClientType.APPLICATION,
@@ -285,9 +291,41 @@ export class CheckConnectivityDialogComponent extends
     return null;
   }
 
+  private setTopics(subRules: string[], pubRules: string[]): { subTopic: string; pubTopic: string } {
+    if (subRules?.length && pubRules?.length) {
+      const commonPattern = pubRules.find(p => subRules.includes(p));
+      if (commonPattern) {
+        const topic = this.topicFromRule(commonPattern);
+        return { subTopic: topic, pubTopic: topic };
+      }
+      for (const pubRule of pubRules) {
+        const pubTopic = this.topicFromRule(pubRule);
+        const matchingSubRule = subRules.find(subRule => {
+          try {
+            return new RegExp(`^${subRule}$`).test(pubTopic);
+          } catch {
+            return false;
+          }
+        });
+        if (matchingSubRule) {
+          return { subTopic: pubTopic, pubTopic };
+        }
+      }
+    }
+
+    return {
+      subTopic: this.setTopic(subRules, 'tbmq/demo/+'),
+      pubTopic: this.setTopic(pubRules, this.defaultTopic)
+    };
+  }
+
+  private topicFromRule(rule: string): string {
+    return rule === this.wildcardPattern ? this.defaultTopic : randomStringFromRegex(rule);
+  }
+
   private setTopic(rules: string[], topic: string): string {
     for (let i= 0; i < rules?.length; i++) {
-      if (rules[i] === '.*') {
+      if (rules[i] === this.wildcardPattern) {
         return topic;
       }
     }

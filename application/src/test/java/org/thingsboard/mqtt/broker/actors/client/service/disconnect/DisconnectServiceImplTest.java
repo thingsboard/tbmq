@@ -22,17 +22,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -41,6 +44,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -49,6 +54,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -83,6 +89,12 @@ public class DisconnectServiceImplTest {
     FlowControlService flowControlService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockitoBean
+    ChannelBackpressureManager channelBackpressureManager;
+    @MockitoBean
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    @MockitoBean
+    StatsManager statsManager;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -91,6 +103,7 @@ public class DisconnectServiceImplTest {
     ClientActorStateInfo clientActorState;
     QueuedMqttMessages queuedMqttMessages;
     SessionInfo sessionInfo;
+    ClientDisconnectStats clientDisconnectStats;
 
     @Before
     public void setUp() {
@@ -109,6 +122,12 @@ public class DisconnectServiceImplTest {
         when(clientActorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
 
         when(ctx.getClientId()).thenReturn(CLIENT_ID);
+
+        clientDisconnectStats = mock(ClientDisconnectStats.class);
+        when(statsManager.getClientDisconnectStats()).thenReturn(clientDisconnectStats);
+        // The bean caches the stats reference in @PostConstruct; re-run it here so the cached field
+        // picks up the stub above (context init ran before this stub was set).
+        disconnectService.init();
     }
 
     @Test
@@ -121,6 +140,8 @@ public class DisconnectServiceImplTest {
         verify(disconnectService, never()).cleanupClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0, ON_DISCONNECT_MSG);
         verify(disconnectService, times(1)).closeChannel(ctx);
+        // Never-initialized session returns before the increment site, so the counter must not move.
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
     }
 
     @Test
@@ -136,6 +157,36 @@ public class DisconnectServiceImplTest {
         verify(flowControlService, times(1)).removeFromMap(eq(CLIENT_ID));
         verify(tbMessageStatsReportClient).removeClient(eq(CLIENT_ID));
         verify(mqttMessageGenerator, never()).createDisconnectMsg(any());
+        // A genuine established-session disconnect counts, and the disconnect reason is passed through.
+        verify(clientDisconnectStats, times(1)).increment(ON_DISCONNECT_MSG);
+    }
+
+    @Test
+    public void givenClusterConflictingSession_whenDisconnect_thenEmitLifecycleDisconnectButSkipSessionEvent() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // Takeover on another node: the local session-event-service notification must stay suppressed
+        // (the session is now owned by the new node)...
+        verify(disconnectService, never()).notifyClientDisconnected(clientActorState, -1, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+        verify(clientSessionEventService, never()).notifyClientDisconnected(any(), any(), any());
+        // ...but the lifecycle CLIENT_DISCONNECTED event must still be emitted, to pair with the CLIENT_CONNECTED
+        // that this node emitted for the now-superseded session.
+        verify(integrationLifecycleEventPublisher, times(1)).publishDisconnected(ctx, DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+        // Cross-node takeover is a real established-session disconnect, so it counts in lockstep with the event.
+        verify(clientDisconnectStats, times(1)).increment(DisconnectReasonType.ON_CLUSTER_CONFLICTING_SESSIONS);
+    }
+
+    @Test
+    public void givenConnectionFailure_whenDisconnect_thenDoesNotEmitLifecycleDisconnect() {
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_CONNECTION_FAILURE));
+        disconnectService.disconnect(clientActorState, disconnectMsg);
+
+        // A broker-refused connection never established a session, so the teardown disconnect must NOT emit
+        // CLIENT_DISCONNECTED (there is no CLIENT_CONNECTED to pair with); CLIENT_CONNECTION_FAILED covers it instead.
+        verify(integrationLifecycleEventPublisher, never()).publishDisconnected(ctx, DisconnectReasonType.ON_CONNECTION_FAILURE);
+        // ...and for the same reason it must not be counted here; it is surfaced separately as a connection refusal.
+        verify(clientDisconnectStats, never()).increment(any(DisconnectReasonType.class));
     }
 
     @Test
@@ -184,6 +235,28 @@ public class DisconnectServiceImplTest {
 
         verify(msgPersistenceManager, times(1)).stopProcessingPersistedMessages(any());
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());
+    }
+
+    @Test
+    public void cleanupClientSession_notifiesChannelBackpressureManagerOnSessionDisconnect() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        verify(channelBackpressureManager).onSessionDisconnect(clientActorState);
+    }
+
+    @Test
+    public void cleanupClientSession_callsReleasePublishedInFlightCtx_beforeRemoveFromMap() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        InOrder inOrder = inOrder(ctx, flowControlService);
+        inOrder.verify(ctx).releasePublishedInFlightCtx();
+        inOrder.verify(flowControlService).removeFromMap(eq(CLIENT_ID));
     }
 
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {

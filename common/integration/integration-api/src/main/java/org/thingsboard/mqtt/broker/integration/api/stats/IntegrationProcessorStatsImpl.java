@@ -55,10 +55,10 @@ public class IntegrationProcessorStatsImpl implements IntegrationProcessorStats 
     private final StatsCounter successIterationsCounter;
     private final StatsCounter failedIterationsCounter;
 
-    public IntegrationProcessorStatsImpl(UUID integrationUuid, StatsFactory statsFactory) {
+    public IntegrationProcessorStatsImpl(UUID integrationUuid, StatsFactory statsFactory, StatsType statsType) {
         this.integrationUuid = integrationUuid;
         String integrationId = integrationUuid.toString();
-        String statsKey = StatsType.INTEGRATION_PROCESSOR.getPrintName();
+        String statsKey = statsType.getPrintName();
         this.totalMsgCounter = statsFactory.createStatsCounter(statsKey, TOTAL_MSGS, INTEGRATION_ID_TAG, integrationId);
         this.successMsgCounter = statsFactory.createStatsCounter(statsKey, SUCCESSFUL_MSGS, INTEGRATION_ID_TAG, integrationId);
         this.tmpTimeoutMsgCounter = statsFactory.createStatsCounter(statsKey, TMP_TIMEOUT, INTEGRATION_ID_TAG, integrationId);
@@ -73,7 +73,7 @@ public class IntegrationProcessorStatsImpl implements IntegrationProcessorStats 
     }
 
     @Override
-    public void log(int totalMsgCount, IntegrationPackProcessingResult result, boolean finalIterationForPack) {
+    public void log(int totalMsgCount, IntegrationPackProcessingResult<?> result, boolean finalIterationForPack) {
         int pending = result.getPendingMap().size();
         int failed = result.getFailedMap().size();
         int success = totalMsgCount - (pending + failed);

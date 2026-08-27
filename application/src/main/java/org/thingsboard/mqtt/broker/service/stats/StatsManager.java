@@ -28,12 +28,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public interface StatsManager {
 
     TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats);
 
     MessagesStats createMsgDispatcherPublishStats();
+
+    /**
+     * Returns the dropped-messages stats. Defined here so it shares the {@code stats.enabled} master switch
+     * with all other broker metrics: when stats are disabled the stub manager returns a no-op instance, so
+     * the {@code droppedMsgs} counter is not exposed on {@code /actuator/prometheus}.
+     */
+    DroppedMsgStats getDroppedMsgStats();
+
+    /**
+     * Returns the dropped-lifecycle-events stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    DroppedLifecycleEventStats getDroppedLifecycleEventStats();
+
+    /**
+     * Returns the client-disconnect stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    ClientDisconnectStats getClientDisconnectStats();
+
+    /**
+     * Returns the total-throughput-quota degradation stats. When stats are disabled the stub manager
+     * returns a no-op instance.
+     */
+    ThroughputQuotaStats getThroughputQuotaStats();
+
+    /**
+     * Returns the connection-outcome stats. Shares the {@code stats.enabled} master switch; when stats
+     * are disabled the stub manager returns a no-op instance.
+     */
+    ConnectionStats getConnectionStats();
 
     ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
 
@@ -55,15 +87,15 @@ public interface StatsManager {
 
     void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription);
 
-    AtomicInteger createNonWritableClientsCounter();
+    AtomicInteger createNonWritableClientsGauge();
 
-    AtomicInteger createSubscriptionSizeCounter();
+    AtomicInteger createSubscriptionSizeGauge();
 
-    AtomicInteger createRetainMsgSizeCounter();
+    AtomicInteger createRetainMsgSizeGauge();
 
-    AtomicLong createSubscriptionTrieNodesCounter();
+    AtomicLong createSubscriptionTrieNodesGauge();
 
-    AtomicLong createRetainMsgTrieNodesCounter();
+    AtomicLong createRetainMsgTrieNodesGauge();
 
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 
@@ -73,7 +105,7 @@ public interface StatsManager {
 
     void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap);
 
-    void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
+    void registerSubscriptionsStats(LongAdder subscriptionCount);
 
     void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap);
 
@@ -89,7 +121,11 @@ public interface StatsManager {
 
     DeliveryTimerStats getDeliveryTimerStats();
 
-    ClientActorStats getClientActorStats();
+    ActorStats getClientActorStats();
+
+    ActorStats getPersistedDeviceActorStats();
+
+    FlowControlStats getFlowControlStats();
 
     boolean isEnabled();
 }

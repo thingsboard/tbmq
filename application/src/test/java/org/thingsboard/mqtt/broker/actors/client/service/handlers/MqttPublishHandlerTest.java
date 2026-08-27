@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -40,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRepublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
@@ -81,6 +83,8 @@ public class MqttPublishHandlerTest {
     PublishMsgValidationService publishMsgValidationService;
     @MockitoBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockitoBean
+    SparkplugCertificateRepublisher sparkplugCertificateRepublisher;
 
     @MockitoSpyBean
     MqttPublishHandler mqttPublishHandler;
@@ -183,6 +187,7 @@ public class MqttPublishHandlerTest {
         MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
         assertThat(disconnectMsg).isNotNull();
         assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
     @Test
@@ -201,6 +206,7 @@ public class MqttPublishHandlerTest {
         MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
         assertThat(disconnectMsg).isNotNull();
         assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
     @Test
@@ -214,6 +220,7 @@ public class MqttPublishHandlerTest {
             mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
         }
         verify(clientMqttActorManager, never()).disconnect(eq("clientId"), any());
+        verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
     @Test
@@ -392,6 +399,50 @@ public class MqttPublishHandlerTest {
 
         verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), any(), eq(actorRef), any());
         verify(retainedMsgProcessor, times(1)).process(eq(publishMsg));
+    }
+
+    @Test
+    public void givenAcceptedPubMsg_whenProcessPubMsg_thenInvokesSparkplugCertificateRepublisher() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(ctx.getClientCertCn()).thenReturn("cn-edge");
+
+        PublishMsg publishMsg = getPublishMsg(1, "spBv1.0/G1/NBIRTH/E1", 0);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        verify(sparkplugCertificateRepublisher, times(1))
+                .maybeRepublish(eq(sessionInfo), eq(publishMsg), eq("cn-edge"));
+    }
+
+    @Test
+    public void givenRejectedPubMsg_whenProcessPubMsg_thenSparkplugCertificateRepublisherNotInvoked() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(false);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(1, "spBv1.0/G1/NBIRTH/E1", 0);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        verify(sparkplugCertificateRepublisher, never())
+                .maybeRepublish(any(), any(), any());
+    }
+
+    @Test
+    public void givenNbirthPubMsg_whenProcessPubMsg_thenOriginalPersistedAndCertificateRepublishHookInvoked() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getSessionInfo()).thenReturn(mock(SessionInfo.class));
+
+        PublishMsg publishMsg = getPublishMsg(1, "spBv1.0/G1/NBIRTH/E1", 0);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        // original publish still flows through the standard persistence path
+        verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), eq(publishMsg), eq(actorRef), any());
+        // certificate republish hook invoked exactly once
+        verify(sparkplugCertificateRepublisher, times(1))
+                .maybeRepublish(any(), eq(publishMsg), any());
     }
 
     private MqttPublishMsg createMqttPubMsg(PublishMsg publishMsg) {

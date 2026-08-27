@@ -28,6 +28,11 @@ public class DefaultCounter {
         this.micrometerCounter = micrometerCounter;
     }
 
+    // Package-private: only DefaultStatsFactory (same package) needs the backing meter, to deregister it.
+    Counter getMicrometerCounter() {
+        return micrometerCounter;
+    }
+
     public void increment() {
         aiCounter.incrementAndGet();
         micrometerCounter.increment();

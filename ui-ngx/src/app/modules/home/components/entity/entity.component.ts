@@ -27,7 +27,6 @@ import { deepTrim } from '@core/utils';
 
 // @dynamic
 @Directive()
-// tslint:disable-next-line:directive-class-suffix
 export abstract class EntityComponent<T extends BaseData,
   P extends PageLink = PageLink,
   L extends BaseData = T,

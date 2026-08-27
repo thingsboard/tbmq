@@ -27,7 +27,7 @@ import java.util.UUID;
 public class BaseIntegrationMsgCallback implements IntegrationMsgCallback {
 
     private final UUID id;
-    private final IntegrationPackProcessingContext ctx;
+    private final IntegrationPackProcessingContext<?> ctx;
 
     @Override
     public void onSuccess() {

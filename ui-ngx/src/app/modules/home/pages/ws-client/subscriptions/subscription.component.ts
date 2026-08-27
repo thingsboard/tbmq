@@ -27,7 +27,7 @@ import {
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
-import { ClipboardService } from 'ngx-clipboard';
+import { Clipboard } from '@angular/cdk/clipboard';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
@@ -58,7 +58,7 @@ export class SubscriptionComponent {
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
               private mqttJsClientService: MqttJsClientService,
-              private clipboardService: ClipboardService,
+              private clipboard: Clipboard,
               private dialog: MatDialog,
               private dialogService: DialogService,
               private store: Store<AppState>,
@@ -116,7 +116,7 @@ export class SubscriptionComponent {
     if ($event) {
       $event.stopPropagation();
     }
-    this.clipboardService.copy(webSocketSubscription.configuration.topicFilter);
+    this.clipboard.copy(webSocketSubscription.configuration.topicFilter);
     this.store.dispatch(new ActionNotificationShow(
       {
         message: this.translate.instant('action.on-copied'),

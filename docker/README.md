@@ -97,4 +97,4 @@ After that execute the following commands:
 ./scripts/docker-start-services.sh
 ```
 
-See [Upgrade Instructions](https://thingsboard.io/docs/mqtt-broker/install/upgrade-instructions/) for more details.
+See [Upgrade Instructions](https://tbmq.io/docs/installation/upgrade-instructions/) for more details.

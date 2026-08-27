@@ -52,13 +52,10 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
+import { DEFAULT_OVERLAY_POSITIONS, POSITION_MAP } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { MatNativeDatetimeModule } from '@mat-datetimepicker/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
 
 // @dynamic
 @Component({
@@ -72,13 +69,9 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => TimewindowComponent),
             multi: true
-        },
-        {
-          provide: MAT_DATE_LOCALE,
-          useValue: 'en-GB'
         }
     ],
-    imports: [MatButton, MatIcon, MatTooltip, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
+    imports: [MatButton, MatIcon, MatTooltip, TranslateModule]
 })
 export class TimewindowComponent implements ControlValueAccessor {
 
@@ -161,14 +154,24 @@ export class TimewindowComponent implements ControlValueAccessor {
       height: 'min-content'
     });
 
+    const triggerRect = (this.nativeElement.nativeElement as HTMLElement).getBoundingClientRect();
+    const preferRight = (triggerRect.left + triggerRect.right) / 2 > window.innerWidth / 2;
+    const positions = preferRight
+      ? [POSITION_MAP.bottomRight, POSITION_MAP.bottomLeft, POSITION_MAP.topRight, POSITION_MAP.topLeft,
+         POSITION_MAP.left, POSITION_MAP.right]
+      : DEFAULT_OVERLAY_POSITIONS;
     config.positionStrategy = this.overlay.position()
       .flexibleConnectedTo(this.nativeElement)
-      .withPositions(DEFAULT_OVERLAY_POSITIONS);
+      .withFlexibleDimensions(true)
+      .withGrowAfterOpen(true)
+      .withPositions(positions);
 
     const overlayRef = this.overlay.create(config);
     overlayRef.backdropClick().subscribe(() => {
       overlayRef.dispose();
     });
+    const resizeObserver = new ResizeObserver(() => overlayRef.updatePosition());
+    resizeObserver.observe(overlayRef.overlayElement);
     const providers: StaticProvider[] = [
       {
         provide: TIMEWINDOW_PANEL_DATA,
@@ -194,6 +197,7 @@ export class TimewindowComponent implements ControlValueAccessor {
       overlayRef.updatePosition();
     });
     componentRef.onDestroy(() => {
+      resizeObserver.disconnect();
       resizeWindows$.unsubscribe();
       if (componentRef.instance.result) {
         this.innerValue = componentRef.instance.result;
@@ -233,7 +237,7 @@ export class TimewindowComponent implements ControlValueAccessor {
 
   updateDisplayValue() {
     if (this.innerValue.selectedTab === TimewindowType.REALTIME && !this.historyOnly) {
-      this.innerValue.displayValue = '';
+      this.innerValue.displayValue = this.translate.instant('timewindow.realtime') + ' - ';
       if (this.innerValue.realtime.realtimeType === RealtimeWindowType.INTERVAL) {
         this.innerValue.displayValue += this.translate.instant(QuickTimeIntervalTranslationMap.get(this.innerValue.realtime.quickInterval));
       } else {

@@ -18,15 +18,18 @@ package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -35,6 +38,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -58,6 +63,18 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final AuthorizationRuleService authorizationRuleService;
     private final FlowControlService flowControlService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ChannelBackpressureManager channelBackpressureManager;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final StatsManager statsManager;
+
+    private ClientDisconnectStats clientDisconnectStats;
+
+    @PostConstruct
+    void init() {
+        // Resolve once: the instance is created in StatsManagerImpl.init() and never reassigned, matching the
+        // other hot-path consumers (TbMessageStatsReportClientImpl, IntegrationLifecycleEventPublisherImpl).
+        clientDisconnectStats = statsManager.getClientDisconnectStats();
+    }
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -82,6 +99,17 @@ public class DisconnectServiceImpl implements DisconnectService {
         var sessionExpiryInterval = getSessionExpiryInterval(disconnectMsg.getProperties());
         if (reasonType.isNotClusterConflictingSession()) {
             notifyClientDisconnected(actorState, sessionExpiryInterval, reasonType);
+        }
+        // Emit the lifecycle CLIENT_DISCONNECTED on every disconnect, including cross-node session takeover
+        // (ON_CLUSTER_CONFLICTING_SESSIONS). The session-event notification above is intentionally suppressed
+        // on takeover, but the lifecycle event must still fire to pair with the CLIENT_CONNECTED this node emitted.
+        // Exception: a broker-refused connection (ON_CONNECTION_FAILURE) never established a session and never
+        // emitted CLIENT_CONNECTED, so its teardown must not emit a phantom CLIENT_DISCONNECTED; the dedicated
+        // CLIENT_CONNECTION_FAILED event covers that case instead.
+        if (reasonType != DisconnectReasonType.ON_CONNECTION_FAILURE) {
+            integrationLifecycleEventPublisher.publishDisconnected(sessionCtx, reasonType);
+            // clientDisconnects counts every established-session disconnect, in lockstep with the CLIENT_DISCONNECTED event above.
+            clientDisconnectStats.increment(reasonType);
         }
         cleanupClientSession(actorState, disconnectMsg, sessionExpiryInterval);
     }
@@ -137,8 +165,10 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         rateLimitService.remove(sessionCtx.getClientId());
         authorizationRuleService.evict(sessionCtx.getClientId());
+        sessionCtx.releasePublishedInFlightCtx();
         flowControlService.removeFromMap(sessionCtx.getClientId());
         tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
+        channelBackpressureManager.onSessionDisconnect(actorState);
         closeChannel(sessionCtx);
 
         log.debug("[{}][{}] Client disconnected", sessionCtx.getClientId(), sessionCtx.getSessionId());

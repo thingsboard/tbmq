@@ -58,6 +58,8 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
   contentType: ContentType;
   aceEditor: Ace.Editor;
 
+  private readonly wrapLimit = 100;
+
   constructor(protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: EventContentDialogComponentDialogData,
@@ -140,11 +142,12 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
         getAce().subscribe(
           (ace) => {
             this.aceEditor = ace.edit(editorElement, editorOptions);
-            this.aceEditor.session.setUseWrapMode(this.contentType === ContentType.TEXT);
-            if (this.contentType === ContentType.TEXT) {
-              this.aceEditor.session.setWrapLimitRange(0, 100);
-              this.aceEditor.setOption('indentedSoftWrap', false);
-            }
+            // Soft-wrap every content type so long unbreakable strings (e.g. a single
+            // JSON value with no spaces) wrap onto new lines instead of stretching the
+            // editor to its max width and forcing horizontal scrolling.
+            this.aceEditor.session.setUseWrapMode(true);
+            this.aceEditor.session.setWrapLimitRange(0, this.wrapLimit);
+            this.aceEditor.setOption('indentedSoftWrap', false);
             this.aceEditor.setValue(processedContent, -1);
             this.updateEditorSize(editorElement, processedContent, this.aceEditor);
           }
@@ -158,17 +161,27 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
     let newWidth = 400;
     if (content && content.length > 0) {
       const lines = content.split('\n');
-      newHeight = 16 * lines.length + 24;
       let maxLineLength = 0;
+      let screenRows = 0;
       lines.forEach((row) => {
         const line = row.replace(/\t/g, '    ').replace(/\n/g, '');
-        const lineLength = line.length;
-        maxLineLength = Math.max(maxLineLength, lineLength);
+        maxLineLength = Math.max(maxLineLength, line.length);
+        // Each logical line occupies one visual row per wrapLimit chars (at least one).
+        screenRows += Math.max(1, Math.ceil(line.length / this.wrapLimit));
       });
+      // Soft-wrap is always on, so lines wrap at the configured limit — the editor
+      // never needs to be wider than that. Otherwise long single-line strings would
+      // stretch the dialog to its max width with empty space on the right.
+      maxLineLength = Math.min(maxLineLength, this.wrapLimit);
       newWidth = 8 * maxLineLength + 16;
+      // Size the height from the wrapped row count (not the raw line count) so a value
+      // that wraps over many visual rows is fully shown and scrolls vertically.
+      newHeight = 16 * screenRows + 24;
     }
-    // newHeight = Math.min(400, newHeight);
-    this.renderer.setStyle(editorElement, 'minHeight', newHeight.toString() + 'px');
+    // Cap to the viewport so the dialog never overflows; ACE renders its own
+    // scrollbars (pinned at the editor edges) when the content exceeds these bounds.
+    newHeight = Math.min(newHeight, Math.round(window.innerHeight * 0.7));
+    newWidth = Math.min(newWidth, Math.round(window.innerWidth * 0.8));
     this.renderer.setStyle(editorElement, 'height', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'width', newWidth.toString() + 'px');
     editor.resize();

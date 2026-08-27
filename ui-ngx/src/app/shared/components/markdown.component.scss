@@ -311,6 +311,7 @@
             width: 18px;
             height: 18px;
             filter: invert(51%) sepia(6%) saturate(172%) hue-rotate(177deg) brightness(94%) contrast(92%);
+            transition: opacity .18s ease;
           }
         }
       }
@@ -333,6 +334,22 @@
             }
           }
         }
+      }
+
+      // Copied-state feedback for views that render the icon as a real <img>
+      // (kept after `:hover` so it overrides the hover reveal). Views that render
+      // the icon via a `:after` mask handle the swap in their own stylesheet.
+      &.copied button.clipboard-btn div img {
+        content: url(/assets/copy-code-done-icon.svg);
+      }
+
+      &.copying button.clipboard-btn div img {
+        opacity: 0;
+      }
+
+      &.copied button.clipboard-btn p,
+      &.copying button.clipboard-btn p {
+        opacity: 0;
       }
     }
 

@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -47,11 +48,11 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
@@ -67,6 +68,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final ThroughputQuotaService throughputQuotaService;
     private final IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
@@ -90,74 +92,99 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (deviceSubscriptions != null) {
-            if (rateLimitService.isDevicePersistedMsgsLimitEnabled()) {
-                processDeviceSubscriptionsWithRateLimits(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            } else {
-                processDeviceSubscriptions(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            }
+            // the narrower device-persisted-msgs limit truncates first, so the quota is never charged for copies
+            // that limit already dropped
+            List<Subscription> admittedDeviceSubscriptions = rateLimitService.isDevicePersistedMsgsLimitEnabled()
+                    ? applyDevicePersistedMsgsLimit(deviceSubscriptions, callbackWrapper)
+                    : deviceSubscriptions;
+            processDeviceSubscriptionsWithThroughputQuota(admittedDeviceSubscriptions, publishMsgWithId, callbackWrapper);
         }
         if (applicationSubscriptions != null) {
-            if (applicationSubscriptions.size() == 1) {
-                sendApplicationMsg(applicationSubscriptions.get(0), publishMsgWithId, callbackWrapper);
-            } else {
-                for (Subscription applicationSubscription : applicationSubscriptions) {
-                    sendApplicationMsg(applicationSubscription, publishMsgWithId, callbackWrapper);
-                }
-            }
+            processApplicationSubscriptionsWithThroughputQuota(applicationSubscriptions, publishMsgWithId, callbackWrapper);
         }
         if (sharedTopics != null) {
-            for (String sharedTopic : sharedTopics) {
-                applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                        sharedTopic,
-                        new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
-                        callbackWrapper);
-            }
+            processSharedTopicsWithThroughputQuota(sharedTopics, publishMsgWithId, callbackWrapper);
         }
         if (integrationSubscriptions != null) {
-            for (Subscription integrationSubscription : integrationSubscriptions) {
-                sendIntegrationMsg(integrationSubscription, publishMsgWithId, callbackWrapper);
-            }
+            processIntegrationSubscriptionsWithThroughputQuota(integrationSubscriptions, publishMsgWithId, callbackWrapper);
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
-    void processDeviceSubscriptionsWithRateLimits(List<Subscription> deviceSubscriptions,
-                                                  PublishMsgWithId publishMsgWithId,
-                                                  PublishMsgCallback callbackWrapper) {
+    List<Subscription> applyDevicePersistedMsgsLimit(List<Subscription> deviceSubscriptions,
+                                                     PublishMsgCallback callbackWrapper) {
         int totalCount = deviceSubscriptions.size();
         int availableTokens = (int) rateLimitService.tryConsumeDevicePersistedMsgs(totalCount);
-
         if (availableTokens >= totalCount) {
-            processDeviceSubscriptions(deviceSubscriptions, publishMsgWithId, callbackWrapper);
-            return;
+            return deviceSubscriptions;
         }
-
         int dropped = totalCount - Math.max(availableTokens, 0);
-        if (dropped > 0) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
-        }
-
-        if (availableTokens <= 0) {
-            log.trace("No available tokens left for device persisted messages bucket. Dropping {} messages", totalCount);
-            callbackWrapper.onBatchSuccess(totalCount);
-            return;
-        }
-
         log.trace("Hitting device persisted messages rate limits. Dropping {} messages", dropped);
-        for (int i = 0; i < totalCount; i++) {
-            if (i < availableTokens) {
-                sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
-            } else {
-                callbackWrapper.onSuccess();
-            }
-        }
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+        callbackWrapper.onBatchSuccess(dropped);
+        // a view over the caller's list, not a copy: nothing downstream mutates either one
+        return availableTokens <= 0 ? List.of() : deviceSubscriptions.subList(0, availableTokens);
     }
 
-    private void processDeviceSubscriptions(List<Subscription> deviceSubscriptions, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
-        for (Subscription subscription : deviceSubscriptions) {
-            sendDeviceMsg(subscription, publishMsgWithId, callbackWrapper);
+    void processDeviceSubscriptionsWithThroughputQuota(List<Subscription> deviceSubscriptions,
+                                                       PublishMsgWithId publishMsgWithId,
+                                                       PublishMsgCallback callbackWrapper) {
+        int totalCount = deviceSubscriptions.size();
+        if (totalCount == 0) {
+            return; // the device limit took everything: nothing left to charge for
         }
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
+        for (int i = 0; i < granted; i++) {
+            sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
+    }
+
+    void processApplicationSubscriptionsWithThroughputQuota(List<Subscription> applicationSubscriptions,
+                                                            PublishMsgWithId publishMsgWithId,
+                                                            PublishMsgCallback callbackWrapper) {
+        int totalCount = applicationSubscriptions.size();
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
+        for (int i = 0; i < granted; i++) {
+            sendApplicationMsg(applicationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
+    }
+
+    void processSharedTopicsWithThroughputQuota(Set<String> sharedTopics,
+                                                PublishMsgWithId publishMsgWithId,
+                                                PublishMsgCallback callbackWrapper) {
+        int totalCount = sharedTopics.size();
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
+        // an explicit iterator so the granted prefix is bounded in the loop header, as in the sibling charge sites
+        Iterator<String> sharedTopicIterator = sharedTopics.iterator();
+        for (int i = 0; i < granted && sharedTopicIterator.hasNext(); i++) {
+            sendSharedTopicMsg(sharedTopicIterator.next(), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
+    }
+
+    // callbackCount was computed over the FULL fan-out, so every subscription the quota refused still owes the
+    // wrapper a completion. Without this the wrapper never reaches zero and the offset is never committed.
+    private void settleQuotaDropped(int dropped, PublishMsgCallback callbackWrapper) {
+        if (dropped <= 0) {
+            return;
+        }
+        log.trace("Total throughput quota exceeded. Dropping {} persisted messages", dropped);
+        tbMessageStatsReportClient.reportDroppedMsgs(dropped);
+        callbackWrapper.onBatchSuccess(dropped);
+    }
+
+    void processIntegrationSubscriptionsWithThroughputQuota(List<Subscription> integrationSubscriptions,
+                                                            PublishMsgWithId publishMsgWithId,
+                                                            PublishMsgCallback callbackWrapper) {
+        int totalCount = integrationSubscriptions.size();
+        int granted = throughputQuotaService.tryConsumeOutgoingBlocking(totalCount);
+        for (int i = 0; i < granted; i++) {
+            sendIntegrationMsg(integrationSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+        }
+        settleQuotaDropped(totalCount - granted, callbackWrapper);
     }
 
     private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
@@ -174,6 +201,14 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         applicationMsgQueuePublisher.sendMsg(
                 applicationSubscription.getClientId(),
                 new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsg, getAppMsgHeaders(publishMsgWithId)),
+                callbackWrapper);
+    }
+
+    private void sendSharedTopicMsg(String sharedTopic, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        PublishMsgProto publishMsg = ProtoConverter.createReceiverPublishMsg(publishMsgWithId.getPublishMsgProto());
+        applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                sharedTopic,
+                new TbProtoQueueMsg<>(publishMsg, getAppMsgHeaders(publishMsgWithId)),
                 callbackWrapper);
     }
 

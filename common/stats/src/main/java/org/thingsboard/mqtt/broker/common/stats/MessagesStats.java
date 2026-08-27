@@ -50,4 +50,12 @@ public interface MessagesStats {
     void updateQueueSize(Supplier<Integer> queueSizeSupplier);
 
     int getCurrentQueueSize();
+
+    /**
+     * Whether a queue-size supplier has been wired via {@link #updateQueueSize(Supplier)}. Only stats
+     * backed by a real queue (e.g. the SQL blocking queues) report a meaningful depth; producer-style
+     * stats never wire a supplier and would otherwise print a dead always-0 {@code queueSize} log field.
+     * Consumed by {@link MessagesStatsFormatter} when formatting the periodic log line.
+     */
+    boolean isQueueSizeTracked();
 }

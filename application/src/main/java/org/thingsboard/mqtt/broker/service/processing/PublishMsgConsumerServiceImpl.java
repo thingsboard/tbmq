@@ -29,7 +29,6 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -40,8 +39,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @Service
 @Slf4j
@@ -57,7 +54,6 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final SubmitStrategyFactory submitStrategyFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
-    private final RateLimitService rateLimitService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private volatile boolean stopped = false;
@@ -100,18 +96,13 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         continue;
                     }
 
-                    List<TbProtoQueueMsg<PublishMsgProto>> msgsAfterRateLimits = applyRateLimits(consumer, msgs);
-                    if (msgsAfterRateLimits == null) {
-                        continue;
-                    }
-
                     AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
                     long packId = counter.incrementAndGet();
                     if (packId == MAX_VALUE) {
                         counter.set(0);
                     }
-                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgsAfterRateLimits, packId);
+                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgs, packId);
                     submitStrategy.init(pendingMsgMap);
 
                     long packProcessingStart = System.nanoTime();
@@ -134,13 +125,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         stats.log(totalMsgCount, result, decision.isCommit());
 
                         if (decision.isCommit()) {
+                            reportDroppedMsgsOnGiveUp(result);
                             consumer.commitSync();
                             break;
                         } else {
                             submitStrategy.update(decision.getReprocessMap());
                         }
                     }
-                    stats.logPackProcessingTime(msgsAfterRateLimits.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
+                    stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
@@ -158,30 +150,11 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         });
     }
 
-    private List<TbProtoQueueMsg<PublishMsgProto>> applyRateLimits(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
-                                                                   List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
-        if (!rateLimitService.isTotalMsgsLimitEnabled()) {
-            return msgs;
+    void reportDroppedMsgsOnGiveUp(PackProcessingResult result) {
+        int dropped = result.getPendingMap().size() + result.getFailedMap().size();
+        if (dropped > 0) {
+            tbMessageStatsReportClient.reportDroppedMsgs(dropped);
         }
-
-        int totalMsgCount = msgs.size();
-        int availableTokens = (int) rateLimitService.tryConsumeTotalMsgs(totalMsgCount);
-
-        if (availableTokens >= totalMsgCount) {
-            return msgs;
-        }
-
-        int dropped = totalMsgCount - availableTokens;
-        tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
-
-        if (availableTokens <= 0) {
-            log.debug("No available tokens left for total msgs bucket during consumer polling. Skipping {} messages", totalMsgCount);
-            consumer.commitSync();
-            return null;
-        }
-
-        log.debug("Hitting total messages rate limits on consumer polling. Skipping {} messages", dropped);
-        return msgs.subList(0, availableTokens);
     }
 
     private Map<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {

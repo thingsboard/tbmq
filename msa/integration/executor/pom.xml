@@ -21,7 +21,7 @@
 
     <parent>
         <groupId>org.thingsboard.mqtt-broker.msa</groupId>
-        <version>2.3.1-SNAPSHOT</version>
+        <version>2.4.0-SNAPSHOT</version>
         <artifactId>integration</artifactId>
     </parent>
 
@@ -30,7 +30,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ Integration Executor Microservice</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
     <description>TBMQ Integration Executor Microservice</description>
 
     <properties>

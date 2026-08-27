@@ -15,53 +15,23 @@
     limitations under the License.
 
 -->
-<section class="flex flex-col items-stretch">
-  <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
-    <mat-form-field>
-      <mat-label translate>datetime.date-from</mat-label>
-      <input matInput
-             [disabled]="disabled()"
-             [(ngModel)]="startDate"
-             [matDatepicker]="startDatePicker"
-             (ngModelChange)="onStartDateChange()">
-      <mat-datepicker #startDatePicker/>
-      <mat-datepicker-toggle disableRipple="true" [for]="startDatePicker" matSuffix/>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label translate>datetime.time-from</mat-label>
-      <input matInput
-             [disabled]="disabled()"
-             [(ngModel)]="startDate"
-             [matTimepicker]="startTimePicker"
-             matTimepickerMin="00:00"
-             matTimepickerMax="23:59"
-             (ngModelChange)="onStartDateChange()">
-      <mat-timepicker #startTimePicker/>
-      <mat-timepicker-toggle disableRipple="true" [for]="startTimePicker" matSuffix/>
-    </mat-form-field>
-  </section>
-  <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
-    <mat-form-field subscriptSizing="dynamic">
-      <mat-label translate>datetime.date-to</mat-label>
-      <input matInput
-             [disabled]="disabled()"
-             [(ngModel)]="endDate"
-             [matDatepicker]="endDatePicker"
-             (ngModelChange)="onEndDateChange()">
-      <mat-datepicker #endDatePicker/>
-      <mat-datepicker-toggle disableRipple="true" [for]="endDatePicker" matSuffix/>
-    </mat-form-field>
-    <mat-form-field subscriptSizing="dynamic">
-      <mat-label translate>datetime.time-to</mat-label>
-      <input matInput
-             [disabled]="disabled()"
-             [(ngModel)]="endDate"
-             [matTimepicker]="endTimePicker"
-             matTimepickerMin="00:00"
-             matTimepickerMax="23:59"
-             (ngModelChange)="onEndDateChange()">
-      <mat-timepicker #endTimePicker/>
-      <mat-timepicker-toggle disableRipple="true" [for]="endTimePicker" matSuffix/>
-    </mat-form-field>
-  </section>
+<section class="tb-datetime-period flex flex-row gap-2 xs:flex-col" [formGroup]="dateTimePeriodFormGroup">
+  <mat-form-field subscriptSizing="dynamic" class="flex-1">
+    <mat-label translate>datetime.from</mat-label>
+    <input matInput
+           formControlName="startDate"
+           [matDatetimepicker]="startDatePicker"
+           [max]="maxStartDate">
+    <mat-datetimepicker-toggle matSuffix [for]="startDatePicker" disableRipple="true"/>
+    <mat-datetimepicker #startDatePicker type="datetime" [openOnFocus]="true"/>
+  </mat-form-field>
+  <mat-form-field subscriptSizing="dynamic" class="flex-1">
+    <mat-label translate>datetime.to</mat-label>
+    <input matInput
+           formControlName="endDate"
+           [matDatetimepicker]="endDatePicker"
+           [max]="maxEndDate">
+    <mat-datetimepicker-toggle matSuffix [for]="endDatePicker" disableRipple="true"/>
+    <mat-datetimepicker #endDatePicker type="datetime" [openOnFocus]="true"/>
+  </mat-form-field>
 </section>

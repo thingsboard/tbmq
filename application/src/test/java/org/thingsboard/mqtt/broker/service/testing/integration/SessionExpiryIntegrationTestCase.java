@@ -104,10 +104,10 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         client.disconnect();
         client.close();
 
-        ClientSession clientSession = clientSessionCache.getClientSession(CLIENT_ID);
-        Assert.assertNull(clientSession);
-        Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(CLIENT_ID);
-        Assert.assertTrue(clientSubscriptions.isEmpty());
+        // the session and its subscriptions are cleared asynchronously and in separate steps
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(this::clientSessionCleared);
     }
 
     @Test

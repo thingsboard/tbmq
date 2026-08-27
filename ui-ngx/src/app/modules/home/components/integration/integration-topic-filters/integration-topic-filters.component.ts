@@ -38,8 +38,7 @@ import {
   Validator,
   Validators,
   ReactiveFormsModule,
-  ValidatorFn,
-  FormControl
+  ValidatorFn
 } from '@angular/forms';
 import { IntegrationTopicFilter, Integration } from '@shared/models/integration.models';
 import { Subject } from 'rxjs';
@@ -119,9 +118,14 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
   @coerceBoolean()
   displayHeaderAction = false;
 
+  @Input()
+  @coerceBoolean()
+  required = true;
+
   topicFiltersHasDuplicates = signal<boolean>(false);
   integration = input<Integration>();
   isEdit = input<boolean>();
+  allowEmpty = input<boolean>(false);
 
   topicFilterGroups = new Map<string, AbstractControl[]>();
   activeSubscriptions: string[] = [];
@@ -144,7 +148,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
               private utils: UtilsService,
               private integrationService: IntegrationService) {
     this.integrationTopicFiltersForm = this.fb.group({
-      filters: this.fb.array([], [Validators.required, this.isUnique])
+      filters: this.fb.array([], this.filtersArrayValidators())
     });
     this.integrationTopicFiltersForm.valueChanges.pipe(
       takeUntil(this.destroy$)
@@ -188,8 +192,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
           }));
         });
       }
-      this.integrationTopicFiltersForm.setControl('filters', this.fb.array(filtersControls), {emitEvent: true});
-      this.integrationTopicFiltersForm.addValidators(this.isUnique());
+      this.integrationTopicFiltersForm.setControl('filters', this.fb.array(filtersControls, this.filtersArrayValidators()), {emitEvent: true});
       if (this.disabled) {
         this.integrationTopicFiltersForm.disable({emitEvent: false});
       } else {
@@ -340,9 +343,13 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     }
   }
 
+  private filtersArrayValidators(): ValidatorFn[] {
+    return this.required ? [Validators.required, this.isUnique()] : [this.isUnique()];
+  }
+
   private isUnique(): ValidatorFn {
-    return (control: FormControl) => {
-      const filtersList = this.integrationFiltersFromArray.value.map(item => item.filter);
+    return (control: AbstractControl) => {
+      const filtersList = (control.value ?? []).map(item => item.filter);
       const formArrayHasDuplicates = filtersList.some((item, idx) => filtersList.indexOf(item) !== idx);
       if (formArrayHasDuplicates) {
         this.topicFiltersHasDuplicates.set(true);

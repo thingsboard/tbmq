@@ -29,6 +29,26 @@ import { ChartDataKeyTooltipTranslationMap, ChartDataKeyTranslationMap, ChartKey
 @Component({
   selector: 'tb-chart-toolbar',
   templateUrl: './chart-toolbar.component.html',
+  styles: [`
+    :host {
+      display: block;
+    }
+    .tb-chart-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+    .tb-chart-toolbar-left {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .tb-chart-toolbar-right {
+      min-width: 0;
+    }
+  `],
   imports: [TimewindowComponent, FormsModule, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, TranslateModule]
 })
 export class ChartToolbarComponent {

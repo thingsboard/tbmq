@@ -73,12 +73,48 @@
         </div>
       </form>
     </mat-step>
-    <mat-step [stepControl]="integrationTopicFilterForm">
-      <ng-template matStepLabel>{{ "integration.topic-filters" | translate }}</ng-template>
-      <form [formGroup]="integrationTopicFilterForm">
-        <tb-integration-topic-filters [displayHeader]="false"
-                                      formControlName="topicFilters">
-        </tb-integration-topic-filters>
+    <mat-step [stepControl]="integrationFiltersForm">
+      <ng-template matStepLabel>{{ "integration.filters-and-events" | translate }}</ng-template>
+      <form [formGroup]="integrationFiltersForm" class="flex flex-col gap-4">
+        <section class="security-setting mat-padding">
+          <tb-integration-topic-filters [required]="false"
+                                        [allowEmpty]="integrationFiltersForm.get('lifecycleEventTypes').value?.length > 0"
+                                        formControlName="topicFilters">
+          </tb-integration-topic-filters>
+        </section>
+        <section class="security-setting mat-padding">
+          <p translate>integration.lifecycle-events</p>
+          <tb-integration-lifecycle-events formControlName="lifecycleEventTypes">
+          </tb-integration-lifecycle-events>
+          @if (isMqtt && eventsEnabled) {
+            <mat-form-field class="mt-2 flex" appearance="outline">
+              <mat-label translate>integration.events-topic-name</mat-label>
+              <input matInput formControlName="eventsTopicName" [matAutocomplete]="eventsTopicAuto">
+              <mat-autocomplete #eventsTopicAuto="matAutocomplete">
+                @for (option of filteredEventsTopics | async; track option) {
+                  <mat-option [value]="option">{{option}}</mat-option>
+                }
+              </mat-autocomplete>
+              <tb-copy-button matSuffix
+                              [class.!hidden]="!integrationFiltersForm.get('eventsTopicName')?.value?.length"
+                              [copyText]="integrationFiltersForm.get('eventsTopicName').value">
+              </tb-copy-button>
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                        [class.!hidden]="!integrationFiltersForm.get('eventsTopicName').hasError('required')"
+                        class="tb-error">
+                warning
+              </mat-icon>
+              <mat-icon matSuffix matTooltip="{{ 'integration.events-topic-name-hint' | translate }}">
+                help
+              </mat-icon>
+            </mat-form-field>
+          }
+        </section>
+        @if (integrationFiltersForm.hasError('topicFilterOrEventRequired')) {
+          <mat-error style="font-size: 12px">{{ 'integration.topic-filter-or-event-required' | translate }}</mat-error>
+        }
       </form>
     </mat-step>
     <mat-step [stepControl]="integrationConfigurationForm">

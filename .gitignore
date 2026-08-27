@@ -1,4 +1,5 @@
 *.toDelete
+.worktrees/
 output/**
 *.class
 *~
@@ -35,5 +36,6 @@ rebuild-docker.sh
 */.run/**
 .run/**
 .run
+/docs/
 
 

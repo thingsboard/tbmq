@@ -50,12 +50,10 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
-import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.stats.ClientActorStats;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -63,7 +61,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.actors.client.state.SessionState.MQTT_PROCESSABLE_STATES;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @Slf4j
 public class ClientActor extends ContextAwareActor {
@@ -75,7 +72,6 @@ public class ClientActor extends ContextAwareActor {
     private final ConnectService connectService;
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
-    private final ClientActorStats clientActorStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private final ClientActorConfiguration actorConfiguration;
@@ -84,7 +80,7 @@ public class ClientActor extends ContextAwareActor {
     private final ClientActorState state;
 
     public ClientActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
-        super(systemContext);
+        super(systemContext, systemContext.getClientActorContext().getStatsManager().getClientActorStats());
         this.sessionClusterManager = systemContext.getClientActorContext().getSessionClusterManager();
         this.subscriptionChangesManager = systemContext.getClientActorContext().getSubscriptionChangesManager();
         this.subscriptionCommandService = systemContext.getClientActorContext().getSubscriptionCommandService();
@@ -92,7 +88,6 @@ public class ClientActor extends ContextAwareActor {
         this.connectService = systemContext.getClientActorContext().getConnectService();
         this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
-        this.clientActorStats = systemContext.getClientActorContext().getStatsManager().getClientActorStats();
         this.tbMessageStatsReportClient = systemContext.getClientActorContext().getTbMessageStatsReportClient();
         this.actorConfiguration = systemContext.getClientActorConfiguration();
         this.backpressureManager = systemContext.getChannelBackpressureManager();
@@ -106,15 +101,10 @@ public class ClientActor extends ContextAwareActor {
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
-        if (msg instanceof TimedMsg) {
-            clientActorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
-        }
         clientLogger.logEventWithDetails(state.getClientId(), getClass(), ctx -> ctx
                 .msg("Process actor msg")
                 .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
         );
-
-        long startTime = System.nanoTime();
 
         try {
             if (sessionNotMatch(msg)) {
@@ -217,7 +207,6 @@ public class ClientActor extends ContextAwareActor {
             }
             return success;
         } finally {
-            clientActorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
             clientLogger.logEventWithDetails(state.getClientId(), getClass(), ctx -> ctx
                     .msg("Finished msg processing")
                     .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
@@ -316,7 +305,7 @@ public class ClientActor extends ContextAwareActor {
         } catch (FullMsgQueueException e) {
             log.debug("[{}][{}] Too many messages in the pre-connect queue", state.getClientId(), state.getCurrentSessionId());
             release(msg);
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, state.getQueuedMessages().getPublishMsgCountAndClear());
+            tbMessageStatsReportClient.reportDroppedMsgs(state.getQueuedMessages().getPublishMsgCountAndClear());
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_QUOTA_EXCEEDED,
                     "Too many messages in the pre-connect queue")));
         }

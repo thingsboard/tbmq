@@ -125,6 +125,41 @@ public class DeviceSharedSubscriptionProcessorImplTest {
         assertEquals("topic3", subscription.getTopicFilter());
     }
 
+    @Test
+    public void givenConnectedSubscriptionOnAnotherNode_whenFindAnyConnectedSubscription_thenReturnSubscription() {
+        // The connected subscriber's live session is on another cluster node, so there is no local
+        // ClientSessionCtx here. It must still be eligible: selection and device delivery are cluster-wide
+        // (routed via the per-client device queue), and backpressure is handled by that node's device actor.
+        List<Subscription> subscriptions = List.of(
+                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic2", 2, ClientSessionInfo.builder().clientId("remoteClient").connected(true).build()),
+                new Subscription("topic3", 0, ClientSessionInfo.builder().connected(false).build())
+        );
+
+        when(clientSessionCtxService.getClientSessionCtx(eq("remoteClient"))).thenReturn(null);
+
+        Subscription subscription = processor.findAnyConnectedSubscription(subscriptions);
+        assertEquals("topic2", subscription.getTopicFilter());
+    }
+
+    @Test
+    public void givenLocalNonWritableAndRemoteConnected_whenFindAnyConnectedSubscription_thenReturnRemote() {
+        // A connected member on this node whose channel is saturated must be skipped (local backpressure),
+        // but a connected member on another node (no local ctx) is still eligible.
+        List<Subscription> subscriptions = List.of(
+                new Subscription("local", 1, ClientSessionInfo.builder().clientId("localClient").connected(true).build()),
+                new Subscription("remote", 2, ClientSessionInfo.builder().clientId("remoteClient").connected(true).build())
+        );
+
+        ClientSessionCtx localCtx = mock(ClientSessionCtx.class);
+        when(localCtx.isWritable()).thenReturn(false);
+        when(clientSessionCtxService.getClientSessionCtx(eq("localClient"))).thenReturn(localCtx);
+        when(clientSessionCtxService.getClientSessionCtx(eq("remoteClient"))).thenReturn(null);
+
+        Subscription subscription = processor.findAnyConnectedSubscription(subscriptions);
+        assertEquals("remote", subscription.getTopicFilter());
+    }
+
     private Subscription newSubscription(int mqttQoSValue, String shareName) {
         return new Subscription("topic", mqttQoSValue, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
     }

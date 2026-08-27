@@ -84,7 +84,7 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
         connectOptions.setKeepAliveInterval(1);
         connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
         lastWillClient.connect(connectOptions).waitForCompletion();
-        waiter.await();
+        waiter.await(30, TimeUnit.SECONDS);
         subClient.disconnect();
         subClient.close();
     }

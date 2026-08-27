@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-// tslint:disable-next-line:no-reference
 /// <reference path="../../../../src/typings/rawloader.typings.d.ts" />
 
 import { Inject, Injectable, NgZone } from '@angular/core';

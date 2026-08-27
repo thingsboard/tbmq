@@ -16,10 +16,12 @@
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
 import com.google.common.util.concurrent.Futures;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +36,7 @@ import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -56,6 +59,8 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
     private ClientSessionCache clientSessionCache;
     @Autowired
     private ClientSubscriptionCache clientSubscriptionCache;
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @Test
     public void givenCleanSessionClient_whenCleanSessionTakenOver_thenNoSubscriptionsPresent() throws Throwable {
@@ -137,6 +142,35 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         Assert.assertEquals(0, clientSubscriptions.size());
 
         clientTakenOver.disconnect();
+    }
+
+    @Test
+    public void givenConnectedClient_whenSessionTakenOver_thenClientDisconnectsCounterIncremented() throws Throwable {
+        String clientId = RandomStringUtils.randomAlphabetic(10);
+        MqttClientConfig config = getConfig(clientId, true);
+
+        MqttClient client = MqttClient.create(config, null, externalExecutorService);
+        connectClient(client);
+
+        // Cumulative Micrometer counter (never reset), so assert the delta caused by the takeover disconnect —
+        // immune to disconnects produced by the other test methods sharing this context.
+        double before = clientDisconnectsCount();
+
+        // Reconnecting with the same clientId forces the broker to disconnect the original session with
+        // ON_CLUSTER_CONFLICTING_SESSIONS: a broker-generated disconnect that must bump clientDisconnects.
+        MqttClient clientTakenOver = MqttClient.create(config, null, externalExecutorService);
+        connectClient(clientTakenOver);
+
+        // The takeover disconnect is processed asynchronously on the client actor thread, so poll the counter.
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> clientDisconnectsCount() - before >= 1);
+
+        clientTakenOver.disconnect();
+    }
+
+    private double clientDisconnectsCount() {
+        return meterRegistry.get(StatsType.CLIENT_DISCONNECTS.getPrintName()).counter().count();
     }
 
     private void connectClient(MqttClient client) throws InterruptedException, ExecutionException, TimeoutException {

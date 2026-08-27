@@ -53,7 +53,7 @@
         [chart]="chart"
         [chartKey]="chartKey()"
         [entityIds]="entityIds()"
-        [datasets]="chart?.data?.datasets"
+        [toggleVisibility]="toggleSeriesVisibility.bind(this)"
         [isFullscreen]="isFullscreen()"
         [totalEntityIdOnly]="totalEntityIdOnly()"
         [visibleEntityIds]="visibleEntityIds()"

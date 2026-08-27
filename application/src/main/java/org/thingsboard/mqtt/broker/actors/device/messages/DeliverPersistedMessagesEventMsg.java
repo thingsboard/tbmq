@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class DeliverPersistedMessagesEventMsg implements TbActorMsg {
+public class DeliverPersistedMessagesEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final List<DevicePublishMsg> persistedMessages;
 

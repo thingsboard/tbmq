@@ -72,7 +72,7 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
   buildForm(entity: SharedSubscription): UntypedFormGroup {
     const form = this.fb.group(
       {
-        name: [entity ? entity.name : '', [Validators.required]],
+        name: [entity ? entity.name : '', [Validators.required, Validators.maxLength(255), Validators.pattern(/(?:.|\s)*\S(&:.|\s)*/)]],
         partitions: [2, [Validators.required, Validators.min(1)]],
         topicFilter: [entity ? entity.topicFilter : '', [Validators.required]]
       }

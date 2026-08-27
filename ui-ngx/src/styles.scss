@@ -15,13 +15,11 @@
  */
 /* You can add global styles to this file, and also import other style files */
 
-@import 'typeface-roboto/index.css';
-@import 'font-awesome/css/font-awesome.min.css';
-@import 'theme.scss';
-@import 'constants';
-@import './scss/animations';
-@import './scss/mixins';
-@import './scss/fonts';
+@use 'theme';
+@use 'constants' as *;
+@use 'mixins' as *;
+@use 'animations';
+@use 'fonts';
 
 body, html {
   height: 100%;
@@ -233,10 +231,10 @@ div {
 
 .tb-hint {
   padding: 0 16px 16px;
-  font-size: var(--mdc-typography-caption-font-size, 12px);
-  line-height: var(--mdc-typography-caption-line-height, 20px);
-  font-weight: var(--mdc-typography-caption-font-weight, 400);
-  letter-spacing: var(--mdc-typography-caption-letter-spacing, 0.0333333333em);
+  font-size: var(--mat-typography-caption-font-size, 12px);
+  line-height: var(--mat-typography-caption-line-height, 20px);
+  font-weight: var(--mat-typography-caption-font-weight, 400);
+  letter-spacing: var(--mat-typography-caption-letter-spacing, 0.0333333333em);
   color: rgba(0, 0, 0, 0.6);
   white-space: normal;
 }
@@ -1327,6 +1325,10 @@ pre.tb-highlight {
 
   .white {
     color: white;
+  }
+
+  .mat-drawer-container {
+    background-color: unset;
   }
 }
 

@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 **Your Server Environment**
 <!-- 🔅🔅🔅🔅🔅🔅🔅 Write your own 🔅🔅🔅🔅🔅🔅🔅-->
 
-* Deployment: [e.g., AWS EKS using official installation [instructions](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/)]
+* Deployment: [e.g., AWS EKS using official installation [instructions](https://tbmq.io/docs/installation/cluster/aws-cluster-setup/)]
 * TBMQ version: [e.g., 1.0.0]
 * OS name and version: [e.g., iOS in case of local docker-compose deployment]
 

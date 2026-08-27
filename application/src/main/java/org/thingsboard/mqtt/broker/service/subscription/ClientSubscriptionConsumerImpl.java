@@ -148,25 +148,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     if (messages.isEmpty()) {
                         continue;
                     }
-                    stats.logTotal(messages.size());
-                    int acceptedSubscriptions = 0;
-                    int ignoredSubscriptions = 0;
-                    for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
-                        String clientId = msg.getKey();
-                        if (clientId.startsWith(BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX)) {
-                            ignoredSubscriptions++;
-                            continue;
-                        }
-                        String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
-                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue()).getSubscriptions();
-                        boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
-                        if (accepted) {
-                            acceptedSubscriptions++;
-                        } else {
-                            ignoredSubscriptions++;
-                        }
-                    }
-                    stats.log(acceptedSubscriptions, ignoredSubscriptions);
+                    processPack(messages, callback);
                     clientSubscriptionsConsumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
@@ -182,6 +164,31 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                 }
             }
         });
+    }
+
+    void processPack(List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages, ClientSubscriptionChangesCallback callback) {
+        int acceptedRecords = 0;
+        int ignoredRecords = 0;
+        for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
+            String clientId = msg.getKey();
+            if (clientId.startsWith(BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX)) {
+                ignoredRecords++;
+                continue;
+            }
+            String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
+            Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue()).getSubscriptions();
+            boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
+            if (accepted) {
+                acceptedRecords++;
+            } else {
+                ignoredRecords++;
+            }
+        }
+        // Record all three counters only after the whole pack is processed and is about to be committed: a mid-pack
+        // failure then leaves total/accepted/ignored unchanged, so the invariant total == accepted + ignored holds
+        // and a rebalance re-delivery of the uncommitted pack does not double-count.
+        stats.logTotal(messages.size());
+        stats.log(acceptedRecords, ignoredRecords);
     }
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {

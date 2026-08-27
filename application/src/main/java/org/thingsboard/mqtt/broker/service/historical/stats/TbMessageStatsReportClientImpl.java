@@ -39,6 +39,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.DroppedMsgStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -72,15 +74,22 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private final TimeseriesService timeseriesService;
     private final HistoricalStatsTotalHelper helper;
     private final HistoricalDataReportProperties historicalDataReportProperties;
+    private final StatsManager statsManager;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
     private ConcurrentMap<String, ConcurrentMap<String, ClientSessionMetricState>> clientSessionsStats;
     private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
+    // Cached at init time to avoid Spring MethodValidationInterceptor AOP overhead on the hot path
+    // (HistoricalDataReportProperties is @Validated, so every getter call would otherwise go through a CGLIB proxy).
+    private boolean enabled;
+    private DroppedMsgStats droppedMsgStats;
 
     @PostConstruct
     void init() {
-        if (historicalDataReportProperties.isDisabled()) {
+        droppedMsgStats = statsManager.getDroppedMsgStats();
+        enabled = historicalDataReportProperties.isEnabled();
+        if (!enabled) {
             return;
         }
 
@@ -95,7 +104,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @PreDestroy
     private void destroy() {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             CountDownLatch latch = new CountDownLatch(MSG_RELATED_HISTORICAL_KEYS_COUNT);
             reportAndPersistStats(getStartOfNextCronBoundary(), latch); // sync; block to persist in Kafka
             try {
@@ -114,7 +123,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Scheduled(cron = "#{@historicalDataReportProperties.cron}", zone = "#{@historicalDataReportProperties.zone}")
     public void process() {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
             reportAndPersistStats(startOfCurrentMinute, null); // async; don't block
             reportClientSessionsStats(startOfCurrentMinute);
@@ -211,7 +220,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportStats(String key) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             AtomicLong al = stats.get(key);
             al.incrementAndGet();
         }
@@ -219,9 +228,25 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportStats(String key, int count) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             AtomicLong al = stats.get(key);
             al.addAndGet(count);
+        }
+    }
+
+    @Override
+    public void reportDroppedMsgs() {
+        droppedMsgStats.increment();
+        if (enabled) {
+            stats.get(BrokerConstants.DROPPED_MSGS).incrementAndGet();
+        }
+    }
+
+    @Override
+    public void reportDroppedMsgs(int count) {
+        droppedMsgStats.increment(count);
+        if (enabled) {
+            stats.get(BrokerConstants.DROPPED_MSGS).addAndGet(count);
         }
     }
 
@@ -237,27 +262,27 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void reportClientSendStats(String clientId, int qos) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             reportClientStats(clientId, SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
         }
     }
 
     @Override
     public void reportClientReceiveStats(String clientId, int qos) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             reportClientStats(clientId, RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
         }
     }
 
     @Override
     public void removeClient(String clientId) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             clientSessionsStats.remove(clientId);
         }
     }
 
     private void reportTraffic(String key, long bytes) {
-        if (historicalDataReportProperties.isEnabled()) {
+        if (enabled) {
             AtomicLong al = stats.get(key);
             al.addAndGet(bytes);
         }

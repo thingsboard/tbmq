@@ -21,7 +21,12 @@ import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SslOptions;
 import io.lettuce.core.TimeoutOptions;
+import io.lettuce.core.api.StatefulConnection;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
+import lombok.ToString;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,6 +120,18 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     @Autowired
     private RedisSslCredentials redisSslCredentials;
 
+    // Lazily built once and reused. Safe without double-checked locking: these config beans are Spring singletons
+    // whose @Bean methods run single-threaded at startup; a duplicate build under hypothetical concurrency would be harmless.
+    @Setter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private volatile SSLSocketFactory sslSocketFactory;
+
+    @Setter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private volatile SslOptions lettuceSslOptions;
+
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
         return loadFactory();
@@ -124,7 +141,7 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     public LettuceConnectionFactory lettuceConnectionFactory() {
         var lettucePoolingClientConfigBuilder = LettucePoolingClientConfiguration.builder();
         if (!useDefaultPoolConfig()) {
-            lettucePoolingClientConfigBuilder.poolConfig(buildConnectionPoolConfig());
+            lettucePoolingClientConfigBuilder.poolConfig(buildLettuceConnectionPoolConfig());
         }
 
         lettucePoolingClientConfigBuilder.shutdownQuietPeriod(Duration.ofSeconds(lettuceConfig.getShutdownQuietPeriod()));
@@ -144,7 +161,7 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
     protected ClientOptions getLettuceClientOptions() {
         ClientOptions.Builder builder = ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled());
         if (sslEnabled) {
-            builder.sslOptions(createLettuceSslOptions());
+            builder.sslOptions(getLettuceSslOptions());
         }
         return builder.build();
     }
@@ -215,6 +232,18 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         return poolConfig;
     }
 
+    // Lettuce needs its own StatefulConnection-typed pool config: as of spring-data-redis 3.5 the pooling
+    // builder's poolConfig() is generically typed and no longer accepts the Jedis ConnectionPoolConfig.
+    protected GenericObjectPoolConfig<StatefulConnection<?, ?>> buildLettuceConnectionPoolConfig() {
+        final GenericObjectPoolConfig<StatefulConnection<?, ?>> poolConfig = new GenericObjectPoolConfig<>();
+        configurePool(poolConfig);
+        // Jedis' ConnectionPoolConfig constructor seeded this to 60s, which the Lettuce pool used to inherit;
+        // commons-pool2 on its own defaults to 30 min. Set it from the configured value to keep evicting
+        // connections idle beyond minEvictableMs even while the pool is at or below minIdle.
+        poolConfig.setMinEvictableIdleDuration(Duration.ofMillis(minEvictableMs));
+        return poolConfig;
+    }
+
     private void configurePool(GenericObjectPoolConfig<?> poolConfig) {
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
@@ -229,7 +258,14 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         poolConfig.setBlockWhenExhausted(blockWhenExhausted);
     }
 
-    protected SSLSocketFactory createSslSocketFactory() {
+    protected SSLSocketFactory getSslSocketFactory() {
+        if (sslSocketFactory == null) {
+            sslSocketFactory = createSslSocketFactory();
+        }
+        return sslSocketFactory;
+    }
+
+    private SSLSocketFactory createSslSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyManagerFactory kmf = createAndInitKeyManagerFactory();
@@ -241,7 +277,14 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         }
     }
 
-    protected SslOptions createLettuceSslOptions() {
+    protected SslOptions getLettuceSslOptions() {
+        if (lettuceSslOptions == null) {
+            lettuceSslOptions = createLettuceSslOptions();
+        }
+        return lettuceSslOptions;
+    }
+
+    private SslOptions createLettuceSslOptions() {
         try {
             TrustManagerFactory tmf = createAndInitTrustManagerFactory();
             KeyManagerFactory kmf = createAndInitKeyManagerFactory();

@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Configuration
@@ -59,6 +60,11 @@ public class SslWebServerConfig {
             @Override
             public void addBundleUpdateHandler(String name, Consumer<SslBundle> handler) {
                 // no-op
+            }
+
+            @Override
+            public void addBundleRegisterHandler(BiConsumer<String, SslBundle> handler) {
+                // no-op: this registry serves a single fixed bundle, so no bundle is ever registered later
             }
         };
     }

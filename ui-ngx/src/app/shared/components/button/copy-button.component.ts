@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, input, booleanAttribute, model, output } from '@angular/core';
-import { ClipboardService } from 'ngx-clipboard';
+import { Clipboard } from '@angular/cdk/clipboard';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
@@ -45,7 +45,7 @@ export class CopyButtonComponent {
 
   readonly successCopied = output<string>();
 
-  constructor(private clipboardService: ClipboardService,
+  constructor(private clipboard: Clipboard,
               private translate: TranslateService,
               private cd: ChangeDetectorRef) {
   }
@@ -60,7 +60,7 @@ export class CopyButtonComponent {
       clearTimeout(this.timer);
     }
     const copyText = this.copyText();
-    this.clipboardService.copy(copyText);
+    this.clipboard.copy(copyText);
     this.successCopied.emit(copyText);
     this.copied = true;
     this.timer = setTimeout(() => {

@@ -21,6 +21,26 @@ import java.util.Set;
 
 public interface IntegrationSubscriptionUpdateService {
 
+    /**
+     * Applies the given subscription set to the integration. An empty set clears all of them.
+     */
     void processSubscriptionsUpdate(String integrationId, Set<TopicSubscription> subscriptions);
+
+    /**
+     * Removes all of the integration's subscriptions and persists the empty set unconditionally.
+     * <p>
+     * Deliberately does not check whether this node currently sees any: that view is node-local and eventually
+     * consistent, so skipping the write would let the persisted subscriptions outlive a deleted integration and come
+     * back on the next restart. Use {@link #hasSubscriptions(String)} when a caller needs to know whether there was
+     * anything to clear.
+     */
+    void clearSubscriptions(String integrationId);
+
+    /**
+     * Whether this node currently sees any subscriptions for the integration. A node-local, eventually-consistent
+     * read: only safe for a caller that can tolerate a stale answer, e.g. the periodic cleanup deciding whether an
+     * integration disabled for the whole TTL is still attached to the data stream.
+     */
+    boolean hasSubscriptions(String integrationId);
 
 }

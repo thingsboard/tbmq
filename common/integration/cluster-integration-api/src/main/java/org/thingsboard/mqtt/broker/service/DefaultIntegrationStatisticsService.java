@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEve
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStatsFormatter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
@@ -59,6 +59,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     private static final String STATS_KEY_GAUGE = StatsType.INTEGRATION.getPrintName() + "_stats_gauge";
 
     private final Map<UUID, IntegrationProcessorStats> managedIntegrationProcessorStats = new ConcurrentHashMap<>();
+    private final Map<UUID, IntegrationProcessorStats> managedEventProcessorStats = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, DefaultCounter> counters = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, AtomicLong> gauges = new ConcurrentHashMap<>();
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
@@ -85,7 +86,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     @Override
     public IntegrationProcessorStats createIntegrationProcessorStats(UUID integrationId) {
         log.trace("Creating IntegrationProcessorStats, integrationId - {}", integrationId);
-        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory);
+        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory, StatsType.INTEGRATION_PROCESSOR);
         managedIntegrationProcessorStats.put(integrationId, stats);
         return stats;
     }
@@ -93,7 +94,25 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     @Override
     public void clearIntegrationProcessorStats(UUID integrationId) {
         log.trace("Clearing IntegrationProcessorStats, integrationId - {}", integrationId);
-        IntegrationProcessorStats stats = managedIntegrationProcessorStats.get(integrationId);
+        disable(managedIntegrationProcessorStats, integrationId);
+    }
+
+    @Override
+    public IntegrationProcessorStats createIntegrationEventProcessorStats(UUID integrationId) {
+        log.trace("Creating IntegrationEventProcessorStats, integrationId - {}", integrationId);
+        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory, StatsType.INTEGRATION_EVENT_PROCESSOR);
+        managedEventProcessorStats.put(integrationId, stats);
+        return stats;
+    }
+
+    @Override
+    public void clearIntegrationEventProcessorStats(UUID integrationId) {
+        log.trace("Clearing IntegrationEventProcessorStats, integrationId - {}", integrationId);
+        disable(managedEventProcessorStats, integrationId);
+    }
+
+    private static void disable(Map<UUID, IntegrationProcessorStats> managed, UUID integrationId) {
+        IntegrationProcessorStats stats = managed.get(integrationId);
         if (stats != null && stats.isActive()) {
             stats.disable();
         }
@@ -137,11 +156,6 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
         onMsg(IntegrationStatisticsMetricName.MSGS_UPLINK, integrationType, success);
     }
 
-    @Override
-    public void onDownlinkMsg(IntegrationType integrationType, boolean success) {
-        onMsg(IntegrationStatisticsMetricName.MSGS_DOWNLINK, integrationType, success);
-    }
-
     private void onMsg(IntegrationStatisticsMetricName metric, IntegrationType integrationType, boolean success) {
         try {
             incrementCounter(new IntegrationStatisticsKey(metric, success, integrationType));
@@ -165,24 +179,40 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
             log.info("Integration State Summary: {}", gaugeLogBuilder);
         }
         for (MessagesStats stats : managedStats) {
-            String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
-                    StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
-                    StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
-                    StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
-            log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), statsStr);
+            log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), MessagesStatsFormatter.format(stats));
             stats.reset();
         }
-        for (IntegrationProcessorStats stats : new ArrayList<>(managedIntegrationProcessorStats.values())) {
+        printProcessorStats(managedIntegrationProcessorStats, StatsType.INTEGRATION_PROCESSOR.getPrintName(), "Integration Message Processing Stats");
+        printProcessorStats(managedEventProcessorStats, StatsType.INTEGRATION_EVENT_PROCESSOR.getPrintName(), "Integration Event Processing Stats");
+    }
+
+    private void printProcessorStats(Map<UUID, IntegrationProcessorStats> managed, String printName, String label) {
+        for (IntegrationProcessorStats stats : new ArrayList<>(managed.values())) {
             String msgStatsStr = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Integration Message Processing Stats: {}", StatsType.INTEGRATION_PROCESSOR.getPrintName(), stats.getIntegrationUuid(), msgStatsStr);
-            if (!stats.isActive()) {
-                log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
-                managedIntegrationProcessorStats.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
-            } else {
+            log.info("[{}][{}] {}: {}", printName, stats.getIntegrationUuid(), label, msgStatsStr);
+            if (stats.isActive()) {
                 stats.reset();
+            } else {
+                removeInactiveStats(managed, stats);
             }
+        }
+    }
+
+    private void removeInactiveStats(Map<UUID, IntegrationProcessorStats> managed, IntegrationProcessorStats stats) {
+        log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
+        // Drop the entry only while it is still inactive: a same-id re-enable that already replaced it with an
+        // active entry is kept (the remap returns that value, so removed == false), so its meters aren't touched.
+        // Keep the remap trivial and deregister the counters afterwards, outside the per-key lock: MeterRegistry
+        // #remove takes the registry lock and fires removed-listeners, which is more than a ConcurrentHashMap
+        // remap should do while holding the bin lock. This mirrors how StatsManagerImpl deregisters its
+        // per-client counters. Removal is deferred to this print cycle (not eager on clear) so an inactive
+        // integration still emits one final stats line above.
+        boolean removed = managed.computeIfPresent(stats.getIntegrationUuid(),
+                (id, oldStats) -> oldStats.isActive() ? oldStats : null) == null;
+        if (removed) {
+            stats.getStatsCounters().forEach(statsFactory::remove);
         }
     }
 

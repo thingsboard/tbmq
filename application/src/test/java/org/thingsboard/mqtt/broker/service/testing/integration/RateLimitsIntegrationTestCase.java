@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -36,7 +37,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClientImpl;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +60,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MS
 public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @Autowired
-    private TbMessageStatsReportClientImpl reportClient;
+    private MeterRegistry meterRegistry;
 
     @Test
     public void givenPublisher_whenRateLimitsDetected_thenGotDisconnected() throws Throwable {
@@ -148,13 +148,19 @@ public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "publisher_rate_limits");
         pubClient.connect();
 
+        // Baseline of the cumulative droppedMsgs Prometheus counter. Unlike the historical per-interval
+        // counter (reset to 0 every reporting cron tick), this Micrometer counter is monotonic and never
+        // reset, so asserting its delta is immune both to the reporting scheduler firing mid-test and to
+        // drops accumulated by the other test methods sharing this context.
+        double droppedMsgsBefore = meterRegistry.get(DROPPED_MSGS).counter().count();
+
         for (int i = 0; i < 50; i++) {
             pubClient.publish("outgoing/rate/limits", ("data_" + i).getBytes(), 0, false);
         }
 
         latch.await(2, TimeUnit.SECONDS);
         assertEquals(30, latch.getCount());
-        assertEquals(30, reportClient.getStats().get(DROPPED_MSGS).get());
+        assertEquals(30, (long) (meterRegistry.get(DROPPED_MSGS).counter().count() - droppedMsgsBefore));
 
         assertTrue(subClient.isConnected());
 

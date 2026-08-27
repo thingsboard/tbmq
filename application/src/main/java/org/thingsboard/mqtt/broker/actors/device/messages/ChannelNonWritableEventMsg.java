@@ -20,13 +20,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class ChannelNonWritableEventMsg implements TbActorMsg {
-
-    public static final ChannelNonWritableEventMsg INSTANCE = new ChannelNonWritableEventMsg();
+public class ChannelNonWritableEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
     @Override
     public MsgType getMsgType() {

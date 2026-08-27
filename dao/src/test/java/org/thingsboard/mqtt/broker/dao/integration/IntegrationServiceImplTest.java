@@ -113,6 +113,139 @@ public class IntegrationServiceImplTest extends AbstractServiceTest {
         integrationService.deleteIntegration(savedIntegration);
     }
 
+    // Mode 3: events-only integration is now valid (no topicFilters).
+    @Test
+    public void testSaveEventsOnlyIntegration() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("lifecycleEventTypes").add("CLIENT_CONNECTED").add("CLIENT_DISCONNECTED");
+
+        Integration integration = new Integration();
+        integration.setName("Events only integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        Integration saved = integrationService.saveIntegration(integration);
+        Assert.assertNotNull(saved);
+        Assert.assertNotNull(saved.getId());
+        savedIntegrations.add(saved);
+    }
+
+    // Mode 1: messages + events integration is valid.
+    @Test
+    public void testSaveMessagesAndEventsIntegration() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("topicFilters").add("tbmq/#");
+        configuration.putArray("lifecycleEventTypes").add("CLIENT_CONNECTED");
+
+        Integration integration = new Integration();
+        integration.setName("Messages and events integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        Integration saved = integrationService.saveIntegration(integration);
+        Assert.assertNotNull(saved);
+        savedIntegrations.add(saved);
+    }
+
+    // Mode 2 (regression guard): legacy messages-only integration still valid.
+    @Test
+    public void testSaveLegacyMessagesOnlyIntegration() {
+        Integration integration = new Integration();
+        integration.setName("Messages only integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(getIntegrationConfiguration()); // topicFilters: ["#"], no lifecycleEventTypes
+
+        Integration saved = integrationService.saveIntegration(integration);
+        Assert.assertNotNull(saved);
+        savedIntegrations.add(saved);
+    }
+
+    // Neither list -> rejected with the new combined message.
+    @Test
+    public void testSaveIntegrationWithNoTopicFiltersAndNoEventsIsRejected() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+
+        Integration integration = new Integration();
+        integration.setName("No filters no events integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        DataValidationException ex = Assertions.assertThrows(DataValidationException.class,
+                () -> integrationService.saveIntegration(integration));
+        Assertions.assertTrue(ex.getMessage().contains("lifecycle event types"));
+    }
+
+    // Empty topicFilters array with no events -> rejected (old code accepted an empty array).
+    @Test
+    public void testSaveIntegrationWithEmptyTopicFiltersAndNoEventsIsRejected() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("topicFilters"); // empty array
+
+        Integration integration = new Integration();
+        integration.setName("Empty filters no events integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        DataValidationException ex = Assertions.assertThrows(DataValidationException.class,
+                () -> integrationService.saveIntegration(integration));
+        Assertions.assertTrue(ex.getMessage().contains("lifecycle event types"));
+    }
+
+    // Unknown lifecycle event-type name -> rejected.
+    @Test
+    public void testSaveIntegrationWithUnknownLifecycleEventTypeIsRejected() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("lifecycleEventTypes").add("CLIENT_CONNECTED").add("NOT_A_REAL_EVENT");
+
+        Integration integration = new Integration();
+        integration.setName("Unknown event type integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        DataValidationException ex = Assertions.assertThrows(DataValidationException.class,
+                () -> integrationService.saveIntegration(integration));
+        Assertions.assertTrue(ex.getMessage().contains("Unknown lifecycle event type"));
+    }
+
+    // Non-array lifecycleEventTypes -> rejected.
+    @Test
+    public void testSaveIntegrationWithNonArrayLifecycleEventTypesIsRejected() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("topicFilters").add("#");
+        configuration.put("lifecycleEventTypes", "CLIENT_CONNECTED"); // not an array
+
+        Integration integration = new Integration();
+        integration.setName("Non-array events integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        DataValidationException ex = Assertions.assertThrows(DataValidationException.class,
+                () -> integrationService.saveIntegration(integration));
+        Assertions.assertTrue(ex.getMessage().contains("should be an array"));
+    }
+
+    // Existing behavior preserved: an invalid topic filter is still rejected.
+    @Test
+    public void testSaveIntegrationWithInvalidTopicFilterIsRejected() {
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.putObject("metadata").put("key1", "val1");
+        configuration.putArray("topicFilters").add("a/#/b"); // multi-level wildcard not last -> invalid
+
+        Integration integration = new Integration();
+        integration.setName("Invalid topic filter integration");
+        integration.setType(IntegrationType.HTTP);
+        integration.setConfiguration(configuration);
+
+        Assertions.assertThrows(DataValidationException.class,
+                () -> integrationService.saveIntegration(integration));
+    }
+
     @Test
     public void testFindIntegrationById() {
         Integration integration = new Integration();

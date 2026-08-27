@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.messages;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.shared.AbstractTimedMsg;
 
 @Getter
 @Slf4j

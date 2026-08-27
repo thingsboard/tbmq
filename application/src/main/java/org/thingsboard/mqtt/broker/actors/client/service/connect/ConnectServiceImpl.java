@@ -44,7 +44,6 @@ import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -52,11 +51,15 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -89,9 +92,12 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandler messageHandler;
     private final ClientSubscriptionCache clientSubscriptionCache;
-    private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
     private final PublishMsgValidationService publishMsgValidationService;
+    private final MqttPublishMsgDeliveryService mqttPublishMsgDeliveryService;
+    private final StatsManager statsManager;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -151,7 +157,13 @@ public class ConnectServiceImpl implements ConnectService {
 
         if (flowControlEnabled) {
             int receiveMaxValue = getReceiveMaxValue(msg, sessionCtx);
-            sessionCtx.initPublishedInFlightCtx(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
+            sessionCtx.initPublishedInFlightCtx(
+                    flowControlService,
+                    mqttPublishMsgDeliveryService,
+                    statsManager.getFlowControlStats(),
+                    tbMessageStatsReportClient,
+                    receiveMaxValue,
+                    delayedQueueMaxSize);
         }
 
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));
@@ -202,6 +214,7 @@ public class ConnectServiceImpl implements ConnectService {
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);
+        integrationLifecycleEventPublisher.publishConnected(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.startProcessingPersistedMessages(actorState);
@@ -236,12 +249,16 @@ public class ConnectServiceImpl implements ConnectService {
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
-        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, reason);
+        MqttConnectReturnCode returnCode = reason.toMqttReturnCode(clientSessionCtx);
+        // Emit the same MQTT CONNACK reason-code name the client receives, matching the pre-connection validation
+        // path (which emits MqttConnectReturnCode.name()) so CLIENT_CONNECTION_FAILED speaks a single vocabulary.
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), returnCode.name());
+
+        sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, returnCode);
     }
 
-    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, ClientSessionFailureReason reason) {
+    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx, MqttConnectReturnCode mqttReturnCode) {
         try {
-            MqttConnectReturnCode mqttReturnCode = reason.toMqttReturnCode(ctx);
             createAndSendConnAckMsg(mqttReturnCode, ctx);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send CONN_ACK response.", ctx.getClientId(), ctx.getSessionId());
@@ -284,9 +301,13 @@ public class ConnectServiceImpl implements ConnectService {
         String clientId = actorState.getClientId();
         try {
             validateClientId(ctx, msg);
+            validateReceiveMaximum(ctx, msg);
             validateLastWillMessage(ctx, clientId, msg);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
+            // ctx.getSessionInfo() is not set yet at this point, so pass the already-built sessionInfo explicitly.
+            // reason is the MQTT connect return code the client received, e.g. CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID.
+            integrationLifecycleEventPublisher.publishConnectionFailed(ctx, sessionInfo, e.getMqttConnectReturnCode().name());
             createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
             disconnect(clientId, ctx.getSessionId());
             return false;
@@ -298,6 +319,18 @@ public class ConnectServiceImpl implements ConnectService {
         if (isPersistentClientWithoutClientId(msg)) {
             throw new ConnectionValidationException("Client identifier is empty and clean session flag is set to false",
                     MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx));
+        }
+    }
+
+    private void validateReceiveMaximum(ClientSessionCtx ctx, MqttConnectMsg msg) throws ConnectionValidationException {
+        if (MqttVersion.MQTT_5 != ctx.getMqttVersion()) {
+            return;
+        }
+        int receiveMax = MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties());
+        if (receiveMax <= 0) {
+            throw new ConnectionValidationException(
+                    "Receive Maximum=" + receiveMax + " is a protocol error per MQTT 5",
+                    MqttReasonCodeResolver.connectionRefusedProtocolError(ctx));
         }
     }
 

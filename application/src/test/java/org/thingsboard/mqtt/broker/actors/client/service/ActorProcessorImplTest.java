@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -100,6 +101,7 @@ public class ActorProcessorImplTest {
     UnauthorizedClientManager unauthorizedClientManager;
     BlockedClientService blockedClientService;
     AuthorizationRoutingService authorizationRoutingService;
+    IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
 
     ClientActorState clientActorState;
 
@@ -112,8 +114,9 @@ public class ActorProcessorImplTest {
         unauthorizedClientManager = mock(UnauthorizedClientManager.class);
         authorizationRoutingService = mock(AuthorizationRoutingService.class);
         blockedClientService = mock(BlockedClientService.class);
+        integrationLifecycleEventPublisher = mock(IntegrationLifecycleEventPublisher.class);
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, enhancedAuthenticationService,
-                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService));
+                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService, integrationLifecycleEventPublisher));
         clientActorState = new DefaultClientActorState(CLIENT_ID, false, 0);
     }
 
@@ -405,6 +408,7 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
+        verify(sessionCtxMock).setUsername(any());
         verify(sessionCtxMock).setAuthRulePatterns(authorizationRules);
         verify(sessionCtxMock).setClientType(ClientType.DEVICE);
         verify(sessionCtxMock).getSessionId();
@@ -442,6 +446,7 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
+        verify(sessionCtxMock).setUsername(any());
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);
@@ -472,6 +477,7 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
+        verify(sessionCtxMock).setUsername(any());
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);

@@ -25,7 +25,7 @@ public interface IntegrationProcessorStats {
 
     UUID getIntegrationUuid();
 
-    void log(int totalMsgCount, IntegrationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
+    void log(int totalMsgCount, IntegrationPackProcessingResult<?> packProcessingResult, boolean finalIterationForPack);
 
     List<StatsCounter> getStatsCounters();
 

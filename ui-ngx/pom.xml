@@ -20,14 +20,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.thingsboard.mqtt-broker</groupId>
-      <version>2.3.1-SNAPSHOT</version>
+      <version>2.4.0-SNAPSHOT</version>
         <artifactId>mqtt-broker</artifactId>
     </parent>
     <artifactId>ui-ngx</artifactId>
     <packaging>jar</packaging>
 
     <name>TBMQ Server UI</name>
-    <url>https://thingsboard.io/products/mqtt-broker/</url>
+    <url>https://tbmq.io/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -55,7 +55,7 @@
                             <goal>install-node-and-yarn</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v20.18.0</nodeVersion>
+                            <nodeVersion>v22.13.0</nodeVersion>
                             <yarnVersion>v1.22.22</yarnVersion>
                         </configuration>
                     </execution>

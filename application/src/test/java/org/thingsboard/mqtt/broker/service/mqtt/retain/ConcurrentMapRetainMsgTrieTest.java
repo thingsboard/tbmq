@@ -45,8 +45,8 @@ public class ConcurrentMapRetainMsgTrieTest {
         this.retainedMsgCounter = new AtomicInteger(0);
         this.nodesCounter = new AtomicLong(0);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        Mockito.when(statsManagerMock.createRetainMsgSizeCounter()).thenReturn(retainedMsgCounter);
-        Mockito.when(statsManagerMock.createRetainMsgTrieNodesCounter()).thenReturn(nodesCounter);
+        Mockito.when(statsManagerMock.createRetainMsgSizeGauge()).thenReturn(retainedMsgCounter);
+        Mockito.when(statsManagerMock.createRetainMsgTrieNodesGauge()).thenReturn(nodesCounter);
         this.retainMsgTrie = new ConcurrentMapRetainMsgTrie<>(statsManagerMock);
     }
 

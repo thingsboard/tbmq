@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.common.stats;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 @RequiredArgsConstructor
 @Getter
@@ -29,10 +30,17 @@ public enum StatsType {
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
     RETAIN_MSG_TRIE_SIZE("retainMsgTrieSize"),
     LAST_WILL_CLIENTS("lastWillClients"),
+    // Live MQTT channels on THIS node only. NOT the analog of the historical 'sessions' chart, which
+    // counts cluster-wide sessions incl. offline persistent ones (see ALL_CLIENT_SESSIONS).
     CONNECTED_SESSIONS("connectedSessions"),
     CONNECTED_SSL_SESSIONS("connectedSslSessions"),
+    // Cluster-wide client sessions incl. offline persistent ones. This is the Prometheus analog of the
+    // historical 'sessions' chart (BrokerConstants.SESSIONS).
     ALL_CLIENT_SESSIONS("allClientSessions"),
-    CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
+    // Total subscription count across all clients (sum of the per-client subscription set sizes), matching
+    // the historical 'subscriptions' chart. Renamed from 'clientSubscriptions', which misleadingly reported
+    // the number of clients with at least one subscription rather than a count.
+    SUBSCRIPTIONS(BrokerConstants.SUBSCRIPTIONS),
     RETAINED_MESSAGES("retainedMessages"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     RETAIN_MSG_TRIE_NODES("retainMsgTrieNodes"),
@@ -45,6 +53,8 @@ public enum StatsType {
     CLIENT_SUBSCRIPTIONS_CONSUMER("clientSubscriptionsConsumer"),
     RETAINED_MSG_CONSUMER("retainedMsgConsumer"),
     CLIENT_ACTOR("clientActor"),
+    PERSISTED_DEVICE_ACTOR("deviceActor"),
+    FLOW_CONTROL("flowControl"),
 
     SUBSCRIPTION_LOOKUP("subscriptionLookup"),
     RETAINED_MSG_LOOKUP("retainedMsgLookup"),
@@ -53,12 +63,21 @@ public enum StatsType {
     PERSISTENT_MESSAGES_PROCESSING("persistentMessagesProcessing"),
     DELIVERY("delivery"),
 
-    QUEUE_PRODUCER("producer"),
-    QUEUE_CONSUMER("consumer"),
+    QUEUE_PRODUCER("kafkaProducer.send"),
+    QUEUE_CONSUMER("kafkaConsumer.commit"),
 
     IE_UPLINK_PRODUCER("ie.uplink.published"),
     INTEGRATION("integration"),
     INTEGRATION_PROCESSOR("integrationProcessor"),
+    INTEGRATION_EVENT_PROCESSOR("integrationEventProcessor"),
+
+    DROPPED_MSGS(BrokerConstants.DROPPED_MSGS),
+    DROPPED_LIFECYCLE_EVENTS("droppedLifecycleEvents"),
+    CLIENT_DISCONNECTS("clientDisconnects"),
+    CONNECTION_ACCEPTED("connectionAccepted"),
+    CONNECTION_REFUSED("connectionRefused"),
+    CONNECTION_ERROR("connectionError"),
+    THROUGHPUT_QUOTA_DEGRADED("throughputQuotaDegraded"),
     ;
 
     private final String printName;

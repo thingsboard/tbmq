@@ -63,6 +63,13 @@
                   class="tb-error">
           warning
         </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'user.email-max-length' | translate }}"
+                  [class.!hidden]="!entityForm.get('email').hasError('maxlength')"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>user.first-name</mat-label>

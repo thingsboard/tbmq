@@ -20,6 +20,17 @@
   &.no-margin {
     margin: 0;
   }
+  &.tb-chart-timewindow {
+    margin: 0;
+    section.tb-timewindow {
+      line-height: 16px;
+    }
+    .tb-timewindow-label {
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
   .mdc-button {
     max-width: 100%;
   }

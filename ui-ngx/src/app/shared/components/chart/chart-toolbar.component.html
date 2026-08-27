@@ -15,13 +15,17 @@
     limitations under the License.
 
 -->
-<section class="flex flex-row items-center justify-between">
-  <tb-timewindow [class.hidden]="!showTimewindow()" asButton flatButton
-                 [ngModel]="timewindow()" (ngModelChange)="timewindowChange.emit($event)"
-                 tooltipPosition="left"
-                 aggregation="true">
-  </tb-timewindow>
-  <section class="flex min-w-0 items-center gap-1 overflow-hidden">
+<section class="tb-chart-toolbar">
+  <div class="tb-chart-toolbar-left">
+    <tb-timewindow class="tb-chart-timewindow"
+                   [class.hidden]="!showTimewindow()"
+                   noPadding
+                   [ngModel]="timewindow()" (ngModelChange)="timewindowChange.emit($event)"
+                   tooltipPosition="right"
+                   aggregation="true">
+    </tb-timewindow>
+  </div>
+  <section class="tb-chart-toolbar-center flex min-w-0 items-center gap-1 overflow-hidden">
     <span class="truncate">{{ chartDataKeyTranslations.get(chartKey()) | translate }}</span>
     <mat-icon [matTooltip]="chartTooltip(chartKey())"
               class="material-icons flex-shrink-0"
@@ -29,7 +33,7 @@
       info_outline
     </mat-icon>
   </section>
-  <section class="flex items-center">
+  <section class="tb-chart-toolbar-right flex items-center justify-end">
     <tb-toggle-header (valueChange)="unitTypeChange.emit($event)"
                       [value]="dataSizeUnit()"
                       [class.hidden]="!(chartHasDataSize() && showDataSizeUnitToggle())"

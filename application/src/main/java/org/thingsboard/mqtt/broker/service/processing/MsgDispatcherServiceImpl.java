@@ -35,7 +35,6 @@ import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -57,8 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -74,7 +71,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final DeviceSharedSubscriptionProcessor deviceSharedSubscriptionProcessor;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
-    private final RateLimitService rateLimitService;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -108,7 +104,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
         if (msgSubscriptions == null) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            tbMessageStatsReportClient.reportDroppedMsgs();
             callback.onSuccess();
             return;
         }
@@ -156,8 +152,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             log.trace("Found 0 subscriptions for [{}] msg", publishMsgProto);
             return null;
         }
-        clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
-
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
             var compositeSubscriptions = sharedSubscriptionCacheService.getSubscriptions(clientSubscriptions);
             var sharedSubscriptions = compositeSubscriptions.getSharedSubscriptions();
@@ -173,42 +167,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
 
         return new MsgSubscriptions(collectCommonSubscriptions(clientSubscriptions, senderClientId));
-    }
-
-    List<ValueWithTopicFilter<EntitySubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
-        int total = clientSubscriptions.size();
-
-        if (!rateLimitService.isTotalMsgsLimitEnabled() || total <= 1) {
-            return clientSubscriptions;
-        }
-
-        // We have already consumed 1 token for one subscription in PublishMsgConsumerServiceImpl.
-        // Here we only check if we can send to the remaining (total - 1) subscriptions.
-        int extraCandidates = total - 1;
-
-        long consumed = rateLimitService.tryConsumeTotalMsgs(extraCandidates);
-        int allowedExtra = (int) Math.min(consumed, extraCandidates);
-
-        if (allowedExtra == extraCandidates) {
-            return clientSubscriptions;
-        }
-
-        int deliverCount = 1 + allowedExtra;
-        int dropped = total - deliverCount;
-
-        if (allowedExtra == 0) {
-            log.debug("No available extra tokens left for total msgs bucket. Delivering to 1 subscription, dropping {}",
-                    dropped);
-        } else {
-            log.debug("Hitting total messages rate limits on subscriptions processing. Delivering to {}, dropping {}",
-                    deliverCount, dropped);
-        }
-
-        if (dropped > 0) {
-            tbMessageStatsReportClient.reportStats(DROPPED_MSGS, dropped);
-        }
-
-        return clientSubscriptions.subList(0, deliverCount);
     }
 
     private List<Subscription> collectCommonSubscriptions(

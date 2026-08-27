@@ -23,7 +23,6 @@ import {EntityTableConfig} from '@home/models/entity/entities-table-config.model
 import {PageLink} from '@shared/models/page/page-link';
 
 @Directive()
-// tslint:disable-next-line:directive-class-suffix
 export abstract class EntityTableHeaderComponent<T extends BaseData,
   P extends PageLink = PageLink,
   L extends BaseData = T,

@@ -23,5 +23,9 @@ public interface PublishedInFlightCtx {
 
     void ackInFlightMsg(int msgId);
 
-    boolean processMsg(long ttlMs);
+    void onChannelWritable();
+
+    void expireTtl(long ttlMs);
+
+    void release();
 }

@@ -33,6 +33,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
@@ -70,6 +71,10 @@ public final class MqttReasonCodeResolver {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_TOPIC_NAME_INVALID : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
     }
 
+    public static MqttConnectReturnCode connectionRefusedProtocolError(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_PROTOCOL_ERROR : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
+
     public static PubAck pubAckSuccess(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? PubAck.SUCCESS : null;
     }
@@ -88,6 +93,14 @@ public final class MqttReasonCodeResolver {
 
     public static UnsubAck unsubAckSuccess(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? UnsubAck.SUCCESS : null;
+    }
+
+    public static UnsubAck unsubAckNoSubscriptionExisted(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? UnsubAck.NO_SUBSCRIPTION_EXISTED : null;
+    }
+
+    public static UnsubAck unsubAckError(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? UnsubAck.UNSPECIFIED_ERROR : null;
     }
 
     public static PubAck pubAckTopicNameInvalid() {
@@ -120,6 +133,11 @@ public final class MqttReasonCodeResolver {
 
     public static SubAck notAuthorizedSubscribe(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.NOT_AUTHORIZED : failure();
+    }
+
+    public static SubAck topicFilterInvalid(ClientSessionCtx ctx) {
+        // 0x8F exists only in MQTT 5; MQTT 3.1.1 has no such SUBACK code, so fall back to 0x80 (Failure).
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SubAck.TOPIC_FILTER_INVALID : failure();
     }
 
     public static SubAck implementationSpecificError(ClientSessionCtx ctx) {
