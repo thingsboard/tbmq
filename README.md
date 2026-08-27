@@ -275,6 +275,8 @@ If you find TBMQ helpful, consider giving the project a ⭐ on GitHub — it hel
 For assistance, please visit our **[GitHub issues page](https://github.com/thingsboard/tbmq/issues)** and check
 the [TBMQ support options](https://tbmq.io/docs/help/).
 
+TBMQ is developed by the team behind **[ThingsBoard](https://thingsboard.io)**, the open-source IoT platform.
+
 ---
 
 ## 📄 Licenses
