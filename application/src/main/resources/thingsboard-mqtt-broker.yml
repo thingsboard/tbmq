@@ -250,16 +250,16 @@ listener:
 # Kafka parameters
 queue:
   msg-all:
-    # Number of parallel consumers for 'tbmq.msg.all' topic. Should not be more than the number of partitions in topic.
+    # Number of parallel consumers for `tbmq.msg.all` topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:4}"
     # Number of threads in the pool to process consumers tasks. Should not be less than number of consumers.
     threads-count: "${TB_MSG_ALL_THREADS_COUNT:4}"
-    # Poll interval for messages from 'tbmq.msg.all' topic (in ms).
+    # Poll interval for messages from `tbmq.msg.all` topic (in ms).
     poll-interval: "${TB_MSG_ALL_POLL_INTERVAL:100}"
-    # Timeout for processing a pack of messages from 'tbmq.msg.all' topic (in ms).
+    # Timeout for processing a pack of messages from `tbmq.msg.all` topic (in ms).
     pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
-      # Processing strategy for 'tbmq.msg.all' topic. Accepted values: SKIP_ALL, RETRY_ALL.
+      # Processing strategy for `tbmq.msg.all` topic. Accepted values: SKIP_ALL, RETRY_ALL.
       type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}"
       # Number of retries. Use 0 for unlimited. Applies to the RETRY_ALL strategy.
       retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}"
@@ -279,16 +279,16 @@ queue:
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}"
     # Enables or disables validation that the application client ID contains only alphanumeric characters (required for Kafka topic creation).
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
-    # Enables or disables validation that the application shared subscription topic filter contains only alphanumeric characters, '+', or '#' (required for Kafka topic creation).
+    # Enables or disables validation that the application shared subscription topic filter contains only alphanumeric characters, `+`, or `#` (required for Kafka topic creation).
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
   device-persisted-msg:
-    # Number of parallel consumers for 'tbmq.msg.persisted' topic. Should not be more than the number of partitions in topic.
+    # Number of parallel consumers for `tbmq.msg.persisted` topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:3}"
     # Number of threads in the pool to process consumers tasks.
     threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:3}"
-    # Poll interval for messages from 'tbmq.msg.persisted' topic (in ms).
+    # Poll interval for messages from `tbmq.msg.persisted` topic (in ms).
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
-    # Timeout for processing a pack of messages from 'tbmq.msg.persisted' topic (in ms).
+    # Timeout for processing a pack of messages from `tbmq.msg.persisted` topic (in ms).
     pack-processing-timeout: "${TB_DEVICE_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
       # Queue processing strategy. Accepted values: SKIP_ALL, RETRY_ALL.
@@ -298,57 +298,57 @@ queue:
       # Time to wait in the consumer thread before retrying (in s).
       pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
   retained-msg:
-    # Poll interval for messages from 'tbmq.msg.retained' topic (in ms).
+    # Poll interval for messages from `tbmq.msg.retained` topic (in ms).
     poll-interval: "${TB_RETAINED_MSG_POLL_INTERVAL:100}"
-    # Wait timeout for system messages to be delivered to 'tbmq.msg.retained' topic (in ms).
+    # Wait timeout for system messages to be delivered to `tbmq.msg.retained` topic (in ms).
     acknowledge-wait-timeout-ms: "${TB_RETAINED_MSG_ACK_WAIT_TIMEOUT_MS:500}"
   client-session:
-    # Poll interval for messages from 'tbmq.client.session' topic (in ms).
+    # Poll interval for messages from `tbmq.client.session` topic (in ms).
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
-    # Wait timeout for system messages to be delivered to 'tbmq.client.session' topic (in ms).
+    # Wait timeout for system messages to be delivered to `tbmq.client.session` topic (in ms).
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
   client-subscriptions:
-    # Poll interval for messages from 'tbmq.client.subscriptions' topic (in ms).
+    # Poll interval for messages from `tbmq.client.subscriptions` topic (in ms).
     poll-interval: "${TB_CLIENT_SUBSCRIPTIONS_POLL_INTERVAL:100}"
-    # Wait timeout for system messages to be delivered to 'tbmq.client.subscriptions' topic (in ms).
+    # Wait timeout for system messages to be delivered to `tbmq.client.subscriptions` topic (in ms).
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SUBSCRIPTIONS_ACK_WAIT_TIMEOUT_MS:500}"
   client-session-event:
     # Number of parallel consumers for `tbmq.client.session.event.request` topic.
     consumers-count: "${TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT:2}"
     # Maximum number of pending client session events.
     max-pending-requests: "${TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS:10000}"
-    # Poll interval for messages from 'tbmq.client.session.event.request' topic (in ms).
+    # Poll interval for messages from `tbmq.client.session.event.request` topic (in ms).
     poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
-    # Maximum time to process 'tbmq.client.session.event.request' messages after consuming them (in ms).
+    # Maximum time to process `tbmq.client.session.event.request` messages after consuming them (in ms).
     batch-wait-timeout-ms: "${TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS:15000}"
   client-session-event-response:
     # Number of threads for sending event responses to session event requests.
     response-sender-threads: "${TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS:8}"
-    # Poll interval for messages from 'tbmq.client.session.event.response' topics (in ms).
+    # Poll interval for messages from `tbmq.client.session.event.response` topics (in ms).
     poll-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_POLL_INTERVAL:100}"
     # Maximum time before client session events expire (in ms).
     max-request-timeout: "${TB_CLIENT_SESSION_EVENT_RESPONSE_MAX_REQUEST_TIMEOUT:100000}"
     # Cleanup period for stale client session events (in ms).
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
-    # Poll interval for messages from 'tbmq.client.disconnect' topics (in ms).
+    # Poll interval for messages from `tbmq.client.disconnect` topics (in ms).
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persisted-downlink-msg:
     # Number of parallel consumers for `tbmq.msg.downlink.persisted` topics.
     consumers-count: "${TB_PERSISTED_DOWNLINK_MSG_CONSUMERS_COUNT:2}"
     # Number of threads in the pool to process consumers tasks.
     threads-count: "${TB_PERSISTED_DOWNLINK_MSG_THREADS_COUNT:2}"
-    # Poll interval for messages from 'tbmq.msg.downlink.persisted' topics (in ms).
+    # Poll interval for messages from `tbmq.msg.downlink.persisted` topics (in ms).
     poll-interval: "${TB_PERSISTED_DOWNLINK_MSG_POLL_INTERVAL:100}"
   basic-downlink-msg:
     # Number of parallel consumers for `tbmq.msg.downlink.basic` topics.
     consumers-count: "${TB_BASIC_DOWNLINK_MSG_CONSUMERS_COUNT:2}"
     # Number of threads in the pool to process consumers tasks.
     threads-count: "${TB_BASIC_DOWNLINK_MSG_THREADS_COUNT:2}"
-    # Poll interval for messages from 'tbmq.msg.downlink.basic' topics (in ms).
+    # Poll interval for messages from `tbmq.msg.downlink.basic` topics (in ms).
     poll-interval: "${TB_BASIC_DOWNLINK_MSG_POLL_INTERVAL:100}"
   application-removed-event:
-    # Poll interval for messages from 'tbmq.sys.app.removed' topic (in ms).
+    # Poll interval for messages from `tbmq.sys.app.removed` topic (in ms).
     poll-interval: "${TB_APPLICATION_REMOVED_EVENT_POLL_INTERVAL:100}"
     processing:
       # Cron expression defining when to consume and process messages.
@@ -356,23 +356,23 @@ queue:
       # Timezone for the processing cron-job.
       zone: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_ZONE:UTC}"
   historical-data-total:
-    # Poll interval for messages from 'tbmq.sys.historical.data' topic (in ms).
+    # Poll interval for messages from `tbmq.sys.historical.data` topic (in ms).
     poll-interval: "${TB_HISTORICAL_DATA_TOTAL_POLL_INTERVAL:100}"
   integration-uplink:
-    # Poll interval for messages from 'tbmq.ie.uplink' topic (in ms).
+    # Poll interval for messages from `tbmq.ie.uplink` topic (in ms).
     poll-interval: "${TB_IE_UPLINK_POLL_INTERVAL:100}"
-    # Timeout for processing a pack of messages from 'tbmq.ie.uplink' topic (in ms).
+    # Timeout for processing a pack of messages from `tbmq.ie.uplink` topic (in ms).
     pack-processing-timeout: "${TB_IE_UPLINK_PACK_PROCESSING_TIMEOUT:20000}"
   integration-uplink-notifications:
-    # Poll interval for messages from 'tbmq.ie.uplink.notifications' topics (in ms).
+    # Poll interval for messages from `tbmq.ie.uplink.notifications` topics (in ms).
     poll-interval: "${TB_IE_UPLINK_NOTIFICATIONS_POLL_INTERVAL:100}"
   internode-notifications:
-    # Poll interval for messages from 'tbmq.sys.internode.notifications' topics (in ms).
+    # Poll interval for messages from `tbmq.sys.internode.notifications` topics (in ms).
     poll-interval: "${TB_NODE_NOTIFICATION_POLL_INTERVAL:100}"
   blocked-client:
-    # Poll interval for messages from 'tbmq.client.blocked' topic (in ms).
+    # Poll interval for messages from `tbmq.client.blocked` topic (in ms).
     poll-interval: "${TB_BLOCKED_CLIENT_POLL_INTERVAL:100}"
-    # Wait timeout for system messages to be delivered to 'tbmq.client.blocked' topic (in ms).
+    # Wait timeout for system messages to be delivered to `tbmq.client.blocked` topic (in ms).
     acknowledge-wait-timeout-ms: "${TB_BLOCKED_CLIENT_ACK_WAIT_TIMEOUT_MS:500}"
 
   kafka:
@@ -385,7 +385,7 @@ queue:
     default:
       # Base Kafka properties applied to admins, all producers and consumers, making it the ideal place for shared
       # connection and security settings. Format is key:value;key:value. If a property value contains a semicolon
-      # (common in sasl.jaas.config), escape it with a backslash (e.g., ...username="user"\;password="pass"\;).
+      # (common in sasl.jaas.config), escape it with a backslash (e.g., `...username="user"\;password="pass"\;`).
       config: "${TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG:}"
       consumer:
         # Additional Kafka properties specific only to consumers, merged with the global defaults —
@@ -896,12 +896,12 @@ mqtt:
   # Maximum number of PUBLISH messages not yet acknowledged.
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   flow-control:
-    # Enables or disables the MQTT 5 flow control feature for the server. If disabled, the server will not control the number of messages sent to subscribers via "Receive Maximum".
-    # Also applies to MQTT 3.x clients when enabled. "Receive Maximum" for MQTT 3.x clients can be configured using MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX.
+    # Enables or disables the MQTT 5 flow control feature for the server. If disabled, the server will not control the number of messages sent to subscribers via `Receive Maximum`.
+    # Also applies to MQTT 3.x clients when enabled. `Receive Maximum` for MQTT 3.x clients can be configured using MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX.
     enabled: "${MQTT_FLOW_CONTROL_ENABLED:true}"
-    # Interval between sweeps of the per-client delayed-message buffer that drops messages whose age exceeds 'ttl' (in ms).
+    # Interval between sweeps of the per-client delayed-message buffer that drops messages whose age exceeds `ttl` (in ms).
     # Drain on ACK/writability is event-driven, so this sweeper only handles TTL expiry. Defaults to 10 s.
-    # The legacy YAML key 'mqtt.flow-control.timeout' and env var MQTT_FLOW_CONTROL_TIMEOUT remain honoured as fallbacks
+    # The legacy YAML key `mqtt.flow-control.timeout` and env var MQTT_FLOW_CONTROL_TIMEOUT remain honoured as fallbacks
     # for upgrade compatibility.
     ttl-sweep-interval-ms: "${MQTT_FLOW_CONTROL_TTL_SWEEP_INTERVAL_MS:${mqtt.flow-control.timeout:${MQTT_FLOW_CONTROL_TIMEOUT:10000}}}"
     # Time to store delayed messages for subscribers (in s). Delayed messages are those that cannot be sent immediately due to flow control restrictions.
@@ -924,11 +924,11 @@ mqtt:
     # Minimum topic name length that the broker may replace with a topic alias (e.g., topics with more than 50 characters).
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   subscription:
-    # Enables or disables client subscriptions to the root multi-level wildcard "#".
-    # When true (default), clients can subscribe to "#" and receive a copy of every message published to the broker.
+    # Enables or disables client subscriptions to the root multi-level wildcard `#`.
+    # When true (default), clients can subscribe to `#` and receive a copy of every message published to the broker.
     # Useful for debugging or firehose-style monitoring services.
-    # When false, clients are denied subscription to the exact topic "#" but can still subscribe to specific paths
-    # (e.g., "sensors/#") or individual topics. Recommended for production to prevent accidental or malicious data leakage.
+    # When false, clients are denied subscription to the exact topic `#` but can still subscribe to specific paths
+    # (e.g., `sensors/#`) or individual topics. Recommended for production to prevent accidental or malicious data leakage.
     allow-root-multi-level-wildcard: "${MQTT_SUBSCRIPTION_ROOT_MULTI_LVL_WILDCARD:true}"
   shared-subscriptions:
     # Processing strategy for distributing messages among clients in a shared subscription. Accepted values: ROUND_ROBIN.
@@ -1029,7 +1029,7 @@ mqtt:
       # Example: 10 messages per second or 300 messages per minute.
       client-config: "${MQTT_INCOMING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
     outgoing-publish:
-      # Enables or disables publish rate limits per client for outgoing messages to subscribers. Applies only to non-persistent subscribers with QoS = 0 ("AT_MOST_ONCE").
+      # Enables or disables publish rate limits per client for outgoing messages to subscribers. Applies only to non-persistent subscribers with QoS = 0 (`AT_MOST_ONCE`).
       enabled: "${MQTT_OUTGOING_RATE_LIMITS_ENABLED:false}"
       # Limits the count of publish messages per subscriber per time interval (in s). Comma-separated list of limit:seconds pairs.
       # Example: 10 messages per second or 300 messages per minute.
@@ -1058,8 +1058,8 @@ mqtt:
     # Number of threads in the pool for processing downlink messages callbacks after sending them to Kafka.
     downlink_msg_callback_threads: "${MQTT_HANDLER_DOWNLINK_MSG_CALLBACK_THREADS:2}"
   # Response info value for the MQTT 5 request-response feature, returned to clients that request it.
-  # If not set, the broker will not reply with response info to MQTT 5 clients that connect with "request response info" = 1.
-  # Set it to the topic to be used for the request-response feature, e.g. "example/".
+  # If not set, the broker will not reply with response info to MQTT 5 clients that connect with `request response info` = 1.
+  # Set it to the topic to be used for the request-response feature, e.g. `example/`.
   response-info: "${MQTT_RESPONSE_INFO:}"
   blocked-client:
     cleanup:
@@ -1124,22 +1124,22 @@ redis:
     # Enables or disables pool config. Applies only when not using the default ClientConfig.
     usePoolConfig: "${REDIS_CLIENT_USE_POOL_CONFIG:false}"
   cluster:
-    # Comma-separated list of "host:port" pairs to bootstrap from.
+    # Comma-separated list of `host:port` pairs to bootstrap from.
     nodes: "${REDIS_NODES:}"
     # Maximum number of redirects to follow when executing commands across the cluster.
     maxRedirects: "${REDIS_MAX_REDIRECTS:12}"
-    # Enables or disables use of the default pool config. When false, the pool config is built from the 'pool_config' section values.
+    # Enables or disables use of the default pool config. When false, the pool config is built from the `pool_config` section values.
     useDefaultPoolConfig: "${REDIS_CLUSTER_USE_DEFAULT_POOL_CONFIG:true}"
   sentinel:
     # Name of the master node.
     master: "${REDIS_MASTER:}"
-    # Comma-separated list of "host:port" pairs of sentinels.
+    # Comma-separated list of `host:port` pairs of sentinels.
     sentinels: "${REDIS_SENTINELS:}"
     # Optional. Username to authenticate with the Sentinel (Sentinel ACL).
     username: "${REDIS_SENTINEL_USERNAME:}"
     # Password to authenticate with the Sentinel.
     password: "${REDIS_SENTINEL_PASSWORD:}"
-    # Enables or disables use of the default pool config. When false, the pool config is built from the 'pool_config' section values.
+    # Enables or disables use of the default pool config. When false, the pool config is built from the `pool_config` section values.
     useDefaultPoolConfig: "${REDIS_SENTINEL_USE_DEFAULT_POOL_CONFIG:true}"
   # DB index.
   db: "${REDIS_DB:0}"
@@ -1194,7 +1194,7 @@ stats:
     percentiles: "${STATS_TIMER_PERCENTILES:0.5}"
   application-processor:
     # Enables or disables per-Application-client processing stats. When enabled, each Application client gets its own set
-    # of counters tagged with 'clientId' (deregistered when the client disconnects); the appProcessor.latency timers are
+    # of counters tagged with `clientId` (deregistered when the client disconnects); the appProcessor.latency timers are
     # aggregated globally (keyed only by packetType, with no per-client tag). On a broker with very many Application
     # clients the per-client counter cardinality can be high, so enable only when per-client stats are needed.
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
@@ -1227,8 +1227,8 @@ management:
   endpoints:
     web:
       exposure:
-        # Actuator endpoints exposed via HTTP. Use 'health,info' to expose only basic health and information endpoints.
-        # To expose Prometheus metrics, include 'prometheus' in the list (e.g., 'health,info,prometheus').
+        # Actuator endpoints exposed via HTTP. Use `health,info` to expose only basic health and information endpoints.
+        # To expose Prometheus metrics, include `prometheus` in the list (e.g., `health,info,prometheus`).
         include: "${METRICS_ENDPOINTS_EXPOSE:health,info,prometheus}"
 
 # Spring CORS configuration
@@ -1236,11 +1236,11 @@ spring.mvc.cors:
   mappings:
     # Intercept path.
     "[/api/**]":
-      # Comma-separated list of origins to allow. '*' allows all origins. When not set, CORS support is disabled.
+      # Comma-separated list of origins to allow. `*` allows all origins. When not set, CORS support is disabled.
       allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
-      # Comma-separated list of methods to allow. '*' allows all methods.
+      # Comma-separated list of methods to allow. `*` allows all methods.
       allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
-      # Comma-separated list of headers to allow in a request. '*' allows all headers.
+      # Comma-separated list of headers to allow in a request. `*` allows all headers.
       allowed-headers: "${MVC_CORS_API_ALLOWED_HEADERS:*}"
       # How long the response from a pre-flight request can be cached by clients (in s).
       max-age: "${MVC_CORS_API_MAX_AGE:1800}"
@@ -1293,7 +1293,7 @@ analysis:
   log:
     # Enables or disables analysis logging.
     enabled: "${ANALYSIS_LOG_ENABLED:true}"
-    # Enables or disables logging events for all clients. When true, ignores the 'analyzed-client-ids' list.
+    # Enables or disables logging events for all clients. When true, ignores the `analyzed-client-ids` list.
     all-clients: "${ANALYSIS_LOG_ALL_CLIENTS:false}"
     # Comma-separated list of client IDs for which additional events will be logged.
     # Example env var: ANALYSIS_LOG_CLIENT_IDS=client1,client2.
