@@ -406,7 +406,7 @@ export function buildSeries(
     emphasis: {
       lineStyle: { width: 4 },
     },
-    data: (data ?? []).map(d => [d.ts, d.value] as [number, number]),
+    data: (data ?? []).map(d => [d.ts, d.value] as [number, number]).sort((a, b) => a[0] - b[0]),
     z: 2,
     silent: !visible,
   };
