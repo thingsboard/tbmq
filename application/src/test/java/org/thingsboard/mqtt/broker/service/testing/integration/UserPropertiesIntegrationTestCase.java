@@ -20,6 +20,7 @@ import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
@@ -67,23 +68,24 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     // the in-memory path on a loaded CI agent.
     private static final int DELIVERY_TIMEOUT_SEC = 30;
 
+    // Paho waits without a timeout by default (timeToWait == -1). A client that wedges - and 1.2.5 can
+    // wedge, see clearSession() - would then block the JUnit thread forever and take the whole surefire
+    // fork down with it, so every blocking call of every client created here is bounded.
+    private static final long BLOCKING_CALL_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(30);
+
     @Autowired
     private MqttClientCredentialsService credentialsService;
 
     private final List<MqttClientCredentials> credentials = new ArrayList<>();
 
     // Clients are registered here as soon as they are created, so that @After closes them even when a
-    // test fails before its own disconnect. A client left connected keeps both its session on the
-    // broker and its Paho file persistence directory open, and since that directory is derived from
-    // the client id and the server URI, the next client created with the same client id shares it:
-    // whichever of the two is closed first deletes the directory and the other one then fails with
-    // "Untranslated MqttException - RC: 0" on its receiver thread.
+    // test fails before its own disconnect. A client left connected keeps its session on the broker.
     private final List<MqttClient> clients = new ArrayList<>();
     private final List<MqttAsyncClient> asyncClients = new ArrayList<>();
 
-    // Sub client of a persisted session test. Its session outlives the connection, so it has to be
-    // dropped in @After to not leave a subscription behind for the other test classes.
-    private MqttClient persistedSubClient;
+    // Client id of the sub client of a persisted session test. Its session outlives the connection, so it
+    // has to be dropped in @After to not leave a subscription behind for the other test classes.
+    private String persistedSubClientId;
 
     @Before
     public void beforeTest() {
@@ -99,9 +101,9 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
     @After
     public void clear() {
-        clearSession(persistedSubClient);
         clients.forEach(this::disconnectAndClose);
         asyncClients.forEach(this::disconnectAndClose);
+        clearSession(persistedSubClientId);
         credentials.forEach(c -> credentialsService.deleteCredentials(c.getId()));
     }
 
@@ -109,8 +111,14 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         this.credentials.add(credentialsService.saveCredentials(credentials));
     }
 
+    // In-memory persistence on purpose. Paho otherwise persists in-flight messages in a directory of the
+    // working copy, derived from the client id and the server URI: two clients with the same client id
+    // share it, whichever is closed first deletes it and the other then fails with
+    // "Untranslated MqttException - RC: 0", and a client closed with a QoS 2 message still in flight
+    // leaves the directory behind for good.
     private MqttClient newClient(String clientId) throws MqttException {
-        MqttClient client = new MqttClient(SERVER_URI + mqttPort, clientId);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, clientId, new MemoryPersistence());
+        client.setTimeToWait(BLOCKING_CALL_TIMEOUT_MS);
         clients.add(client);
         return client;
     }
@@ -122,22 +130,30 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         return client;
     }
 
-    // Reconnecting with clean start is what makes the broker drop the persisted session. The client
+    // Connecting with clean start is what makes the broker drop the persisted session. The client
     // authenticates by client id, so no credentials have to be set on the connection options.
-    private void clearSession(MqttClient client) {
-        if (client == null) {
+    //
+    // A brand new instance is used on purpose, and only after the client that owned the session has been
+    // closed: reconnecting the very instance that has just been disconnected livelocks Paho 1.2.5.
+    // MqttClient.connect() creates a fresh CommsSender and then spins in CommsSender.start() until it
+    // observes it running, and the shutdown of the previous connection can stop that sender in between -
+    // start() has no other exit condition, so it sleeps in a loop forever and connect() never returns.
+    private void clearSession(String clientId) {
+        if (clientId == null) {
             return;
         }
+        MqttClient client = null;
         try {
-            if (client.isConnected()) {
-                client.disconnect();
-            }
+            client = new MqttClient(SERVER_URI + mqttPort, clientId, new MemoryPersistence());
+            client.setTimeToWait(BLOCKING_CALL_TIMEOUT_MS);
             MqttConnectionOptions options = new MqttConnectionOptions();
             options.setCleanStart(true);
             client.connect(options);
-            client.disconnect();
         } catch (Exception e) {
-            log.warn("[{}] Failed to clear the session", client.getClientId(), e);
+            log.warn("[{}] Failed to clear the session", clientId, e);
+        }
+        if (client != null) {
+            disconnectAndClose(client);
         }
     }
 
@@ -187,7 +203,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
         MqttClient subClient = newClient(subClientId);
         if (!cleanStart) {
-            persistedSubClient = subClient;
+            persistedSubClientId = subClientId;
         }
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setCleanStart(cleanStart);
@@ -240,7 +256,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         options.setWillMessageProperties(MQTT_PROPERTIES);
         options.setKeepAliveInterval(1);
         options.setUserName(DEFAULT_USER_NAME);
-        pubClient.connect(options).waitForCompletion();
+        pubClient.connect(options).waitForCompletion(BLOCKING_CALL_TIMEOUT_MS);
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(await);
@@ -257,7 +273,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         options.setWillMessageProperties(MQTT_PROPERTIES);
         options.setKeepAliveInterval(1);
         options.setUserName(DEFAULT_USER_NAME);
-        pubClient.connect(options).waitForCompletion();
+        pubClient.connect(options).waitForCompletion(BLOCKING_CALL_TIMEOUT_MS);
 
         boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertFalse(await);
@@ -289,14 +305,12 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     }
 
     private void clearRetainedMsg() throws MqttException {
-        MqttClient pubClientClearRetained = new MqttClient(SERVER_URI + mqttPort, "pubClearRetained");
+        MqttClient pubClientClearRetained = newClient("pubClearRetained");
         MqttConnectionOptions clearRetainedOptions = new MqttConnectionOptions();
         clearRetainedOptions.setUserName(DEFAULT_USER_NAME);
 
         pubClientClearRetained.connect(clearRetainedOptions);
         pubClientClearRetained.publish(MY_TOPIC, new MqttMessage("".getBytes(StandardCharsets.UTF_8), 0, true, MQTT_PROPERTIES));
-        pubClientClearRetained.disconnect();
-        pubClientClearRetained.close();
     }
 
     private static void assertUserProperties(List<UserProperty> userProperties) {
