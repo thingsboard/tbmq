@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -75,6 +76,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -286,24 +288,33 @@ public class BrokerInitializerTest {
         ));
         when(clientSubscriptionConsumer.initLoad()).thenReturn(map);
 
-        brokerInitializer.initClientSubscriptions(Map.of());
+        brokerInitializer.initClientSubscriptions();
 
         verify(clientSubscriptionConsumer).initLoad();
         verify(clientSubscriptionService).init(eq(Map.of()));
     }
 
+    /**
+     * Sessions are resolved against the live cache, not against the map the sessions init load returned: a client
+     * that connected on another node after that load is in the cache but not in the snapshot, and dropping its
+     * subscription here would lose it for good - the subscriptions consumer resumes past the message that
+     * carried it.
+     */
     @Test
     public void testInitClientSubscriptions() throws QueuePersistenceException {
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> map = new HashMap<>(Map.of(
                 SubscriptionsSourceKey.newInstance("clientId1"), Set.of(new ClientTopicSubscription("#")),
                 SubscriptionsSourceKey.newInstance("clientId2"), Set.of(new ClientTopicSubscription("test/#"), new ClientTopicSubscription("temp/#"))
         ));
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> expected = Map.copyOf(map);
         when(clientSubscriptionConsumer.initLoad()).thenReturn(map);
+        prepareSessions().forEach((clientId, session) ->
+                when(clientSessionService.getClientSessionInfo(clientId)).thenReturn(session));
 
-        brokerInitializer.initClientSubscriptions(prepareSessions());
+        brokerInitializer.initClientSubscriptions();
 
         verify(clientSubscriptionConsumer).initLoad();
-        verify(clientSubscriptionService).init(eq(map));
+        verify(clientSubscriptionService).init(eq(expected));
     }
 
     @Test
@@ -334,6 +345,20 @@ public class BrokerInitializerTest {
         verify(basicDownLinkConsumer).startConsuming();
         verify(persistentDownLinkConsumer).startConsuming();
         verify(internodeNotificationsConsumer).startConsuming();
+    }
+
+    @Test
+    public void testOnApplicationEventStartsSessionListenerBeforeSubscriptionsInitLoad() throws QueuePersistenceException {
+        ApplicationReadyEvent readyEvent = mock(ApplicationReadyEvent.class);
+        brokerInitializer.onApplicationEvent(readyEvent);
+
+        // The subscriptions init load can run for minutes. If the session cache stays frozen for that long,
+        // subscriptions of clients that connected meanwhile arrive before their sessions do, and
+        // SharedSubscriptionCacheServiceImpl.put() silently drops a subscription whose session it cannot find.
+        InOrder inOrder = inOrder(clientSessionService, clientSubscriptionConsumer);
+        inOrder.verify(clientSessionService).init(anyMap());
+        inOrder.verify(clientSessionService).startListening(any());
+        inOrder.verify(clientSubscriptionConsumer).initLoad();
     }
 
 }

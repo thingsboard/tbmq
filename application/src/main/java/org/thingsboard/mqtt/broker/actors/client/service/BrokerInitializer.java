@@ -99,10 +99,11 @@ public class BrokerInitializer {
         log.info("Initializing Client Sessions and Subscriptions.");
         try {
             initIntegrationLifecycleEventCache();
-            Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
-            initClientSubscriptions(allClientSessions);
 
+            initClientSessions();
             clientSessionService.startListening(clientSessionConsumer);
+
+            initClientSubscriptions();
             clientSubscriptionService.startListening(clientSubscriptionConsumer);
 
             initRetainedMessages();
@@ -205,21 +206,20 @@ public class BrokerInitializer {
         log.info("All client-session-dependent consumers have started.");
     }
 
-    void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
+    void initClientSubscriptions() throws QueuePersistenceException {
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
-        removeSubscriptionIfSessionIsAbsent(allClientSessions, allClientSubscriptions);
+        removeSubscriptionIfSessionIsAbsent(allClientSubscriptions);
 
         log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
         clientSubscriptionService.init(allClientSubscriptions);
     }
 
-    private void removeSubscriptionIfSessionIsAbsent(Map<String, ClientSessionInfo> allClientSessions,
-                                                     Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions) {
+    private void removeSubscriptionIfSessionIsAbsent(Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions) {
         for (SubscriptionsSourceKey sourceKey : new HashSet<>(allClientSubscriptions.keySet())) {
             if (MQTT_CLIENT.equals(sourceKey.getSource())) {
-                if (!allClientSessions.containsKey(sourceKey.getId())) {
+                if (clientSessionService.getClientSessionInfo(sourceKey.getId()) == null) {
                     allClientSubscriptions.remove(sourceKey);
                 }
             }
