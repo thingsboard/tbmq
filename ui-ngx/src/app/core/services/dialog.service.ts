@@ -106,7 +106,8 @@ export class DialogService {
       this.dialog.open<GettingStartedGuideDialogComponent>(
         GettingStartedGuideDialogComponent, {
           disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          autoFocus: false
         })
         .afterClosed()
         .subscribe();

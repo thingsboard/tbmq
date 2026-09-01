@@ -301,7 +301,8 @@ export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
           const m = moment(value);
           const text = m.format(xFormat.formatPattern);
           if (compact) {
-            return text;
+            // en-spaces enlarge the label box so hideOverlap keeps a gap between adjacent labels
+            return `\u2002${text}\u2002`;
           }
           let isMajor = false;
           if (xFormat.unit === 'second') {
@@ -332,6 +333,7 @@ export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
       axisLabel: {
         color: tbColors.axisLabel,
         fontSize: compact ? 9 : 11,
+        hideOverlap: true,
         formatter: (value: number) => {
           if (Number.isInteger(value)) {
             return new Intl.NumberFormat('en', { notation: 'compact' }).format(value);
@@ -404,7 +406,7 @@ export function buildSeries(
     emphasis: {
       lineStyle: { width: 4 },
     },
-    data: (data ?? []).map(d => [d.ts, d.value] as [number, number]),
+    data: (data ?? []).map(d => [d.ts, d.value] as [number, number]).sort((a, b) => a[0] - b[0]),
     z: 2,
     silent: !visible,
   };

@@ -133,7 +133,7 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
         this.jsonEditor = ace.edit(editorElement, editorOptions);
         this.jsonEditor.session.setUseWrapMode(false);
         this.jsonEditor.setValue(this.contentValue ? this.contentValue : '', -1);
-        this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
+        this.updateEditorReadonlyState();
         this.jsonEditor.on('change', () => {
           if (!this.ignoreChange) {
             this.cleanupJsonErrors();
@@ -178,8 +178,30 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
   setDisabledState(isDisabled: boolean): void {
     this.disabled.set(isDisabled);
     if (this.jsonEditor) {
-      this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
+      this.updateEditorReadonlyState();
     }
+  }
+
+  private updateEditorReadonlyState(): void {
+    const readOnly = this.disabled() || this.readonly();
+    this.jsonEditor.setReadOnly(readOnly);
+    this.jsonEditor.container.style.pointerEvents = readOnly ? 'none' : '';
+    this.jsonEditor.container.style.opacity = readOnly ? '0.6' : '';
+    if (readOnly) {
+      this.jsonEditor.blur();
+      this.clearBracketHighlight();
+    }
+  }
+
+  private clearBracketHighlight(): void {
+    // ace re-adds the matching-bracket markers asynchronously after every cursor change
+    setTimeout(() => {
+      const session = this.jsonEditor?.session as any;
+      if (session?.$bracketHighlight) {
+        session.$bracketHighlight.markerIds.forEach((id: number) => session.removeMarker(id));
+        session.$bracketHighlight = null;
+      }
+    });
   }
 
   public validate(c: UntypedFormControl) {
@@ -236,6 +258,9 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
       this.ignoreChange = true;
       this.jsonEditor.setValue(this.contentValue ? this.contentValue : '', -1);
       this.ignoreChange = false;
+      if (this.disabled() || this.readonly()) {
+        this.clearBracketHighlight();
+      }
     }
   }
 

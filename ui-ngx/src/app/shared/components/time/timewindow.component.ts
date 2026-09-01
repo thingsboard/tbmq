@@ -52,7 +52,7 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { DEFAULT_OVERLAY_POSITIONS, POSITION_MAP } from '@shared/models/overlay.models';
+import { POSITION_MAP } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -156,10 +156,13 @@ export class TimewindowComponent implements ControlValueAccessor {
 
     const triggerRect = (this.nativeElement.nativeElement as HTMLElement).getBoundingClientRect();
     const preferRight = (triggerRect.left + triggerRect.right) / 2 > window.innerWidth / 2;
-    const positions = preferRight
-      ? [POSITION_MAP.bottomRight, POSITION_MAP.bottomLeft, POSITION_MAP.topRight, POSITION_MAP.topLeft,
-         POSITION_MAP.left, POSITION_MAP.right]
-      : DEFAULT_OVERLAY_POSITIONS;
+    const preferTop = (triggerRect.top + triggerRect.bottom) / 2 > window.innerHeight / 2;
+    const verticalOrder = preferTop ? ['top', 'bottom'] : ['bottom', 'top'];
+    const horizontalOrder = preferRight ? ['Right', 'Left'] : ['Left', 'Right'];
+    const positions = [
+      ...verticalOrder.flatMap(vertical => horizontalOrder.map(horizontal => POSITION_MAP[`${vertical}${horizontal}`])),
+      POSITION_MAP.left, POSITION_MAP.right
+    ];
     config.positionStrategy = this.overlay.position()
       .flexibleConnectedTo(this.nativeElement)
       .withFlexibleDimensions(true)

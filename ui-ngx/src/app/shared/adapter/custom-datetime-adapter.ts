@@ -24,6 +24,9 @@ export class CustomDateAdapter extends NativeDatetimeAdapter {
     if (!this.isValid(date)) {
       return '';
     }
+    if (!displayFormat?.day || !displayFormat?.hour) {
+      return super.format(date, displayFormat);
+    }
     const dtf = new Intl.DateTimeFormat(this.locale, {
       day: '2-digit',
       month: '2-digit',
