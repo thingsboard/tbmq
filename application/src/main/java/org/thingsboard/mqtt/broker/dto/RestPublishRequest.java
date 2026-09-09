@@ -39,14 +39,14 @@ public class RestPublishRequest {
 
     @NotNull
     @JsonSetter(nulls = Nulls.FAIL) // a JSON null would otherwise bind to NullNode and pass @NotNull
-    @Schema(description = "Message payload, interpreted according to 'payloadEncoding': a Base64 string (BASE64, the default), " +
-            "a plain string (TEXT) or any JSON value published as its compact JSON text (JSON). " +
+    @Schema(description = "Message payload, in the form declared by 'payloadEncoding'. " +
             "An empty payload with 'retain' set clears the retained message.",
             example = "eyJjbWQiOiAicmVib290In0=", requiredMode = Schema.RequiredMode.REQUIRED)
     private JsonNode payload;
 
-    @Schema(description = "Payload encoding: BASE64 (default) publishes the Base64-decoded bytes of the 'payload' string; " +
-            "TEXT publishes its UTF-8 bytes; JSON publishes the compact JSON text of any 'payload' value.",
+    @Schema(description = "Form of the 'payload' field: BASE64 (default) - a Base64 string of the raw message bytes; " +
+            "TEXT - a string, published as its UTF-8 bytes; " +
+            "JSON - any JSON value (object, array, string, number, boolean), published as its compact JSON text.",
             example = "BASE64", defaultValue = "BASE64")
     private PayloadEncoding payloadEncoding = PayloadEncoding.BASE64;
 
