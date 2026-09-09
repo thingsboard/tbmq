@@ -69,7 +69,7 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
             latch.countDown();
         });
 
-        RestPublishRequest request = request(topic, "ignored", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request(topic, "ignored", PayloadEncoding.JSON);
         // a JSON object payload is published as its compact JSON text
         request.setPayload(JacksonUtil.toJsonNode("{\"cmd\": \"reboot\"}"));
         request.setQos(1);
@@ -124,7 +124,7 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
 
     @Test
     public void givenNoSubscribers_whenRestPublish_thenAcceptedWithNoMatchingSubscribersReasonCode() throws Throwable {
-        RestPublishResponse response = publish(request(uniqueTopic(), "nobody home", PayloadEncoding.PLAIN), 202);
+        RestPublishResponse response = publish(request(uniqueTopic(), "nobody home", PayloadEncoding.TEXT), 202);
 
         assertThat(response.getReasonCode()).isEqualTo(16);
     }
@@ -132,7 +132,7 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
     @Test
     public void givenRetainedRestPublish_whenClientSubscribesLater_thenReceivesRetainedMessage() throws Throwable {
         String topic = uniqueTopic();
-        RestPublishRequest request = request(topic, "online", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request(topic, "online", PayloadEncoding.TEXT);
         request.setRetain(true);
         RestPublishProperties properties = new RestPublishProperties();
         properties.setMessageExpiryInterval(600);
@@ -159,11 +159,11 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
     @Test
     public void givenRetainedMessage_whenRestPublishEmptyRetainedPayload_thenRetainedMessageCleared() throws Throwable {
         String topic = uniqueTopic();
-        RestPublishRequest store = request(topic, "online", PayloadEncoding.PLAIN);
+        RestPublishRequest store = request(topic, "online", PayloadEncoding.TEXT);
         store.setRetain(true);
         publish(store, 202);
 
-        RestPublishRequest clear = request(topic, "", PayloadEncoding.PLAIN);
+        RestPublishRequest clear = request(topic, "", PayloadEncoding.TEXT);
         clear.setRetain(true);
         publish(clear, 202);
 
@@ -177,7 +177,7 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
 
     @Test
     public void givenWildcardTopic_whenRestPublish_thenBadRequest() throws Exception {
-        doPost(PUBLISH_URL, request("devices/+/commands", "x", PayloadEncoding.PLAIN)).andExpect(status().isBadRequest());
+        doPost(PUBLISH_URL, request("devices/+/commands", "x", PayloadEncoding.TEXT)).andExpect(status().isBadRequest());
     }
 
     private MqttClient subscribe(String topic, int qos, IMqttMessageListener listener) throws Exception {

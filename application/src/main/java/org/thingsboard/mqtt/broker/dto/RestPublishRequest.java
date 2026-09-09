@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -36,25 +39,39 @@ public class RestPublishRequest {
 
     @NotNull
     @JsonSetter(nulls = Nulls.FAIL) // a JSON null would otherwise bind to NullNode and pass @NotNull
-    @Schema(description = "Message payload. A JSON string is published as text ('payloadEncoding' PLAIN) or as Base64-decoded bytes (BASE64); " +
-            "any other JSON value (object, array, number, boolean) is published as its compact JSON text. " +
-            "An empty string with 'retain' set clears the retained message.",
-            example = "{\"cmd\": \"reboot\"}", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Message payload, interpreted according to 'payloadEncoding': a Base64 string (BASE64, the default), " +
+            "a plain string (TEXT) or any JSON value published as its compact JSON text (JSON). " +
+            "An empty payload with 'retain' set clears the retained message.",
+            example = "eyJjbWQiOiAicmVib290In0=", requiredMode = Schema.RequiredMode.REQUIRED)
     private JsonNode payload;
 
-    @Schema(description = "Payload encoding: PLAIN (default) publishes the UTF-8 bytes of 'payload'; BASE64 publishes its Base64-decoded bytes.",
-            example = "PLAIN", defaultValue = "PLAIN")
-    private PayloadEncoding payloadEncoding = PayloadEncoding.PLAIN;
+    @Schema(description = "Payload encoding: BASE64 (default) publishes the Base64-decoded bytes of the 'payload' string; " +
+            "TEXT publishes its UTF-8 bytes; JSON publishes the compact JSON text of any 'payload' value.",
+            example = "BASE64", defaultValue = "BASE64")
+    private PayloadEncoding payloadEncoding = PayloadEncoding.BASE64;
 
     @Min(0)
     @Max(2)
     @Schema(description = "Quality of Service level: 0, 1 or 2.", example = "1", defaultValue = "0")
     private int qos;
 
+    @JsonAlias("retained")
     @Schema(description = "Whether the message should be stored as the retained message for the topic.", example = "false", defaultValue = "false")
     private boolean retain;
 
     @Valid
     private RestPublishProperties properties;
+
+    /** Legacy top-level form of {@link RestPublishProperties#getMessageExpiryInterval()}; the nested one wins when both are set. */
+    @Deprecated
+    @PositiveOrZero
+    @Schema(hidden = true)
+    private Integer messageExpiryInterval;
+
+    /** Legacy top-level form of {@link RestPublishProperties#getContentType()}; the nested one wins when both are set. */
+    @Deprecated
+    @Size(max = 65535)
+    @Schema(hidden = true)
+    private String contentType;
 
 }

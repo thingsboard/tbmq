@@ -19,8 +19,10 @@ package org.thingsboard.mqtt.broker.dto;
  * How {@link RestPublishRequest#getPayload()} is encoded on the wire.
  */
 public enum PayloadEncoding {
-    /** The JSON string is the payload as-is; the broker publishes its UTF-8 bytes. */
-    PLAIN,
-    /** The JSON string is Base64 text; the broker publishes the decoded bytes. Use for binary payloads. */
-    BASE64
+    /** The payload is a Base64 string; the broker publishes the decoded bytes. Use for binary payloads. */
+    BASE64,
+    /** The payload is a string; the broker publishes its UTF-8 bytes. */
+    TEXT,
+    /** The payload is any JSON value (object, array, string, number, boolean); the broker publishes its compact JSON text. */
+    JSON
 }

@@ -104,7 +104,7 @@ class RestPublishServiceImplTest {
     void givenPlainPayload_whenPublish_thenDispatchesUtf8BytesUnderRestApiClientId() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
 
-        service.publish(request("hello", PayloadEncoding.PLAIN));
+        service.publish(request("hello", PayloadEncoding.TEXT));
 
         PublishMsg dispatched = capturedPublishMsg();
         assertThat(dispatched.getTopicName()).isEqualTo(TOPIC);
@@ -119,7 +119,7 @@ class RestPublishServiceImplTest {
     @Test
     void givenJsonObjectPayload_whenPublish_thenDispatchesCompactJsonText() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("ignored", PayloadEncoding.JSON);
         request.setPayload(JacksonUtil.toJsonNode("{\"cmd\": \"reboot\", \"delay\": 5}"));
 
         service.publish(request);
@@ -130,7 +130,7 @@ class RestPublishServiceImplTest {
     @Test
     void givenJsonNumberPayload_whenPublish_thenDispatchesItsText() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("ignored", PayloadEncoding.JSON);
         request.setPayload(JacksonUtil.toJsonNode("42"));
 
         service.publish(request);
@@ -140,13 +140,66 @@ class RestPublishServiceImplTest {
 
     @Test
     void givenJsonNullPayload_whenPublish_thenRejects() {
-        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("ignored", PayloadEncoding.TEXT);
         request.setPayload(NullNode.getInstance());
 
         assertThatThrownBy(() -> service.publish(request))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessageContaining("Payload is required");
         verify(throughputQuotaService, never()).tryConsumeIncoming();
+    }
+
+    @Test
+    void givenJsonEncodingWithStringPayload_whenPublish_thenDispatchesQuotedJsonString() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+
+        service.publish(request("hello", PayloadEncoding.JSON));
+
+        assertThat(capturedPublishMsg().getPayload()).isEqualTo("\"hello\"".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void givenTextEncodingWithNonStringPayload_whenPublish_thenRejects() {
+        RestPublishRequest request = request("ignored", PayloadEncoding.TEXT);
+        request.setPayload(JacksonUtil.toJsonNode("{\"cmd\":\"reboot\"}"));
+
+        assertThatThrownBy(() -> service.publish(request))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessageContaining("TEXT")
+                .hasMessageContaining("JSON");
+        verify(throughputQuotaService, never()).tryConsumeIncoming();
+    }
+
+    @Test
+    void givenLegacyTopLevelProperties_whenPublish_thenMappedOntoPublishMsg() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setMessageExpiryInterval(45);
+        request.setContentType("text/csv");
+
+        service.publish(request);
+
+        MqttProperties props = capturedPublishMsg().getProperties();
+        assertThat(intProp(props, BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID)).isEqualTo(45);
+        assertThat(stringProp(props, BrokerConstants.CONTENT_TYPE_PROP_ID)).isEqualTo("text/csv");
+    }
+
+    @Test
+    void givenLegacyAndNestedProperties_whenPublish_thenNestedWins() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setMessageExpiryInterval(45);
+        request.setContentType("text/csv");
+        RestPublishProperties properties = new RestPublishProperties();
+        properties.setMessageExpiryInterval(30);
+        properties.setContentType("text/plain");
+        request.setProperties(properties);
+
+        service.publish(request);
+
+        MqttProperties props = capturedPublishMsg().getProperties();
+        assertThat(intProp(props, BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID)).isEqualTo(30);
+        assertThat(stringProp(props, BrokerConstants.CONTENT_TYPE_PROP_ID)).isEqualTo("text/plain");
     }
 
     @Test
@@ -179,19 +232,20 @@ class RestPublishServiceImplTest {
     }
 
     @Test
-    void givenNullEncoding_whenPublish_thenDefaultsToPlain() {
+    void givenNullEncoding_whenPublish_thenDefaultsToBase64() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        byte[] binary = {0, 1, 2, (byte) 0xFF};
 
-        service.publish(request("hello", null));
+        service.publish(request(Base64.getEncoder().encodeToString(binary), null));
 
-        assertThat(capturedPublishMsg().getPayload()).isEqualTo("hello".getBytes(StandardCharsets.UTF_8));
+        assertThat(capturedPublishMsg().getPayload()).isEqualTo(binary);
     }
 
     @Test
     void givenOversizedDecodedPayload_whenPublish_thenRejectsBeforeQuota() {
         String payload = "x".repeat(65);
 
-        assertThatThrownBy(() -> service.publish(request(payload, PayloadEncoding.PLAIN)))
+        assertThatThrownBy(() -> service.publish(request(payload, PayloadEncoding.TEXT)))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessageContaining("64 bytes");
         verify(throughputQuotaService, never()).tryConsumeIncoming();
@@ -202,7 +256,7 @@ class RestPublishServiceImplTest {
     void givenInvalidTopic_whenPublish_thenTopicValidationFailurePropagates() {
         doThrow(new DataValidationException("Topic name cannot contain wildcard characters!"))
                 .when(topicValidationService).validateTopic("devices/#");
-        RestPublishRequest request = request("hello", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
         request.setTopic("devices/#");
 
         assertThatThrownBy(() -> service.publish(request))
@@ -220,7 +274,7 @@ class RestPublishServiceImplTest {
             }
             return null;
         }).when(topicValidationService).validateTopic(anyString());
-        RestPublishRequest request = request("hello", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
         RestPublishProperties properties = new RestPublishProperties();
         properties.setResponseTopic("replies/+");
         request.setProperties(properties);
@@ -233,7 +287,7 @@ class RestPublishServiceImplTest {
     void givenQuotaExceeded_whenPublish_thenThrowsRateLimitsAndCountsDrop() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(false);
 
-        assertThatThrownBy(() -> service.publish(request("hello", PayloadEncoding.PLAIN)))
+        assertThatThrownBy(() -> service.publish(request("hello", PayloadEncoding.TEXT)))
                 .isInstanceOf(TbRateLimitsException.class);
 
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
@@ -244,7 +298,7 @@ class RestPublishServiceImplTest {
     @Test
     void givenAllMqtt5Properties_whenPublish_thenMappedOntoPublishMsg() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("hello", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
         RestPublishProperties properties = new RestPublishProperties();
         properties.setPayloadFormatIndicator(1);
         properties.setMessageExpiryInterval(30);
@@ -271,7 +325,7 @@ class RestPublishServiceImplTest {
 
     @Test
     void givenInvalidBase64CorrelationData_whenPublish_thenRejects() {
-        RestPublishRequest request = request("hello", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
         RestPublishProperties properties = new RestPublishProperties();
         properties.setCorrelationData("%%%");
         request.setProperties(properties);
@@ -285,7 +339,7 @@ class RestPublishServiceImplTest {
     void givenNoProperties_whenPublish_thenNoMqttPropertiesSet() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
 
-        service.publish(request("hello", PayloadEncoding.PLAIN));
+        service.publish(request("hello", PayloadEncoding.TEXT));
 
         assertThat(capturedPublishMsg().getProperties().listAll()).isEmpty();
     }
@@ -296,7 +350,7 @@ class RestPublishServiceImplTest {
         PublishMsg processed = PublishMsg.builder().topicName(TOPIC).payload(new byte[]{7}).qos(1).isRetained(true)
                 .properties(new MqttProperties()).build();
         when(retainedMsgProcessor.process(any())).thenReturn(processed);
-        RestPublishRequest request = request("hello", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
         request.setRetain(true);
 
         service.publish(request);
@@ -311,7 +365,7 @@ class RestPublishServiceImplTest {
     void givenNoRetainFlag_whenPublish_thenRetainedProcessorNotInvolved() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
 
-        service.publish(request("hello", PayloadEncoding.PLAIN));
+        service.publish(request("hello", PayloadEncoding.TEXT));
 
         verify(retainedMsgProcessor, never()).process(any());
     }
@@ -322,7 +376,7 @@ class RestPublishServiceImplTest {
         when(subscriptionService.getSubscriptions(TOPIC))
                 .thenReturn(List.of(new ValueWithTopicFilter<>(mock(EntitySubscription.class), "devices/+/commands")));
 
-        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.PLAIN));
+        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.TEXT));
         assertThat(future.isDone()).isFalse();
         capturedQueueCallback().onSuccess(mock(TbQueueMsgMetadata.class));
 
@@ -336,7 +390,7 @@ class RestPublishServiceImplTest {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
         when(subscriptionService.getSubscriptions(TOPIC)).thenReturn(List.of());
 
-        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.PLAIN));
+        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.TEXT));
         capturedQueueCallback().onSuccess(mock(TbQueueMsgMetadata.class));
 
         assertThat(future.get().getReasonCode()).isEqualTo(MqttReasonCodes.PubAck.NO_MATCHING_SUBSCRIBERS.byteValue());
@@ -348,7 +402,7 @@ class RestPublishServiceImplTest {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
         RuntimeException failure = new RuntimeException("queue unavailable");
 
-        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.PLAIN));
+        ListenableFuture<RestPublishResponse> future = service.publish(request("hello", PayloadEncoding.TEXT));
         capturedQueueCallback().onFailure(failure);
 
         assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCause(failure);

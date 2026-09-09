@@ -76,7 +76,7 @@ public class TotalThroughputQuotaRestPublishIntegrationTestCase extends Abstract
             RestPublishRequest request = new RestPublishRequest();
             request.setTopic("quota/rest/publish");
             request.setPayload(new TextNode("data_" + i));
-            request.setPayloadEncoding(PayloadEncoding.PLAIN);
+            request.setPayloadEncoding(PayloadEncoding.TEXT);
             try {
                 restPublishService.publish(request).get(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
                 accepted++;
