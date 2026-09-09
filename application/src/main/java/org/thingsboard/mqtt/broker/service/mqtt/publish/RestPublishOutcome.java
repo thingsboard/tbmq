@@ -15,10 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+/**
+ * Terminal outcome of a REST publish, used as the {@code result} tag of the {@code restPublishMsgs} counter.
+ */
+public enum RestPublishOutcome {
+    /** Accepted by the publish queue (regardless of whether any subscription matched). */
+    ACCEPTED("accepted"),
+    /** Refused by the total incoming throughput quota. */
+    QUOTA_EXCEEDED("quota_exceeded"),
+    /** Passed the quota but the publish queue rejected the message. */
+    FAILED("failed");
 
-public interface ExternalPublishService {
+    private final String tagValue;
 
-    void publish(ExternalPublishCommand command, TbQueueCallback callback);
+    RestPublishOutcome(String tagValue) {
+        this.tagValue = tagValue;
+    }
 
+    public String getTagValue() {
+        return tagValue;
+    }
 }

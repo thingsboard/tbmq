@@ -15,22 +15,53 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.ArgumentCaptor;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockAsyncContext;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
+import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.publish.ExternalPublishRateLimitException;
-import org.thingsboard.mqtt.broker.service.mqtt.publish.ExternalPublishService;
+import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
+import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
 
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@DaoSqlTest
+@TestPropertySource(properties = {
+        "server.rest_publish.max_payload_size=1024",
+        "server.rest_publish.timeout_ms=500"
+})
 public class MqttPublishControllerTest extends AbstractControllerTest {
 
-    @MockBean
-    private ExternalPublishService externalPublishService;
+    private static final String PUBLISH_URL = "/api/mqtt/publish";
+
+    @MockitoBean
+    private RestPublishService restPublishService;
 
     @Before
     public void beforeTest() throws Exception {
@@ -38,62 +69,179 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void testPublishAccepted() throws Exception {
-        doAnswer(invocation -> {
-            TbQueueCallback callback = invocation.getArgument(1);
-            callback.onSuccess(null);
-            return null;
-        }).when(externalPublishService).publish(any(), any());
+    public void givenMatchingSubscribers_whenPublish_thenOkWithSuccessReasonCode() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
 
-        doPostAsync("/api/mqtt/publish", validRequest(), -1L)
-                .andExpect(status().isAccepted());
+        doPostAsync(PUBLISH_URL, validRequest(), -1L)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reasonCode").value(0))
+                .andExpect(jsonPath("$.message").value("Success"));
     }
 
     @Test
-    public void testPublishRateLimited() throws Exception {
-        doAnswer(invocation -> {
-            TbQueueCallback callback = invocation.getArgument(1);
-            callback.onFailure(new ExternalPublishRateLimitException());
-            return null;
-        }).when(externalPublishService).publish(any(), any());
+    public void givenNoMatchingSubscribers_whenPublish_thenAcceptedWithReasonCode16() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.noMatchingSubscribers()));
 
-        doPostAsync("/api/mqtt/publish", validRequest(), -1L)
-                .andExpect(status().isTooManyRequests());
+        doPostAsync(PUBLISH_URL, validRequest(), -1L)
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.reasonCode").value(16))
+                .andExpect(jsonPath("$.message").value("No matching subscribers"));
     }
 
     @Test
-    public void testPublishQueueFailure() throws Exception {
-        doAnswer(invocation -> {
-            TbQueueCallback callback = invocation.getArgument(1);
-            callback.onFailure(new RuntimeException("queue unavailable"));
-            return null;
-        }).when(externalPublishService).publish(any(), any());
+    public void givenAllFields_whenPublish_thenRequestReachesServiceIntact() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
+        RestPublishRequest request = validRequest();
+        request.setPayloadEncoding(PayloadEncoding.BASE64);
+        request.setPayload("AQID");
+        request.setQos(2);
+        request.setRetain(true);
+        RestPublishProperties properties = new RestPublishProperties();
+        properties.setPayloadFormatIndicator(1);
+        properties.setMessageExpiryInterval(60);
+        properties.setContentType("application/octet-stream");
+        properties.setResponseTopic("devices/a/replies");
+        properties.setCorrelationData("cmVx");
+        properties.setUserProperties(Map.of("k", "v"));
+        request.setProperties(properties);
 
-        doPostAsync("/api/mqtt/publish", validRequest(), -1L)
-                .andExpect(status().isServiceUnavailable());
+        doPostAsync(PUBLISH_URL, request, -1L).andExpect(status().isOk());
+
+        ArgumentCaptor<RestPublishRequest> captor = ArgumentCaptor.forClass(RestPublishRequest.class);
+        verify(restPublishService).publish(captor.capture());
+        assertThat(captor.getValue()).usingRecursiveComparison().isEqualTo(request);
     }
 
     @Test
-    public void testPublishRequiresAuthentication() throws Exception {
-        logout();
+    public void givenQuotaExceeded_whenPublish_thenTooManyRequestsWithErrorBody() throws Exception {
+        when(restPublishService.publish(any())).thenThrow(new TbRateLimitsException("Total message rate limit exceeded"));
 
-        doPost("/api/mqtt/publish", validRequest())
-                .andExpect(status().isUnauthorized());
+        doPost(PUBLISH_URL, validRequest())
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.errorCode").value(33))
+                .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
-    public void testPublishRejectsInvalidQos() throws Exception {
+    public void givenServiceRejectsRequest_whenPublish_thenBadRequestWithMessage() throws Exception {
+        when(restPublishService.publish(any())).thenThrow(new DataValidationException("Topic name cannot contain wildcard characters!"));
+
+        doPost(PUBLISH_URL, validRequest())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Topic name cannot contain wildcard characters!"));
+    }
+
+    @Test
+    public void givenQueueFailure_whenPublish_thenServiceUnavailableWithErrorBody() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFailedFuture(new RuntimeException("queue unavailable")));
+
+        doPostAsync(PUBLISH_URL, validRequest(), -1L)
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("Failed to publish the message: queue unavailable"))
+                .andExpect(jsonPath("$.errorCode").value(2));
+    }
+
+    @Test
+    public void givenQueueNeverAcks_whenPublish_thenServiceUnavailableOnTimeout() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(SettableFuture.create());
+
+        // MockMvc never fires async timeouts itself, so drive the servlet timeout event the container would raise
+        MvcResult started = doPost(PUBLISH_URL, validRequest()).andExpect(request().asyncStarted()).andReturn();
+        MockAsyncContext asyncContext = (MockAsyncContext) started.getRequest().getAsyncContext();
+        for (AsyncListener listener : asyncContext.getListeners()) {
+            listener.onTimeout(new AsyncEvent(asyncContext));
+        }
+
+        mockMvc.perform(asyncDispatch(started))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("Publish timed out waiting for the broker queue"));
+    }
+
+    @Test
+    public void givenBlankTopic_whenPublish_thenBadRequest() throws Exception {
+        RestPublishRequest request = validRequest();
+        request.setTopic(" ");
+
+        doPost(PUBLISH_URL, request).andExpect(status().isBadRequest());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenMissingPayload_whenPublish_thenBadRequest() throws Exception {
+        RestPublishRequest request = validRequest();
+        request.setPayload(null);
+
+        doPost(PUBLISH_URL, request).andExpect(status().isBadRequest());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenInvalidQos_whenPublish_thenBadRequest() throws Exception {
         RestPublishRequest request = validRequest();
         request.setQos(3);
 
-        doPost("/api/mqtt/publish", request)
-                .andExpect(status().isBadRequest());
+        doPost(PUBLISH_URL, request).andExpect(status().isBadRequest());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenNegativeMessageExpiryInterval_whenPublish_thenBadRequest() throws Exception {
+        RestPublishRequest request = validRequest();
+        RestPublishProperties properties = new RestPublishProperties();
+        properties.setMessageExpiryInterval(-1);
+        request.setProperties(properties);
+
+        doPost(PUBLISH_URL, request).andExpect(status().isBadRequest());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenUnknownPayloadEncoding_whenPublish_thenBadRequest() throws Exception {
+        doPostRaw("{\"topic\":\"devices/a\",\"payload\":\"x\",\"payloadEncoding\":\"HEX\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.startsWith("Invalid request body:")));
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenBodyLargerThanConfiguredLimit_whenPublish_thenPayloadTooLargeBeforeDeserialization() throws Exception {
+        // 1024-byte payload cap -> ~1.4 KB base64 + envelope allowance; 64 KB of body must be refused up front
+        RestPublishRequest request = validRequest();
+        request.setPayload("x".repeat(64 * 1024));
+
+        doPost(PUBLISH_URL, request)
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.message").exists());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenBodyWithinLimit_whenPublish_thenNotRejectedBySizeGuard() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
+        RestPublishRequest request = validRequest();
+        request.setPayload("x".repeat(1024));
+
+        doPostAsync(PUBLISH_URL, request, -1L).andExpect(status().isOk());
+    }
+
+    @Test
+    public void givenNoAuthentication_whenPublish_thenUnauthorized() throws Exception {
+        logout();
+
+        doPost(PUBLISH_URL, validRequest()).andExpect(status().isUnauthorized());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    private ResultActions doPostRaw(String json) throws Exception {
+        MockHttpServletRequestBuilder postRequest = post(PUBLISH_URL).contentType(MediaType.APPLICATION_JSON).content(json);
+        setJwtToken(postRequest);
+        return mockMvc.perform(postRequest);
     }
 
     private RestPublishRequest validRequest() {
         RestPublishRequest request = new RestPublishRequest();
         request.setTopic("devices/a/commands");
-        request.setPayload(new byte[]{1, 2, 3});
+        request.setPayload("hello");
         request.setQos(1);
         return request;
     }

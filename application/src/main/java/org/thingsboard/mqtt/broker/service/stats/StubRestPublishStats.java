@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.publish;
+package org.thingsboard.mqtt.broker.service.stats;
 
-public class ExternalPublishRateLimitException extends RuntimeException {
+import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishOutcome;
 
-    public ExternalPublishRateLimitException() {
-        super("Total message rate limit exceeded");
+public class StubRestPublishStats implements RestPublishStats {
+
+    public static final StubRestPublishStats STUB_REST_PUBLISH_STATS = new StubRestPublishStats();
+
+    @Override
+    public void increment(RestPublishOutcome outcome) {
     }
 
+    @Override
+    public int getCount(RestPublishOutcome outcome) {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
+    }
 }

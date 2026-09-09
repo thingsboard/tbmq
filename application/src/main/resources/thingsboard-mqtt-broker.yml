@@ -30,6 +30,12 @@ server:
     enabled: "${HTTP2_ENABLED:true}"
   # Enables or disables logging of errors with stacktrace when the REST API throws an exception.
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
+  # REST publish API (POST /api/mqtt/publish) configuration.
+  rest_publish:
+    # Maximum size of the decoded MQTT payload accepted from the REST publish API (in bytes). Requests whose body exceeds this limit (plus the Base64 and JSON overhead) are refused before being read. Keep it below the Kafka producer max.request.size.
+    max_payload_size: "${REST_PUBLISH_MAX_PAYLOAD_SIZE:65536}"
+    # Time to wait for the publish queue to acknowledge a message before answering 503 Service Unavailable (in ms).
+    timeout_ms: "${REST_PUBLISH_TIMEOUT_MS:30000}"
   # Server SSL configuration.
   ssl:
     # Enables or disables SSL support.
@@ -883,10 +889,6 @@ security:
 
 # MQTT parameters
 mqtt:
-  rest:
-    publish:
-      # Maximum decoded MQTT payload accepted by POST /api/mqtt/publish, in bytes.
-      max-payload-size: "${MQTT_REST_PUBLISH_MAX_PAYLOAD_SIZE:65536}"
   connect:
     # Number of threads for the client connection thread pool.
     threads: "${MQTT_CONNECT_THREADS:4}"

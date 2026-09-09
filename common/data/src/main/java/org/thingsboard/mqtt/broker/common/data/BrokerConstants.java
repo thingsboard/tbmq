@@ -200,6 +200,11 @@ public class BrokerConstants {
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
 
     public static final String SYSTEM_DUMMY_CLIENT_ID_PREFIX = "tbmq_system_dummy_client_id_";
+    /**
+     * Client id stamped on messages published through the REST API ({@code POST /api/mqtt/publish}). Reserved:
+     * it drives the {@code noLocal} check and appears as the sender in client logs, so no real client should use it.
+     */
+    public static final String REST_API_CLIENT_ID = "tbmq_rest_api";
     public static final String SYSTEM_DUMMY_TOPIC_FILTER = "tbmq_system_dummy_topic_filter";
 
     public static final byte[] DUMMY_PAYLOAD = "test".getBytes(StandardCharsets.UTF_8);

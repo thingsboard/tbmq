@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.publish;
+package org.thingsboard.mqtt.broker.dto;
 
-public record ExternalPublishCommand(String topic, byte[] payload, int qos, boolean retained,
-                                     Integer messageExpiryInterval, String contentType) {
+/**
+ * How {@link RestPublishRequest#getPayload()} is encoded on the wire.
+ */
+public enum PayloadEncoding {
+    /** The JSON string is the payload as-is; the broker publishes its UTF-8 bytes. */
+    PLAIN,
+    /** The JSON string is Base64 text; the broker publishes the decoded bytes. Use for binary payloads. */
+    BASE64
 }

@@ -15,32 +15,40 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
+@Schema(description = "MQTT message to publish through the broker.")
 public class RestPublishRequest {
 
     @NotBlank
+    @Schema(description = "Topic name to publish to. Wildcards are not allowed.", example = "devices/a/commands", requiredMode = Schema.RequiredMode.REQUIRED)
     private String topic;
 
-    /** Base64-encoded by Jackson so arbitrary MQTT payloads can be transported in JSON. */
     @NotNull
-    private byte[] payload;
+    @Schema(description = "Message payload. Interpreted according to 'payloadEncoding'. An empty string with 'retain' set clears the retained message.",
+            example = "{\"cmd\": \"reboot\"}", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String payload;
+
+    @Schema(description = "Payload encoding: PLAIN (default) publishes the UTF-8 bytes of 'payload'; BASE64 publishes its Base64-decoded bytes.",
+            example = "PLAIN", defaultValue = "PLAIN")
+    private PayloadEncoding payloadEncoding = PayloadEncoding.PLAIN;
 
     @Min(0)
     @Max(2)
+    @Schema(description = "Quality of Service level: 0, 1 or 2.", example = "1", defaultValue = "0")
     private int qos;
 
-    private boolean retained;
+    @Schema(description = "Whether the message should be stored as the retained message for the topic.", example = "false", defaultValue = "false")
+    private boolean retain;
 
-    @PositiveOrZero
-    private Integer messageExpiryInterval;
-
-    private String contentType;
+    @Valid
+    private RestPublishProperties properties;
 
 }

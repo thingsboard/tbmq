@@ -78,6 +78,7 @@ public enum StatsType {
     CONNECTION_REFUSED("connectionRefused"),
     CONNECTION_ERROR("connectionError"),
     THROUGHPUT_QUOTA_DEGRADED("throughputQuotaDegraded"),
+    REST_PUBLISH_MSGS("restPublishMsgs"),
     ;
 
     private final String printName;
