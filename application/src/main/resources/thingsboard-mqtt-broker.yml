@@ -883,6 +883,10 @@ security:
 
 # MQTT parameters
 mqtt:
+  rest:
+    publish:
+      # Maximum decoded MQTT payload accepted by POST /api/mqtt/publish, in bytes.
+      max-payload-size: "${MQTT_REST_PUBLISH_MAX_PAYLOAD_SIZE:65536}"
   connect:
     # Number of threads for the client connection thread pool.
     threads: "${MQTT_CONNECT_THREADS:4}"

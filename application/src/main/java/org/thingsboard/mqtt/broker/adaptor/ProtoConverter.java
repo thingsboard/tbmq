@@ -115,6 +115,14 @@ public class ProtoConverter {
     }
 
     public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
+        return convertToPublishMsgProto(sessionInfo.getClientInfo().getClientId(), publishMsg, clientCertCn);
+    }
+
+    public static PublishMsgProto convertToPublishMsgProto(String clientId, PublishMsg publishMsg) {
+        return convertToPublishMsgProto(clientId, publishMsg, null);
+    }
+
+    private static PublishMsgProto convertToPublishMsgProto(String clientId, PublishMsg publishMsg, String clientCertCn) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg.getProperties());
         PublishMsgProto.Builder builder = PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
@@ -122,7 +130,7 @@ public class ProtoConverter {
                 .setQos(publishMsg.getQos())
                 .setRetain(publishMsg.isRetained())
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
-                .setClientId(sessionInfo.getClientInfo().getClientId());
+                .setClientId(clientId);
         builder.setPayload(publishMsg.getByteBuf() != null ?
                 ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()) :
                 ByteString.copyFrom(publishMsg.getPayload()));

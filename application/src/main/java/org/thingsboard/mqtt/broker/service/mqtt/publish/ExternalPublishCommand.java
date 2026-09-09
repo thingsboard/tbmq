@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-
-public interface MsgDispatcherService {
-
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback);
-
-    void persistExternalPublishMsg(String publisherId, PublishMsg publishMsg, TbQueueCallback callback);
-
-    void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
-
+public record ExternalPublishCommand(String topic, byte[] payload, int qos, boolean retained,
+                                     Integer messageExpiryInterval, String contentType) {
 }
