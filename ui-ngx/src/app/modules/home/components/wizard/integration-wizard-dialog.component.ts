@@ -282,6 +282,12 @@ export class IntegrationWizardDialogComponent extends
 
   changeStep($event: StepperSelectionEvent) {
     this.selectedIndex = $event.selectedIndex;
+    if ($event.selectedIndex < $event.previouslySelectedIndex) {
+      // The CDK marks a step as interacted whenever sit is left, and MatStep then shows every invalid field in it as
+      // an error. Stepping back is not an attempt to submit that step, so undo the mark; moving forward or pressing
+      // Add / Check connection sets it again.
+      $event.previouslySelectedStep.interacted = false;
+    }
     if (this.isConnectionStep) {
       this.showCheckConnection = false;
     }

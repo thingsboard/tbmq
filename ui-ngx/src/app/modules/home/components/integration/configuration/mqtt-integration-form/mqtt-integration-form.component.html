@@ -40,7 +40,7 @@
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"
                   matTooltip="{{ 'admin.settings.host-required' | translate }}"
-                  [class.!hidden]="!clientConfigurationFormGroup.get('host').hasError('required')"
+                  [class.!hidden]="!clientConfigurationFormGroup.get('host').hasError('required') || !clientConfigurationFormGroup.get('host').touched"
                   class="tb-error">
           warning
         </mat-icon>
