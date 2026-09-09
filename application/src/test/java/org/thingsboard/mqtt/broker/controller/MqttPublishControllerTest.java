@@ -232,6 +232,18 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         verify(restPublishService, never()).publish(any());
     }
 
+    @Test
+    public void givenOpenApiDocs_whenReadPublishOperation_thenAllResponseCodesDocumented() throws Exception {
+        doGet("/v3/api-docs")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses.keys()")
+                        .value(org.hamcrest.Matchers.containsInAnyOrder("200", "202", "400", "413", "429", "503")))
+                .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['202'].content['application/json'].schema.$ref")
+                        .value("#/components/schemas/RestPublishResponse"))
+                .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['429'].content['application/json'].schema.$ref")
+                        .value("#/components/schemas/ThingsboardErrorResponse"));
+    }
+
     private ResultActions doPostRaw(String json) throws Exception {
         MockHttpServletRequestBuilder postRequest = post(PUBLISH_URL).contentType(MediaType.APPLICATION_JSON).content(json);
         setJwtToken(postRequest);

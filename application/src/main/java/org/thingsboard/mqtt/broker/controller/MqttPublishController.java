@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,22 +61,22 @@ public class MqttPublishController extends BaseController {
                     "PUBLISH received from a client: total throughput quota, retained-message store, publish queue and delivery. " +
                     "The publisher client id is '" + BrokerConstants.REST_API_CLIENT_ID + "'. " +
                     "A 2xx response means the broker queue accepted the message, not that any client received it. " +
-                    "Payloads are UTF-8 text by default; set 'payloadEncoding' to BASE64 for binary data.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Accepted by the queue; at least one subscription matched the topic.",
-                            content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
-                    @ApiResponse(responseCode = "202", description = "Accepted by the queue; no subscription matched the topic (reason code 16). " +
-                            "A retained message is still stored.",
-                            content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid topic, payload, encoding or MQTT property.",
-                            content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-                    @ApiResponse(responseCode = "413", description = "Request body exceeds the limit derived from 'server.rest_publish.max_payload_size'.",
-                            content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-                    @ApiResponse(responseCode = "429", description = "Refused by the total incoming throughput quota.",
-                            content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-                    @ApiResponse(responseCode = "503", description = "The broker queue rejected the message or did not acknowledge it in time.",
-                            content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class)))
-            })
+                    "Payloads are UTF-8 text by default; set 'payloadEncoding' to BASE64 for binary data.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Accepted by the queue; at least one subscription matched the topic.",
+                    content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
+            @ApiResponse(responseCode = "202", description = "Accepted by the queue; no subscription matched the topic (reason code 16). " +
+                    "A retained message is still stored.",
+                    content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid topic, payload, encoding or MQTT property.",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Request body exceeds the limit derived from 'server.rest_publish.max_payload_size'.",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Refused by the total incoming throughput quota.",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
+            @ApiResponse(responseCode = "503", description = "The broker queue rejected the message or did not acknowledge it in time.",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class)))
+    })
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping("/publish")
     public DeferredResult<ResponseEntity<?>> publish(@Valid @RequestBody RestPublishRequest request) {
