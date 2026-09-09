@@ -182,7 +182,7 @@ public abstract class BaseController {
                 || exception instanceof DataValidationException || cause instanceof IncorrectParameterException) {
             return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         } else if (exception instanceof HttpMessageNotReadableException e) {
-            return new ThingsboardException("Invalid request body: " + e.getMostSpecificCause().getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+            return new ThingsboardException("Invalid request body: " + unreadableBodyReason(e), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         } else if (exception instanceof MessagingException) {
             return new ThingsboardException("Unable to send mail", ThingsboardErrorCode.GENERAL);
         } else if (exception instanceof AsyncRequestTimeoutException) {
@@ -191,6 +191,19 @@ public abstract class BaseController {
             return new ThingsboardException(exception, ThingsboardErrorCode.DATABASE);
         }
         return new ThingsboardException(exception.getMessage(), exception, ThingsboardErrorCode.GENERAL);
+    }
+
+    /**
+     * Jackson appends the parser location and the reference chain after the first line break; only the sentence
+     * before it explains what was wrong with the body.
+     */
+    private static String unreadableBodyReason(HttpMessageNotReadableException e) {
+        String message = e.getMostSpecificCause().getMessage();
+        if (message == null) {
+            return e.getMessage();
+        }
+        int cut = message.indexOf('\n');
+        return cut > 0 ? message.substring(0, cut).trim() : message;
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -131,10 +132,19 @@ public class RestPublishServiceImpl implements RestPublishService {
     }
 
     private byte[] decodePayload(RestPublishRequest request) {
-        if (request.getPayloadEncoding() == PayloadEncoding.BASE64) {
-            return decodeBase64(request.getPayload(), "Payload");
+        JsonNode payload = request.getPayload();
+        if (payload == null || payload.isNull()) {
+            throw new DataValidationException("Payload is required");
         }
-        return request.getPayload().getBytes(StandardCharsets.UTF_8);
+        boolean base64 = request.getPayloadEncoding() == PayloadEncoding.BASE64;
+        if (!payload.isTextual()) {
+            if (base64) {
+                throw new DataValidationException("BASE64 payload encoding requires the payload to be a string");
+            }
+            // an object, array, number or boolean is published as its compact JSON text
+            return payload.toString().getBytes(StandardCharsets.UTF_8);
+        }
+        return base64 ? decodeBase64(payload.textValue(), "Payload") : payload.textValue().getBytes(StandardCharsets.UTF_8);
     }
 
     private static byte[] decodeBase64(String value, String field) {

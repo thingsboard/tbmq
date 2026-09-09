@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import jakarta.servlet.AsyncEvent;
@@ -93,7 +94,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
         RestPublishRequest request = validRequest();
         request.setPayloadEncoding(PayloadEncoding.BASE64);
-        request.setPayload("AQID");
+        request.setPayload(new TextNode("AQID"));
         request.setQos(2);
         request.setRetain(true);
         RestPublishProperties properties = new RestPublishProperties();
@@ -196,10 +197,24 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void givenUnknownPayloadEncoding_whenPublish_thenBadRequest() throws Exception {
+    public void givenJsonObjectPayload_whenPublish_thenAcceptedAndReachesServiceAsJsonNode() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
+
+        doPostRaw("{\"topic\":\"devices/a\",\"payload\":{\"cmd\":\"reboot\"}}").andExpect(status().isOk());
+
+        ArgumentCaptor<RestPublishRequest> captor = ArgumentCaptor.forClass(RestPublishRequest.class);
+        verify(restPublishService).publish(captor.capture());
+        assertThat(captor.getValue().getPayload().isObject()).isTrue();
+        assertThat(captor.getValue().getPayload().get("cmd").asText()).isEqualTo("reboot");
+    }
+
+    @Test
+    public void givenUnknownPayloadEncoding_whenPublish_thenBadRequestWithoutJacksonInternals() throws Exception {
         doPostRaw("{\"topic\":\"devices/a\",\"payload\":\"x\",\"payloadEncoding\":\"HEX\"}")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.startsWith("Invalid request body:")));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.startsWith("Invalid request body:"),
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("[Source:")))));
         verify(restPublishService, never()).publish(any());
     }
 
@@ -207,7 +222,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     public void givenBodyLargerThanConfiguredLimit_whenPublish_thenPayloadTooLargeBeforeDeserialization() throws Exception {
         // 1024-byte payload cap -> ~1.4 KB base64 + envelope allowance; 64 KB of body must be refused up front
         RestPublishRequest request = validRequest();
-        request.setPayload("x".repeat(64 * 1024));
+        request.setPayload(new TextNode("x".repeat(64 * 1024)));
 
         doPost(PUBLISH_URL, request)
                 .andExpect(status().isPayloadTooLarge())
@@ -219,7 +234,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     public void givenBodyWithinLimit_whenPublish_thenNotRejectedBySizeGuard() throws Exception {
         when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
         RestPublishRequest request = validRequest();
-        request.setPayload("x".repeat(1024));
+        request.setPayload(new TextNode("x".repeat(1024)));
 
         doPostAsync(PUBLISH_URL, request, -1L).andExpect(status().isOk());
     }
@@ -253,7 +268,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     private RestPublishRequest validRequest() {
         RestPublishRequest request = new RestPublishRequest();
         request.setTopic("devices/a/commands");
-        request.setPayload("hello");
+        request.setPayload(new TextNode("hello"));
         request.setQos(1);
         return request;
     }

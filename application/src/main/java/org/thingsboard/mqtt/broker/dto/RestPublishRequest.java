@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -32,9 +35,12 @@ public class RestPublishRequest {
     private String topic;
 
     @NotNull
-    @Schema(description = "Message payload. Interpreted according to 'payloadEncoding'. An empty string with 'retain' set clears the retained message.",
+    @JsonSetter(nulls = Nulls.FAIL) // a JSON null would otherwise bind to NullNode and pass @NotNull
+    @Schema(description = "Message payload. A JSON string is published as text ('payloadEncoding' PLAIN) or as Base64-decoded bytes (BASE64); " +
+            "any other JSON value (object, array, number, boolean) is published as its compact JSON text. " +
+            "An empty string with 'retain' set clears the retained message.",
             example = "{\"cmd\": \"reboot\"}", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String payload;
+    private JsonNode payload;
 
     @Schema(description = "Payload encoding: PLAIN (default) publishes the UTF-8 bytes of 'payload'; BASE64 publishes its Base64-decoded bytes.",
             example = "PLAIN", defaultValue = "PLAIN")

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
@@ -24,6 +25,7 @@ import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.Before;
 import org.junit.Test;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
@@ -67,7 +69,9 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
             latch.countDown();
         });
 
-        RestPublishRequest request = request(topic, "{\"cmd\":\"reboot\"}", PayloadEncoding.PLAIN);
+        RestPublishRequest request = request(topic, "ignored", PayloadEncoding.PLAIN);
+        // a JSON object payload is published as its compact JSON text
+        request.setPayload(JacksonUtil.toJsonNode("{\"cmd\": \"reboot\"}"));
         request.setQos(1);
         RestPublishProperties properties = new RestPublishProperties();
         properties.setPayloadFormatIndicator(1);
@@ -190,7 +194,7 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
     private static RestPublishRequest request(String topic, String payload, PayloadEncoding encoding) {
         RestPublishRequest request = new RestPublishRequest();
         request.setTopic(topic);
-        request.setPayload(payload);
+        request.setPayload(new TextNode(payload));
         request.setPayloadEncoding(encoding);
         return request;
     }

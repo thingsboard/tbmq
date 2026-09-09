@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class TotalThroughputQuotaRestPublishIntegrationTestCase extends Abstract
         for (int i = 0; i < 50 && !refused; i++) {
             RestPublishRequest request = new RestPublishRequest();
             request.setTopic("quota/rest/publish");
-            request.setPayload("data_" + i);
+            request.setPayload(new TextNode("data_" + i));
             request.setPayloadEncoding(PayloadEncoding.PLAIN);
             try {
                 restPublishService.publish(request).get(AWAIT_TIMEOUT_SEC, TimeUnit.SECONDS);

@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
@@ -27,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
@@ -111,6 +114,50 @@ class RestPublishServiceImplTest {
         assertThat(dispatched.isDup()).isFalse();
         assertThat(dispatched.getPacketId()).isZero();
         verify(msgDispatcherService).persistPublishMsg(eq(BrokerConstants.REST_API_CLIENT_ID), any(), any());
+    }
+
+    @Test
+    void givenJsonObjectPayload_whenPublish_thenDispatchesCompactJsonText() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        request.setPayload(JacksonUtil.toJsonNode("{\"cmd\": \"reboot\", \"delay\": 5}"));
+
+        service.publish(request);
+
+        assertThat(new String(capturedPublishMsg().getPayload(), StandardCharsets.UTF_8)).isEqualTo("{\"cmd\":\"reboot\",\"delay\":5}");
+    }
+
+    @Test
+    void givenJsonNumberPayload_whenPublish_thenDispatchesItsText() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        request.setPayload(JacksonUtil.toJsonNode("42"));
+
+        service.publish(request);
+
+        assertThat(capturedPublishMsg().getPayload()).isEqualTo("42".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void givenJsonNullPayload_whenPublish_thenRejects() {
+        RestPublishRequest request = request("ignored", PayloadEncoding.PLAIN);
+        request.setPayload(NullNode.getInstance());
+
+        assertThatThrownBy(() -> service.publish(request))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessageContaining("Payload is required");
+        verify(throughputQuotaService, never()).tryConsumeIncoming();
+    }
+
+    @Test
+    void givenBase64EncodingWithNonStringPayload_whenPublish_thenRejects() {
+        RestPublishRequest request = request("ignored", PayloadEncoding.BASE64);
+        request.setPayload(JacksonUtil.toJsonNode("{\"cmd\":\"reboot\"}"));
+
+        assertThatThrownBy(() -> service.publish(request))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessageContaining("BASE64");
+        verify(throughputQuotaService, never()).tryConsumeIncoming();
     }
 
     @Test
@@ -312,7 +359,7 @@ class RestPublishServiceImplTest {
     private RestPublishRequest request(String payload, PayloadEncoding encoding) {
         RestPublishRequest request = new RestPublishRequest();
         request.setTopic(TOPIC);
-        request.setPayload(payload);
+        request.setPayload(new TextNode(payload));
         request.setPayloadEncoding(encoding);
         request.setQos(1);
         return request;
