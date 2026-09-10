@@ -249,6 +249,19 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
+    public void givenUnsupportedContentType_whenPublish_thenUnsupportedMediaType() throws Exception {
+        MockHttpServletRequestBuilder postRequest = post(PUBLISH_URL).contentType(MediaType.TEXT_PLAIN)
+                .content("{\"topic\":\"devices/a\",\"payload\":\"eA==\"}");
+        setJwtToken(postRequest);
+
+        mockMvc.perform(postRequest)
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.errorCode").value(31))
+                .andExpect(jsonPath("$.message").value(containsString("not supported")));
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
     public void givenNoContentLength_whenPublish_thenLengthRequired() throws Exception {
         MockHttpServletRequestBuilder postRequest = post(PUBLISH_URL).contentType(MediaType.APPLICATION_JSON);
         setJwtToken(postRequest);
@@ -282,7 +295,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doGet("/v3/api-docs")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses.keys()")
-                        .value(containsInAnyOrder("200", "202", "400", "411", "413", "429", "503")))
+                        .value(containsInAnyOrder("200", "202", "400", "411", "413", "415", "429", "503")))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['202'].content['application/json'].schema.$ref")
                         .value("#/components/schemas/RestPublishResponse"))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['429'].content['application/json'].schema.$ref")

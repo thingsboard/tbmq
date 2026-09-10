@@ -71,6 +71,8 @@ public class MqttPublishController extends BaseController {
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "411", description = "The request has no Content-Length header (chunked bodies are not accepted).",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
+            @ApiResponse(responseCode = "415", description = "The request Content-Type is not 'application/json'.",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "413", description = "Request body exceeds the limit derived from 'server.rest_publish.max_payload_size'.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "429", description = "Refused by the total incoming throughput quota.",
