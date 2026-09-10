@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.mail.MessagingException;
@@ -194,16 +195,15 @@ public abstract class BaseController {
     }
 
     /**
-     * Jackson appends the parser location and the reference chain after the first line break; only the sentence
-     * before it explains what was wrong with the body.
+     * Jackson's full message carries the parser location and the reference chain; only the original message
+     * explains what was wrong with the body.
      */
     private static String unreadableBodyReason(HttpMessageNotReadableException e) {
-        String message = e.getMostSpecificCause().getMessage();
-        if (message == null) {
-            return e.getMessage();
+        Throwable cause = e.getMostSpecificCause();
+        if (cause instanceof JsonProcessingException jpe) {
+            return jpe.getOriginalMessage();
         }
-        int cut = message.indexOf('\n');
-        return cut > 0 ? message.substring(0, cut).trim() : message;
+        return cause.getMessage() != null ? cause.getMessage() : e.getMessage();
     }
 
     /**

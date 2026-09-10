@@ -27,6 +27,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.service.stats.DefaultRestPublishStats;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
@@ -95,7 +96,7 @@ public class TotalThroughputQuotaRestPublishIntegrationTestCase extends Abstract
     }
 
     private double restPublishCount(RestPublishOutcome outcome) {
-        return meterRegistry.get(StatsType.REST_PUBLISH_MSGS.getPrintName()).tag("result", outcome.getTagValue()).counter().count();
+        return meterRegistry.get(StatsType.REST_PUBLISH_MSGS.getPrintName()).tag(DefaultRestPublishStats.RESULT_TAG, outcome.getTagValue()).counter().count();
     }
 
 }

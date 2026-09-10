@@ -203,6 +203,21 @@ class RestPublishServiceImplTest {
     }
 
     @Test
+    void givenLegacyTopLevelProperties_whenPublish_thenRequestNotMutated() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setMessageExpiryInterval(45);
+        RestPublishProperties properties = new RestPublishProperties();
+        properties.setContentType("text/plain");
+        request.setProperties(properties);
+
+        service.publish(request);
+
+        assertThat(request.getProperties().getMessageExpiryInterval()).isNull();
+        assertThat(request.getProperties().getContentType()).isEqualTo("text/plain");
+    }
+
+    @Test
     void givenBase64EncodingWithNonStringPayload_whenPublish_thenRejects() {
         RestPublishRequest request = request("ignored", PayloadEncoding.BASE64);
         request.setPayload(JacksonUtil.toJsonNode("{\"cmd\":\"reboot\"}"));

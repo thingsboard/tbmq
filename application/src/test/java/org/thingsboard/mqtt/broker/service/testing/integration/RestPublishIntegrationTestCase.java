@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
+import org.thingsboard.mqtt.broker.controller.MqttPublishController;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
@@ -52,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DaoSqlTest
 public class RestPublishIntegrationTestCase extends AbstractControllerTest {
 
-    private static final String PUBLISH_URL = "/api/mqtt/publish";
+    private static final String PUBLISH_URL = MqttPublishController.PUBLISH_PATH;
 
     @Before
     public void beforeTest() throws Exception {

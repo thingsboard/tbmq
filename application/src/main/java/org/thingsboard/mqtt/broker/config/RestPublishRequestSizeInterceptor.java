@@ -47,11 +47,18 @@ public class RestPublishRequestSizeInterceptor implements HandlerInterceptor, We
      */
     static final long ENVELOPE_ALLOWANCE_BYTES = 16 * 1024;
 
+    /**
+     * Worst realistic growth of the payload on the wire: Base64 adds 4/3, and TEXT/JSON payloads escaped as
+     * {@code \\uXXXX} (e.g. Python's json.dumps default) turn a 3-byte UTF-8 character into 6 bytes.
+     */
+    static final long PAYLOAD_ENCODING_FACTOR = 2;
+
+    private final long maxPayloadSize;
     private final long maxRequestBytes;
 
     public RestPublishRequestSizeInterceptor(@Value("${server.rest_publish.max_payload_size:65536}") long maxPayloadSize) {
-        // Base64 grows the payload by 4/3 (rounded up to a multiple of 4); PLAIN text never exceeds that
-        this.maxRequestBytes = (maxPayloadSize + 2) / 3 * 4 + ENVELOPE_ALLOWANCE_BYTES;
+        this.maxPayloadSize = maxPayloadSize;
+        this.maxRequestBytes = maxPayloadSize * PAYLOAD_ENCODING_FACTOR + ENVELOPE_ALLOWANCE_BYTES;
     }
 
     @Override
@@ -67,8 +74,8 @@ public class RestPublishRequestSizeInterceptor implements HandlerInterceptor, We
         }
         if (contentLength > maxRequestBytes) {
             log.debug("Refusing REST publish request of {} bytes, limit is {} bytes", contentLength, maxRequestBytes);
-            return reject(response, HttpStatus.PAYLOAD_TOO_LARGE,
-                    "Request body of " + contentLength + " bytes exceeds the maximum of " + maxRequestBytes + " bytes");
+            return reject(response, HttpStatus.PAYLOAD_TOO_LARGE, "Request body of " + contentLength + " bytes exceeds the maximum of "
+                    + maxRequestBytes + " bytes (max_payload_size is " + maxPayloadSize + " bytes)");
         }
         return true;
     }

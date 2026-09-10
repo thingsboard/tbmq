@@ -49,6 +49,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -535,10 +536,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("[{}] Stats: count = [{}]", StatsType.THROUGHPUT_QUOTA_DEGRADED.getPrintName(), throughputQuotaStats.getCount());
         throughputQuotaStats.reset();
 
-        log.info("[{}] Stats: accepted = [{}] quotaExceeded = [{}] failed = [{}]", StatsType.REST_PUBLISH_MSGS.getPrintName(),
-                restPublishStats.getCount(RestPublishOutcome.ACCEPTED),
-                restPublishStats.getCount(RestPublishOutcome.QUOTA_EXCEEDED),
-                restPublishStats.getCount(RestPublishOutcome.FAILED));
+        log.info("[{}] Stats: {}", StatsType.REST_PUBLISH_MSGS.getPrintName(), Arrays.stream(RestPublishOutcome.values())
+                .map(outcome -> outcome.getTagValue() + " = [" + restPublishStats.getCount(outcome) + "]")
+                .collect(Collectors.joining(" ")));
         restPublishStats.reset();
 
         log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",

@@ -59,7 +59,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 public class MqttPublishControllerTest extends AbstractControllerTest {
 
-    private static final String PUBLISH_URL = "/api/mqtt/publish";
+    private static final String PUBLISH_URL = MqttPublishController.PUBLISH_PATH;
 
     @MockitoBean
     private RestPublishService restPublishService;
@@ -76,7 +76,8 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doPostAsync(PUBLISH_URL, validRequest(), -1L)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reasonCode").value(0))
-                .andExpect(jsonPath("$.message").value("Success"));
+                .andExpect(jsonPath("$.message").value("Success"))
+                .andExpect(jsonPath("$.success").doesNotExist());
     }
 
     @Test
@@ -120,7 +121,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doPost(PUBLISH_URL, validRequest())
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.errorCode").value(33))
-                .andExpect(jsonPath("$.message").exists());
+                .andExpect(jsonPath("$.message").value("Total message rate limit exceeded"));
     }
 
     @Test
@@ -244,7 +245,19 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
 
         doPost(PUBLISH_URL, request)
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.message").exists());
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("max_payload_size is 1024 bytes")));
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenNoContentLength_whenPublish_thenLengthRequired() throws Exception {
+        MockHttpServletRequestBuilder postRequest = post(PUBLISH_URL).contentType(MediaType.APPLICATION_JSON);
+        setJwtToken(postRequest);
+
+        mockMvc.perform(postRequest)
+                .andExpect(status().isLengthRequired())
+                .andExpect(jsonPath("$.errorCode").value(31))
+                .andExpect(jsonPath("$.message").value("Content-Length header is required"));
         verify(restPublishService, never()).publish(any());
     }
 
@@ -270,7 +283,7 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doGet("/v3/api-docs")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses.keys()")
-                        .value(org.hamcrest.Matchers.containsInAnyOrder("200", "202", "400", "413", "429", "503")))
+                        .value(org.hamcrest.Matchers.containsInAnyOrder("200", "202", "400", "411", "413", "429", "503")))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['202'].content['application/json'].schema.$ref")
                         .value("#/components/schemas/RestPublishResponse"))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['429'].content['application/json'].schema.$ref")

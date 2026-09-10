@@ -32,7 +32,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -45,7 +44,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/mqtt")
 @RequiredArgsConstructor
 public class MqttPublishController extends BaseController {
 
@@ -61,7 +59,8 @@ public class MqttPublishController extends BaseController {
                     "PUBLISH received from a client: total throughput quota, retained-message store, publish queue and delivery. " +
                     "The publisher client id is '" + BrokerConstants.REST_API_CLIENT_ID + "'. " +
                     "A 2xx response means the broker queue accepted the message, not that any client received it. " +
-                    "Payloads are UTF-8 text by default; set 'payloadEncoding' to BASE64 for binary data.")
+                    "The payload is a Base64 string by default; set 'payloadEncoding' to TEXT for a UTF-8 string or to JSON " +
+                    "to publish any JSON value as its compact JSON text.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Accepted by the queue; at least one subscription matched the topic.",
                     content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
@@ -70,15 +69,18 @@ public class MqttPublishController extends BaseController {
                     content = @Content(schema = @Schema(implementation = RestPublishResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid topic, payload, encoding or MQTT property.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
+            @ApiResponse(responseCode = "411", description = "The request has no Content-Length header (chunked bodies are not accepted).",
+                    content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "413", description = "Request body exceeds the limit derived from 'server.rest_publish.max_payload_size'.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "429", description = "Refused by the total incoming throughput quota.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-            @ApiResponse(responseCode = "503", description = "The broker queue rejected the message or did not acknowledge it in time.",
+            @ApiResponse(responseCode = "503", description = "The broker queue rejected the message or did not acknowledge it in time. " +
+                    "On a timeout the message may still have been published, so retries can produce duplicates.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class)))
     })
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @PostMapping("/publish")
+    @PostMapping(PUBLISH_PATH)
     public DeferredResult<ResponseEntity<?>> publish(@Valid @RequestBody RestPublishRequest request) {
         DeferredResult<ResponseEntity<?>> result = new DeferredResult<>(timeoutMs);
         result.onTimeout(() -> {

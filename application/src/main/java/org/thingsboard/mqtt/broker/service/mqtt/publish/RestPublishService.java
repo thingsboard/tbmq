@@ -27,8 +27,10 @@ public interface RestPublishService {
      * <p>
      * Request-level problems are reported synchronously: {@link org.thingsboard.mqtt.broker.exception.DataValidationException}
      * for an invalid topic, payload or property, {@link org.thingsboard.mqtt.broker.exception.TbRateLimitsException}
-     * when the total throughput quota refuses the message. The returned future completes once the publish queue
-     * acknowledges the message and fails with the queue error otherwise.
+     * when the total throughput quota refuses the message. They are thrown rather than returned as a failed future
+     * on purpose: the message is refused before anything is queued, and the global error handler maps them to
+     * 400 / 429. The returned future completes once the publish queue acknowledges the message and fails with the
+     * queue error otherwise.
      */
     ListenableFuture<RestPublishResponse> publish(RestPublishRequest request);
 

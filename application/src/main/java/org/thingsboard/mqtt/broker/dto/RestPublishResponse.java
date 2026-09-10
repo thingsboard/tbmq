@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -40,6 +41,7 @@ public class RestPublishResponse {
         return new RestPublishResponse(MqttReasonCodes.PubAck.NO_MATCHING_SUBSCRIBERS.byteValue(), "No matching subscribers");
     }
 
+    @JsonIgnore
     public boolean isSuccess() {
         return reasonCode == MqttReasonCodes.PubAck.SUCCESS.byteValue();
     }

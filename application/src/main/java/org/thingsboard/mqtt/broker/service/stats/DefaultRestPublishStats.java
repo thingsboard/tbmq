@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class DefaultRestPublishStats implements RestPublishStats {
 
-    static final String RESULT_TAG = "result";
+    public static final String RESULT_TAG = "result";
 
     private final Map<RestPublishOutcome, DefaultCounter> counters = new EnumMap<>(RestPublishOutcome.class);
 

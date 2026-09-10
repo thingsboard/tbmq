@@ -183,7 +183,7 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
 
     private void handleRateLimitException(HttpServletResponse response, TbRateLimitsException exception) throws IOException {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        String message = "Too many requests!";
+        String message = exception.getMessage() != null ? exception.getMessage() : "Too many requests!";
         JacksonUtil.writeValue(response.getWriter(),
                 ThingsboardErrorResponse.of(message,
                         ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS));

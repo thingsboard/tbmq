@@ -156,7 +156,15 @@ public class RestPublishServiceImpl implements RestPublishService {
         if (request.getMessageExpiryInterval() == null && request.getContentType() == null) {
             return props;
         }
-        RestPublishProperties merged = props == null ? new RestPublishProperties() : props;
+        RestPublishProperties merged = new RestPublishProperties();
+        if (props != null) {
+            merged.setPayloadFormatIndicator(props.getPayloadFormatIndicator());
+            merged.setMessageExpiryInterval(props.getMessageExpiryInterval());
+            merged.setContentType(props.getContentType());
+            merged.setResponseTopic(props.getResponseTopic());
+            merged.setCorrelationData(props.getCorrelationData());
+            merged.setUserProperties(props.getUserProperties());
+        }
         if (merged.getMessageExpiryInterval() == null) {
             merged.setMessageExpiryInterval(request.getMessageExpiryInterval());
         }
