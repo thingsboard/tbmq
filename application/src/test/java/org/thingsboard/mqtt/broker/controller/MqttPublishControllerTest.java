@@ -220,24 +220,6 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void givenLegacyRequestShape_whenPublish_thenAcceptedAndMappedOntoRequest() throws Exception {
-        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
-
-        // the shape of the original contribution: Base64 payload by default, 'retained', top-level expiry and content type
-        doPostRaw("{\"topic\":\"devices/a\",\"payload\":\"AQID\",\"qos\":1,\"retained\":true," +
-                "\"messageExpiryInterval\":60,\"contentType\":\"application/octet-stream\"}").andExpect(status().isOk());
-
-        ArgumentCaptor<RestPublishRequest> captor = ArgumentCaptor.forClass(RestPublishRequest.class);
-        verify(restPublishService).publish(captor.capture());
-        RestPublishRequest request = captor.getValue();
-        assertThat(request.getPayloadEncoding()).isEqualTo(PayloadEncoding.BASE64);
-        assertThat(request.getPayload().textValue()).isEqualTo("AQID");
-        assertThat(request.isRetain()).isTrue();
-        assertThat(request.getMessageExpiryInterval()).isEqualTo(60);
-        assertThat(request.getContentType()).isEqualTo("application/octet-stream");
-    }
-
-    @Test
     public void givenUnknownPayloadEncoding_whenPublish_thenBadRequestWithoutJacksonInternals() throws Exception {
         doPostRaw("{\"topic\":\"devices/a\",\"payload\":\"x\",\"payloadEncoding\":\"HEX\"}")
                 .andExpect(status().isBadRequest())

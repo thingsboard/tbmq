@@ -171,53 +171,6 @@ class RestPublishServiceImplTest {
     }
 
     @Test
-    void givenLegacyTopLevelProperties_whenPublish_thenMappedOntoPublishMsg() {
-        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
-        request.setMessageExpiryInterval(45);
-        request.setContentType("text/csv");
-
-        service.publish(request);
-
-        MqttProperties props = capturedPublishMsg().getProperties();
-        assertThat(intProp(props, BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID)).isEqualTo(45);
-        assertThat(stringProp(props, BrokerConstants.CONTENT_TYPE_PROP_ID)).isEqualTo("text/csv");
-    }
-
-    @Test
-    void givenLegacyAndNestedProperties_whenPublish_thenNestedWins() {
-        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
-        request.setMessageExpiryInterval(45);
-        request.setContentType("text/csv");
-        RestPublishProperties properties = new RestPublishProperties();
-        properties.setMessageExpiryInterval(30);
-        properties.setContentType("text/plain");
-        request.setProperties(properties);
-
-        service.publish(request);
-
-        MqttProperties props = capturedPublishMsg().getProperties();
-        assertThat(intProp(props, BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID)).isEqualTo(30);
-        assertThat(stringProp(props, BrokerConstants.CONTENT_TYPE_PROP_ID)).isEqualTo("text/plain");
-    }
-
-    @Test
-    void givenLegacyTopLevelProperties_whenPublish_thenRequestNotMutated() {
-        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
-        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
-        request.setMessageExpiryInterval(45);
-        RestPublishProperties properties = new RestPublishProperties();
-        properties.setContentType("text/plain");
-        request.setProperties(properties);
-
-        service.publish(request);
-
-        assertThat(request.getProperties().getMessageExpiryInterval()).isNull();
-        assertThat(request.getProperties().getContentType()).isEqualTo("text/plain");
-    }
-
-    @Test
     void givenBase64EncodingWithNonStringPayload_whenPublish_thenRejects() {
         RestPublishRequest request = request("ignored", PayloadEncoding.BASE64);
         request.setPayload(JacksonUtil.toJsonNode("{\"cmd\":\"reboot\"}"));

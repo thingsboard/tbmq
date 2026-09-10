@@ -127,7 +127,7 @@ public class RestPublishServiceImpl implements RestPublishService {
                 .qos(request.getQos())
                 .isRetained(request.isRetain())
                 .isDup(false)
-                .properties(toMqttProperties(effectiveProperties(request)))
+                .properties(toMqttProperties(request.getProperties()))
                 .build();
     }
 
@@ -145,25 +145,6 @@ public class RestPublishServiceImpl implements RestPublishService {
             throw new DataValidationException(encoding + " payload encoding requires the payload to be a string; use the JSON encoding to publish a JSON value");
         }
         return encoding == PayloadEncoding.BASE64 ? decodeBase64(payload.textValue(), "Payload") : payload.textValue().getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Folds the legacy top-level {@code messageExpiryInterval} / {@code contentType} into the properties block; the nested values win.
-     */
-    @SuppressWarnings("deprecation")
-    private static RestPublishProperties effectiveProperties(RestPublishRequest request) {
-        RestPublishProperties props = request.getProperties();
-        if (request.getMessageExpiryInterval() == null && request.getContentType() == null) {
-            return props;
-        }
-        RestPublishProperties merged = props == null ? new RestPublishProperties() : props.toBuilder().build();
-        if (merged.getMessageExpiryInterval() == null) {
-            merged.setMessageExpiryInterval(request.getMessageExpiryInterval());
-        }
-        if (StringUtils.isEmpty(merged.getContentType())) {
-            merged.setContentType(request.getContentType());
-        }
-        return merged;
     }
 
     private static byte[] decodeBase64(String value, String field) {

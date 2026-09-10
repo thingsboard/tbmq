@@ -20,17 +20,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
 @Data
-@Builder(toBuilder = true)
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "MQTT 5 PUBLISH properties. Every field is optional.")
 public class RestPublishProperties {
 

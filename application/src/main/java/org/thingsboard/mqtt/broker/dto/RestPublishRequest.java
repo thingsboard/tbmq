@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,8 +24,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -55,23 +52,10 @@ public class RestPublishRequest {
     @Schema(description = "Quality of Service level: 0, 1 or 2.", example = "1", defaultValue = "0")
     private int qos;
 
-    @JsonAlias("retained")
     @Schema(description = "Whether the message should be stored as the retained message for the topic.", example = "false", defaultValue = "false")
     private boolean retain;
 
     @Valid
     private RestPublishProperties properties;
-
-    /** Legacy top-level form of {@link RestPublishProperties#getMessageExpiryInterval()}; the nested one wins when both are set. */
-    @Deprecated
-    @PositiveOrZero
-    @Schema(hidden = true)
-    private Integer messageExpiryInterval;
-
-    /** Legacy top-level form of {@link RestPublishProperties#getContentType()}; the nested one wins when both are set. */
-    @Deprecated
-    @Size(max = 65535)
-    @Schema(hidden = true)
-    private String contentType;
 
 }
