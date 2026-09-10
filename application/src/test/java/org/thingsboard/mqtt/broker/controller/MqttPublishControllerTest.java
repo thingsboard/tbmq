@@ -30,8 +30,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.config.RestPublishRequestSizeInterceptor;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
@@ -61,13 +61,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @DaoSqlTest
 @TestPropertySource(properties = {
-        "server.rest_publish.max_payload_size=1024",
+        "server.rest_publish.max_payload_size=" + MqttPublishControllerTest.MAX_PAYLOAD_SIZE,
         "server.rest_publish.timeout_ms=500"
 })
 public class MqttPublishControllerTest extends AbstractControllerTest {
 
     private static final String PUBLISH_URL = MqttPublishController.PUBLISH_PATH;
-    private static final long MAX_PAYLOAD_SIZE = 1024;
+    static final long MAX_PAYLOAD_SIZE = 1024;
     private static final long MAX_REQUEST_BYTES = MAX_PAYLOAD_SIZE * RestPublishRequestSizeInterceptor.PAYLOAD_ENCODING_FACTOR
             + RestPublishRequestSizeInterceptor.ENVELOPE_ALLOWANCE_BYTES;
 
@@ -232,21 +232,11 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void givenBodyLargerThanConfiguredLimit_whenPublish_thenPayloadTooLargeBeforeDeserialization() throws Exception {
-        // 1024-byte payload cap -> 2 x 1024 + 16 KB envelope allowance; 64 KB of body must be refused up front
-        RestPublishRequest request = validRequest();
-        request.setPayload(new TextNode("x".repeat(64 * 1024)));
-
-        doPost(PUBLISH_URL, request)
+    public void givenBodyOneByteOverLimit_whenPublish_thenPayloadTooLargeBeforeDeserialization() throws Exception {
+        doPostRaw(bodyOfSize(MAX_REQUEST_BYTES + 1))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.errorCode").value(31))
-                .andExpect(jsonPath("$.message").value(containsString("max_payload_size is 1024 bytes")));
-        verify(restPublishService, never()).publish(any());
-    }
-
-    @Test
-    public void givenBodyOneByteOverLimit_whenPublish_thenPayloadTooLarge() throws Exception {
-        doPostRaw(bodyOfSize(MAX_REQUEST_BYTES + 1)).andExpect(status().isPayloadTooLarge());
+                .andExpect(jsonPath("$.message").value(containsString("max_payload_size is " + MAX_PAYLOAD_SIZE + " bytes")));
         verify(restPublishService, never()).publish(any());
     }
 
