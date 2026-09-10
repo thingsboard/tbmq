@@ -32,7 +32,7 @@ server:
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # REST publish API (POST /api/mqtt/publish) configuration.
   rest_publish:
-    # Maximum size of the decoded MQTT payload accepted from the REST publish API (in bytes). Requests whose body exceeds twice this limit plus 16 KB for the JSON envelope (room for Base64 or \uXXXX-escaped text) are refused before being read. Keep it below the Kafka producer max.request.size.
+    # Maximum size of the decoded MQTT payload accepted from the REST publish API (in bytes).
     max_payload_size: "${REST_PUBLISH_MAX_PAYLOAD_SIZE:65536}"
     # Time to wait for the publish queue to acknowledge a message before answering 503 Service Unavailable (in ms).
     timeout_ms: "${REST_PUBLISH_TIMEOUT_MS:30000}"

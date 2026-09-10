@@ -52,6 +52,7 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -376,6 +377,35 @@ class RestPublishServiceImplTest {
         assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCause(failure);
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
         verify(restPublishStats).increment(RestPublishOutcome.FAILED);
+    }
+
+    @Test
+    void givenUserPropertyWithNullValue_whenPublish_thenRejectsBeforeQuota() {
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        RestPublishProperties properties = new RestPublishProperties();
+        Map<String, String> userProperties = new HashMap<>();
+        userProperties.put("k", null);
+        properties.setUserProperties(userProperties);
+        request.setProperties(properties);
+
+        assertThatThrownBy(() -> service.publish(request))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessageContaining("has no value");
+        verify(throughputQuotaService, never()).tryConsumeIncoming();
+        verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
+    }
+
+    @Test
+    void givenContentTypeOverMqttStringLimit_whenPublish_thenRejectsBeforeQuota() {
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        RestPublishProperties properties = new RestPublishProperties();
+        properties.setContentType("\u0429".repeat(32768)); // 2 bytes in UTF-8 each -> 65536 bytes
+        request.setProperties(properties);
+
+        assertThatThrownBy(() -> service.publish(request))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessageContaining("Content type");
+        verify(throughputQuotaService, never()).tryConsumeIncoming();
     }
 
     private RestPublishRequest request(String payload, PayloadEncoding encoding) {

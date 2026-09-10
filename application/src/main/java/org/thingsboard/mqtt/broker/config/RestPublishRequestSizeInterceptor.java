@@ -48,10 +48,16 @@ public class RestPublishRequestSizeInterceptor implements HandlerInterceptor, We
     public static final long ENVELOPE_ALLOWANCE_BYTES = 16 * 1024;
 
     /**
-     * Worst realistic growth of the payload on the wire: Base64 adds 4/3, and TEXT/JSON payloads escaped as
-     * {@code \\uXXXX} (e.g. Python's json.dumps default) turn a 3-byte UTF-8 character into 6 bytes.
+     * Worst-case growth of a string payload on the wire. Base64 adds 4/3; JSON escaping is worse: a serializer that
+     * writes non-ASCII as {@code \\uXXXX} (Python's json.dumps default) turns a 2-byte UTF-8 character into 6 bytes
+     * (x3), and one that escapes ASCII too turns 1 byte into 6 (x6). 6 is the ceiling for any escaped string.
+     * <p>
+     * This is a coarse pre-read bound, not the limit itself: it can still refuse a legal request whose size comes
+     * from something other than the payload — a pretty-printed {@code JSON} payload (published compact, so the
+     * whitespace is unbounded on the wire) or a properties block larger than {@link #ENVELOPE_ALLOWANCE_BYTES}. The
+     * decoded-payload check in the service is authoritative.
      */
-    public static final long PAYLOAD_ENCODING_FACTOR = 2;
+    public static final long PAYLOAD_ENCODING_FACTOR = 6;
 
     private final long maxPayloadSize;
     private final long maxRequestBytes;

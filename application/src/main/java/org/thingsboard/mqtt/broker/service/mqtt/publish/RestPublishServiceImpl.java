@@ -58,6 +58,9 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class RestPublishServiceImpl implements RestPublishService {
 
+    /** MQTT UTF-8 encoded strings are length-prefixed with two bytes, so nothing longer than this can be encoded. */
+    private static final int MQTT_STRING_MAX_BYTES = 65535;
+
     private final TopicValidationService topicValidationService;
     private final ThroughputQuotaService throughputQuotaService;
     private final RetainedMsgProcessor retainedMsgProcessor;
@@ -167,6 +170,7 @@ public class RestPublishServiceImpl implements RestPublishService {
             MqttPropertiesUtil.addMsgExpiryIntervalToProps(properties, props.getMessageExpiryInterval());
         }
         if (StringUtils.isNotEmpty(props.getContentType())) {
+            validateMqttStringSize(props.getContentType(), "Content type");
             MqttPropertiesUtil.addContentTypeToProps(properties, props.getContentType());
         }
         if (StringUtils.isNotEmpty(props.getResponseTopic())) {
@@ -178,10 +182,23 @@ public class RestPublishServiceImpl implements RestPublishService {
         }
         if (props.getUserProperties() != null && !props.getUserProperties().isEmpty()) {
             MqttProperties.UserProperties userProperties = new MqttProperties.UserProperties();
-            props.getUserProperties().forEach(userProperties::add);
+            props.getUserProperties().forEach((key, val) -> {
+                if (val == null) {
+                    // a null value would only fail later, when the message is converted to proto
+                    throw new DataValidationException("User property '" + key + "' has no value");
+                }
+                userProperties.add(key, val);
+            });
             properties.add(userProperties);
         }
         return properties;
+    }
+
+    private static void validateMqttStringSize(String value, String field) {
+        int size = value.getBytes(StandardCharsets.UTF_8).length;
+        if (size > MQTT_STRING_MAX_BYTES) {
+            throw new DataValidationException(field + " size " + size + " bytes exceeds the MQTT string limit of " + MQTT_STRING_MAX_BYTES + " bytes");
+        }
     }
 
 }

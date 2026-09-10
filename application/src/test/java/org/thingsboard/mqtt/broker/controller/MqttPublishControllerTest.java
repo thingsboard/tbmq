@@ -179,6 +179,15 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     }
 
     @Test
+    public void givenMarkupInTopic_whenPublish_thenBadRequest() throws Exception {
+        RestPublishRequest request = validRequest();
+        request.setTopic("devices/<script>alert(1)</script>");
+
+        doPost(PUBLISH_URL, request).andExpect(status().isBadRequest());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
     public void givenMissingPayload_whenPublish_thenBadRequest() throws Exception {
         RestPublishRequest request = validRequest();
         request.setPayload(null);

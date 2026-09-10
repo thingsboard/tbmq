@@ -45,7 +45,7 @@ class DefaultRestPublishStatsTest {
         assertThat(stats.getCount(RestPublishOutcome.QUOTA_EXCEEDED)).isEqualTo(1);
         assertThat(stats.getCount(RestPublishOutcome.FAILED)).isZero();
         assertThat(micrometerCount("accepted")).isEqualTo(2.0);
-        assertThat(micrometerCount("quota_exceeded")).isEqualTo(1.0);
+        assertThat(micrometerCount("quotaExceeded")).isEqualTo(1.0);
         assertThat(micrometerCount("failed")).isZero();
     }
 

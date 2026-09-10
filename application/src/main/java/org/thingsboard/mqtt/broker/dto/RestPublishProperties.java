@@ -21,6 +21,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.Map;
 
@@ -37,15 +38,18 @@ public class RestPublishProperties {
     @Schema(description = "Message Expiry Interval in seconds.", example = "3600")
     private Integer messageExpiryInterval;
 
+    @NoXss
     @Size(max = 65535)
     @Schema(description = "Content Type of the payload.", example = "application/json")
     private String contentType;
 
+    @NoXss
     @Size(max = 65535)
     @Schema(description = "Response Topic for request/response messaging. Must be a valid topic name (no wildcards).",
             example = "devices/a/replies")
     private String responseTopic;
 
+    @NoXss
     @Schema(description = "Correlation Data, Base64-encoded.", example = "cmVxLTQy")
     private String correlationData;
 

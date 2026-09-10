@@ -25,15 +25,18 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 @Data
 @Schema(description = "MQTT message to publish through the broker.")
 public class RestPublishRequest {
 
     @NotBlank
+    @NoXss
     @Schema(description = "Topic name to publish to. Wildcards are not allowed.", example = "devices/a/commands", requiredMode = Schema.RequiredMode.REQUIRED)
     private String topic;
 
+    // deliberately no @NoXss: the payload is opaque data, and AntiSamy rejects any markup (XML/HTML telemetry)
     @NotNull
     @JsonSetter(nulls = Nulls.FAIL) // a JSON null would otherwise bind to NullNode and pass @NotNull
     @Schema(description = "Message payload, in the form declared by 'payloadEncoding'. " +
