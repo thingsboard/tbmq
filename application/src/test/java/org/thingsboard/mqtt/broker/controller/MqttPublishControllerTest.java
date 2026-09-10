@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.config.RestPublishRequestSizeInterceptor;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
@@ -39,9 +40,15 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +67,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MqttPublishControllerTest extends AbstractControllerTest {
 
     private static final String PUBLISH_URL = MqttPublishController.PUBLISH_PATH;
+    private static final long MAX_PAYLOAD_SIZE = 1024;
+    private static final long MAX_REQUEST_BYTES = MAX_PAYLOAD_SIZE * RestPublishRequestSizeInterceptor.PAYLOAD_ENCODING_FACTOR
+            + RestPublishRequestSizeInterceptor.ENVELOPE_ALLOWANCE_BYTES;
 
     @MockitoBean
     private RestPublishService restPublishService;
@@ -231,22 +241,39 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
     public void givenUnknownPayloadEncoding_whenPublish_thenBadRequestWithoutJacksonInternals() throws Exception {
         doPostRaw("{\"topic\":\"devices/a\",\"payload\":\"x\",\"payloadEncoding\":\"HEX\"}")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.allOf(
-                        org.hamcrest.Matchers.startsWith("Invalid request body:"),
-                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("[Source:")))));
+                .andExpect(jsonPath("$.message").value(allOf(
+                        startsWith("Invalid request body:"),
+                        containsString("\"HEX\""),
+                        containsString("not one of the values accepted for Enum class"),
+                        not(containsString("[Source:")))));
         verify(restPublishService, never()).publish(any());
     }
 
     @Test
     public void givenBodyLargerThanConfiguredLimit_whenPublish_thenPayloadTooLargeBeforeDeserialization() throws Exception {
-        // 1024-byte payload cap -> ~1.4 KB base64 + envelope allowance; 64 KB of body must be refused up front
+        // 1024-byte payload cap -> 2 x 1024 + 16 KB envelope allowance; 64 KB of body must be refused up front
         RestPublishRequest request = validRequest();
         request.setPayload(new TextNode("x".repeat(64 * 1024)));
 
         doPost(PUBLISH_URL, request)
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("max_payload_size is 1024 bytes")));
+                .andExpect(jsonPath("$.errorCode").value(31))
+                .andExpect(jsonPath("$.message").value(containsString("max_payload_size is 1024 bytes")));
         verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenBodyOneByteOverLimit_whenPublish_thenPayloadTooLarge() throws Exception {
+        doPostRaw(bodyOfSize(MAX_REQUEST_BYTES + 1)).andExpect(status().isPayloadTooLarge());
+        verify(restPublishService, never()).publish(any());
+    }
+
+    @Test
+    public void givenBodyExactlyAtLimit_whenPublish_thenNotRejectedBySizeGuard() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFuture(RestPublishResponse.success()));
+
+        MvcResult result = doPostRaw(bodyOfSize(MAX_REQUEST_BYTES)).andExpect(request().asyncStarted()).andReturn();
+        mockMvc.perform(asyncDispatch(result)).andExpect(status().isOk());
     }
 
     @Test
@@ -283,11 +310,22 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doGet("/v3/api-docs")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses.keys()")
-                        .value(org.hamcrest.Matchers.containsInAnyOrder("200", "202", "400", "411", "413", "429", "503")))
+                        .value(containsInAnyOrder("200", "202", "400", "411", "413", "429", "503")))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['202'].content['application/json'].schema.$ref")
                         .value("#/components/schemas/RestPublishResponse"))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['429'].content['application/json'].schema.$ref")
                         .value("#/components/schemas/ThingsboardErrorResponse"));
+    }
+
+    /**
+     * A TEXT publish whose serialized body is exactly {@code size} bytes; the payload string is the padding.
+     */
+    private static String bodyOfSize(long size) {
+        String prefix = "{\"topic\":\"devices/a\",\"payloadEncoding\":\"TEXT\",\"payload\":\"";
+        String suffix = "\"}";
+        String body = prefix + "x".repeat((int) (size - prefix.length() - suffix.length())) + suffix;
+        assertThat(body.getBytes(StandardCharsets.UTF_8)).hasSize((int) size);
+        return body;
     }
 
     private ResultActions doPostRaw(String json) throws Exception {

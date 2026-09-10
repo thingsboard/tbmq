@@ -45,13 +45,13 @@ public class RestPublishRequestSizeInterceptor implements HandlerInterceptor, We
     /**
      * Room for the JSON envelope around the payload: topic, flags and the MQTT 5 properties block.
      */
-    static final long ENVELOPE_ALLOWANCE_BYTES = 16 * 1024;
+    public static final long ENVELOPE_ALLOWANCE_BYTES = 16 * 1024;
 
     /**
      * Worst realistic growth of the payload on the wire: Base64 adds 4/3, and TEXT/JSON payloads escaped as
      * {@code \\uXXXX} (e.g. Python's json.dumps default) turn a 3-byte UTF-8 character into 6 bytes.
      */
-    static final long PAYLOAD_ENCODING_FACTOR = 2;
+    public static final long PAYLOAD_ENCODING_FACTOR = 2;
 
     private final long maxPayloadSize;
     private final long maxRequestBytes;
