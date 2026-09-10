@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishOutcome;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -48,6 +49,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,6 +87,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private DroppedMsgStats droppedMsgStats;
     private DroppedLifecycleEventStats droppedLifecycleEventStats;
     private ClientDisconnectStats clientDisconnectStats;
+    private RestPublishStats restPublishStats;
     private ThroughputQuotaStats throughputQuotaStats;
     private ConnectionStats connectionStats;
 
@@ -107,6 +110,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.droppedMsgStats = new DefaultDroppedMsgStats(statsFactory);
         this.droppedLifecycleEventStats = new DefaultDroppedLifecycleEventStats(statsFactory);
         this.clientDisconnectStats = new DefaultClientDisconnectStats(statsFactory);
+        this.restPublishStats = new DefaultRestPublishStats(statsFactory);
         this.throughputQuotaStats = new DefaultThroughputQuotaStats(statsFactory);
         this.connectionStats = new DefaultConnectionStats(statsFactory);
     }
@@ -143,6 +147,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public ClientDisconnectStats getClientDisconnectStats() {
         return clientDisconnectStats;
+    }
+
+    @Override
+    public RestPublishStats getRestPublishStats() {
+        return restPublishStats;
     }
 
     @Override
@@ -526,6 +535,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         log.info("[{}] Stats: count = [{}]", StatsType.THROUGHPUT_QUOTA_DEGRADED.getPrintName(), throughputQuotaStats.getCount());
         throughputQuotaStats.reset();
+
+        log.info("[{}] Stats: {}", StatsType.REST_PUBLISH_MSGS.getPrintName(), Arrays.stream(RestPublishOutcome.values())
+                .map(outcome -> outcome.getTagValue() + " = [" + restPublishStats.getCount(outcome) + "]")
+                .collect(Collectors.joining(" ")));
+        restPublishStats.reset();
 
         log.info("[connection] Stats: {} = [{}] {} = [{}] {} = [{}]",
                 StatsType.CONNECTION_ACCEPTED.getPrintName(), connectionStats.getAcceptedCount(),

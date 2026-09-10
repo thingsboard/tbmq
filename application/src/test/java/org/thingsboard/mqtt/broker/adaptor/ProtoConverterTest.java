@@ -825,4 +825,31 @@ public class ProtoConverterTest {
         assertEquals(input.isConnectOnConflict(), output.isConnectOnConflict());
     }
 
+
+    @Test
+    public void givenClientIdOnly_whenConvertToPublishMsgProto_thenSameShapeAsSessionPathWithoutSessionFields() {
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, "text/plain"));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 30));
+        MqttProperties.UserProperties userProperties = new MqttProperties.UserProperties();
+        userProperties.add("k", "v");
+        properties.add(userProperties);
+        PublishMsg publishMsg = PublishMsg.builder()
+                .packetId(0).topicName("rest/topic").payload(new byte[]{1, 2}).qos(1).isRetained(true).properties(properties)
+                .build();
+
+        PublishMsgProto proto = ProtoConverter.convertToPublishMsgProto(BrokerConstants.REST_API_CLIENT_ID, publishMsg);
+
+        assertEquals(BrokerConstants.REST_API_CLIENT_ID, proto.getClientId());
+        assertEquals("rest/topic", proto.getTopicName());
+        assertEquals(ByteString.copyFrom(new byte[]{1, 2}), proto.getPayload());
+        assertEquals(1, proto.getQos());
+        assertTrue(proto.getRetain());
+        assertFalse(proto.hasClientCertCn());
+        assertEquals("text/plain", proto.getMqttProperties().getContentType());
+        assertEquals(1, proto.getUserPropertiesCount());
+        assertEquals("k", proto.getUserProperties(0).getKey());
+        assertEquals("v", proto.getUserProperties(0).getValue());
+    }
+
 }

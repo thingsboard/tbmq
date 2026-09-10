@@ -23,6 +23,12 @@ public interface MsgDispatcherService {
 
     void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback);
 
+    /**
+     * Persists a broker-originated PUBLISH (no client session behind it, e.g. the REST API) under the given
+     * client id. {@code clientId} is what subscribers' {@code noLocal} option is compared against.
+     */
+    void persistPublishMsg(String clientId, PublishMsg publishMsg, TbQueueCallback callback);
+
     void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
 
 }

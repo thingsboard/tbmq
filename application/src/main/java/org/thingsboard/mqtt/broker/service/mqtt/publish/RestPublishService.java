@@ -1,0 +1,37 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.service.mqtt.publish;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
+import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
+
+public interface RestPublishService {
+
+    /**
+     * Publishes an MQTT message on behalf of the REST API through the standard broker pipeline: total throughput
+     * quota, retained-message processing, publish queue, subscription matching and downlink.
+     * <p>
+     * Request-level problems are reported synchronously: {@link org.thingsboard.mqtt.broker.exception.DataValidationException}
+     * for an invalid topic, payload or property, {@link org.thingsboard.mqtt.broker.exception.TbRateLimitsException}
+     * when the total throughput quota refuses the message. They are thrown rather than returned as a failed future
+     * on purpose: the message is refused before anything is queued, and the global error handler maps them to
+     * 400 / 429. The returned future completes once the publish queue acknowledges the message and fails with the
+     * queue error otherwise.
+     */
+    ListenableFuture<RestPublishResponse> publish(RestPublishRequest request);
+
+}

@@ -86,7 +86,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Override
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback) {
-        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg, clientCertCn);
+        sendToPublishQueue(ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg, clientCertCn), publishMsg, callback);
+    }
+
+    @Override
+    public void persistPublishMsg(String clientId, PublishMsg publishMsg, TbQueueCallback callback) {
+        sendToPublishQueue(ProtoConverter.convertToPublishMsgProto(clientId, publishMsg), publishMsg, callback);
+    }
+
+    private void sendToPublishQueue(PublishMsgProto publishMsgProto, PublishMsg publishMsg, TbQueueCallback callback) {
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
 

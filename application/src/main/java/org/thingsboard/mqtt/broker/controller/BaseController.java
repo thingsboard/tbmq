@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.mail.MessagingException;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -180,6 +182,8 @@ public abstract class BaseController {
         } else if (exception instanceof IllegalArgumentException || exception instanceof IncorrectParameterException
                 || exception instanceof DataValidationException || cause instanceof IncorrectParameterException) {
             return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        } else if (exception instanceof HttpMessageNotReadableException e) {
+            return new ThingsboardException("Invalid request body: " + unreadableBodyReason(e), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         } else if (exception instanceof MessagingException) {
             return new ThingsboardException("Unable to send mail", ThingsboardErrorCode.GENERAL);
         } else if (exception instanceof AsyncRequestTimeoutException) {
@@ -188,6 +192,18 @@ public abstract class BaseController {
             return new ThingsboardException(exception, ThingsboardErrorCode.DATABASE);
         }
         return new ThingsboardException(exception.getMessage(), exception, ThingsboardErrorCode.GENERAL);
+    }
+
+    /**
+     * Jackson's full message carries the parser location and the reference chain; only the original message
+     * explains what was wrong with the body.
+     */
+    private static String unreadableBodyReason(HttpMessageNotReadableException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (cause instanceof JsonProcessingException jpe) {
+            return jpe.getOriginalMessage();
+        }
+        return cause.getMessage() != null ? cause.getMessage() : e.getMessage();
     }
 
     /**

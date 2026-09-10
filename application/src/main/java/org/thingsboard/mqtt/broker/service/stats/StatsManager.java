@@ -62,6 +62,12 @@ public interface StatsManager {
     ThroughputQuotaStats getThroughputQuotaStats();
 
     /**
+     * Returns the REST publish stats ({@code restPublishMsgs{result}}). Shares the {@code stats.enabled} master
+     * switch; when stats are disabled the stub manager returns a no-op instance.
+     */
+    RestPublishStats getRestPublishStats();
+
+    /**
      * Returns the connection-outcome stats. Shares the {@code stats.enabled} master switch; when stats
      * are disabled the stub manager returns a no-op instance.
      */

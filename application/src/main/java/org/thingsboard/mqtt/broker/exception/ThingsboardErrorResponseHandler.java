@@ -39,6 +39,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.HttpClientErrorException;
@@ -151,6 +152,8 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
                     handleAuthenticationException((AuthenticationException) exception, response);
                 } else if (exception instanceof DataAccessException e) {
                     handleDatabaseException(e, response);
+                } else if (exception instanceof HttpMediaTypeNotSupportedException) {
+                    handleMediaTypeNotSupportedException(exception, response);
                 } else {
                     response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
                     JacksonUtil.writeValue(response.getWriter(), ThingsboardErrorResponse.of(exception.getMessage(),
@@ -181,9 +184,18 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
         JacksonUtil.writeValue(response.getWriter(), ThingsboardErrorResponse.of(thingsboardException.getMessage(), errorCode, status));
     }
 
+    /**
+     * A request with a missing or wrong Content-Type is a client error; without this it would fall through to 500.
+     */
+    private void handleMediaTypeNotSupportedException(Exception exception, HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value());
+        JacksonUtil.writeValue(response.getWriter(), ThingsboardErrorResponse.of(exception.getMessage(),
+                ThingsboardErrorCode.BAD_REQUEST_PARAMS, HttpStatus.UNSUPPORTED_MEDIA_TYPE));
+    }
+
     private void handleRateLimitException(HttpServletResponse response, TbRateLimitsException exception) throws IOException {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        String message = "Too many requests!";
+        String message = exception.getMessage() != null ? exception.getMessage() : "Too many requests!";
         JacksonUtil.writeValue(response.getWriter(),
                 ThingsboardErrorResponse.of(message,
                         ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS));
