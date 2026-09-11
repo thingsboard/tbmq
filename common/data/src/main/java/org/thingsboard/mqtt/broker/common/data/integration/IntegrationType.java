@@ -15,22 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.data.integration;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@AllArgsConstructor
-@Getter
 public enum IntegrationType {
 
     HTTP,
     MQTT,
-    KAFKA,
-    ;
+    KAFKA
 
-    // Identifies if the Integration instance is one per cluster
-    private final boolean singleton;
-
-    IntegrationType() {
-        this(true);
-    }
 }
