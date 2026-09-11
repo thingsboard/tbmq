@@ -103,9 +103,10 @@ public class DefaultTopicValidationService implements TopicValidationService {
             throw new DataValidationException("Topic Names and Topic Filters must not encode to more than " + MAX_SIZE_BYTES + " bytes.");
         }
         if (maxSegmentsCount > 0) {
-            int segmentsCount = StringUtils.countMatches(topic, TOPIC_DELIMITER);
+            // A topic with N delimiters has N + 1 segments; leading, trailing, and adjacent delimiters yield empty segments.
+            int segmentsCount = StringUtils.countMatches(topic, TOPIC_DELIMITER) + 1;
             if (segmentsCount > maxSegmentsCount) {
-                throw new DataValidationException("Topic Names and Topic Filters must contain less than " + maxSegmentsCount + " segments.");
+                throw new DataValidationException("Topic Names and Topic Filters must not contain more than " + maxSegmentsCount + " segments, but got " + segmentsCount + ".");
             }
         }
     }
