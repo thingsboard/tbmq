@@ -923,7 +923,9 @@ mqtt:
     # Maximum keep-alive value allowed by the server (in s). Applies to MQTT v5 clients. Defaults to 10 minutes.
     max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"
   topic:
-    # Maximum number of segments in topics. Excessively large values may cause processing errors. Defaults to 0, which disables the limit.
+    # Maximum number of segments in topic names and topic filters. Segments are separated by "/", so a topic with N slashes
+    # has N + 1 segments (e.g., a/b/c has 3 segments). Topics with more segments than the limit are rejected.
+    # Excessively large values may cause processing errors. Defaults to 0, which disables the limit.
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}"
     # Maximum number of topic aliases per connection. Defaults to 0, which disables the Topic Alias feature.
     alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"

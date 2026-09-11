@@ -23,6 +23,8 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class DefaultTopicValidationServiceTest {
 
     private DefaultTopicValidationService topicValidationService;
@@ -127,6 +129,39 @@ public class DefaultTopicValidationServiceTest {
         topicValidationService.setMaxSegmentsCount(maxSegmentsSize);
         String topic = generateManySegmentsTopic(maxSegmentsSize);
         topicValidationService.validateTopicFilter(topic);
+    }
+
+    @Test
+    public void testTopicWithSegmentsCountEqualToLimitIsAccepted() {
+        topicValidationService.setMaxSegmentsCount(3);
+        topicValidationService.validateTopic("a/b/c");
+        topicValidationService.validateTopicFilter("a/b/c");
+    }
+
+    @Test
+    public void testTopicWithSegmentsCountAboveLimitIsRejected() {
+        topicValidationService.setMaxSegmentsCount(3);
+        assertThatThrownBy(() -> topicValidationService.validateTopic("a/b/c/d"))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Topic Names and Topic Filters must not contain more than 3 segments, but got 4.");
+        assertThatThrownBy(() -> topicValidationService.validateTopicFilter("a/b/c/d"))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Topic Names and Topic Filters must not contain more than 3 segments, but got 4.");
+    }
+
+    @Test
+    public void testSegmentsLimitCountsEmptySegments() {
+        topicValidationService.setMaxSegmentsCount(3);
+        topicValidationService.validateTopic("a/b/");
+        assertThatThrownBy(() -> topicValidationService.validateTopic("/a/b/"))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Topic Names and Topic Filters must not contain more than 3 segments, but got 4.");
+    }
+
+    @Test
+    public void testSegmentsLimitDisabledWhenZero() {
+        topicValidationService.setMaxSegmentsCount(0);
+        topicValidationService.validateTopic(generateManySegmentsTopic(100));
     }
 
     private String generateManySegmentsTopic(int maxSegmentsSize) {
