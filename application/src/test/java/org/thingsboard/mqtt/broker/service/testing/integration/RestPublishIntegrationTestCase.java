@@ -168,8 +168,14 @@ public class RestPublishIntegrationTestCase extends AbstractControllerTest {
         clear.setRetain(true);
         publish(clear, 202);
 
+        // 202 means the PUBLISH is queued, not delivered: a subscriber connecting now may still receive the
+        // queued "online"/clear messages live (retain flag off), so only a retained delivery is a failure
         CountDownLatch latch = new CountDownLatch(1);
-        MqttClient subClient = subscribe(topic, 1, (t, msg) -> latch.countDown());
+        MqttClient subClient = subscribe(topic, 1, (t, msg) -> {
+            if (msg.isRetained()) {
+                latch.countDown();
+            }
+        });
 
         assertThat(latch.await(2, TimeUnit.SECONDS)).as("no retained message must arrive after it was cleared").isFalse();
 
