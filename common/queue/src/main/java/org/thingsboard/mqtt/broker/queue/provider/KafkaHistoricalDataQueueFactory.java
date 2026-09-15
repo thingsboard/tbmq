@@ -57,7 +57,7 @@ public class KafkaHistoricalDataQueueFactory extends AbstractQueueFactory implem
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<ToUsageStatsMsgProto>> createConsumer(String topic, String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ToUsageStatsMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(topic, historicalDataTotalKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(historicalDataTotalKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "historical-data-consumer-" + serviceId);

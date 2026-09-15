@@ -19,20 +19,14 @@ import lombok.Setter;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.common.data.TbProperty;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.common.TbKafkaCommonSettings;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 @Setter
 @Component
-@ConfigurationProperties(prefix = "queue.kafka")
 public class TbKafkaConsumerSettings {
 
     private final TbKafkaCommonSettings commonSettings;
@@ -61,14 +55,12 @@ public class TbKafkaConsumerSettings {
     @Value("${queue.kafka.default.consumer.heartbeat-interval-ms}")
     private int heartbeatIntervalMs;
 
-    private Map<String, List<TbProperty>> consumerPropertiesPerTopic = Collections.emptyMap();
-
     @Autowired
     public TbKafkaConsumerSettings(TbKafkaCommonSettings commonSettings) {
         this.commonSettings = commonSettings;
     }
 
-    public Properties toProps(String topic, String customProperties) {
+    public Properties toProps(String customProperties) {
         Properties props = new Properties();
 
         props.putAll(QueueUtil.getConfigs(commonSettings.getCommonConfig()));
@@ -85,9 +77,6 @@ public class TbKafkaConsumerSettings {
 
         props.putAll(QueueUtil.getConfigs(customProperties));
 
-        consumerPropertiesPerTopic
-                .getOrDefault(topic, Collections.emptyList())
-                .forEach(kv -> props.put(kv.getKey(), kv.getValue()));
         return props;
     }
 

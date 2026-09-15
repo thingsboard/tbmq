@@ -57,7 +57,7 @@ public class KafkaPublishMsgQueueFactory extends AbstractQueueFactory implements
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getKafkaTopic(), publishMsgSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(publishMsgSettings.getKafkaTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "msg-all-consumer-" + id);

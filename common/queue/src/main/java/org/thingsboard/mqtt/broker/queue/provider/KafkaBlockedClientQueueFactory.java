@@ -62,7 +62,7 @@ public class KafkaBlockedClientQueueFactory extends AbstractQueueFactory impleme
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<BlockedClientProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<BlockedClientProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(blockedClientKafkaSettings.getKafkaTopic(), blockedClientKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(blockedClientKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("BlockedClientQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 

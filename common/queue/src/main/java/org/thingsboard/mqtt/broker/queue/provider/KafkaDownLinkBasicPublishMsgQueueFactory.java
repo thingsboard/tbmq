@@ -59,7 +59,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory extends AbstractQueueFacto
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ClientPublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(topic, basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "basic-downlink-msg-consumer-" + consumerId);

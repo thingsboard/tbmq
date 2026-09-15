@@ -188,11 +188,6 @@ queue:
       additional-producer-config: "${TB_KAFKA_IE_EVENT_MSG_ADDITIONAL_PRODUCER_CONFIG:max.block.ms:5000}"
     # Common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string, meaning no prefix is applied.
     kafka-prefix: "${TB_KAFKA_PREFIX:}"
-    # Custom consumer configuration per Kafka topic.
-    consumer-properties-per-topic:
-      tbmq.msg.app.test_client:
-#        - key: max.poll.records
-#          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
 
 # Service parameters
 service:

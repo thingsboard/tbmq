@@ -58,7 +58,7 @@ public class KafkaInternodeNotificationsQueueFactory extends AbstractQueueFactor
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<InternodeNotificationProto>> createConsumer(String topic, String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<InternodeNotificationProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(topic, internodeNotificationsKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(internodeNotificationsKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "internode-notifications-consumer-" + serviceId);

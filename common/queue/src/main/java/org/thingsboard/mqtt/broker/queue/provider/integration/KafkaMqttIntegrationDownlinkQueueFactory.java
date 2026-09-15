@@ -65,7 +65,7 @@ public class KafkaMqttIntegrationDownlinkQueueFactory extends AbstractQueueFacto
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         String topic = mqttIntegrationDownlinkKafkaSettings.getKafkaTopicPrefix() + MQTT_TOPIC_SUFFIX;
 
-        Properties props = consumerSettings.toProps(topic, mqttIntegrationDownlinkKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(mqttIntegrationDownlinkKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("MqttIeDownlink", props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 

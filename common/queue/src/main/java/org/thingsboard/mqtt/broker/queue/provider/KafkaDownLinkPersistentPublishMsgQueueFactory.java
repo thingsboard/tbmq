@@ -59,7 +59,7 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory extends AbstractQueue
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<DevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(topic, persistentDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "persisted-downlink-msg-consumer-" + consumerId);
