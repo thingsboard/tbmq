@@ -59,7 +59,7 @@ public class KafkaApplicationRemovedEventQueueFactory extends AbstractQueueFacto
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ApplicationRemovedEventProto>> createEventConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ApplicationRemovedEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        Properties props = consumerSettings.toProps(kafkaSettings.getKafkaTopic(), kafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(kafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationRemovedEventQueue-" + serviceId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
         consumerBuilder.topic(kafkaSettings.getKafkaTopic());

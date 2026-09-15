@@ -62,7 +62,7 @@ public class KafkaRetainedMsgQueueFactory extends AbstractQueueFactory implement
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<RetainedMsgProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<RetainedMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(retainedMsgKafkaSettings.getKafkaTopic(), retainedMsgKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(retainedMsgKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("RetainedMsgQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 

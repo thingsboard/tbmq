@@ -60,7 +60,7 @@ public class KafkaIntegrationUplinkNotificationsQueueFactory extends AbstractQue
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<UplinkIntegrationNotificationMsgProto>> createConsumer(String topic, String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<UplinkIntegrationNotificationMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        consumerBuilder.properties(consumerSettings.toProps(topic, integrationUplinkNotificationsKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(integrationUplinkNotificationsKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), UplinkIntegrationNotificationMsgProto.parseFrom(msg.getData()),
                 msg.getHeaders(), msg.getPartition(), msg.getOffset()));
         consumerBuilder.clientId(kafkaPrefix + "ie-uplink-notifications-consumer-" + serviceId);

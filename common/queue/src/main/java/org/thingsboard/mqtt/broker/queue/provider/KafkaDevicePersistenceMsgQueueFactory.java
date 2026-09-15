@@ -61,7 +61,7 @@ public class KafkaDevicePersistenceMsgQueueFactory extends AbstractQueueFactory 
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(devicePersistenceMsgSettings.getKafkaTopic(), devicePersistenceMsgSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(devicePersistenceMsgSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("DeviceMsgQueue-" + id, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 

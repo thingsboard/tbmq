@@ -121,7 +121,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     private Consumer<String, byte[]> createConsumer(TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
-        Properties consumerProps = consumerSettings.toProps("kafka_admin_home_page", homePageConsumerKafkaSettings.getConsumerProperties());
+        Properties consumerProps = consumerSettings.toProps(homePageConsumerKafkaSettings.getConsumerProperties());
         var kafkaPrefix = adminSettings.getKafkaPrefix();
         consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "home-page-client");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "home-page-client-group");
