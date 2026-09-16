@@ -76,7 +76,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory extends AbstractQueueFac
 
         String clientId = "application-persisted-msg-consumer-" + consumerId;
 
-        Properties props = consumerSettings.toProps(topic, applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
 
         return createConsumer(topic, consumerGroupId, clientId, props);
@@ -87,7 +87,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory extends AbstractQueueFac
             String topic, String consumerGroupId, String consumerId) {
 
         String clientId = "application-shared-msg-consumer-" + consumerId;
-        Properties props = consumerSettings.toProps(topic, applicationSharedTopicMsgSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(applicationSharedTopicMsgSettings.getAdditionalConsumerConfig());
 
         return createConsumer(topic, consumerGroupId, clientId, props);
     }

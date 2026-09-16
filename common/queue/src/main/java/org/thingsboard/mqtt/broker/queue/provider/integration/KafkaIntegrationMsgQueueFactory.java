@@ -66,7 +66,7 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId) {
         String clientId = "ie-msg-consumer-" + consumerId;
 
-        Properties props = consumerSettings.toProps(topic, integrationMsgKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(integrationMsgKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("IeMsgQueue-" + consumerId, props, requiredConsumerProperties);
 
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
@@ -102,7 +102,7 @@ public class KafkaIntegrationMsgQueueFactory extends AbstractQueueFactory implem
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> createEventConsumer(String topic, String consumerGroupId, String consumerId) {
         String clientId = "ie-event-msg-consumer-" + consumerId;
 
-        Properties props = consumerSettings.toProps(topic, integrationEventKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(integrationEventKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("IeEventMsgQueue-" + consumerId, props, requiredConsumerProperties);
 
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ClientLifecycleEventMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();

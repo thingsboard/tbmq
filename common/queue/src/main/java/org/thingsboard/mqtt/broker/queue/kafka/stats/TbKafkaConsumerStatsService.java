@@ -71,7 +71,7 @@ public class TbKafkaConsumerStatsService {
         }
         this.statsPrintScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("kafka-consumer-stats"));
 
-        Properties consumerProps = consumerSettings.toProps("stats_dummy", statsConsumerSettings.getConsumerProperties());
+        Properties consumerProps = consumerSettings.toProps(statsConsumerSettings.getConsumerProperties());
         consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "consumer-stats-loader-client");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "consumer-stats-loader-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
