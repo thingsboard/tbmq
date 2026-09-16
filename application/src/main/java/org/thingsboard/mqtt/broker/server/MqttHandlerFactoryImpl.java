@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,11 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     @Override
     public TbMessageStatsReportClient getTbMessageStatsReportClient() {
         return mqttHandlerCtx.getTbMessageStatsReportClient();
+    }
+
+    @Override
+    public ClientTraceRecorder getClientTraceRecorder() {
+        return mqttHandlerCtx.getClientTraceRecorder();
     }
 
     @Override

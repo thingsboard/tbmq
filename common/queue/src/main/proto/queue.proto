@@ -190,6 +190,32 @@ message InternodeNotificationProto {
   MqttAuthProviderProto mqttAuthProviderProto = 2;
   ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 3;
   IntegrationLifecycleConfigProto integrationLifecycleConfigProto = 4;
+  ClientTraceConfigProto clientTraceConfigProto = 5;
+}
+
+message ClientTraceConfigProto {
+  string traceId = 1;
+  string clientId = 2;
+  int64 expiresAt = 3;
+  string level = 4;
+  bool deleted = 5;
+}
+
+message ClientTraceEventProto {
+  string traceId = 1;
+  string clientId = 2;
+  string sessionId = 3;
+  int64 ts = 4;
+  string direction = 5;
+  string packetType = 6;
+  string topic = 7;
+  int32 qos = 8;
+  int32 packetId = 9;
+  int32 payloadSize = 10;
+  string remoteAddress = 11;
+  string details = 12;
+  string serviceId = 13;
+  string eventId = 14;
 }
 
 message DevicePublishMsgProto {

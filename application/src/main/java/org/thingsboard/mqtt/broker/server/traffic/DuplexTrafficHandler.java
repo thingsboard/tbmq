@@ -28,6 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
+
+import java.net.InetSocketAddress;
+import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
@@ -38,6 +42,8 @@ import static org.thingsboard.mqtt.broker.server.MqttSessionHandler.CLIENT_ID_AT
 public class DuplexTrafficHandler extends ChannelDuplexHandler {
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ClientTraceRecorder clientTraceRecorder;
+    private final UUID sessionId;
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -80,6 +86,10 @@ public class DuplexTrafficHandler extends ChannelDuplexHandler {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof MqttPublishMessage publishMsg) {
             handlePublishWrite(ctx, publishMsg);
+        }
+        if (msg instanceof MqttMessage mqttMessage) {
+            clientTraceRecorder.tryRecord(getClientId(ctx), sessionId,
+                    (InetSocketAddress) ctx.channel().remoteAddress(), "OUT", mqttMessage);
         }
 
         ctx.write(msg, promise);

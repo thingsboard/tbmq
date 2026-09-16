@@ -254,7 +254,23 @@ listener:
       shutdown_timeout: "${WSS_NETTY_SHUTDOWN_TIMEOUT:5}"
 
 # Kafka parameters
+client-trace:
+  stream:
+    # Interval for SSE endpoints to poll ClickHouse for new events (in ms).
+    poll-interval: "${TB_CLIENT_TRACE_STREAM_POLL_INTERVAL:1000}"
+  clickhouse:
+    # Enables REST and SSE trace queries from the Management Console.
+    enabled: "${TB_CLIENT_TRACE_CLICKHOUSE_ENABLED:false}"
+    url: "${TB_CLIENT_TRACE_CLICKHOUSE_URL:http://localhost:8123}"
+    database: "${TB_CLIENT_TRACE_CLICKHOUSE_DATABASE:default}"
+    username: "${TB_CLIENT_TRACE_CLICKHOUSE_USERNAME:default}"
+    password: "${TB_CLIENT_TRACE_CLICKHOUSE_PASSWORD:}"
+
 queue:
+  # Runtime controls for the non-blocking MQTT client trace pipeline.
+  client-trace:
+    queue-capacity: "${TB_CLIENT_TRACE_QUEUE_CAPACITY:10000}"
+    batch-size: "${TB_CLIENT_TRACE_BATCH_SIZE:200}"
   msg-all:
     # Number of parallel consumers for `tbmq.msg.all` topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:4}"
@@ -466,6 +482,11 @@ queue:
       additional-consumer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for the `tbmq.msg.all` topic.
       additional-producer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_PRODUCER_CONFIG:}"
+    client-trace:
+      topic: "${TB_KAFKA_CLIENT_TRACE_TOPIC:tbmq.client-trace}"
+      topic-properties: "${TB_KAFKA_CLIENT_TRACE_TOPIC_PROPERTIES:retention.ms:86400000;segment.bytes:52428800;partitions:4;replication.factor:1}"
+      additional-consumer-config: "${TB_KAFKA_CLIENT_TRACE_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+      additional-producer-config: "${TB_KAFKA_CLIENT_TRACE_ADDITIONAL_PRODUCER_CONFIG:linger.ms:20;batch.size:65536}"
     application-persisted-msg:
       # Kafka topic properties separated by semicolon for the `tbmq.msg.app` topics.
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
