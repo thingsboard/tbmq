@@ -230,7 +230,8 @@ public class HttpAuthClient {
             log.warn("[{}] HTTP auth provider processException {}", clientId, result);
             return;
         }
-        log.warn("[{}] HTTP auth provider processException {}", clientId, result, e);
+        log.warn("[{}] HTTP auth provider processException {}", clientId, result);
+        log.debug("[{}] HTTP auth provider processException stacktrace", clientId, e);
     }
 
     void headersToMetaData(Map<String, List<String>> headers, BiConsumer<String, String> consumer) {

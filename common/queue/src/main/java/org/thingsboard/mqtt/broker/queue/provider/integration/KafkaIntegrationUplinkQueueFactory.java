@@ -61,7 +61,7 @@ public class KafkaIntegrationUplinkQueueFactory extends AbstractQueueFactory imp
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<UplinkIntegrationMsgProto>> createConsumer(String consumerId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<UplinkIntegrationMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        consumerBuilder.properties(consumerSettings.toProps(integrationUplinkKafkaSettings.getKafkaTopic(), integrationUplinkKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(integrationUplinkKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), UplinkIntegrationMsgProto.parseFrom(msg.getData()),
                 msg.getHeaders(), msg.getPartition(), msg.getOffset()));
         consumerBuilder.clientId(kafkaPrefix + "ie-uplink-consumer-" + consumerId);

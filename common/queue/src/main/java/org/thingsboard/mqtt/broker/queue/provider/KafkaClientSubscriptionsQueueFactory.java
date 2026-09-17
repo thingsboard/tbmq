@@ -62,7 +62,7 @@ public class KafkaClientSubscriptionsQueueFactory extends AbstractQueueFactory i
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSubscriptionsProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getKafkaTopic(), clientSubscriptionsSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ClientSubscriptionsQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
