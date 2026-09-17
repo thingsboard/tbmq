@@ -271,6 +271,10 @@ queue:
   client-trace:
     queue-capacity: "${TB_CLIENT_TRACE_QUEUE_CAPACITY:10000}"
     batch-size: "${TB_CLIENT_TRACE_BATCH_SIZE:200}"
+    # Best-effort admission: no waiting, and no event allocation when overloaded.
+    max-events-per-second: "${TB_CLIENT_TRACE_MAX_EVENTS_PER_SECOND:1000}"
+    max-details-length: "${TB_CLIENT_TRACE_MAX_DETAILS_LENGTH:2048}"
+    max-topics: "${TB_CLIENT_TRACE_MAX_TOPICS:20}"
   msg-all:
     # Number of parallel consumers for `tbmq.msg.all` topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:4}"

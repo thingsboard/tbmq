@@ -87,12 +87,16 @@ public class DuplexTrafficHandler extends ChannelDuplexHandler {
         if (msg instanceof MqttPublishMessage publishMsg) {
             handlePublishWrite(ctx, publishMsg);
         }
-        if (msg instanceof MqttMessage mqttMessage) {
-            clientTraceRecorder.tryRecord(getClientId(ctx), sessionId,
-                    (InetSocketAddress) ctx.channel().remoteAddress(), "OUT", mqttMessage);
+        try {
+            if (msg instanceof MqttMessage mqttMessage) {
+                var remoteAddress = ctx.channel().remoteAddress();
+                clientTraceRecorder.tryRecord(getClientId(ctx), sessionId,
+                        remoteAddress instanceof InetSocketAddress address ? address : null, "OUT", mqttMessage);
+            }
+        } finally {
+            // Netty may release the payload during write, so capture first but always forward.
+            ctx.write(msg, promise);
         }
-
-        ctx.write(msg, promise);
     }
 
     private void handlePublishWrite(ChannelHandlerContext ctx, MqttPublishMessage publishMsg) {
