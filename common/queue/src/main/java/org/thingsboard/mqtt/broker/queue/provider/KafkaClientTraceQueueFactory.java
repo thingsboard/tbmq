@@ -52,7 +52,7 @@ public class KafkaClientTraceQueueFactory extends AbstractQueueFactory implement
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<ClientTraceEventProto>> createConsumer(String serviceId) {
         return TbKafkaConsumerTemplate.<TbProtoQueueMsg<ClientTraceEventProto>>builder()
-                .properties(consumerSettings.toProps(settings.getKafkaTopic(), settings.getAdditionalConsumerConfig()))
+                .properties(consumerSettings.toProps(settings.getAdditionalConsumerConfig()))
                 .topic(settings.getKafkaTopic()).topicConfigs(topicConfigs)
                 .clientId(kafkaPrefix + "client-trace-writer-" + serviceId)
                 .groupId(kafkaPrefix + "client-trace-writer")
