@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
 
@@ -119,16 +118,8 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
                 if (stateFixed) {
                     fixedGhostCount++;
                 }
-            } else {
-                Long expiryMs = resolveSessionExpiryIntervalMs(info);
-                if (expiryMs == null) {
-                    continue;
-                }
-
-                boolean removed = tryCleanupDisconnectedSession(info, expiryMs, now);
-                if (removed) {
-                    removedCount++;
-                }
+            } else if (tryCleanupDisconnectedSession(info, now)) {
+                removedCount++;
             }
         }
 
@@ -155,30 +146,12 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         return true;
     }
 
-    private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long expiryMs, long now) {
-        if (isExpired(info, expiryMs, now)) {
+    private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long now) {
+        if (info.isExpired(now, ttl)) {
             clientSessionEventService.requestClientSessionCleanup(info, ClientCleanupInfo.GRACEFUL);
             return true;
         }
         return false;
     }
 
-    boolean isNotCleanSession(ClientSessionInfo sessionInfo) {
-        return sessionInfo.isNotCleanSession();
-    }
-
-    private Long resolveSessionExpiryIntervalMs(ClientSessionInfo session) {
-        if (isNotCleanSession(session)) {
-            return ttl > 0 ? toMillis(ttl) : null;
-        }
-        return toMillis(session.safeGetSessionExpiryInterval());
-    }
-
-    private boolean isExpired(ClientSessionInfo info, long expiryIntervalMs, long now) {
-        return info.getDisconnectedAt() + expiryIntervalMs < now;
-    }
-
-    private long toMillis(int seconds) {
-        return TimeUnit.SECONDS.toMillis(seconds);
-    }
 }

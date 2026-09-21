@@ -15,9 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -51,9 +51,13 @@ import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINI
 @ContextConfiguration(classes = ClientSessionCleanUpServiceImpl.class)
 @TestPropertySource(properties = {
         "mqtt.client-session-expiry.cron=* * * * * *",
-        "mqtt.client-session-expiry.zone=UTC"
+        "mqtt.client-session-expiry.zone=UTC",
+        "mqtt.client-session-expiry.ttl=60"
 })
 public class ClientSessionCleanUpServiceImplTest {
+
+    @Value("${mqtt.client-session-expiry.ttl}")
+    private int ttlSeconds;
 
     private final String SERVICE_ID = "tb-broker";
 
@@ -125,19 +129,18 @@ public class ClientSessionCleanUpServiceImplTest {
     }
 
     @Test
-    public void givenSessions_whenCheckIfNotCleanSession_thenReceiveExpectedResult() {
-        Assert.assertTrue(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(false, 0)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(false, 100)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(true, 0)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(true, 100)
-        ));
+    public void givenMqtt3NotCleanSessions_whenRunCleanup_thenOnlyOnePastTtlRemoved() {
+        long now = System.currentTimeMillis();
+        ClientSessionInfo pastTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(ttlSeconds + 5), false, 0);
+        ClientSessionInfo insideTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(1), false, 0);
+
+        when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
+        when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of("pastTtl", pastTtl, "insideTtl", insideTtl));
+
+        clientSessionCleanUpService.cleanUp();
+
+        verify(clientSessionEventService).requestClientSessionCleanup(eq(pastTtl), eq(ClientCleanupInfo.GRACEFUL));
+        verify(clientSessionEventService, never()).requestClientSessionCleanup(eq(insideTtl), any());
     }
 
     private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
