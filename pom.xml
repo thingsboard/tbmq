@@ -88,6 +88,7 @@
         <module>common</module>
         <module>dao</module>
         <module>integration</module>
+        <module>rest-publish-sdk</module>
         <module>msa</module>
         <module>ui-ngx</module>
     </modules>
