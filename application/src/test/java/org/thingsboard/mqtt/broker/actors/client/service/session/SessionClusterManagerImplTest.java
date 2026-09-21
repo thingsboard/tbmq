@@ -54,6 +54,7 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -241,7 +242,7 @@ public class SessionClusterManagerImplTest {
     public void updateClientSessionOnConnect_appRemoved_appToDevice_clearsMsgs_sendsEvent_andDecrementsIfPersistentAppClient() {
         SessionInfo incomingDevice = deviceSession("appId", false);
         ClientSessionInfo previousApp = ClientSessionInfo.withClientType(ClientType.APPLICATION)
-                .toBuilder().clientId("appId").sessionExpiryInterval(100).build();
+                .toBuilder().clientId("appId").sessionExpiryInterval(100).disconnectedAt(System.currentTimeMillis()).build();
 
         sessionClusterManager.updateClientSessionOnConnect(incomingDevice, req(), previousApp);
 
@@ -264,6 +265,57 @@ public class SessionClusterManagerImplTest {
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
         verify(applicationRemovedEventService, never()).sendApplicationRemovedEvent(any());
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_noCleanStart_previousSessionExpired_clearsSubsAndMsgs_andSavesSession() {
+        SessionInfo incoming = deviceSession("c3", false);
+        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c3", ClientType.DEVICE, true)
+                .toBuilder()
+                .connected(false)
+                .sessionExpiryInterval(3)
+                .disconnectedAt(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(16))
+                .build();
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("c3"), any());
+        verify(msgPersistenceManager).clearPersistedMessages(eq("c3"), eq(ClientType.DEVICE));
+        verify(clientSessionService).saveClientSession(any(), any());
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_noCleanStart_previousSessionNotExpired_onlySavesSession() {
+        SessionInfo incoming = deviceSession("c4", false);
+        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c4", ClientType.DEVICE, true)
+                .toBuilder()
+                .connected(false)
+                .sessionExpiryInterval(30)
+                .disconnectedAt(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(1))
+                .build();
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(clientSessionService).saveClientSession(any(), any());
+        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
+        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_noCleanStart_previousMqtt3NotCleanSession_neverExpires_onlySavesSession() {
+        SessionInfo incoming = deviceSession("c5", false);
+        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c5", ClientType.DEVICE, false)
+                .toBuilder()
+                .connected(false)
+                .sessionExpiryInterval(0)
+                .disconnectedAt(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30))
+                .build();
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(clientSessionService).saveClientSession(any(), any());
+        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
+        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
     }
 
     // -------------------------

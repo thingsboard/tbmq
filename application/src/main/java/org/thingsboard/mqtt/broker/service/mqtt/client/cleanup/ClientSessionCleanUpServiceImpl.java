@@ -119,16 +119,8 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
                 if (stateFixed) {
                     fixedGhostCount++;
                 }
-            } else {
-                Long expiryMs = resolveSessionExpiryIntervalMs(info);
-                if (expiryMs == null) {
-                    continue;
-                }
-
-                boolean removed = tryCleanupDisconnectedSession(info, expiryMs, now);
-                if (removed) {
-                    removedCount++;
-                }
+            } else if (tryCleanupDisconnectedSession(info, now)) {
+                removedCount++;
             }
         }
 
@@ -155,27 +147,19 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         return true;
     }
 
-    private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long expiryMs, long now) {
-        if (isExpired(info, expiryMs, now)) {
+    private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long now) {
+        if (isExpired(info, now)) {
             clientSessionEventService.requestClientSessionCleanup(info, ClientCleanupInfo.GRACEFUL);
             return true;
         }
         return false;
     }
 
-    boolean isNotCleanSession(ClientSessionInfo sessionInfo) {
-        return sessionInfo.isNotCleanSession();
-    }
-
-    private Long resolveSessionExpiryIntervalMs(ClientSessionInfo session) {
-        if (isNotCleanSession(session)) {
-            return ttl > 0 ? toMillis(ttl) : null;
+    private boolean isExpired(ClientSessionInfo info, long now) {
+        if (info.isNotCleanSession()) {
+            return ttl > 0 && info.getDisconnectedAt() + toMillis(ttl) < now;
         }
-        return toMillis(session.safeGetSessionExpiryInterval());
-    }
-
-    private boolean isExpired(ClientSessionInfo info, long expiryIntervalMs, long now) {
-        return info.getDisconnectedAt() + expiryIntervalMs < now;
+        return info.isExpired(now);
     }
 
     private long toMillis(int seconds) {

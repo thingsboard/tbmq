@@ -126,18 +126,10 @@ public class ClientSessionCleanUpServiceImplTest {
 
     @Test
     public void givenSessions_whenCheckIfNotCleanSession_thenReceiveExpectedResult() {
-        Assert.assertTrue(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(false, 0)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(false, 100)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(true, 0)
-        ));
-        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
-                getClientSessionInfo(true, 100)
-        ));
+        Assert.assertTrue(getClientSessionInfo(false, 0).isNotCleanSession());
+        Assert.assertFalse(getClientSessionInfo(false, 100).isNotCleanSession());
+        Assert.assertFalse(getClientSessionInfo(true, 0).isNotCleanSession());
+        Assert.assertFalse(getClientSessionInfo(true, 100).isNotCleanSession());
     }
 
     private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {

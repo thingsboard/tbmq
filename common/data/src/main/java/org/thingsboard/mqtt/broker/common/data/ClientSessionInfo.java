@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Builder(toBuilder = true)
 @Getter
@@ -61,6 +62,18 @@ public class ClientSessionInfo implements EntitySessionInfo {
 
     public boolean isDisconnected() {
         return !connected;
+    }
+
+    /**
+     * True when this session is disconnected and its MQTT Session Expiry Interval has elapsed.
+     * Sessions with a zero expiry interval and cleanStart=false (MQTTv3 cleanSession=false semantics)
+     * never expire by this rule; they are governed by the administrative TTL only.
+     */
+    public boolean isExpired(long now) {
+        if (connected || isNotCleanSession()) {
+            return false;
+        }
+        return disconnectedAt + TimeUnit.SECONDS.toMillis(safeGetSessionExpiryInterval()) < now;
     }
 
     public boolean isAppClient() {
