@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINISTRATIVE_ACTION;
 
@@ -148,21 +147,11 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     }
 
     private boolean tryCleanupDisconnectedSession(ClientSessionInfo info, long now) {
-        if (isExpired(info, now)) {
+        if (info.isExpired(now, ttl)) {
             clientSessionEventService.requestClientSessionCleanup(info, ClientCleanupInfo.GRACEFUL);
             return true;
         }
         return false;
     }
 
-    private boolean isExpired(ClientSessionInfo info, long now) {
-        if (info.isNotCleanSession()) {
-            return ttl > 0 && info.getDisconnectedAt() + toMillis(ttl) < now;
-        }
-        return info.isExpired(now);
-    }
-
-    private long toMillis(int seconds) {
-        return TimeUnit.SECONDS.toMillis(seconds);
-    }
 }

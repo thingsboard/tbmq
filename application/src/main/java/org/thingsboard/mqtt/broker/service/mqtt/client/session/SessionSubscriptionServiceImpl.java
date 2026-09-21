@@ -31,7 +31,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,27 +62,13 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .nodeId(sessionInfo.getServiceId())
                 .cleanStart(sessionInfo.isCleanStart())
                 .sessionExpiryInterval(sessionInfo.safeGetSessionExpiryInterval())
-                .sessionEndTs(computeSessionEndTs(clientSessionInfo, sessionInfo))
+                .sessionEndTs(clientSessionInfo.getSessionEndTs(ttl))
                 .subscriptions(collectSubscriptions(subscriptions))
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
                 .disconnectedAt(connectionInfo.getDisconnectedAt())
                 .clientIpAdr(BytesUtil.toHostAddress(sessionInfo.getClientInfo().getClientIpAdr()))
                 .build();
-    }
-
-    private long computeSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
-        if (clientSessionInfo.isConnected()) {
-            return -1;
-        }
-        if (sessionInfo.isNotCleanSession()) {
-            return ttl > 0 ? getSessionEndTs(clientSessionInfo, ttl) : -1;
-        }
-        return getSessionEndTs(clientSessionInfo, sessionInfo.safeGetSessionExpiryInterval());
-    }
-
-    private long getSessionEndTs(ClientSessionInfo clientSessionInfo, int sessionExpiryInterval) {
-        return clientSessionInfo.getDisconnectedAt() + TimeUnit.SECONDS.toMillis(sessionExpiryInterval);
     }
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {

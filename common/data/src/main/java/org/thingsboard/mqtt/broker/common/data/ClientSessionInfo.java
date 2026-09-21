@@ -31,6 +31,9 @@ import java.util.concurrent.TimeUnit;
 @ToString
 public class ClientSessionInfo implements EntitySessionInfo {
 
+    public static final long NO_SESSION_END = -1;
+    public static final int NO_TTL = 0;
+
     private final boolean connected;
     private final String serviceId;
     private final UUID sessionId;
@@ -65,15 +68,40 @@ public class ClientSessionInfo implements EntitySessionInfo {
     }
 
     /**
-     * True when this session is disconnected and its MQTT Session Expiry Interval has elapsed.
-     * Sessions with a zero expiry interval and cleanStart=false (MQTTv3 cleanSession=false semantics)
-     * never expire by this rule; they are governed by the administrative TTL only.
+     * Timestamp (epoch millis) at which this session's state ends, or {@link #NO_SESSION_END} if it does not
+     * end on its own: the session is connected, or it has MQTTv3 cleanSession=false semantics
+     * (cleanStart=false, sessionExpiryInterval=0) and the administrative TTL is disabled ({@code ttlSeconds <= 0}).
+     * Single source of the "disconnectedAt + interval" formula used by the cleanup job, the connect path and
+     * the session details DTO.
      */
-    public boolean isExpired(long now) {
-        if (connected || isNotCleanSession()) {
-            return false;
+    public long getSessionEndTs(int ttlSeconds) {
+        if (connected) {
+            return NO_SESSION_END;
         }
-        return disconnectedAt + TimeUnit.SECONDS.toMillis(safeGetSessionExpiryInterval()) < now;
+        if (isNotCleanSession()) {
+            return ttlSeconds > 0 ? disconnectedAt + TimeUnit.SECONDS.toMillis(ttlSeconds) : NO_SESSION_END;
+        }
+        return disconnectedAt + TimeUnit.SECONDS.toMillis(safeGetSessionExpiryInterval());
+    }
+
+    /**
+     * True when this session is disconnected and its state has ended by {@code now} (see {@link #getSessionEndTs(int)}).
+     * Pass {@link #NO_TTL} to consider only the MQTT Session Expiry Interval, which is what the connect path must do:
+     * the administrative TTL is a housekeeping rule, not part of the protocol contract.
+     * <p>
+     * Notes:
+     * <ul>
+     *   <li>{@code disconnectedAt} is stamped by the node that processed the disconnect and compared with the caller's
+     *   clock. Cross-node clock skew comparable to a short Session Expiry Interval (a few seconds) can make a session
+     *   look expired earlier or later than the client expects; keep node clocks synchronized.</li>
+     *   <li>A disconnected session with {@code disconnectedAt == 0} is unconditionally expired. Every real disconnect
+     *   path sets the timestamp; test fixtures built from bare builder defaults must set it (or {@code connected(true)})
+     *   to represent a live session.</li>
+     * </ul>
+     */
+    public boolean isExpired(long now, int ttlSeconds) {
+        long endTs = getSessionEndTs(ttlSeconds);
+        return endTs != NO_SESSION_END && endTs < now;
     }
 
     public boolean isAppClient() {
@@ -85,7 +113,9 @@ public class ClientSessionInfo implements EntitySessionInfo {
     }
 
     /**
-     * For tests purposes
+     * For tests purposes. The result is disconnected with {@code disconnectedAt == 0}, so it reads as an
+     * expired session (see {@link #isExpired(long, int)}); set {@code connected(true)} or {@code disconnectedAt(...)}
+     * when the test needs a live or recently disconnected session.
      */
     public static ClientSessionInfo withClientType(ClientType clientType) {
         return ClientSessionInfo.builder().type(clientType).build();

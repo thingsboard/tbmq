@@ -174,7 +174,15 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         removeClientLatestTs(clientId);
 
-        boolean cleanStart = connectingSessionInfo.isCleanStart() || isPreviousSessionExpired(clientId, currentSession);
+        // MQTT 5 [3.1.2.11.2]: the Session ends once the Session Expiry Interval has elapsed after the Network
+        // Connection was closed, so a reconnect must not resume it and must answer Session Present = 0. The periodic
+        // cleanup job may not have removed it yet, hence the check here. The administrative TTL is not applied:
+        // MQTTv3 cleanSession=false sessions never expire on connect.
+        boolean expired = currentSession.isExpired(System.currentTimeMillis(), ClientSessionInfo.NO_TTL);
+        boolean cleanStart = connectingSessionInfo.isCleanStart() || expired;
+        if (expired) {
+            log.debug("[{}] Previous session expired, discarding its state on connect.", clientId);
+        }
         processRemoveApplication(connectingSessionInfo, currentSession, cleanStart);
 
         TwoPhaseCompletion completion = cleanStart ?
@@ -198,26 +206,16 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         ));
     }
 
-    /**
-     * MQTT 5 [3.1.2.11.2]: the Session ends once the Session Expiry Interval has elapsed after the Network
-     * Connection was closed, so a reconnect must not resume it and must answer Session Present = 0.
-     * The periodic cleanup job may not have removed it yet, hence the check at connect time.
-     */
-    private boolean isPreviousSessionExpired(String clientId, ClientSessionInfo currentSession) {
-        boolean expired = currentSession.isExpired(System.currentTimeMillis());
-        if (expired) {
-            log.debug("[{}] Previous session expired, discarding its state on connect.", clientId);
-        }
-        return expired;
-    }
-
     private void processRemoveApplication(SessionInfo connectingSession, ClientSessionInfo currentSession, boolean cleanStart) {
         String clientId = connectingSession.getClientId();
         ClientType clientType = connectingSession.getClientType();
 
         boolean appClientCountDecremented = false;
 
-        if (cleanStart) {
+        // RateLimitService.checkApplicationClientsLimit carries the quota slot over (no increment) when both the
+        // stored and the connecting session are persistent APPLICATION clients, so release the slot here only when
+        // the connecting session did not inherit it. Otherwise the counter drifts down by one per reconnect.
+        if (cleanStart && !connectingSession.isPersistentAppClient()) {
             appClientCountDecremented = decrementAppClientsIfNeeded(currentSession);
         }
 

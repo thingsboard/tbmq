@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
 import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequ
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -53,13 +55,17 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Set;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -105,8 +111,13 @@ public class SessionClusterManagerImplTest {
     @MockitoSpyBean
     SessionClusterManagerImpl sessionClusterManager;
 
+    private final List<ClientSessionEventResponseProto> sentResponses = new CopyOnWriteArrayList<>();
+
     @Before
     public void setUp() {
+        sentResponses.clear();
+        doAnswer(this::completeCallback).when(clientSessionService).saveClientSession(any(), any());
+        doAnswer(this::completeCallback).when(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any(BasicCallback.class));
         TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> producer = new TbQueueProducer<>() {
             @Override
             public String getDefaultTopic() {
@@ -119,6 +130,7 @@ public class SessionClusterManagerImplTest {
 
             @Override
             public void send(String topic, Integer partition, TbProtoQueueMsg<ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
+                sentResponses.add(msg.getValue());
             }
 
             @Override
@@ -270,29 +282,33 @@ public class SessionClusterManagerImplTest {
     @Test
     public void updateClientSessionOnConnect_noCleanStart_previousSessionExpired_clearsSubsAndMsgs_andSavesSession() {
         SessionInfo incoming = deviceSession("c3", false);
-        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c3", ClientType.DEVICE, true)
-                .toBuilder()
-                .connected(false)
-                .sessionExpiryInterval(3)
-                .disconnectedAt(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(16))
-                .build();
+        ClientSessionInfo previous = disconnectedSession("c3", ClientType.DEVICE, true, 3, TimeUnit.SECONDS.toMillis(16));
 
         sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
 
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("c3"), any());
         verify(msgPersistenceManager).clearPersistedMessages(eq("c3"), eq(ClientType.DEVICE));
         verify(clientSessionService).saveClientSession(any(), any());
+        assertConnectResponse(false);
     }
 
     @Test
     public void updateClientSessionOnConnect_noCleanStart_previousSessionNotExpired_onlySavesSession() {
         SessionInfo incoming = deviceSession("c4", false);
-        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c4", ClientType.DEVICE, true)
-                .toBuilder()
-                .connected(false)
-                .sessionExpiryInterval(30)
-                .disconnectedAt(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(1))
-                .build();
+        ClientSessionInfo previous = disconnectedSession("c4", ClientType.DEVICE, true, 30, TimeUnit.SECONDS.toMillis(1));
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(clientSessionService).saveClientSession(any(), any());
+        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
+        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
+        assertConnectResponse(true);
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_noCleanStart_previousMqtt3NotCleanSession_neverExpires_onlySavesSession() {
+        SessionInfo incoming = deviceSession("c5", false);
+        ClientSessionInfo previous = disconnectedSession("c5", ClientType.DEVICE, false, 0, TimeUnit.DAYS.toMillis(30));
 
         sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
 
@@ -302,20 +318,37 @@ public class SessionClusterManagerImplTest {
     }
 
     @Test
-    public void updateClientSessionOnConnect_noCleanStart_previousMqtt3NotCleanSession_neverExpires_onlySavesSession() {
-        SessionInfo incoming = deviceSession("c5", false);
-        ClientSessionInfo previous = ClientSessionInfoFactory.getClientSessionInfo("c5", ClientType.DEVICE, false)
-                .toBuilder()
-                .connected(false)
-                .sessionExpiryInterval(0)
-                .disconnectedAt(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30))
-                .build();
+    public void updateClientSessionOnConnect_expiredPersistentAppToPersistentApp_doesNotDecrementAppClientsCount() {
+        // checkApplicationClientsLimit carries the slot over (no increment) for app -> app, so no decrement either
+        SessionInfo incoming = persistentAppSession("app1", false);
+        ClientSessionInfo previous = disconnectedSession("app1", ClientType.APPLICATION, true, 3, TimeUnit.SECONDS.toMillis(16));
 
         sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
 
-        verify(clientSessionService).saveClientSession(any(), any());
-        verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
-        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
+        verify(rateLimitService, never()).decrementApplicationClientsCount();
+        verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("app1"), any());
+        verify(msgPersistenceManager).clearPersistedMessages(eq("app1"), eq(ClientType.APPLICATION));
+        assertConnectResponse(false);
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_cleanStartPersistentAppToPersistentApp_doesNotDecrementAppClientsCount() {
+        SessionInfo incoming = persistentAppSession("app2", true);
+        ClientSessionInfo previous = disconnectedSession("app2", ClientType.APPLICATION, true, 100, 0);
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(rateLimitService, never()).decrementApplicationClientsCount();
+    }
+
+    @Test
+    public void updateClientSessionOnConnect_cleanStartPersistentAppToNonPersistentApp_decrementsAppClientsCount() {
+        SessionInfo incoming = persistentAppSession("app3", true).toBuilder().sessionExpiryInterval(0).build();
+        ClientSessionInfo previous = disconnectedSession("app3", ClientType.APPLICATION, true, 100, 0);
+
+        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+
+        verify(rateLimitService).decrementApplicationClientsCount();
     }
 
     // -------------------------
@@ -505,6 +538,36 @@ public class SessionClusterManagerImplTest {
     private void givenCache() {
         Cache cache = mock(Cache.class);
         when(cacheOps.cache(anyString())).thenReturn(cache);
+    }
+
+    private Object completeCallback(InvocationOnMock inv) {
+        BasicCallback callback = inv.getArgument(1);
+        if (callback != null) {
+            callback.onSuccess();
+        }
+        return null;
+    }
+
+    private void assertConnectResponse(boolean sessionPresent) {
+        await().atMost(2, TimeUnit.SECONDS).until(() -> !sentResponses.isEmpty());
+        ClientSessionEventResponseProto response = sentResponses.get(0);
+        Assert.assertTrue(response.getSuccess());
+        Assert.assertEquals(sessionPresent, response.getSessionPresent());
+    }
+
+    private SessionInfo persistentAppSession(String clientId, boolean cleanStart) {
+        ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(clientId, ClientType.APPLICATION);
+        return ClientSessionInfoFactory.getSessionInfo(cleanStart, SERVICE_ID_HEADER, clientInfo)
+                .toBuilder().sessionExpiryInterval(100).build();
+    }
+
+    private ClientSessionInfo disconnectedSession(String clientId, ClientType type, boolean cleanStart, int expiry, long disconnectedAgoMs) {
+        return ClientSessionInfoFactory.getClientSessionInfo(clientId, type, cleanStart)
+                .toBuilder()
+                .connected(false)
+                .sessionExpiryInterval(expiry)
+                .disconnectedAt(System.currentTimeMillis() - disconnectedAgoMs)
+                .build();
     }
 
     private SessionInfo deviceSession(String clientId, boolean cleanStart) {
