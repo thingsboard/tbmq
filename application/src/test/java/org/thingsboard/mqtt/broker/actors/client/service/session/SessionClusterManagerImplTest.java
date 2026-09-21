@@ -54,10 +54,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
-import java.util.Set;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -314,7 +314,7 @@ public class SessionClusterManagerImplTest {
 
         verify(clientSessionService).saveClientSession(any(), any());
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
-        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
+        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());        assertConnectResponse(true);
     }
 
     @Test

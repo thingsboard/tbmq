@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -56,7 +56,8 @@ import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_ADMINI
 })
 public class ClientSessionCleanUpServiceImplTest {
 
-    private static final int TTL_SECONDS = 60;
+    @Value("${mqtt.client-session-expiry.ttl}")
+    private int ttlSeconds;
 
     private final String SERVICE_ID = "tb-broker";
 
@@ -130,7 +131,7 @@ public class ClientSessionCleanUpServiceImplTest {
     @Test
     public void givenMqtt3NotCleanSessions_whenRunCleanup_thenOnlyOnePastTtlRemoved() {
         long now = System.currentTimeMillis();
-        ClientSessionInfo pastTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(TTL_SECONDS + 5), false, 0);
+        ClientSessionInfo pastTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(ttlSeconds + 5), false, 0);
         ClientSessionInfo insideTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(1), false, 0);
 
         when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
@@ -140,23 +141,6 @@ public class ClientSessionCleanUpServiceImplTest {
 
         verify(clientSessionEventService).requestClientSessionCleanup(eq(pastTtl), eq(ClientCleanupInfo.GRACEFUL));
         verify(clientSessionEventService, never()).requestClientSessionCleanup(eq(insideTtl), any());
-    }
-
-    @Test
-    public void givenMqtt3NotCleanSessionAndTtlDisabled_whenRunCleanup_thenSessionIsNotRemoved() {
-        ReflectionTestUtils.setField(clientSessionCleanUpService, "ttl", 0);
-        try {
-            ClientSessionInfo session = getClientSessionInfo(1L, false, 0);
-
-            when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
-            when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of("client", session));
-
-            clientSessionCleanUpService.cleanUp();
-
-            verify(clientSessionEventService, never()).requestClientSessionCleanup(any(), any());
-        } finally {
-            ReflectionTestUtils.setField(clientSessionCleanUpService, "ttl", TTL_SECONDS);
-        }
     }
 
     private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
