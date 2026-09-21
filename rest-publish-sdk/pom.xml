@@ -11,10 +11,10 @@
         <artifactId>mqtt-broker</artifactId>
         <version>2.4.1-SNAPSHOT</version>
     </parent>
-    <artifactId>rest-publish-sdk</artifactId>
+    <artifactId>tbmq-java-sdk</artifactId>
     <packaging>jar</packaging>
-    <name>TBMQ REST Publish SDK</name>
-    <description>Standalone Java client for the TBMQ REST publish API</description>
+    <name>TBMQ Java SDK</name>
+    <description>Java 8 client for all TBMQ REST APIs</description>
 
     <properties>
         <maven.compiler.release>8</maven.compiler.release>
