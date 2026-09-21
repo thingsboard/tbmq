@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.testing.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -40,6 +41,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
@@ -69,6 +71,8 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
     private ClientSessionCache clientSessionCache;
     @Autowired
     private ClientSubscriptionCache clientSubscriptionCache;
+    @Autowired
+    private DeviceMsgService deviceMsgService;
 
     @After
     public void clearStoredSession() throws Throwable {
@@ -86,8 +90,11 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
         connectSubscribeAndDisconnect(1L);
         awaitSessionExpired();
 
-        // message published while the client is offline; a resumed session would replay it after the reconnect
+        // message published while the client is offline; a resumed session would replay it after the reconnect.
+        // Routing and the persisted-message write are asynchronous to the PUBACK, so wait for the write before
+        // reconnecting; otherwise the reconnect's clear could race the write and the message would be replayed
         publishQos1("after-expiry");
+        awaitPersistedMessages(1);
 
         AtomicInteger received = new AtomicInteger();
         MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
@@ -123,14 +130,13 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
 
     @Test
     public void givenMqtt3NotCleanSession_whenReconnect_thenSessionPresentAndSubscriptionsKept() throws Throwable {
-        org.eclipse.paho.client.mqttv3.MqttConnectOptions options = new org.eclipse.paho.client.mqttv3.MqttConnectOptions();
+        MqttConnectOptions options = new MqttConnectOptions();
         options.setCleanSession(false);
 
-        org.eclipse.paho.client.mqttv3.MqttClient client = new org.eclipse.paho.client.mqttv3.MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
-        client.connect(options);
-        client.subscribe(MY_TOPIC, 1);
-        client.disconnect();
-        client.close();
+        Mqtt3Connection first = connectMqtt3(options);
+        first.client().subscribe(MY_TOPIC, 1);
+        first.client().disconnect();
+        first.client().close();
 
         // MQTTv3 cleanSession=false has no Session Expiry Interval: the connect path must never treat it as expired,
         // whatever the elapsed time, so there is no state transition to wait for - the broker-side rule is asserted directly
@@ -138,14 +144,13 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
         Assert.assertNotNull(stored);
         Assert.assertEquals(ClientSessionInfo.NO_SESSION_END, stored.getSessionEndTs(ClientSessionInfo.NO_TTL));
 
-        client = new org.eclipse.paho.client.mqttv3.MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
-        org.eclipse.paho.client.mqttv3.IMqttToken token = client.connectWithResult(options);
+        Mqtt3Connection second = connectMqtt3(options);
 
-        Assert.assertTrue(token.getSessionPresent());
+        Assert.assertTrue(second.sessionPresent());
         Assert.assertEquals(1, clientSubscriptionCache.getClientSubscriptions(CLIENT_ID).size());
 
-        client.disconnect();
-        client.close();
+        second.client().disconnect();
+        second.client().close();
     }
 
     private void connectSubscribeAndDisconnect(long sessionExpiryInterval) throws Throwable {
@@ -164,6 +169,18 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
         Assert.assertEquals(1, clientSubscriptionCache.getClientSubscriptions(CLIENT_ID).size());
     }
 
+    /**
+     * The v3 and v5 Paho clients share simple names, so the v3 client is created in one place and stays fully qualified.
+     */
+    private Mqtt3Connection connectMqtt3(MqttConnectOptions options) throws Throwable {
+        org.eclipse.paho.client.mqttv3.MqttClient client = new org.eclipse.paho.client.mqttv3.MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
+        org.eclipse.paho.client.mqttv3.IMqttToken token = client.connectWithResult(options);
+        return new Mqtt3Connection(client, token.getSessionPresent());
+    }
+
+    private record Mqtt3Connection(org.eclipse.paho.client.mqttv3.MqttClient client, boolean sessionPresent) {
+    }
+
     private void awaitSessionExpired() {
         // waits exactly as long as needed and proves disconnectedAt was stamped; the cleanup cron never fires here
         Awaitility.await()
@@ -172,6 +189,12 @@ public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubInt
                     ClientSessionInfo info = clientSessionCache.getClientSessionInfo(CLIENT_ID);
                     return info != null && info.isExpired(System.currentTimeMillis(), ClientSessionInfo.NO_TTL);
                 });
+    }
+
+    private void awaitPersistedMessages(int expected) {
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> deviceMsgService.findPersistedMessages(CLIENT_ID).toCompletableFuture().get().size() == expected);
     }
 
     private void publishQos1(String payload) throws Throwable {

@@ -314,7 +314,8 @@ public class SessionClusterManagerImplTest {
 
         verify(clientSessionService).saveClientSession(any(), any());
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
-        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());        assertConnectResponse(true);
+        verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
+        assertConnectResponse(true);
     }
 
     @Test
