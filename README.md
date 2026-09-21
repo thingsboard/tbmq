@@ -247,7 +247,7 @@ Keep a pulse on your IoT environment by tracking key metrics in real-time, ensur
 Enable smooth data transmission between IoT devices, the broker, and external platforms with a reliable and scalable solution — all without impacting core broker performance.
 
 Java applications can publish MQTT messages through the broker REST API with the standalone
-[TBMQ Java SDK](rest-publish-sdk/README.md).
+[TBMQ Java SDK](tbmq-java-sdk/README.md).
 
 ![External system integrations](https://img.thingsboard.io/mqtt-broker/product/integrations.webp)
 
