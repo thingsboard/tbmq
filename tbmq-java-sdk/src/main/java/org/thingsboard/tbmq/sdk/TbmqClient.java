@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Java 8 client for every TBMQ REST endpoint. Business-specific clients can be
@@ -36,6 +37,7 @@ public final class TbmqClient {
     private final int requestTimeoutMs;
     private final String username;
     private final String password;
+    private final Executor asyncExecutor;
     private volatile String accessToken;
 
     private TbmqClient(Builder builder) {
@@ -45,6 +47,7 @@ public final class TbmqClient {
         requestTimeoutMs = toTimeoutMillis(builder.requestTimeout, "requestTimeout");
         username = builder.username;
         password = builder.password;
+        asyncExecutor = builder.asyncExecutor;
         accessToken = builder.accessToken;
     }
 
@@ -94,7 +97,7 @@ public final class TbmqClient {
 
     public <T> CompletableFuture<TbmqApiResponse<T>> executeAsync(final TbmqApiRequest request,
                                                                   final Class<T> responseType) {
-        return CompletableFuture.supplyAsync(() -> execute(request, responseType));
+        return CompletableFuture.supplyAsync(() -> execute(request, responseType), requireAsyncExecutor());
     }
 
     public TbmqRestPublishClient mqttPublish() { return new TbmqRestPublishClient(this); }
@@ -104,8 +107,13 @@ public final class TbmqClient {
     public SubscriptionsClient subscriptions() { return new SubscriptionsClient(this); }
     public RetainedMessagesClient retainedMessages() { return new RetainedMessagesClient(this); }
     public IntegrationsClient integrations() { return new IntegrationsClient(this); }
-    public ClientTracesClient clientTraces() { return new ClientTracesClient(this); }
     public ObjectMapper objectMapper() { return mapper; }
+    Executor requireAsyncExecutor() {
+        if (asyncExecutor == null) {
+            throw new IllegalStateException("Configure an executor before using asynchronous SDK methods");
+        }
+        return asyncExecutor;
+    }
 
     private <T> TbmqApiResponse<T> executeInternal(TbmqApiRequest request, BodyReader<T> reader) {
         Objects.requireNonNull(request, "request");
@@ -250,6 +258,7 @@ public final class TbmqClient {
         private String accessToken;
         private String username;
         private String password;
+        private Executor asyncExecutor;
 
         private Builder(URI baseUri) { this.baseUri = baseUri; }
         public Builder accessToken(String value) {
@@ -261,6 +270,7 @@ public final class TbmqClient {
         public Builder connectTimeout(Duration value) { connectTimeout = positive(value, "connectTimeout"); return this; }
         public Builder requestTimeout(Duration value) { requestTimeout = positive(value, "requestTimeout"); return this; }
         public Builder objectMapper(ObjectMapper value) { mapper = Objects.requireNonNull(value); return this; }
+        public Builder executor(Executor value) { asyncExecutor = Objects.requireNonNull(value); return this; }
         public TbmqClient build() {
             if (accessToken == null && username == null) throw new IllegalStateException("Configure accessToken or credentials");
             return new TbmqClient(this);

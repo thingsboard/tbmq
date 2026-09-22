@@ -7,10 +7,10 @@ package org.thingsboard.tbmq.sdk;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.thingsboard.tbmq.sdk.model.ClientSubscription;
 import org.thingsboard.tbmq.sdk.model.ClientSubscriptions;
-import org.thingsboard.tbmq.sdk.model.Subscription;
 import org.thingsboard.tbmq.sdk.model.TbmqPage;
+import org.thingsboard.tbmq.sdk.model.TopicSubscription;
 
-import java.util.List;
+import java.util.Set;
 
 public final class SubscriptionsClient extends AbstractTbmqApiClient {
     private static final String PATH = "/api/subscription";
@@ -19,9 +19,9 @@ public final class SubscriptionsClient extends AbstractTbmqApiClient {
     public ClientSubscriptions update(ClientSubscriptions subscriptions) {
         return client.post(PATH, subscriptions, ClientSubscriptions.class);
     }
-    public List<Subscription> getForClient(String clientId) {
+    public Set<TopicSubscription> getForClient(String clientId) {
         return client.execute(TbmqApiRequest.builder(TbmqHttpMethod.GET, PATH)
-                .query("clientId", clientId).build(), new TypeReference<List<Subscription>>() { }).getBody();
+                .query("clientId", clientId).build(), new TypeReference<Set<TopicSubscription>>() { }).getBody();
     }
     public TbmqPage<ClientSubscription> list(int pageSize, int page, String textSearch) {
         return client.execute(page(PATH + "/all", pageSize, page, textSearch).build(),

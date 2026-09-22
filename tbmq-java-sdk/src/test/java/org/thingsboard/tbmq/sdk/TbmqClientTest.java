@@ -10,6 +10,8 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.thingsboard.tbmq.sdk.model.Subscription;
+import org.thingsboard.tbmq.sdk.model.TopicSubscription;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,6 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -93,11 +98,39 @@ class TbmqClientTest {
             respond(exchange, 200, "{\"data\":[{\"id\":\"c1\",\"name\":\"device-a\",\"clientType\":\"DEVICE\"}],"
                     + "\"totalPages\":1,\"totalElements\":1,\"hasNext\":false}");
         });
-        server.createContext("/api/client-traces", exchange -> respond(exchange, 200,
-                "[{\"id\":\"t1\",\"clientId\":\"device-a\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"level\":\"FULL\"}]"));
         TbmqClient client = TbmqClient.builder(baseUrl).accessToken("token").build();
         assertEquals("device-a", client.credentials().list(10, 0, "device").getData().get(0).getName());
-        assertEquals("device-a", client.clientTraces().list().get(0).getClientId());
+    }
+
+    @Test
+    void preservesSharedSubscriptionWhenConvertingForUpdate() {
+        server.createContext("/api/subscription", exchange -> respond(exchange, 200,
+                "[{\"topicFilter\":\"devices/+\",\"qos\":1,\"shareName\":\"workers\","
+                        + "\"options\":{\"noLocal\":true,\"retainAsPublish\":false,"
+                        + "\"retainHandling\":\"DONT_SEND_AT_SUBSCRIBE\"},\"subscriptionId\":7}]"));
+        TbmqClient client = TbmqClient.builder(baseUrl).accessToken("token").build();
+        Set<TopicSubscription> subscriptions = client.subscriptions().getForClient("device-a");
+        Subscription update = subscriptions.iterator().next().toUpdateSubscription();
+        assertEquals("$share/workers/devices/+", update.getTopicFilter());
+        assertEquals("AT_LEAST_ONCE", update.getQos());
+        assertEquals(2, update.getOptions().path("retainHandling").asInt());
+        assertEquals(Integer.valueOf(7), update.getSubscriptionId());
+    }
+
+    @Test
+    void asyncRequestsUseApplicationExecutor() throws Exception {
+        server.createContext("/api/async", exchange -> respond(exchange, 200, "{\"ok\":true}"));
+        TbmqClient withoutExecutor = TbmqClient.builder(baseUrl).accessToken("token").build();
+        TbmqApiRequest request = TbmqApiRequest.builder(TbmqHttpMethod.GET, "/api/async").build();
+        assertThrows(IllegalStateException.class, () -> withoutExecutor.executeAsync(request, Map.class));
+
+        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "tbmq-sdk-test"));
+        try {
+            TbmqClient client = TbmqClient.builder(baseUrl).accessToken("token").executor(executor).build();
+            assertEquals(true, client.executeAsync(request, Map.class).get().getBody().get("ok"));
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private static void respond(HttpExchange exchange, int status, String body) throws IOException {

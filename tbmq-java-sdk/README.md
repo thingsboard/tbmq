@@ -49,13 +49,23 @@ TbmqPage<MqttClientCredentials> credentials =
 ClientSession session = client.sessions().get("device-a");
 client.sessions().disconnect(session.getClientId(), session.getSessionId());
 
-List<ClientTraceConfig> traces = client.clientTraces().list();
 TbmqPage<Integration> integrations = client.integrations().list(20, 0, null);
 ```
 
 The typed clients currently cover client credentials, MQTT authentication providers, client sessions,
-subscriptions, retained messages, integrations, client traces and REST MQTT publishing. Extensible
+subscriptions, retained messages, integrations and REST MQTT publishing. Extensible
 configuration fields remain `JsonNode` so a newer broker can add fields without breaking an older SDK.
+
+Asynchronous methods require an application-owned executor, preventing blocking HTTP calls from occupying
+the JVM common pool:
+
+```java
+ExecutorService sdkExecutor = Executors.newFixedThreadPool(4);
+TbmqClient client = TbmqClient.builder("https://tbmq.example.com")
+        .accessToken(System.getenv("TBMQ_TOKEN"))
+        .executor(sdkExecutor)
+        .build();
+```
 
 Use the typed MQTT publish facade from the same client:
 

@@ -11,6 +11,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /** Strongly typed facade for {@code POST /api/mqtt/publish}. */
 public final class TbmqRestPublishClient {
@@ -40,7 +41,7 @@ public final class TbmqRestPublishClient {
     }
 
     public CompletableFuture<RestPublishResult> publishAsync(final RestPublishRequest request) {
-        return CompletableFuture.supplyAsync(() -> publish(request));
+        return CompletableFuture.supplyAsync(() -> publish(request), client.requireAsyncExecutor());
     }
 
     public ObjectMapper objectMapper() { return client.objectMapper(); }
@@ -53,6 +54,7 @@ public final class TbmqRestPublishClient {
         public Builder connectTimeout(Duration value) { delegate.connectTimeout(value); return this; }
         public Builder requestTimeout(Duration value) { delegate.requestTimeout(value); return this; }
         public Builder objectMapper(ObjectMapper value) { delegate.objectMapper(value); return this; }
+        public Builder executor(Executor value) { delegate.executor(value); return this; }
         public TbmqRestPublishClient build() { return new TbmqRestPublishClient(delegate.build()); }
     }
 }
