@@ -44,6 +44,9 @@ import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -57,8 +60,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -98,6 +99,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final StatsManager statsManager;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final NodeDrainService nodeDrainService;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -202,6 +204,10 @@ public class ConnectServiceImpl implements ConnectService {
     @Override
     public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg, TbActorRef actorRef) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        if (nodeDrainService.isDraining()) {
+            refuseConnection(sessionCtx, SERVER_UNAVAILABLE, null);
+            return;
+        }
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 
         lastWillService.cancelLastWillDelayIfScheduled(sessionCtx.getClientId());

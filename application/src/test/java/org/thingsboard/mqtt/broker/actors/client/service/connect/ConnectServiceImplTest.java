@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -65,11 +66,13 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,6 +117,8 @@ public class ConnectServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    @MockitoBean
+    NodeDrainService nodeDrainService;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -159,6 +164,18 @@ public class ConnectServiceImplTest {
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
         verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));
         verify(queuedMqttMessages, times(1)).process(any());
+    }
+
+    @Test
+    public void givenNodeDraining_whenAcceptConnection_thenRefusesAndDoesNotRegisterSession() {
+        when(nodeDrainService.isDraining()).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        connectService.acceptConnection(actorState, getConnectionAcceptedMsg(null), mock(TbActorRef.class));
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE_5);
+        verify(clientMqttActorManager).disconnect(any(), any());
+        verify(clientSessionCtxService, never()).registerSession(any());
     }
 
     @Test
