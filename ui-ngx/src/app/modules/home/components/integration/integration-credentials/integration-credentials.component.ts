@@ -29,7 +29,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationCredentialType, IntegrationCredentialTypeTranslation } from '@shared/models/integration.models';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
-import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix, SubscriptSizing } from '@angular/material/form-field';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -109,6 +109,9 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
     return this.ignoreCaCertValue;
   }
 
+  @Input()
+  subscriptSizing: SubscriptSizing = 'fixed';
+
   readonly userNameLabel = input('integration.username');
   readonly userNameRequired = input('integration.username-required');
   readonly passwordLabel = input('integration.password');
@@ -140,6 +143,7 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
+  onTouched = () => {};
 
   constructor(private fb: UntypedFormBuilder) {
   }
@@ -176,7 +180,9 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
     this.propagateChange = fn;
   }
 
-  registerOnTouched(fn: any) { }
+  registerOnTouched(fn: any) {
+    this.onTouched = fn;
+  }
 
   setDisabledState(isDisabled: boolean) {
     this.disabled = isDisabled;
