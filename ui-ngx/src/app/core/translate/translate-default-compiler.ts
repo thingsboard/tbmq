@@ -63,6 +63,11 @@ export class TranslateDefaultCompiler extends TranslateMessageFormatCompiler {
   }
 
   private checkIsPlural(src: string): boolean {
+    // Non-plural strings are used verbatim, and hint text such as ${metadata.<key>} is not valid ICU syntax,
+    // so parsing it would only log a spurious error.
+    if (!src.includes('plural')) {
+      return false;
+    }
     let tokens: any[];
     try {
       tokens = parse(src.replace(/\{\{/g, '{').replace(/\}\}/g, '}'),
