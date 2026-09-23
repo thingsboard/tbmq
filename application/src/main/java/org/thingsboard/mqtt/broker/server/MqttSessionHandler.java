@@ -127,7 +127,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
             DecoderResult decoderResult = message.decoderResult();
             if (!decoderResult.isSuccess()) {
-                log.warn("[{}][{}][{}] Message decoding failed: {}", clientId, sessionId, message.fixedHeader().messageType(), decoderResult.cause().getMessage());
+                // The fixed header is null when decoding failed on it, e.g. non-MQTT bytes from a health check or port scan
+                MqttMessageType msgType = message.fixedHeader() != null ? message.fixedHeader().messageType() : null;
+                log.warn("[{}][{}][{}] Message decoding failed: {}", clientId, sessionId, msgType, decoderResult.cause().getMessage());
                 if (decoderResult.cause() instanceof TooLongFrameException) {
                     disconnect(new DisconnectReason(DisconnectReasonType.ON_PACKET_TOO_LARGE));
                 } else {

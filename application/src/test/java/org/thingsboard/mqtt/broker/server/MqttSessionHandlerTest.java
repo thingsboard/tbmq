@@ -22,9 +22,12 @@ import ch.qos.logback.core.read.ListAppender;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttDecoder;
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -37,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
+import org.mockito.ArgumentCaptor;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -46,6 +50,8 @@ import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -53,6 +59,7 @@ import java.net.InetSocketAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -188,6 +195,53 @@ public class MqttSessionHandlerTest {
         } finally {
             logger.detachAppender(appender);
         }
+    }
+
+    // --- bytes that do not start a valid MQTT packet (health checks, port scanners, `openssl s_client` probes) make the
+    //     Netty decoder emit an invalid message with no fixed header. It must take the one-line WARN +
+    //     malformed-packet disconnect path rather than NPE into exceptionCaught (ERROR stack trace, ON_ERROR). ---
+
+    @Test
+    public void givenNonMqttBytesBeforeConnect_whenChannelRead_thenWarnsAndClosesChannel() {
+        when(addressAttr.get()).thenReturn(REMOTE);
+        ((ClientSessionCtx) ReflectionTestUtils.getField(handler, "clientSessionCtx")).setChannel(ctx);
+        MqttMessage invalid = decodeNonMqttBytes();
+        assertThat(invalid.fixedHeader()).as("precondition: decoder failed on the fixed header").isNull();
+
+        Logger logger = (Logger) LoggerFactory.getLogger(MqttSessionHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            handler.channelRead(ctx, invalid);
+
+            assertThat(appender.list)
+                    .anyMatch(e -> e.getLevel() == Level.WARN && e.getFormattedMessage().contains("Message decoding failed"))
+                    .noneMatch(e -> e.getLevel() == Level.ERROR);
+        } finally {
+            logger.detachAppender(appender);
+        }
+        verify(ctx).close();
+    }
+
+    @Test
+    public void givenNonMqttBytesOnEstablishedSession_whenChannelRead_thenDisconnectsAsMalformedPacket() {
+        when(addressAttr.get()).thenReturn(REMOTE);
+        ReflectionTestUtils.setField(handler, "clientId", "client");
+
+        handler.channelRead(ctx, decodeNonMqttBytes());
+
+        ArgumentCaptor<MqttDisconnectMsg> captor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager).disconnect(eq("client"), captor.capture());
+        assertThat(captor.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_MALFORMED_PACKET);
+    }
+
+    private static MqttMessage decodeNonMqttBytes() {
+        EmbeddedChannel decoderChannel = new EmbeddedChannel(new MqttDecoder());
+        decoderChannel.writeInbound(Unpooled.wrappedBuffer(new byte[]{'\n'}));
+        MqttMessage msg = decoderChannel.readInbound();
+        decoderChannel.finishAndReleaseAll();
+        return msg;
     }
 
     // --- connAckAndCloseCtx must send the CONNACK and then close via ClientSessionCtx.closeChannel()
