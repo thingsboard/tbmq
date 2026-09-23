@@ -1,0 +1,84 @@
+<!--
+
+    ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+
+    Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+
+    NOTICE: All information contained herein is, and remains
+    the property of ThingsBoard, Inc. and its suppliers,
+    if any.  The intellectual and technical concepts contained
+    herein are proprietary to ThingsBoard, Inc.
+    and its suppliers and may be covered by U.S. and Foreign Patents,
+    patents in process, and are protected by trade secret or copyright law.
+
+    Dissemination of this information or reproduction of this material is strictly forbidden
+    unless prior written permission is obtained from COMPANY.
+
+    Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+    managers or contractors who have executed Confidentiality and Non-disclosure agreements
+    explicitly covering such access.
+
+    The copyright notice above does not evidence any actual or intended publication
+    or disclosure  of  this source code, which includes
+    information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+    ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+    OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+    THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+    AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+    THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+    DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+    OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+
+-->
+@if (node(); as n) {
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-id">{{ n.id }}</div>
+    <div class="tb-inspector-meta">
+      <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
+        {{ statusLabel() | translate }}
+      </span>
+      <span class="tb-inspector-type">{{ serviceTypeLabel() }}</span>
+    </div>
+  </div>
+
+  @if (n.kind === 'broker') {
+    <div class="tb-stat">
+      <span class="tb-stat-label">{{ 'monitoring.cluster.sessions-on-node' | translate }}</span>
+      <span class="tb-stat-value">{{ n.sessions ? formatLargeNumber(n.sessions.totalCount) : '—' }}</span>
+      @if (n.sessions) {
+        <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(n.sessions.connectedCount)} }}</span>
+      }
+    </div>
+    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions(n)">
+      {{ 'monitoring.cluster.open-in-sessions' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </button>
+  }
+
+  <div class="tb-divider"></div>
+
+  <div class="tb-meters">
+    @for (meter of meters(); track meter.label) {
+      <div class="tb-meter-row">
+        <span class="tb-meter-name">{{ meter.label | translate }}</span>
+        <div class="tb-meter-track">
+          @if (meter.value !== null) {
+            <div [class]="'tb-meter-fill tb-' + meter.level" [style.width.%]="meter.value"></div>
+          }
+        </div>
+        <span class="tb-meter-value">{{ meter.value !== null ? meter.value + '%' : '—' }}</span>
+      </div>
+    }
+  </div>
+
+  @if (n.kind === 'broker') {
+    <div class="tb-divider"></div>
+    <div class="tb-spark-head">
+      <span class="tb-stat-label">{{ 'monitoring.cluster.outgoing-messages' | translate }}</span>
+      <span class="tb-spark-unit">{{ compactNumber(n.outgoingRate) }} {{ 'monitoring.cluster.msg-per-min' | translate }}</span>
+    </div>
+    <tb-cluster-sparkline [points]="samples()"></tb-cluster-sparkline>
+  }
+} @else {
+  <div class="tb-inspector-empty">{{ 'monitoring.cluster.inspector-empty' | translate }}</div>
+}

@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscripti
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.UNKNOWN;
@@ -139,6 +140,13 @@ public class ClientSessionController extends BaseController {
     @GetMapping(value = "/client-session/info")
     public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
         return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session/info/by-node")
+    public Map<String, ClientSessionStatsInfoDto> getClientSessionsStatsInfoByNode() throws ThingsboardException {
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfoByNode());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

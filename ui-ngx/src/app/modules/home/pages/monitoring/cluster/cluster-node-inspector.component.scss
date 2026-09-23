@@ -1,0 +1,185 @@
+/**
+ * ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+ *
+ * Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of ThingsBoard, Inc. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to ThingsBoard, Inc.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ *
+ * Dissemination of this information or reproduction of this material is strictly forbidden
+ * unless prior written permission is obtained from COMPANY.
+ *
+ * Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+ * managers or contractors who have executed Confidentiality and Non-disclosure agreements
+ * explicitly covering such access.
+ *
+ * The copyright notice above does not evidence any actual or intended publication
+ * or disclosure  of  this source code, which includes
+ * information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+ * ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+ * OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+ * THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+ * AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+ * THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+ * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+ * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+ */
+
+// Same hexes as STATUS_COLOR.ACTIVE / PENDING / INACTIVE in entities-table-config.models.ts.
+$tb-ok: #198038;
+$tb-warn: #d47d18;
+$tb-crit: #d12730;
+$tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-inspector-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tb-inspector-id {
+  font-family: $tb-mono;
+  font-size: 14px;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.tb-inspector-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tb-inspector-type {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.tb-stat-value {
+  font-family: $tb-mono;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tb-stat-sub {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-inspector-link {
+  align-self: flex-start;
+}
+
+.tb-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.tb-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-meter-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.tb-meter-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.tb-meter-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.09);
+  overflow: hidden;
+}
+
+.tb-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: $tb-ok;
+  transition: width 0.5s ease, background-color 0.3s ease;
+
+  &.tb-warn {
+    background: $tb-warn;
+  }
+
+  &.tb-crit {
+    background: $tb-crit;
+  }
+}
+
+.tb-meter-value {
+  font-family: $tb-mono;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tb-spark-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tb-spark-unit {
+  font-family: $tb-mono;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-inspector-empty {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.42);
+}

@@ -136,6 +136,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;
       }
+      if (routerQueryParams?.nodeIdList) {
+        // A single node id arrives from the router as a plain string.
+        this.sessionFilterConfig.nodeIdList = [].concat(routerQueryParams.nodeIdList);
+        delete queryParams.nodeIdList;
+        replaceUrl = true;
+      }
       if (routerQueryParams?.openSession) {
         openSession = coerceBooleanProperty(queryParams.openSession);
         delete queryParams.openSession;

@@ -1,0 +1,182 @@
+///
+/// ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+///
+/// Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+///
+/// NOTICE: All information contained herein is, and remains
+/// the property of ThingsBoard, Inc. and its suppliers,
+/// if any.  The intellectual and technical concepts contained
+/// herein are proprietary to ThingsBoard, Inc.
+/// and its suppliers and may be covered by U.S. and Foreign Patents,
+/// patents in process, and are protected by trade secret or copyright law.
+///
+/// Dissemination of this information or reproduction of this material is strictly forbidden
+/// unless prior written permission is obtained from COMPANY.
+///
+/// Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+/// managers or contractors who have executed Confidentiality and Non-disclosure agreements
+/// explicitly covering such access.
+///
+/// The copyright notice above does not evidence any actual or intended publication
+/// or disclosure  of  this source code, which includes
+/// information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+/// ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+/// OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+/// THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+/// AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+/// THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+/// DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+/// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+///
+
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+import { forkJoin, Observable, of, Subject, timer } from 'rxjs';
+import { catchError, map, retry, switchMap, takeUntil } from 'rxjs/operators';
+import { TimeseriesService } from '@core/http/timeseries.service';
+import { ClientSessionService } from '@core/http/client-session.service';
+import { KafkaService } from '@core/http/kafka.service';
+import { ConfigService } from '@core/http/config.service';
+import { RequestConfig } from '@core/http/http-utils';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
+import { ServiceType } from '@shared/models/resource-usage.model';
+import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
+import { SECOND } from '@shared/models/time/time.models';
+import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
+import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
+import {
+  appendSample,
+  assembleClusterVm,
+  ClusterMapVm,
+  ClusterRawData,
+  emptyClusterVm
+} from '@home/pages/monitoring/cluster/cluster.models';
+
+const REFRESH_INTERVAL = 10 * SECOND;
+// Consumer-group lag is computed through the Kafka admin client, so it is refreshed less often than node stats.
+const KAFKA_REFRESH_EVERY_TICKS = 6;
+const QUIET_REQUEST: RequestConfig = {ignoreLoading: true, ignoreErrors: true};
+const BROKER_RATE_KEYS = [ChartKey.incomingMsgs, ChartKey.outgoingMsgs];
+
+const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(catchError(() => of(null)));
+
+@Component({
+    selector: 'tb-cluster',
+    templateUrl: './cluster.component.html',
+    styleUrls: ['./cluster.component.scss'],
+    imports: [TranslateModule, ClusterMapComponent, ClusterNodeInspectorComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ClusterComponent implements OnInit, OnDestroy {
+
+  readonly vm = signal<ClusterMapVm>(emptyClusterVm());
+  readonly selectedId = signal<string | null>(null);
+  readonly samples = signal<Record<string, TsValue[]>>({});
+  readonly lastTickOk = signal(true);
+  readonly staleSeconds = signal(0);
+  readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  readonly selectedNode = computed(() => {
+    const id = this.selectedId();
+    const {brokers, executors} = this.vm();
+    return brokers.concat(executors).find(node => node.id === id) ?? null;
+  });
+  readonly selectedSamples = computed(() => this.samples()[this.selectedId()] ?? []);
+
+  private readonly timeseriesService = inject(TimeseriesService);
+  private readonly clientSessionService = inject(ClientSessionService);
+  private readonly kafkaService = inject(KafkaService);
+  private readonly configService = inject(ConfigService);
+
+  private lastUpdated: number | null = null;
+  private kafkaBrokers: PageData<KafkaBroker> | null = null;
+  private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
+  private readonly destroy$ = new Subject<void>();
+
+  ngOnInit() {
+    timer(0, REFRESH_INTERVAL).pipe(
+      switchMap(tick => this.loadTick(tick)),
+      retry({delay: REFRESH_INTERVAL}),
+      takeUntil(this.destroy$)
+    ).subscribe(raw => this.applyTick(raw));
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadTick(tick: number): Observable<ClusterRawData> {
+    const refreshKafka = tick % KAFKA_REFRESH_EVERY_TICKS === 0;
+    return forkJoin({
+      services: quiet(this.timeseriesService.getServiceInfos(QUIET_REQUEST)),
+      sessionsByNode: quiet(this.clientSessionService.getClientSessionsStatsByNode(QUIET_REQUEST)),
+      kafkaBrokers: refreshKafka
+        ? quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST))
+        : of(this.kafkaBrokers),
+      consumerGroups: refreshKafka
+        ? quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST))
+        : of(this.consumerGroups)
+    }).pipe(
+      switchMap(partial => {
+        const brokerIds = (partial.services?.data ?? [])
+          .filter(service => service.serviceType === ServiceType.TBMQ)
+          .map(service => service.serviceId);
+        return this.loadBrokerRates(brokerIds).pipe(
+          map(latestByBroker => ({...partial, latestByBroker}))
+        );
+      })
+    );
+  }
+
+  private loadBrokerRates(brokerIds: string[]): Observable<Record<string, TimeseriesData | null>> {
+    if (!brokerIds.length) {
+      return of({});
+    }
+    return forkJoin(brokerIds.map(id =>
+      quiet(this.timeseriesService.getLatestTimeseries(id, BROKER_RATE_KEYS)).pipe(map(data => [id, data] as const))
+    )).pipe(
+      map(entries => Object.fromEntries(entries))
+    );
+  }
+
+  private applyTick(raw: ClusterRawData) {
+    if (!raw.services) {
+      this.lastTickOk.set(false);
+      this.staleSeconds.set(this.lastUpdated ? Math.round((Date.now() - this.lastUpdated) / SECOND) : 0);
+      return;
+    }
+    this.kafkaBrokers = raw.kafkaBrokers ?? this.kafkaBrokers;
+    this.consumerGroups = raw.consumerGroups ?? this.consumerGroups;
+
+    const statsInterval = this.configService.brokerConfig?.statsCollectionInterval || 1;
+    const vm = assembleClusterVm(raw, this.vm(), statsInterval);
+    this.vm.set(vm);
+    this.lastUpdated = Date.now();
+    this.lastTickOk.set(true);
+    this.ensureSelection(vm);
+    this.recordSamples(vm, raw);
+  }
+
+  private ensureSelection(vm: ClusterMapVm) {
+    const selected = this.selectedId();
+    if (!vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
+      this.selectedId.set(vm.brokers[0]?.id ?? vm.executors[0]?.id ?? null);
+    }
+  }
+
+  private recordSamples(vm: ClusterMapVm, raw: ClusterRawData) {
+    this.samples.update(samples => {
+      const next = {...samples};
+      for (const broker of vm.brokers) {
+        const ts = raw.latestByBroker[broker.id]?.[ChartKey.outgoingMsgs]?.[0]?.ts;
+        if (ts) {
+          next[broker.id] = appendSample(next[broker.id] ?? [], {ts, value: broker.outgoingRate});
+        }
+      }
+      return next;
+    });
+  }
+}

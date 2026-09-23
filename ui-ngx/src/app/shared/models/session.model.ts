@@ -112,6 +112,8 @@ export interface ClientSessionStatsInfo {
   totalCount: number;
 }
 
+export type ClientSessionNodeStatsInfo = Record<string, ClientSessionStatsInfo>;
+
 export interface SessionFilterConfig {
   connectedStatusList?: ConnectionState[];
   clientTypeList?: ClientType[];

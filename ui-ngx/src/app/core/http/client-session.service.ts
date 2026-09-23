@@ -22,6 +22,7 @@ import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import {
   ClientSessionCredentials,
+  ClientSessionNodeStatsInfo,
   ClientSessionStatsInfo,
   DetailedClientSessionInfo,
   SessionMetrics,
@@ -72,6 +73,10 @@ export class ClientSessionService {
 
   public getClientSessionsStats(config?: RequestConfig): Observable<ClientSessionStatsInfo> {
     return this.http.get<ClientSessionStatsInfo>(`/api/client-session/info`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getClientSessionsStatsByNode(config?: RequestConfig): Observable<ClientSessionNodeStatsInfo> {
+    return this.http.get<ClientSessionNodeStatsInfo>(`/api/client-session/info/by-node`, defaultHttpOptionsFromConfig(config));
   }
 
   public getClientSessionDetails(clientId: string, config?: RequestConfig): Observable<ClientSessionCredentials> {

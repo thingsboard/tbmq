@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,6 +108,26 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         long connectedCount = allClientSessions.values().stream().filter(ClientSessionInfo::isConnected).count();
         long disconnectedCount = totalCount - connectedCount;
         return new ClientSessionStatsInfoDto(connectedCount, disconnectedCount, totalCount);
+    }
+
+    @Override
+    public Map<String, ClientSessionStatsInfoDto> getClientSessionStatsInfoByNode() {
+        Map<String, long[]> connectedAndTotalByNode = new HashMap<>();
+        for (ClientSessionInfo clientSessionInfo : clientSessionCache.getAllClientSessions().values()) {
+            String nodeId = clientSessionInfo.getServiceId();
+            if (nodeId == null) {
+                continue;
+            }
+            long[] counts = connectedAndTotalByNode.computeIfAbsent(nodeId, id -> new long[2]);
+            counts[1]++;
+            if (clientSessionInfo.isConnected()) {
+                counts[0]++;
+            }
+        }
+        Map<String, ClientSessionStatsInfoDto> result = new HashMap<>(connectedAndTotalByNode.size());
+        connectedAndTotalByNode.forEach((nodeId, counts) ->
+                result.put(nodeId, new ClientSessionStatsInfoDto(counts[0], counts[1] - counts[0], counts[1])));
+        return result;
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {

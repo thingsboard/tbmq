@@ -221,6 +221,14 @@ export class MenuService {
             path: '/monitoring/resource-usage',
             icon: 'memory'
           },
+          {
+            id: MenuId.monitoring_cluster,
+            name: 'monitoring.cluster.cluster',
+            type: 'link',
+            path: '/monitoring/cluster',
+            icon: 'mdi:lan',
+            isNew: true
+          },
         ]
       },
       {

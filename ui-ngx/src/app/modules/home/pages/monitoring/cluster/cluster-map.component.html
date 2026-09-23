@@ -1,0 +1,113 @@
+<!--
+
+    ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+
+    Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+
+    NOTICE: All information contained herein is, and remains
+    the property of ThingsBoard, Inc. and its suppliers,
+    if any.  The intellectual and technical concepts contained
+    herein are proprietary to ThingsBoard, Inc.
+    and its suppliers and may be covered by U.S. and Foreign Patents,
+    patents in process, and are protected by trade secret or copyright law.
+
+    Dissemination of this information or reproduction of this material is strictly forbidden
+    unless prior written permission is obtained from COMPANY.
+
+    Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+    managers or contractors who have executed Confidentiality and Non-disclosure agreements
+    explicitly covering such access.
+
+    The copyright notice above does not evidence any actual or intended publication
+    or disclosure  of  this source code, which includes
+    information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+    ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+    OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+    THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+    AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+    THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+    DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+    OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+
+-->
+@let map = vm();
+<svg class="tb-cluster-svg" [attr.viewBox]="'0 0 ' + map.width + ' ' + map.height" role="group"
+     [attr.aria-label]="'monitoring.cluster.map-aria-label' | translate">
+
+  <text class="tb-column-caption" [attr.x]="columnX.clients" y="22" text-anchor="middle">{{ 'monitoring.cluster.clients' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.brokers" y="22" text-anchor="middle">{{ 'monitoring.cluster.brokers' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.kafka" y="22" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.executors" y="22" text-anchor="middle">{{ 'monitoring.cluster.integrations' | translate }}</text>
+
+  <!-- Edges are tracked by id and updated attribute-by-attribute: re-creating a path restarts every particle riding it. -->
+  @for (edge of map.edges; track edge.id) {
+    <path class="tb-edge" [attr.id]="edge.id" [attr.d]="edge.path"
+          [attr.stroke-width]="edge.strokeWidth" [attr.stroke-opacity]="edge.opacity"/>
+    @if (animate()) {
+      @for (slot of edge.particleSlots; track slot) {
+        <circle class="tb-particle" r="2.5">
+          <animateMotion [attr.dur]="edge.durSec + 's'" repeatCount="indefinite"
+                         [attr.begin]="particleBegin(slot, edge.particleSlots.length, edge.durSec)">
+            <mpath [attr.href]="'#' + edge.id"/>
+          </animateMotion>
+        </circle>
+      }
+    }
+  }
+
+  <g class="tb-clients">
+    @for (offset of [-30, 0, 30]; track offset) {
+      <rect [class]="offset === 0 ? 'tb-clients-pill' : 'tb-clients-pill tb-clients-pill-side'"
+            [attr.x]="map.clients.x - 26" [attr.y]="map.clients.y + offset - 9" width="52" height="18" rx="9"/>
+    }
+    <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 62" text-anchor="middle">
+      {{ map.clients.hasSessionStats ? compactNumber(map.clients.totalSessions) : '—' }} {{ 'monitoring.cluster.sessions' | translate }}
+    </text>
+    <text class="tb-node-hint" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 76" text-anchor="middle">{{ 'monitoring.cluster.clients-protocols' | translate }}</text>
+  </g>
+
+  @if (!map.brokers.length) {
+    <text class="tb-node-hint" [attr.x]="columnX.brokers" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-brokers' | translate }}</text>
+  }
+  @for (node of map.brokers; track node.id) {
+    <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
+  }
+
+  <g class="tb-kafka">
+    <polygon class="tb-kafka-hex" [attr.points]="map.kafka.points"/>
+    <text class="tb-node-count" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y - 2" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
+    <text class="tb-node-hint" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 13" text-anchor="middle">
+      {{ (map.kafka.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: map.kafka.brokerCount ?? '—'} }}
+    </text>
+    <text class="tb-node-sub" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 68" text-anchor="middle">
+      {{ 'monitoring.cluster.consumer-lag' | translate }} {{ map.kafka.totalLag !== null ? compactNumber(map.kafka.totalLag) : '—' }}
+    </text>
+  </g>
+
+  @if (!map.executors.length) {
+    <text class="tb-node-hint" [attr.x]="columnX.executors" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-executors' | translate }}</text>
+  }
+  @for (node of map.executors; track node.id) {
+    <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
+  }
+</svg>
+
+<ng-template #nodeGlyph let-node="node">
+  <svg:g [class]="node.id === selectedId() ? 'tb-node tb-node-selected' : 'tb-node'" role="button" tabindex="0"
+         [attr.aria-pressed]="node.id === selectedId()"
+         [attr.aria-label]="'monitoring.cluster.node-aria-label' | translate: {id: node.id, sessions: node.sessions?.totalCount ?? 0, cpu: node.cpu ?? 0}"
+         (click)="onSelect(node)" (keydown.enter)="onSelect(node, $event)" (keydown.space)="onSelect(node, $event)">
+    <svg:circle class="tb-halo" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR + 7"/>
+    <svg:circle class="tb-ring-track" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"/>
+    <svg:circle [class]="'tb-ring-arc tb-' + node.cpuLevel" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"
+                [attr.stroke-dasharray]="ringArcDash(node.ringR, node.cpu)" [attr.transform]="'rotate(-90 ' + node.x + ' ' + node.y + ')'"/>
+    <svg:circle [class]="'tb-disc tb-status-' + node.status" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>
+    @if (node.countLabel) {
+      <svg:text class="tb-node-count" [attr.x]="node.x" [attr.y]="node.y" text-anchor="middle" dominant-baseline="central">{{ node.countLabel }}</svg:text>
+    }
+    <svg:text class="tb-node-id" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 18" text-anchor="middle">{{ node.id }}</svg:text>
+    <svg:text [class]="'tb-node-sub tb-' + node.cpuLevel" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
+      {{ node.cpu !== null ? node.cpu + '% CPU' : '—' }}
+    </svg:text>
+  </svg:g>
+</ng-template>

@@ -1,0 +1,190 @@
+/**
+ * ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+ *
+ * Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of ThingsBoard, Inc. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to ThingsBoard, Inc.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ *
+ * Dissemination of this information or reproduction of this material is strictly forbidden
+ * unless prior written permission is obtained from COMPANY.
+ *
+ * Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+ * managers or contractors who have executed Confidentiality and Non-disclosure agreements
+ * explicitly covering such access.
+ *
+ * The copyright notice above does not evidence any actual or intended publication
+ * or disclosure  of  this source code, which includes
+ * information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+ * ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+ * OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+ * THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+ * AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+ * THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+ * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+ * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+ */
+
+// Same hexes as STATUS_COLOR.ACTIVE / PENDING / INACTIVE in entities-table-config.models.ts.
+$tb-ok: #198038;
+$tb-warn: #d47d18;
+$tb-crit: #d12730;
+$tb-neutral: rgba(0, 0, 0, 0.54);
+
+:host {
+  display: block;
+}
+
+.tb-cluster-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+
+.tb-column-caption {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+.tb-edge {
+  fill: none;
+  stroke: var(--tb-primary-500);
+  transition: stroke-width 0.5s ease, stroke-opacity 0.5s ease;
+}
+
+.tb-particle {
+  fill: var(--tb-primary-500);
+  opacity: 0.85;
+}
+
+.tb-clients-pill {
+  fill: var(--tb-primary-50);
+  stroke: var(--tb-primary-300);
+  stroke-width: 1.2;
+
+  &.tb-clients-pill-side {
+    opacity: 0.55;
+    stroke-width: 0.8;
+  }
+}
+
+.tb-kafka-hex {
+  fill: #f4f6f5;
+  stroke: $tb-neutral;
+  stroke-width: 1.4;
+}
+
+.tb-node {
+  cursor: pointer;
+  outline: none;
+
+  .tb-halo {
+    fill: none;
+    stroke: var(--tb-primary-500);
+    stroke-width: 1.5;
+    opacity: 0;
+    transition: opacity 0.16s ease;
+  }
+
+  &:hover .tb-halo,
+  &:focus-visible .tb-halo,
+  &.tb-node-selected .tb-halo {
+    opacity: 1;
+  }
+}
+
+.tb-ring-track {
+  fill: #fff;
+  stroke: rgba(0, 0, 0, 0.09);
+  stroke-width: 3.6;
+}
+
+.tb-ring-arc {
+  fill: none;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+
+  &.tb-ok {
+    stroke: $tb-ok;
+  }
+
+  &.tb-warn {
+    stroke: $tb-warn;
+  }
+
+  &.tb-crit {
+    stroke: $tb-crit;
+  }
+}
+
+// Disc outline follows the service status the way every status pill in the app does.
+.tb-disc {
+  fill: var(--tb-primary-50);
+  stroke: var(--tb-primary-300);
+  stroke-width: 1;
+  transition: r 0.5s ease;
+
+  &.tb-status-OUTDATED {
+    stroke: $tb-crit;
+    stroke-width: 1.6;
+  }
+
+  &.tb-status-INACTIVE {
+    stroke: $tb-neutral;
+    stroke-dasharray: 3 2;
+  }
+}
+
+.tb-node-count {
+  font-size: 13px;
+  font-weight: 700;
+  fill: rgba(0, 0, 0, 0.87);
+  pointer-events: none;
+}
+
+.tb-node-id {
+  font-size: 11px;
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.tb-node-sub {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  fill: rgba(0, 0, 0, 0.6);
+
+  &.tb-ok {
+    fill: $tb-ok;
+  }
+
+  &.tb-warn {
+    fill: $tb-warn;
+  }
+
+  &.tb-crit {
+    fill: $tb-crit;
+  }
+}
+
+.tb-node-hint {
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-particle {
+    display: none;
+  }
+
+  .tb-edge {
+    stroke-dasharray: 5 6;
+  }
+}

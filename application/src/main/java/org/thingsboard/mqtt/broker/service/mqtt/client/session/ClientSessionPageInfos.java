@@ -21,6 +21,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 
+import java.util.Map;
+
 public interface ClientSessionPageInfos {
 
     PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink);
@@ -28,5 +30,7 @@ public interface ClientSessionPageInfos {
     PageData<ShortClientSessionInfoDto> getClientSessionInfos(ClientSessionQuery query);
 
     ClientSessionStatsInfoDto getClientSessionStatsInfo();
+
+    Map<String, ClientSessionStatsInfoDto> getClientSessionStatsInfoByNode();
 
 }
