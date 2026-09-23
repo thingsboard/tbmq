@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.service.stats.ClientSubscriptionConsumerStats
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
+import org.thingsboard.mqtt.broker.util.InitLoadUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -193,7 +194,8 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {
         String dummyClientId = BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX + UUID.randomUUID();
-        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new ClientTopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
+        Set<TopicSubscription> dummySubscriptions = Collections.singleton(new ClientTopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0));
+        InitLoadUtil.persistMarkerWithRetry("clientSubscriptions", () -> persistenceService.persistClientSubscriptionsSync(dummyClientId, dummySubscriptions));
         return dummyClientId;
     }
 

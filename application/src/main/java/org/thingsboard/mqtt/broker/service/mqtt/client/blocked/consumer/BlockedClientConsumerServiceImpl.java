@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.queue.provider.BlockedClientQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedClientProducerService;
+import org.thingsboard.mqtt.broker.util.InitLoadUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -171,7 +172,8 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
     private String persistDummyBlockedClient() throws QueuePersistenceException {
         BlockedClient blockedClient = new ClientIdBlockedClient(UUIDUtil.randomUuid());
         String dummyBlockedClientKey = blockedClient.getKey();
-        producerService.persistDummyBlockedClient(dummyBlockedClientKey, ProtoConverter.convertToBlockedClientProto(blockedClient));
+        BlockedClientProto blockedClientProto = ProtoConverter.convertToBlockedClientProto(blockedClient);
+        InitLoadUtil.persistMarkerWithRetry("blockedClient", () -> producerService.persistDummyBlockedClient(dummyBlockedClientKey, blockedClientProto));
         return dummyBlockedClientKey;
     }
 

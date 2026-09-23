@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
+import org.thingsboard.mqtt.broker.util.InitLoadUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -169,7 +170,8 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     private String persistDummySession() throws QueuePersistenceException {
         String dummyClientId = UUID.randomUUID().toString();
         ClientSessionInfo dummyClientSessionInfo = getClientSessionInfo(dummyClientId, serviceInfoProvider.getServiceId(), false);
-        persistenceService.persistClientSessionInfoSync(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
+        ClientSessionInfoProto dummyClientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo);
+        InitLoadUtil.persistMarkerWithRetry("clientSession", () -> persistenceService.persistClientSessionInfoSync(dummyClientId, dummyClientSessionInfoProto));
         return dummyClientId;
     }
 
