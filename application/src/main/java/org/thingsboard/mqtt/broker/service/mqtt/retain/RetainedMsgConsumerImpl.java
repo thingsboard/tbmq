@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.util.InitLoadUtil;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.Collections;
@@ -196,7 +197,8 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
     private String persistDummyRetainedMsg() throws QueuePersistenceException {
         String dummyTopic = DUMMY_TOPIC_PREFIX + RandomStringUtils.randomAlphanumeric(8);
         RetainedMsg retainedMsg = new RetainedMsg(dummyTopic, BrokerConstants.DUMMY_PAYLOAD, 0);
-        persistenceService.persistRetainedMsgSync(dummyTopic, ProtoConverter.convertToRetainedMsgProto(retainedMsg));
+        RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        InitLoadUtil.persistMarkerWithRetry("retainedMsg", () -> persistenceService.persistRetainedMsgSync(dummyTopic, retainedMsgProto));
         return dummyTopic;
     }
 

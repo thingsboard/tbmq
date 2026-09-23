@@ -19,9 +19,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -29,10 +32,18 @@ import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,6 +54,8 @@ public class RetainedMsgConsumerImplTest {
 
     private RetainedMsgConsumerStats stats;
     private RetainedMsgChangesCallback callback;
+    private RetainedMsgQueueFactory queueFactory;
+    private RetainedMsgPersistenceService persistenceService;
     private RetainedMsgConsumerImpl consumer;
 
     @Before
@@ -51,10 +64,12 @@ public class RetainedMsgConsumerImplTest {
         stats = mock(RetainedMsgConsumerStats.class);
         when(statsManager.getRetainedMsgConsumerStats()).thenReturn(stats);
         callback = mock(RetainedMsgChangesCallback.class);
+        queueFactory = mock(RetainedMsgQueueFactory.class);
+        persistenceService = mock(RetainedMsgPersistenceService.class);
         consumer = new RetainedMsgConsumerImpl(
-                mock(RetainedMsgQueueFactory.class),
+                queueFactory,
                 mock(ServiceInfoProvider.class),
-                mock(RetainedMsgPersistenceService.class),
+                persistenceService,
                 mock(TbQueueAdmin.class),
                 statsManager);
     }
@@ -84,6 +99,40 @@ public class RetainedMsgConsumerImplTest {
 
         verify(stats, never()).logTotal(anyInt());
         verify(stats, never()).log(anyInt(), anyInt());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenFirstMarkerWriteFailsOnFreshTopic_whenInitLoad_thenRetriesAndCompletes() throws Exception {
+        // On a fresh Kafka cluster the first write to the just-created topic can fail while the partition leader has not
+        // applied the new topic metadata yet ("This server does not host this topic-partition"). initLoad must retry the
+        // marker write instead of failing broker startup.
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<RetainedMsgProto>> queueConsumer = mock(TbQueueControlledOffsetConsumer.class);
+        when(queueFactory.createConsumer(any(), any())).thenReturn(queueConsumer);
+        consumer.init();
+
+        List<String> persistedTopics = new ArrayList<>();
+        doAnswer(invocation -> {
+            persistedTopics.add(invocation.getArgument(0));
+            if (persistedTopics.size() == 1) {
+                throw new QueuePersistenceException("Failed to update retained msg");
+            }
+            return null;
+        }).when(persistenceService).persistRetainedMsgSync(anyString(), any());
+        when(queueConsumer.poll(anyLong())).thenAnswer(invocation -> List.of(markerMsg(persistedTopics.get(0))));
+
+        Map<String, RetainedMsg> result = consumer.initLoad();
+
+        assertTrue(result.isEmpty());
+        // failed marker write + retried marker write (same key, so the consumer still recognizes it) + marker clear
+        assertEquals(3, persistedTopics.size());
+        assertEquals(persistedTopics.get(0), persistedTopics.get(1));
+        assertEquals(persistedTopics.get(0), persistedTopics.get(2));
+    }
+
+    private static TbProtoQueueMsg<RetainedMsgProto> markerMsg(String topic) {
+        RetainedMsgProto proto = ProtoConverter.convertToRetainedMsgProto(new RetainedMsg(topic, BrokerConstants.DUMMY_PAYLOAD, 0));
+        return new TbProtoQueueMsg<>(topic, proto, new DefaultTbQueueMsgHeaders());
     }
 
     private static TbProtoQueueMsg<RetainedMsgProto> clearedMsg() {
