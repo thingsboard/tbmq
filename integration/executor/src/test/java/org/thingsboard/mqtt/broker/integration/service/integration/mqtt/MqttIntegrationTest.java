@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
@@ -37,12 +40,16 @@ import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -133,6 +140,43 @@ class MqttIntegrationTest {
             types.add(type);
         }
         return IntegrationLifecycleMsg.builder().configuration(configuration).build();
+    }
+
+    /** The form hides the "Enable SSL" toggle for PEM credentials, so their ssl flag is usually false. */
+    @Test
+    void testGetSslContext_certPemWithSslOff_usesTls() throws Exception {
+        SslContext sslContext = mock(SslContext.class);
+        config.setSsl(false);
+        config.setCredentials(credentials(CredentialsType.CERT_PEM, sslContext));
+
+        assertSame(sslContext, MqttIntegration.getSslContext(config));
+    }
+
+    @Test
+    void testGetSslContext_basicWithSslOn_usesTls() throws Exception {
+        SslContext sslContext = mock(SslContext.class);
+        config.setSsl(true);
+        config.setCredentials(credentials(CredentialsType.BASIC, sslContext));
+
+        assertSame(sslContext, MqttIntegration.getSslContext(config));
+    }
+
+    @Test
+    void testGetSslContext_basicWithSslOff_usesPlainTcp() throws Exception {
+        ClientCredentials credentials = mock(ClientCredentials.class);
+        when(credentials.getType()).thenReturn(CredentialsType.BASIC);
+        config.setSsl(false);
+        config.setCredentials(credentials);
+
+        assertNull(MqttIntegration.getSslContext(config));
+        verify(credentials, never()).initSslContext();
+    }
+
+    private static ClientCredentials credentials(CredentialsType type, SslContext sslContext) throws Exception {
+        ClientCredentials credentials = mock(ClientCredentials.class);
+        lenient().when(credentials.getType()).thenReturn(type);   // not read when the ssl flag is already on
+        when(credentials.initSslContext()).thenReturn(sslContext);
+        return credentials;
     }
 
     @Test
