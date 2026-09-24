@@ -170,6 +170,8 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     if (isDefinedAndNotNull(value?.clientConfiguration?.host)) {
       this.isNew = false;
       this.mqttIntegrationConfigForm.reset(value, {emitEvent: false});
+      // a PEM integration saved before the flag was kept on for it
+      this.enableSslForCertPem(false);
       this.updateView(value);
     } else {
       this.isNew = true;
@@ -217,7 +219,15 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   }
 
   displayEnableSsl() {
-    return this.clientConfigurationFormGroup.get('credentials').value?.type !== 'cert.PEM';
+    return this.clientConfigurationFormGroup.get('credentials').value?.type !== IntegrationCredentialType.CertPEM;
+  }
+
+  /** PEM certificates only work over TLS, and their credentials hide the "Enable SSL" toggle: keep the flag on for them. */
+  private enableSslForCertPem(emitEvent = true) {
+    if (this.clientConfigurationFormGroup.get('credentials').value?.type === IntegrationCredentialType.CertPEM
+      && !this.clientConfigurationFormGroup.get('ssl').value) {
+      this.clientConfigurationFormGroup.get('ssl').setValue(true, {emitEvent});
+    }
   }
 
   private initFormListeners() {
@@ -270,6 +280,10 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     this.mqttIntegrationConfigForm.get('lifecycleEventTypes').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateEventsTopicState());
+
+    this.clientConfigurationFormGroup.get('credentials').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.enableSslForCertPem());
 
     setTimeout(() => {
       if (this.isNew) {
