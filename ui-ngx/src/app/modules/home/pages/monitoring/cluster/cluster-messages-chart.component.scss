@@ -1,0 +1,220 @@
+/**
+ * ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+ *
+ * Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of ThingsBoard, Inc. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to ThingsBoard, Inc.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ *
+ * Dissemination of this information or reproduction of this material is strictly forbidden
+ * unless prior written permission is obtained from COMPANY.
+ *
+ * Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+ * managers or contractors who have executed Confidentiality and Non-disclosure agreements
+ * explicitly covering such access.
+ *
+ * The copyright notice above does not evidence any actual or intended publication
+ * or disclosure  of  this source code, which includes
+ * information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+ * ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+ * OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+ * THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+ * AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+ * THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+ * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+ * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+ */
+
+:host {
+  display: block;
+}
+
+// Validated pair (deutan/protan/tritan separation and contrast against the white card).
+.tb-series-incoming {
+  --tb-series: #58519e;
+}
+
+.tb-series-outgoing {
+  --tb-series: #00897b;
+}
+
+.tb-chart {
+  position: relative;
+}
+
+.tb-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  outline: none;
+  touch-action: none;
+
+  &:focus-visible {
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--tb-primary-300);
+  }
+}
+
+.tb-chart-fill-stop {
+  stop-color: var(--tb-series);
+}
+
+.tb-chart-baseline {
+  stroke: rgba(0, 0, 0, 0.1);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tb-chart-area {
+  &.tb-series-incoming {
+    fill: url(#tb-cluster-chart-fill-incoming);
+  }
+
+  &.tb-series-outgoing {
+    fill: url(#tb-cluster-chart-fill-outgoing);
+  }
+}
+
+.tb-chart-line {
+  fill: none;
+  stroke: var(--tb-series);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tb-chart-marker {
+  fill: var(--tb-series);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.tb-chart-cursor {
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tb-chart-tick,
+.tb-chart-empty {
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+.tb-chart-empty {
+  font-family: inherit;
+  font-size: 11px;
+  fill: rgba(0, 0, 0, 0.38);
+}
+
+.tb-chart-tooltip {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  white-space: nowrap;
+
+  &.tb-chart-tooltip-left {
+    margin-left: -8px;
+    transform: translateX(-100%);
+  }
+}
+
+.tb-chart-tooltip-time {
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+}
+
+.tb-chart-tooltip-value {
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.tb-chart-tooltip-label {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tb-legend {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.tb-legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: rgba(0, 0, 0, 0.76);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-300);
+    outline-offset: -2px;
+  }
+
+  &.tb-legend-item-hidden {
+    color: rgba(0, 0, 0, 0.38);
+
+    .tb-legend-key {
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px var(--tb-series);
+    }
+
+    .tb-legend-label {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.tb-legend-key {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--tb-series);
+}
+
+.tb-legend-label {
+  font-size: 12px;
+}
+
+.tb-legend-value {
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.54);
+}

@@ -34,6 +34,7 @@ import { ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/mode
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
 import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
+import { HOUR } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
 
 export type UsageLevel = 'ok' | 'warn' | 'crit';
@@ -56,7 +57,8 @@ export const EXECUTOR_DISC_RADIUS = 11;
 export const KAFKA_RADIUS = 46;
 export const EDGE_GAP = 4;
 export const EXECUTOR_EDGE_WEIGHT = 0.3;
-export const MAX_SAMPLES = 40;
+export const HISTORY_WINDOW_MS = HOUR;
+export const MAX_SAMPLES = 720;
 export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
 
@@ -106,6 +108,21 @@ export interface ClusterKafkaVm {
   totalLag: number | null;
 }
 
+export interface ClusterTotalVm {
+  brokerCount: number;
+  executorCount: number;
+  hasSessionStats: boolean;
+  totalSessions: number;
+  connectedSessions: number;
+  incomingRate: number;
+  outgoingRate: number;
+}
+
+export interface MessageSeries {
+  incoming: TsValue[];
+  outgoing: TsValue[];
+}
+
 export interface ClusterMapVm {
   width: number;
   height: number;
@@ -113,6 +130,7 @@ export interface ClusterMapVm {
   brokers: ClusterNodeVm[];
   executors: ClusterNodeVm[];
   kafka: ClusterKafkaVm;
+  total: ClusterTotalVm;
   edges: ClusterEdgeVm[];
 }
 
@@ -122,6 +140,7 @@ export interface ClusterRawData {
   kafkaBrokers: PageData<KafkaBroker> | null;
   consumerGroups: PageData<KafkaConsumerGroup> | null;
   latestByBroker: Record<string, TimeseriesData | null>;
+  latestTotal: TimeseriesData | null;
 }
 
 interface MessageRates {
@@ -170,12 +189,22 @@ export function ringArcDash(ringR: number, percent: number | null): string {
   return `${filled.toFixed(1)} ${circumference.toFixed(1)}`;
 }
 
-export function appendSample(samples: TsValue[], sample: TsValue): TsValue[] {
-  const last = samples[samples.length - 1];
-  if (last && last.ts === sample.ts) {
-    return samples;
-  }
-  return [...samples, sample].slice(-MAX_SAMPLES);
+export function emptyMessageSeries(): MessageSeries {
+  return {incoming: [], outgoing: []};
+}
+
+export function appendLatest(series: MessageSeries, latest: TimeseriesData | null, statsIntervalMinutes: number): MessageSeries {
+  return {
+    incoming: appendSample(series.incoming, latestSample(latest, ChartKey.incomingMsgs, statsIntervalMinutes)),
+    outgoing: appendSample(series.outgoing, latestSample(latest, ChartKey.outgoingMsgs, statsIntervalMinutes))
+  };
+}
+
+export function mergeHistory(series: MessageSeries, history: TimeseriesData, statsIntervalMinutes: number): MessageSeries {
+  return {
+    incoming: trimSamples(series.incoming.concat(toRateSamples(history[ChartKey.incomingMsgs], statsIntervalMinutes))),
+    outgoing: trimSamples(series.outgoing.concat(toRateSamples(history[ChartKey.outgoingMsgs], statsIntervalMinutes)))
+  };
 }
 
 export function emptyClusterVm(): ClusterMapVm {
@@ -187,6 +216,7 @@ export function emptyClusterVm(): ClusterMapVm {
     brokers: [],
     executors: [],
     kafka: {x: COLUMN_X.kafka, y: centerY, points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS), brokerCount: null, totalLag: null},
+    total: {brokerCount: 0, executorCount: 0, hasSessionStats: false, totalSessions: 0, connectedSessions: 0, incomingRate: 0, outgoingRate: 0},
     edges: []
   };
 }
@@ -201,7 +231,7 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   const centerY = height / 2;
 
   const rates = brokerInfos.map(info => messageRates(raw.latestByBroker[info.serviceId], statsIntervalMinutes));
-  const sessions = brokerInfos.map(info => raw.sessionsByNode?.[info.serviceId] ?? null);
+  const sessions = brokerInfos.map(info => nodeSessions(raw.sessionsByNode, info.serviceId));
   const maxSessions = Math.max(0, ...sessions.map(s => s?.totalCount ?? 0));
   const maxIncoming = Math.max(0, ...rates.map(r => r.incoming));
   const maxOutgoing = Math.max(0, ...rates.map(r => r.outgoing));
@@ -242,16 +272,14 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   }
 
   const nodeStats = Object.values(raw.sessionsByNode ?? {});
+  const hasSessionStats = isDefinedAndNotNull(raw.sessionsByNode);
+  const totalSessions = nodeStats.reduce((sum, s) => sum + s.totalCount, 0);
+  const connectedSessions = nodeStats.reduce((sum, s) => sum + s.connectedCount, 0);
+  const totalRates = messageRates(raw.latestTotal, statsIntervalMinutes);
   return {
     width: VIEWBOX_WIDTH,
     height,
-    clients: {
-      x: COLUMN_X.clients,
-      y: centerY,
-      hasSessionStats: isDefinedAndNotNull(raw.sessionsByNode),
-      totalSessions: nodeStats.reduce((sum, s) => sum + s.totalCount, 0),
-      connectedSessions: nodeStats.reduce((sum, s) => sum + s.connectedCount, 0)
-    },
+    clients: {x: COLUMN_X.clients, y: centerY, hasSessionStats, totalSessions, connectedSessions},
     brokers,
     executors,
     kafka: {
@@ -263,8 +291,25 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
         ? raw.consumerGroups.data.reduce((sum, group) => sum + (Number(group.lag) || 0), 0)
         : prev.kafka.totalLag
     },
+    total: {
+      brokerCount: brokers.length,
+      executorCount: executors.length,
+      hasSessionStats,
+      totalSessions,
+      connectedSessions,
+      incomingRate: totalRates.incoming,
+      outgoingRate: totalRates.outgoing
+    },
     edges
   };
+}
+
+// A node absent from a successful by-node response simply has no sessions; null means the stats are unavailable.
+function nodeSessions(byNode: ClientSessionNodeStatsInfo | null, serviceId: string): ClientSessionStatsInfo | null {
+  if (!byNode) {
+    return null;
+  }
+  return byNode[serviceId] ?? {connectedCount: 0, disconnectedCount: 0, totalCount: 0};
 }
 
 function byServiceId(a: ResourceUsage, b: ResourceUsage): number {
@@ -279,16 +324,42 @@ function relativeTo(value: number, max: number): number {
   return max > 0 ? value / max : 0;
 }
 
-function latestValue(data: TimeseriesData | null, key: ChartKey): number {
-  return Number(data?.[key]?.[0]?.value) || 0;
+function messageRates(data: TimeseriesData | null, statsIntervalMinutes: number): MessageRates {
+  return {
+    incoming: toRate(data?.[ChartKey.incomingMsgs]?.[0]?.value, statsIntervalMinutes),
+    outgoing: toRate(data?.[ChartKey.outgoingMsgs]?.[0]?.value, statsIntervalMinutes)
+  };
 }
 
-function messageRates(data: TimeseriesData | null, statsIntervalMinutes: number): MessageRates {
-  const interval = statsIntervalMinutes > 0 ? statsIntervalMinutes : 1;
-  return {
-    incoming: latestValue(data, ChartKey.incomingMsgs) / interval,
-    outgoing: latestValue(data, ChartKey.outgoingMsgs) / interval
-  };
+function toRate(count: number | undefined, statsIntervalMinutes: number): number {
+  return (Number(count) || 0) / (statsIntervalMinutes > 0 ? statsIntervalMinutes : 1);
+}
+
+function latestSample(data: TimeseriesData | null, key: ChartKey, statsIntervalMinutes: number): TsValue | null {
+  const latest = data?.[key]?.[0];
+  return latest ? {ts: latest.ts, value: toRate(latest.value, statsIntervalMinutes)} : null;
+}
+
+function toRateSamples(values: TsValue[] | undefined, statsIntervalMinutes: number): TsValue[] {
+  return (values ?? []).map(sample => ({ts: sample.ts, value: toRate(sample.value, statsIntervalMinutes)}));
+}
+
+function appendSample(samples: TsValue[], sample: TsValue | null): TsValue[] {
+  const last = samples[samples.length - 1];
+  if (!sample || (last && last.ts === sample.ts)) {
+    return samples;
+  }
+  return trimSamples([...samples, sample]);
+}
+
+function trimSamples(samples: TsValue[]): TsValue[] {
+  const byTs = new Map<number, TsValue>();
+  for (const sample of samples) {
+    byTs.set(sample.ts, sample);
+  }
+  const sorted = [...byTs.values()].sort((a, b) => a.ts - b.ts);
+  const oldest = (sorted[sorted.length - 1]?.ts ?? 0) - HISTORY_WINDOW_MS;
+  return sorted.filter(sample => sample.ts >= oldest).slice(-MAX_SAMPLES);
 }
 
 function percentOrNull(value: number | null | undefined): number | null {

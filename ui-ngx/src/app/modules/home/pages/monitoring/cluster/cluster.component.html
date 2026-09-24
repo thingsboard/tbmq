@@ -46,9 +46,10 @@
     <div class="tb-cluster-card-body flex lt-lg:flex-col">
       <div class="tb-cluster-map-wrap min-w-0 flex-1">
         <tb-cluster-map [vm]="vm()" [selectedId]="selectedId()" [animate]="animate"
-                        (nodeSelected)="selectedId.set($event)"></tb-cluster-map>
+                        (nodeSelected)="toggleSelection($event)"></tb-cluster-map>
       </div>
-      <tb-cluster-node-inspector class="tb-cluster-inspector" [node]="selectedNode()" [samples]="selectedSamples()">
+      <tb-cluster-node-inspector class="tb-cluster-inspector" [node]="selectedNode()" [total]="vm().total"
+                                 [series]="selectedSeries()" (cleared)="clearSelection()">
       </tb-cluster-node-inspector>
     </div>
   </div>

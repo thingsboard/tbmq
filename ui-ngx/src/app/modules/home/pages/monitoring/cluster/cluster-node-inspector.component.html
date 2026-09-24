@@ -32,13 +32,21 @@
 -->
 @if (node(); as n) {
   <div class="tb-inspector-head">
-    <div class="tb-inspector-id">{{ n.id }}</div>
-    <div class="tb-inspector-meta">
-      <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
-        {{ statusLabel() | translate }}
-      </span>
-      <span class="tb-inspector-type">{{ serviceTypeLabel() }}</span>
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-id">{{ n.id }}</div>
+      <div class="tb-inspector-meta">
+        <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
+          {{ statusLabel() | translate }}
+        </span>
+        <span class="tb-inspector-type">{{ serviceTypeLabel() }}</span>
+      </div>
     </div>
+    <button mat-icon-button type="button" class="tb-inspector-close"
+            [matTooltip]="'monitoring.cluster.show-cluster-total' | translate"
+            [attr.aria-label]="'monitoring.cluster.show-cluster-total' | translate"
+            (click)="cleared.emit()">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
   @if (n.kind === 'broker') {
@@ -49,7 +57,7 @@
         <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(n.sessions.connectedCount)} }}</span>
       }
     </div>
-    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions(n)">
+    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions(n.id)">
       {{ 'monitoring.cluster.open-in-sessions' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
     </button>
@@ -70,15 +78,38 @@
       </div>
     }
   </div>
-
-  @if (n.kind === 'broker') {
-    <div class="tb-divider"></div>
-    <div class="tb-spark-head">
-      <span class="tb-stat-label">{{ 'monitoring.cluster.outgoing-messages' | translate }}</span>
-      <span class="tb-spark-unit">{{ compactNumber(n.outgoingRate) }} {{ 'monitoring.cluster.msg-per-min' | translate }}</span>
-    </div>
-    <tb-cluster-sparkline [points]="samples()"></tb-cluster-sparkline>
-  }
 } @else {
-  <div class="tb-inspector-empty">{{ 'monitoring.cluster.inspector-empty' | translate }}</div>
+  @let t = total();
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-id">{{ 'monitoring.cluster.cluster-total' | translate }}</div>
+      <div class="tb-inspector-meta">
+        <span class="tb-inspector-type">
+          {{ 'monitoring.cluster.brokers' | translate }}: {{ t.brokerCount }}
+          · {{ 'monitoring.cluster.integrations' | translate }}: {{ t.executorCount }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tb-stat">
+    <span class="tb-stat-label">{{ 'monitoring.cluster.sessions-in-cluster' | translate }}</span>
+    <span class="tb-stat-value">{{ t.hasSessionStats ? formatLargeNumber(t.totalSessions) : '—' }}</span>
+    @if (t.hasSessionStats) {
+      <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(t.connectedSessions)} }}</span>
+    }
+  </div>
+  <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions()">
+    {{ 'monitoring.cluster.open-in-sessions' | translate }}
+    <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+  </button>
+}
+
+@if (showChart()) {
+  <div class="tb-divider"></div>
+  <div class="tb-spark-head">
+    <span class="tb-stat-label">{{ 'monitoring.cluster.messages' | translate }}</span>
+    <span class="tb-spark-unit">{{ 'monitoring.cluster.last-hour' | translate }}</span>
+  </div>
+  <tb-cluster-messages-chart [series]="chartSeries()"></tb-cluster-messages-chart>
 }

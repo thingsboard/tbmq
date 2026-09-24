@@ -29,20 +29,30 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { TsValue } from '@shared/models/chart.model';
+import { MatTooltip } from '@angular/material/tooltip';
 import {
   resourceUsageStatusStyle,
   resourceUsageStatusTranslationMap,
   serviceTypeMap
 } from '@shared/models/resource-usage.model';
 import { formatLargeNumber } from '@core/utils';
-import { ClusterSparklineComponent } from '@home/pages/monitoring/cluster/cluster-sparkline.component';
-import { ClusterNodeVm, compactNumber, UsageLevel, usageLevel } from '@home/pages/monitoring/cluster/cluster.models';
+import {
+  ClusterMessagesChartComponent,
+  MessageChartSeries
+} from '@home/pages/monitoring/cluster/cluster-messages-chart.component';
+import {
+  ClusterNodeVm,
+  ClusterTotalVm,
+  emptyMessageSeries,
+  MessageSeries,
+  UsageLevel,
+  usageLevel
+} from '@home/pages/monitoring/cluster/cluster.models';
 
 interface MeterVm {
   label: string;
@@ -54,13 +64,16 @@ interface MeterVm {
     selector: 'tb-cluster-node-inspector',
     templateUrl: './cluster-node-inspector.component.html',
     styleUrls: ['./cluster-node-inspector.component.scss'],
-    imports: [TranslateModule, MatButton, MatIcon, ClusterSparklineComponent],
+    imports: [TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, ClusterMessagesChartComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClusterNodeInspectorComponent {
 
   readonly node = input<ClusterNodeVm | null>(null);
-  readonly samples = input<TsValue[]>([]);
+  readonly total = input.required<ClusterTotalVm>();
+  readonly series = input<MessageSeries>(emptyMessageSeries());
+
+  readonly cleared = output<void>();
 
   readonly statusStyle = computed(() => resourceUsageStatusStyle.get(this.node()?.status));
   readonly statusLabel = computed(() => resourceUsageStatusTranslationMap.get(this.node()?.status));
@@ -76,13 +89,21 @@ export class ClusterNodeInspectorComponent {
       {label: 'monitoring.resource-usage.disk-usage', value: node.disk, level: usageLevel(node.disk)}
     ];
   });
+  readonly showChart = computed(() => this.node()?.kind !== 'executor');
+  readonly chartSeries = computed<MessageChartSeries[]>(() => {
+    const rates = this.node() ?? this.total();
+    const series = this.series();
+    return [
+      {key: 'incoming', label: 'monitoring.cluster.incoming-messages', points: series.incoming, current: rates.incomingRate},
+      {key: 'outgoing', label: 'monitoring.cluster.outgoing-messages', points: series.outgoing, current: rates.outgoingRate}
+    ];
+  });
 
   readonly formatLargeNumber = formatLargeNumber;
-  readonly compactNumber = compactNumber;
 
   private readonly router = inject(Router);
 
-  openSessions(node: ClusterNodeVm) {
-    this.router.navigate(['/sessions'], {queryParams: {nodeIdList: node.id}});
+  openSessions(nodeId?: string) {
+    this.router.navigate(['/sessions'], nodeId ? {queryParams: {nodeIdList: nodeId}} : undefined);
   }
 }

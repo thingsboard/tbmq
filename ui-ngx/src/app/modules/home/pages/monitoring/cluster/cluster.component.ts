@@ -40,25 +40,31 @@ import { ConfigService } from '@core/http/config.service';
 import { RequestConfig } from '@core/http/http-utils';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
+import { Direction } from '@shared/models/page/sort-order';
+import { ChartKey, TimeseriesData, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ServiceType } from '@shared/models/resource-usage.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
-import { SECOND } from '@shared/models/time/time.models';
+import { AggregationType, SECOND } from '@shared/models/time/time.models';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
 import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
 import {
-  appendSample,
+  appendLatest,
   assembleClusterVm,
   ClusterMapVm,
   ClusterRawData,
-  emptyClusterVm
+  emptyClusterVm,
+  emptyMessageSeries,
+  HISTORY_WINDOW_MS,
+  MAX_SAMPLES,
+  mergeHistory,
+  MessageSeries
 } from '@home/pages/monitoring/cluster/cluster.models';
 
 const REFRESH_INTERVAL = 10 * SECOND;
 // Consumer-group lag is computed through the Kafka admin client, so it is refreshed less often than node stats.
 const KAFKA_REFRESH_EVERY_TICKS = 6;
 const QUIET_REQUEST: RequestConfig = {ignoreLoading: true, ignoreErrors: true};
-const BROKER_RATE_KEYS = [ChartKey.incomingMsgs, ChartKey.outgoingMsgs];
+const MESSAGE_RATE_KEYS = [ChartKey.incomingMsgs, ChartKey.outgoingMsgs];
 
 const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(catchError(() => of(null)));
 
@@ -73,7 +79,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   readonly vm = signal<ClusterMapVm>(emptyClusterVm());
   readonly selectedId = signal<string | null>(null);
-  readonly samples = signal<Record<string, TsValue[]>>({});
+  readonly samples = signal<Record<string, MessageSeries>>({});
   readonly lastTickOk = signal(true);
   readonly staleSeconds = signal(0);
   readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -83,7 +89,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
     const {brokers, executors} = this.vm();
     return brokers.concat(executors).find(node => node.id === id) ?? null;
   });
-  readonly selectedSamples = computed(() => this.samples()[this.selectedId()] ?? []);
+  readonly selectedSeries = computed(() => this.samples()[this.selectedId() ?? TOTAL_ENTITY_ID] ?? emptyMessageSeries());
 
   private readonly timeseriesService = inject(TimeseriesService);
   private readonly clientSessionService = inject(ClientSessionService);
@@ -93,9 +99,11 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private lastUpdated: number | null = null;
   private kafkaBrokers: PageData<KafkaBroker> | null = null;
   private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
+  private readonly historyLoaded = new Set<string>();
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit() {
+    this.loadHistory(TOTAL_ENTITY_ID);
     timer(0, REFRESH_INTERVAL).pipe(
       switchMap(tick => this.loadTick(tick)),
       retry({delay: REFRESH_INTERVAL}),
@@ -108,11 +116,26 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  toggleSelection(id: string) {
+    const next = this.selectedId() === id ? null : id;
+    this.selectedId.set(next);
+    if (!next) {
+      this.loadHistory(TOTAL_ENTITY_ID);
+    } else if (this.vm().brokers.some(broker => broker.id === next)) {
+      this.loadHistory(next);
+    }
+  }
+
+  clearSelection() {
+    this.selectedId.set(null);
+  }
+
   private loadTick(tick: number): Observable<ClusterRawData> {
     const refreshKafka = tick % KAFKA_REFRESH_EVERY_TICKS === 0;
     return forkJoin({
       services: quiet(this.timeseriesService.getServiceInfos(QUIET_REQUEST)),
       sessionsByNode: quiet(this.clientSessionService.getClientSessionsStatsByNode(QUIET_REQUEST)),
+      latestTotal: quiet(this.timeseriesService.getLatestTimeseries(TOTAL_ENTITY_ID, MESSAGE_RATE_KEYS)),
       kafkaBrokers: refreshKafka
         ? quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST))
         : of(this.kafkaBrokers),
@@ -136,10 +159,34 @@ export class ClusterComponent implements OnInit, OnDestroy {
       return of({});
     }
     return forkJoin(brokerIds.map(id =>
-      quiet(this.timeseriesService.getLatestTimeseries(id, BROKER_RATE_KEYS)).pipe(map(data => [id, data] as const))
+      quiet(this.timeseriesService.getLatestTimeseries(id, MESSAGE_RATE_KEYS)).pipe(map(data => [id, data] as const))
     )).pipe(
       map(entries => Object.fromEntries(entries))
     );
+  }
+
+  private loadHistory(key: string) {
+    if (this.historyLoaded.has(key)) {
+      return;
+    }
+    this.historyLoaded.add(key);
+    const endTs = Date.now();
+    this.timeseriesService.getEntityTimeseries(key, endTs - HISTORY_WINDOW_MS, endTs, MESSAGE_RATE_KEYS, MAX_SAMPLES,
+      AggregationType.NONE, undefined, Direction.ASC
+    ).pipe(
+      catchError(() => of(null)),
+      takeUntil(this.destroy$)
+    ).subscribe(history => {
+      if (!history) {
+        this.historyLoaded.delete(key);
+        return;
+      }
+      const statsInterval = this.statsInterval();
+      this.samples.update(samples => ({
+        ...samples,
+        [key]: mergeHistory(samples[key] ?? emptyMessageSeries(), history, statsInterval)
+      }));
+    });
   }
 
   private applyTick(raw: ClusterRawData) {
@@ -151,32 +198,34 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.kafkaBrokers = raw.kafkaBrokers ?? this.kafkaBrokers;
     this.consumerGroups = raw.consumerGroups ?? this.consumerGroups;
 
-    const statsInterval = this.configService.brokerConfig?.statsCollectionInterval || 1;
-    const vm = assembleClusterVm(raw, this.vm(), statsInterval);
+    const vm = assembleClusterVm(raw, this.vm(), this.statsInterval());
     this.vm.set(vm);
     this.lastUpdated = Date.now();
     this.lastTickOk.set(true);
     this.ensureSelection(vm);
-    this.recordSamples(vm, raw);
+    this.recordSamples(raw);
   }
 
   private ensureSelection(vm: ClusterMapVm) {
     const selected = this.selectedId();
-    if (!vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
-      this.selectedId.set(vm.brokers[0]?.id ?? vm.executors[0]?.id ?? null);
+    if (selected && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
+      this.selectedId.set(null);
     }
   }
 
-  private recordSamples(vm: ClusterMapVm, raw: ClusterRawData) {
+  private recordSamples(raw: ClusterRawData) {
+    const statsInterval = this.statsInterval();
+    const latestByKey = {...raw.latestByBroker, [TOTAL_ENTITY_ID]: raw.latestTotal};
     this.samples.update(samples => {
       const next = {...samples};
-      for (const broker of vm.brokers) {
-        const ts = raw.latestByBroker[broker.id]?.[ChartKey.outgoingMsgs]?.[0]?.ts;
-        if (ts) {
-          next[broker.id] = appendSample(next[broker.id] ?? [], {ts, value: broker.outgoingRate});
-        }
+      for (const [key, latest] of Object.entries(latestByKey)) {
+        next[key] = appendLatest(next[key] ?? emptyMessageSeries(), latest, statsInterval);
       }
       return next;
     });
+  }
+
+  private statsInterval(): number {
+    return this.configService.brokerConfig?.statsCollectionInterval || 1;
   }
 }

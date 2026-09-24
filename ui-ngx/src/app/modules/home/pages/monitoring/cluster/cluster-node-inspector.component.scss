@@ -43,8 +43,34 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 
 .tb-inspector-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tb-inspector-title {
+  display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+}
+
+.tb-inspector-close {
+  --mdc-icon-button-state-layer-size: 28px;
+
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 2px;
+  margin: -4px -6px 0 0;
+
+  .mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 20px;
+    color: rgba(0, 0, 0, 0.54);
+  }
 }
 
 .tb-inspector-id {
@@ -177,9 +203,4 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   font-family: $tb-mono;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.54);
-}
-
-.tb-inspector-empty {
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.42);
 }
