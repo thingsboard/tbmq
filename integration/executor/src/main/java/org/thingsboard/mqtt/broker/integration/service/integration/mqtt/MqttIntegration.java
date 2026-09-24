@@ -217,8 +217,13 @@ public class MqttIntegration extends AbstractIntegration {
         return client;
     }
 
-    private SslContext getSslContext(MqttIntegrationConfig mqttIntegrationConfig) throws SSLException {
-        return mqttIntegrationConfig.isSsl() ? mqttIntegrationConfig.getCredentials().initSslContext() : null;
+    /**
+     * PEM certificate credentials always mean TLS: the form hides the "Enable SSL" toggle for them, so their saved
+     * {@code ssl} flag is whatever it was before, usually false.
+     */
+    static SslContext getSslContext(MqttIntegrationConfig mqttIntegrationConfig) throws SSLException {
+        boolean tls = mqttIntegrationConfig.isSsl() || CredentialsType.CERT_PEM == mqttIntegrationConfig.getCredentials().getType();
+        return tls ? mqttIntegrationConfig.getCredentials().initSslContext() : null;
     }
 
     private MqttVersion getMqttVersion(MqttIntegrationConfig mqttIntegrationConfig) {
