@@ -211,6 +211,13 @@ public class MqttIntegration extends AbstractIntegration {
         boolean reconnect = mqttIntegrationConfig.getReconnectPeriodSec() != 0;
         clientConfig.setReconnect(reconnect);
         clientConfig.setReconnectDelay(reconnect ? mqttIntegrationConfig.getReconnectPeriodSec() : 5);
+        // Without this, MqttClientImpl's RetransmissionHandler NPEs while arming the retransmission timer for the
+        // first QoS>0 PUBLISH. The publish still completes and process()'s IntegrationMsgCallback still fires
+        // normally - a different listener (handlePuback, via pendingPublishes) completes that promise - but the
+        // retransmission safety net for that PUBLISH is gone, and the NPE itself surfaces only as a netty listener
+        // WARN, never as a thrown or reported error. See MqttClientRetransmissionDefaults for the full explanation
+        // and where these values come from.
+        clientConfig.setRetransmissionConfig(MqttClientRetransmissionDefaults.CONFIG);
 
         MqttClient client = getMqttClient(clientConfig);
         client.setEventLoop(context.getSharedEventLoop());

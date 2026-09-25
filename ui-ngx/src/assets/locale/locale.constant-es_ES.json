@@ -638,6 +638,7 @@
         "keep-alive-sec": "Keep alive (seg)",
         "connect-timeout-sec": "Timeout de conexión (seg)",
         "reconnect-period-sec": "Periodo de reconexión (seg)",
+        "mqtt-reconnect-period-hint": "Intervalo mínimo entre intentos de reconexión. Cada intento fallido consecutivo espera más, este valor más 1, 2, 4, 8… segundos, hasta 60 segundos (o este valor, si es mayor). Desactive la reconexión automática estableciendo 0.",
         "configuration": "Configuración",
         "send-only-payload": "Enviar solo el payload",
         "send-only-payload-hint": "Si está habilitado, se reenvía el payload tal cual. Si no, se envía un objeto JSON con propiedades.",
