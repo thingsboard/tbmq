@@ -137,7 +137,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
     }
 
     private MqttClientConfig getConfig(String clientId) {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setClientId(clientId);
         config.setUsername(USER_NAME);
         config.setCleanSession(true);

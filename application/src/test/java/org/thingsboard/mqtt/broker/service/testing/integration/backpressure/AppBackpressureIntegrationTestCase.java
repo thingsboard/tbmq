@@ -122,7 +122,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
 
         String backpressureTopic = "backpressure/topic";
 
-        MqttClientConfig subscriberConfig = new MqttClientConfig();
+        MqttClientConfig subscriberConfig = newMqttClientConfig();
         subscriberConfig.setCleanSession(false);
         subscriberConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         subscriberConfig.setClientId(appClientId);
@@ -178,7 +178,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         String topic = "shared/backpressure/topic";
         String sharedSubsTopic = "$share/backpressureGroup/" + topic;
 
-        MqttClientConfig subscriberConfig = new MqttClientConfig();
+        MqttClientConfig subscriberConfig = newMqttClientConfig();
         subscriberConfig.setCleanSession(false);
         subscriberConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         subscriberConfig.setClientId(appClientId);

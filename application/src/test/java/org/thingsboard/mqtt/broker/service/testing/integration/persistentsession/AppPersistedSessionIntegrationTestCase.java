@@ -93,7 +93,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
             persistedClient.disconnect();
             awaitUntilDisconnected();
         }
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(true);
@@ -105,7 +105,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessPersistence_afterDisconnect() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
@@ -137,7 +137,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessConnect() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
@@ -153,7 +153,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessPersistence_afterReconnect() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
@@ -188,7 +188,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessPersistence_afterReconnectAndChange() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
@@ -219,7 +219,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessPersistence_clearPersisted() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
@@ -252,7 +252,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void testSuccessPersistence_clearPersistedAndDisconnect() throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
