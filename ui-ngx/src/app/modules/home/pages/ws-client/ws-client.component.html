@@ -40,14 +40,7 @@
         <section class="client-section auto-flex">
           <tb-ws-subscriptions></tb-ws-subscriptions>
         </section>
-        <section class="client-section items-between flex flex-row gap-4 px-4">
-          <tb-help-page [label]="'ws-client.settings'"
-                        [page]="'/settings/general'"
-                        [icon]="'settings'"
-                        [tooltip]="'ws-client.settings-navigate'">
-          </tb-help-page>
-          <tb-help-page [page]="connectionHelpLink"></tb-help-page>
-        </section>
+        <ng-container *ngTemplateOutlet="helpSection"></ng-container>
       </section>
       <section class="client-container !w-[70%]">
         <section class="client-section">
@@ -75,9 +68,18 @@
     <section class="client-section">
       <tb-ws-subscriptions></tb-ws-subscriptions>
     </section>
-    <section class="client-section">
-      <tb-help-page [page]="connectionHelpLink"></tb-help-page>
-    </section>
+    <ng-container *ngTemplateOutlet="helpSection"></ng-container>
+  </section>
+</ng-template>
+
+<ng-template #helpSection>
+  <section class="client-section flex flex-row gap-4 px-4">
+    <tb-help-page [label]="'ws-client.settings'"
+                  [page]="'/settings/general'"
+                  [icon]="'settings'"
+                  [tooltip]="'ws-client.settings-navigate'">
+    </tb-help-page>
+    <tb-help-page [page]="connectionHelpLink"></tb-help-page>
   </section>
 </ng-template>
 

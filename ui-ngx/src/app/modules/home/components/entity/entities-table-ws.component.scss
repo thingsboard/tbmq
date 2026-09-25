@@ -18,6 +18,15 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+
+  // the table scrolls on its own, so wide rows scroll under a paginator that stays in place
+  .tb-table-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
 }
 
 :host ::ng-deep {
@@ -33,6 +42,16 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+  }
+
+  .mat-mdc-cell > span {
+    display: block;
+
+    // a 100% column must not stretch to its longest value: the fixed width is its floor, min-width lets it fill the rest
+    &.tb-fill-column {
+      width: 200px;
+      min-width: 100%;
     }
   }
 

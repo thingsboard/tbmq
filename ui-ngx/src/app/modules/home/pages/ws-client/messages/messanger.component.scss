@@ -32,8 +32,7 @@
 
   .tb-messages-container {
     min-height: 260px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     padding: 0 12px 0 12px;
     margin-bottom: 8px;
     height: 100%;

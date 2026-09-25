@@ -83,8 +83,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
       new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '120px'),
-      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic,
-        undefined, undefined, undefined, (entity) => entity.topic),
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic),
       new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '30px', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(QosTranslation.get(entity.qos))),
       new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50px',
@@ -98,7 +97,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         } catch (e) {
           return content;
         }
-      }, undefined, undefined, undefined, (entity) => entity.payload)
+      })
     );
 
     this.entitiesFetchFunction = (pageLink) => this.mqttJsClientService.getMessages(pageLink);
