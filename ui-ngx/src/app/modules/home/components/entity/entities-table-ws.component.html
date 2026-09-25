@@ -15,6 +15,7 @@
     limitations under the License.
 
 -->
+<div class="tb-table-content">
 <table mat-table [dataSource]="dataSource"
   matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
   <ng-container matColumnDef="select" sticky>
@@ -33,7 +34,7 @@
     </mat-cell>
   </ng-container>
   @for (column of entityColumns; track column.key) {
-    <ng-container [matColumnDef]="column.key" sticky>
+    <ng-container [matColumnDef]="column.key">
       <mat-header-cell [class.mat-number-cell]="column.isNumberColumn"
         *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
       {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
@@ -42,7 +43,11 @@
         [matTooltip]="cellTooltip(entity, column, row)"
         matTooltipPosition="above"
         [style]="cellStyle(entity, column, row)">
-        <span [innerHTML]="cellContent(entity, column, row)"></span>
+        @if (cellTooltip(entity, column, row)) {
+          <span [class.tb-fill-column]="column.width === '100%'" [innerHTML]="cellContent(entity, column, row)"></span>
+        } @else {
+          <span [class.tb-fill-column]="column.width === '100%'" [innerHTML]="cellContent(entity, column, row)" tbTruncateWithTooltip></span>
+        }
         @if (column.actionCell) {
           @switch (column.actionCell.type) {
             @case (cellActionType.COPY_BUTTON) {
@@ -72,7 +77,7 @@
     </ng-container>
   }
   @for (column of actionColumns; track column.key) {
-    <ng-container [matColumnDef]="column.key" sticky>
+    <ng-container [matColumnDef]="column.key">
       <mat-header-cell *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
       <mat-cell *matCellDef="let entity; let row = index"
         [style]="cellStyle(entity, column, row)">
@@ -142,12 +147,12 @@
            [class.tb-current-entity]="dataSource.isCurrentEntity(entity)"
            *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
 </table>
-
-@if (!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading) {
-  <ng-container *ngTemplateOutlet="isEmpty"></ng-container>
-} @else {
-  <span class="flex flex-1"></span>
-}
+  @if (!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading) {
+    <ng-container *ngTemplateOutlet="isEmpty"></ng-container>
+  } @else {
+    <span class="flex flex-1"></span>
+  }
+</div>
 
 @if (displayPagination) {
   <mat-paginator

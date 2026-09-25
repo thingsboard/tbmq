@@ -76,6 +76,9 @@
       }
 
       .action-buttons {
+        // a block wrapper puts the inline-block button on a baseline with descender space under it, pushing it above the row centre
+        display: flex;
+        align-items: center;
         visibility: hidden;
 
         .mat-icon {

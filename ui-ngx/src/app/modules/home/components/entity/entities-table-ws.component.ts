@@ -66,13 +66,14 @@ import { MatIconButton } from '@angular/material/button';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIcon } from '@angular/material/icon';
+import { TruncateWithTooltipDirective } from '@shared/directives/truncate-with-tooltip.directive';
 
 @Component({
     selector: 'tb-entities-table-ws',
     templateUrl: './entities-table-ws.component.html',
     styleUrls: ['./entities-table-ws.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
+    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe, TruncateWithTooltipDirective]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit, OnDestroy {
 
