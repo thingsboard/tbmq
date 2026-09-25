@@ -66,7 +66,7 @@
         <jar-plugin.version>3.4.0</jar-plugin.version>
         <mail.version>2.0.2</mail.version> <!-- to fix CVE-2025-7962 -->
         <paho-client.version>1.2.5</paho-client.version>
-        <thingsboard.version>3.9.0</thingsboard.version>
+        <thingsboard.version>4.3.1</thingsboard.version>
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <jjwt.version>0.12.5</jjwt.version>
@@ -1004,6 +1004,28 @@
                     <exclusion>
                         <groupId>com.squareup.okio</groupId>
                         <artifactId>okio</artifactId>
+                    </exclusion>
+                    <!-- org.thingsboard.common:util (which netty-mqtt needs for ListeningExecutor) drags these in
+                         for its geo, expression and JSON-schema helpers. TBMQ uses only ListeningExecutor,
+                         AbstractListeningExecutor and JacksonUtil from that jar, and none of those three reference
+                         these packages; Spring Boot's YAML support comes from org.yaml:snakeyaml, not from
+                         jackson-dataformat-yaml. Excluding json-schema-validator also drops its own transitive
+                         com.ethlo.time:itu and jackson-dataformat-yaml. -->
+                    <exclusion>
+                        <groupId>org.locationtech.spatial4j</groupId>
+                        <artifactId>spatial4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.locationtech.jts</groupId>
+                        <artifactId>jts-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.objecthunter</groupId>
+                        <artifactId>exp4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.networknt</groupId>
+                        <artifactId>json-schema-validator</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

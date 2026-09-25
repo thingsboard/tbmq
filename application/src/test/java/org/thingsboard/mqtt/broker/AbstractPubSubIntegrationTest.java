@@ -45,6 +45,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
@@ -174,6 +175,34 @@ public abstract class AbstractPubSubIntegrationTest {
         ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
             return new ReplaceKafkaPropertiesBeanPostProcessor();
         }
+    }
+
+    /**
+     * netty-mqtt leaves {@code MqttClientConfig.retransmissionConfig} null in both of its constructors, while
+     * {@code MqttClientImpl} dereferences it synchronously on every SUBSCRIBE/UNSUBSCRIBE and on every QoS &gt; 0
+     * PUBLISH, so a bare {@code new MqttClientConfig()} NPEs out of the first {@code client.on(...)}. Every test
+     * client must therefore set one, which is why this is the only way these tests build an
+     * {@link MqttClientConfig}.
+     * <p>
+     * Deliberately <b>not</b> the production triple the integrations use ({@code MqttClientRetransmissionDefaults} in
+     * {@code integration/executor}). These tests do not assert anything about retransmission; they only need a window
+     * wide enough that a retransmission never fires while they are running. The production {@code initialDelayMillis} of 5000 with a 0.15 jitter puts the first
+     * PUBLISH retransmission at 4.25-5.75 s, which is narrower than the flat 10 s that netty-mqtt 3.9.0 hardcoded
+     * ({@code RetransmissionHandler.start} set {@code timeout = 10} and scheduled in SECONDS) - the behaviour these
+     * tests were green against before the 4.3.1 bump. Under load a broker PUBACK can cross 5 s but not 10 s, and a
+     * QoS 1 publisher retransmitting into QoS 0 subscribers duplicates every message with nothing to dedup it.
+     * <p>
+     * So: 10 000 ms, with jitter disabled (the library special-cases {@code jitterFactor == 0} to a multiplier of
+     * exactly 1.0, so this is deterministic rather than a range). That reproduces 3.9.0's first retransmission
+     * exactly, and every later attempt is longer than 3.9.0's was.
+     */
+    protected static final MqttClientConfig.RetransmissionConfig TEST_RETRANSMISSION_CONFIG =
+            new MqttClientConfig.RetransmissionConfig(3, 10_000L, 0.0d);
+
+    protected static MqttClientConfig newMqttClientConfig() {
+        MqttClientConfig config = new MqttClientConfig();
+        config.setRetransmissionConfig(TEST_RETRANSMISSION_CONFIG);
+        return config;
     }
 
     @NotNull

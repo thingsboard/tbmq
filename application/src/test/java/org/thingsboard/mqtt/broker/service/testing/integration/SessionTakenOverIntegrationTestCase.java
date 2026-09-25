@@ -187,7 +187,7 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
     }
 
     private MqttClientConfig getConfig(String clientId, boolean cleanSession) {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setClientId(clientId);
         config.setCleanSession(cleanSession);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);

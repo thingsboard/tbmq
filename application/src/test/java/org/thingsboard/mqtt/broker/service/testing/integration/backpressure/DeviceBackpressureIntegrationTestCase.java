@@ -68,7 +68,7 @@ public class DeviceBackpressureIntegrationTestCase extends AbstractPubSubIntegra
         String backpressureTopic = "backpressure/topic";
         String subscriberClientId = "backpressureSubscriber";
 
-        MqttClientConfig subscriberConfig = new MqttClientConfig();
+        MqttClientConfig subscriberConfig = newMqttClientConfig();
         subscriberConfig.setCleanSession(false);
         subscriberConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         subscriberConfig.setClientId(subscriberClientId);

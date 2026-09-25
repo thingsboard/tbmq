@@ -99,7 +99,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         }
         // a persistent session outlives DISCONNECT, so reconnect with the SAME client id and cleanSession=true
         // to drop the session together with its subscriptions
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setClientId(client.getClientConfig().getClientId());
         config.setCleanSession(true);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
@@ -194,7 +194,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
             Thread.sleep(50);
         }
 
-        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient1 = reconnect(shareSubClient1, handler1);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
         log.debug("The result of awaiting should be [false], actual is: [{}]", await);
@@ -239,7 +239,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
             Thread.sleep(50);
         }
 
-        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient1 = reconnect(shareSubClient1, handler1);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
         log.debug("The result of awaiting should be [false], actual is: [{}]", await);
@@ -247,7 +247,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         //asserts
         assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
 
-        shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient2 = reconnect(shareSubClient2, handler2);
         shareSubClient2.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -386,14 +386,14 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         }
         Thread.sleep(50);
 
-        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient1 = reconnect(shareSubClient1, handler1);
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
             ClientSessionCtx clientCtx = clientSessionCtxService.getClientSessionCtx(shareSubClient1.getClientConfig().getClientId());
             return clientCtx != null;
         });
 
-        shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient2 = reconnect(shareSubClient2, handler2);
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
         log.debug("The result of awaiting is: [{}]", await);
@@ -472,8 +472,38 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         return getClient(handler, true);
     }
 
+    /**
+     * Reconnects a persistent client with a <b>fresh</b> {@link MqttClient} under the same client id, the same
+     * cleanSession and the same default handler.
+     * <p>
+     * Never call {@code connect()} on an instance that has been {@code disconnect()}ed. netty-mqtt writes
+     * {@code MqttClientImpl#disconnected} only in the constructor and in {@code disconnect()} and never resets it,
+     * so such an instance reports {@code isConnected() == false} for ever and {@code scheduleConnectIfRequired}
+     * refuses to reconnect it. On 4.3.1 that is worse than cosmetic in two ways this class was hitting:
+     * {@code disconnect()} now early-returns when the flag is already set, so the {@code disconnectClient(...)}
+     * calls at the end of these tests were silent no-ops leaking a connected session into {@code @After}; and
+     * {@code disconnect()} arms a one-second fallback that closes whatever {@code MqttClientImpl#channel} points at
+     * when it fires, which can tear down a channel opened by a reconnect inside that second.
+     * <p>
+     * Semantics are unchanged: the broker keeps the persistent session under the same client id, and these tests
+     * deliver through the handler that {@link #getClient} installs as netty-mqtt's <em>default</em> handler.
+     */
+    private MqttClient reconnect(MqttClient disconnected, MqttHandler handler) throws Exception {
+        MqttClientConfig config = newMqttClientConfig();
+        config.setClientId(disconnected.getClientConfig().getClientId());
+        config.setCleanSession(disconnected.getClientConfig().isCleanSession());
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
+        MqttClient client = MqttClient.create(config, handler, externalExecutorService);
+        // the instance being replaced is already disconnected, and the replacement carries its client id, so
+        // releasing both would only make the @After cleanup take the same session over twice
+        clients.remove(disconnected);
+        clients.add(client);
+        client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        return client;
+    }
+
     private MqttClient getClient(MqttHandler handler, boolean cleanSession) throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setCleanSession(cleanSession);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         MqttClient client = MqttClient.create(config, handler, externalExecutorService);

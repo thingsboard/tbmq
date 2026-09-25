@@ -638,6 +638,7 @@
         "keep-alive-sec": "Keep-Alive (Sek.)",
         "connect-timeout-sec": "Verbindungszeitüberschreitung (Sek.)",
         "reconnect-period-sec": "Wiederverbindungsintervall (Sek.)",
+        "mqtt-reconnect-period-hint": "Minimaler Abstand zwischen Wiederverbindungsversuchen. Jeder weitere Fehlversuch wartet länger – dieser Wert plus 1, 2, 4, 8 … Sekunden –, bis maximal 60 Sekunden (oder dieser Wert, falls größer). Automatische Wiederverbindung mit 0 deaktivieren.",
         "configuration": "Konfiguration",
         "send-only-payload": "Nur Nutzdaten senden",
         "send-only-payload-hint": "Wenn aktiviert, wird das Payload der eingehenden Nachricht unverändert weitergeleitet. Wenn deaktiviert, wird ein JSON-Objekt mit dem Payload und weiteren Eigenschaften gesendet.",

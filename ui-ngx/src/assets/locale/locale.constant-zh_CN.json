@@ -594,6 +594,7 @@
         "keep-alive-sec": "Keep alive（秒）",
         "connect-timeout-sec": "连接超时（秒）",
         "reconnect-period-sec": "重连间隔（秒）",
+        "mqtt-reconnect-period-hint": "重连尝试之间的最小间隔。每次连续失败后等待时间增加，为该值加 1、2、4、8… 秒，最长 60 秒（若该值更大，则以该值为上限）。设置为 0 可禁用自动重连。",
         "configuration": "配置",
         "send-only-payload": "仅发送消息负载",
         "send-only-payload-hint": "启用则原样转发负载；禁用则发送带属性的 JSON 对象",

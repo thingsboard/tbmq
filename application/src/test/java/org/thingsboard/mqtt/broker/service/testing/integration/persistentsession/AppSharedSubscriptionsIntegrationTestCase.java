@@ -143,7 +143,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
 
     private void disconnectWithCleanSession(MqttClient client) throws Exception {
         if (client != null) {
-            MqttClientConfig config = new MqttClientConfig();
+            MqttClientConfig config = newMqttClientConfig();
             config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
             config.setCleanSession(true);
             config.setClientId(client.getClientConfig().getClientId());
@@ -267,7 +267,20 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
                         return sessionInfo == null || sessionInfo.isDisconnected();
                     });
 
-            shareSubClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+            // Reconnect with a FRESH MqttClient rather than calling connect() again on the disconnected one.
+            // netty-mqtt never resets MqttClientImpl#disconnected (written only by the constructor and by
+            // disconnect(), in 3.9.0 and 4.3.1 alike), and 4.3.1's disconnect() additionally arms a one-second
+            // fallback that closes whatever MqttClientImpl#channel points at when it fires - so a connect() on the
+            // same instance has its brand-new channel torn down from under it. Reusing a disconnected instance is
+            // not something the library supports.
+            //
+            // Nothing this test asserts changes. The new client carries the same client id, the same
+            // cleanSession=false and the same `handler`, and getClient passes that handler as netty-mqtt's DEFAULT
+            // handler - which is how these messages have always been delivered, because the local
+            // '$share/g1/test/+' subscription registered above never matches a delivered topic like 'test/1'. The
+            // broker keeps the persistent session's shared subscription across the reconnect, so no SUBSCRIBE is
+            // sent here either: that is exactly what "withoutAdditionalSubscribe" means.
+            shareSubClient = getClient("test_sub_client1", handler, false);
             Awaitility
                     .await()
                     .atMost(10, TimeUnit.SECONDS)
@@ -433,7 +446,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     }
 
     private MqttClient getClient(String clientId, MqttHandler handler, boolean cleanSession) throws Exception {
-        MqttClientConfig config = new MqttClientConfig();
+        MqttClientConfig config = newMqttClientConfig();
         config.setCleanSession(cleanSession);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(clientId);
