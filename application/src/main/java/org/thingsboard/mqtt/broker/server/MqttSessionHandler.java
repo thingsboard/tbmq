@@ -88,6 +88,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ConnectionStats connectionStats;
     private final ClientSessionCtx clientSessionCtx;
+    private final org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder clientTraceRecorder;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
 
@@ -102,6 +103,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.throughputQuotaService = mqttHandlerCtx.getThroughputQuotaService();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
         this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
+        this.clientTraceRecorder = mqttHandlerCtx.getClientTraceRecorder();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -139,6 +141,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             }
 
             processMqttMsg(message);
+            clientTraceRecorder.tryRecord(clientId, sessionId, address, "IN", message);
         } finally {
             ReferenceCountUtil.safeRelease(msg);
         }

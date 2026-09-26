@@ -76,6 +76,13 @@ export class MenuService {
         icon: 'mdi:book-multiple'
       },
       {
+        id: MenuId.client_traces,
+        name: 'Client trace',
+        type: 'link',
+        path: '/client-traces',
+        icon: 'timeline'
+      },
+      {
         id: MenuId.subscriptions,
         name: 'subscription.subscriptions',
         type: 'link',
@@ -313,4 +320,3 @@ export class MenuService {
     ]);
   }
 }
-

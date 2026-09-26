@@ -28,6 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
+
+import java.net.InetSocketAddress;
+import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
@@ -38,6 +42,8 @@ import static org.thingsboard.mqtt.broker.server.MqttSessionHandler.CLIENT_ID_AT
 public class DuplexTrafficHandler extends ChannelDuplexHandler {
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ClientTraceRecorder clientTraceRecorder;
+    private final UUID sessionId;
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -81,8 +87,16 @@ public class DuplexTrafficHandler extends ChannelDuplexHandler {
         if (msg instanceof MqttPublishMessage publishMsg) {
             handlePublishWrite(ctx, publishMsg);
         }
-
-        ctx.write(msg, promise);
+        try {
+            if (msg instanceof MqttMessage mqttMessage) {
+                var remoteAddress = ctx.channel().remoteAddress();
+                clientTraceRecorder.tryRecord(getClientId(ctx), sessionId,
+                        remoteAddress instanceof InetSocketAddress address ? address : null, "OUT", mqttMessage);
+            }
+        } finally {
+            // Netty may release the payload during write, so capture first but always forward.
+            ctx.write(msg, promise);
+        }
     }
 
     private void handlePublishWrite(ChannelHandlerContext ctx, MqttPublishMessage publishMsg) {

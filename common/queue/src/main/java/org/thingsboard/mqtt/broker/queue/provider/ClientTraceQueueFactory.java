@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import io.netty.handler.ssl.SslHandler;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
+import org.thingsboard.mqtt.broker.gen.queue.ClientTraceEventProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-public interface MqttHandlerFactory {
-
-    MqttSessionHandler create(SslHandler sslHandler, String initializerName);
-
-    TbMessageStatsReportClient getTbMessageStatsReportClient();
-
-    ClientTraceRecorder getClientTraceRecorder();
-
-    MqttClientAuthType getClientAuthType();
+public interface ClientTraceQueueFactory {
+    TbQueueProducer<TbProtoQueueMsg<ClientTraceEventProto>> createProducer(String serviceId);
+    TbQueueConsumer<TbProtoQueueMsg<ClientTraceEventProto>> createConsumer(String serviceId);
 }
