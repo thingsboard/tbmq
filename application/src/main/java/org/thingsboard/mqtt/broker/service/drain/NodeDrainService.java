@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.drain;
 
+public interface NodeDrainService {
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+    /**
+     * Starts draining this broker node. Repeated calls return the current operation without restarting it.
+     */
+    NodeDrainStatus startDrain();
 
-import java.util.Collection;
+    NodeDrainStatus getStatus();
 
-public interface ClientSessionCtxService {
-
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    int getSessionsCount();
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+    boolean isDraining();
 
 }
