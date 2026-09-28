@@ -21,8 +21,8 @@ import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @Getter(AccessLevel.PACKAGE)
@@ -40,8 +40,8 @@ final class MqttPendingSubscription {
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttSubscribeMessage> retransmissionHandler;
 
-    @Setter(AccessLevel.PACKAGE)
-    private boolean sent = false;
+    @Getter(AccessLevel.NONE)
+    private final AtomicBoolean sent = new AtomicBoolean();
 
     private MqttPendingSubscription(
             Promise<MqttQoS> future,
@@ -69,8 +69,17 @@ final class MqttPendingSubscription {
         this.handler = handler;
     }
 
+    /**
+     * Claims the write of {@link #getSubscribeMessage()}: only the caller that gets {@code true} may write it, and must
+     * write it to an active channel - {@code on()} when the client's channel is active, else the CONNACK resend of the
+     * next connection. A claim counts the SUBSCRIBE as sent, so the CONNACK resend skips it from then on.
+     */
+    boolean markSent() {
+        return sent.compareAndSet(false, true);
+    }
+
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
-        if (sent) { // If the packet is sent, we can start the retransmission timer
+        if (sent.get()) { // If the packet is sent, we can start the retransmission timer
             retransmissionHandler.setHandler((fixedHeader, originalMessage) ->
                     sendPacket.accept(new MqttSubscribeMessage(fixedHeader, originalMessage.variableHeader(), originalMessage.payload())));
             retransmissionHandler.start(eventLoop);

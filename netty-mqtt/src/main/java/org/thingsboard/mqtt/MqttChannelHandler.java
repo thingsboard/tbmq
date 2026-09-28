@@ -229,9 +229,11 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             case CONNECTION_ACCEPTED:
                 this.connectFuture.setSuccess(new MqttConnectResult(true, MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
 
-                this.client.getPendingSubscriptions().entrySet().stream().filter((e) -> !e.getValue().isSent()).forEach((e) -> {
-                    channel.write(e.getValue().getSubscribeMessage());
-                    e.getValue().setSent(true);
+                this.client.getPendingSubscriptions().forEach((id, subscription) -> {
+                    // claim the write, or on() may write the same SUBSCRIBE too
+                    if (subscription.markSent()) {
+                        channel.write(subscription.getSubscribeMessage());
+                    }
                 });
 
                 this.client.getPendingPublishes().forEach((id, publish) -> {

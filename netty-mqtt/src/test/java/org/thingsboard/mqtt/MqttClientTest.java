@@ -1019,6 +1019,64 @@ class MqttClientTest {
     }
 
     @Test
+    void testSubscribeDuringReconnectDelayIsSentOnReconnect() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+        int proxyPort = proxy.getPort();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeDuringReconnect]");
+        clientConfig.setClientId("sub-during-reconnect");
+        // reconnect stays on (1 s); the retransmission, 30 s out, cannot be what sends the SUBSCRIBE within the bound below
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxyPort);
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        // notified after the client's own close listener, which was added first
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        connectFuture.getNow().getCloseFuture().addListener(f -> closeCleanedUp.countDown());
+        proxy.stop();
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+
+        // WHEN
+        // made during the reconnect delay, while the client still holds the channel that closed
+        String topic = "sub-during-reconnect";
+        CountDownLatch delivered = new CountDownLatch(1);
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> {
+            delivered.countDown();
+            return Futures.immediateVoidFuture();
+        }, MqttQoS.AT_LEAST_ONCE);
+        assertThat(subscribeFuture.isDone()).isFalse();
+        // back on the same port before the reconnect fires, so the reconnect succeeds
+        proxy = MqttTestProxy.builder()
+                .localPort(proxyPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+
+        // THEN
+        // the CONNACK resend is what sends it: the bound is well short of the retransmission delay
+        Awaitility.await("waiting for the subscribe to be granted on the new connection")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.isSuccess()).describedAs("subscribe granted, cause %s", subscribeFuture.cause()).isTrue();
+        assertThat(subscribeFuture.getNow()).isEqualTo(MqttQoS.AT_LEAST_ONCE);
+        ByteBuf message = PooledByteBufAllocator.DEFAULT.buffer().writeBytes("after reconnect".getBytes(StandardCharsets.UTF_8));
+        Future<Void> publishFuture = client.publish(topic, message, MqttQoS.AT_LEAST_ONCE);
+        awaitLatch(delivered, "waiting for the publish to reach the subscription's handler");
+        Awaitility.await("waiting for the publish to be acknowledged")
+                .atMost(Duration.ofSeconds(10L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).describedAs("publish acknowledged, cause %s", publishFuture.cause()).isTrue();
+    }
+
+    @Test
     void testResubscribeFromCloseFailureListenerSurvivesTheCleanup() {
         // GIVEN
         AtomicBoolean dropSubacks = new AtomicBoolean(true);
@@ -1039,8 +1097,9 @@ class MqttClientTest {
         var clientConfig = new MqttClientConfig();
         clientConfig.setOwnerId("Test[ResubscribeOnClose]");
         clientConfig.setClientId("resubscribe-on-close");
-        // reconnect stays on (1 s); the retransmission, 2 s after the close, is what sends the re-subscribe then
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 2000L, 0d));
+        // reconnect stays on (1 s), and its CONNACK resend sends the re-subscribe; the retransmission, 30 s out, cannot
+        // be what sends it within the bound below
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         // one loop: the subscribe promises notify on the loop that runs the close cleanup, so a listener runs inline in it
         clientEventLoop = new NioEventLoopGroup(1);
@@ -1091,7 +1150,7 @@ class MqttClientTest {
         assertThat(topicPending.get()).describedAs("re-subscribed topic pending after the cleanup").isTrue();
         assertThat(entryPending.get()).describedAs("re-subscribe entry pending after the cleanup").isTrue();
         Awaitility.await("waiting for the re-subscribe to be granted on the new connection")
-                .atMost(Duration.ofSeconds(15L))
+                .atMost(Duration.ofSeconds(10L))
                 .until(resubscribe.get()::isDone);
         assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
         assertThat(impl.getServerSubscriptions()).containsKey(topic);

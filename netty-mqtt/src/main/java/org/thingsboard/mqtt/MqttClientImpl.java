@@ -553,9 +553,9 @@ final class MqttClientImpl implements MqttClient {
      * a publish's payload, are then serialised with every release of that payload. This relies on a pending publish
      * never outliving its channel: the close cleanup removes every pending publish, so a timer that fires after its
      * channel closed finds itself cancelled and retains nothing. The one exception is a caller running connect() or
-     * reconnect() while a channel is still live, which skips that cleanup - a known gap no caller currently hits. Only a
-     * subscription made before the first connect has no channel yet; it carries no reference-counted payload, so any
-     * loop of the group does for it.
+     * reconnect() while a channel is still live, which skips that cleanup - a known gap no caller currently hits. A
+     * subscribe or unsubscribe starts its timer only once written to a channel as well; neither carries a
+     * reference-counted payload, so for a caller without a channel any loop of the group would do.
      */
     EventLoop retransmissionLoop(Channel ch) {
         return ch != null ? ch.eventLoop() : this.eventLoop.next();
@@ -697,9 +697,12 @@ final class MqttClientImpl implements MqttClient {
             return future;
         }
         final Channel ch = this.channel;
-        pendingSubscription.setSent(this.sendAndFlushPacket(ch, message) != null); //If not sent, we will send it when the connection is opened
-
-        pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
+        // sent only when written to an active channel: a write to a channel that closed is refused, and the SUBSCRIBE
+        // is left to the CONNACK resend of the next connection, which skips one counted as sent
+        if (ch != null && ch.isActive() && pendingSubscription.markSent()) {
+            this.sendAndFlushPacket(ch, message);
+            pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
+        }
 
         return future;
     }

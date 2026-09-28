@@ -46,6 +46,10 @@ public class MqttTestProxy {
     private volatile Channel clientToProxyChannel;
     private Channel proxyToBrokerChannel;
 
+    // closed by stop() itself, so that the port is free for a new proxy once stop() returns; the event loop groups
+    // shut down gracefully, and would only close it after their quiet period
+    private final Channel serverChannel;
+
     private final int assignedPort;
 
     private boolean stopped;
@@ -87,8 +91,8 @@ public class MqttTestProxy {
                 });
 
         try {
-            Channel proxyChannel = proxyBootstrap.bind(builder.localPort).sync().channel();
-            assignedPort = ((InetSocketAddress) proxyChannel.localAddress()).getPort();
+            serverChannel = proxyBootstrap.bind(builder.localPort).sync().channel();
+            assignedPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
         } catch (Exception e) {
             log.error("Failed to start MQTT proxy", e);
             throw new RuntimeException("Failed to start MQTT proxy", e);
@@ -157,6 +161,7 @@ public class MqttTestProxy {
 
         log.info("Stopping MQTT proxy...");
 
+        serverChannel.close().syncUninterruptibly();
         if (clientToProxyChannel != null) {
             clientToProxyChannel.close();
         }
