@@ -178,13 +178,11 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     /**
-     * netty-mqtt leaves {@code MqttClientConfig.retransmissionConfig} null in both of its constructors, while
-     * {@code MqttClientImpl} dereferences it synchronously on every SUBSCRIBE/UNSUBSCRIBE and on every QoS &gt; 0
-     * PUBLISH, so a bare {@code new MqttClientConfig()} NPEs out of the first {@code client.on(...)}. Every test
-     * client must therefore set one, which is why this is the only way these tests build an
-     * {@link MqttClientConfig}.
+     * The retransmission config every test client uses in place of netty-mqtt's default, which is why this is the only
+     * way these tests build an {@link MqttClientConfig}.
      * <p>
-     * Deliberately <b>not</b> the production triple the integrations use ({@code MqttClientRetransmissionDefaults} in
+     * Deliberately <b>not</b> netty-mqtt's default {@code MqttClientConfig.retransmissionConfig} (3 attempts, 5000 ms,
+     * 0.15 jitter), the production triple the integrations use as well ({@code MqttClientRetransmissionDefaults} in
      * {@code integration/executor}). These tests do not assert anything about retransmission; they only need a window
      * wide enough that a retransmission never fires while they are running. The production {@code initialDelayMillis} of 5000 with a 0.15 jitter puts the first
      * PUBLISH retransmission at 4.25-5.75 s, which is narrower than the flat 10 s that netty-mqtt 3.9.0 hardcoded

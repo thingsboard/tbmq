@@ -162,6 +162,29 @@ class MqttClientTest {
     }
 
     @Test
+    void aBareConfigCanSubscribeAndPublishWithoutSettingRetransmission() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setClientId("bare-config");
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        // WHEN
+        String topic = "bare-config";
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        ByteBuf message = PooledByteBufAllocator.DEFAULT.buffer().writeBytes("bare config".getBytes(StandardCharsets.UTF_8));
+        Future<Void> publishFuture = client.publish(topic, message, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the subscribe and the publish to complete")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> subscribeFuture.isDone() && publishFuture.isDone());
+        assertThat(subscribeFuture.isSuccess()).describedAs("subscribe granted, cause %s", subscribeFuture.cause()).isTrue();
+        assertThat(publishFuture.isSuccess()).describedAs("publish acknowledged, cause %s", publishFuture.cause()).isTrue();
+        assertThat(clientConfig.getRetransmissionConfig()).isEqualTo(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0.15d));
+    }
+
+    @Test
     void testDisconnectFromBroker() {
         // GIVEN
         var clientConfig = new MqttClientConfig();

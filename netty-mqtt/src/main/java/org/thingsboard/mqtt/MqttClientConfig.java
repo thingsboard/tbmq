@@ -75,9 +75,9 @@ public final class MqttClientConfig {
     @Getter
     private int backPressureLowWatermark = 200;
 
+    @Nonnull
     @Getter
-    @Setter
-    private RetransmissionConfig retransmissionConfig;
+    private RetransmissionConfig retransmissionConfig = new RetransmissionConfig(3, 5000L, 0.15d);
 
     public record RetransmissionConfig(int maxAttempts, long initialDelayMillis, double jitterFactor) {
 
@@ -117,6 +117,13 @@ public final class MqttClientConfig {
         } else {
             this.clientId = clientId;
         }
+    }
+
+    public void setRetransmissionConfig(@Nonnull RetransmissionConfig retransmissionConfig) {
+        if (retransmissionConfig == null) {
+            throw new NullPointerException("retransmissionConfig must not be null");
+        }
+        this.retransmissionConfig = retransmissionConfig;
     }
 
     public void setTimeoutSeconds(int timeoutSeconds) {
