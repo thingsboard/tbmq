@@ -277,7 +277,7 @@ class MqttSubscriptionRegistryTest {
     }
 
     private MqttHandler record(List<String> served, String name) {
-        return (__, payload) -> {
+        return msg -> {
             served.add(name);
             return Futures.immediateVoidFuture();
         };

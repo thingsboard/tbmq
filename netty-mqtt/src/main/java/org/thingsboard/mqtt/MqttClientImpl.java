@@ -263,7 +263,7 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
      *
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
@@ -275,7 +275,7 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
      *
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message

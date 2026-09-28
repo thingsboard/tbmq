@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -76,7 +77,7 @@ public interface MqttClient {
     ListeningExecutor getHandlerExecutor();
 
     /**
-     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
      * <p>
      * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
      * keeps the filter's position in delivery order. Handlers survive a reconnect, but the server-side subscription
@@ -89,7 +90,7 @@ public interface MqttClient {
     Future<Void> on(String topic, MqttHandler handler);
 
     /**
-     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
      * <p>
      * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
      * keeps the filter's position in delivery order. Handlers survive a reconnect, but the server-side subscription

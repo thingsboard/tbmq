@@ -115,7 +115,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
         awaitUntilDisconnected();
@@ -163,7 +163,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
@@ -198,7 +198,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
@@ -209,7 +209,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] newTopicNames = getTopicNames(newTopicSubscriptions);
         int[] newQoSLevels = getQoSLevels(newTopicSubscriptions);
         for (int i = 0; i < newTopicNames.length; i++) {
-            persistedClient.on(newTopicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(newQoSLevels[i])).get();
+            persistedClient.on(newTopicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(newQoSLevels[i])).get();
         }
 
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
@@ -229,7 +229,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
@@ -262,7 +262,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
@@ -270,7 +270,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], msg -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
         awaitUntilDisconnected();
@@ -284,7 +284,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
     }
 
     private MqttClient createMqttClient(MqttClientConfig config) {
-        return MqttClient.create(config, (s, byteBuf) -> Futures.immediateVoidFuture(), externalExecutorService);
+        return MqttClient.create(config, msg -> Futures.immediateVoidFuture(), externalExecutorService);
     }
 
     private void awaitUntilDisconnected() {

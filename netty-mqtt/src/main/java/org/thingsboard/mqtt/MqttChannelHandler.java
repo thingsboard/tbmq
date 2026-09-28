@@ -166,7 +166,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         // never run a handler on the netty event loop
         ListenableFuture<Void> future;
         try {
-            future = Futures.submitAsync(() -> adaptFuture(handler.onMessage(topic, payload)), client.getHandlerExecutor());
+            future = Futures.submitAsync(() -> adaptFuture(handler.onMessage(message)), client.getHandlerExecutor());
         } catch (RejectedExecutionException e) {
             // submitAsync throws where transformAsync failed the future; keep failing it so the payload is released
             future = Futures.immediateFailedFuture(e);

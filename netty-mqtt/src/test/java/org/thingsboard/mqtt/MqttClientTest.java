@@ -197,8 +197,8 @@ class MqttClientTest {
         // subscribe to a topic
         String topic = "test-topic";
         List<ByteBuf> receivedMessages = Collections.synchronizedList(new ArrayList<>(2));
-        Future<Void> subscribeFuture = client.on(topic, (__, payload) -> {
-            receivedMessages.add(payload);
+        Future<Void> subscribeFuture = client.on(topic, msg -> {
+            receivedMessages.add(msg.payload());
             return Futures.immediateVoidFuture();
         });
         Awaitility.await("waiting for client to subscribe to a topic")
