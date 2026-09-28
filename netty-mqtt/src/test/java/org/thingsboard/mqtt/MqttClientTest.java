@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt;
 
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
@@ -36,12 +37,17 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
+import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -223,6 +229,112 @@ class MqttClientTest {
         }
 
         assertThat(receivedMessages).size().describedAs("incorrect number of messages received, expected 2 (original plus one retransmitted)").isEqualTo(2);
+    }
+
+    @Test
+    void testQoS0BackPressureStopsReadingWhileHandlerIsStalled() throws Exception {
+        // GIVEN
+        // counts the PUBLISHes the subscriber hands to its handler executor: that queue is what grows without bound
+        // when reads are not paused, whereas the delivery count is capped at one by the single stalled handler thread
+        AtomicInteger dispatched = new AtomicInteger();
+        ListeningExecutor countingExecutor = new ListeningExecutor() {
+            @Override
+            public <T> ListenableFuture<T> executeAsync(Callable<T> task) {
+                return handlerExecutor.executeAsync(task);
+            }
+
+            @Override
+            public void execute(Runnable command) {
+                dispatched.incrementAndGet();
+                handlerExecutor.execute(command);
+            }
+        };
+
+        var subscriberConfig = new MqttClientConfig();
+        subscriberConfig.setOwnerId("Test[QoS0BackPressure]");
+        subscriberConfig.setClientId("qos0-bp-sub");
+        subscriberConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 1000L, 0d));
+        // low watermark first: the setters reject a high watermark that is not above the current low one
+        subscriberConfig.setBackPressureLowWatermark(2);
+        subscriberConfig.setBackPressureHighWatermark(4);
+        client = MqttClient.create(subscriberConfig, null, countingExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        String topic = "qos0-backpressure";
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger delivered = new AtomicInteger();
+        Future<Void> subscribeFuture = client.on(topic, msg -> {
+            delivered.incrementAndGet();
+            try {
+                release.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return Futures.immediateVoidFuture();
+        }, MqttQoS.AT_MOST_ONCE);
+        Awaitility.await("waiting for subscriber to subscribe")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isSuccess);
+
+        var publisherConfig = new MqttClientConfig();
+        publisherConfig.setOwnerId("Test[QoS0BackPressurePub]");
+        publisherConfig.setClientId("qos0-bp-pub");
+        publisherConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 1000L, 0d));
+        MqttClient publisher = MqttClient.create(publisherConfig, null, handlerExecutor);
+        try {
+            Promise<MqttConnectResult> publisherConnect = publisher.connect(broker.getHost(), broker.getMqttPort());
+            Awaitility.await("waiting for publisher to connect")
+                    .atMost(Duration.ofSeconds(10L))
+                    .until(publisherConnect::isSuccess);
+
+            // 16 KiB payloads: netty's adaptive read buffer tops out at 64 KiB, so one socket read decodes only a few
+            // PUBLISHes and pausing autoRead takes effect within a handful of messages rather than a whole burst
+            int payloadSize = 16 * 1024;
+            int burst = 60;
+            byte[] bytes = new byte[payloadSize];
+
+            // WHEN
+            List<Future<Void>> publishFutures = new ArrayList<>(burst);
+            for (int i = 0; i < burst; i++) {
+                ByteBuf payload = PooledByteBufAllocator.DEFAULT.buffer(payloadSize).writeBytes(bytes);
+                publishFutures.add(publisher.publish(topic, payload, MqttQoS.AT_MOST_ONCE));
+            }
+            Awaitility.await("waiting for the publisher to write the burst")
+                    .atMost(Duration.ofSeconds(10L))
+                    .until(() -> publishFutures.stream().allMatch(Future::isDone));
+            assertThat(publishFutures).allMatch(Future::isSuccess);
+
+            Awaitility.await("waiting for the first delivery")
+                    .atMost(Duration.ofSeconds(10L))
+                    .until(() -> delivered.get() > 0);
+
+            // THEN
+            // With the handler stalled, reads must pause once high watermark (4) PUBLISHes are in flight. What may still
+            // be dispatched after that is what was already read: the rest of the current read buffer (at most 64 KiB,
+            // i.e. about 4 PUBLISHes of 16 KiB) plus a partial message held by the decoder, so correct code stays at
+            // or below about 9 (4-5 observed). Without back pressure the client reads the whole burst of 60 at line
+            // rate (60 observed). 20 separates the two with a wide margin either way.
+            int maxDispatchedWhileStalled = 20;
+            Awaitility.await("dispatched count must stay bounded while the handler is stalled")
+                    .during(Duration.ofSeconds(2))
+                    .atMost(Duration.ofSeconds(5))
+                    .untilAsserted(() -> assertThat(dispatched.get()).isLessThanOrEqualTo(maxDispatchedWhileStalled));
+            int stalledDispatched = dispatched.get();
+            int stalledDelivered = delivered.get();
+            log.info("QoS 0 back pressure: dispatched {} of {} while stalled, delivered {}", stalledDispatched, burst, stalledDelivered);
+
+            // releasing the handler drains the in-flight PUBLISHes below the low watermark, so reads must resume:
+            // more PUBLISHes than were dispatched while stalled get delivered, which only new reads can supply
+            release.countDown();
+            Awaitility.await("dispatching and delivery must resume once the handler is released")
+                    .atMost(Duration.ofSeconds(10L))
+                    .untilAsserted(() -> assertThat(delivered.get()).isGreaterThan(stalledDispatched));
+            assertThat(dispatched.get()).isGreaterThan(stalledDispatched);
+            log.info("QoS 0 back pressure: resumed, dispatched {}, delivered {}", dispatched.get(), delivered.get());
+        } finally {
+            release.countDown();
+            publisher.disconnect();
+        }
     }
 
     private void connect(String host, int port) {

@@ -260,11 +260,18 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         }
 
         MqttQoS qoS = message.fixedHeader().qosLevel();
-        checkBackPressure(channel, true, qoS);
+        checkBackPressure(channel, true);
 
         switch (qoS) {
             case AT_MOST_ONCE -> {
-                invokeHandlerForIncomingPublish(message);
+                var future = invokeHandlerForIncomingPublish(message);
+                DonAsynchron.withCallback(future,
+                        (_) -> checkBackPressure(channel, false),
+                        (t) -> {
+                            log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.AT_MOST_ONCE, t);
+                            checkBackPressure(channel, false);
+                        }
+                );
             }
 
             case AT_LEAST_ONCE -> {
@@ -272,7 +279,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 var msgWrapper = mqttOrderedAcknowledgementCtxQoS1.addMsgId(msgId);
 
                 if (msgWrapper == null) {
-                    checkBackPressure(channel, false, qoS);
+                    checkBackPressure(channel, false);
                     return;
                 }
 
@@ -280,12 +287,12 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 DonAsynchron.withCallback(future,
                         (_) -> {
                             processPubAck(channel, msgWrapper, PubAck.SUCCESS.byteValue());
-                            checkBackPressure(channel, false, qoS);
+                            checkBackPressure(channel, false);
                         },
                         (t) -> {
                             log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.AT_LEAST_ONCE, t);
                             processPubAck(channel, msgWrapper, PubAck.UNSPECIFIED_ERROR.byteValue());
-                            checkBackPressure(channel, false, qoS);
+                            checkBackPressure(channel, false);
                         }
                 );
             }
@@ -296,26 +303,26 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 if (!client.getQos2PendingMsgIds().add(msgId)) {
                     log.debug("Duplicate QoS2 message received for client {} with msgId {}. Skipping processing.", client.getClientConfig().getClientId(), msgId);
                     processPubRec(channel, msgId, PubRec.PACKET_IDENTIFIER_IN_USE.byteValue());
-                    checkBackPressure(channel, false, qoS);
+                    checkBackPressure(channel, false);
                     return;
                 }
 
                 var msgWrapper = mqttOrderedAcknowledgementCtxQoS2.addMsgId(msgId);
                 if (msgWrapper == null) {
-                    checkBackPressure(channel, false, qoS);
+                    checkBackPressure(channel, false);
                     return;
                 }
                 var future = invokeHandlerForIncomingPublish(message);
                 DonAsynchron.withCallback(future,
                         (_) -> {
                             processPubRec(channel, msgWrapper, PubRec.SUCCESS.byteValue());
-                            checkBackPressure(channel, false, qoS);
+                            checkBackPressure(channel, false);
                         },
                         (t) -> {
                             log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.EXACTLY_ONCE, t);
                             processPubRec(channel, msgWrapper, PubRec.UNSPECIFIED_ERROR.byteValue());
                             client.getQos2PendingMsgIds().remove(msgId);
-                            checkBackPressure(channel, false, qoS);
+                            checkBackPressure(channel, false);
                         }
                 );
             }
@@ -452,8 +459,8 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         return JdkFutureAdapters.listenInPoolThread(future, client.getHandlerExecutor());
     }
 
-    private void checkBackPressure(Channel channel, boolean increment, MqttQoS qoS) {
-        if (!backPressureEnabled || MqttQoS.AT_MOST_ONCE.equals(qoS)) {
+    private void checkBackPressure(Channel channel, boolean increment) {
+        if (!backPressureEnabled) {
             return;
         }
         long count = increment ? publishMsgCount.incrementAndGet() : publishMsgCount.decrementAndGet();
