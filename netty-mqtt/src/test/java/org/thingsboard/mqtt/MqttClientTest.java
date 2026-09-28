@@ -66,7 +66,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -185,12 +184,7 @@ class MqttClientTest {
     @Test
     void testDisconnectDueToKeepAliveIfNoActivity() {
         // GIVEN
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PINGRESP) // drop all ping responses to simulate broker down
-                .build();
+        proxy = proxyDropping(MqttMessageType.PINGRESP); // drop all ping responses to simulate broker down
 
         int idleTimeoutSeconds = 2;
 
@@ -215,12 +209,7 @@ class MqttClientTest {
     @Test
     void testRetransmission() {
         // GIVEN
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PUBACK) // drop all pubacks to allow retransmission to happen
-                .build();
+        proxy = proxyDropping(MqttMessageType.PUBACK); // drop all pubacks to allow retransmission to happen
 
         // create client
         var clientConfig = new MqttClientConfig();
@@ -419,15 +408,8 @@ class MqttClientTest {
     void testPublishWithoutChannelReleasesPayload() throws IOException {
         // GIVEN
         // nothing listens on this port, so the connect attempt fails and the client never gets a channel
-        int closedPort;
-        try (ServerSocket socket = new ServerSocket(0)) {
-            closedPort = socket.getLocalPort();
-        }
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[PublishNoChannel]");
-        clientConfig.setClientId("no-channel-release");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        int closedPort = closedPort();
+        var clientConfig = newConfig("Test[PublishNoChannel]", "no-channel-release");
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         client.connect("localhost", closedPort);
 
@@ -501,17 +483,9 @@ class MqttClientTest {
     @Test
     void testPendingQoS1PublishIsReleasedOnceOnChannelClose() {
         // GIVEN
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PUBACK) // keep the publish pending
-                .build();
+        proxy = proxyDropping(MqttMessageType.PUBACK); // keep the publish pending
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[PendingPublishClose]");
-        clientConfig.setClientId("pending-close-release");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[PendingPublishClose]", "pending-close-release");
         // long enough that no retransmission happens before the connection is dropped
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
@@ -543,17 +517,9 @@ class MqttClientTest {
     @Test
     void testPublishRetransmissionRunsOnChannelEventLoop() {
         // GIVEN
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PUBACK) // force a retransmission
-                .build();
+        proxy = proxyDropping(MqttMessageType.PUBACK); // force a retransmission
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[RetransmissionLoop]");
-        clientConfig.setClientId("retransmission-loop");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[RetransmissionLoop]", "retransmission-loop");
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 500L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
@@ -584,10 +550,7 @@ class MqttClientTest {
     @Test
     void testPublishFirstWrittenByConnackResendIsRetransmitted() {
         // GIVEN
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[ConnackResendRetransmission]");
-        clientConfig.setClientId("connack-resend-retrans");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[ConnackResendRetransmission]", "connack-resend-retrans");
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 1000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
 
@@ -636,11 +599,7 @@ class MqttClientTest {
     @EnumSource(value = MqttQoS.class, names = {"AT_MOST_ONCE", "AT_LEAST_ONCE", "EXACTLY_ONCE"})
     void testPublishFirstWrittenByConnackResendAndRejectedByEncoderFails(MqttQoS qos) {
         // GIVEN
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[ConnackResendEncoderReject]");
-        clientConfig.setClientId("connack-resend-reject-" + qos.value());
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        var clientConfig = newConfig("Test[ConnackResendEncoderReject]", "connack-resend-reject-" + qos.value());
         client = MqttClient.create(clientConfig, null, handlerExecutor);
 
         TrackedByteBuf payload = new TrackedByteBuf("invalid topic, resent on connack");
@@ -666,23 +625,9 @@ class MqttClientTest {
         // GIVEN
         // dropping PUBREC holds the publish before the broker received it, dropping PUBCOMP holds it after PUBREL
         CountDownLatch ackDropped = new CountDownLatch(1);
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> {
-                    if (msg.fixedHeader().messageType() != withheldAck) {
-                        return true;
-                    }
-                    ackDropped.countDown();
-                    return false;
-                })
-                .build();
+        proxy = proxyDropping(withheldAck, ackDropped);
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[PendingQoS2Close]");
-        clientConfig.setClientId("qos2-close-" + withheldAck.name().toLowerCase());
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[PendingQoS2Close]", "qos2-close-" + withheldAck.name().toLowerCase());
         // long enough that no retransmission happens before the connection is dropped
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
@@ -705,18 +650,14 @@ class MqttClientTest {
     }
 
     @Test
-    void testConnectToRefusedPortFailsWithConnectException() {
+    void testConnectToRefusedPortFailsWithConnectException() throws IOException {
         // GIVEN
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[ConnectRefused]");
-        clientConfig.setClientId("connect-refused");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        var clientConfig = newConfig("Test[ConnectRefused]", "connect-refused");
         client = MqttClient.create(clientConfig, null, handlerExecutor);
 
         // WHEN
-        // nothing listens on port 1, so the TCP connect is refused at once
-        Promise<MqttConnectResult> connectFuture = client.connect("127.0.0.1", 1);
+        // nothing listens on this port, so the TCP connect is refused at once
+        Promise<MqttConnectResult> connectFuture = client.connect("127.0.0.1", closedPort());
 
         // THEN
         // a refusal takes milliseconds; the keep-alive (60 s) is the only timeout that would otherwise end the wait
@@ -743,11 +684,11 @@ class MqttClientTest {
         Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
 
         // THEN
+        // past SslHandler's own 10 s handshake timeout, so the await cannot race it
         Awaitility.await("waiting for the TLS connect to a plain port to fail")
-                .atMost(Duration.ofSeconds(10L))
+                .atMost(Duration.ofSeconds(15L))
                 .until(connectFuture::isDone);
         assertThat(connectFuture.isSuccess()).isFalse();
-        log.info("TLS connect to a plain port failed with", connectFuture.cause());
         assertThat(Throwables.getRootCause(connectFuture.cause())).isInstanceOf(SSLException.class);
     }
 
@@ -755,24 +696,9 @@ class MqttClientTest {
     void testConnectFailsWhenChannelClosesBeforeConnack() {
         // GIVEN
         CountDownLatch connackDropped = new CountDownLatch(1);
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> {
-                    if (msg.fixedHeader().messageType() != MqttMessageType.CONNACK) {
-                        return true;
-                    }
-                    connackDropped.countDown();
-                    return false;
-                })
-                .build();
+        proxy = proxyDropping(MqttMessageType.CONNACK, connackDropped);
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[CloseBeforeConnack]");
-        clientConfig.setClientId("close-before-connack");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        var clientConfig = newConfig("Test[CloseBeforeConnack]", "close-before-connack");
         client = MqttClient.create(clientConfig, null, handlerExecutor);
 
         Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
@@ -836,11 +762,7 @@ class MqttClientTest {
                         : MqttMessageBuilders.connAck().returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5).build())
                 .build();
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[Mqtt5Refusal]");
-        clientConfig.setClientId("mqtt5-refusal");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        var clientConfig = newConfig("Test[Mqtt5Refusal]", "mqtt5-refusal");
         client = MqttClient.create(clientConfig, null, handlerExecutor);
 
         // WHEN
@@ -863,7 +785,7 @@ class MqttClientTest {
     void testPubackListenerThatPublishesInlineCompletesBothPublishes() {
         // GIVEN
         // PUBACKs are withheld while the flag is set; the trigger's is then released by hand once its listener is added
-        Map<Integer, MqttMessage> withheldPubacks = new ConcurrentHashMap<>();
+        AtomicReference<MqttMessage> withheldPuback = new AtomicReference<>();
         AtomicBoolean withholdPubacks = new AtomicBoolean(true);
         proxy = MqttTestProxy.builder()
                 .localPort(randomPort)
@@ -873,15 +795,12 @@ class MqttClientTest {
                     if (msg.fixedHeader().messageType() != MqttMessageType.PUBACK || !withholdPubacks.get()) {
                         return msg;
                     }
-                    withheldPubacks.put(((MqttMessageIdVariableHeader) msg.variableHeader()).messageId(), msg);
+                    withheldPuback.set(msg);
                     return null;
                 })
                 .build();
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[PubackInlinePublish]");
-        clientConfig.setClientId("puback-inline-publish");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[PubackInlinePublish]", "puback-inline-publish");
         // long enough that no retransmission happens during the test
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
@@ -891,33 +810,29 @@ class MqttClientTest {
         connect(broker.getHost(), proxy.getPort());
         Map<Integer, MqttPendingPublish> pendingPublishes = ((MqttClientImpl) client).getPendingPublishes();
 
-        // 22 publishes held pending plus the trigger make 23 entries, so the listener's publish is the one that takes
-        // the map to its resize threshold (24 at capacity 32): made while the map is still inside the PUBACK's
-        // computation, it resizes the map from inside that computation, which ConcurrentHashMap forbids
-        int held = 22;
-        for (int i = 0; i < held; i++) {
-            client.publish("puback-inline/held", PooledByteBufAllocator.DEFAULT.buffer().writeBytes(new byte[]{(byte) i}), MqttQoS.AT_LEAST_ONCE);
-        }
         TrackedByteBuf triggerPayload = new TrackedByteBuf("trigger");
         Future<Void> trigger = client.publish("puback-inline/trigger", triggerPayload, MqttQoS.AT_LEAST_ONCE);
         int triggerId = pendingPublishes.entrySet().stream()
                 .filter(e -> e.getValue().getFuture() == trigger)
                 .findFirst().orElseThrow().getKey();
-        Awaitility.await("waiting for every PUBACK to be withheld")
+        Awaitility.await("waiting for the trigger's PUBACK to be withheld")
                 .atMost(Duration.ofSeconds(10L))
-                .until(() -> withheldPubacks.size() == held + 1);
-        assertThat(pendingPublishes).hasSize(held + 1);
+                .until(() -> withheldPuback.get() != null);
         withholdPubacks.set(false);
 
+        // a listener running while its entry is still pending runs inside the PUBACK's computation on the map: its
+        // publish then updates the map from inside that computation, which ConcurrentHashMap forbids
         AtomicReference<Thread> listenerThread = new AtomicReference<>();
+        AtomicBoolean pendingWhenListenerRan = new AtomicBoolean(true);
         AtomicReference<Future<Void>> second = new AtomicReference<>();
         trigger.addListener(f -> {
             listenerThread.set(Thread.currentThread());
+            pendingWhenListenerRan.set(pendingPublishes.containsKey(triggerId));
             second.set(client.publish("puback-inline/second", new TrackedByteBuf("second"), MqttQoS.AT_LEAST_ONCE));
         });
 
         // WHEN
-        proxy.sendToClient(withheldPubacks.get(triggerId));
+        proxy.sendToClient(withheldPuback.get());
 
         // THEN
         Awaitility.await("waiting for the trigger to be acknowledged")
@@ -926,6 +841,8 @@ class MqttClientTest {
         assertThat(trigger.isSuccess()).isTrue();
         assertThat(clientEventLoop.next().inEventLoop(listenerThread.get()))
                 .describedAs("the listener ran inline on the loop that handled the PUBACK").isTrue();
+        assertThat(pendingWhenListenerRan.get())
+                .describedAs("the acknowledged publish was still pending when its listener ran").isFalse();
         Awaitility.await("waiting for the listener's publish to be acknowledged")
                 .atMost(Duration.ofSeconds(10L))
                 .until(() -> second.get() != null && second.get().isDone());
@@ -938,23 +855,9 @@ class MqttClientTest {
     void testInFlightSubscribeFailsOnChannelClose() {
         // GIVEN
         CountDownLatch subackDropped = new CountDownLatch(1);
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> {
-                    if (msg.fixedHeader().messageType() != MqttMessageType.SUBACK) {
-                        return true;
-                    }
-                    subackDropped.countDown();
-                    return false;
-                })
-                .build();
+        proxy = proxyDropping(MqttMessageType.SUBACK, subackDropped);
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[SubscribeClose]");
-        clientConfig.setClientId("subscribe-close");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[SubscribeClose]", "subscribe-close");
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         connect(broker.getHost(), proxy.getPort());
@@ -977,23 +880,9 @@ class MqttClientTest {
     void testInFlightUnsubscribeFailsOnChannelClose() {
         // GIVEN
         CountDownLatch unsubackDropped = new CountDownLatch(1);
-        proxy = MqttTestProxy.builder()
-                .localPort(randomPort)
-                .brokerHost(broker.getHost())
-                .brokerPort(broker.getMqttPort())
-                .brokerToClientInterceptor(msg -> {
-                    if (msg.fixedHeader().messageType() != MqttMessageType.UNSUBACK) {
-                        return true;
-                    }
-                    unsubackDropped.countDown();
-                    return false;
-                })
-                .build();
+        proxy = proxyDropping(MqttMessageType.UNSUBACK, unsubackDropped);
 
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[UnsubscribeClose]");
-        clientConfig.setClientId("unsubscribe-close");
-        clientConfig.setReconnect(false);
+        var clientConfig = newConfig("Test[UnsubscribeClose]", "unsubscribe-close");
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         connect(broker.getHost(), proxy.getPort());
@@ -1018,13 +907,9 @@ class MqttClientTest {
     }
 
     @Test
-    void testSubscribeBeforeConnectFailsWhenConnectFails() {
+    void testSubscribeBeforeConnectFailsWhenConnectFails() throws IOException {
         // GIVEN
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[SubscribeBeforeFailedConnect]");
-        clientConfig.setClientId("sub-before-failed-conn");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        var clientConfig = newConfig("Test[SubscribeBeforeFailedConnect]", "sub-before-failed-conn");
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         // the client creates its loop group on the first connect; a subscription made before it needs one given
         clientEventLoop = new NioEventLoopGroup(1);
@@ -1034,7 +919,7 @@ class MqttClientTest {
 
         // WHEN
         // refused, and with reconnect off no CONNACK will ever come
-        client.connect("127.0.0.1", 1);
+        client.connect("127.0.0.1", closedPort());
 
         // THEN
         Awaitility.await("waiting for the waiting subscribe to fail")
@@ -1210,6 +1095,50 @@ class MqttClientTest {
                 .until(resubscribe.get()::isDone);
         assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
         assertThat(impl.getServerSubscriptions()).containsKey(topic);
+    }
+
+    /**
+     * The client config the tests share: reconnect off, and retransmission slow enough not to fire unless a test waits.
+     */
+    private static MqttClientConfig newConfig(String ownerId, String clientId) {
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId(ownerId);
+        clientConfig.setClientId(clientId);
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        return clientConfig;
+    }
+
+    /**
+     * A proxy to the broker that drops every message of {@code type} on its way to the client, counting each drop down
+     * on {@code dropped}.
+     */
+    private MqttTestProxy proxyDropping(MqttMessageType type, CountDownLatch dropped) {
+        return MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != type) {
+                        return true;
+                    }
+                    dropped.countDown();
+                    return false;
+                })
+                .build();
+    }
+
+    private MqttTestProxy proxyDropping(MqttMessageType type) {
+        return proxyDropping(type, new CountDownLatch(0));
+    }
+
+    /**
+     * A local port nothing listens on: bound, then closed again.
+     */
+    private static int closedPort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 
     private static void awaitLatch(CountDownLatch latch, String description) {
