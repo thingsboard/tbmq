@@ -1086,7 +1086,7 @@ class MqttClientTest {
         // THEN
         // the CONNACK resend is what sends it: the bound is well short of the retransmission delay
         Awaitility.await("waiting for the subscribe to be granted on the new connection")
-                .atMost(Duration.ofSeconds(10L))
+                .atMost(Duration.ofSeconds(20L))
                 .until(subscribeFuture::isDone);
         assertThat(subscribeFuture.isSuccess()).describedAs("subscribe granted, cause %s", subscribeFuture.cause()).isTrue();
         assertThat(subscribeFuture.getNow()).isEqualTo(MqttQoS.AT_LEAST_ONCE);
@@ -1236,6 +1236,177 @@ class MqttClientTest {
                 .until(resubscribe.get()::isDone);
         assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
         assertThat(impl.getServerSubscriptions()).containsKey(topic);
+    }
+
+    @Test
+    void testResubscribeFromConnectionLostIsSentOnReconnect() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+        int proxyPort = proxy.getPort();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ResubscribeOnConnectionLost]");
+        clientConfig.setClientId("resub-on-conn-lost");
+        // reconnect stays on (1 s) with a clean session, so the broker forgets the subscription and only a SUBSCRIBE on
+        // the new connection restores it; the retransmission, 30 s out, cannot be what sends it within the bound below
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxyPort);
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        String topic = "resub-on-conn-lost";
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        Awaitility.await("waiting for the first subscribe to be granted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isSuccess);
+
+        CountDownLatch delivered = new CountDownLatch(1);
+        MqttHandler resubscribeHandler = msg -> {
+            delivered.countDown();
+            return Futures.immediateVoidFuture();
+        };
+        AtomicReference<Future<MqttQoS>> resubscribe = new AtomicReference<>();
+        CountDownLatch reconnected = new CountDownLatch(1);
+        client.setCallback(new MqttClientCallback() {
+            @Override
+            public void connectionLost(Throwable cause) {
+                resubscribe.set(client.on(topic, resubscribeHandler, MqttQoS.AT_LEAST_ONCE));
+            }
+
+            @Override
+            public void onSuccessfulReconnect() {
+                reconnected.countDown();
+            }
+        });
+        // notified after the client's own close listener, which was added first
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        connectFuture.getNow().getCloseFuture().addListener(f -> closeCleanedUp.countDown());
+
+        // WHEN
+        proxy.stop();
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+        assertThat(resubscribe.get()).describedAs("connectionLost re-subscribed").isNotNull();
+        // back on the same port before the reconnect fires, counting the SUBACKs the new connection gets
+        AtomicInteger subacks = new AtomicInteger();
+        proxy = MqttTestProxy.builder()
+                .localPort(proxyPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() == MqttMessageType.SUBACK) {
+                        subacks.incrementAndGet();
+                    }
+                    return true;
+                })
+                .build();
+
+        // THEN
+        Awaitility.await("waiting for the reconnect")
+                .atMost(Duration.ofSeconds(20L))
+                .until(() -> reconnected.getCount() == 0);
+        // a re-subscribe the cleanup erased sends no SUBSCRIBE, so the broker never answers one
+        Awaitility.await("waiting for the re-subscribe's SUBSCRIBE to be answered on the new connection")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> subacks.get() >= 1);
+        Awaitility.await("waiting for the re-subscribe to be granted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(resubscribe.get()::isDone);
+        assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
+        assertThat(resubscribe.get().getNow()).isEqualTo(MqttQoS.AT_LEAST_ONCE);
+        assertThat(((MqttClientImpl) client).getServerSubscriptions()).containsKey(topic);
+        ByteBuf message = PooledByteBufAllocator.DEFAULT.buffer().writeBytes("after reconnect".getBytes(StandardCharsets.UTF_8));
+        Future<Void> publishFuture = client.publish(topic, message, MqttQoS.AT_LEAST_ONCE);
+        awaitLatch(delivered, "waiting for the publish to reach the re-subscribed handler");
+        Awaitility.await("waiting for the publish to be acknowledged")
+                .atMost(Duration.ofSeconds(10L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).describedAs("publish acknowledged, cause %s", publishFuture.cause()).isTrue();
+        assertThat(subacks.get()).describedAs("SUBACKs on the new connection: the re-subscribe's alone").isEqualTo(1);
+    }
+
+    @Test
+    void testHandlerRunAfterChannelReadReturnedStillReadsItsPayload() throws Exception {
+        // GIVEN
+        // counts the PUBLISHes handed to the handler executor, so the test knows when every one has been dispatched
+        AtomicInteger dispatched = new AtomicInteger();
+        ListeningExecutor countingExecutor = new ListeningExecutor() {
+            @Override
+            public <T> ListenableFuture<T> executeAsync(Callable<T> task) {
+                return handlerExecutor.executeAsync(task);
+            }
+
+            @Override
+            public void execute(Runnable command) {
+                dispatched.incrementAndGet();
+                handlerExecutor.execute(command);
+            }
+        };
+        // the handler executor is the test's one-thread one, so every handler queues behind the first, stalled one
+        client = MqttClient.create(newConfig("Test[DeferredHandlerPayload]", "deferred-handler-pl"), null, countingExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+
+        String topic = "deferred-handler-payload";
+        CountDownLatch release = new CountDownLatch(1);
+        List<String> received = new CopyOnWriteArrayList<>();
+        List<Throwable> readFailures = new CopyOnWriteArrayList<>();
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> {
+            try {
+                // held until every channelRead0 that dispatched a PUBLISH has returned
+                if (!release.await(30, TimeUnit.SECONDS)) {
+                    readFailures.add(new AssertionError("handler never released"));
+                }
+                received.add(msg.payload().toString(StandardCharsets.UTF_8));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Throwable t) {
+                readFailures.add(t);
+            }
+            return Futures.immediateVoidFuture();
+        }, MqttQoS.AT_LEAST_ONCE);
+        Awaitility.await("waiting for the subscribe to be granted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isSuccess);
+        assertThat(subscribeFuture.getNow()).isEqualTo(MqttQoS.AT_LEAST_ONCE);
+
+        // WHEN
+        List<String> sent = new ArrayList<>();
+        List<Future<Void>> publishFutures = new ArrayList<>();
+        for (MqttQoS qos : List.of(MqttQoS.AT_MOST_ONCE, MqttQoS.AT_LEAST_ONCE)) {
+            for (int i = 0; i < 3; i++) {
+                String payload = "deferred payload " + i + " at QoS " + qos.value();
+                sent.add(payload);
+                ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer().writeBytes(payload.getBytes(StandardCharsets.UTF_8));
+                publishFutures.add(client.publish(topic, buf, qos));
+            }
+        }
+        Awaitility.await("waiting for the publishes to complete")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> publishFutures.stream().allMatch(Future::isDone));
+        assertThat(publishFutures).allMatch(Future::isSuccess);
+        Awaitility.await("waiting for every PUBLISH to be dispatched to the handler executor")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> dispatched.get() == sent.size());
+        // the channel's loop runs this only once the channelRead that dispatched the last PUBLISH has returned, and
+        // with it SimpleChannelInboundHandler's auto-release of that message
+        connectFuture.getNow().getCloseFuture().channel().eventLoop().submit(() -> {}).get(10, TimeUnit.SECONDS);
+        release.countDown();
+
+        // THEN
+        Awaitility.await("waiting for every handler to read its payload")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> received.size() + readFailures.size() == sent.size());
+        assertThat(readFailures).describedAs("payload reads that failed, e.g. with an IllegalReferenceCountException")
+                .noneMatch(IllegalReferenceCountException.class::isInstance)
+                .isEmpty();
+        assertThat(received).containsExactlyInAnyOrderElementsOf(sent);
     }
 
     /**

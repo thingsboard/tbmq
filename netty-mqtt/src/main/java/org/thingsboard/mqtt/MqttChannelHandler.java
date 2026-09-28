@@ -203,6 +203,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             // submitAsync throws where transformAsync failed the future; keep failing it so the payload is released
             future = Futures.immediateFailedFuture(e);
         }
+        // releases the reference MqttPingHandler retained, which is what keeps the payload valid past channelRead0
         future.addListener(payload::release, MoreExecutors.directExecutor());
         return future;
     }
@@ -390,14 +391,15 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     private void handleUnsuback(MqttUnsubAckMessage message) {
-        MqttPendingUnsubscription unsubscription = this.client.getPendingServerUnsubscribes().get(message.variableHeader().messageId());
+        // remove first and complete only what was removed here, so a concurrent close or max-retransmission cannot also
+        // complete it
+        MqttPendingUnsubscription unsubscription = this.client.getPendingServerUnsubscribes().remove(message.variableHeader().messageId());
         if (unsubscription == null) {
             return;
         }
         unsubscription.onUnsubackReceived();
         this.client.getServerSubscriptions().remove(unsubscription.getTopic());
-        unsubscription.getFuture().setSuccess(null);
-        this.client.getPendingServerUnsubscribes().remove(message.variableHeader().messageId());
+        unsubscription.getFuture().trySuccess(null);
         if (this.client.getCallback() != null) {
             this.client.getCallback().onUnsubAck(message);
         }

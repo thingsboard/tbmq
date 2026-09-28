@@ -225,22 +225,23 @@ final class MqttClientImpl implements MqttClient {
     /**
      * The close cleanup of a channel. Clears the plain state first, then drains the pending operations, so the
      * listeners that completing them runs - which may subscribe or publish again - find the client fully cleaned up.
+     * The callback's {@code connectionLost} runs after that, for the same reason, and the reconnect is scheduled last,
+     * so a listener or callback that calls {@link #disconnect()} inline stops it.
      */
     private void onChannelClosed(String host, int port) {
         if (isConnected()) {
             return;
         }
         log.debug("[{}][{}] Channel is closed {}!", host, port, this.channel.id());
-        ChannelClosedException e = new ChannelClosedException("Channel is closed!");
-        if (callback != null) {
-            callback.connectionLost(e);
-        }
         serverSubscriptions.clear();
         qos2PendingMsgIds.clear();
         pendingSubscribeTopics.clear();
         drain(pendingSubscriptions, MqttPendingSubscription::onChannelClosed);
         drain(pendingServerUnsubscribes, MqttPendingUnsubscription::onChannelClosed);
         drain(pendingPublishes, MqttPendingPublish::onChannelClosed);
+        if (callback != null) {
+            callback.connectionLost(new ChannelClosedException("Channel is closed!"));
+        }
         scheduleConnectIfRequired(host, port, true);
     }
 
