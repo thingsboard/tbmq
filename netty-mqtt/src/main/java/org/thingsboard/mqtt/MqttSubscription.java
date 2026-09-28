@@ -17,24 +17,16 @@ package org.thingsboard.mqtt;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
-
-import java.util.regex.Pattern;
 
 final class MqttSubscription {
 
     @Getter(AccessLevel.PACKAGE)
     private final String topic;
-    private final Pattern topicRegex;
+    private final MqttTopicFilter filter;
     @Getter
     private final MqttHandler handler;
-    @Getter(AccessLevel.PACKAGE)
-    private final boolean once;
-    @Getter(AccessLevel.PACKAGE)
-    @Setter(AccessLevel.PACKAGE)
-    private volatile boolean called;
 
-    MqttSubscription(String topic, MqttHandler handler, boolean once) {
+    MqttSubscription(String topic, MqttHandler handler) {
         if (topic == null) {
             throw new NullPointerException("topic");
         }
@@ -43,30 +35,23 @@ final class MqttSubscription {
         }
         this.topic = topic;
         this.handler = handler;
-        this.once = once;
-        this.topicRegex = Pattern.compile(topic.replace("+", "[^/]+").replace("#", ".+") + "$");
+        this.filter = MqttTopicFilter.of(topic);
     }
 
-    boolean matches(String topic) {
-        return this.topicRegex.matcher(topic).matches();
+    boolean matches(String topic, String[] topicLevels) {
+        return this.filter.matches(topic, topicLevels);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         MqttSubscription that = (MqttSubscription) o;
-
-        return once == that.once && topic.equals(that.topic) && handler.equals(that.handler);
+        return topic.equals(that.topic) && handler.equals(that.handler);
     }
 
     @Override
     public int hashCode() {
-        int result = topic.hashCode();
-        result = 31 * result + handler.hashCode();
-        result = 31 * result + (once ? 1 : 0);
-        return result;
+        return 31 * topic.hashCode() + handler.hashCode();
     }
-
 }

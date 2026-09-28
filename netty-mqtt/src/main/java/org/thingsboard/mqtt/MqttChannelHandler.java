@@ -162,22 +162,16 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         var future = Futures.immediateVoidFuture();
         var handlerInvoked = new AtomicBoolean();
         try {
+            String[] topicLevels = MqttTopicFilter.split(topic);
             for (MqttSubscription subscription : ImmutableSet.copyOf(this.client.getSubscriptions().values())) {
-                if (!subscription.matches(topic)) {
+                if (!subscription.matches(topic, topicLevels)) {
                     continue;
                 }
                 future = Futures.transformAsync(future, __ -> {
-                    if (subscription.isOnce() && subscription.isCalled()) {
-                        return Futures.immediateVoidFuture();
-                    }
                     payload.markReaderIndex();
-                    subscription.setCalled(true);
                     var handlerFuture = adaptFuture(subscription.getHandler().onMessage(topic, payload));
 
                     return Futures.transformAsync(handlerFuture, ___ -> {
-                        if (subscription.isOnce()) {
-                            this.client.off(subscription.getTopic(), subscription.getHandler());
-                        }
                         payload.resetReaderIndex();
                         handlerInvoked.set(true);
                         return Futures.immediateVoidFuture();
@@ -263,7 +257,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         }
         pendingSubscription.onSubackReceived();
         for (MqttPendingSubscription.MqttPendingHandler handler : pendingSubscription.getHandlers()) {
-            MqttSubscription subscription = new MqttSubscription(pendingSubscription.getTopic(), handler.handler(), handler.once());
+            MqttSubscription subscription = new MqttSubscription(pendingSubscription.getTopic(), handler.handler());
             this.client.getSubscriptions().put(pendingSubscription.getTopic(), subscription);
             this.client.getHandlerToSubscription().put(handler.handler(), subscription);
         }

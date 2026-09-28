@@ -60,10 +60,10 @@ final class MqttPendingSubscription {
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
-    record MqttPendingHandler(MqttHandler handler, boolean once) {}
+    record MqttPendingHandler(MqttHandler handler) {}
 
-    void addHandler(MqttHandler handler, boolean once) {
-        handlers.add(new MqttPendingHandler(handler, once));
+    void addHandler(MqttHandler handler) {
+        handlers.add(new MqttPendingHandler(handler));
     }
 
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {

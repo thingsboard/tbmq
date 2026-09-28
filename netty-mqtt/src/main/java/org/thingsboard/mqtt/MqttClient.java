@@ -95,27 +95,6 @@ public interface MqttClient {
     Future<Void> on(String topic, MqttHandler handler, MqttQoS qos);
 
     /**
-     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
-     * This subscription is only once. If the MqttClient has received 1 message, the subscription will be removed
-     *
-     * @param topic The topic filter to subscribe to
-     * @param handler The handler to invoke when we receive a message
-     * @return A future which will be completed when the server acknowledges our subscribe request
-     */
-    Future<Void> once(String topic, MqttHandler handler);
-
-    /**
-     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
-     * This subscription is only once. If the MqttClient has received 1 message, the subscription will be removed
-     *
-     * @param topic The topic filter to subscribe to
-     * @param handler The handler to invoke when we receive a message
-     * @param qos The qos to request to the server
-     * @return A future which will be completed when the server acknowledges our subscribe request
-     */
-    Future<Void> once(String topic, MqttHandler handler, MqttQoS qos);
-
-    /**
      * Remove the subscription for the given topic and handler
      * If you want to unsubscribe from all handlers known for this topic, use {@link #off(String)}
      *

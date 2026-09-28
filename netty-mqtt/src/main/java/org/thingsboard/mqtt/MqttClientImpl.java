@@ -284,34 +284,7 @@ final class MqttClientImpl implements MqttClient {
      */
     @Override
     public Future<Void> on(String topic, MqttHandler handler, MqttQoS qos) {
-        return createSubscription(topic, handler, false, qos);
-    }
-
-    /**
-     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
-     * This subscription is only once. If the MqttClient has received 1 message, the subscription will be removed
-     *
-     * @param topic   The topic filter to subscribe to
-     * @param handler The handler to invoke when we receive a message
-     * @return A future which will be completed when the server acknowledges our subscribe request
-     */
-    @Override
-    public Future<Void> once(String topic, MqttHandler handler) {
-        return once(topic, handler, MqttQoS.AT_MOST_ONCE);
-    }
-
-    /**
-     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
-     * This subscription is only once. If the MqttClient has received 1 message, the subscription will be removed
-     *
-     * @param topic   The topic filter to subscribe to
-     * @param handler The handler to invoke when we receive a message
-     * @param qos     The qos to request to the server
-     * @return A future which will be completed when the server acknowledges our subscribe request
-     */
-    @Override
-    public Future<Void> once(String topic, MqttHandler handler, MqttQoS qos) {
-        return createSubscription(topic, handler, true, qos);
+        return createSubscription(topic, handler, qos);
     }
 
     /**
@@ -523,17 +496,17 @@ final class MqttClientImpl implements MqttClient {
         return MqttMessageIdVariableHeader.from(messageId);
     }
 
-    private Future<Void> createSubscription(String topic, MqttHandler handler, boolean once, MqttQoS qos) {
+    private Future<Void> createSubscription(String topic, MqttHandler handler, MqttQoS qos) {
         log.trace("[{}] Creating subscription to {}", channel != null ? channel.id() : "UNKNOWN", topic);
         if (this.pendingSubscribeTopics.contains(topic)) {
             Optional<Map.Entry<Integer, MqttPendingSubscription>> subscriptionEntry = this.pendingSubscriptions.entrySet().stream().filter((e) -> e.getValue().getTopic().equals(topic)).findAny();
             if (subscriptionEntry.isPresent()) {
-                subscriptionEntry.get().getValue().addHandler(handler, once);
+                subscriptionEntry.get().getValue().addHandler(handler);
                 return subscriptionEntry.get().getValue().getFuture();
             }
         }
         if (this.serverSubscriptions.contains(topic)) {
-            MqttSubscription subscription = new MqttSubscription(topic, handler, once);
+            MqttSubscription subscription = new MqttSubscription(topic, handler);
             this.subscriptions.put(topic, subscription);
             this.handlerToSubscription.put(handler, subscription);
             return this.channel.newSucceededFuture();
@@ -549,7 +522,7 @@ final class MqttClientImpl implements MqttClient {
         final var pendingSubscription = MqttPendingSubscription.builder()
                 .future(future)
                 .topic(topic)
-                .handlers(Sets.newHashSet(new MqttPendingSubscription.MqttPendingHandler(handler, once)))
+                .handlers(Sets.newHashSet(new MqttPendingSubscription.MqttPendingHandler(handler)))
                 .subscribeMessage(message)
                 .ownerId(clientConfig.getOwnerId())
                 .retransmissionConfig(clientConfig.getRetransmissionConfig())
