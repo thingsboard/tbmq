@@ -442,6 +442,7 @@ final class MqttClientImpl implements MqttClient {
             // no channel, so nothing was written: the caller's reference was never consumed either
             releaseIfRemoved(pendingPublish);
             message.release();
+            future.tryFailure(new ChannelClosedException("Client is not connected"));
         }
         return future;
     }

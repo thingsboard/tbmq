@@ -412,6 +412,10 @@ class MqttClientTest {
         // THEN
         // nothing was ever written, so neither the caller's reference nor the pending publish's may survive
         assertPayloadFullyReleased(payload);
+        Awaitility.await("waiting for the unsendable publish to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).isFalse();
     }
 
     @Test
