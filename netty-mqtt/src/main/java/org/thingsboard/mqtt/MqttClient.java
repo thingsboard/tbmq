@@ -87,7 +87,7 @@ public interface MqttClient {
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
      * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
-     * the filter, in which case nothing is registered for it
+     * the filter, in which case this call registers nothing
      */
     Future<MqttQoS> on(String topic, MqttHandler handler);
 
@@ -100,10 +100,11 @@ public interface MqttClient {
      *
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @param qos The qos to request to the server
+     * @param qos The qos to request to the server; ignored when the filter is already subscribed or its SUBSCRIBE is
+     *            in flight
      * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
      * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
-     * the filter, in which case nothing is registered for it
+     * the filter, in which case this call registers nothing
      */
     Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos);
 

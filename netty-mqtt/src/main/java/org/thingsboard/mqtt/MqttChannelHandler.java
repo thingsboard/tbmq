@@ -254,7 +254,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             this.client.getServerSubscriptions().put(topic, grantedQos);
             pendingSubscription.getFuture().trySuccess(grantedQos);
         }
-        // only after recording a grant: an on() racing this SUBACK that misses the pending subscription then finds the grant
+        // only after recording a grant: an on() racing this SUBACK that finds the topic no longer pending then finds the grant
         this.client.getPendingSubscribeTopics().remove(topic);
         if (this.client.getCallback() != null) {
             this.client.getCallback().onSubAck(message);

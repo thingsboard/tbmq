@@ -61,6 +61,10 @@ final class MqttPendingSubscription {
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
+    /**
+     * The handler registered when the SUBACK grants the filter; the last {@code on()} for a filter in flight wins,
+     * except one racing the SUBACK itself, whose handler can be lost while its shared future still succeeds.
+     */
     void setHandler(MqttHandler handler) {
         this.handler = handler;
     }

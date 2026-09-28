@@ -52,7 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -91,7 +90,7 @@ final class MqttClientImpl implements MqttClient {
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingSubscription> pendingSubscriptions = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
-    private final Set<String> pendingSubscribeTopics = new HashSet<>();
+    private final Set<String> pendingSubscribeTopics = ConcurrentHashMap.newKeySet();
     private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
     @Getter
@@ -291,7 +290,8 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @param qos     The qos to request to the server
+     * @param qos     The qos to request to the server; ignored when the filter is already subscribed or its SUBSCRIBE
+     *                is in flight
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter
      */

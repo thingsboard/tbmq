@@ -43,7 +43,7 @@ public class MqttTestProxy {
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
 
-    private Channel clientToProxyChannel;
+    private volatile Channel clientToProxyChannel;
     private Channel proxyToBrokerChannel;
 
     private final int assignedPort;
