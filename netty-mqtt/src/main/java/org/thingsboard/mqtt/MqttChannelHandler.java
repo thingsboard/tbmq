@@ -22,6 +22,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
@@ -205,10 +207,17 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 this.client.getPendingPublishes().forEach((id, publish) -> {
                     // claim the first write, or publish() would write the same message (and consume its reference) again
                     if (!publish.markSent()) return;
-                    channel.write(publish.getMessage());
+                    ChannelFuture written = channel.write(publish.getMessage());
                     if (publish.getQos() == MqttQoS.AT_MOST_ONCE) {
                         publish.getFuture().setSuccess(null); // We don't get an ACK for QOS 0
                         this.client.releaseIfRemoved(publish);
+                    } else {
+                        // publish() lost the claim and skips its write, so it will not start the retransmission either
+                        written.addListener((ChannelFutureListener) f -> {
+                            if (f.isSuccess()) {
+                                this.client.startPublishRetransmission(publish, f.channel());
+                            }
+                        });
                     }
                 });
                 channel.flush();
@@ -381,7 +390,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         channel.writeAndFlush(pubrelMessage);
 
         pendingPublish.setPubrelMessage(pubrelMessage);
-        pendingPublish.startPubrelRetransmissionTimer(this.client.getEventLoop().next(), this.client::sendAndFlushPacket);
+        pendingPublish.startPubrelRetransmissionTimer(this.client.retransmissionLoop(channel), this.client::sendAndFlushPacket);
     }
 
     private void processPubRec(Channel channel, int msgId, byte reasonCodeValue) {

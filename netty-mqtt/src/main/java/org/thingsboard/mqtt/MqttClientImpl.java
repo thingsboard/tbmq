@@ -22,6 +22,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -435,7 +436,7 @@ final class MqttClientImpl implements MqttClient {
                     releaseIfRemoved(pendingPublish);
                     pendingPublish.getFuture().setSuccess(null); //We don't get an ACK for QOS 0
                 } else {
-                    pendingPublish.startPublishRetransmissionTimer(eventLoop.next(), MqttClientImpl.this::sendAndFlushPacket);
+                    startPublishRetransmission(pendingPublish, channelFuture.channel());
                 }
             });
         } else {
@@ -445,6 +446,24 @@ final class MqttClientImpl implements MqttClient {
             future.tryFailure(new ChannelClosedException("Client is not connected"));
         }
         return future;
+    }
+
+    /**
+     * Starts retransmitting a QoS 1/2 publish just written on {@code ch}. Call it once, from whichever path claimed the
+     * first write.
+     */
+    void startPublishRetransmission(MqttPendingPublish pendingPublish, Channel ch) {
+        pendingPublish.startPublishRetransmissionTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
+    }
+
+    /**
+     * The loop a retransmission timer runs on: the channel's own, where the ACK handlers, the write listeners and the
+     * close cleanup that end a pending operation all run. The timer's cancelled check and its retransmit, which retains
+     * a publish's payload, are then serialised with every release of that payload. Only a subscription made before the
+     * first connect has no channel yet; it carries no reference-counted payload, so any loop of the group does for it.
+     */
+    EventLoop retransmissionLoop(Channel ch) {
+        return ch != null ? ch.eventLoop() : this.eventLoop.next();
     }
 
     /**
@@ -567,9 +586,10 @@ final class MqttClientImpl implements MqttClient {
 
         this.pendingSubscriptions.put(variableHeader.messageId(), pendingSubscription);
         this.pendingSubscribeTopics.add(topic);
-        pendingSubscription.setSent(this.sendAndFlushPacket(message) != null); //If not sent, we will send it when the connection is opened
+        final Channel ch = this.channel;
+        pendingSubscription.setSent(this.sendAndFlushPacket(ch, message) != null); //If not sent, we will send it when the connection is opened
 
-        pendingSubscription.startRetransmitTimer(this.eventLoop.next(), this::sendAndFlushPacket);
+        pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
 
         return future;
     }
@@ -622,9 +642,10 @@ final class MqttClientImpl implements MqttClient {
                     }).build();
 
             this.pendingServerUnsubscribes.put(variableHeader.messageId(), pendingUnsubscription);
-            pendingUnsubscription.startRetransmissionTimer(this.eventLoop.next(), this::sendAndFlushPacket);
+            final Channel ch = this.channel;
+            pendingUnsubscription.startRetransmissionTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
 
-            this.sendAndFlushPacket(message);
+            this.sendAndFlushPacket(ch, message);
         } else {
             promise.setSuccess(null);
         }

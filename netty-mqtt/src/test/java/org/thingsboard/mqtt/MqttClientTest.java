@@ -21,12 +21,19 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ResourceLeakDetector;
+import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
@@ -50,9 +57,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -509,6 +518,135 @@ class MqttClientTest {
         assertPayloadFullyReleased(payload);
     }
 
+    @Test
+    void testPublishRetransmissionRunsOnChannelEventLoop() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PUBACK) // force a retransmission
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[RetransmissionLoop]");
+        clientConfig.setClientId("retransmission-loop");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 500L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        EventLoop channelLoop = connectFuture.getNow().getCloseFuture().channel().eventLoop();
+
+        TrackedByteBuf payload = new TrackedByteBuf("retransmitted");
+        Thread publisher = Thread.currentThread();
+
+        // WHEN
+        client.publish("retransmission-loop", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        // publish() takes the pending publish's reference on the caller's thread; every other retain is a retransmission
+        Awaitility.await("waiting for the publish to be retransmitted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> payload.retainThreads.stream().anyMatch(t -> t != publisher));
+        // PUBACK, PUBCOMP, the write listener and the close cleanup all release on the channel's loop: a retransmission
+        // that retains anywhere else can pass its cancelled check and then retain a payload those paths just freed
+        assertThat(payload.retainThreads.stream().filter(t -> t != publisher).toList())
+                .describedAs("threads that retained the payload for a retransmission")
+                .isNotEmpty()
+                .allSatisfy(t -> assertThat(channelLoop.inEventLoop(t)).describedAs("%s is the channel's event loop", t).isTrue());
+    }
+
+    @Test
+    void testPublishFirstWrittenByConnackResendIsRetransmitted() {
+        // GIVEN
+        int messageId = 4242;
+        AtomicInteger pubacks = new AtomicInteger();
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.PUBACK) {
+                        return true;
+                    }
+                    // the broker acknowledges every copy it receives, so each dropped PUBACK counts one delivery
+                    if (((MqttMessageIdVariableHeader) msg.variableHeader()).messageId() == messageId) {
+                        pubacks.incrementAndGet();
+                    }
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ConnackResendRetransmission]");
+        clientConfig.setClientId("connack-resend-retrans");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 1000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        TrackedByteBuf payload = new TrackedByteBuf("resent on connack");
+        // the state publish() leaves between registering its entry and claiming the first write; no public call can
+        // hold that window open, so the entry is registered directly and the CONNACK resend is the one to claim it
+        MqttPendingPublish pendingPublish = registerUnsentQoS1Publish((MqttClientImpl) client, "connack-resend", payload, messageId);
+
+        // WHEN
+        connect(broker.getHost(), proxy.getPort());
+
+        // THEN
+        try {
+            Awaitility.await("wait up to 6s, stop early if too many deliveries")
+                    .atMost(Duration.ofSeconds(6L))
+                    .pollInterval(Duration.ofMillis(100))
+                    .until(() -> pubacks.get() > 2);
+        } catch (ConditionTimeoutException __) {
+            // didn't exceed 2 deliveries
+        }
+        assertThat(pubacks.get()).describedAs("deliveries of the publish, expected 2 (the CONNACK resend plus one retransmission)").isEqualTo(2);
+        Awaitility.await("waiting for the retransmissions to run out")
+                .atMost(Duration.ofSeconds(5L))
+                .until(pendingPublish.getFuture()::isDone);
+        assertThat(pendingPublish.getFuture().cause()).isInstanceOf(MaxRetransmissionsReachedException.class);
+        assertPayloadFullyReleased(payload);
+    }
+
+    /**
+     * Registers a QoS 1 pending publish exactly as {@link MqttClientImpl#publish} does, but without writing it.
+     */
+    private static MqttPendingPublish registerUnsentQoS1Publish(MqttClientImpl client, String topic, ByteBuf payload, int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+        MqttPublishMessage message = new MqttPublishMessage(fixedHeader, new MqttPublishVariableHeader(topic, messageId), payload);
+        Promise<Void> future = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
+        var self = new AtomicReference<MqttPendingPublish>();
+        MqttPendingPublish pendingPublish = MqttPendingPublish.builder()
+                .messageId(messageId)
+                .future(future)
+                .payload(payload.retain())
+                .message(message)
+                .qos(MqttQoS.AT_LEAST_ONCE)
+                .ownerId(client.getClientConfig().getOwnerId())
+                .retransmissionConfig(client.getClientConfig().getRetransmissionConfig())
+                .pendingOperation(new PendingOperation() {
+                    @Override
+                    public boolean isCancelled() {
+                        return client.getPendingPublishes().get(messageId) != self.get();
+                    }
+
+                    @Override
+                    public void onMaxRetransmissionAttemptsReached() {
+                        if (client.getPendingPublishes().remove(messageId, self.get())) {
+                            future.tryFailure(new MaxRetransmissionsReachedException("max retransmissions reached"));
+                            self.get().getPayload().release();
+                        }
+                    }
+                }).build();
+        self.set(pendingPublish);
+        client.getPendingPublishes().put(messageId, pendingPublish);
+        return pendingPublish;
+    }
+
     private static void assertPayloadFullyReleased(TrackedByteBuf payload) {
         Awaitility.await("waiting for the payload to be fully released")
                 .atMost(Duration.ofSeconds(5L))
@@ -530,6 +668,7 @@ class MqttClientTest {
     private static final class TrackedByteBuf extends UnpooledHeapByteBuf {
 
         private final AtomicInteger illegalRefCntOps = new AtomicInteger();
+        private final List<Thread> retainThreads = new CopyOnWriteArrayList<>();
 
         private TrackedByteBuf(String content) {
             this(content.getBytes(StandardCharsets.UTF_8));
@@ -561,6 +700,7 @@ class MqttClientTest {
 
         @Override
         public ByteBuf retain() {
+            retainThreads.add(Thread.currentThread());
             try {
                 return super.retain();
             } catch (IllegalReferenceCountException e) {
@@ -571,6 +711,7 @@ class MqttClientTest {
 
         @Override
         public ByteBuf retain(int increment) {
+            retainThreads.add(Thread.currentThread());
             try {
                 return super.retain(increment);
             } catch (IllegalReferenceCountException e) {
