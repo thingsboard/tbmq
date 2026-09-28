@@ -32,7 +32,9 @@ public interface MqttClient {
      * If you want to change the port number, see {@link #connect(String, int)}
      *
      * @param host The ip address or host to connect to
-     * @return A future which will be completed when the connection is opened and we received an CONNACK
+     * @return A future which will be completed when the connection is opened and we received an CONNACK; it fails
+     * with the TCP connect's cause, an {@link javax.net.ssl.SSLException} for a failed TLS handshake, or a
+     * {@link ChannelClosedException} when the channel closes before the CONNACK
      */
     Promise<MqttConnectResult> connect(String host);
 
@@ -41,7 +43,9 @@ public interface MqttClient {
      *
      * @param host The ip address or host to connect to
      * @param port The tcp port to connect to
-     * @return A future which will be completed when the connection is opened and we received an CONNACK
+     * @return A future which will be completed when the connection is opened and we received an CONNACK; it fails
+     * with the TCP connect's cause, an {@link javax.net.ssl.SSLException} for a failed TLS handshake, or a
+     * {@link ChannelClosedException} when the channel closes before the CONNACK
      */
     Promise<MqttConnectResult> connect(String host, int port);
 
@@ -54,7 +58,9 @@ public interface MqttClient {
     /**
      * Attempt reconnect to the host that was attempted with {@link #connect(String, int)} method before
      *
-     * @return A future which will be completed when the connection is opened and we received an CONNACK
+     * @return A future which will be completed when the connection is opened and we received an CONNACK; it fails
+     * with the TCP connect's cause, an {@link javax.net.ssl.SSLException} for a failed TLS handshake, or a
+     * {@link ChannelClosedException} when the channel closes before the CONNACK
      * @throws IllegalStateException if no previous {@link #connect(String, int)} calls were attempted
      */
     Promise<MqttConnectResult> reconnect();
@@ -87,7 +93,9 @@ public interface MqttClient {
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
      * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
-     * the filter, in which case this call registers nothing
+     * the filter, in which case this call registers nothing; it also fails with {@link ChannelClosedException} when the
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out
      */
     Future<MqttQoS> on(String topic, MqttHandler handler);
 
@@ -104,7 +112,9 @@ public interface MqttClient {
      *            in flight
      * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
      * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
-     * the filter, in which case this call registers nothing
+     * the filter, in which case this call registers nothing; it also fails with {@link ChannelClosedException} when the
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out
      */
     Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos);
 
@@ -114,7 +124,9 @@ public interface MqttClient {
      *
      * @param topic The topic filter to unsubscribe for
      * @param handler The handler the filter must currently have
-     * @return A future which will be completed when the server acknowledges our unsubscribe request
+     * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     Future<Void> off(String topic, MqttHandler handler);
 
@@ -122,7 +134,9 @@ public interface MqttClient {
      * Remove the given topic filter and its handler, and unsubscribe the filter on the server.
      *
      * @param topic The topic filter to unsubscribe for
-     * @return A future which will be completed when the server acknowledges our unsubscribe request
+     * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     Future<Void> off(String topic);
 
@@ -135,7 +149,8 @@ public interface MqttClient {
      *
      * @param topic The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
-     * @return A future which will be completed when the message is sent out of the MqttClient
+     * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     Future<Void> publish(String topic, ByteBuf payload);
 
@@ -144,7 +159,9 @@ public interface MqttClient {
      * @param topic The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos The qos to use while publishing
-     * @return A future which will be completed when the message is delivered to the server
+     * @return A future which will be completed when the message is delivered to the server, or fails with the
+     * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
+     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos);
 
@@ -153,7 +170,8 @@ public interface MqttClient {
      * @param topic The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain true if you want to retain the message on the server, false otherwise
-     * @return A future which will be completed when the message is sent out of the MqttClient
+     * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     Future<Void> publish(String topic, ByteBuf payload, boolean retain);
 
@@ -163,7 +181,9 @@ public interface MqttClient {
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos The qos to use while publishing
      * @param retain true if you want to retain the message on the server, false otherwise
-     * @return A future which will be completed when the message is delivered to the server
+     * @return A future which will be completed when the message is delivered to the server, or fails with the
+     * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
+     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain);
 

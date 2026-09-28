@@ -22,6 +22,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -1086,6 +1087,129 @@ class MqttClientTest {
                 .atMost(Duration.ofSeconds(5L))
                 .until(subscribeFuture::isDone);
         assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testSubscribeWhileReconnectIsPendingFailsOnDisconnect() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeReconnectPendingDisconnect]");
+        clientConfig.setClientId("sub-reconnect-pending");
+        // reconnect stays on, a minute out: meanwhile the client still holds the channel that closed
+        clientConfig.setReconnectDelay(60);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        // notified after the client's own close listener, which was added first
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        connectFuture.getNow().getCloseFuture().addListener(f -> closeCleanedUp.countDown());
+        proxy.stop();
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+
+        // made after the close cleanup, so only disconnect() is left to fail it
+        Future<MqttQoS> subscribeFuture = client.on("sub-reconnect-pending", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        assertThat(subscribeFuture.isDone()).isFalse();
+
+        // WHEN
+        client.disconnect();
+        // cancels the scheduled reconnect and retransmission: nothing else is left to complete the subscribe
+        clientEventLoop.shutdownGracefully();
+
+        // THEN
+        Awaitility.await("waiting for the subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testResubscribeFromCloseFailureListenerSurvivesTheCleanup() {
+        // GIVEN
+        AtomicBoolean dropSubacks = new AtomicBoolean(true);
+        CountDownLatch subacksDropped = new CountDownLatch(2);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.SUBACK || !dropSubacks.get()) {
+                        return true;
+                    }
+                    subacksDropped.countDown();
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ResubscribeOnClose]");
+        clientConfig.setClientId("resubscribe-on-close");
+        // reconnect stays on (1 s); the retransmission, 2 s after the close, is what sends the re-subscribe then
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 2000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        // one loop: the subscribe promises notify on the loop that runs the close cleanup, so a listener runs inline in it
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        MqttClientImpl impl = (MqttClientImpl) client;
+
+        // two in flight, so the close sweep has an entry still to visit after the one whose listener re-subscribes
+        String topic = "resubscribe-on-close";
+        Future<MqttQoS> first = client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        client.on(topic + "/other", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        awaitLatch(subacksDropped, "waiting for both SUBACKs to be dropped");
+        AtomicReference<Future<MqttQoS>> resubscribe = new AtomicReference<>();
+        first.addListener(f -> {
+            if (!f.isSuccess()) {
+                resubscribe.set(client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE));
+            }
+        });
+
+        // notified after the client's own close listener, which was added first: this records the state it left
+        Channel channel = connectFuture.getNow().getCloseFuture().channel();
+        AtomicBoolean resubscribeDone = new AtomicBoolean(true);
+        AtomicBoolean topicPending = new AtomicBoolean();
+        AtomicBoolean entryPending = new AtomicBoolean();
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        channel.closeFuture().addListener(f -> {
+            Future<MqttQoS> resubscribed = resubscribe.get();
+            if (resubscribed != null) {
+                resubscribeDone.set(resubscribed.isDone());
+                topicPending.set(impl.getPendingSubscribeTopics().contains(topic));
+                entryPending.set(impl.getPendingSubscriptions().values().stream().anyMatch(p -> p.getFuture() == resubscribed));
+            }
+            closeCleanedUp.countDown();
+        });
+        dropSubacks.set(false);
+
+        // WHEN
+        channel.close();
+
+        // THEN
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+        assertThat(first.cause()).isInstanceOf(ChannelClosedException.class);
+        assertThat(resubscribe.get()).describedAs("the listener re-subscribed during the close cleanup").isNotNull();
+        assertThat(resubscribeDone.get()).describedAs("re-subscribe completed by the cleanup it was made in").isFalse();
+        assertThat(topicPending.get()).describedAs("re-subscribed topic pending after the cleanup").isTrue();
+        assertThat(entryPending.get()).describedAs("re-subscribe entry pending after the cleanup").isTrue();
+        Awaitility.await("waiting for the re-subscribe to be granted on the new connection")
+                .atMost(Duration.ofSeconds(15L))
+                .until(resubscribe.get()::isDone);
+        assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
+        assertThat(impl.getServerSubscriptions()).containsKey(topic);
     }
 
     private static void awaitLatch(CountDownLatch latch, String description) {

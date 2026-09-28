@@ -52,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -61,9 +62,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Represents an MqttClientImpl connected to a single MQTT server. Will try to keep the connection going at all times
+ * <p>
+ * Every future handed out completes exactly once, and exactly one path completes it:
+ * <ul>
+ * <li>a connect future - the connect listener on a failed TCP connect; otherwise {@link MqttChannelHandler}, on the
+ * CONNACK or in its {@code channelInactive};</li>
+ * <li>a pending subscribe, unsubscribe or publish - whoever removes its entry from the pending map: the ACK handler,
+ * max retransmission, the close cleanup, {@link #disconnect()} or the no-channel sweep, through {@link #drain} or an
+ * explicit remove-then-act. The remover also releases the entry's payload.</li>
+ * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 @Slf4j
@@ -144,7 +155,9 @@ final class MqttClientImpl implements MqttClient {
      * If you want to change the port number, see {@link #connect(String, int)}
      *
      * @param host The ip address or host to connect to
-     * @return A future which will be completed when the connection is opened and we received an CONNACK
+     * @return A future which will be completed when the connection is opened and we received an CONNACK; it fails
+     * with the TCP connect's cause, an {@link javax.net.ssl.SSLException} for a failed TLS handshake, or a
+     * {@link ChannelClosedException} when the channel closes before the CONNACK
      */
     @Override
     public Promise<MqttConnectResult> connect(String host) {
@@ -156,7 +169,9 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param host The ip address or host to connect to
      * @param port The tcp port to connect to
-     * @return A future which will be completed when the connection is opened and we received an CONNACK
+     * @return A future which will be completed when the connection is opened and we received an CONNACK; it fails
+     * with the TCP connect's cause, an {@link javax.net.ssl.SSLException} for a failed TLS handshake, or a
+     * {@link ChannelClosedException} when the channel closes before the CONNACK
      */
     @Override
     public Promise<MqttConnectResult> connect(String host, int port) {
@@ -182,45 +197,11 @@ final class MqttClientImpl implements MqttClient {
         // the channel closes before one arrives. Here only a failed TCP connect is left to fail it.
         future.addListener((ChannelFutureListener) f -> {
             if (f.isSuccess()) {
-                // Assign first, then re-check: disconnect() is a no-op while the channel is null, so a connect
+                // Assign first, then re-check: disconnect() closes nothing while the channel is null, so a connect
                 // completing after it would otherwise leave a live session that nobody holds a reference to.
                 MqttClientImpl.this.channel = f.channel();
                 // Before the re-check, so that closing a channel connected after disconnect() fails what waits for it too
-                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
-                    if (isConnected()) {
-                        return;
-                    }
-                    log.debug("[{}][{}] Channel is closed {}!", host, port, this.channel.id());
-                    ChannelClosedException e = new ChannelClosedException("Channel is closed!");
-                    if (callback != null) {
-                        callback.connectionLost(e);
-                    }
-                    // remove each entry before completing it: this path owns only what it removed itself, so an entry a
-                    // concurrent ACK, write listener or max retransmission already took is neither completed nor
-                    // released twice
-                    for (Integer id : pendingSubscriptions.keySet()) {
-                        MqttPendingSubscription mqttPendingSubscription = pendingSubscriptions.remove(id);
-                        if (mqttPendingSubscription != null) {
-                            mqttPendingSubscription.onChannelClosed();
-                        }
-                    }
-                    serverSubscriptions.clear();
-                    for (Integer id : pendingServerUnsubscribes.keySet()) {
-                        MqttPendingUnsubscription mqttPendingUnsubscription = pendingServerUnsubscribes.remove(id);
-                        if (mqttPendingUnsubscription != null) {
-                            mqttPendingUnsubscription.onChannelClosed();
-                        }
-                    }
-                    qos2PendingMsgIds.clear();
-                    for (Integer id : pendingPublishes.keySet()) {
-                        MqttPendingPublish mqttPendingPublish = pendingPublishes.remove(id);
-                        if (mqttPendingPublish != null) {
-                            mqttPendingPublish.onChannelClosed();
-                        }
-                    }
-                    pendingSubscribeTopics.clear();
-                    scheduleConnectIfRequired(host, port, true);
-                });
+                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> onChannelClosed(host, port));
                 if (disconnected) {
                     log.debug("[{}][{}] Connected after disconnect(); closing channel {}", host, port, f.channel().id());
                     f.channel().close();
@@ -230,14 +211,51 @@ final class MqttClientImpl implements MqttClient {
             } else {
                 log.debug("[{}][{}] Connect failed, trying reconnect!", host, port);
                 boolean reconnectScheduled = scheduleConnectIfRequired(host, port, reconnect);
-                connectFuture.tryFailure(f.cause());
                 if (!reconnectScheduled) {
-                    // no connection is coming to send them on
+                    // no connection is coming to send them on; failed before the connect future, so that a listener
+                    // on it retrying connect() keeps the subscriptions it makes for the retry
                     failPendingSubscriptions(new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
                 }
+                connectFuture.tryFailure(f.cause());
             }
         });
         return connectFuture;
+    }
+
+    /**
+     * The close cleanup of a channel. Clears the plain state first, then drains the pending operations, so the
+     * listeners that completing them runs - which may subscribe or publish again - find the client fully cleaned up.
+     */
+    private void onChannelClosed(String host, int port) {
+        if (isConnected()) {
+            return;
+        }
+        log.debug("[{}][{}] Channel is closed {}!", host, port, this.channel.id());
+        ChannelClosedException e = new ChannelClosedException("Channel is closed!");
+        if (callback != null) {
+            callback.connectionLost(e);
+        }
+        serverSubscriptions.clear();
+        qos2PendingMsgIds.clear();
+        pendingSubscribeTopics.clear();
+        drain(pendingSubscriptions, MqttPendingSubscription::onChannelClosed);
+        drain(pendingServerUnsubscribes, MqttPendingUnsubscription::onChannelClosed);
+        drain(pendingPublishes, MqttPendingPublish::onChannelClosed);
+        scheduleConnectIfRequired(host, port, true);
+    }
+
+    /**
+     * Removes each entry, then hands it to onRemoved: the caller owns - completes and releases - only what it removed.
+     * The keys are copied first, so an entry that onRemoved's listeners add - a retry - is left for its own
+     * completion, whereas a live view might or might not reach it.
+     */
+    private static <V> void drain(Map<Integer, V> map, Consumer<V> onRemoved) {
+        for (Integer id : List.copyOf(map.keySet())) {
+            V v = map.remove(id);
+            if (v != null) {
+                onRemoved.accept(v);
+            }
+        }
     }
 
     /**
@@ -260,17 +278,14 @@ final class MqttClientImpl implements MqttClient {
 
     /**
      * Fails every subscription still waiting for its SUBACK, for when no channel will carry one: the connect failed
-     * with no reconnect to follow, or the client was disconnected before it had a channel. With a channel, its close
-     * does this instead. Removes each entry before failing it, so no other path completes it too.
+     * with no reconnect to follow, or the client was disconnected. Removes each entry before failing it, so no other
+     * path completes it too.
      */
     private void failPendingSubscriptions(Throwable cause) {
-        for (Integer id : pendingSubscriptions.keySet()) {
-            MqttPendingSubscription pendingSubscription = pendingSubscriptions.remove(id);
-            if (pendingSubscription != null) {
-                pendingSubscribeTopics.remove(pendingSubscription.getTopic());
-                pendingSubscription.fail(cause);
-            }
-        }
+        drain(pendingSubscriptions, pendingSubscription -> {
+            pendingSubscribeTopics.remove(pendingSubscription.getTopic());
+            pendingSubscription.fail(cause);
+        });
     }
 
     @Override
@@ -315,7 +330,9 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted, or fails with
-     * {@link MqttSubscriptionFailedException} when the server refuses the filter
+     * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler) {
@@ -330,7 +347,9 @@ final class MqttClientImpl implements MqttClient {
      * @param qos     The qos to request to the server; ignored when the filter is already subscribed or its SUBSCRIBE
      *                is in flight
      * @return A future which completes with the QoS the server granted, or fails with
-     * {@link MqttSubscriptionFailedException} when the server refuses the filter
+     * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos) {
@@ -343,7 +362,9 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic   The topic filter to unsubscribe for
      * @param handler The handler the filter must currently have
-     * @return A future which will be completed when the server acknowledges our unsubscribe request
+     * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     @Override
     public Future<Void> off(String topic, MqttHandler handler) {
@@ -360,7 +381,9 @@ final class MqttClientImpl implements MqttClient {
      * Remove the given topic filter and its handler, and unsubscribe the filter on the server.
      *
      * @param topic The topic filter to unsubscribe for
-     * @return A future which will be completed when the server acknowledges our unsubscribe request
+     * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     @Override
     public Future<Void> off(String topic) {
@@ -378,7 +401,8 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic   The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
-     * @return A future which will be completed when the message is sent out of the MqttClient
+     * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload) {
@@ -391,7 +415,9 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos     The qos to use while publishing
-     * @return A future which will be completed when the message is delivered to the server
+     * @return A future which will be completed when the message is delivered to the server, or fails with the
+     * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
+     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos) {
@@ -404,7 +430,8 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain  true if you want to retain the message on the server, false otherwise
-     * @return A future which will be completed when the message is sent out of the MqttClient
+     * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, boolean retain) {
@@ -418,7 +445,9 @@ final class MqttClientImpl implements MqttClient {
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos     The qos to use while publishing
      * @param retain  true if you want to retain the message on the server, false otherwise
-     * @return A future which will be completed when the message is delivered to the server
+     * @return A future which will be completed when the message is delivered to the server, or fails with the
+     * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
+     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
@@ -562,11 +591,11 @@ final class MqttClientImpl implements MqttClient {
                     ch.close();
                 }
             }, DISCONNECT_FALLBACK_DELAY_SECS, TimeUnit.SECONDS);
-        } else {
-            // no channel, so no close fails what waits for the first CONNACK; a connect still in flight closes the
-            // channel it gets, and that close fails whatever was added meanwhile
-            failPendingSubscriptions(new ChannelClosedException("Client is disconnected"));
         }
+        // whatever the channel: with none, or one already closed while a reconnect was pending, no close is left to
+        // fail what waits for a CONNACK; a live channel's close finds these gone, and a connect still in flight closes
+        // the channel it gets, which fails whatever was added meanwhile
+        failPendingSubscriptions(new ChannelClosedException("Client is disconnected"));
     }
 
 
