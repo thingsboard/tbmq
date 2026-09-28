@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.JdkFutureAdapters;
@@ -55,7 +54,6 @@ import org.thingsboard.mqtt.MqttOrderedAcknowledgementCtx.MqttMsgWrapper;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -155,55 +153,43 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         super.channelInactive(ctx);
     }
 
-    ListenableFuture<Void> invokeHandlersForIncomingPublish(MqttPublishMessage message) {
+    ListenableFuture<Void> invokeHandlerForIncomingPublish(MqttPublishMessage message) {
         String topic = message.variableHeader().topicName();
         ByteBuf payload = message.payload();
+        String[] topicLevels = MqttTopicFilter.split(topic);
 
-        var future = Futures.immediateVoidFuture();
-        var handlerInvoked = new AtomicBoolean();
-        try {
-            String[] topicLevels = MqttTopicFilter.split(topic);
-            for (MqttSubscription subscription : ImmutableSet.copyOf(this.client.getSubscriptions().values())) {
-                if (!subscription.matches(topic, topicLevels)) {
-                    continue;
-                }
-                future = Futures.transformAsync(future, __ -> {
-                    payload.markReaderIndex();
-                    var handlerFuture = adaptFuture(subscription.getHandler().onMessage(topic, payload));
+        MqttHandler target = null;
+        for (MqttSubscription subscription : this.client.getSubscriptions()) {
+            if (subscription.matches(topic, topicLevels)) {
+                target = subscription.getHandler();
+                break;
+            }
+        }
+        if (target == null) {
+            target = client.getDefaultHandler();
+        }
+        if (target == null) {
+            payload.release();
+            return Futures.immediateVoidFuture();
+        }
 
-                    return Futures.transformAsync(handlerFuture, ___ -> {
-                        payload.resetReaderIndex();
-                        handlerInvoked.set(true);
-                        return Futures.immediateVoidFuture();
-                    }, client.getHandlerExecutor());
-                }, client.getHandlerExecutor());
+        final MqttHandler handler = target;
+        ListenableFuture<Void> future = Futures.transformAsync(
+                Futures.immediateVoidFuture(),
+                __ -> adaptFuture(handler.onMessage(topic, payload)),
+                client.getHandlerExecutor());
+
+        Futures.addCallback(future, new FutureCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                payload.release();
             }
 
-            future = Futures.transformAsync(future, __ -> {
-                if (!handlerInvoked.get() && client.getDefaultHandler() != null) {
-                    payload.markReaderIndex();
-                    var defaultFuture = adaptFuture(client.getDefaultHandler().onMessage(topic, payload));
-
-                    return Futures.transformAsync(defaultFuture, ___ -> {
-                        payload.resetReaderIndex();
-                        return Futures.immediateVoidFuture();
-                    }, client.getHandlerExecutor());
-                }
-                return Futures.immediateVoidFuture();
-            }, client.getHandlerExecutor());
-        } finally {
-            Futures.addCallback(future, new FutureCallback<>() {
-                @Override
-                public void onSuccess(Void result) {
-                    payload.release();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    payload.release();
-                }
-            }, MoreExecutors.directExecutor());
-        }
+            @Override
+            public void onFailure(Throwable t) {
+                payload.release();
+            }
+        }, MoreExecutors.directExecutor());
         return future;
     }
 
@@ -256,10 +242,9 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             return;
         }
         pendingSubscription.onSubackReceived();
-        for (MqttPendingSubscription.MqttPendingHandler handler : pendingSubscription.getHandlers()) {
-            MqttSubscription subscription = new MqttSubscription(pendingSubscription.getTopic(), handler.handler());
-            this.client.getSubscriptions().put(pendingSubscription.getTopic(), subscription);
-            this.client.getHandlerToSubscription().put(handler.handler(), subscription);
+        for (MqttHandler handler : pendingSubscription.getHandlers()) {
+            MqttSubscription subscription = new MqttSubscription(pendingSubscription.getTopic(), handler);
+            this.client.getSubscriptions().addIfAbsent(subscription);
         }
         this.client.getPendingSubscribeTopics().remove(pendingSubscription.getTopic());
 
@@ -283,7 +268,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
 
         switch (qoS) {
             case AT_MOST_ONCE -> {
-                invokeHandlersForIncomingPublish(message);
+                invokeHandlerForIncomingPublish(message);
             }
 
             case AT_LEAST_ONCE -> {
@@ -295,7 +280,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     return;
                 }
 
-                var future = invokeHandlersForIncomingPublish(message);
+                var future = invokeHandlerForIncomingPublish(message);
                 DonAsynchron.withCallback(future,
                         (_) -> {
                             processPubAck(channel, msgWrapper, PubAck.SUCCESS.byteValue());
@@ -324,7 +309,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     checkBackPressure(channel, false, qoS);
                     return;
                 }
-                var future = invokeHandlersForIncomingPublish(message);
+                var future = invokeHandlerForIncomingPublish(message);
                 DonAsynchron.withCallback(future,
                         (_) -> {
                             processPubRec(channel, msgWrapper, PubRec.SUCCESS.byteValue());

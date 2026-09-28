@@ -18,6 +18,12 @@ package org.thingsboard.mqtt;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+/**
+ * A subscription is identified by its raw topic filter string together with handler equality: two subscriptions are
+ * the same when both are equal. Handler identity semantics are therefore the caller's to decide - an
+ * {@link MqttHandler} with value-based equality (a record, say) makes two genuinely distinct handlers collapse into
+ * a single registry entry.
+ */
 final class MqttSubscription {
 
     @Getter(AccessLevel.PACKAGE)
@@ -38,6 +44,9 @@ final class MqttSubscription {
         this.filter = MqttTopicFilter.of(topic);
     }
 
+    /**
+     * {@code topicLevels} must be {@link MqttTopicFilter#split(String)} of the very same {@code topic}.
+     */
     boolean matches(String topic, String[] topicLevels) {
         return this.filter.matches(topic, topicLevels);
     }

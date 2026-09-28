@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -59,6 +57,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,13 +77,11 @@ final class MqttClientImpl implements MqttClient {
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
-    private final HashMultimap<String, MqttSubscription> subscriptions = HashMultimap.create();
+    private final CopyOnWriteArrayList<MqttSubscription> subscriptions = new CopyOnWriteArrayList<>();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingSubscription> pendingSubscriptions = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final Set<String> pendingSubscribeTopics = new HashSet<>();
-    @Getter(AccessLevel.PACKAGE)
-    private final HashMultimap<MqttHandler, MqttSubscription> handlerToSubscription = HashMultimap.create();
     private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
     @Getter
@@ -195,14 +192,12 @@ final class MqttClientImpl implements MqttClient {
                     pendingSubscriptions.forEach((id, mqttPendingSubscription) -> mqttPendingSubscription.onChannelClosed());
                     pendingSubscriptions.clear();
                     serverSubscriptions.clear();
-                    subscriptions.clear();
                     pendingServerUnsubscribes.forEach((id, mqttPendingServerUnsubscribes) -> mqttPendingServerUnsubscribes.onChannelClosed());
                     pendingServerUnsubscribes.clear();
                     qos2PendingMsgIds.clear();
                     pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
                     pendingPublishes.clear();
                     pendingSubscribeTopics.clear();
-                    handlerToSubscription.clear();
                     scheduleConnectIfRequired(host, port, true);
                 });
             } else {
@@ -299,10 +294,7 @@ final class MqttClientImpl implements MqttClient {
     public Future<Void> off(String topic, MqttHandler handler) {
         log.trace("[{}] Unsubscribing from {}", channel != null ? channel.id() : "UNKNOWN", topic);
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
-        for (MqttSubscription subscription : this.handlerToSubscription.get(handler)) {
-            this.subscriptions.remove(topic, subscription);
-        }
-        this.handlerToSubscription.removeAll(handler);
+        this.subscriptions.removeIf(s -> s.getTopic().equals(topic) && s.getHandler().equals(handler));
         this.checkSubscriptions(topic, future);
         return future;
     }
@@ -318,13 +310,7 @@ final class MqttClientImpl implements MqttClient {
     public Future<Void> off(String topic) {
         log.trace("[{}] Unsubscribing from {}", channel != null ? channel.id() : "UNKNOWN", topic);
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
-        ImmutableSet<MqttSubscription> subscriptions = ImmutableSet.copyOf(this.subscriptions.get(topic));
-        for (MqttSubscription subscription : subscriptions) {
-            for (MqttSubscription handSub : this.handlerToSubscription.get(subscription.getHandler())) {
-                this.subscriptions.remove(topic, handSub);
-            }
-            this.handlerToSubscription.remove(subscription.getHandler(), subscription);
-        }
+        this.subscriptions.removeIf(s -> s.getTopic().equals(topic));
         this.checkSubscriptions(topic, future);
         return future;
     }
@@ -507,8 +493,7 @@ final class MqttClientImpl implements MqttClient {
         }
         if (this.serverSubscriptions.contains(topic)) {
             MqttSubscription subscription = new MqttSubscription(topic, handler);
-            this.subscriptions.put(topic, subscription);
-            this.handlerToSubscription.put(handler, subscription);
+            this.subscriptions.addIfAbsent(subscription);
             return this.channel.newSucceededFuture();
         }
 
@@ -522,7 +507,7 @@ final class MqttClientImpl implements MqttClient {
         final var pendingSubscription = MqttPendingSubscription.builder()
                 .future(future)
                 .topic(topic)
-                .handlers(Sets.newHashSet(new MqttPendingSubscription.MqttPendingHandler(handler)))
+                .handlers(Sets.newHashSet(handler))
                 .subscribeMessage(message)
                 .ownerId(clientConfig.getOwnerId())
                 .retransmissionConfig(clientConfig.getRetransmissionConfig())
@@ -553,7 +538,8 @@ final class MqttClientImpl implements MqttClient {
     }
 
     private void checkSubscriptions(String topic, Promise<Void> promise) {
-        if (!(this.subscriptions.containsKey(topic) && !this.subscriptions.get(topic).isEmpty()) && this.serverSubscriptions.contains(topic)) {
+        if (this.subscriptions.stream().noneMatch(s -> s.getTopic().equals(topic))
+                && this.serverSubscriptions.contains(topic)) {
             MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
             MqttMessageIdVariableHeader variableHeader = getNewMessageId();
             MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Collections.singletonList(topic));

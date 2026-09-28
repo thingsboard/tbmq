@@ -33,7 +33,7 @@ final class MqttPendingSubscription {
 
     private final Promise<Void> future;
     private final String topic;
-    private final Set<MqttPendingHandler> handlers;
+    private final Set<MqttHandler> handlers;
     private final MqttSubscribeMessage subscribeMessage;
 
     @Getter(AccessLevel.NONE)
@@ -45,7 +45,7 @@ final class MqttPendingSubscription {
     private MqttPendingSubscription(
             Promise<Void> future,
             String topic,
-            Set<MqttPendingHandler> handlers,
+            Set<MqttHandler> handlers,
             MqttSubscribeMessage subscribeMessage,
             String ownerId,
             MqttClientConfig.RetransmissionConfig retransmissionConfig,
@@ -60,10 +60,8 @@ final class MqttPendingSubscription {
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
-    record MqttPendingHandler(MqttHandler handler) {}
-
     void addHandler(MqttHandler handler) {
-        handlers.add(new MqttPendingHandler(handler));
+        handlers.add(handler);
     }
 
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
@@ -90,7 +88,7 @@ final class MqttPendingSubscription {
 
         private Promise<Void> future;
         private String topic;
-        private Set<MqttPendingHandler> handlers;
+        private Set<MqttHandler> handlers;
         private MqttSubscribeMessage subscribeMessage;
         private String ownerId;
         private PendingOperation pendingOperation;
@@ -106,7 +104,7 @@ final class MqttPendingSubscription {
             return this;
         }
 
-        Builder handlers(Set<MqttPendingHandler> handlers) {
+        Builder handlers(Set<MqttHandler> handlers) {
             this.handlers = handlers;
             return this;
         }
