@@ -22,18 +22,15 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ResourceLeakDetector;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
@@ -42,6 +39,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.testcontainers.hivemq.HiveMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -61,7 +60,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,6 +77,9 @@ class MqttClientTest {
     MqttClient client;
 
     AbstractListeningExecutor handlerExecutor;
+
+    // the client's loop group when a test sets one itself; the client never shuts its group down
+    EventLoopGroup clientEventLoop;
 
     @BeforeAll
     static void init() {
@@ -113,6 +114,10 @@ class MqttClientTest {
         }
         handlerExecutor.destroy();
         handlerExecutor = null;
+        if (clientEventLoop != null) {
+            clientEventLoop.shutdownGracefully();
+            clientEventLoop = null;
+        }
     }
 
     @Test
@@ -562,7 +567,17 @@ class MqttClientTest {
     @Test
     void testPublishFirstWrittenByConnackResendIsRetransmitted() {
         // GIVEN
-        int messageId = 4242;
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ConnackResendRetransmission]");
+        clientConfig.setClientId("connack-resend-retrans");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 1000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        TrackedByteBuf payload = new TrackedByteBuf("resent on connack");
+        MqttPendingPublish pendingPublish = registerUnsentPublish("connack-resend", payload, MqttQoS.AT_LEAST_ONCE);
+        int messageId = pendingPublish.getMessageId();
+
         AtomicInteger pubacks = new AtomicInteger();
         proxy = MqttTestProxy.builder()
                 .localPort(randomPort)
@@ -579,18 +594,6 @@ class MqttClientTest {
                     return false;
                 })
                 .build();
-
-        var clientConfig = new MqttClientConfig();
-        clientConfig.setOwnerId("Test[ConnackResendRetransmission]");
-        clientConfig.setClientId("connack-resend-retrans");
-        clientConfig.setReconnect(false);
-        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(1, 1000L, 0d));
-        client = MqttClient.create(clientConfig, null, handlerExecutor);
-
-        TrackedByteBuf payload = new TrackedByteBuf("resent on connack");
-        // the state publish() leaves between registering its entry and claiming the first write; no public call can
-        // hold that window open, so the entry is registered directly and the CONNACK resend is the one to claim it
-        MqttPendingPublish pendingPublish = registerUnsentQoS1Publish((MqttClientImpl) client, "connack-resend", payload, messageId);
 
         // WHEN
         connect(broker.getHost(), proxy.getPort());
@@ -612,39 +615,44 @@ class MqttClientTest {
         assertPayloadFullyReleased(payload);
     }
 
-    /**
-     * Registers a QoS 1 pending publish exactly as {@link MqttClientImpl#publish} does, but without writing it.
-     */
-    private static MqttPendingPublish registerUnsentQoS1Publish(MqttClientImpl client, String topic, ByteBuf payload, int messageId) {
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttPublishMessage message = new MqttPublishMessage(fixedHeader, new MqttPublishVariableHeader(topic, messageId), payload);
-        Promise<Void> future = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
-        var self = new AtomicReference<MqttPendingPublish>();
-        MqttPendingPublish pendingPublish = MqttPendingPublish.builder()
-                .messageId(messageId)
-                .future(future)
-                .payload(payload.retain())
-                .message(message)
-                .qos(MqttQoS.AT_LEAST_ONCE)
-                .ownerId(client.getClientConfig().getOwnerId())
-                .retransmissionConfig(client.getClientConfig().getRetransmissionConfig())
-                .pendingOperation(new PendingOperation() {
-                    @Override
-                    public boolean isCancelled() {
-                        return client.getPendingPublishes().get(messageId) != self.get();
-                    }
+    @ParameterizedTest
+    @EnumSource(value = MqttQoS.class, names = {"AT_MOST_ONCE", "AT_LEAST_ONCE", "EXACTLY_ONCE"})
+    void testPublishFirstWrittenByConnackResendAndRejectedByEncoderFails(MqttQoS qos) {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ConnackResendEncoderReject]");
+        clientConfig.setClientId("connack-resend-reject-" + qos.value());
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
 
-                    @Override
-                    public void onMaxRetransmissionAttemptsReached() {
-                        if (client.getPendingPublishes().remove(messageId, self.get())) {
-                            future.tryFailure(new MaxRetransmissionsReachedException("max retransmissions reached"));
-                            self.get().getPayload().release();
-                        }
-                    }
-                }).build();
-        self.set(pendingPublish);
-        client.getPendingPublishes().put(messageId, pendingPublish);
-        return pendingPublish;
+        TrackedByteBuf payload = new TrackedByteBuf("invalid topic, resent on connack");
+        // the encoder rejects a wildcard in a publish topic: the CONNACK resend's write fails, but the channel stays open
+        MqttPendingPublish pendingPublish = registerUnsentPublish("invalid/+/topic", payload, qos);
+
+        // WHEN
+        connect(broker.getHost(), broker.getMqttPort());
+
+        // THEN
+        Awaitility.await("waiting for the rejected CONNACK resend to fail its publish")
+                .atMost(Duration.ofSeconds(5L))
+                .until(pendingPublish.getFuture()::isDone);
+        assertThat(pendingPublish.getFuture().isSuccess()).describedAs("publish future succeeded").isFalse();
+        assertPayloadFullyReleased(payload);
+        assertThat(((MqttClientImpl) client).getPendingPublishes()).doesNotContainKey(pendingPublish.getMessageId());
+        assertThat(client.isConnected()).isTrue();
+    }
+
+    /**
+     * Leaves a publish in the state {@link MqttClientImpl#publish} holds between registering its entry and claiming the
+     * first write. No public call can hold that window open, so the entry is registered directly - through the
+     * production code, so the test runs the real entry - and the CONNACK resend is the one to claim it.
+     */
+    private MqttPendingPublish registerUnsentPublish(String topic, ByteBuf payload, MqttQoS qos) {
+        // the client creates its loop group on the first connect; give it one now, which that connect then reuses
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        return ((MqttClientImpl) client).registerPendingPublish(topic, payload, qos, false);
     }
 
     private static void assertPayloadFullyReleased(TrackedByteBuf payload) {

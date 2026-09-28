@@ -383,6 +383,34 @@ final class MqttClientImpl implements MqttClient {
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         log.trace("[{}] Publishing message to {}", channel != null ? channel.id() : "UNKNOWN", topic);
+        MqttPendingPublish pendingPublish = registerPendingPublish(topic, payload, qos, retain);
+        Promise<Void> future = pendingPublish.getFuture();
+        if (!pendingPublish.markSent()) {
+            // a CONNACK arriving meanwhile resent it and now owns the caller's reference through that write
+            return future;
+        }
+        ChannelFuture channelFuture = this.sendAndFlushPacket(pendingPublish.getMessage());
+
+        if (channelFuture != null) {
+            // netty consumed the caller's reference, whether the write succeeds or fails; an inactive channel's
+            // refusal arrives here as an already failed future, and completes through the same path
+            channelFuture.addListener((ChannelFutureListener) f -> onFirstWriteComplete(pendingPublish, f));
+        } else {
+            // no channel, so nothing was written: the caller's reference was never consumed either
+            releaseIfRemoved(pendingPublish);
+            pendingPublish.getMessage().release();
+            future.tryFailure(new ChannelClosedException("Client is not connected"));
+        }
+        return future;
+    }
+
+    /**
+     * Builds the pending publish for a new message and registers it in the pending publishes, unsent. Its message
+     * carries the caller's reference to {@code payload}, and the entry holds one more of its own. Whoever then claims
+     * the first write with {@link MqttPendingPublish#markSent()} writes the message and completes that write through
+     * {@link #onFirstWriteComplete}.
+     */
+    MqttPendingPublish registerPendingPublish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
         MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, getNewMessageId().messageId());
@@ -420,47 +448,45 @@ final class MqttClientImpl implements MqttClient {
         self.set(pendingPublish);
 
         this.pendingPublishes.put(pendingPublish.getMessageId(), pendingPublish);
-        if (!pendingPublish.markSent()) {
-            // a CONNACK arriving meanwhile resent it and now owns the caller's reference through that write
-            return future;
-        }
-        ChannelFuture channelFuture = this.sendAndFlushPacket(message);
-
-        if (channelFuture != null) {
-            // netty consumed the caller's reference, whether the write succeeds or fails
-            channelFuture.addListener(result -> {
-                if (result.cause() != null) {
-                    releaseIfRemoved(pendingPublish);
-                    future.setFailure(result.cause());
-                } else if (pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
-                    releaseIfRemoved(pendingPublish);
-                    pendingPublish.getFuture().setSuccess(null); //We don't get an ACK for QOS 0
-                } else {
-                    startPublishRetransmission(pendingPublish, channelFuture.channel());
-                }
-            });
-        } else {
-            // no channel, so nothing was written: the caller's reference was never consumed either
-            releaseIfRemoved(pendingPublish);
-            message.release();
-            future.tryFailure(new ChannelClosedException("Client is not connected"));
-        }
-        return future;
+        return pendingPublish;
     }
 
     /**
-     * Starts retransmitting a QoS 1/2 publish just written on {@code ch}. Call it once, from whichever path claimed the
-     * first write.
+     * Completes the first write of a pending publish, from whichever path claimed it with
+     * {@link MqttPendingPublish#markSent()}: {@link #publish} or the CONNACK resend. The write has consumed the caller's
+     * reference either way. A failed write fails the future, and a QoS 0 write completes it, both releasing the entry's
+     * reference if that entry is still theirs to remove; a QoS 1/2 write starts its retransmission on the channel it was
+     * written on, and stays pending until acknowledged.
      */
-    void startPublishRetransmission(MqttPendingPublish pendingPublish, Channel ch) {
+    void onFirstWriteComplete(MqttPendingPublish pendingPublish, ChannelFuture f) {
+        if (!f.isSuccess()) {
+            releaseIfRemoved(pendingPublish);
+            pendingPublish.getFuture().tryFailure(f.cause());
+        } else if (pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
+            releaseIfRemoved(pendingPublish);
+            pendingPublish.getFuture().trySuccess(null); // We don't get an ACK for QOS 0
+        } else {
+            startPublishRetransmission(pendingPublish, f.channel());
+        }
+    }
+
+    /**
+     * Starts retransmitting a QoS 1/2 publish just written on {@code ch}. Only {@link #onFirstWriteComplete} calls it, once
+     * per first write.
+     */
+    private void startPublishRetransmission(MqttPendingPublish pendingPublish, Channel ch) {
         pendingPublish.startPublishRetransmissionTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
     }
 
     /**
      * The loop a retransmission timer runs on: the channel's own, where the ACK handlers, the write listeners and the
      * close cleanup that end a pending operation all run. The timer's cancelled check and its retransmit, which retains
-     * a publish's payload, are then serialised with every release of that payload. Only a subscription made before the
-     * first connect has no channel yet; it carries no reference-counted payload, so any loop of the group does for it.
+     * a publish's payload, are then serialised with every release of that payload. This relies on a pending publish
+     * never outliving its channel: the close cleanup removes every pending publish, so a timer that fires after its
+     * channel closed finds itself cancelled and retains nothing. The one exception is a caller running connect() or
+     * reconnect() while a channel is still live, which skips that cleanup - a known gap no caller currently hits. Only a
+     * subscription made before the first connect has no channel yet; it carries no reference-counted payload, so any
+     * loop of the group does for it.
      */
     EventLoop retransmissionLoop(Channel ch) {
         return ch != null ? ch.eventLoop() : this.eventLoop.next();

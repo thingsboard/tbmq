@@ -74,6 +74,8 @@ final class MqttPendingPublish {
     }
 
     void startPublishRetransmissionTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
+        // eventLoop must be the publishing channel's loop (see MqttClientImpl#retransmissionLoop): this retain is only
+        // safe while it is serialised with every release of the payload, which all run on that loop
         publishRetransmissionHandler.setHandler(((fixedHeader, originalMessage) ->
                 sendPacket.accept(new MqttPublishMessage(fixedHeader, originalMessage.variableHeader(), payload.retain()))));
         publishRetransmissionHandler.start(eventLoop);

@@ -22,7 +22,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -207,18 +206,9 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 this.client.getPendingPublishes().forEach((id, publish) -> {
                     // claim the first write, or publish() would write the same message (and consume its reference) again
                     if (!publish.markSent()) return;
-                    ChannelFuture written = channel.write(publish.getMessage());
-                    if (publish.getQos() == MqttQoS.AT_MOST_ONCE) {
-                        publish.getFuture().setSuccess(null); // We don't get an ACK for QOS 0
-                        this.client.releaseIfRemoved(publish);
-                    } else {
-                        // publish() lost the claim and skips its write, so it will not start the retransmission either
-                        written.addListener((ChannelFutureListener) f -> {
-                            if (f.isSuccess()) {
-                                this.client.startPublishRetransmission(publish, f.channel());
-                            }
-                        });
-                    }
+                    // publish() lost the claim and skips its write, so this write is the one to complete
+                    channel.write(publish.getMessage())
+                            .addListener((ChannelFutureListener) f -> this.client.onFirstWriteComplete(publish, f));
                 });
                 channel.flush();
                 if (this.client.isReconnect()) {
