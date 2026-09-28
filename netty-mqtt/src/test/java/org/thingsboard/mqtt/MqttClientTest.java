@@ -1100,6 +1100,65 @@ class MqttClientTest {
     }
 
     @Test
+    void testSubscribeWrittenByConnackResendIsRetransmitted() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+        int proxyPort = proxy.getPort();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ConnackResendSubRetrans]");
+        clientConfig.setClientId("connack-resend-sub-rtx");
+        // reconnect stays on (1 s); the retransmission, 1 s out, is what recovers the SUBACK the new proxy drops
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(2, 1000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxyPort);
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        // notified after the client's own close listener, which was added first
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        connectFuture.getNow().getCloseFuture().addListener(f -> closeCleanedUp.countDown());
+        proxy.stop();
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+
+        // WHEN
+        // made during the reconnect delay, so the CONNACK resend of the next connection writes it
+        String topic = "connack-resend-sub-rtx";
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        assertThat(subscribeFuture.isDone()).isFalse();
+        // back on the same port before the reconnect fires; it drops the first SUBACK, answering the resent SUBSCRIBE
+        AtomicInteger subacks = new AtomicInteger();
+        proxy = MqttTestProxy.builder()
+                .localPort(proxyPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.SUBACK) {
+                        return true;
+                    }
+                    // the broker answers every copy of the SUBSCRIBE it receives, so each SUBACK counts one delivery
+                    return subacks.incrementAndGet() > 1;
+                })
+                .build();
+
+        // THEN
+        Awaitility.await("waiting for the CONNACK resend's SUBSCRIBE to be answered")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> subacks.get() >= 1);
+        // only a retransmission can deliver the SUBSCRIBE again: nothing else resends it on this connection
+        Awaitility.await("waiting for the retransmitted subscribe to be granted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.isSuccess()).describedAs("subscribe granted, cause %s", subscribeFuture.cause()).isTrue();
+        assertThat(subscribeFuture.getNow()).isEqualTo(MqttQoS.AT_LEAST_ONCE);
+        assertThat(subacks.get()).describedAs("deliveries of the SUBSCRIBE: the CONNACK resend plus one retransmission").isEqualTo(2);
+    }
+
+    @Test
     void testResubscribeFromCloseFailureListenerSurvivesTheCleanup() {
         // GIVEN
         AtomicBoolean dropSubacks = new AtomicBoolean(true);

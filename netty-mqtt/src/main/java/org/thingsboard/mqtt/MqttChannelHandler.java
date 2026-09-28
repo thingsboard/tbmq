@@ -232,7 +232,12 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 this.client.getPendingSubscriptions().forEach((id, subscription) -> {
                     // claim the write, or on() may write the same SUBSCRIBE too
                     if (subscription.markSent()) {
-                        channel.write(subscription.getSubscribeMessage());
+                        // the claim makes this write the SUBSCRIBE's only first write, so its timer starts here, once
+                        channel.write(subscription.getSubscribeMessage()).addListener((ChannelFutureListener) f -> {
+                            if (f.isSuccess()) {
+                                subscription.startRetransmitTimer(this.client.retransmissionLoop(f.channel()), this.client::sendAndFlushPacket);
+                            }
+                        });
                     }
                 });
 
