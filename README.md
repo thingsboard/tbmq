@@ -83,6 +83,12 @@ sysadmin
 
 Consult the full [guide](https://tbmq.io/docs/installation/docker/) for comprehensive instructions, troubleshooting guidance, and advanced configuration details.
 
+## 🔌 REST API and OpenAPI specification
+
+The release workflow publishes a versioned OpenAPI specification named `tbmq-openapi-<version>.json` on the
+corresponding [GitHub release page](https://github.com/thingsboard/tbmq/releases). When TBMQ is running, the same
+specification is available from `/v3/api-docs/TBMQ`, with an interactive UI at `/swagger-ui.html`.
+
 ## 💡 Getting started with TBMQ
 
 Check out our [Getting Started guide](https://tbmq.io/docs/getting-started/) to learn the basics of TBMQ. In minutes, you will learn to:
@@ -281,5 +287,3 @@ TBMQ is developed by the team behind **[ThingsBoard](https://thingsboard.io)**, 
 
 ## 📄 Licenses
 This project is released under **[Apache 2.0 License](./LICENSE)**.
-
-
