@@ -78,12 +78,11 @@ final class MqttPendingSubscription {
         return sent.compareAndSet(false, true);
     }
 
+    /** Only the caller that won {@link #markSent()} starts the timer, so it starts at most once. */
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
-        if (sent.get()) { // If the packet is sent, we can start the retransmission timer
-            retransmissionHandler.setHandler((fixedHeader, originalMessage) ->
-                    sendPacket.accept(new MqttSubscribeMessage(fixedHeader, originalMessage.variableHeader(), originalMessage.payload())));
-            retransmissionHandler.start(eventLoop);
-        }
+        retransmissionHandler.setHandler((fixedHeader, originalMessage) ->
+                sendPacket.accept(new MqttSubscribeMessage(fixedHeader, originalMessage.variableHeader(), originalMessage.payload())));
+        retransmissionHandler.start(eventLoop);
     }
 
     void onSubackReceived() {

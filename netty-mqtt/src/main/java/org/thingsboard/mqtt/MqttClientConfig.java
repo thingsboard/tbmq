@@ -121,7 +121,7 @@ public final class MqttClientConfig {
 
     public void setRetransmissionConfig(@Nonnull RetransmissionConfig retransmissionConfig) {
         if (retransmissionConfig == null) {
-            throw new NullPointerException("retransmissionConfig must not be null");
+            throw new NullPointerException("retransmissionConfig");
         }
         this.retransmissionConfig = retransmissionConfig;
     }

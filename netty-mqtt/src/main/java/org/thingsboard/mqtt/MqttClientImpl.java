@@ -554,8 +554,10 @@ final class MqttClientImpl implements MqttClient {
      * never outliving its channel: the close cleanup removes every pending publish, so a timer that fires after its
      * channel closed finds itself cancelled and retains nothing. The one exception is a caller running connect() or
      * reconnect() while a channel is still live, which skips that cleanup - a known gap no caller currently hits. A
-     * subscribe or unsubscribe starts its timer only once written to a channel as well; neither carries a
-     * reference-counted payload, so for a caller without a channel any loop of the group would do.
+     * subscribe starts its timer once its write is issued to a channel. An unsubscribe starts its timer before its
+     * write, on the channel the client holds (any loop of the group when there is none) - it has no CONNACK resend, so
+     * the timer is the only thing that can still deliver one whose write was refused. Neither carries a
+     * reference-counted payload, so the loop does not matter for them.
      */
     EventLoop retransmissionLoop(Channel ch) {
         return ch != null ? ch.eventLoop() : this.eventLoop.next();

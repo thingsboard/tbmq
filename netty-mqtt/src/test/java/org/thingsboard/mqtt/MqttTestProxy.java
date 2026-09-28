@@ -161,6 +161,7 @@ public class MqttTestProxy {
 
         log.info("Stopping MQTT proxy...");
 
+        // release the port before returning, so a replacement proxy can bind it; must not run on the proxy's own loop
         serverChannel.close().syncUninterruptibly();
         if (clientToProxyChannel != null) {
             clientToProxyChannel.close();

@@ -183,11 +183,11 @@ public abstract class AbstractPubSubIntegrationTest {
      * <p>
      * Deliberately <b>not</b> netty-mqtt's default {@code MqttClientConfig.retransmissionConfig} (3 attempts, 5000 ms,
      * 0.15 jitter), the production triple {@code MqttIntegration} in {@code integration/executor} relies on as well.
-     * These tests do not assert anything about retransmission; they only need a window
-     * wide enough that a retransmission never fires while they are running. The production {@code initialDelayMillis} of 5000 with a 0.15 jitter puts the first
-     * PUBLISH retransmission at 4.25-5.75 s, which is narrower than the flat 10 s that netty-mqtt 3.9.0 hardcoded
-     * ({@code RetransmissionHandler.start} set {@code timeout = 10} and scheduled in SECONDS) - the behaviour these
-     * tests were green against before the 4.3.1 bump. Under load a broker PUBACK can cross 5 s but not 10 s, and a
+     * These tests do not assert anything about retransmission; they only need a window wide enough that a
+     * retransmission never fires while they are running. The production {@code initialDelayMillis} of 5000 with a
+     * 0.15 jitter puts the first PUBLISH retransmission at 4.25-5.75 s, which is narrower than the flat 10 s that
+     * netty-mqtt 3.9.0 hardcoded ({@code RetransmissionHandler.start} set {@code timeout = 10} and scheduled in
+     * SECONDS) - the behaviour these tests were green against before the 4.3.1 bump. Under load a broker PUBACK can cross 5 s but not 10 s, and a
      * QoS 1 publisher retransmitting into QoS 0 subscribers duplicates every message with nothing to dedup it.
      * <p>
      * So: 10 000 ms, with jitter disabled (the library special-cases {@code jitterFactor == 0} to a multiplier of
