@@ -101,7 +101,7 @@ final class MqttPendingPublish {
 
     /**
      * Must only be called by the path that removed this entry from the pending publishes, so the payload reference this
-     * entry holds is released exactly once.
+     * entry holds is released exactly once. Fails the future: the acknowledgement it waits for can no longer arrive.
      */
     void onChannelClosed() {
         publishRetransmissionHandler.stop();
@@ -109,6 +109,7 @@ final class MqttPendingPublish {
         if (payload != null) {
             payload.release();
         }
+        future.tryFailure(new ChannelClosedException("Channel closed before the publish was acknowledged"));
     }
 
     static Builder builder() {

@@ -44,6 +44,7 @@ import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRec;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Promise;
@@ -51,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.MqttOrderedAcknowledgementCtx.MqttMsgWrapper;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -150,9 +152,37 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         ctx.channel().writeAndFlush(new MqttConnectMessage(fixedHeader, variableHeader, payload));
     }
 
+    /**
+     * Fails the connect future if the channel closes before a CONNACK completed it: a failed TLS handshake with the
+     * handshake's cause, anything else - a broker closing the connection, a disconnect() - as a closed channel. Once a
+     * CONNACK completed the future this is a no-op. An SslHandler ahead of this handler has failed its handshake by the
+     * time this runs, since it does so in its own channelInactive before passing the event on.
+     */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if (!this.connectFuture.isDone()) {
+            SslHandler sslHandler = ctx.pipeline().get(SslHandler.class);
+            Throwable handshakeFailure = sslHandler != null ? sslHandler.handshakeFuture().cause() : null;
+            this.connectFuture.tryFailure(handshakeFailure != null ? tlsFailureCause(handshakeFailure)
+                    : new ChannelClosedException("Channel closed before CONNACK"));
+        }
         super.channelInactive(ctx);
+    }
+
+    /**
+     * The TLS failure to report for a failed handshake. When the peer closes the connection mid-handshake - a TLS
+     * client meeting a plain listener, say - netty fails the handshake with a bare ClosedChannelException and carries
+     * the SSLHandshakeException saying so only as a suppressed exception; that one is reported instead.
+     */
+    private static Throwable tlsFailureCause(Throwable handshakeFailure) {
+        if (!(handshakeFailure instanceof SSLException)) {
+            for (Throwable suppressed : handshakeFailure.getSuppressed()) {
+                if (suppressed instanceof SSLException) {
+                    return suppressed;
+                }
+            }
+        }
+        return handshakeFailure;
     }
 
     ListenableFuture<Void> invokeHandlerForIncomingPublish(MqttPublishMessage message) {
@@ -222,6 +252,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             case CONNECTION_REFUSED_NOT_AUTHORIZED:
             case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
             case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
+            default: // every other code refuses too, e.g. the MQTT 5 reason codes
                 this.connectFuture.setSuccess(new MqttConnectResult(false, message.variableHeader().connectReturnCode(), channel.closeFuture()));
                 channel.close();
                 // Don't start reconnecting logic here
@@ -367,15 +398,18 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     private void handlePuback(MqttPubAckMessage message) {
-        this.client.getPendingPublishes().computeIfPresent(message.variableHeader().messageId(), (__, pendingPublish) -> {
-            pendingPublish.getFuture().setSuccess(null);
-            pendingPublish.onPubackReceived();
-            pendingPublish.getPayload().release();
-            if (this.client.getCallback() != null) {
-                this.client.getCallback().onPubAck(message);
-            }
-            return null;
-        });
+        // remove first and act outside any map operation: completing the future runs its listeners, which may publish
+        // and so update the pending publishes, which ConcurrentHashMap forbids from inside a computation on it
+        MqttPendingPublish pendingPublish = this.client.getPendingPublishes().remove(message.variableHeader().messageId());
+        if (pendingPublish == null) {
+            return;
+        }
+        pendingPublish.onPubackReceived();
+        pendingPublish.getPayload().release();
+        pendingPublish.getFuture().setSuccess(null);
+        if (this.client.getCallback() != null) {
+            this.client.getCallback().onPubAck(message);
+        }
     }
 
     private void handlePubrec(Channel channel, MqttMessage message) {

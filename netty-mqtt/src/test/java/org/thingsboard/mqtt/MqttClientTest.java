@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
@@ -25,9 +26,14 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
@@ -48,18 +54,24 @@ import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -521,6 +533,10 @@ class MqttClientTest {
                 .atMost(Duration.ofSeconds(10L))
                 .untilAsserted(() -> assertThat(client.isConnected()).isFalse());
         assertPayloadFullyReleased(payload);
+        Awaitility.await("waiting for the in-flight publish to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.cause()).isInstanceOf(ChannelClosedException.class);
     }
 
     @Test
@@ -641,6 +657,441 @@ class MqttClientTest {
         assertPayloadFullyReleased(payload);
         assertThat(((MqttClientImpl) client).getPendingPublishes()).doesNotContainKey(pendingPublish.getMessageId());
         assertThat(client.isConnected()).isTrue();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MqttMessageType.class, names = {"PUBREC", "PUBCOMP"})
+    void testPendingQoS2PublishFailsOnChannelClose(MqttMessageType withheldAck) {
+        // GIVEN
+        // dropping PUBREC holds the publish before the broker received it, dropping PUBCOMP holds it after PUBREL
+        CountDownLatch ackDropped = new CountDownLatch(1);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != withheldAck) {
+                        return true;
+                    }
+                    ackDropped.countDown();
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PendingQoS2Close]");
+        clientConfig.setClientId("qos2-close-" + withheldAck.name().toLowerCase());
+        clientConfig.setReconnect(false);
+        // long enough that no retransmission happens before the connection is dropped
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), proxy.getPort());
+
+        TrackedByteBuf payload = new TrackedByteBuf("qos2 pending on close");
+        Future<Void> publishFuture = client.publish("qos2-close", payload, MqttQoS.EXACTLY_ONCE);
+        awaitLatch(ackDropped, "waiting for the " + withheldAck + " to be dropped");
+        assertThat(publishFuture.isDone()).isFalse();
+
+        // WHEN
+        proxy.stop();
+
+        // THEN
+        Awaitility.await("waiting for the in-flight QoS 2 publish to fail")
+                .atMost(Duration.ofSeconds(10L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.cause()).isInstanceOf(ChannelClosedException.class);
+        assertPayloadFullyReleased(payload);
+    }
+
+    @Test
+    void testConnectToRefusedPortFailsWithConnectException() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ConnectRefused]");
+        clientConfig.setClientId("connect-refused");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        // WHEN
+        // nothing listens on port 1, so the TCP connect is refused at once
+        Promise<MqttConnectResult> connectFuture = client.connect("127.0.0.1", 1);
+
+        // THEN
+        // a refusal takes milliseconds; the keep-alive (60 s) is the only timeout that would otherwise end the wait
+        Awaitility.await("waiting for the refused connect to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(connectFuture::isDone);
+        assertThat(connectFuture.isSuccess()).isFalse();
+        assertThat(Throwables.getRootCause(connectFuture.cause())).isInstanceOf(ConnectException.class);
+    }
+
+    @Test
+    void testTlsConnectToPlainPortFailsWithSslException() throws SSLException {
+        // GIVEN
+        // trust anything, so the failure can only be the TLS handshake meeting a plain MQTT listener
+        SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+        var clientConfig = new MqttClientConfig(sslContext);
+        clientConfig.setOwnerId("Test[TlsToPlainPort]");
+        clientConfig.setClientId("tls-to-plain");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        // WHEN
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
+
+        // THEN
+        Awaitility.await("waiting for the TLS connect to a plain port to fail")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isDone);
+        assertThat(connectFuture.isSuccess()).isFalse();
+        log.info("TLS connect to a plain port failed with", connectFuture.cause());
+        assertThat(Throwables.getRootCause(connectFuture.cause())).isInstanceOf(SSLException.class);
+    }
+
+    @Test
+    void testConnectFailsWhenChannelClosesBeforeConnack() {
+        // GIVEN
+        CountDownLatch connackDropped = new CountDownLatch(1);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.CONNACK) {
+                        return true;
+                    }
+                    connackDropped.countDown();
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[CloseBeforeConnack]");
+        clientConfig.setClientId("close-before-connack");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+        awaitLatch(connackDropped, "waiting for the CONNACK to be dropped");
+        assertThat(connectFuture.isDone()).isFalse();
+
+        // WHEN
+        proxy.stop();
+
+        // THEN
+        Awaitility.await("waiting for the connect to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(connectFuture::isDone);
+        assertThat(connectFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testConnectFailsWhenDisconnectedBeforeTcpConnectCompletes() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[DisconnectBeforeConnect]");
+        clientConfig.setClientId("disconnect-first");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+
+        // hold the client's only loop, so the TCP connect cannot complete before disconnect() runs
+        CountDownLatch loopHeld = new CountDownLatch(1);
+        clientEventLoop.execute(() -> {
+            try {
+                loopHeld.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
+
+        // WHEN
+        client.disconnect();
+        loopHeld.countDown();
+
+        // THEN
+        // the TCP connect then completes into a disconnected client, which closes the channel before any CONNACK
+        Awaitility.await("waiting for the connect to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(connectFuture::isDone);
+        assertThat(connectFuture.cause()).isInstanceOf(ChannelClosedException.class);
+        assertThat(client.isConnected()).isFalse();
+    }
+
+    @Test
+    void testConnackRefusingWithMqtt5ReasonCodeCompletesConnect() {
+        // GIVEN
+        // the proxy turns the broker's acceptance into a refusal whose code only MQTT 5 defines
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientRewriter(msg -> msg.fixedHeader().messageType() != MqttMessageType.CONNACK ? msg
+                        : MqttMessageBuilders.connAck().returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5).build())
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[Mqtt5Refusal]");
+        clientConfig.setClientId("mqtt5-refusal");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+        // WHEN
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+
+        // THEN
+        // a refusal completes the future with an unsuccessful result, as the MQTT 3.1.1 refusals do
+        Awaitility.await("waiting for the refused connect to complete")
+                .atMost(Duration.ofSeconds(5L))
+                .until(connectFuture::isDone);
+        assertThat(connectFuture.isSuccess()).isTrue();
+        assertThat(connectFuture.getNow().isSuccess()).isFalse();
+        assertThat(connectFuture.getNow().getReturnCode()).isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5);
+        Awaitility.await("waiting for the refused connection to close")
+                .atMost(Duration.ofSeconds(5L))
+                .until(() -> connectFuture.getNow().getCloseFuture().isDone());
+    }
+
+    @Test
+    void testPubackListenerThatPublishesInlineCompletesBothPublishes() {
+        // GIVEN
+        // PUBACKs are withheld while the flag is set; the trigger's is then released by hand once its listener is added
+        Map<Integer, MqttMessage> withheldPubacks = new ConcurrentHashMap<>();
+        AtomicBoolean withholdPubacks = new AtomicBoolean(true);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientRewriter(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.PUBACK || !withholdPubacks.get()) {
+                        return msg;
+                    }
+                    withheldPubacks.put(((MqttMessageIdVariableHeader) msg.variableHeader()).messageId(), msg);
+                    return null;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PubackInlinePublish]");
+        clientConfig.setClientId("puback-inline-publish");
+        clientConfig.setReconnect(false);
+        // long enough that no retransmission happens during the test
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        // one loop: the publish promises notify on the loop that handles PUBACK, so a listener runs inline in it
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        connect(broker.getHost(), proxy.getPort());
+        Map<Integer, MqttPendingPublish> pendingPublishes = ((MqttClientImpl) client).getPendingPublishes();
+
+        // 22 publishes held pending plus the trigger make 23 entries, so the listener's publish is the one that takes
+        // the map to its resize threshold (24 at capacity 32): made while the map is still inside the PUBACK's
+        // computation, it resizes the map from inside that computation, which ConcurrentHashMap forbids
+        int held = 22;
+        for (int i = 0; i < held; i++) {
+            client.publish("puback-inline/held", PooledByteBufAllocator.DEFAULT.buffer().writeBytes(new byte[]{(byte) i}), MqttQoS.AT_LEAST_ONCE);
+        }
+        TrackedByteBuf triggerPayload = new TrackedByteBuf("trigger");
+        Future<Void> trigger = client.publish("puback-inline/trigger", triggerPayload, MqttQoS.AT_LEAST_ONCE);
+        int triggerId = pendingPublishes.entrySet().stream()
+                .filter(e -> e.getValue().getFuture() == trigger)
+                .findFirst().orElseThrow().getKey();
+        Awaitility.await("waiting for every PUBACK to be withheld")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> withheldPubacks.size() == held + 1);
+        assertThat(pendingPublishes).hasSize(held + 1);
+        withholdPubacks.set(false);
+
+        AtomicReference<Thread> listenerThread = new AtomicReference<>();
+        AtomicReference<Future<Void>> second = new AtomicReference<>();
+        trigger.addListener(f -> {
+            listenerThread.set(Thread.currentThread());
+            second.set(client.publish("puback-inline/second", new TrackedByteBuf("second"), MqttQoS.AT_LEAST_ONCE));
+        });
+
+        // WHEN
+        proxy.sendToClient(withheldPubacks.get(triggerId));
+
+        // THEN
+        Awaitility.await("waiting for the trigger to be acknowledged")
+                .atMost(Duration.ofSeconds(10L))
+                .until(trigger::isDone);
+        assertThat(trigger.isSuccess()).isTrue();
+        assertThat(clientEventLoop.next().inEventLoop(listenerThread.get()))
+                .describedAs("the listener ran inline on the loop that handled the PUBACK").isTrue();
+        Awaitility.await("waiting for the listener's publish to be acknowledged")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> second.get() != null && second.get().isDone());
+        assertThat(second.get().isSuccess()).describedAs("the listener's publish succeeded").isTrue();
+        assertThat(pendingPublishes).describedAs("pending publishes after the trigger's PUBACK").doesNotContainKey(triggerId);
+        assertPayloadFullyReleased(triggerPayload);
+    }
+
+    @Test
+    void testInFlightSubscribeFailsOnChannelClose() {
+        // GIVEN
+        CountDownLatch subackDropped = new CountDownLatch(1);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.SUBACK) {
+                        return true;
+                    }
+                    subackDropped.countDown();
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeClose]");
+        clientConfig.setClientId("subscribe-close");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), proxy.getPort());
+
+        Future<MqttQoS> subscribeFuture = client.on("subscribe-close", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        awaitLatch(subackDropped, "waiting for the SUBACK to be dropped");
+        assertThat(subscribeFuture.isDone()).isFalse();
+
+        // WHEN
+        proxy.stop();
+
+        // THEN
+        Awaitility.await("waiting for the in-flight subscribe to fail")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testInFlightUnsubscribeFailsOnChannelClose() {
+        // GIVEN
+        CountDownLatch unsubackDropped = new CountDownLatch(1);
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() != MqttMessageType.UNSUBACK) {
+                        return true;
+                    }
+                    unsubackDropped.countDown();
+                    return false;
+                })
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[UnsubscribeClose]");
+        clientConfig.setClientId("unsubscribe-close");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), proxy.getPort());
+
+        String topic = "unsubscribe-close";
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        Awaitility.await("waiting for the subscribe to be granted")
+                .atMost(Duration.ofSeconds(10L))
+                .until(subscribeFuture::isSuccess);
+        Future<Void> unsubscribeFuture = client.off(topic);
+        awaitLatch(unsubackDropped, "waiting for the UNSUBACK to be dropped");
+        assertThat(unsubscribeFuture.isDone()).isFalse();
+
+        // WHEN
+        proxy.stop();
+
+        // THEN
+        Awaitility.await("waiting for the in-flight unsubscribe to fail")
+                .atMost(Duration.ofSeconds(10L))
+                .until(unsubscribeFuture::isDone);
+        assertThat(unsubscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testSubscribeBeforeConnectFailsWhenConnectFails() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeBeforeFailedConnect]");
+        clientConfig.setClientId("sub-before-failed-conn");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        // the client creates its loop group on the first connect; a subscription made before it needs one given
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        // with no channel yet, the SUBSCRIBE waits for the CONNACK
+        Future<MqttQoS> subscribeFuture = client.on("sub-before-failed-connect", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+
+        // WHEN
+        // refused, and with reconnect off no CONNACK will ever come
+        client.connect("127.0.0.1", 1);
+
+        // THEN
+        Awaitility.await("waiting for the waiting subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+        assertThat(Throwables.getRootCause(subscribeFuture.cause())).isInstanceOf(ConnectException.class);
+    }
+
+    @Test
+    void testSubscribeBeforeConnectFailsOnDisconnect() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeThenDisconnect]");
+        clientConfig.setClientId("sub-then-disconnect");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        Future<MqttQoS> subscribeFuture = client.on("sub-then-disconnect", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+
+        // WHEN
+        client.disconnect();
+
+        // THEN
+        Awaitility.await("waiting for the waiting subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testSubscribeAfterDisconnectFails() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[SubscribeAfterDisconnect]");
+        clientConfig.setClientId("sub-after-disconnect");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        client.disconnect();
+
+        // WHEN
+        // a disconnected client never connects again, so no CONNACK will come to send this SUBSCRIBE
+        Future<MqttQoS> subscribeFuture = client.on("sub-after-disconnect", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    private static void awaitLatch(CountDownLatch latch, String description) {
+        Awaitility.await(description)
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> latch.getCount() == 0);
     }
 
     /**

@@ -178,17 +178,14 @@ final class MqttClientImpl implements MqttClient {
         bootstrap.handler(new MqttChannelInitializer(connectFuture, host, port, clientConfig.getSslContext()));
         ChannelFuture future = bootstrap.connect();
 
+        // Once the TCP connect succeeds, MqttChannelHandler completes connectFuture: with the CONNACK, or failed when
+        // the channel closes before one arrives. Here only a failed TCP connect is left to fail it.
         future.addListener((ChannelFutureListener) f -> {
             if (f.isSuccess()) {
                 // Assign first, then re-check: disconnect() is a no-op while the channel is null, so a connect
                 // completing after it would otherwise leave a live session that nobody holds a reference to.
                 MqttClientImpl.this.channel = f.channel();
-                if (disconnected) {
-                    log.debug("[{}][{}] Connected after disconnect(); closing channel {}", host, port, f.channel().id());
-                    f.channel().close();
-                    return;
-                }
-                log.debug("[{}][{}] Connected successfully {}!", host, port, this.channel.id());
+                // Before the re-check, so that closing a channel connected after disconnect() fails what waits for it too
                 MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
                     if (isConnected()) {
                         return;
@@ -198,14 +195,23 @@ final class MqttClientImpl implements MqttClient {
                     if (callback != null) {
                         callback.connectionLost(e);
                     }
-                    pendingSubscriptions.forEach((id, mqttPendingSubscription) -> mqttPendingSubscription.onChannelClosed());
-                    pendingSubscriptions.clear();
+                    // remove each entry before completing it: this path owns only what it removed itself, so an entry a
+                    // concurrent ACK, write listener or max retransmission already took is neither completed nor
+                    // released twice
+                    for (Integer id : pendingSubscriptions.keySet()) {
+                        MqttPendingSubscription mqttPendingSubscription = pendingSubscriptions.remove(id);
+                        if (mqttPendingSubscription != null) {
+                            mqttPendingSubscription.onChannelClosed();
+                        }
+                    }
                     serverSubscriptions.clear();
-                    pendingServerUnsubscribes.forEach((id, mqttPendingServerUnsubscribes) -> mqttPendingServerUnsubscribes.onChannelClosed());
-                    pendingServerUnsubscribes.clear();
+                    for (Integer id : pendingServerUnsubscribes.keySet()) {
+                        MqttPendingUnsubscription mqttPendingUnsubscription = pendingServerUnsubscribes.remove(id);
+                        if (mqttPendingUnsubscription != null) {
+                            mqttPendingUnsubscription.onChannelClosed();
+                        }
+                    }
                     qos2PendingMsgIds.clear();
-                    // remove each entry before releasing it: this path owns only what it removed itself, so an entry a
-                    // concurrent write listener or ACK already took is not released twice
                     for (Integer id : pendingPublishes.keySet()) {
                         MqttPendingPublish mqttPendingPublish = pendingPublishes.remove(id);
                         if (mqttPendingPublish != null) {
@@ -215,15 +221,29 @@ final class MqttClientImpl implements MqttClient {
                     pendingSubscribeTopics.clear();
                     scheduleConnectIfRequired(host, port, true);
                 });
+                if (disconnected) {
+                    log.debug("[{}][{}] Connected after disconnect(); closing channel {}", host, port, f.channel().id());
+                    f.channel().close();
+                    return;
+                }
+                log.debug("[{}][{}] Connected successfully {}!", host, port, this.channel.id());
             } else {
                 log.debug("[{}][{}] Connect failed, trying reconnect!", host, port);
-                scheduleConnectIfRequired(host, port, reconnect);
+                boolean reconnectScheduled = scheduleConnectIfRequired(host, port, reconnect);
+                connectFuture.tryFailure(f.cause());
+                if (!reconnectScheduled) {
+                    // no connection is coming to send them on
+                    failPendingSubscriptions(new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
+                }
             }
         });
         return connectFuture;
     }
 
-    private void scheduleConnectIfRequired(String host, int port, boolean reconnect) {
+    /**
+     * @return whether a connect attempt was scheduled
+     */
+    private boolean scheduleConnectIfRequired(String host, int port, boolean reconnect) {
         log.trace("[{}][{}][{}] Scheduling connect to server, isReconnect - {}", host, port, channel != null ? channel.id() : "UNKNOWN", reconnect);
         if (clientConfig.isReconnect() && !disconnected) {
             if (reconnect) {
@@ -233,6 +253,23 @@ final class MqttClientImpl implements MqttClient {
             final long nextReconnectDelay = reconnectStrategy.getNextReconnectDelay();
             log.debug("[{}][{}][{}] Scheduling reconnect in [{}] sec", host, port, channel != null ? channel.id() : "UNKNOWN", nextReconnectDelay);
             eventLoop.schedule((Runnable) () -> connect(host, port, reconnect), nextReconnectDelay, TimeUnit.SECONDS);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Fails every subscription still waiting for its SUBACK, for when no channel will carry one: the connect failed
+     * with no reconnect to follow, or the client was disconnected before it had a channel. With a channel, its close
+     * does this instead. Removes each entry before failing it, so no other path completes it too.
+     */
+    private void failPendingSubscriptions(Throwable cause) {
+        for (Integer id : pendingSubscriptions.keySet()) {
+            MqttPendingSubscription pendingSubscription = pendingSubscriptions.remove(id);
+            if (pendingSubscription != null) {
+                pendingSubscribeTopics.remove(pendingSubscription.getTopic());
+                pendingSubscription.fail(cause);
+            }
         }
     }
 
@@ -525,6 +562,10 @@ final class MqttClientImpl implements MqttClient {
                     ch.close();
                 }
             }, DISCONNECT_FALLBACK_DELAY_SECS, TimeUnit.SECONDS);
+        } else {
+            // no channel, so no close fails what waits for the first CONNACK; a connect still in flight closes the
+            // channel it gets, and that close fails whatever was added meanwhile
+            failPendingSubscriptions(new ChannelClosedException("Client is disconnected"));
         }
     }
 
@@ -607,17 +648,25 @@ final class MqttClientImpl implements MqttClient {
 
                     @Override
                     public void onMaxRetransmissionAttemptsReached() {
-                        pendingSubscriptions.computeIfPresent(variableHeader.messageId(), (__, pendingSubscription) -> {
-                            var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
-                            pendingSubscription.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                            return null;
-                        });
+                        // remove, then fail outside the map: a listener that subscribes again updates this map
+                        MqttPendingSubscription exhausted = pendingSubscriptions.remove(variableHeader.messageId());
+                        if (exhausted == null) {
+                            return;
+                        }
+                        var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
+                        exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
                     }
                 }).build();
 
         this.pendingSubscriptions.put(variableHeader.messageId(), pendingSubscription);
         this.pendingSubscribeTopics.add(topic);
+        if (this.disconnected) {
+            // a disconnected client never connects again, and disconnect() may have swept the pending subscriptions
+            // before this one was added
+            failPendingSubscriptions(new ChannelClosedException("Client is disconnected"));
+            return future;
+        }
         final Channel ch = this.channel;
         pendingSubscription.setSent(this.sendAndFlushPacket(ch, message) != null); //If not sent, we will send it when the connection is opened
 
@@ -664,12 +713,14 @@ final class MqttClientImpl implements MqttClient {
 
                         @Override
                         public void onMaxRetransmissionAttemptsReached() {
-                            pendingServerUnsubscribes.computeIfPresent(variableHeader.messageId(), (__, pendingUnsubscription) -> {
-                                var message = "Unable to deliver unsubscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                        .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
-                                pendingUnsubscription.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                                return null;
-                            });
+                            // remove, then fail outside the map: a listener that unsubscribes again updates this map
+                            MqttPendingUnsubscription exhausted = pendingServerUnsubscribes.remove(variableHeader.messageId());
+                            if (exhausted == null) {
+                                return;
+                            }
+                            var message = "Unable to deliver unsubscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
+                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
                         }
                     }).build();
 

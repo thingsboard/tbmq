@@ -81,8 +81,21 @@ final class MqttPendingSubscription {
         retransmissionHandler.stop();
     }
 
+    /**
+     * Must only be called by the path that removed this entry from the pending subscriptions. Fails the future: the
+     * SUBACK it waits for can no longer arrive.
+     */
     void onChannelClosed() {
+        fail(new ChannelClosedException("Channel closed before the SUBACK arrived"));
+    }
+
+    /**
+     * Fails the future with {@code cause} and stops retransmitting. Must only be called by the path that removed this
+     * entry from the pending subscriptions.
+     */
+    void fail(Throwable cause) {
         retransmissionHandler.stop();
+        future.tryFailure(cause);
     }
 
     static Builder builder() {
