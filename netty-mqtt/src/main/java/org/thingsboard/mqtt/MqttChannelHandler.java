@@ -203,12 +203,12 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 });
 
                 this.client.getPendingPublishes().forEach((id, publish) -> {
-                    if (publish.isSent()) return;
+                    // claim the first write, or publish() would write the same message (and consume its reference) again
+                    if (!publish.markSent()) return;
                     channel.write(publish.getMessage());
-                    publish.setSent(true);
                     if (publish.getQos() == MqttQoS.AT_MOST_ONCE) {
                         publish.getFuture().setSuccess(null); // We don't get an ACK for QOS 0
-                        this.client.getPendingPublishes().remove(publish.getMessageId());
+                        this.client.releaseIfRemoved(publish);
                     }
                 });
                 channel.flush();
@@ -411,9 +411,12 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
 
     private void handlePubcomp(MqttMessage message) {
         MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) message.variableHeader();
-        MqttPendingPublish pendingPublish = this.client.getPendingPublishes().get(variableHeader.messageId());
+        // remove first and release only what was removed here, so a concurrent close or max-retransmission cannot also release it
+        MqttPendingPublish pendingPublish = this.client.getPendingPublishes().remove(variableHeader.messageId());
+        if (pendingPublish == null) {
+            return;
+        }
         pendingPublish.getFuture().setSuccess(null);
-        this.client.getPendingPublishes().remove(variableHeader.messageId());
         pendingPublish.getPayload().release();
         pendingPublish.onPubcompReceived();
     }

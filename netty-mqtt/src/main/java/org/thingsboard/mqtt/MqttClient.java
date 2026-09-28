@@ -123,9 +123,14 @@ public interface MqttClient {
     Future<Void> off(String topic);
 
     /**
-     * Publish a message to the given payload
+     * Publish a message to the given payload.
+     * <p>
+     * All {@code publish} methods take ownership of {@code payload}: the client releases the caller's reference once
+     * the message has been written, or failed to be written, and releases its own references when the publish
+     * completes or the connection closes. The caller must not release the payload, nor use it after this call.
+     *
      * @param topic The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @return A future which will be completed when the message is sent out of the MqttClient
      */
     Future<Void> publish(String topic, ByteBuf payload);
@@ -133,7 +138,7 @@ public interface MqttClient {
     /**
      * Publish a message to the given payload, using the given qos
      * @param topic The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos The qos to use while publishing
      * @return A future which will be completed when the message is delivered to the server
      */
@@ -142,7 +147,7 @@ public interface MqttClient {
     /**
      * Publish a message to the given payload, using optional retain
      * @param topic The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is sent out of the MqttClient
      */
@@ -151,7 +156,7 @@ public interface MqttClient {
     /**
      * Publish a message to the given payload, using the given qos and optional retain
      * @param topic The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos The qos to use while publishing
      * @param retain true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is delivered to the server

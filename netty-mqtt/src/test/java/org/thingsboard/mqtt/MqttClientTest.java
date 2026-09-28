@@ -19,9 +19,12 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -39,6 +42,8 @@ import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -335,6 +340,241 @@ class MqttClientTest {
             release.countDown();
             publisher.disconnect();
         }
+    }
+
+    @Test
+    void testQoS0PublishReleasesPayload() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[QoS0PublishRelease]");
+        clientConfig.setClientId("qos0-release");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        TrackedByteBuf payload = new TrackedByteBuf("qos0 payload");
+
+        // WHEN
+        Future<Void> publishFuture = client.publish("qos0-release", payload, MqttQoS.AT_MOST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the QoS 0 publish to complete")
+                .atMost(Duration.ofSeconds(10L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).isTrue();
+        assertPayloadFullyReleased(payload);
+    }
+
+    @Test
+    void testQoS1PublishReleasesPayload() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[QoS1PublishRelease]");
+        clientConfig.setClientId("qos1-release");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        TrackedByteBuf payload = new TrackedByteBuf("qos1 payload");
+
+        // WHEN
+        Future<Void> publishFuture = client.publish("qos1-release", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the QoS 1 publish to be acknowledged")
+                .atMost(Duration.ofSeconds(10L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).isTrue();
+        assertPayloadFullyReleased(payload);
+    }
+
+    @Test
+    void testPublishWithoutChannelReleasesPayload() throws IOException {
+        // GIVEN
+        // nothing listens on this port, so the connect attempt fails and the client never gets a channel
+        int closedPort;
+        try (ServerSocket socket = new ServerSocket(0)) {
+            closedPort = socket.getLocalPort();
+        }
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PublishNoChannel]");
+        clientConfig.setClientId("no-channel-release");
+        clientConfig.setReconnect(false);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        client.connect("localhost", closedPort);
+
+        TrackedByteBuf payload = new TrackedByteBuf("never written");
+
+        // WHEN
+        Future<Void> publishFuture = client.publish("no-channel", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        // nothing was ever written, so neither the caller's reference nor the pending publish's may survive
+        assertPayloadFullyReleased(payload);
+    }
+
+    @Test
+    void testPublishOnClosedChannelReleasesPayload() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PublishClosedChannel]");
+        clientConfig.setClientId("closed-channel-release");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+        client.disconnect();
+        Awaitility.await("waiting for client to disconnect")
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> assertThat(client.isConnected()).isFalse());
+
+        TrackedByteBuf payload = new TrackedByteBuf("closed channel");
+
+        // WHEN
+        // the channel is still set but no longer active, so the message never reaches netty
+        Future<Void> publishFuture = client.publish("closed-channel", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the publish on a closed channel to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).isFalse();
+        assertPayloadFullyReleased(payload);
+    }
+
+    @Test
+    void testPublishRejectedByEncoderReleasesPayload() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PublishEncoderReject]");
+        clientConfig.setClientId("encoder-reject-release");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        TrackedByteBuf payload = new TrackedByteBuf("invalid topic");
+
+        // WHEN
+        // the encoder rejects a wildcard in a publish topic: the write fails after netty has taken the message
+        Future<Void> publishFuture = client.publish("invalid/+/topic", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the rejected publish to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(publishFuture::isDone);
+        assertThat(publishFuture.isSuccess()).isFalse();
+        assertPayloadFullyReleased(payload);
+        assertThat(client.isConnected()).isTrue();
+    }
+
+    @Test
+    void testPendingQoS1PublishIsReleasedOnceOnChannelClose() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .brokerToClientInterceptor(msg -> msg.fixedHeader().messageType() != MqttMessageType.PUBACK) // keep the publish pending
+                .build();
+
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[PendingPublishClose]");
+        clientConfig.setClientId("pending-close-release");
+        clientConfig.setReconnect(false);
+        // long enough that no retransmission happens before the connection is dropped
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), proxy.getPort());
+
+        TrackedByteBuf payload = new TrackedByteBuf("pending on close");
+        Future<Void> publishFuture = client.publish("pending-close", payload, MqttQoS.AT_LEAST_ONCE);
+
+        // the encoder consumed the caller's reference; only the pending publish's reference remains
+        Awaitility.await("waiting for the publish to be written")
+                .atMost(Duration.ofSeconds(10L))
+                .untilAsserted(() -> assertThat(payload.refCnt()).isEqualTo(1));
+        assertThat(publishFuture.isDone()).isFalse();
+
+        // WHEN
+        proxy.stop(); // drop the connection abruptly while the PUBACK is outstanding
+
+        // THEN
+        Awaitility.await("waiting for client to notice the closed connection")
+                .atMost(Duration.ofSeconds(10L))
+                .untilAsserted(() -> assertThat(client.isConnected()).isFalse());
+        assertPayloadFullyReleased(payload);
+    }
+
+    private static void assertPayloadFullyReleased(TrackedByteBuf payload) {
+        Awaitility.await("waiting for the payload to be fully released")
+                .atMost(Duration.ofSeconds(5L))
+                .untilAsserted(() -> assertThat(payload.refCnt()).describedAs("payload refCnt").isZero());
+        // any late release or retain on the freed buffer would be recorded here rather than only logged
+        Awaitility.await("payload must stay released without any over-release")
+                .during(Duration.ofMillis(500))
+                .atMost(Duration.ofSeconds(2L))
+                .untilAsserted(() -> {
+                    assertThat(payload.refCnt()).describedAs("payload refCnt").isZero();
+                    assertThat(payload.illegalRefCntOps.get()).describedAs("releases/retains on an already freed payload").isZero();
+                });
+    }
+
+    /**
+     * Heap buffer that records every release or retain attempted after it was freed, which netty would otherwise only
+     * surface as an {@link IllegalReferenceCountException} logged from whichever listener made the call.
+     */
+    private static final class TrackedByteBuf extends UnpooledHeapByteBuf {
+
+        private final AtomicInteger illegalRefCntOps = new AtomicInteger();
+
+        private TrackedByteBuf(String content) {
+            this(content.getBytes(StandardCharsets.UTF_8));
+        }
+
+        private TrackedByteBuf(byte[] bytes) {
+            super(UnpooledByteBufAllocator.DEFAULT, bytes, bytes.length);
+        }
+
+        @Override
+        public boolean release() {
+            try {
+                return super.release();
+            } catch (IllegalReferenceCountException e) {
+                illegalRefCntOps.incrementAndGet();
+                throw e;
+            }
+        }
+
+        @Override
+        public boolean release(int decrement) {
+            try {
+                return super.release(decrement);
+            } catch (IllegalReferenceCountException e) {
+                illegalRefCntOps.incrementAndGet();
+                throw e;
+            }
+        }
+
+        @Override
+        public ByteBuf retain() {
+            try {
+                return super.retain();
+            } catch (IllegalReferenceCountException e) {
+                illegalRefCntOps.incrementAndGet();
+                throw e;
+            }
+        }
+
+        @Override
+        public ByteBuf retain(int increment) {
+            try {
+                return super.retain(increment);
+            } catch (IllegalReferenceCountException e) {
+                illegalRefCntOps.incrementAndGet();
+                throw e;
+            }
+        }
+
     }
 
     private void connect(String host, int port) {

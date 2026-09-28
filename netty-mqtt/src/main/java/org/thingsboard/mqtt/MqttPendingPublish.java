@@ -23,8 +23,8 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @Getter(AccessLevel.PACKAGE)
@@ -41,8 +41,8 @@ final class MqttPendingPublish {
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler;
 
-    @Setter(AccessLevel.PACKAGE)
-    private boolean sent = false;
+    @Getter(AccessLevel.NONE)
+    private final AtomicBoolean sent = new AtomicBoolean();
 
     private MqttPendingPublish(
             int messageId,
@@ -63,6 +63,14 @@ final class MqttPendingPublish {
         publishRetransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, pendingOperation, ownerId);
         publishRetransmissionHandler.setOriginalMessage(message);
         pubrelRetransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, pendingOperation, ownerId);
+    }
+
+    /**
+     * Claims the first write of {@link #getMessage()}. Only the caller that gets {@code true} may write it: writing
+     * hands the caller's reference to netty, so a second first-write would consume that reference twice.
+     */
+    boolean markSent() {
+        return sent.compareAndSet(false, true);
     }
 
     void startPublishRetransmissionTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
@@ -89,6 +97,10 @@ final class MqttPendingPublish {
         pubrelRetransmissionHandler.stop();
     }
 
+    /**
+     * Must only be called by the path that removed this entry from the pending publishes, so the payload reference this
+     * entry holds is released exactly once.
+     */
     void onChannelClosed() {
         publishRetransmissionHandler.stop();
         pubrelRetransmissionHandler.stop();

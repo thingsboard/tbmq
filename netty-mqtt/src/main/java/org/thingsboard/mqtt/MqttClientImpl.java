@@ -41,6 +41,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -60,6 +61,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Represents an MqttClientImpl connected to a single MQTT server. Will try to keep the connection going at all times
@@ -200,8 +202,14 @@ final class MqttClientImpl implements MqttClient {
                     pendingServerUnsubscribes.forEach((id, mqttPendingServerUnsubscribes) -> mqttPendingServerUnsubscribes.onChannelClosed());
                     pendingServerUnsubscribes.clear();
                     qos2PendingMsgIds.clear();
-                    pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-                    pendingPublishes.clear();
+                    // remove each entry before releasing it: this path owns only what it removed itself, so an entry a
+                    // concurrent write listener or ACK already took is not released twice
+                    for (Integer id : pendingPublishes.keySet()) {
+                        MqttPendingPublish mqttPendingPublish = pendingPublishes.remove(id);
+                        if (mqttPendingPublish != null) {
+                            mqttPendingPublish.onChannelClosed();
+                        }
+                    }
                     pendingSubscribeTopics.clear();
                     scheduleConnectIfRequired(host, port, true);
                 });
@@ -328,7 +336,7 @@ final class MqttClientImpl implements MqttClient {
      * Publish a message to the given payload
      *
      * @param topic   The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @return A future which will be completed when the message is sent out of the MqttClient
      */
     @Override
@@ -340,7 +348,7 @@ final class MqttClientImpl implements MqttClient {
      * Publish a message to the given payload, using the given qos
      *
      * @param topic   The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos     The qos to use while publishing
      * @return A future which will be completed when the message is delivered to the server
      */
@@ -353,7 +361,7 @@ final class MqttClientImpl implements MqttClient {
      * Publish a message to the given payload, using optional retain
      *
      * @param topic   The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain  true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is sent out of the MqttClient
      */
@@ -366,7 +374,7 @@ final class MqttClientImpl implements MqttClient {
      * Publish a message to the given payload, using the given qos and optional retain
      *
      * @param topic   The topic to publish to
-     * @param payload The payload to send
+     * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param qos     The qos to use while publishing
      * @param retain  true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is delivered to the server
@@ -377,8 +385,10 @@ final class MqttClientImpl implements MqttClient {
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
         MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, getNewMessageId().messageId());
+        // the message carries the caller's reference, which the write hands to netty; the pending publish holds its own
         MqttPublishMessage message = new MqttPublishMessage(fixedHeader, variableHeader, payload);
 
+        final var self = new AtomicReference<MqttPendingPublish>();
         final var pendingPublish = MqttPendingPublish.builder()
                 .messageId(variableHeader.packetId())
                 .future(future)
@@ -390,45 +400,60 @@ final class MqttClientImpl implements MqttClient {
                 .pendingOperation(new PendingOperation() {
                     @Override
                     public boolean isCancelled() {
-                        return !pendingPublishes.containsKey(variableHeader.packetId());
+                        // identity, not the packet id: once this entry is gone its id may already belong to a new publish
+                        return pendingPublishes.get(variableHeader.packetId()) != self.get();
                     }
 
                     @Override
                     public void onMaxRetransmissionAttemptsReached() {
-                        pendingPublishes.computeIfPresent(variableHeader.packetId(), (__, pendingPublish) -> {
-                            var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
-                            pendingPublish.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                            pendingPublish.getPayload().release();
-                            return null;
-                        });
+                        MqttPendingPublish exhausted = self.get();
+                        if (!pendingPublishes.remove(variableHeader.packetId(), exhausted)) {
+                            return; // acknowledged, failed or closed meanwhile: whoever removed it released it
+                        }
+                        var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
+                        exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
+                        exhausted.getPayload().release();
                     }
                 }).build();
+        self.set(pendingPublish);
 
         this.pendingPublishes.put(pendingPublish.getMessageId(), pendingPublish);
+        if (!pendingPublish.markSent()) {
+            // a CONNACK arriving meanwhile resent it and now owns the caller's reference through that write
+            return future;
+        }
         ChannelFuture channelFuture = this.sendAndFlushPacket(message);
 
         if (channelFuture != null) {
+            // netty consumed the caller's reference, whether the write succeeds or fails
             channelFuture.addListener(result -> {
-                pendingPublish.setSent(true);
                 if (result.cause() != null) {
-                    pendingPublishes.remove(pendingPublish.getMessageId());
+                    releaseIfRemoved(pendingPublish);
                     future.setFailure(result.cause());
+                } else if (pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
+                    releaseIfRemoved(pendingPublish);
+                    pendingPublish.getFuture().setSuccess(null); //We don't get an ACK for QOS 0
                 } else {
-                    if (pendingPublish.isSent() && pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
-                        pendingPublishes.remove(pendingPublish.getMessageId());
-                        pendingPublish.getFuture().setSuccess(null); //We don't get an ACK for QOS 0
-                    } else if (pendingPublish.isSent()) {
-                        pendingPublish.startPublishRetransmissionTimer(eventLoop.next(), MqttClientImpl.this::sendAndFlushPacket);
-                    } else {
-                        pendingPublishes.remove(pendingPublish.getMessageId());
-                    }
+                    pendingPublish.startPublishRetransmissionTimer(eventLoop.next(), MqttClientImpl.this::sendAndFlushPacket);
                 }
             });
         } else {
-            pendingPublishes.remove(pendingPublish.getMessageId());
+            // no channel, so nothing was written: the caller's reference was never consumed either
+            releaseIfRemoved(pendingPublish);
+            message.release();
         }
         return future;
+    }
+
+    /**
+     * Releases the pending publish's payload reference if, and only if, this call removed the entry, so that no two
+     * paths (write listener, ACK, max retransmissions, channel close) can both release it.
+     */
+    void releaseIfRemoved(MqttPendingPublish pendingPublish) {
+        if (pendingPublishes.remove(pendingPublish.getMessageId(), pendingPublish)) {
+            pendingPublish.getPayload().release();
+        }
     }
 
     @Override
@@ -469,7 +494,8 @@ final class MqttClientImpl implements MqttClient {
 
     /**
      * Sends on the channel the caller pinned, instead of re-reading the volatile field at each step.
-     * Returns null when there is no channel yet; callers use that to defer delivery until the connection opens.
+     * Returns null when there is no channel yet; callers use that to defer delivery until the connection opens, and
+     * still own the message then. Otherwise the message is consumed: written, or released if the channel is inactive.
      */
     private ChannelFuture sendAndFlushPacket(Channel ch, Object message) {
         if (ch == null) {
@@ -479,6 +505,8 @@ final class MqttClientImpl implements MqttClient {
             log.trace("[{}] Sending message {}", ch.id(), message);
             return ch.writeAndFlush(message);
         }
+        // netty releases a message whose write fails; do the same for one that is refused before reaching netty
+        ReferenceCountUtil.release(message);
         return ch.newFailedFuture(new ChannelClosedException("Channel is closed!"));
     }
 
