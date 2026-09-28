@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.testing.integration.executor;
+package org.thingsboard.mqtt;
 
-import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
+public class MaxRetransmissionsReachedException extends RuntimeException {
 
-@Component
-public class ExternalExecutorService extends AbstractListeningExecutor {
-
-    @Override
-    protected int getThreadPoolSize() {
-        return 10;
-    }
-
-    @Override
-    protected String getExecutorName() {
-        return "External";
+    public MaxRetransmissionsReachedException(String message) {
+        super(message);
     }
 
 }
-

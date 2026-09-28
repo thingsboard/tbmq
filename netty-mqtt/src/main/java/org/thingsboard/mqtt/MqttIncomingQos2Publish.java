@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.testing.integration.executor;
+package org.thingsboard.mqtt;
 
-import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
-@Component
-public class ExternalExecutorService extends AbstractListeningExecutor {
+final class MqttIncomingQos2Publish {
 
-    @Override
-    protected int getThreadPoolSize() {
-        return 10;
+    private final MqttPublishMessage incomingPublish;
+
+    MqttIncomingQos2Publish(MqttPublishMessage incomingPublish) {
+        this.incomingPublish = incomingPublish;
     }
 
-    @Override
-    protected String getExecutorName() {
-        return "External";
+    MqttPublishMessage getIncomingPublish() {
+        return incomingPublish;
     }
-
 }
-

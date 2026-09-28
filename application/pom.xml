@@ -254,7 +254,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.thingsboard</groupId>
+            <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>netty-mqtt</artifactId>
             <scope>test</scope>
         </dependency>
