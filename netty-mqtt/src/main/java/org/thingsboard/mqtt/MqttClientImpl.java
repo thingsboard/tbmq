@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt;
 
-import com.google.common.collect.Sets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -71,8 +70,11 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 final class MqttClientImpl implements MqttClient {
 
+    /**
+     * The topic filters subscribed on the server, each with the QoS the server granted it in its SUBACK.
+     */
     @Getter(AccessLevel.PACKAGE)
-    private final Set<String> serverSubscriptions = new HashSet<>();
+    private final ConcurrentMap<String, MqttQoS> serverSubscriptions = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingUnsubscription> pendingServerUnsubscribes = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
@@ -276,10 +278,11 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @return A future which will be completed when the server acknowledges our subscribe request
+     * @return A future which completes with the QoS the server granted, or fails with
+     * {@link MqttSubscriptionFailedException} when the server refuses the filter
      */
     @Override
-    public Future<Void> on(String topic, MqttHandler handler) {
+    public Future<MqttQoS> on(String topic, MqttHandler handler) {
         return on(topic, handler, MqttQoS.AT_MOST_ONCE);
     }
 
@@ -289,19 +292,20 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
      * @param qos     The qos to request to the server
-     * @return A future which will be completed when the server acknowledges our subscribe request
+     * @return A future which completes with the QoS the server granted, or fails with
+     * {@link MqttSubscriptionFailedException} when the server refuses the filter
      */
     @Override
-    public Future<Void> on(String topic, MqttHandler handler, MqttQoS qos) {
+    public Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos) {
         return createSubscription(topic, handler, qos);
     }
 
     /**
-     * Remove the subscription for the given topic and handler
-     * If you want to unsubscribe from all handlers known for this topic, use {@link #off(String)}
+     * Remove the given topic filter, but only if its current handler equals {@code handler}; otherwise this is a
+     * no-op whose future completes successfully. Removing the filter unsubscribes it on the server.
      *
-     * @param topic   The topic to unsubscribe for
-     * @param handler The handler to unsubscribe
+     * @param topic   The topic filter to unsubscribe for
+     * @param handler The handler the filter must currently have
      * @return A future which will be completed when the server acknowledges our unsubscribe request
      */
     @Override
@@ -316,10 +320,9 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Remove all subscriptions for the given topic.
-     * If you want to specify which handler to unsubscribe, use {@link #off(String, MqttHandler)}
+     * Remove the given topic filter and its handler, and unsubscribe the filter on the server.
      *
-     * @param topic The topic to unsubscribe for
+     * @param topic The topic filter to unsubscribe for
      * @return A future which will be completed when the server acknowledges our unsubscribe request
      */
     @Override
@@ -565,21 +568,24 @@ final class MqttClientImpl implements MqttClient {
         return MqttMessageIdVariableHeader.from(messageId);
     }
 
-    private Future<Void> createSubscription(String topic, MqttHandler handler, MqttQoS qos) {
+    private Future<MqttQoS> createSubscription(String topic, MqttHandler handler, MqttQoS qos) {
         log.trace("[{}] Creating subscription to {}", channel != null ? channel.id() : "UNKNOWN", topic);
         if (this.pendingSubscribeTopics.contains(topic)) {
             Optional<Map.Entry<Integer, MqttPendingSubscription>> subscriptionEntry = this.pendingSubscriptions.entrySet().stream().filter((e) -> e.getValue().getTopic().equals(topic)).findAny();
             if (subscriptionEntry.isPresent()) {
-                subscriptionEntry.get().getValue().addHandler(handler);
+                // the SUBSCRIBE in flight registers the handler given last; every caller observes its grant or refusal
+                subscriptionEntry.get().getValue().setHandler(handler);
                 return subscriptionEntry.get().getValue().getFuture();
             }
         }
-        if (this.serverSubscriptions.contains(topic)) {
+        MqttQoS grantedQos = this.serverSubscriptions.get(topic);
+        if (grantedQos != null) {
             register(new MqttSubscription(topic, handler));
-            return this.channel.newSucceededFuture();
+            // already subscribed on the server, which granted this QoS then; no SUBSCRIBE is sent for the QoS asked now
+            return this.eventLoop.next().newSucceededFuture(grantedQos);
         }
 
-        Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+        Promise<MqttQoS> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
         MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
         MqttMessageIdVariableHeader variableHeader = getNewMessageId();
@@ -589,7 +595,7 @@ final class MqttClientImpl implements MqttClient {
         final var pendingSubscription = MqttPendingSubscription.builder()
                 .future(future)
                 .topic(topic)
-                .handlers(Sets.newLinkedHashSet(Collections.singleton(handler))) // ordered: the last handler added wins on SUBACK
+                .handler(handler)
                 .subscribeMessage(message)
                 .ownerId(clientConfig.getOwnerId())
                 .retransmissionConfig(clientConfig.getRetransmissionConfig())
@@ -638,7 +644,7 @@ final class MqttClientImpl implements MqttClient {
 
     private void checkSubscriptions(String topic, Promise<Void> promise) {
         if (this.subscriptions.stream().noneMatch(s -> s.getTopic().equals(topic))
-                && this.serverSubscriptions.contains(topic)) {
+                && this.serverSubscriptions.containsKey(topic)) {
             MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
             MqttMessageIdVariableHeader variableHeader = getNewMessageId();
             MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Collections.singletonList(topic));

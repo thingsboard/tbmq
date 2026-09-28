@@ -16,24 +16,25 @@
 package org.thingsboard.mqtt;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Consumer;
-
-import static java.util.Objects.requireNonNullElseGet;
 
 @Getter(AccessLevel.PACKAGE)
 final class MqttPendingSubscription {
 
-    private final Promise<Void> future;
+    private final Promise<MqttQoS> future;
     private final String topic;
-    private final Set<MqttHandler> handlers;
+    /**
+     * The handler to register on SUBACK. Callers replace it while the SUBSCRIBE is in flight, so the last {@code on()}
+     * for the filter wins; the event loop reads it once, on SUBACK.
+     */
+    private volatile MqttHandler handler;
     private final MqttSubscribeMessage subscribeMessage;
 
     @Getter(AccessLevel.NONE)
@@ -43,9 +44,9 @@ final class MqttPendingSubscription {
     private boolean sent = false;
 
     private MqttPendingSubscription(
-            Promise<Void> future,
+            Promise<MqttQoS> future,
             String topic,
-            Set<MqttHandler> handlers,
+            MqttHandler handler,
             MqttSubscribeMessage subscribeMessage,
             String ownerId,
             MqttClientConfig.RetransmissionConfig retransmissionConfig,
@@ -53,15 +54,15 @@ final class MqttPendingSubscription {
     ) {
         this.future = future;
         this.topic = topic;
-        this.handlers = requireNonNullElseGet(handlers, HashSet::new);
+        this.handler = handler;
         this.subscribeMessage = subscribeMessage;
 
         retransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, operation, ownerId);
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
-    void addHandler(MqttHandler handler) {
-        handlers.add(handler);
+    void setHandler(MqttHandler handler) {
+        this.handler = handler;
     }
 
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
@@ -86,15 +87,15 @@ final class MqttPendingSubscription {
 
     static class Builder {
 
-        private Promise<Void> future;
+        private Promise<MqttQoS> future;
         private String topic;
-        private Set<MqttHandler> handlers;
+        private MqttHandler handler;
         private MqttSubscribeMessage subscribeMessage;
         private String ownerId;
         private PendingOperation pendingOperation;
         private MqttClientConfig.RetransmissionConfig retransmissionConfig;
 
-        Builder future(Promise<Void> future) {
+        Builder future(Promise<MqttQoS> future) {
             this.future = future;
             return this;
         }
@@ -104,8 +105,8 @@ final class MqttPendingSubscription {
             return this;
         }
 
-        Builder handlers(Set<MqttHandler> handlers) {
-            this.handlers = handlers;
+        Builder handler(MqttHandler handler) {
+            this.handler = handler;
             return this;
         }
 
@@ -130,7 +131,7 @@ final class MqttPendingSubscription {
         }
 
         MqttPendingSubscription build() {
-            return new MqttPendingSubscription(future, topic, handlers, subscribeMessage, ownerId, retransmissionConfig, pendingOperation);
+            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, ownerId, retransmissionConfig, pendingOperation);
         }
 
     }

@@ -52,6 +52,7 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.MqttOrderedAcknowledgementCtx.MqttMsgWrapper;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -237,17 +238,24 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             return;
         }
         pendingSubscription.onSubackReceived();
-        // a filter has one handler: registered in insertion order, the handler added last wins
-        for (MqttHandler handler : pendingSubscription.getHandlers()) {
-            this.client.register(new MqttSubscription(pendingSubscription.getTopic(), handler));
-        }
-        this.client.getPendingSubscribeTopics().remove(pendingSubscription.getTopic());
+        String topic = pendingSubscription.getTopic();
 
-        this.client.getServerSubscriptions().add(pendingSubscription.getTopic());
-
-        if (!pendingSubscription.getFuture().isDone()) {
-            pendingSubscription.getFuture().setSuccess(null);
+        // each SUBSCRIBE carries exactly one filter, so its SUBACK carries exactly one code; none is a malformed SUBACK
+        List<Integer> codes = message.payload().grantedQoSLevels();
+        int code = codes.isEmpty() ? MqttQoS.FAILURE.value() : codes.get(0);
+        if (code == MqttQoS.FAILURE.value()) {
+            log.debug("[{}][{}] Server refused the subscription to {}", client.getClientConfig().getOwnerId(), client.getClientConfig().getClientId(), topic);
+            pendingSubscription.getFuture().tryFailure(new MqttSubscriptionFailedException(
+                    codes.isEmpty() ? "SUBACK for topic filter '" + topic + "' carries no return code"
+                            : "Server refused the subscription to topic filter '" + topic + "'"));
+        } else {
+            MqttQoS grantedQos = MqttQoS.valueOf(code);
+            this.client.register(new MqttSubscription(topic, pendingSubscription.getHandler()));
+            this.client.getServerSubscriptions().put(topic, grantedQos);
+            pendingSubscription.getFuture().trySuccess(grantedQos);
         }
+        // only after recording a grant: an on() racing this SUBACK that misses the pending subscription then finds the grant
+        this.client.getPendingSubscribeTopics().remove(topic);
         if (this.client.getCallback() != null) {
             this.client.getCallback().onSubAck(message);
         }

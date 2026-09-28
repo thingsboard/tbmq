@@ -222,7 +222,7 @@ class MqttClientTest {
         // subscribe to a topic
         String topic = "test-topic";
         List<ByteBuf> receivedMessages = Collections.synchronizedList(new ArrayList<>(2));
-        Future<Void> subscribeFuture = client.on(topic, msg -> {
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> {
             receivedMessages.add(msg.payload());
             return Futures.immediateVoidFuture();
         });
@@ -282,7 +282,7 @@ class MqttClientTest {
         String topic = "qos0-backpressure";
         CountDownLatch release = new CountDownLatch(1);
         AtomicInteger delivered = new AtomicInteger();
-        Future<Void> subscribeFuture = client.on(topic, msg -> {
+        Future<MqttQoS> subscribeFuture = client.on(topic, msg -> {
             delivered.incrementAndGet();
             try {
                 release.await(30, TimeUnit.SECONDS);

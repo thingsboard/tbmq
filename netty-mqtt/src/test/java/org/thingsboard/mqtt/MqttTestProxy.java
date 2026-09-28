@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 @Slf4j
 public class MqttTestProxy {
@@ -51,10 +52,13 @@ public class MqttTestProxy {
 
     private final Predicate<MqttMessage> brokerToClientInterceptor;
 
+    private final UnaryOperator<MqttMessage> brokerToClientRewriter;
+
     private MqttTestProxy(Builder builder) {
         log.info("Starting MQTT proxy...");
 
         brokerToClientInterceptor = builder.brokerToClientInterceptor != null ? builder.brokerToClientInterceptor : msg -> true;
+        brokerToClientRewriter = builder.brokerToClientRewriter;
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);
 
@@ -70,7 +74,7 @@ public class MqttTestProxy {
                         connectToBroker(builder.brokerHost, builder.brokerPort).addListener(future -> {
                             if (future.isSuccess()) {
                                 clientToProxyChannel.pipeline().addLast("mqttDecoder", new MqttDecoder());
-                                clientToProxyChannel.pipeline().addLast("mqttToBroker", new MqttRelayHandler(proxyToBrokerChannel, null));
+                                clientToProxyChannel.pipeline().addLast("mqttToBroker", new MqttRelayHandler(proxyToBrokerChannel, null, null));
                                 clientToProxyChannel.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
 
                                 clientToProxyChannel.config().setAutoRead(true); // start accepting data for a client
@@ -102,7 +106,7 @@ public class MqttTestProxy {
                     protected void initChannel(SocketChannel channel) {
                         proxyToBrokerChannel = channel;
                         proxyToBrokerChannel.pipeline().addLast(new MqttDecoder());
-                        proxyToBrokerChannel.pipeline().addLast("mqttToClient", new MqttRelayHandler(clientToProxyChannel, brokerToClientInterceptor));
+                        proxyToBrokerChannel.pipeline().addLast("mqttToClient", new MqttRelayHandler(clientToProxyChannel, brokerToClientInterceptor, brokerToClientRewriter));
                         proxyToBrokerChannel.pipeline().addLast(MqttEncoder.INSTANCE);
                     }
                 });
@@ -113,21 +117,31 @@ public class MqttTestProxy {
 
         private final Channel targetChannel;
         private final Predicate<MqttMessage> interceptor;
+        private final UnaryOperator<MqttMessage> rewriter;
 
-        private MqttRelayHandler(Channel targetChannel, Predicate<MqttMessage> interceptor) {
+        private MqttRelayHandler(Channel targetChannel, Predicate<MqttMessage> interceptor, UnaryOperator<MqttMessage> rewriter) {
             this.targetChannel = targetChannel;
             this.interceptor = interceptor;
+            this.rewriter = rewriter;
         }
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, MqttMessage msg) {
             log.debug("Received message: {}", msg.fixedHeader().messageType());
-            if (interceptor == null || interceptor.test(msg)) {
-                if (targetChannel.isActive()) {
-                    targetChannel.writeAndFlush(ReferenceCountUtil.retain(msg));
-                }
-            } else {
+            if (interceptor != null && !interceptor.test(msg)) {
                 log.info("Dropping message: {}", msg.fixedHeader().messageType());
+                return;
+            }
+            MqttMessage out = rewriter != null ? rewriter.apply(msg) : msg;
+            if (out == null) {
+                log.info("Withholding message: {}", msg.fixedHeader().messageType());
+                return;
+            }
+            if (targetChannel.isActive()) {
+                // the inbound handler releases msg after this call, so relaying msg itself needs a reference of its own
+                targetChannel.writeAndFlush(out == msg ? ReferenceCountUtil.retain(msg) : out);
+            } else if (out != msg) {
+                ReferenceCountUtil.release(out);
             }
         }
 
@@ -159,6 +173,14 @@ public class MqttTestProxy {
         log.info("MQTT proxy stopped");
     }
 
+    /**
+     * Writes {@code msg} to the client, e.g. a message a {@link Builder#brokerToClientRewriter rewriter} withheld
+     * earlier. The write takes ownership of {@code msg}.
+     */
+    public void sendToClient(MqttMessage msg) {
+        clientToProxyChannel.writeAndFlush(msg);
+    }
+
     public int getPort() {
         return assignedPort;
     }
@@ -173,6 +195,7 @@ public class MqttTestProxy {
         private String brokerHost;
         private int brokerPort;
         private Predicate<MqttMessage> brokerToClientInterceptor;
+        private UnaryOperator<MqttMessage> brokerToClientRewriter;
 
         public Builder localPort(int localPort) {
             this.localPort = localPort;
@@ -191,6 +214,17 @@ public class MqttTestProxy {
 
         public Builder brokerToClientInterceptor(Predicate<MqttMessage> interceptor) {
             this.brokerToClientInterceptor = interceptor;
+            return this;
+        }
+
+        /**
+         * Rewrites each message relayed from the broker to the client, after the interceptor let it through: return
+         * the message itself to relay it unchanged, a new message to relay that instead, or {@code null} to withhold
+         * it - {@link MqttTestProxy#sendToClient} can deliver it later. A rewriter that keeps a reference-counted
+         * message beyond the call must retain it itself.
+         */
+        public Builder brokerToClientRewriter(UnaryOperator<MqttMessage> rewriter) {
+            this.brokerToClientRewriter = rewriter;
             return this;
         }
 

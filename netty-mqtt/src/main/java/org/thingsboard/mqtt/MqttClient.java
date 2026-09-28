@@ -85,9 +85,11 @@ public interface MqttClient {
      *
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @return A future which will be completed when the server acknowledges our subscribe request
+     * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
+     * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
+     * the filter, in which case nothing is registered for it
      */
-    Future<Void> on(String topic, MqttHandler handler);
+    Future<MqttQoS> on(String topic, MqttHandler handler);
 
     /**
      * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
@@ -99,25 +101,26 @@ public interface MqttClient {
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
      * @param qos The qos to request to the server
-     * @return A future which will be completed when the server acknowledges our subscribe request
+     * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
+     * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
+     * the filter, in which case nothing is registered for it
      */
-    Future<Void> on(String topic, MqttHandler handler, MqttQoS qos);
+    Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos);
 
     /**
-     * Remove the subscription for the given topic and handler
-     * If you want to unsubscribe from all handlers known for this topic, use {@link #off(String)}
+     * Remove the given topic filter, but only if its current handler equals {@code handler}; otherwise this is a
+     * no-op whose future completes successfully. Removing the filter unsubscribes it on the server.
      *
-     * @param topic The topic to unsubscribe for
-     * @param handler The handler to unsubscribe
+     * @param topic The topic filter to unsubscribe for
+     * @param handler The handler the filter must currently have
      * @return A future which will be completed when the server acknowledges our unsubscribe request
      */
     Future<Void> off(String topic, MqttHandler handler);
 
     /**
-     * Remove all subscriptions for the given topic.
-     * If you want to specify which handler to unsubscribe, use {@link #off(String, MqttHandler)}
+     * Remove the given topic filter and its handler, and unsubscribe the filter on the server.
      *
-     * @param topic The topic to unsubscribe for
+     * @param topic The topic filter to unsubscribe for
      * @return A future which will be completed when the server acknowledges our unsubscribe request
      */
     Future<Void> off(String topic);
