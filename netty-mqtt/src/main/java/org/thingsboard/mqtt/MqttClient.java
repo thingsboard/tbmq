@@ -77,6 +77,10 @@ public interface MqttClient {
 
     /**
      * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * <p>
+     * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
+     * keeps the filter's position in delivery order. Handlers survive a reconnect, but the server-side subscription
+     * does not - after a clean-session reconnect call {@code on} again. {@link #off(String)} stops routing to a filter.
      *
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
@@ -86,6 +90,10 @@ public interface MqttClient {
 
     /**
      * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(String, ByteBuf)} function of the given handler
+     * <p>
+     * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
+     * keeps the filter's position in delivery order. Handlers survive a reconnect, but the server-side subscription
+     * does not - after a clean-session reconnect call {@code on} again. {@link #off(String)} stops routing to a filter.
      *
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message

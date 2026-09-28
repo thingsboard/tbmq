@@ -19,10 +19,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 /**
- * A subscription is identified by its raw topic filter string together with handler equality: two subscriptions are
- * the same when both are equal. Handler identity semantics are therefore the caller's to decide - an
- * {@link MqttHandler} with value-based equality (a record, say) makes two genuinely distinct handlers collapse into
- * a single registry entry.
+ * A registered topic filter and its handler. The registry keys entries by the raw topic filter string alone - a filter
+ * has at most one handler (see {@link MqttClientImpl#register(MqttSubscription)}). Handler equality only matters to
+ * {@link MqttClient#off(String, MqttHandler)}, which removes the filter's entry when its handler is equal to the given one.
  */
 final class MqttSubscription {
 

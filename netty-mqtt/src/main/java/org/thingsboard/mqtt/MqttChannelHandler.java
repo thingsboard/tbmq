@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt;
 
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -54,6 +53,7 @@ import org.thingsboard.mqtt.MqttOrderedAcknowledgementCtx.MqttMsgWrapper;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -156,41 +156,37 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     ListenableFuture<Void> invokeHandlerForIncomingPublish(MqttPublishMessage message) {
         String topic = message.variableHeader().topicName();
         ByteBuf payload = message.payload();
-        String[] topicLevels = MqttTopicFilter.split(topic);
 
-        MqttHandler target = null;
-        for (MqttSubscription subscription : this.client.getSubscriptions()) {
-            if (subscription.matches(topic, topicLevels)) {
-                target = subscription.getHandler();
-                break;
-            }
-        }
-        if (target == null) {
-            target = client.getDefaultHandler();
-        }
-        if (target == null) {
+        MqttHandler handler = resolveHandler(topic);
+        if (handler == null) {
             payload.release();
             return Futures.immediateVoidFuture();
         }
 
-        final MqttHandler handler = target;
-        ListenableFuture<Void> future = Futures.transformAsync(
-                Futures.immediateVoidFuture(),
-                __ -> adaptFuture(handler.onMessage(topic, payload)),
-                client.getHandlerExecutor());
-
-        Futures.addCallback(future, new FutureCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                payload.release();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                payload.release();
-            }
-        }, MoreExecutors.directExecutor());
+        // never run a handler on the netty event loop
+        ListenableFuture<Void> future;
+        try {
+            future = Futures.submitAsync(() -> adaptFuture(handler.onMessage(topic, payload)), client.getHandlerExecutor());
+        } catch (RejectedExecutionException e) {
+            // submitAsync throws where transformAsync failed the future; keep failing it so the payload is released
+            future = Futures.immediateFailedFuture(e);
+        }
+        future.addListener(payload::release, MoreExecutors.directExecutor());
         return future;
+    }
+
+    /**
+     * The handler of the first registered subscription whose filter matches {@code topic}, else the client's default
+     * handler, which may be {@code null}.
+     */
+    private MqttHandler resolveHandler(String topic) {
+        String[] topicLevels = MqttTopicFilter.split(topic);
+        for (MqttSubscription subscription : this.client.getSubscriptions()) {
+            if (subscription.matches(topic, topicLevels)) {
+                return subscription.getHandler();
+            }
+        }
+        return client.getDefaultHandler();
     }
 
     private void handleConack(Channel channel, MqttConnAckMessage message) {
@@ -242,9 +238,9 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             return;
         }
         pendingSubscription.onSubackReceived();
+        // a filter has one handler: registered in insertion order, the handler added last wins
         for (MqttHandler handler : pendingSubscription.getHandlers()) {
-            MqttSubscription subscription = new MqttSubscription(pendingSubscription.getTopic(), handler);
-            this.client.getSubscriptions().addIfAbsent(subscription);
+            this.client.register(new MqttSubscription(pendingSubscription.getTopic(), handler));
         }
         this.client.getPendingSubscribeTopics().remove(pendingSubscription.getTopic());
 

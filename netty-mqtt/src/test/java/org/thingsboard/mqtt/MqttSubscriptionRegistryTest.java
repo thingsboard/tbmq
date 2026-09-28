@@ -115,7 +115,11 @@ class MqttSubscriptionRegistryTest {
         // THEN
         awaitDeliveries(served);
 
-        assertThat(served).isNotEmpty().containsOnly("first");
+        assertThat(served).isNotEmpty();
+        Awaitility.await("holding the assertion over a quiet period")
+                .during(Duration.ofMillis(500))
+                .atMost(Duration.ofSeconds(10L))
+                .untilAsserted(() -> assertThat(served).containsOnly("first"));
     }
 
     @Test
@@ -141,7 +145,11 @@ class MqttSubscriptionRegistryTest {
         // THEN
         awaitDeliveries(served);
 
-        assertThat(served).isNotEmpty().containsOnly("second");
+        assertThat(served).isNotEmpty();
+        Awaitility.await("holding the assertion over a quiet period")
+                .during(Duration.ofMillis(500))
+                .atMost(Duration.ofSeconds(10L))
+                .untilAsserted(() -> assertThat(served).containsOnly("second"));
     }
 
     @Test
@@ -164,6 +172,72 @@ class MqttSubscriptionRegistryTest {
 
         // THEN
         assertThat(((MqttClientImpl) client).getSubscriptions()).hasSize(1);
+    }
+
+    @Test
+    void reRegisteringAFilterWithANewHandlerReplacesItInPlace() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[ReRegistrationReplacesInPlace]");
+        clientConfig.setClientId("re-register");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        List<String> served = Collections.synchronizedList(new ArrayList<>(2));
+        MqttHandler handlerA = record(served, "A");
+        MqttHandler handlerB = record(served, "B");
+        MqttHandler handlerC = record(served, "C");
+
+        subscribe("sensors/a", handlerA);
+        subscribe("sensors/b", handlerB);
+
+        // WHEN - a caller re-registering after a reconnect passes a fresh handler instance
+        subscribe("sensors/a", handlerC);
+
+        // THEN
+        List<MqttSubscription> subscriptions = ((MqttClientImpl) client).getSubscriptions();
+        assertThat(subscriptions).hasSize(2);
+        assertThat(subscriptions.get(0).getTopic()).isEqualTo("sensors/a");
+        assertThat(subscriptions.get(0).getHandler()).isSameAs(handlerC);
+        assertThat(subscriptions.get(1).getTopic()).isEqualTo("sensors/b");
+
+        publish("sensors/a");
+
+        Awaitility.await("waiting for the message to be served")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> !served.isEmpty());
+        Awaitility.await("holding the assertion over a quiet period")
+                .during(Duration.ofMillis(500))
+                .atMost(Duration.ofSeconds(10L))
+                .untilAsserted(() -> assertThat(served).containsOnly("C"));
+    }
+
+    @Test
+    void offForOneTopicLeavesTheSameHandlersOtherTopicsRemovable() {
+        // GIVEN
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[OffLeavesOtherTopicsRemovable]");
+        clientConfig.setClientId("off-other-topics");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        List<String> served = Collections.synchronizedList(new ArrayList<>(1));
+        MqttHandler handler = record(served, "h");
+
+        subscribe("sensors/a", handler);
+        subscribe("sensors/b", handler);
+        assertThat(((MqttClientImpl) client).getSubscriptions()).hasSize(2);
+
+        // WHEN
+        unsubscribe("sensors/a", handler);
+        unsubscribe("sensors/b", handler);
+
+        // THEN
+        assertThat(((MqttClientImpl) client).getSubscriptions()).isEmpty();
     }
 
     @Test
@@ -215,6 +289,14 @@ class MqttSubscriptionRegistryTest {
                 .atMost(Duration.ofSeconds(10L))
                 .until(subscribeFuture::isDone);
         assertThat(subscribeFuture.isSuccess()).isTrue();
+    }
+
+    private void unsubscribe(String topicFilter, MqttHandler handler) {
+        Future<Void> unsubscribeFuture = client.off(topicFilter, handler);
+        Awaitility.await("waiting for client to unsubscribe from " + topicFilter)
+                .atMost(Duration.ofSeconds(10L))
+                .until(unsubscribeFuture::isDone);
+        assertThat(unsubscribeFuture.isSuccess()).isTrue();
     }
 
     private void publish(String topic) {

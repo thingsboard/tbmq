@@ -78,6 +78,11 @@ final class MqttClientImpl implements MqttClient {
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final CopyOnWriteArrayList<MqttSubscription> subscriptions = new CopyOnWriteArrayList<>();
+    /**
+     * Serialises every mutation of {@link #subscriptions}, so a replace-by-index can never interleave with a removal.
+     * Delivery iterates the copy-on-write snapshot and takes no lock.
+     */
+    private final Object registryLock = new Object();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingSubscription> pendingSubscriptions = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
@@ -294,7 +299,9 @@ final class MqttClientImpl implements MqttClient {
     public Future<Void> off(String topic, MqttHandler handler) {
         log.trace("[{}] Unsubscribing from {}", channel != null ? channel.id() : "UNKNOWN", topic);
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
-        this.subscriptions.removeIf(s -> s.getTopic().equals(topic) && s.getHandler().equals(handler));
+        synchronized (this.registryLock) {
+            this.subscriptions.removeIf(s -> s.getTopic().equals(topic) && s.getHandler().equals(handler));
+        }
         this.checkSubscriptions(topic, future);
         return future;
     }
@@ -310,7 +317,9 @@ final class MqttClientImpl implements MqttClient {
     public Future<Void> off(String topic) {
         log.trace("[{}] Unsubscribing from {}", channel != null ? channel.id() : "UNKNOWN", topic);
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
-        this.subscriptions.removeIf(s -> s.getTopic().equals(topic));
+        synchronized (this.registryLock) {
+            this.subscriptions.removeIf(s -> s.getTopic().equals(topic));
+        }
         this.checkSubscriptions(topic, future);
         return future;
     }
@@ -492,8 +501,7 @@ final class MqttClientImpl implements MqttClient {
             }
         }
         if (this.serverSubscriptions.contains(topic)) {
-            MqttSubscription subscription = new MqttSubscription(topic, handler);
-            this.subscriptions.addIfAbsent(subscription);
+            register(new MqttSubscription(topic, handler));
             return this.channel.newSucceededFuture();
         }
 
@@ -507,7 +515,7 @@ final class MqttClientImpl implements MqttClient {
         final var pendingSubscription = MqttPendingSubscription.builder()
                 .future(future)
                 .topic(topic)
-                .handlers(Sets.newHashSet(handler))
+                .handlers(Sets.newLinkedHashSet(Collections.singleton(handler))) // ordered: the last handler added wins on SUBACK
                 .subscribeMessage(message)
                 .ownerId(clientConfig.getOwnerId())
                 .retransmissionConfig(clientConfig.getRetransmissionConfig())
@@ -535,6 +543,22 @@ final class MqttClientImpl implements MqttClient {
         pendingSubscription.startRetransmitTimer(this.eventLoop.next(), this::sendAndFlushPacket);
 
         return future;
+    }
+
+    /**
+     * Registers {@code subscription}. A topic filter has at most one handler: when the filter is already registered its
+     * handler is replaced in place, keeping the filter's position in delivery order; otherwise the filter is appended.
+     */
+    void register(MqttSubscription subscription) {
+        synchronized (this.registryLock) {
+            for (int i = 0; i < this.subscriptions.size(); i++) {
+                if (this.subscriptions.get(i).getTopic().equals(subscription.getTopic())) {
+                    this.subscriptions.set(i, subscription);
+                    return;
+                }
+            }
+            this.subscriptions.add(subscription);
+        }
     }
 
     private void checkSubscriptions(String topic, Promise<Void> promise) {
