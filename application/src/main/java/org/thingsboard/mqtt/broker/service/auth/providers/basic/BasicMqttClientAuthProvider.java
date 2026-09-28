@@ -90,7 +90,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
             MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
             log.debug("[{}] Authenticated as {} with username {}", clientId, basicCredentials.getClientType(), username);
             BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
-            AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
+            AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials, clientId);
             return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns), basicCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);

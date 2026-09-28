@@ -27,7 +27,9 @@ import java.util.regex.PatternSyntaxException;
 public class AuthRulesUtil {
 
     public static final String COMMON_NAME_PLACEHOLDER = "${cn}";
+    public static final String CLIENT_ID_PLACEHOLDER = "${clientId}";
     public static final String DUMMY_CN = "tbmq.io";
+    public static final String DUMMY_CLIENT_ID = "tbmq-client";
     public static final String PUB_AUTH_RULE_PATTERNS_ERROR_MSG = "Publish auth rule patterns should be a valid regexes!";
     public static final String SUB_AUTH_RULE_PATTERNS_ERROR_MSG = "Subscribe auth rule patterns should be a valid regexes!";
 
@@ -37,10 +39,16 @@ public class AuthRulesUtil {
         compileAuthRules(authRules.getSubAuthRulePatterns(), SUB_AUTH_RULE_PATTERNS_ERROR_MSG);
     }
 
+    public static void validateAndCompileBasicAuthRules(PubSubAuthorizationRules authRules) {
+        checkNotNull(authRules);
+        compileAuthRules(replaceWithDummyValues(authRules.getPubAuthRulePatterns(), null), PUB_AUTH_RULE_PATTERNS_ERROR_MSG);
+        compileAuthRules(replaceWithDummyValues(authRules.getSubAuthRulePatterns(), null), SUB_AUTH_RULE_PATTERNS_ERROR_MSG);
+    }
+
     public static void validateAndCompileSslAuthRules(PubSubAuthorizationRules authRules) {
         checkNotNull(authRules);
-        compileAuthRules(replaceWithDummyCn(authRules.getPubAuthRulePatterns()), PUB_AUTH_RULE_PATTERNS_ERROR_MSG);
-        compileAuthRules(replaceWithDummyCn(authRules.getSubAuthRulePatterns()), SUB_AUTH_RULE_PATTERNS_ERROR_MSG);
+        compileAuthRules(replaceWithDummyValues(authRules.getPubAuthRulePatterns(), DUMMY_CN), PUB_AUTH_RULE_PATTERNS_ERROR_MSG);
+        compileAuthRules(replaceWithDummyValues(authRules.getSubAuthRulePatterns(), DUMMY_CN), SUB_AUTH_RULE_PATTERNS_ERROR_MSG);
     }
 
     public static List<Pattern> fromStringList(List<String> authRules) {
@@ -60,26 +68,34 @@ public class AuthRulesUtil {
         }
     }
 
-    private static List<String> replaceWithDummyCn(List<String> rules) {
+    private static List<String> replaceWithDummyValues(List<String> rules, String commonName) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
         return rules.stream()
-                .map(p -> processPattern(p, DUMMY_CN))
+                .map(p -> processPattern(p, commonName, DUMMY_CLIENT_ID))
                 .toList();
     }
 
     public static String processPattern(String pattern, String clientCommonName) {
+        return processPattern(pattern, clientCommonName, null);
+    }
+
+    public static String processPattern(String pattern, String clientCommonName, String clientId) {
         try {
-            return processVar(pattern, clientCommonName);
+            String result = processVar(pattern, COMMON_NAME_PLACEHOLDER, clientCommonName);
+            return processVar(result, CLIENT_ID_PLACEHOLDER, clientId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to process pattern!", e);
         }
     }
 
-    private static String processVar(String pattern, String value) {
+    private static String processVar(String pattern, String placeholder, String value) {
+        if (value == null) {
+            return pattern;
+        }
         String quoted = Pattern.quote(value);
-        return pattern.replace(COMMON_NAME_PLACEHOLDER, quoted);
+        return pattern.replace(placeholder, quoted);
     }
 
     private static void checkNotNull(PubSubAuthorizationRules authRules) {

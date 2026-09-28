@@ -50,6 +50,12 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
 
     @Override
     public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {
+        return parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName, null);
+    }
+
+    @Override
+    public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials,
+                                                            String clientCommonName, String clientId) throws AuthenticationException {
         SslMqttCredentials credentials = clientTypeSslMqttCredentials.getSslMqttCredentials();
         if (credentials == null) {
             throw new AuthenticationException(CAN_NOT_PARSE_SSL_CREDS.getErrorMsg());
@@ -63,7 +69,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(pubSubAuthRules -> newAuthRulePatterns(pubSubAuthRules, clientCommonName))
+                .map(pubSubAuthRules -> newAuthRulePatterns(pubSubAuthRules, clientCommonName, clientId))
                 .collect(Collectors.toList());
 
         if (authRulePatterns.isEmpty()) {
@@ -78,23 +84,28 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
 
     @Override
     public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException {
+        return parseAuthorizationRule(credentials, null);
+    }
+
+    @Override
+    public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials, String clientId) throws AuthenticationException {
         if (credentials == null) {
             throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
         }
-        return parsePubSubAuthorizationRule(credentials.getAuthRules());
+        return newAuthRulePatterns(credentials.getAuthRules(), null, clientId);
     }
 
-    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName) {
+    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName, String clientId) {
         return new AuthRulePatterns(
-                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName),
-                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName));
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName, clientId),
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName, clientId));
     }
 
-    private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName) {
+    private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName, String clientId) {
         return CollectionUtils.isEmpty(authRulePatterns) ? Collections.emptyList() :
                 authRulePatterns
                         .stream()
-                        .map(pattern -> AuthRulesUtil.processPattern(pattern, clientCommonName))
+                        .map(pattern -> AuthRulesUtil.processPattern(pattern, clientCommonName, clientId))
                         .map(Pattern::compile)
                         .collect(Collectors.toList());
     }

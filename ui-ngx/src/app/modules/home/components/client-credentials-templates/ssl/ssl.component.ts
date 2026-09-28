@@ -55,6 +55,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   credentialsMqttFormGroup: UntypedFormGroup;
   certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
   certificateCnLabel = 'mqtt-client-credentials.certificate-common-name';
+  clientIdHint = 'mqtt-client-credentials.hint-client-id-pattern';
+  clientIdLabel = 'mqtt-client-credentials.client-id-pattern';
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
@@ -63,6 +65,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     this.credentialsMqttFormGroup = this.fb.group({
       certCnPattern: [null, [Validators.required]],
       certCnIsRegex: [false],
+      clientIdPattern: [null],
+      clientIdIsRegex: [false],
       authRulesMapping: [null]
     });
   }
@@ -107,6 +111,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     if (isDefinedAndNotNull(mqttSsl) && !isEmptyStr(mqttSsl)) {
       const value = JSON.parse(mqttSsl);
       this.updateCertificateCnView(value?.certCnIsRegex);
+      this.updateClientIdView(value?.clientIdIsRegex);
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
@@ -114,6 +119,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   updateView(value: SslMqttCredentials) {
     const formValue = JSON.stringify(value);
     this.updateCertificateCnView(value?.certCnIsRegex);
+    this.updateClientIdView(value?.clientIdIsRegex);
     this.propagateChange(formValue);
   }
 
@@ -124,6 +130,16 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     } else {
       this.certificateCnLabel = 'mqtt-client-credentials.certificate-common-name';
       this.certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
+    }
+  }
+
+  private updateClientIdView(value: boolean = false) {
+    if (value) {
+      this.clientIdLabel = 'mqtt-client-credentials.client-id-regex-label';
+      this.clientIdHint = 'mqtt-client-credentials.hint-client-id-regex';
+    } else {
+      this.clientIdLabel = 'mqtt-client-credentials.client-id-pattern';
+      this.clientIdHint = 'mqtt-client-credentials.hint-client-id-pattern';
     }
   }
 }

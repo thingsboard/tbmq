@@ -111,7 +111,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                         clientId, clientTypeSslMqttCredentials.getType(), protocol);
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
-            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
+            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(
+                    clientTypeSslMqttCredentials, clientCommonName, clientId);
             return AuthResponse.sslSuccess(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName(), clientCommonName);
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
@@ -174,7 +175,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             if (!regexCreds.isEmpty()) {
                 for (var creds : regexCreds) {
                     Pattern pattern = Pattern.compile(creds.getSslMqttCredentials().getCertCnPattern());
-                    if (pattern.matcher(commonName).find()) {
+                    if (pattern.matcher(commonName).find() && creds.getSslMqttCredentials().matchesClientId(clientId)) {
                         return creds;
                     }
                 }
@@ -185,7 +186,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             if (!matchingCredentials.isEmpty()) {
                 MqttClientCredentials mqttClientCredentials = matchingCredentials.get(0);
                 SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
+                if (sslMqttCredentials.matchesClientId(clientId)) {
+                    return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
+                }
             }
         }
         return null;

@@ -27,7 +27,12 @@ public interface AuthorizationRuleService {
 
     List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException;
 
+    List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials,
+                                                     String clientCommonName, String clientId) throws AuthenticationException;
+
     AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException;
+
+    AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials, String clientId) throws AuthenticationException;
 
     AuthRulePatterns parsePubSubAuthorizationRule(PubSubAuthorizationRules pubSubAuthRules);
 

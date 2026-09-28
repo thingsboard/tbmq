@@ -77,6 +77,8 @@ export interface ClientCredentials extends BaseData {
 export interface SslMqttCredentials extends SslAuthRulesMapping {
   certCnPattern: string;
   certCnIsRegex: boolean;
+  clientIdPattern?: string;
+  clientIdIsRegex?: boolean;
 }
 
 export interface SslAuthRulesMapping {
