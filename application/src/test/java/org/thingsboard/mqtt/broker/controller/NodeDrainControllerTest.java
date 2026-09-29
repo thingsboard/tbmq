@@ -22,11 +22,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainState;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainStatus;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,12 +43,15 @@ public class NodeDrainControllerTest {
 
     @Mock
     private NodeDrainService nodeDrainService;
+    @Mock
+    private ServiceInfoProvider serviceInfoProvider;
     @InjectMocks
     private NodeDrainController controller;
     private MockMvc mockMvc;
 
     @Before
     public void beforeTest() {
+        lenient().when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
         mockMvc = standaloneSetup(controller).build();
     }
 
@@ -53,7 +59,8 @@ public class NodeDrainControllerTest {
     public void givenActiveNode_whenStartDrain_thenReturnsDrainStatus() throws Exception {
         when(nodeDrainService.startDrain()).thenReturn(drainStatus(NodeDrainState.DRAINING, 42, 42));
 
-        mockMvc.perform(post(NodeDrainController.DRAIN_PATH))
+        mockMvc.perform(post(NodeDrainController.DRAIN_PATH)
+                        .param("expectedServiceId", "service-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("DRAINING"))
                 .andExpect(jsonPath("$.serviceId").value("service-1"))
@@ -67,12 +74,30 @@ public class NodeDrainControllerTest {
     public void givenDrainInProgress_whenCancelDrain_thenReturnsActiveStatus() throws Exception {
         when(nodeDrainService.cancelDrain()).thenReturn(drainStatus(NodeDrainState.ACTIVE, 0, 7));
 
-        mockMvc.perform(delete(NodeDrainController.DRAIN_PATH))
+        mockMvc.perform(delete(NodeDrainController.DRAIN_PATH)
+                        .param("expectedServiceId", "service-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("ACTIVE"))
                 .andExpect(jsonPath("$.serviceId").value("service-1"));
 
         verify(nodeDrainService).cancelDrain();
+    }
+
+    @Test
+    public void givenWrongTarget_whenStartDrain_thenRejectsWithoutStarting() throws Exception {
+        mockMvc.perform(post(NodeDrainController.DRAIN_PATH)
+                        .param("expectedServiceId", "service-2"))
+                .andExpect(status().isPreconditionFailed());
+
+        verifyNoInteractions(nodeDrainService);
+    }
+
+    @Test
+    public void givenMissingTarget_whenStartDrain_thenReturnsBadRequest() throws Exception {
+        mockMvc.perform(post(NodeDrainController.DRAIN_PATH))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(nodeDrainService);
     }
 
     @Test
