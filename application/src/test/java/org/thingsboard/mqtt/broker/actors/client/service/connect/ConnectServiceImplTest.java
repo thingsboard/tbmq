@@ -167,15 +167,18 @@ public class ConnectServiceImplTest {
     }
 
     @Test
-    public void givenNodeDraining_whenAcceptConnection_thenRefusesAndDoesNotRegisterSession() {
+    public void givenDrainStartedAfterClusterConnect_whenAcceptConnection_thenCompletesConnectionForDrainBatch() {
+        // The session is already reserved cluster-wide: refusing it here would tear it down before its persisted
+        // QoS 2 state is loaded and overwrite that state with an empty set. The drain batch disconnects it instead.
         when(nodeDrainService.isDraining()).thenReturn(true);
+        when(actorState.getQueuedMessages()).thenReturn(mock(QueuedMqttMessages.class));
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         connectService.acceptConnection(actorState, getConnectionAcceptedMsg(null), mock(TbActorRef.class));
 
-        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE_5);
-        verify(clientMqttActorManager).disconnect(any(), any());
-        verify(clientSessionCtxService, never()).registerSession(any());
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(clientSessionCtxService).registerSession(eq(ctx));
+        verify(msgPersistenceManager).startProcessingPersistedMessages(eq(actorState));
     }
 
     @Test

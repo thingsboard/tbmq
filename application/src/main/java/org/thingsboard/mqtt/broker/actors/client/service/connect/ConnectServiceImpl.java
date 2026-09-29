@@ -209,10 +209,6 @@ public class ConnectServiceImpl implements ConnectService {
     @Override
     public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg, TbActorRef actorRef) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        if (nodeDrainService.isDraining()) {
-            refuseConnection(sessionCtx, SERVER_UNAVAILABLE, null);
-            return;
-        }
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 
         lastWillService.cancelLastWillDelayIfScheduled(sessionCtx.getClientId());
