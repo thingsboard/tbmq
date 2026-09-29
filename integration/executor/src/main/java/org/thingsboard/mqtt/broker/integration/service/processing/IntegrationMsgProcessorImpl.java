@@ -330,6 +330,13 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                     }
                     IntegrationPackProcessingResult<T> result = new IntegrationPackProcessingResult<>(ctx);
                     ctx.cleanup();
+                    if (isStopRequested(holder) && !(result.getPendingMap().isEmpty() && result.getFailedMap().isEmpty())) {
+                        // the stop failed or cut short part of this pack: committing it would lose those messages
+                        // under SKIP_ALL, so leave it for the next consumer of the topic (redelivery, at least once)
+                        log.info("[{}] IE {} consumer stopped with {} failed and {} pending in the current pack; leaving it uncommitted",
+                                holder.getIntegrationId(), kind, result.getFailedMap().size(), result.getPendingMap().size());
+                        break;
+                    }
                     IntegrationProcessingDecision<T> decision = ackStrategy.analyze(result);
 
                     if (stats != null) {
@@ -359,8 +366,23 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         log.info("[{}] IE {} consumer stopped.", holder.getIntegrationId(), kind);
     }
 
+    @Override
+    public long getPackProcessingTimeoutMs() {
+        return packProcessingTimeout;
+    }
+
+    @Override
+    public long getEventPackProcessingTimeoutMs() {
+        return eventPackProcessingTimeout;
+    }
+
     private boolean isProcessorActive(IntegrationHolder integrationHolder) {
         return !stopped && !Thread.interrupted() && !integrationHolder.isStopped();
+    }
+
+    /** Unlike isProcessorActive(), leaves the thread's interrupt status alone. */
+    private boolean isStopRequested(IntegrationHolder integrationHolder) {
+        return stopped || integrationHolder.isStopped();
     }
 
     private void stopIntegrationCancelTask(IntegrationHolder integration) {
