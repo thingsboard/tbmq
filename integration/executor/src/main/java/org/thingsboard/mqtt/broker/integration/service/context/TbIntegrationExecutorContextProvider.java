@@ -49,6 +49,8 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
 
     @Value("${integrations.init.connection-timeout-sec:10}")
     private int integrationConnectTimeoutSec;
+    @Value("${integrations.allow-local-network-hosts:true}")
+    private boolean allowLocalNetworkHosts;
 
     @Override
     public IntegrationContext buildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg) {
@@ -61,7 +63,7 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     }
 
     private IntegrationContext doBuildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg, BasicCallback callback) {
-        return new IntegrationExecutorContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(),
+        return new IntegrationExecutorContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(), allowLocalNetworkHosts,
                 logSettingsComponent, sharedEventLoopGroupService, eventStorageService, rateLimitService,
                 serviceInfoProvider.getServiceId(), callback, externalCallExecutorService, integrationConnectTimeoutSec);
     }

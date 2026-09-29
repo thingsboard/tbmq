@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.api.util.ExceptionUtil;
 import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -148,14 +149,17 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         context.startProcessingIntegrationMessages(integration);
     }
 
+    /**
+     * The consumer is stopped before the client: otherwise it keeps polling while doStopClient() drains or closes,
+     * every message of those packs fails with "not initialized", and SKIP_ALL commits them away.
+     */
     protected void stopProcessingPersistedMessages() {
-        doStopClient();
-
         if (lifecycleMsg == null) {
             log.debug("[{}] Integration was not initialized properly. Skip stopProcessingPersistedMessages", this.getClass());
-            return;
+        } else {
+            context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
         }
-        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
+        doStopClient();
     }
 
     protected void clearIntegrationMessages() {
@@ -374,17 +378,21 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     }
 
-    protected static boolean isLocalNetworkHost(String host) {
+    public static boolean isLocalNetworkHost(String host) {
         try {
-            InetAddress address = InetAddress.getByName(host);
-            if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress() ||
-                    address.isSiteLocalAddress()) {
-                return true;
-            }
+            return isLocalNetworkAddress(InetAddress.getByName(host));
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Unable to resolve provided hostname: " + host);
         }
-        return false;
+    }
+
+    /**
+     * Also IPv6 unique-local fc00::/7 (the private range most IPv6 and dual-stack networks use):
+     * InetAddress.isSiteLocalAddress() only knows the deprecated fec0::/10.
+     */
+    public static boolean isLocalNetworkAddress(InetAddress address) {
+        return address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress() || (address instanceof Inet6Address && (address.getAddress()[0] & 0xfe) == 0xfc);
     }
 
     protected String toString(Throwable e) {
