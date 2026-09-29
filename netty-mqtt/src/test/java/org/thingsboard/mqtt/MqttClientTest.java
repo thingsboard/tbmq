@@ -849,19 +849,23 @@ class MqttClientTest {
         AtomicReference<Thread> listenerThread = new AtomicReference<>();
         AtomicBoolean pendingWhenListenerRan = new AtomicBoolean(true);
         AtomicReference<Future<Void>> second = new AtomicReference<>();
+        // counted down however the listener ends: a promise is done before it notifies its listeners
+        CountDownLatch listenerRan = new CountDownLatch(1);
         trigger.addListener(f -> {
-            listenerThread.set(Thread.currentThread());
-            pendingWhenListenerRan.set(pendingPublishes.containsKey(triggerId));
-            second.set(client.publish("puback-inline/second", new TrackedByteBuf("second"), MqttQoS.AT_LEAST_ONCE));
+            try {
+                listenerThread.set(Thread.currentThread());
+                pendingWhenListenerRan.set(pendingPublishes.containsKey(triggerId));
+                second.set(client.publish("puback-inline/second", new TrackedByteBuf("second"), MqttQoS.AT_LEAST_ONCE));
+            } finally {
+                listenerRan.countDown();
+            }
         });
 
         // WHEN
         proxy.sendToClient(withheldPuback.get());
 
         // THEN
-        Awaitility.await("waiting for the trigger to be acknowledged")
-                .atMost(Duration.ofSeconds(10L))
-                .until(trigger::isDone);
+        awaitLatch(listenerRan, "waiting for the trigger's listener to run");
         assertThat(trigger.isSuccess()).isTrue();
         assertThat(clientEventLoop.next().inEventLoop(listenerThread.get()))
                 .describedAs("the listener ran inline on the loop that handled the PUBACK").isTrue();
