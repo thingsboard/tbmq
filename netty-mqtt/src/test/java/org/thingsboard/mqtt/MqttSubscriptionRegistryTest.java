@@ -18,8 +18,10 @@ package org.thingsboard.mqtt;
 import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
@@ -47,6 +49,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -463,6 +466,49 @@ class MqttSubscriptionRegistryTest {
                 .during(Duration.ofMillis(500))
                 .atMost(Duration.ofSeconds(10L))
                 .untilAsserted(() -> assertThat(served).containsOnly("C"));
+    }
+
+    @Test
+    void aHandlerGetsThePublishAsTheBrokerSentIt() {
+        // GIVEN - a retained QoS 1 message, which the broker sends a new subscription with the retain flag set
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[HandlerGetsWholePublish]");
+        clientConfig.setClientId("whole-publish");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
+
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), broker.getMqttPort());
+
+        String topic = "sensors/room1/temperature";
+        ByteBuf retained = PooledByteBufAllocator.DEFAULT.buffer().writeBytes("21.5".getBytes(StandardCharsets.UTF_8));
+        Future<Void> publishFuture = client.publish(topic, retained, MqttQoS.AT_LEAST_ONCE, true);
+        awaitDone(publishFuture);
+        assertThat(publishFuture.isSuccess()).isTrue();
+
+        // the headers are plain objects, but the payload is only valid until the handler's future completes
+        AtomicReference<MqttFixedHeader> fixedHeader = new AtomicReference<>();
+        AtomicReference<MqttPublishVariableHeader> variableHeader = new AtomicReference<>();
+        AtomicReference<String> payload = new AtomicReference<>();
+        MqttHandler handler = msg -> {
+            fixedHeader.set(msg.fixedHeader());
+            variableHeader.set(msg.variableHeader());
+            payload.set(msg.payload().toString(StandardCharsets.UTF_8));
+            return Futures.immediateVoidFuture();
+        };
+
+        // WHEN - subscribed through a wildcard filter, at a QoS above the message's
+        Future<MqttQoS> subscribeFuture = client.on("sensors/+/temperature", handler, MqttQoS.EXACTLY_ONCE);
+        awaitDone(subscribeFuture);
+        assertThat(subscribeFuture.isSuccess()).isTrue();
+
+        // THEN
+        Awaitility.await("waiting for the retained message to be served")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> payload.get() != null);
+        assertThat(fixedHeader.get().qosLevel()).describedAs("the QoS the broker sent it at").isEqualTo(MqttQoS.AT_LEAST_ONCE);
+        assertThat(fixedHeader.get().isRetain()).describedAs("the retain flag the broker set").isTrue();
+        assertThat(variableHeader.get().topicName()).describedAs("the PUBLISH's topic, not the filter it matched").isEqualTo(topic);
+        assertThat(payload.get()).isEqualTo("21.5");
     }
 
     /**
