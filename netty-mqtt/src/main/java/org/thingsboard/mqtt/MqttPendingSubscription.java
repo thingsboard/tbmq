@@ -36,6 +36,11 @@ final class MqttPendingSubscription {
      */
     private volatile MqttHandler handler;
     private final MqttSubscribeMessage subscribeMessage;
+    /**
+     * The client's latest connect attempt when this was made, 0 before the first: giving up on that attempt or a later
+     * one fails this while it still waits for a connection, whereas giving up on an earlier one spares it.
+     */
+    private final int connectAttempt;
 
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttSubscribeMessage> retransmissionHandler;
@@ -48,6 +53,7 @@ final class MqttPendingSubscription {
             String topic,
             MqttHandler handler,
             MqttSubscribeMessage subscribeMessage,
+            int connectAttempt,
             String ownerId,
             MqttClientConfig.RetransmissionConfig retransmissionConfig,
             PendingOperation operation
@@ -56,6 +62,7 @@ final class MqttPendingSubscription {
         this.topic = topic;
         this.handler = handler;
         this.subscribeMessage = subscribeMessage;
+        this.connectAttempt = connectAttempt;
 
         retransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, operation, ownerId);
         retransmissionHandler.setOriginalMessage(subscribeMessage);
@@ -116,6 +123,7 @@ final class MqttPendingSubscription {
         private String topic;
         private MqttHandler handler;
         private MqttSubscribeMessage subscribeMessage;
+        private int connectAttempt;
         private String ownerId;
         private PendingOperation pendingOperation;
         private MqttClientConfig.RetransmissionConfig retransmissionConfig;
@@ -140,6 +148,11 @@ final class MqttPendingSubscription {
             return this;
         }
 
+        Builder connectAttempt(int connectAttempt) {
+            this.connectAttempt = connectAttempt;
+            return this;
+        }
+
         Builder ownerId(String ownerId) {
             this.ownerId = ownerId;
             return this;
@@ -156,7 +169,7 @@ final class MqttPendingSubscription {
         }
 
         MqttPendingSubscription build() {
-            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, ownerId, retransmissionConfig, pendingOperation);
+            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, connectAttempt, ownerId, retransmissionConfig, pendingOperation);
         }
 
     }

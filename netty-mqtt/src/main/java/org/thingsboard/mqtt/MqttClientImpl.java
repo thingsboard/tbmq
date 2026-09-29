@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Represents an MqttClientImpl connected to a single MQTT server. Will try to keep the connection going at all times
@@ -118,11 +119,17 @@ final class MqttClientImpl implements MqttClient {
 
     private volatile boolean disconnected = false;
     /**
-     * Whether a connection is still to come for a SUBSCRIBE made while the client is not connected, which waits for
-     * that connection's CONNACK resend: cleared when a connect fails or a channel closes with no reconnect scheduled,
-     * and set again by the next connect(). A client not connected yet expects its first connect().
+     * Numbers the connect attempts - every connect(), a scheduled reconnect's included - so that giving up on one spares
+     * what waits for a later one. 0 until the first.
      */
-    private volatile boolean connectionExpected = true;
+    private final AtomicInteger connectAttempts = new AtomicInteger();
+    /**
+     * The latest connect attempt no connection follows: its connect failed, or its channel closed, with no reconnect
+     * scheduled and no connect() started since. A SUBSCRIBE made while the client is not connected waits for the
+     * CONNACK resend of the next connection, and fails at once when the attempt it was made in is given up on already.
+     * -1 while none is, so that one made before the first connect() waits for it.
+     */
+    private final AtomicInteger abandonedConnectAttempt = new AtomicInteger(-1);
     @Getter
     private volatile boolean reconnect = false;
     private String host;
@@ -191,8 +198,8 @@ final class MqttClientImpl implements MqttClient {
         }
         this.host = host;
         this.port = port;
-        // before the TCP connect starts, as its failure may clear it again before this method returns
-        this.connectionExpected = true;
+        // before the TCP connect starts, as its failure may give up on this attempt before this method returns
+        final int attempt = connectAttempts.incrementAndGet();
         Promise<MqttConnectResult> connectFuture = new DefaultPromise<>(this.eventLoop.next());
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(this.eventLoop);
@@ -209,7 +216,7 @@ final class MqttClientImpl implements MqttClient {
                 // completing after it would otherwise leave a live session that nobody holds a reference to.
                 MqttClientImpl.this.channel = f.channel();
                 // Before the re-check, so that closing a channel connected after disconnect() fails what waits for it too
-                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> onChannelClosed(host, port));
+                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> onChannelClosed(host, port, attempt));
                 if (disconnected) {
                     log.debug("[{}][{}] Connected after disconnect(); closing channel {}", host, port, f.channel().id());
                     f.channel().close();
@@ -220,10 +227,9 @@ final class MqttClientImpl implements MqttClient {
                 log.debug("[{}][{}] Connect failed, trying reconnect!", host, port);
                 boolean reconnectScheduled = scheduleConnectIfRequired(host, port, reconnect);
                 if (!reconnectScheduled) {
-                    // no connection is coming to send them on; failed before the connect future, so that a listener
-                    // on it retrying connect() keeps the subscriptions it makes for the retry
-                    connectionExpected = false;
-                    failPendingSubscriptions(new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
+                    // no connection is coming to send them on; given up before the connect future fails, so that a
+                    // listener on it retrying connect() keeps the subscriptions it makes for the retry
+                    giveUpConnectAttempt(attempt, new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
                 }
                 connectFuture.tryFailure(f.cause());
             }
@@ -235,10 +241,10 @@ final class MqttClientImpl implements MqttClient {
      * The close cleanup of a channel. Clears the plain state first, then drains the pending operations, so the
      * listeners that completing them runs - which may subscribe or publish again - find the client fully cleaned up.
      * The callback's {@code connectionLost} runs after that, for the same reason, and the reconnect is scheduled last,
-     * so a listener or callback that calls {@link #disconnect()} inline stops it. With no reconnect to schedule, what
-     * they subscribed meanwhile is failed then, since no connection will send it.
+     * so a listener or callback that calls {@link #disconnect()} inline stops it. With no reconnect to schedule, the
+     * attempt that opened the channel is given up on then, unless one of them started another connect.
      */
-    private void onChannelClosed(String host, int port) {
+    private void onChannelClosed(String host, int port, int attempt) {
         if (isConnected()) {
             return;
         }
@@ -253,10 +259,25 @@ final class MqttClientImpl implements MqttClient {
             callback.connectionLost(new ChannelClosedException("Channel is closed!"));
         }
         if (!scheduleConnectIfRequired(host, port, true)) {
-            // cleared before the sweep, so an on() that the sweep misses finds it cleared and fails itself
-            connectionExpected = false;
-            failPendingSubscriptions(new ChannelClosedException("Channel is closed and no reconnect is scheduled"));
+            giveUpConnectAttempt(attempt, new ChannelClosedException("Channel is closed and no reconnect is scheduled"));
         }
+    }
+
+    /**
+     * Gives up on connect attempt {@code attempt}, whose connect failed or whose channel closed with no reconnect
+     * scheduled, failing the subscriptions made in it or an earlier one that still wait for a connection. A no-op once a
+     * later connect() has started - from a connectionLost callback or a connect future's listener, say - as what is
+     * pending then waits for that one; a subscription made in a later attempt is spared either way, so a connect()
+     * racing this loses none of the subscriptions made for it.
+     */
+    private void giveUpConnectAttempt(int attempt, Throwable cause) {
+        if (connectAttempts.get() != attempt) {
+            return;
+        }
+        // before the sweep, so that an on() the sweep misses finds its attempt given up on and fails itself; a max, as
+        // a later attempt may have been given up on meanwhile
+        abandonedConnectAttempt.accumulateAndGet(attempt, Math::max);
+        failPendingSubscriptions(cause, attempt);
     }
 
     /**
@@ -265,9 +286,16 @@ final class MqttClientImpl implements MqttClient {
      * completion, whereas a live view might or might not reach it.
      */
     private static <V> void drain(Map<Integer, V> map, Consumer<V> onRemoved) {
+        drain(map, v -> true, onRemoved);
+    }
+
+    /**
+     * {@link #drain(Map, Consumer)}, of only the entries {@code filter} accepts.
+     */
+    private static <V> void drain(Map<Integer, V> map, Predicate<V> filter, Consumer<V> onRemoved) {
         for (Integer id : List.copyOf(map.keySet())) {
-            V v = map.remove(id);
-            if (v != null) {
+            V v = map.get(id);
+            if (v != null && filter.test(v) && map.remove(id, v)) {
                 onRemoved.accept(v);
             }
         }
@@ -297,10 +325,19 @@ final class MqttClientImpl implements MqttClient {
      * path completes it too.
      */
     private void failPendingSubscriptions(Throwable cause) {
-        drain(pendingSubscriptions, pendingSubscription -> {
-            pendingSubscribeTopics.remove(pendingSubscription.getTopic());
-            pendingSubscription.fail(cause);
-        });
+        failPendingSubscriptions(cause, Integer.MAX_VALUE);
+    }
+
+    /**
+     * {@link #failPendingSubscriptions(Throwable)}, of only the subscriptions made in connect attempt
+     * {@code upToAttempt} or an earlier one.
+     */
+    private void failPendingSubscriptions(Throwable cause, int upToAttempt) {
+        drain(pendingSubscriptions, pendingSubscription -> pendingSubscription.getConnectAttempt() <= upToAttempt,
+                pendingSubscription -> {
+                    pendingSubscribeTopics.remove(pendingSubscription.getTopic());
+                    pendingSubscription.fail(cause);
+                });
     }
 
     @Override
@@ -678,6 +715,8 @@ final class MqttClientImpl implements MqttClient {
             return this.eventLoop.next().newSucceededFuture(grantedQos);
         }
 
+        // read first: a connect() started from here on is one this subscription may wait for
+        final int attempt = connectAttempts.get();
         Promise<MqttQoS> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
         MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
@@ -690,6 +729,7 @@ final class MqttClientImpl implements MqttClient {
                 .topic(topic)
                 .handler(handler)
                 .subscribeMessage(message)
+                .connectAttempt(attempt)
                 .ownerId(clientConfig.getOwnerId())
                 .retransmissionConfig(clientConfig.getRetransmissionConfig())
                 .pendingOperation(new PendingOperation() {
@@ -727,10 +767,10 @@ final class MqttClientImpl implements MqttClient {
                 this.sendAndFlushPacket(ch, message);
                 pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
             }
-        } else if (!this.connectionExpected) {
-            // no next connection will resend it; read after the entry was added, while whoever clears the flag sweeps
-            // the pending subscriptions after clearing it, so at least one of the two finds the other's write
-            failPendingSubscriptions(new ChannelClosedException("Client is not connected and no reconnect is scheduled"));
+        } else if (this.abandonedConnectAttempt.get() >= attempt) {
+            // no next connection will resend it; read after the entry was added, while whoever gives up on an attempt
+            // sweeps the pending subscriptions after marking it, so at least one of the two finds the other's write
+            failPendingSubscriptions(new ChannelClosedException("Client is not connected and no reconnect is scheduled"), attempt);
         }
 
         return future;

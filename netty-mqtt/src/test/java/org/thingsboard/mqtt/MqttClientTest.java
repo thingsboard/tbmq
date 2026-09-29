@@ -1118,6 +1118,54 @@ class MqttClientTest {
     }
 
     @Test
+    void testSubscribeAfterReconnectFromConnectionLostWithoutAutoReconnectIsSent() {
+        // GIVEN
+        // reconnect off; the retransmission, 30 s out, cannot be what sends the SUBSCRIBE within the bound below
+        var clientConfig = newConfig("Test[ManualReconnectOnConnectionLost]", "manual-reconnect");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+
+        // the callback reconnects by hand, then restores its subscription while that connect is in flight
+        String topic = "manual-reconnect";
+        AtomicReference<Future<MqttQoS>> resubscribe = new AtomicReference<>();
+        client.setCallback(new MqttClientCallback() {
+            @Override
+            public void connectionLost(Throwable cause) {
+                client.reconnect();
+                resubscribe.set(client.on(topic, msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE));
+            }
+
+            @Override
+            public void onSuccessfulReconnect() {
+            }
+        });
+        // notified after the client's own close listener, which was added first: this records the state it left
+        Channel channel = connectFuture.getNow().getCloseFuture().channel();
+        AtomicBoolean resubscribeDone = new AtomicBoolean(true);
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        channel.closeFuture().addListener(f -> {
+            resubscribeDone.set(resubscribe.get() == null || resubscribe.get().isDone());
+            closeCleanedUp.countDown();
+        });
+
+        // WHEN
+        channel.close();
+
+        // THEN
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+        assertThat(resubscribe.get()).describedAs("connectionLost re-subscribed").isNotNull();
+        assertThat(resubscribeDone.get()).describedAs("re-subscribe completed by the cleanup it was made in").isFalse();
+        Awaitility.await("waiting for the re-subscribe to be granted on the new connection")
+                .atMost(Duration.ofSeconds(10L))
+                .until(resubscribe.get()::isDone);
+        assertThat(resubscribe.get().isSuccess()).describedAs("re-subscribe granted, cause %s", resubscribe.get().cause()).isTrue();
+    }
+
+    @Test
     void testSubscribeDuringReconnectDelayIsSentOnReconnect() {
         // GIVEN
         proxy = MqttTestProxy.builder()
