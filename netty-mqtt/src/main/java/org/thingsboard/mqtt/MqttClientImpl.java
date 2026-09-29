@@ -117,6 +117,12 @@ final class MqttClientImpl implements MqttClient {
     private volatile Channel channel;
 
     private volatile boolean disconnected = false;
+    /**
+     * Whether a connection is still to come for a SUBSCRIBE made while the client is not connected, which waits for
+     * that connection's CONNACK resend: cleared when a connect fails or a channel closes with no reconnect scheduled,
+     * and set again by the next connect(). A client not connected yet expects its first connect().
+     */
+    private volatile boolean connectionExpected = true;
     @Getter
     private volatile boolean reconnect = false;
     private String host;
@@ -185,6 +191,8 @@ final class MqttClientImpl implements MqttClient {
         }
         this.host = host;
         this.port = port;
+        // before the TCP connect starts, as its failure may clear it again before this method returns
+        this.connectionExpected = true;
         Promise<MqttConnectResult> connectFuture = new DefaultPromise<>(this.eventLoop.next());
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(this.eventLoop);
@@ -214,6 +222,7 @@ final class MqttClientImpl implements MqttClient {
                 if (!reconnectScheduled) {
                     // no connection is coming to send them on; failed before the connect future, so that a listener
                     // on it retrying connect() keeps the subscriptions it makes for the retry
+                    connectionExpected = false;
                     failPendingSubscriptions(new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
                 }
                 connectFuture.tryFailure(f.cause());
@@ -226,7 +235,8 @@ final class MqttClientImpl implements MqttClient {
      * The close cleanup of a channel. Clears the plain state first, then drains the pending operations, so the
      * listeners that completing them runs - which may subscribe or publish again - find the client fully cleaned up.
      * The callback's {@code connectionLost} runs after that, for the same reason, and the reconnect is scheduled last,
-     * so a listener or callback that calls {@link #disconnect()} inline stops it.
+     * so a listener or callback that calls {@link #disconnect()} inline stops it. With no reconnect to schedule, what
+     * they subscribed meanwhile is failed then, since no connection will send it.
      */
     private void onChannelClosed(String host, int port) {
         if (isConnected()) {
@@ -242,7 +252,11 @@ final class MqttClientImpl implements MqttClient {
         if (callback != null) {
             callback.connectionLost(new ChannelClosedException("Channel is closed!"));
         }
-        scheduleConnectIfRequired(host, port, true);
+        if (!scheduleConnectIfRequired(host, port, true)) {
+            // cleared before the sweep, so an on() that the sweep misses finds it cleared and fails itself
+            connectionExpected = false;
+            failPendingSubscriptions(new ChannelClosedException("Channel is closed and no reconnect is scheduled"));
+        }
     }
 
     /**
@@ -332,8 +346,9 @@ final class MqttClientImpl implements MqttClient {
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
-     * the retransmissions run out
+     * connection closes or the client disconnects before the SUBACK, or when the client is not connected and no connect
+     * is in flight or scheduled to send the SUBSCRIBE, or {@link MaxRetransmissionsReachedException} when the
+     * retransmissions run out
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler) {
@@ -349,8 +364,9 @@ final class MqttClientImpl implements MqttClient {
      *                is in flight
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
-     * the retransmissions run out
+     * connection closes or the client disconnects before the SUBACK, or when the client is not connected and no connect
+     * is in flight or scheduled to send the SUBSCRIBE, or {@link MaxRetransmissionsReachedException} when the
+     * retransmissions run out
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos) {
@@ -700,11 +716,17 @@ final class MqttClientImpl implements MqttClient {
             return future;
         }
         final Channel ch = this.channel;
-        // sent only when written to an active channel: a write to a channel that closed is refused, and the SUBSCRIBE
-        // is left to the CONNACK resend of the next connection, which skips one counted as sent
-        if (ch != null && ch.isActive() && pendingSubscription.markSent()) {
-            this.sendAndFlushPacket(ch, message);
-            pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
+        if (ch != null && ch.isActive()) {
+            // sent only when written to an active channel: a write to a channel that closed is refused, and the
+            // SUBSCRIBE is left to the CONNACK resend of the next connection, which skips one counted as sent
+            if (pendingSubscription.markSent()) {
+                this.sendAndFlushPacket(ch, message);
+                pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
+            }
+        } else if (!this.connectionExpected) {
+            // no next connection will resend it; read after the entry was added, while whoever clears the flag sweeps
+            // the pending subscriptions after clearing it, so at least one of the two finds the other's write
+            failPendingSubscriptions(new ChannelClosedException("Client is not connected and no reconnect is scheduled"));
         }
 
         return future;

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -1039,6 +1040,77 @@ class MqttClientTest {
                 .atMost(Duration.ofSeconds(5L))
                 .until(subscribeFuture::isDone);
         assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testSubscribeAfterConnectionLostWithoutReconnectFails() {
+        // GIVEN
+        proxy = MqttTestProxy.builder()
+                .localPort(randomPort)
+                .brokerHost(broker.getHost())
+                .brokerPort(broker.getMqttPort())
+                .build();
+
+        // reconnect off; the retransmission, 30 s out, cannot be what fails the subscribe within the bound below
+        var clientConfig = newConfig("Test[SubscribeAfterConnectionLost]", "sub-after-conn-lost");
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), proxy.getPort());
+        Awaitility.await("waiting for client to connect")
+                .atMost(Duration.ofSeconds(10L))
+                .until(connectFuture::isSuccess);
+        // notified after the client's own close listener, which was added first
+        CountDownLatch closeCleanedUp = new CountDownLatch(1);
+        connectFuture.getNow().getCloseFuture().addListener(f -> closeCleanedUp.countDown());
+        proxy.stop();
+        awaitLatch(closeCleanedUp, "waiting for the close cleanup to run");
+
+        // WHEN
+        // made while the client still holds the channel that closed, with no reconnect to send it
+        Future<MqttQoS> subscribeFuture = client.on("sub-after-conn-lost", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+
+        // THEN
+        Awaitility.await("waiting for the subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(subscribeFuture::isDone);
+        assertThat(subscribeFuture.cause()).isInstanceOf(ChannelClosedException.class);
+    }
+
+    @Test
+    void testSubscribeAfterFailedConnectFailsUntilConnectIsCalledAgain() throws IOException {
+        // GIVEN
+        var clientConfig = newConfig("Test[SubscribeAfterFailedConnect]", "sub-after-failed-conn");
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        // one loop, so that holding it below holds the next connect in flight
+        clientEventLoop = new NioEventLoopGroup(1);
+        client.setEventLoop(clientEventLoop);
+        // refused, and with reconnect off no connection follows
+        Promise<MqttConnectResult> failedConnect = client.connect("127.0.0.1", closedPort());
+        Awaitility.await("waiting for the connect to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(failedConnect::isDone);
+        assertThat(failedConnect.isSuccess()).isFalse();
+
+        // WHEN
+        Future<MqttQoS> stranded = client.on("sub-after-failed-connect", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        CountDownLatch loopHeld = new CountDownLatch(1);
+        clientEventLoop.execute(() -> Uninterruptibles.awaitUninterruptibly(loopHeld, 10, TimeUnit.SECONDS));
+        client.connect(broker.getHost(), broker.getMqttPort());
+        // the loop is held, so the connect is still in flight: no channel yet, and a connection coming
+        Future<MqttQoS> waiting = client.on("sub-during-next-connect", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+        boolean waitingDoneWhileConnecting = waiting.isDone();
+        loopHeld.countDown();
+
+        // THEN
+        Awaitility.await("waiting for the stranded subscribe to fail")
+                .atMost(Duration.ofSeconds(5L))
+                .until(stranded::isDone);
+        assertThat(stranded.cause()).isInstanceOf(ChannelClosedException.class);
+        assertThat(waitingDoneWhileConnecting).describedAs("a subscribe made while a connect is in flight waits for it").isFalse();
+        Awaitility.await("waiting for the subscribe to be granted on the new connection")
+                .atMost(Duration.ofSeconds(10L))
+                .until(waiting::isDone);
+        assertThat(waiting.isSuccess()).describedAs("subscribe granted, cause %s", waiting.cause()).isTrue();
     }
 
     @Test
