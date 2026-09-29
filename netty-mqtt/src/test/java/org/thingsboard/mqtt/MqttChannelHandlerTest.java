@@ -26,10 +26,12 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRec;
 import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRel;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -59,6 +61,7 @@ class MqttChannelHandlerTest {
     };
 
     EmbeddedChannel channel;
+    MqttClientImpl client;
 
     @AfterEach
     void cleanup() {
@@ -131,7 +134,58 @@ class MqttChannelHandlerTest {
         });
     }
 
-    private static EmbeddedChannel newChannel(MqttHandler defaultHandler) {
+    @Test
+    void aPubrecAcceptingAQoS2PublishIsAnsweredWithAPubrelOfItsOwnUnderMqtt5() {
+        // GIVEN
+        channel = newChannel(null, MqttVersion.MQTT_5);
+        channel.readOutbound(); // the CONNECT channelActive wrote
+        MqttPendingPublish publish = registerWrittenQos2Publish(Unpooled.EMPTY_BUFFER);
+
+        // WHEN - accepted, with a reason code and a property that are the PUBREC's own
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.StringProperty(MqttProperties.MqttPropertyType.REASON_STRING.value(), "no subscribers"));
+        channel.writeInbound(pubrec(publish.getMessageId(), PubRec.NO_MATCHING_SUBSCRIBERS.byteValue(), properties));
+
+        // THEN
+        MqttMessage pubrel = channel.readOutbound();
+        assertThat(pubrel).describedAs("reply to the PUBREC").isNotNull();
+        assertThat(pubrel.fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBREL);
+        assertThat(pubrel.variableHeader()).isInstanceOfSatisfying(MqttPubReplyMessageVariableHeader.class, header -> {
+            assertThat(header.messageId()).isEqualTo(publish.getMessageId());
+            assertThat(header.reasonCode()).isEqualTo(PubRel.SUCCESS.byteValue());
+            assertThat(header.properties().isEmpty()).describedAs("PUBREL carries no properties").isTrue();
+        });
+        assertThat(publish.getFuture().isDone()).describedAs("publish completed before its PUBCOMP").isFalse();
+    }
+
+    @Test
+    void aPubrecRefusingAQoS2PublishFailsItWithoutAPubrelUnderMqtt5() {
+        // GIVEN
+        channel = newChannel(null, MqttVersion.MQTT_5);
+        channel.readOutbound(); // the CONNECT channelActive wrote
+        ByteBuf payload = Unpooled.copiedBuffer("refused", StandardCharsets.UTF_8);
+        MqttPendingPublish publish = registerWrittenQos2Publish(payload);
+
+        // WHEN
+        channel.writeInbound(pubrec(publish.getMessageId(), PubRec.QUOTA_EXCEEDED.byteValue(), MqttProperties.NO_PROPERTIES));
+
+        // THEN - the QoS 2 exchange ends with the refusal, which frees the message ID
+        assertThat((Object) channel.readOutbound()).describedAs("reply to the refusing PUBREC").isNull();
+        assertThat(publish.getFuture().cause()).isInstanceOf(MqttPublishFailedException.class).hasMessageContaining("0x97");
+        assertThat(client.getPendingPublishes()).describedAs("pending publishes").doesNotContainValue(publish);
+        assertThat(payload.refCnt()).describedAs("references left on the payload").isZero();
+    }
+
+    /**
+     * A QoS 2 publish as its first write leaves it: pending, and netty has consumed the caller's reference.
+     */
+    private MqttPendingPublish registerWrittenQos2Publish(ByteBuf payload) {
+        MqttPendingPublish publish = client.registerPendingPublish("channel-handler/topic", payload, MqttQoS.EXACTLY_ONCE, false);
+        publish.getMessage().release();
+        return publish;
+    }
+
+    private EmbeddedChannel newChannel(MqttHandler defaultHandler) {
         return newChannel(defaultHandler, MqttVersion.MQTT_3_1);
     }
 
@@ -139,19 +193,26 @@ class MqttChannelHandlerTest {
      * A channel with the inbound pipeline the client builds, minus the codec: MqttPingHandler retains each message it
      * passes on, and MqttChannelHandler handles it.
      */
-    private static EmbeddedChannel newChannel(MqttHandler defaultHandler, MqttVersion protocolVersion) {
+    private EmbeddedChannel newChannel(MqttHandler defaultHandler, MqttVersion protocolVersion) {
         var clientConfig = new MqttClientConfig();
         clientConfig.setProtocolVersion(protocolVersion);
         clientConfig.setOwnerId("Test[MqttChannelHandler]");
         clientConfig.setClientId("channel-handler");
-        var client = new MqttClientImpl(clientConfig, defaultHandler, DIRECT_EXECUTOR);
-        return new EmbeddedChannel(new MqttPingHandler(clientConfig.getTimeoutSeconds()),
+        client = new MqttClientImpl(clientConfig, defaultHandler, DIRECT_EXECUTOR);
+        var embeddedChannel = new EmbeddedChannel(new MqttPingHandler(clientConfig.getTimeoutSeconds()),
                 new MqttChannelHandler(client, ImmediateEventExecutor.INSTANCE.newPromise()));
+        client.setEventLoop(embeddedChannel.eventLoop());
+        return embeddedChannel;
     }
 
     private static MqttMessage pubrec(int packetId) {
         return new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 MqttMessageIdVariableHeader.from(packetId));
+    }
+
+    private static MqttMessage pubrec(int packetId, byte reasonCode, MqttProperties properties) {
+        return new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                new MqttPubReplyMessageVariableHeader(packetId, reasonCode, properties));
     }
 
     private static MqttPublishMessage qos2Publish(int packetId, boolean dup, ByteBuf payload) {

@@ -165,7 +165,8 @@ public interface MqttClient {
      * @param qos The qos to use while publishing
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
-     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out,
+     * {@link MqttPublishFailedException} when the server refuses a QoS 2 publish in its PUBREC, or
      * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos);
@@ -188,7 +189,8 @@ public interface MqttClient {
      * @param retain true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
-     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out,
+     * {@link MqttPublishFailedException} when the server refuses a QoS 2 publish in its PUBREC, or
      * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain);
