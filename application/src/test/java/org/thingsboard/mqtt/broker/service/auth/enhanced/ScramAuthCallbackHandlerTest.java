@@ -29,9 +29,9 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCrede
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
@@ -54,12 +54,16 @@ public class ScramAuthCallbackHandlerTest {
     private ScramAuthCallbackHandler callbackHandler;
     private MqttClientCredentialsService credentialsServiceMock;
     private AuthorizationRuleService authorizationRuleServiceMock;
+    private AuthorizationPolicyService authorizationPolicyServiceMock;
 
     @Before
     public void setup() {
         credentialsServiceMock = mock(MqttClientCredentialsService.class);
         authorizationRuleServiceMock = mock(AuthorizationRuleService.class);
-        callbackHandler = new ScramAuthCallbackHandler(credentialsServiceMock, authorizationRuleServiceMock);
+        authorizationPolicyServiceMock = mock(AuthorizationPolicyService.class);
+        when(authorizationPolicyServiceMock.resolveRules(any(), any())).thenAnswer(invocation -> invocation.getArgument(1));
+        callbackHandler = new ScramAuthCallbackHandler(credentialsServiceMock, authorizationRuleServiceMock,
+                authorizationPolicyServiceMock);
     }
 
     @Test
@@ -142,12 +146,12 @@ public class ScramAuthCallbackHandlerTest {
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
 
         when(credentialsServiceMock.findMatchingCredentials(any())).thenReturn(List.of(mqttClientCredentials));
-        when(authorizationRuleServiceMock.parseAuthorizationRule(any())).thenThrow(AuthenticationException.class);
+        when(authorizationRuleServiceMock.parsePubSubAuthorizationRule(any())).thenThrow(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> callbackHandler.handle(callbacks))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Failed to parse authorization rule for SCRAM credentials: " + ProtocolUtil.scramCredentialsId(username))
-                .hasCauseInstanceOf(AuthenticationException.class);
+                .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -167,7 +171,7 @@ public class ScramAuthCallbackHandlerTest {
 
         when(credentialsServiceMock.findMatchingCredentials(any())).thenReturn(List.of(mqttClientCredentials));
         AuthRulePatterns authRulePatternsMock = mock(AuthRulePatterns.class);
-        when(authorizationRuleServiceMock.parseAuthorizationRule(any())).thenReturn(authRulePatternsMock);
+        when(authorizationRuleServiceMock.parsePubSubAuthorizationRule(any())).thenReturn(authRulePatternsMock);
 
         callbackHandler.handle(callbacks);
 

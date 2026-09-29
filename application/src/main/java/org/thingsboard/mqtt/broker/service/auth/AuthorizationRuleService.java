@@ -29,6 +29,8 @@ public interface AuthorizationRuleService {
 
     AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException;
 
+    AuthRulePatterns parseAuthorizationRule(PubSubAuthorizationRules authRules, String clientCommonName);
+
     AuthRulePatterns parsePubSubAuthorizationRule(PubSubAuthorizationRules pubSubAuthRules);
 
     boolean isPubAuthorized(String clientId, String topic, List<AuthRulePatterns> authRulePatterns);

@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
 
@@ -41,4 +42,6 @@ public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 
     List<MqttClientCredentials> findByCredentialsType(ClientCredentialsType type);
+
+    boolean existsByAuthorizationPolicyId(UUID authorizationPolicyId);
 }

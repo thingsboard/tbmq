@@ -1093,6 +1093,9 @@ cache:
     mqttClientCredentials:
       # Cache TTL (in minutes). Defaults to 1 day.
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
+    authorizationPolicy:
+      # Cache TTL (in minutes). Defaults to 1 day.
+      timeToLiveInMinutes: "${CACHE_SPECS_AUTHORIZATION_POLICY_TTL:1440}"
     basicCredentialsPassword:
       # Cache TTL (in minutes). Recommended to set a small value to limit credential storage duration (e.g., 1-5 minutes).
       timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}"

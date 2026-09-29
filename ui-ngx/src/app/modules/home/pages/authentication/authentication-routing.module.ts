@@ -24,6 +24,7 @@ import { BreadCrumbConfig } from '@shared/components/breadcrumb';
 import { ClientCredentialsTableConfigResolver } from '@home/pages/client-credentials/client-credentials-table-config.resolver';
 import { MqttAuthProviderTableConfigResolver } from '@home/pages/mqtt-auth-provider/mqtt-auth-provider-table-config-resolver.service';
 import { BlockedClientsTableConfigResolver } from '@home/pages/blocked-clients/blocked-clients-table-config.resolver';
+import { AuthorizationPolicyTableConfigResolver } from '@home/pages/authorization-policy/authorization-policy-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -84,6 +85,45 @@ const routes: Routes = [
               entitiesTableConfig: ClientCredentialsTableConfigResolver
             }
           },
+        ]
+      },
+      {
+        path: 'authorization-policies',
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          breadcrumb: {
+            label: 'authorization-policy.policies',
+            icon: 'policy'
+          }
+        },
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
+            data: {
+              auth: [Authority.SYS_ADMIN],
+              title: 'authorization-policy.policies'
+            },
+            resolve: {
+              entitiesTableConfig: AuthorizationPolicyTableConfigResolver
+            }
+          },
+          {
+            path: ':entityId',
+            loadComponent: () => import('@home/components/entity/entity-details-page.component').then(m => m.EntityDetailsPageComponent),
+            canDeactivate: [ConfirmOnExitGuard],
+            data: {
+              breadcrumb: {
+                labelFunction: entityDetailsPageBreadcrumbLabelFunction,
+                icon: 'policy'
+              } as BreadCrumbConfig<EntityDetailsPageComponent>,
+              auth: [Authority.SYS_ADMIN],
+              title: 'authorization-policy.policies'
+            },
+            resolve: {
+              entitiesTableConfig: AuthorizationPolicyTableConfigResolver
+            }
+          }
         ]
       },
       {
@@ -171,6 +211,7 @@ const routes: Routes = [
     ClientCredentialsTableConfigResolver,
     MqttAuthProviderTableConfigResolver,
     BlockedClientsTableConfigResolver,
+    AuthorizationPolicyTableConfigResolver,
   ]
 })
 

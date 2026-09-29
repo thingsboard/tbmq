@@ -21,6 +21,7 @@ public class CacheConstants {
      * Managed by cacheManager
      */
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
+    public static final String AUTHORIZATION_POLICY_CACHE = "authorizationPolicy";
     public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
     public static final String SSL_REGEX_BASED_CREDENTIALS_CACHE = "sslRegexBasedCredentials";
     public static final String CLIENT_SESSION_CREDENTIALS_CACHE = "clientSessionCredentials";

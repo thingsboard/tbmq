@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
@@ -65,6 +66,7 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFail
 public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqttAuthProviderConfiguration> {
 
     private final MqttClientCredentialsService clientCredentialsService;
+    private final AuthorizationPolicyService authorizationPolicyService;
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttAuthProviderService mqttAuthProviderService;
     private final MqttHandlerCtx mqttHandlerCtx;
@@ -111,7 +113,14 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                         clientId, clientTypeSslMqttCredentials.getType(), protocol);
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
-            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
+            List<AuthRulePatterns> authRulePatterns;
+            if (clientTypeSslMqttCredentials.getAuthorizationPolicyId() == null) {
+                authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
+            } else {
+                var authorizationRules = authorizationPolicyService.resolveRules(
+                        clientTypeSslMqttCredentials.getAuthorizationPolicyId(), null);
+                authRulePatterns = List.of(authorizationRuleService.parseAuthorizationRule(authorizationRules, clientCommonName));
+            }
             return AuthResponse.sslSuccess(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName(), clientCommonName);
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
@@ -185,7 +194,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             if (!matchingCredentials.isEmpty()) {
                 MqttClientCredentials mqttClientCredentials = matchingCredentials.get(0);
                 SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
+                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials,
+                        mqttClientCredentials.getName(), mqttClientCredentials.getAuthorizationPolicyId());
             }
         }
         return null;
@@ -246,7 +256,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         for (MqttClientCredentials sslCredential : sslCredentials) {
             SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslCredential.getCredentialsValue(), SslMqttCredentials.class);
             if (sslMqttCredentials != null && sslMqttCredentials.isCertCnIsRegex()) {
-                clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(), sslMqttCredentials, sslCredential.getName()));
+                clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(),
+                        sslMqttCredentials, sslCredential.getName(), sslCredential.getAuthorizationPolicyId()));
             }
         }
         return new SslCredentialsCacheValue(clientTypeSslMqttCredentialsList);

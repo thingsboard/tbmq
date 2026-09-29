@@ -90,6 +90,11 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                 applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName));
     }
 
+    @Override
+    public AuthRulePatterns parseAuthorizationRule(PubSubAuthorizationRules authRules, String clientCommonName) {
+        return newAuthRulePatterns(authRules, clientCommonName);
+    }
+
     private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName) {
         return CollectionUtils.isEmpty(authRulePatterns) ? Collections.emptyList() :
                 authRulePatterns
