@@ -110,7 +110,7 @@ class NodeDrainServiceImplTest {
         ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
         verify(clientMqttActorManager, times(3)).disconnect(org.mockito.ArgumentMatchers.anyString(), disconnectCaptor.capture());
         assertThat(disconnectCaptor.getAllValues())
-                .allMatch(msg -> msg.getReason().getType() == DisconnectReasonType.ON_SERVER_SHUTTING_DOWN);
+                .allMatch(msg -> msg.getReason().getType() == DisconnectReasonType.ON_USE_ANOTHER_SERVER);
     }
 
     @Test

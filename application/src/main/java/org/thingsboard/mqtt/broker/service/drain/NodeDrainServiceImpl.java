@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_SERVER_SHUTTING_DOWN;
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_USE_ANOTHER_SERVER;
 
 @Slf4j
 @Service
@@ -150,7 +150,7 @@ public class NodeDrainServiceImpl implements NodeDrainService {
             processed++;
             try {
                 clientMqttActorManager.disconnect(session.getClientId(), new MqttDisconnectMsg(session.getSessionId(),
-                        new DisconnectReason(ON_SERVER_SHUTTING_DOWN)));
+                        new DisconnectReason(ON_USE_ANOTHER_SERVER)));
                 disconnectRequests.incrementAndGet();
                 submitted++;
             } catch (RuntimeException e) {

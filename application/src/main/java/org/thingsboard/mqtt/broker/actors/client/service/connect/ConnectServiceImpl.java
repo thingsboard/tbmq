@@ -77,6 +77,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.USE_ANOTHER_SERVER;
 
 @Service
 @RequiredArgsConstructor
@@ -149,7 +150,7 @@ public class ConnectServiceImpl implements ConnectService {
         );
 
         if (nodeDrainService.isDraining()) {
-            refuseConnection(sessionCtx, sessionInfo, SERVER_UNAVAILABLE, null);
+            refuseConnection(sessionCtx, sessionInfo, USE_ANOTHER_SERVER, null);
             return;
         }
 
