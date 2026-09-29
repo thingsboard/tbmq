@@ -346,9 +346,11 @@ final class MqttClientImpl implements MqttClient {
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or when the client is not connected and no connect
-     * is in flight or scheduled to send the SUBSCRIBE, or {@link MaxRetransmissionsReachedException} when the
-     * retransmissions run out
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
+     * next connection - made before the first connect(), for that connect's - and fails with
+     * {@link ChannelClosedException} at once when no connection is coming: a connect failed, or the connection closed,
+     * with no reconnect scheduled and no connect() called since
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler) {
@@ -364,9 +366,11 @@ final class MqttClientImpl implements MqttClient {
      *                is in flight
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or when the client is not connected and no connect
-     * is in flight or scheduled to send the SUBSCRIBE, or {@link MaxRetransmissionsReachedException} when the
-     * retransmissions run out
+     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
+     * next connection - made before the first connect(), for that connect's - and fails with
+     * {@link ChannelClosedException} at once when no connection is coming: a connect failed, or the connection closed,
+     * with no reconnect scheduled and no connect() called since
      */
     @Override
     public Future<MqttQoS> on(String topic, MqttHandler handler, MqttQoS qos) {
