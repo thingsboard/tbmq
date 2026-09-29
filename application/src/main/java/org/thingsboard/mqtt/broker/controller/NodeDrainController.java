@@ -16,14 +16,15 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
@@ -44,7 +45,7 @@ public class NodeDrainController extends BaseController {
                     "Repeated calls are idempotent.")
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(DRAIN_PATH)
-    public NodeDrainStatus startDrain(@RequestParam("expectedServiceId") String expectedServiceId) {
+    public NodeDrainStatus startDrain(@RequestParam(value = "expectedServiceId", required = false) String expectedServiceId) throws ThingsboardException {
         validateExpectedServiceId(expectedServiceId);
         return nodeDrainService.startDrain();
     }
@@ -62,17 +63,21 @@ public class NodeDrainController extends BaseController {
                     "Sessions already disconnected by the drain are not restored.")
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(DRAIN_PATH)
-    public NodeDrainStatus cancelDrain(@RequestParam("expectedServiceId") String expectedServiceId) {
+    public NodeDrainStatus cancelDrain(@RequestParam(value = "expectedServiceId", required = false) String expectedServiceId) throws ThingsboardException {
         validateExpectedServiceId(expectedServiceId);
         return nodeDrainService.cancelDrain();
     }
 
-    private void validateExpectedServiceId(String expectedServiceId) {
+    // ThingsboardException, because BaseController's handler turns any other exception into a 500.
+    // The parameter is optional in the binding so that a missing value is rejected here with the same 400.
+    private void validateExpectedServiceId(String expectedServiceId) throws ThingsboardException {
+        if (StringUtils.isBlank(expectedServiceId)) {
+            throw new ThingsboardException("Parameter 'expectedServiceId' is required", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
         String actualServiceId = serviceInfoProvider.getServiceId();
         if (!actualServiceId.equals(expectedServiceId)) {
-            throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED,
-                    "Drain request targets service '" + expectedServiceId +
-                            "', but reached service '" + actualServiceId + "'");
+            throw new ThingsboardException("Drain request targets service '" + expectedServiceId +
+                    "', but reached service '" + actualServiceId + "'", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
     }
 

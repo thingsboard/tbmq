@@ -17,53 +17,45 @@ package org.thingsboard.mqtt.broker.controller;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainState;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainStatus;
 
-import static org.mockito.Mockito.lenient;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NodeDrainControllerTest {
+@DaoSqlTest
+public class NodeDrainControllerTest extends AbstractControllerTest {
 
-    @Mock
+    @MockitoBean
     private NodeDrainService nodeDrainService;
-    @Mock
+    @Autowired
     private ServiceInfoProvider serviceInfoProvider;
-    @InjectMocks
-    private NodeDrainController controller;
-    private MockMvc mockMvc;
+
+    private String serviceId;
 
     @Before
-    public void beforeTest() {
-        lenient().when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
-        mockMvc = standaloneSetup(controller).build();
+    public void beforeTest() throws Exception {
+        loginSysAdmin();
+        serviceId = serviceInfoProvider.getServiceId();
     }
 
     @Test
     public void givenActiveNode_whenStartDrain_thenReturnsDrainStatus() throws Exception {
         when(nodeDrainService.startDrain()).thenReturn(drainStatus(NodeDrainState.DRAINING, 42, 42));
 
-        mockMvc.perform(post(NodeDrainController.DRAIN_PATH)
-                        .param("expectedServiceId", "service-1"))
+        doPost(NodeDrainController.DRAIN_PATH, "expectedServiceId", serviceId)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("DRAINING"))
-                .andExpect(jsonPath("$.serviceId").value("service-1"))
+                .andExpect(jsonPath("$.serviceId").value(serviceId))
                 .andExpect(jsonPath("$.initialSessions").value(42))
                 .andExpect(jsonPath("$.remainingSessions").value(42));
 
@@ -74,28 +66,29 @@ public class NodeDrainControllerTest {
     public void givenDrainInProgress_whenCancelDrain_thenReturnsActiveStatus() throws Exception {
         when(nodeDrainService.cancelDrain()).thenReturn(drainStatus(NodeDrainState.ACTIVE, 0, 7));
 
-        mockMvc.perform(delete(NodeDrainController.DRAIN_PATH)
-                        .param("expectedServiceId", "service-1"))
+        doDelete(NodeDrainController.DRAIN_PATH, "expectedServiceId", serviceId)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("ACTIVE"))
-                .andExpect(jsonPath("$.serviceId").value("service-1"));
+                .andExpect(jsonPath("$.serviceId").value(serviceId));
 
         verify(nodeDrainService).cancelDrain();
     }
 
     @Test
-    public void givenWrongTarget_whenStartDrain_thenRejectsWithoutStarting() throws Exception {
-        mockMvc.perform(post(NodeDrainController.DRAIN_PATH)
-                        .param("expectedServiceId", "service-2"))
-                .andExpect(status().isPreconditionFailed());
+    public void givenWrongTarget_whenStartDrain_thenRejectsWithBadRequestWithoutStarting() throws Exception {
+        doPost(NodeDrainController.DRAIN_PATH, "expectedServiceId", "other-service")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value(31))
+                .andExpect(jsonPath("$.message").value(containsString("reached service '" + serviceId + "'")));
 
         verifyNoInteractions(nodeDrainService);
     }
 
     @Test
-    public void givenMissingTarget_whenStartDrain_thenReturnsBadRequest() throws Exception {
-        mockMvc.perform(post(NodeDrainController.DRAIN_PATH))
-                .andExpect(status().isBadRequest());
+    public void givenMissingTarget_whenStartDrain_thenRejectsWithBadRequestWithoutStarting() throws Exception {
+        doPost(NodeDrainController.DRAIN_PATH)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value(31));
 
         verifyNoInteractions(nodeDrainService);
     }
@@ -104,7 +97,7 @@ public class NodeDrainControllerTest {
     public void givenDrainInProgress_whenGetStatus_thenReturnsCurrentProgress() throws Exception {
         when(nodeDrainService.getStatus()).thenReturn(drainStatus(NodeDrainState.DRAINING, 42, 7));
 
-        mockMvc.perform(get(NodeDrainController.DRAIN_PATH))
+        doGet(NodeDrainController.DRAIN_PATH)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("DRAINING"))
                 .andExpect(jsonPath("$.remainingSessions").value(7));
@@ -112,8 +105,8 @@ public class NodeDrainControllerTest {
         verify(nodeDrainService).getStatus();
     }
 
-    private static NodeDrainStatus drainStatus(NodeDrainState state, int initialSessions, int remainingSessions) {
-        return new NodeDrainStatus("service-1", state, initialSessions, remainingSessions, initialSessions - remainingSessions,
+    private NodeDrainStatus drainStatus(NodeDrainState state, int initialSessions, int remainingSessions) {
+        return new NodeDrainStatus(serviceId, state, initialSessions, remainingSessions, initialSessions - remainingSessions,
                 1_000L, 0L);
     }
 
