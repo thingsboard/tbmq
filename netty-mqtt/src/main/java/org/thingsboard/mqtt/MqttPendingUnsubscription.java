@@ -57,8 +57,13 @@ final class MqttPendingUnsubscription {
         retransmissionHandler.stop();
     }
 
+    /**
+     * Must only be called by the path that removed this entry from the pending unsubscriptions. Fails the future: the
+     * UNSUBACK it waits for can no longer arrive.
+     */
     void onChannelClosed() {
         retransmissionHandler.stop();
+        future.tryFailure(new ChannelClosedException("Channel closed before the UNSUBACK arrived"));
     }
 
     static Builder builder() {

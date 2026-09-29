@@ -202,7 +202,7 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
     }
 
     private MqttHandler getHandler() {
-        return (s, byteBuf) -> Futures.immediateVoidFuture();
+        return msg -> Futures.immediateVoidFuture();
     }
 
     private void sessionAndSubsPresent(String clientId) {
