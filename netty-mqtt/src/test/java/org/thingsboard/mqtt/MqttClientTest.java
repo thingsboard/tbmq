@@ -479,12 +479,13 @@ class MqttClientTest {
         assertPayloadFullyReleased(payload);
     }
 
-    @Test
-    void testPublishRejectedByEncoderReleasesPayload() {
+    @ParameterizedTest
+    @EnumSource(value = MqttQoS.class, names = {"AT_MOST_ONCE", "AT_LEAST_ONCE", "EXACTLY_ONCE"})
+    void testPublishRejectedByEncoderReleasesPayload(MqttQoS qos) {
         // GIVEN
         var clientConfig = new MqttClientConfig();
         clientConfig.setOwnerId("Test[PublishEncoderReject]");
-        clientConfig.setClientId("encoder-reject-release");
+        clientConfig.setClientId("encoder-reject-" + qos.value());
         clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 5000L, 0d));
         client = MqttClient.create(clientConfig, null, handlerExecutor);
         connect(broker.getHost(), broker.getMqttPort());
@@ -493,7 +494,7 @@ class MqttClientTest {
 
         // WHEN
         // the encoder rejects a wildcard in a publish topic: the write fails after netty has taken the message
-        Future<Void> publishFuture = client.publish("invalid/+/topic", payload, MqttQoS.AT_LEAST_ONCE);
+        Future<Void> publishFuture = client.publish("invalid/+/topic", payload, qos);
 
         // THEN
         Awaitility.await("waiting for the rejected publish to fail")
