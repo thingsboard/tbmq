@@ -429,10 +429,12 @@ class MqttSubscriptionRegistryTest {
         List<String> served = Collections.synchronizedList(new ArrayList<>(1));
         MqttHandler handlerA = record(served, "A");
         MqttHandler handlerB = record(served, "B");
+        MqttHandler handlerC = record(served, "C");
 
+        // three distinct handlers, so that neither the first nor a middle one can pass for the last
         Future<MqttQoS> first = client.on("sensors/inflight", handlerA, MqttQoS.AT_LEAST_ONCE);
         Future<MqttQoS> second = client.on("sensors/inflight", handlerB, MqttQoS.AT_LEAST_ONCE);
-        Future<MqttQoS> third = client.on("sensors/inflight", handlerA, MqttQoS.AT_LEAST_ONCE);
+        Future<MqttQoS> third = client.on("sensors/inflight", handlerC, MqttQoS.AT_LEAST_ONCE);
 
         assertThat(second).describedAs("an on() for a filter in flight shares its future").isSameAs(first);
         assertThat(third).isSameAs(first);
@@ -450,7 +452,7 @@ class MqttSubscriptionRegistryTest {
         assertThat(first.isSuccess()).isTrue();
         List<MqttSubscription> subscriptions = ((MqttClientImpl) client).getSubscriptions();
         assertThat(subscriptions).hasSize(1);
-        assertThat(subscriptions.get(0).getHandler()).describedAs("the handler given last must win").isSameAs(handlerA);
+        assertThat(subscriptions.get(0).getHandler()).describedAs("the handler given last must win").isSameAs(handlerC);
 
         publish("sensors/inflight");
 
@@ -460,7 +462,7 @@ class MqttSubscriptionRegistryTest {
         Awaitility.await("holding the assertion over a quiet period")
                 .during(Duration.ofMillis(500))
                 .atMost(Duration.ofSeconds(10L))
-                .untilAsserted(() -> assertThat(served).containsOnly("A"));
+                .untilAsserted(() -> assertThat(served).containsOnly("C"));
     }
 
     /**
