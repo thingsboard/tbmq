@@ -44,6 +44,9 @@ import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -57,8 +60,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -76,6 +77,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.USE_ANOTHER_SERVER;
 
 @Service
 @RequiredArgsConstructor
@@ -98,6 +100,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final StatsManager statsManager;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final NodeDrainService nodeDrainService;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -145,6 +148,11 @@ public class ConnectServiceImpl implements ConnectService {
                 keepAliveSeconds,
                 sessionExpiryInterval
         );
+
+        if (nodeDrainService.isDraining()) {
+            refuseConnection(sessionCtx, sessionInfo, USE_ANOTHER_SERVER, null);
+            return;
+        }
 
         boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg, sessionInfo);
         if (!proceedWithConnection) {
@@ -247,12 +255,17 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
+        refuseConnection(clientSessionCtx, clientSessionCtx.getSessionInfo(), reason, t);
+    }
+
+    private void refuseConnection(ClientSessionCtx clientSessionCtx, SessionInfo sessionInfo,
+                                  ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
         MqttConnectReturnCode returnCode = reason.toMqttReturnCode(clientSessionCtx);
         // Emit the same MQTT CONNACK reason-code name the client receives, matching the pre-connection validation
         // path (which emits MqttConnectReturnCode.name()) so CLIENT_CONNECTION_FAILED speaks a single vocabulary.
-        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), returnCode.name());
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, sessionInfo, returnCode.name());
 
         sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, returnCode);
     }

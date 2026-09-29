@@ -39,6 +39,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER;
 
 @Slf4j
 public final class MqttReasonCodeResolver {
@@ -61,6 +62,10 @@ public final class MqttReasonCodeResolver {
 
     public static MqttConnectReturnCode connectionRefusedServerUnavailable(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_SERVER_UNAVAILABLE_5 : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
+
+    public static MqttConnectReturnCode connectionRefusedUseAnotherServer(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_USE_ANOTHER_SERVER : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
     }
 
     public static MqttConnectReturnCode connectionRefusedQuotaExceeded(ClientSessionCtx ctx) {
