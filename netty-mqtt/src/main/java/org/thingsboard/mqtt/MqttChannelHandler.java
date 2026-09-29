@@ -324,7 +324,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 var msgWrapper = mqttOrderedAcknowledgementCtxQoS1.addMsgId(msgId);
 
                 if (msgWrapper == null) {
-                    checkBackPressure(channel, false);
+                    dropPublish(channel, message);
                     return;
                 }
 
@@ -348,13 +348,13 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 if (!client.getQos2PendingMsgIds().add(msgId)) {
                     log.debug("Duplicate QoS2 message received for client {} with msgId {}. Skipping processing.", client.getClientConfig().getClientId(), msgId);
                     processPubRec(channel, msgId, PubRec.PACKET_IDENTIFIER_IN_USE.byteValue());
-                    checkBackPressure(channel, false);
+                    dropPublish(channel, message);
                     return;
                 }
 
                 var msgWrapper = mqttOrderedAcknowledgementCtxQoS2.addMsgId(msgId);
                 if (msgWrapper == null) {
-                    checkBackPressure(channel, false);
+                    dropPublish(channel, message);
                     return;
                 }
                 var future = invokeHandlerForIncomingPublish(message);
@@ -372,6 +372,15 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 );
             }
         }
+    }
+
+    /**
+     * Drops an inbound PUBLISH that no handler will see: releases the reference MqttPingHandler retained, which
+     * {@link #invokeHandlerForIncomingPublish} releases for one a handler does see, and undoes its backpressure count.
+     */
+    private void dropPublish(Channel channel, MqttPublishMessage message) {
+        message.release();
+        checkBackPressure(channel, false);
     }
 
     private void processPubAck(Channel channel, MqttMsgWrapper msgWrapper, byte reasonCode) {
