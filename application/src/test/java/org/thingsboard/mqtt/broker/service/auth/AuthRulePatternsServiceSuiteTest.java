@@ -276,6 +276,35 @@ public class AuthRulePatternsServiceSuiteTest {
     }
 
     @Test
+    public void testSslClientIdPlaceholderRejectsMqttTopicSyntax() {
+        PubSubAuthorizationRules rules = new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/telemetry"),
+                List.of("devices/${clientId}/commands/.*"));
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(
+                new SslMqttCredentials("shared-cert", Map.of(".*", rules)));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                    () -> authorizationRuleService.parseSslAuthorizationRule(credentials, "shared-cert", clientId));
+            Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                    exception.getMessage());
+        }
+    }
+
+    @Test
+    public void testSslMqttTopicSyntaxAllowedWithoutClientIdPlaceholder() throws AuthenticationException {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("devices/.*"));
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(
+                new SslMqttCredentials("shared-cert", Map.of(".*", rules)));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(
+                    credentials, "shared-cert", clientId);
+            Assert.assertEquals("devices/.*", compiled.get(0).getPubPatterns().get(0).pattern());
+        }
+    }
+
+    @Test
     public void testSslCredentialsClientIdConstraint() {
         SslMqttCredentials exact = new SslMqttCredentials(
                 "shared-cert", false, "device-42", false, Collections.emptyMap());
@@ -330,6 +359,32 @@ public class AuthRulePatternsServiceSuiteTest {
                 "device.42", "devices/deviceX42/telemetry", List.of(compiled)));
         Assert.assertTrue(authorizationRuleService.isSubAuthorized(
                 "devices/device.42/commands/reboot", List.of(compiled)));
+    }
+
+    @Test
+    public void testBasicClientIdPlaceholderRejectsMqttTopicSyntax() {
+        BasicMqttCredentials credentials = new BasicMqttCredentials(null, "shared-user", null,
+                new PubSubAuthorizationRules(
+                        List.of("devices/${clientId}/telemetry"),
+                        List.of("devices/${clientId}/commands/.*")));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                    () -> authorizationRuleService.parseAuthorizationRule(credentials, clientId));
+            Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                    exception.getMessage());
+        }
+    }
+
+    @Test
+    public void testBasicMqttTopicSyntaxAllowedWithoutClientIdPlaceholder() throws AuthenticationException {
+        BasicMqttCredentials credentials = BasicMqttCredentials.newInstance(
+                "shared-user", "password", null, List.of("devices/.*"));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthRulePatterns compiled = authorizationRuleService.parseAuthorizationRule(credentials, clientId);
+            Assert.assertEquals("devices/.*", compiled.getPubPatterns().get(0).pattern());
+        }
     }
 
     @Test

@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,9 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFail
 @Getter
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
 
+    static final String INVALID_CLIENT_ID_PLACEHOLDER_ERROR =
+            "Client ID contains characters not allowed with the ${clientId} placeholder";
+
     private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
 
     @Override
@@ -61,7 +65,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
             throw new AuthenticationException(CAN_NOT_PARSE_SSL_CREDS.getErrorMsg());
         }
 
-        List<AuthRulePatterns> authRulePatterns = credentials.getAuthRulesMapping().entrySet().stream()
+        List<PubSubAuthorizationRules> matchingRules = credentials.getAuthRulesMapping().entrySet().stream()
                 .filter(entry -> {
                     String certificateMatcherRegex = entry.getKey();
                     Pattern pattern = Pattern.compile(certificateMatcherRegex);
@@ -69,14 +73,18 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(pubSubAuthRules -> newAuthRulePatterns(pubSubAuthRules, clientCommonName, clientId))
                 .collect(Collectors.toList());
 
-        if (authRulePatterns.isEmpty()) {
+        if (matchingRules.isEmpty()) {
             String errorMsg = String.format(NO_AUTH_RULES_FOR_CN_IN_CREDS.getErrorMsg(),
                     clientCommonName, clientTypeSslMqttCredentials.getName());
             log.warn(errorMsg);
             throw new AuthenticationException(errorMsg);
+        }
+
+        List<AuthRulePatterns> authRulePatterns = new ArrayList<>(matchingRules.size());
+        for (PubSubAuthorizationRules rules : matchingRules) {
+            authRulePatterns.add(newAuthRulePatterns(rules, clientCommonName, clientId));
         }
 
         return authRulePatterns;
@@ -95,10 +103,31 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
         return newAuthRulePatterns(credentials.getAuthRules(), null, clientId);
     }
 
-    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName, String clientId) {
+    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName,
+                                                 String clientId) throws AuthenticationException {
+        validateClientIdPlaceholder(pubSubAuthRules, clientId);
         return new AuthRulePatterns(
                 applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName, clientId),
                 applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName, clientId));
+    }
+
+    private void validateClientIdPlaceholder(PubSubAuthorizationRules authRules, String clientId) throws AuthenticationException {
+        if (clientId == null || !containsMqttTopicSyntax(clientId)) {
+            return;
+        }
+        if (containsClientIdPlaceholder(authRules.getPubAuthRulePatterns()) ||
+                containsClientIdPlaceholder(authRules.getSubAuthRulePatterns())) {
+            throw new AuthenticationException(INVALID_CLIENT_ID_PLACEHOLDER_ERROR);
+        }
+    }
+
+    private boolean containsClientIdPlaceholder(List<String> patterns) {
+        return !CollectionUtils.isEmpty(patterns) && patterns.stream()
+                .anyMatch(pattern -> pattern.contains(AuthRulesUtil.CLIENT_ID_PLACEHOLDER));
+    }
+
+    private boolean containsMqttTopicSyntax(String clientId) {
+        return clientId.indexOf('+') >= 0 || clientId.indexOf('#') >= 0 || clientId.indexOf('/') >= 0;
     }
 
     private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName, String clientId) {
