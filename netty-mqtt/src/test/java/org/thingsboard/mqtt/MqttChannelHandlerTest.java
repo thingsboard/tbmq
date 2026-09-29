@@ -23,10 +23,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRel;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -90,17 +95,63 @@ class MqttChannelHandlerTest {
         assertThat(first.refCnt()).describedAs("references left on the first payload").isZero();
     }
 
+    @Test
+    void aPubrecForAnUnknownPacketIdIsAnsweredWithPubrel() {
+        // GIVEN - no publish is pending, e.g. its retransmissions ran out before the broker's PUBREC arrived
+        channel = newChannel(null);
+        channel.readOutbound(); // the CONNECT channelActive wrote
+
+        // WHEN
+        channel.writeInbound(pubrec(7));
+
+        // THEN - the broker holds the packet id until it gets a PUBREL
+        MqttMessage pubrel = channel.readOutbound();
+        assertThat(pubrel).describedAs("reply to the PUBREC").isNotNull();
+        assertThat(pubrel.fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBREL);
+        assertThat(pubrel.fixedHeader().qosLevel()).describedAs("PUBREL fixed header flags are 0010").isEqualTo(MqttQoS.AT_LEAST_ONCE);
+        assertThat(((MqttMessageIdVariableHeader) pubrel.variableHeader()).messageId()).isEqualTo(7);
+    }
+
+    @Test
+    void aPubrecForAnUnknownPacketIdIsAnsweredWithPacketIdNotFoundUnderMqtt5() {
+        // GIVEN
+        channel = newChannel(null, MqttVersion.MQTT_5);
+        channel.readOutbound(); // the CONNECT channelActive wrote
+
+        // WHEN
+        channel.writeInbound(pubrec(7));
+
+        // THEN
+        MqttMessage pubrel = channel.readOutbound();
+        assertThat(pubrel).describedAs("reply to the PUBREC").isNotNull();
+        assertThat(pubrel.fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBREL);
+        assertThat(pubrel.variableHeader()).isInstanceOfSatisfying(MqttPubReplyMessageVariableHeader.class, header -> {
+            assertThat(header.messageId()).isEqualTo(7);
+            assertThat(header.reasonCode()).isEqualTo(PubRel.PACKET_IDENTIFIER_NOT_FOUND.byteValue());
+        });
+    }
+
+    private static EmbeddedChannel newChannel(MqttHandler defaultHandler) {
+        return newChannel(defaultHandler, MqttVersion.MQTT_3_1);
+    }
+
     /**
      * A channel with the inbound pipeline the client builds, minus the codec: MqttPingHandler retains each message it
      * passes on, and MqttChannelHandler handles it.
      */
-    private static EmbeddedChannel newChannel(MqttHandler defaultHandler) {
+    private static EmbeddedChannel newChannel(MqttHandler defaultHandler, MqttVersion protocolVersion) {
         var clientConfig = new MqttClientConfig();
+        clientConfig.setProtocolVersion(protocolVersion);
         clientConfig.setOwnerId("Test[MqttChannelHandler]");
         clientConfig.setClientId("channel-handler");
         var client = new MqttClientImpl(clientConfig, defaultHandler, DIRECT_EXECUTOR);
         return new EmbeddedChannel(new MqttPingHandler(clientConfig.getTimeoutSeconds()),
                 new MqttChannelHandler(client, ImmediateEventExecutor.INSTANCE.newPromise()));
+    }
+
+    private static MqttMessage pubrec(int packetId) {
+        return new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(packetId));
     }
 
     private static MqttPublishMessage qos2Publish(int packetId, boolean dup, ByteBuf payload) {
