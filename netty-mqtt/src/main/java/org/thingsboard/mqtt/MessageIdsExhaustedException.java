@@ -16,8 +16,9 @@
 package org.thingsboard.mqtt;
 
 /**
- * Fails a publish, subscribe or unsubscribe made while all 65 535 message IDs are held by ones still in flight: MQTT
- * forbids reusing the ID of one not yet acknowledged, so the new one is not sent. It may succeed once one completes.
+ * Fails a QoS 1 or 2 publish, subscribe or unsubscribe made while all 65 535 message IDs are held by ones still in
+ * flight: MQTT forbids reusing the ID of one not yet acknowledged, so the new one is not sent. It may succeed once one
+ * completes. A QoS 0 publish takes no ID, so it never fails this way.
  */
 public class MessageIdsExhaustedException extends RuntimeException {
 

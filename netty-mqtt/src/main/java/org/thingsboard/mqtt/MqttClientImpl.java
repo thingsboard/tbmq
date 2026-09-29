@@ -73,9 +73,10 @@ import java.util.function.Predicate;
  * <ul>
  * <li>a connect future - the connect listener on a failed TCP connect; otherwise {@link MqttChannelHandler}, on the
  * CONNACK or in its {@code channelInactive};</li>
- * <li>a pending subscribe, unsubscribe or publish - whoever removes its entry from the pending map: the ACK handler,
- * max retransmission, the close cleanup, {@link #disconnect()} or the no-channel sweep, through {@link #drain} or an
- * explicit remove-then-act. The remover also releases the entry's payload.</li>
+ * <li>a pending subscribe, unsubscribe or publish - whoever removes its entry from the pending map (a QoS 0 publish's
+ * from {@link #pendingQos0Publishes}): the ACK handler, max retransmission, the close cleanup, {@link #disconnect()}
+ * or the no-channel sweep, through {@link #drain} or an explicit remove-then-act. The remover also releases the
+ * entry's payload.</li>
  * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
@@ -93,6 +94,12 @@ final class MqttClientImpl implements MqttClient {
     private final Set<Integer> qos2PendingMsgIds = ConcurrentHashMap.newKeySet();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
+    /**
+     * The QoS 0 publishes whose first write has not completed. A QoS 0 PUBLISH carries no packet id, so these hold
+     * none: kept out of {@link #pendingPublishes}, they never take an id a QoS 1/2 publish, subscribe or unsubscribe needs.
+     */
+    @Getter(AccessLevel.PACKAGE)
+    private final Set<MqttPendingPublish> pendingQos0Publishes = ConcurrentHashMap.newKeySet();
     @Getter(AccessLevel.PACKAGE)
     private final CopyOnWriteArrayList<MqttSubscription> subscriptions = new CopyOnWriteArrayList<>();
     /**
@@ -261,6 +268,7 @@ final class MqttClientImpl implements MqttClient {
         drain(pendingSubscriptions, MqttPendingSubscription::onChannelClosed);
         drain(pendingServerUnsubscribes, MqttPendingUnsubscription::onChannelClosed);
         drain(pendingPublishes, MqttPendingPublish::onChannelClosed);
+        drain(pendingQos0Publishes, MqttPendingPublish::onChannelClosed);
         if (callback != null) {
             callback.connectionLost(new ChannelClosedException("Channel is closed!"));
         }
@@ -293,6 +301,17 @@ final class MqttClientImpl implements MqttClient {
      */
     private static <V> void drain(Map<Integer, V> map, Consumer<V> onRemoved) {
         drain(map, v -> true, onRemoved);
+    }
+
+    /**
+     * {@link #drain(Map, Consumer)}, of a set.
+     */
+    private static <V> void drain(Set<V> set, Consumer<V> onRemoved) {
+        for (V v : List.copyOf(set)) {
+            if (set.remove(v)) {
+                onRemoved.accept(v);
+            }
+        }
     }
 
     /**
@@ -468,8 +487,7 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload) {
@@ -485,7 +503,7 @@ final class MqttClientImpl implements MqttClient {
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
      * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos) {
@@ -499,8 +517,7 @@ final class MqttClientImpl implements MqttClient {
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain  true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, boolean retain) {
@@ -517,7 +534,7 @@ final class MqttClientImpl implements MqttClient {
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
      * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
@@ -552,48 +569,56 @@ final class MqttClientImpl implements MqttClient {
      * Builds the pending publish for a new message and registers it in the pending publishes, unsent. Its message
      * carries the caller's reference to {@code payload}, and the entry holds one more of its own. Whoever then claims
      * the first write with {@link MqttPendingPublish#markSent()} writes the message and completes that write through
-     * {@link #onFirstWriteComplete}. Returns null, registering nothing and leaving {@code payload} untouched, when all
-     * message IDs are in use.
+     * {@link #onFirstWriteComplete}. A QoS 0 publish takes no message ID; a QoS 1/2 one gets null back, registering
+     * nothing and leaving {@code payload} untouched, when all message IDs are in use.
      */
     MqttPendingPublish registerPendingPublish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
+        if (qos == MqttQoS.AT_MOST_ONCE) {
+            // a QoS 0 PUBLISH carries no packet id, so it takes none
+            MqttPendingPublish pendingPublish = newPendingPublish(0, topic, payload, qos, retain);
+            this.pendingQos0Publishes.add(pendingPublish);
+            return pendingPublish;
+        }
+        return registerWithNewMessageId(this.pendingPublishes, messageId -> newPendingPublish(messageId, topic, payload, qos, retain));
+    }
+
+    private MqttPendingPublish newPendingPublish(int messageId, String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
-        return registerWithNewMessageId(this.pendingPublishes, messageId -> {
-            MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, messageId);
-            // the message carries the caller's reference, which the write hands to netty; the pending publish holds its own
-            MqttPublishMessage message = new MqttPublishMessage(fixedHeader, variableHeader, payload);
+        MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, messageId);
+        // the message carries the caller's reference, which the write hands to netty; the pending publish holds its own
+        MqttPublishMessage message = new MqttPublishMessage(fixedHeader, variableHeader, payload);
 
-            final var self = new AtomicReference<MqttPendingPublish>();
-            final var pendingPublish = MqttPendingPublish.builder()
-                    .messageId(variableHeader.packetId())
-                    .future(future)
-                    .payload(payload.retain())
-                    .message(message)
-                    .qos(qos)
-                    .ownerId(clientConfig.getOwnerId())
-                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
-                    .pendingOperation(new PendingOperation() {
-                        @Override
-                        public boolean isCancelled() {
-                            // identity, not the packet id: once this entry is gone its id may already belong to a new publish
-                            return pendingPublishes.get(variableHeader.packetId()) != self.get();
-                        }
+        final var self = new AtomicReference<MqttPendingPublish>();
+        final var pendingPublish = MqttPendingPublish.builder()
+                .messageId(variableHeader.packetId())
+                .future(future)
+                .payload(payload.retain())
+                .message(message)
+                .qos(qos)
+                .ownerId(clientConfig.getOwnerId())
+                .retransmissionConfig(clientConfig.getRetransmissionConfig())
+                .pendingOperation(new PendingOperation() {
+                    @Override
+                    public boolean isCancelled() {
+                        // identity, not the packet id: once this entry is gone its id may already belong to a new publish
+                        return pendingPublishes.get(variableHeader.packetId()) != self.get();
+                    }
 
-                        @Override
-                        public void onMaxRetransmissionAttemptsReached() {
-                            MqttPendingPublish exhausted = self.get();
-                            if (!pendingPublishes.remove(variableHeader.packetId(), exhausted)) {
-                                return; // acknowledged, failed or closed meanwhile: whoever removed it released it
-                            }
-                            var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
-                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                            exhausted.getPayload().release();
+                    @Override
+                    public void onMaxRetransmissionAttemptsReached() {
+                        MqttPendingPublish exhausted = self.get();
+                        if (!pendingPublishes.remove(variableHeader.packetId(), exhausted)) {
+                            return; // acknowledged, failed or closed meanwhile: whoever removed it released it
                         }
-                    }).build();
-            self.set(pendingPublish);
-            return pendingPublish;
-        });
+                        var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
+                        exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
+                        exhausted.getPayload().release();
+                    }
+                }).build();
+        self.set(pendingPublish);
+        return pendingPublish;
     }
 
     /**
@@ -644,7 +669,10 @@ final class MqttClientImpl implements MqttClient {
      * paths (write listener, ACK, max retransmissions, channel close) can both release it.
      */
     void releaseIfRemoved(MqttPendingPublish pendingPublish) {
-        if (pendingPublishes.remove(pendingPublish.getMessageId(), pendingPublish)) {
+        boolean removed = pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE
+                ? pendingQos0Publishes.remove(pendingPublish)
+                : pendingPublishes.remove(pendingPublish.getMessageId(), pendingPublish);
+        if (removed) {
             pendingPublish.getPayload().release();
         }
     }

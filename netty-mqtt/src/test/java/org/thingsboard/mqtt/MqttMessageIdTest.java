@@ -138,6 +138,37 @@ class MqttMessageIdTest {
         assertThat(client.getPendingServerUnsubscribes()).describedAs("pending unsubscribes").isEmpty();
     }
 
+    @Test
+    void qos0PublishesInFlightHoldNoMessageId() {
+        // GIVEN - QoS 0 publishes whose writes have not completed, as on a connection the broker drains slowly
+        for (int i = 0; i < MESSAGE_IDS; i++) {
+            registerPublish(MqttQoS.AT_MOST_ONCE);
+        }
+
+        // WHEN
+        Future<MqttQoS> subscribe = client.on(TOPIC, msg -> null);
+        MqttPendingPublish qos1Publish = registerPublish(MqttQoS.AT_LEAST_ONCE);
+
+        // THEN - made before the first connect(), the SUBSCRIBE waits for its CONNACK
+        assertThat(subscribe.isDone()).describedAs("subscribe refused").isFalse();
+        assertThat(qos1Publish).describedAs("QoS 1 publish registered").isNotNull();
+    }
+
+    @Test
+    void aQoS0PublishIsNotRefusedWhenEveryMessageIdIsInUse() {
+        // GIVEN
+        fillMessageIds();
+        ByteBuf payload = Unpooled.copiedBuffer("payload", StandardCharsets.UTF_8);
+
+        // WHEN
+        Future<Void> future = client.publish(TOPIC, payload, MqttQoS.AT_MOST_ONCE, false);
+
+        // THEN - it needs no ID, so it fails only for want of a connection
+        assertThat(future.awaitUninterruptibly(5, TimeUnit.SECONDS)).describedAs("publish future completed").isTrue();
+        assertThat(future.cause()).isInstanceOf(ChannelClosedException.class);
+        assertThat(payload.refCnt()).describedAs("references left on the payload").isZero();
+    }
+
     private void fillMessageIds() {
         for (int i = 0; i < MESSAGE_IDS; i++) {
             registerPublish();
@@ -145,12 +176,16 @@ class MqttMessageIdTest {
         assertThat(client.getPendingPublishes()).describedAs("pending publishes holding distinct IDs").hasSize(MESSAGE_IDS);
     }
 
-    /**
-     * Registers a QoS 1 publish, left pending and unsent. Its payload is the empty buffer, whose reference count is
-     * inert, so an entry never removed leaks nothing.
-     */
     private MqttPendingPublish registerPublish() {
-        return client.registerPendingPublish(TOPIC, Unpooled.EMPTY_BUFFER, MqttQoS.AT_LEAST_ONCE, false);
+        return registerPublish(MqttQoS.AT_LEAST_ONCE);
+    }
+
+    /**
+     * Registers a publish, left pending and unsent. Its payload is the empty buffer, whose reference count is inert, so
+     * an entry never removed leaks nothing.
+     */
+    private MqttPendingPublish registerPublish(MqttQoS qos) {
+        return client.registerPendingPublish(TOPIC, Unpooled.EMPTY_BUFFER, qos, false);
     }
 
 }

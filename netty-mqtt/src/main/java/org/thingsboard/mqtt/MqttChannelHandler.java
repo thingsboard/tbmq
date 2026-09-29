@@ -60,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 @Slf4j
 final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> {
@@ -242,13 +243,15 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     }
                 });
 
-                this.client.getPendingPublishes().forEach((id, publish) -> {
+                Consumer<MqttPendingPublish> resend = publish -> {
                     // claim the first write, or publish() would write the same message (and consume its reference) again
                     if (!publish.markSent()) return;
                     // publish() lost the claim and skips its write, so this write is the one to complete
                     channel.write(publish.getMessage())
                             .addListener((ChannelFutureListener) f -> this.client.onFirstWriteComplete(publish, f));
-                });
+                };
+                this.client.getPendingPublishes().values().forEach(resend);
+                this.client.getPendingQos0Publishes().forEach(resend);
                 channel.flush();
                 if (this.client.isReconnect()) {
                     this.client.onSuccessfulReconnect();

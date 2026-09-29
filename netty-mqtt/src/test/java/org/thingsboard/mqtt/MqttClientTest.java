@@ -639,7 +639,8 @@ class MqttClientTest {
                 .until(pendingPublish.getFuture()::isDone);
         assertThat(pendingPublish.getFuture().isSuccess()).describedAs("publish future succeeded").isFalse();
         assertPayloadFullyReleased(payload);
-        assertThat(((MqttClientImpl) client).getPendingPublishes()).doesNotContainKey(pendingPublish.getMessageId());
+        assertThat(((MqttClientImpl) client).getPendingPublishes()).doesNotContainValue(pendingPublish);
+        assertThat(((MqttClientImpl) client).getPendingQos0Publishes()).doesNotContain(pendingPublish);
         assertThat(client.isConnected()).isTrue();
     }
 

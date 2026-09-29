@@ -154,8 +154,7 @@ public interface MqttClient {
      * @param topic The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     Future<Void> publish(String topic, ByteBuf payload);
 
@@ -167,7 +166,7 @@ public interface MqttClient {
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
      * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos);
 
@@ -177,8 +176,7 @@ public interface MqttClient {
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * write's cause, or with {@link ChannelClosedException} when the client is not connected
      */
     Future<Void> publish(String topic, ByteBuf payload, boolean retain);
 
@@ -191,7 +189,7 @@ public interface MqttClient {
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
      * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
-     * {@link MessageIdsExhaustedException} when all message IDs are in use
+     * {@link MessageIdsExhaustedException} when all message IDs are in use - never for QoS 0, which takes none
      */
     Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain);
 
