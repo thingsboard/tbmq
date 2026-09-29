@@ -73,10 +73,10 @@ import java.util.function.Predicate;
  * <ul>
  * <li>a connect future - the connect listener on a failed TCP connect; otherwise {@link MqttChannelHandler}, on the
  * CONNACK or in its {@code channelInactive};</li>
- * <li>a pending subscribe, unsubscribe or publish - whoever removes its entry from the pending map (a QoS 0 publish's
- * from {@link #pendingQos0Publishes}): the ACK handler, max retransmission, the close cleanup, {@link #disconnect()}
- * or the no-channel sweep, through {@link #drain} or an explicit remove-then-act. The remover also releases the
- * entry's payload.</li>
+ * <li>a QoS 0 publish - the listener of its write, or {@link #publish} itself when there is no channel to write to;</li>
+ * <li>a pending subscribe, unsubscribe or QoS 1/2 publish - whoever removes its entry from the pending map: the ACK
+ * handler, max retransmission, the close cleanup, {@link #disconnect()} or the no-channel sweep, through {@link #drain}
+ * or an explicit remove-then-act. The remover also releases the entry's payload.</li>
  * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
@@ -94,12 +94,6 @@ final class MqttClientImpl implements MqttClient {
     private final Set<Integer> qos2PendingMsgIds = ConcurrentHashMap.newKeySet();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
-    /**
-     * The QoS 0 publishes whose first write has not completed. A QoS 0 PUBLISH carries no packet id, so these hold
-     * none: kept out of {@link #pendingPublishes}, they never take an id a QoS 1/2 publish, subscribe or unsubscribe needs.
-     */
-    @Getter(AccessLevel.PACKAGE)
-    private final Set<MqttPendingPublish> pendingQos0Publishes = ConcurrentHashMap.newKeySet();
     @Getter(AccessLevel.PACKAGE)
     private final CopyOnWriteArrayList<MqttSubscription> subscriptions = new CopyOnWriteArrayList<>();
     /**
@@ -268,7 +262,6 @@ final class MqttClientImpl implements MqttClient {
         drain(pendingSubscriptions, MqttPendingSubscription::onChannelClosed);
         drain(pendingServerUnsubscribes, MqttPendingUnsubscription::onChannelClosed);
         drain(pendingPublishes, MqttPendingPublish::onChannelClosed);
-        drain(pendingQos0Publishes, MqttPendingPublish::onChannelClosed);
         if (callback != null) {
             callback.connectionLost(new ChannelClosedException("Channel is closed!"));
         }
@@ -301,17 +294,6 @@ final class MqttClientImpl implements MqttClient {
      */
     private static <V> void drain(Map<Integer, V> map, Consumer<V> onRemoved) {
         drain(map, v -> true, onRemoved);
-    }
-
-    /**
-     * {@link #drain(Map, Consumer)}, of a set.
-     */
-    private static <V> void drain(Set<V> set, Consumer<V> onRemoved) {
-        for (V v : List.copyOf(set)) {
-            if (set.remove(v)) {
-                onRemoved.accept(v);
-            }
-        }
     }
 
     /**
@@ -539,6 +521,9 @@ final class MqttClientImpl implements MqttClient {
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         log.trace("[{}] Publishing message to {}", channel != null ? channel.id() : "UNKNOWN", topic);
+        if (qos == MqttQoS.AT_MOST_ONCE) {
+            return publishAtMostOnce(topic, payload, retain);
+        }
         MqttPendingPublish pendingPublish = registerPendingPublish(topic, payload, qos, retain);
         if (pendingPublish == null) {
             // nothing was registered or written, so the caller's reference is still ours to release
@@ -546,10 +531,6 @@ final class MqttClientImpl implements MqttClient {
             return this.eventLoop.next().newFailedFuture(newMessageIdsExhaustedException());
         }
         Promise<Void> future = pendingPublish.getFuture();
-        if (!pendingPublish.markSent()) {
-            // a CONNACK arriving meanwhile resent it and now owns the caller's reference through that write
-            return future;
-        }
         ChannelFuture channelFuture = this.sendAndFlushPacket(pendingPublish.getMessage());
 
         if (channelFuture != null) {
@@ -566,19 +547,40 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Builds the pending publish for a new message and registers it in the pending publishes, unsent. Its message
-     * carries the caller's reference to {@code payload}, and the entry holds one more of its own. Whoever then claims
-     * the first write with {@link MqttPendingPublish#markSent()} writes the message and completes that write through
-     * {@link #onFirstWriteComplete}. A QoS 0 publish takes no message ID; a QoS 1/2 one gets null back, registering
-     * nothing and leaving {@code payload} untouched, when all message IDs are in use.
+     * Writes a QoS 0 publish straight to the channel. It keeps no pending entry: a QoS 0 PUBLISH takes no message ID, is
+     * never retransmitted and gets no acknowledgement, so the outcome of its write - which netty fails for a write
+     * still queued when the channel closes - is all there is to report.
+     */
+    private Future<Void> publishAtMostOnce(String topic, ByteBuf payload, boolean retain) {
+        Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_MOST_ONCE, retain, 0);
+        MqttPublishMessage message = new MqttPublishMessage(fixedHeader, new MqttPublishVariableHeader(topic, 0), payload);
+        ChannelFuture channelFuture = this.sendAndFlushPacket(message);
+
+        if (channelFuture != null) {
+            // netty consumed the caller's reference, whether the write succeeds or fails
+            channelFuture.addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    future.trySuccess(null);
+                } else {
+                    future.tryFailure(f.cause());
+                }
+            });
+        } else {
+            // no channel, so nothing was written: the caller's reference was never consumed either
+            message.release();
+            future.tryFailure(new ChannelClosedException("Client is not connected"));
+        }
+        return future;
+    }
+
+    /**
+     * Builds the pending publish for a new QoS 1/2 message and registers it in the pending publishes, before its first
+     * write. Its message carries the caller's reference to {@code payload}, and the entry holds one more of its own, which
+     * the retransmissions use. Returns null, registering nothing and leaving {@code payload} untouched, when all message
+     * IDs are in use.
      */
     MqttPendingPublish registerPendingPublish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
-        if (qos == MqttQoS.AT_MOST_ONCE) {
-            // a QoS 0 PUBLISH carries no packet id, so it takes none
-            MqttPendingPublish pendingPublish = newPendingPublish(0, topic, payload, qos, retain);
-            this.pendingQos0Publishes.add(pendingPublish);
-            return pendingPublish;
-        }
         return registerWithNewMessageId(this.pendingPublishes, messageId -> newPendingPublish(messageId, topic, payload, qos, retain));
     }
 
@@ -622,19 +624,14 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Completes the first write of a pending publish, from whichever path claimed it with
-     * {@link MqttPendingPublish#markSent()}: {@link #publish} or the CONNACK resend. The write has consumed the caller's
-     * reference either way. A failed write fails the future, and a QoS 0 write completes it, both releasing the entry's
-     * reference if that entry is still theirs to remove; a QoS 1/2 write starts its retransmission on the channel it was
-     * written on, and stays pending until acknowledged.
+     * Completes the first write of a QoS 1/2 publish, which has consumed the caller's reference either way. A failed
+     * write fails the future, releasing the entry's reference if that entry is still its to remove; a successful one
+     * starts the retransmission on the channel it was written on, and the publish stays pending until acknowledged.
      */
-    void onFirstWriteComplete(MqttPendingPublish pendingPublish, ChannelFuture f) {
+    private void onFirstWriteComplete(MqttPendingPublish pendingPublish, ChannelFuture f) {
         if (!f.isSuccess()) {
             releaseIfRemoved(pendingPublish);
             pendingPublish.getFuture().tryFailure(f.cause());
-        } else if (pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE) {
-            releaseIfRemoved(pendingPublish);
-            pendingPublish.getFuture().trySuccess(null); // We don't get an ACK for QOS 0
         } else {
             startPublishRetransmission(pendingPublish, f.channel());
         }
@@ -669,10 +666,7 @@ final class MqttClientImpl implements MqttClient {
      * paths (write listener, ACK, max retransmissions, channel close) can both release it.
      */
     void releaseIfRemoved(MqttPendingPublish pendingPublish) {
-        boolean removed = pendingPublish.getQos() == MqttQoS.AT_MOST_ONCE
-                ? pendingQos0Publishes.remove(pendingPublish)
-                : pendingPublishes.remove(pendingPublish.getMessageId(), pendingPublish);
-        if (removed) {
+        if (pendingPublishes.remove(pendingPublish.getMessageId(), pendingPublish)) {
             pendingPublish.getPayload().release();
         }
     }

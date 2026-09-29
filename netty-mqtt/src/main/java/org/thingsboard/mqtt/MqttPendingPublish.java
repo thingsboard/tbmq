@@ -24,7 +24,6 @@ import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @Getter(AccessLevel.PACKAGE)
@@ -40,9 +39,6 @@ final class MqttPendingPublish {
     private final RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler;
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler;
-
-    @Getter(AccessLevel.NONE)
-    private final AtomicBoolean sent = new AtomicBoolean();
 
     private MqttPendingPublish(
             int messageId,
@@ -63,14 +59,6 @@ final class MqttPendingPublish {
         publishRetransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, pendingOperation, ownerId);
         publishRetransmissionHandler.setOriginalMessage(message);
         pubrelRetransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, pendingOperation, ownerId);
-    }
-
-    /**
-     * Claims the first write of {@link #getMessage()}. Only the caller that gets {@code true} may write it: writing
-     * hands the caller's reference to netty, so a second first-write would consume that reference twice.
-     */
-    boolean markSent() {
-        return sent.compareAndSet(false, true);
     }
 
     void startPublishRetransmissionTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {

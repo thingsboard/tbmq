@@ -21,11 +21,15 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.Future;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -139,19 +143,29 @@ class MqttMessageIdTest {
     }
 
     @Test
-    void qos0PublishesInFlightHoldNoMessageId() {
-        // GIVEN - QoS 0 publishes whose writes have not completed, as on a connection the broker drains slowly
-        for (int i = 0; i < MESSAGE_IDS; i++) {
-            registerPublish(MqttQoS.AT_MOST_ONCE);
+    void qos0PublishesQueuedOnAStalledConnectionHoldNoMessageId() throws IOException {
+        // GIVEN - a peer that takes the connection but never reads it, as a broker draining it slowly: once the socket
+        // buffers are full, every further write stays queued in the channel
+        try (ServerSocket peer = new ServerSocket(0)) {
+            client.connect("localhost", peer.getLocalPort());
+            Awaitility.await("waiting for the TCP connection").atMost(Duration.ofSeconds(5L)).until(client::isConnected);
+            for (int i = 0; i < 32; i++) {
+                client.publish(TOPIC, Unpooled.wrappedBuffer(new byte[1024 * 1024]));
+            }
+            Future<Void> lastQos0Publish = null;
+            for (int i = 0; i < MESSAGE_IDS; i++) {
+                lastQos0Publish = client.publish(TOPIC, Unpooled.wrappedBuffer(new byte[1]));
+            }
+
+            // WHEN
+            Future<MqttQoS> subscribe = client.on(TOPIC, msg -> null);
+            Future<Void> qos1Publish = client.publish(TOPIC, Unpooled.wrappedBuffer(new byte[1]), MqttQoS.AT_LEAST_ONCE);
+
+            // THEN - each is written behind the stalled writes and waits there; none is refused for want of a message ID
+            assertWaiting(lastQos0Publish, "the last QoS 0 publish");
+            assertWaiting(subscribe, "the subscribe");
+            assertWaiting(qos1Publish, "the QoS 1 publish");
         }
-
-        // WHEN
-        Future<MqttQoS> subscribe = client.on(TOPIC, msg -> null);
-        MqttPendingPublish qos1Publish = registerPublish(MqttQoS.AT_LEAST_ONCE);
-
-        // THEN - made before the first connect(), the SUBSCRIBE waits for its CONNACK
-        assertThat(subscribe.isDone()).describedAs("subscribe refused").isFalse();
-        assertThat(qos1Publish).describedAs("QoS 1 publish registered").isNotNull();
     }
 
     @Test
@@ -169,6 +183,11 @@ class MqttMessageIdTest {
         assertThat(payload.refCnt()).describedAs("references left on the payload").isZero();
     }
 
+    private static void assertWaiting(Future<?> future, String description) {
+        assertThat(future.cause()).describedAs("%s failed", description).isNull();
+        assertThat(future.isDone()).describedAs("%s completed, so no write stalled", description).isFalse();
+    }
+
     private void fillMessageIds() {
         for (int i = 0; i < MESSAGE_IDS; i++) {
             registerPublish();
@@ -176,16 +195,12 @@ class MqttMessageIdTest {
         assertThat(client.getPendingPublishes()).describedAs("pending publishes holding distinct IDs").hasSize(MESSAGE_IDS);
     }
 
-    private MqttPendingPublish registerPublish() {
-        return registerPublish(MqttQoS.AT_LEAST_ONCE);
-    }
-
     /**
-     * Registers a publish, left pending and unsent. Its payload is the empty buffer, whose reference count is inert, so
-     * an entry never removed leaks nothing.
+     * Registers a QoS 1 publish, left pending and unsent. Its payload is the empty buffer, whose reference count is
+     * inert, so an entry never removed leaks nothing.
      */
-    private MqttPendingPublish registerPublish(MqttQoS qos) {
-        return client.registerPendingPublish(TOPIC, Unpooled.EMPTY_BUFFER, qos, false);
+    private MqttPendingPublish registerPublish() {
+        return client.registerPendingPublish(TOPIC, Unpooled.EMPTY_BUFFER, MqttQoS.AT_LEAST_ONCE, false);
     }
 
 }
