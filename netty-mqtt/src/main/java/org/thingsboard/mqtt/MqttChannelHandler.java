@@ -41,6 +41,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttReasonCodes.PubAck;
 import io.netty.handler.codec.mqtt.MqttReasonCodes.PubComp;
 import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRec;
+import io.netty.handler.codec.mqtt.MqttReasonCodes.PubRel;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -241,13 +242,6 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     }
                 });
 
-                this.client.getPendingPublishes().forEach((id, publish) -> {
-                    // claim the first write, or publish() would write the same message (and consume its reference) again
-                    if (!publish.markSent()) return;
-                    // publish() lost the claim and skips its write, so this write is the one to complete
-                    channel.write(publish.getMessage())
-                            .addListener((ChannelFutureListener) f -> this.client.onFirstWriteComplete(publish, f));
-                });
                 channel.flush();
                 if (this.client.isReconnect()) {
                     this.client.onSuccessfulReconnect();
@@ -430,12 +424,33 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     private void handlePubrec(Channel channel, MqttMessage message) {
-        MqttPendingPublish pendingPublish = this.client.getPendingPublishes().get(((MqttMessageIdVariableHeader) message.variableHeader()).messageId());
+        final int msgId = ((MqttMessageIdVariableHeader) message.variableHeader()).messageId();
+        final byte reasonCode = message.variableHeader() instanceof MqttPubReplyMessageVariableHeader pubrec
+                ? pubrec.reasonCode()
+                : PubRec.SUCCESS.byteValue();
+        if (Byte.toUnsignedInt(reasonCode) >= 0x80) {
+            // the server refused the publish: the QoS 2 exchange ends here, with no PUBREL, and frees the packet id
+            MqttPendingPublish refused = this.client.getPendingPublishes().remove(msgId);
+            if (refused != null) {
+                refused.onPubackReceived();
+                refused.getPayload().release();
+                refused.getFuture().tryFailure(new MqttPublishFailedException("Server refused the QoS 2 publish to topic '%s' (message ID: %d) with PUBREC reason code 0x%02X"
+                        .formatted(refused.getMessage().variableHeader().topicName(), msgId, reasonCode)));
+            }
+            return;
+        }
+        MqttPendingPublish pendingPublish = this.client.getPendingPublishes().get(msgId);
+        if (pendingPublish == null) {
+            // no publish is pending for it - its retransmissions ran out before this PUBREC arrived, say. Release it
+            // all the same, or the server keeps the packet id in use; there is nothing left to retransmit or complete
+            log.debug("[{}][{}] PUBREC for unknown packet id {}", client.getClientConfig().getOwnerId(), client.getClientConfig().getClientId(), msgId);
+            processPubRel(channel, msgId, PubRel.PACKET_IDENTIFIER_NOT_FOUND.byteValue());
+            return;
+        }
         pendingPublish.onPubackReceived();
 
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) message.variableHeader();
-        MqttMessage pubrelMessage = new MqttMessage(fixedHeader, variableHeader);
+        // a PUBREL of its own: the PUBREC's reason code and properties are not ones a PUBREL may carry
+        MqttMessage pubrelMessage = newReply(MqttMessageType.PUBREL, msgId, PubRel.SUCCESS.byteValue());
         channel.writeAndFlush(pubrelMessage);
 
         pendingPublish.setPubrelMessage(pubrelMessage);
@@ -444,6 +459,10 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
 
     private void processPubRec(Channel channel, int msgId, byte reasonCodeValue) {
         sendMqttReply(channel, MqttMessageType.PUBREC, msgId, reasonCodeValue);
+    }
+
+    private void processPubRel(Channel channel, int msgId, byte reasonCodeValue) {
+        sendMqttReply(channel, MqttMessageType.PUBREL, msgId, reasonCodeValue);
     }
 
     private void handlePubrel(Channel channel, MqttMessage message) {
@@ -460,11 +479,20 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     private void sendMqttReply(Channel channel, MqttMessageType type, int msgId, byte reasonCodeValue) {
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(type, false, MqttQoS.AT_MOST_ONCE, false, 0);
-        MqttMessage message = MqttVersion.MQTT_5.equals(client.getClientConfig().getProtocolVersion())
+        channel.writeAndFlush(newReply(type, msgId, reasonCodeValue));
+    }
+
+    /**
+     * A PUBREC, PUBREL or PUBCOMP for {@code msgId}, carrying {@code reasonCodeValue} under MQTT 5, which alone has
+     * reason codes.
+     */
+    private MqttMessage newReply(MqttMessageType type, int msgId, byte reasonCodeValue) {
+        // a PUBREL's fixed header flags are 0010, the other replies' 0000
+        MqttQoS qos = type == MqttMessageType.PUBREL ? MqttQoS.AT_LEAST_ONCE : MqttQoS.AT_MOST_ONCE;
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(type, false, qos, false, 0);
+        return MqttVersion.MQTT_5.equals(client.getClientConfig().getProtocolVersion())
                 ? new MqttMessage(fixedHeader, new MqttPubReplyMessageVariableHeader(msgId, reasonCodeValue, null))
                 : new MqttMessage(fixedHeader, MqttMessageIdVariableHeader.from(msgId));
-        channel.writeAndFlush(message);
     }
 
     private void handlePubcomp(MqttMessage message) {
