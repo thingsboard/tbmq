@@ -20,6 +20,7 @@ import lombok.Value;
 @Value
 public class NodeDrainStatus {
 
+    String serviceId;
     NodeDrainState state;
     int initialSessions;
     int remainingSessions;

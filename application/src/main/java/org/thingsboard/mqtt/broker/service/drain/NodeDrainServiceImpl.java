@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -42,6 +43,7 @@ public class NodeDrainServiceImpl implements NodeDrainService {
 
     private final ClientSessionCtxService sessionCtxService;
     private final ClientMqttActorManager clientMqttActorManager;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final NodeDrainSettings settings;
     private final ScheduledExecutorService executor;
     private final AtomicReference<NodeDrainState> state = new AtomicReference<>(NodeDrainState.ACTIVE);
@@ -49,31 +51,52 @@ public class NodeDrainServiceImpl implements NodeDrainService {
     private final AtomicInteger disconnectRequests = new AtomicInteger();
     private final AtomicLong startedAt = new AtomicLong();
     private final AtomicLong completedAt = new AtomicLong();
+    private final AtomicLong operationGeneration = new AtomicLong();
     private Iterator<ClientSessionCtx> sessionsToDrain;
 
     public NodeDrainServiceImpl(ClientSessionCtxService sessionCtxService,
                                 ClientMqttActorManager clientMqttActorManager,
+                                ServiceInfoProvider serviceInfoProvider,
                                 NodeDrainSettings settings) {
         this.sessionCtxService = sessionCtxService;
         this.clientMqttActorManager = clientMqttActorManager;
+        this.serviceInfoProvider = serviceInfoProvider;
         this.settings = settings;
         this.executor = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("node-drain"));
     }
 
     @Override
-    public NodeDrainStatus startDrain() {
+    public synchronized NodeDrainStatus startDrain() {
         if (!state.compareAndSet(NodeDrainState.ACTIVE, NodeDrainState.DRAINING)) {
             return getStatus();
         }
 
         long now = System.currentTimeMillis();
+        long generation = operationGeneration.incrementAndGet();
         startedAt.set(now);
+        completedAt.set(0);
+        disconnectRequests.set(0);
+        sessionsToDrain = null;
         int sessionCount = sessionCtxService.getSessionsCount();
         initialSessions.set(sessionCount);
         log.info("Starting node drain with {} active MQTT sessions", sessionCount);
 
-        executor.schedule(this::drainBatchSafely, Math.max(0, settings.getLoadBalancerWaitMs()), TimeUnit.MILLISECONDS);
+        executor.schedule(() -> drainBatchSafely(generation),
+                Math.max(0, settings.getLoadBalancerWaitMs()), TimeUnit.MILLISECONDS);
         return status(sessionCount);
+    }
+
+    @Override
+    public synchronized NodeDrainStatus cancelDrain() {
+        operationGeneration.incrementAndGet();
+        state.set(NodeDrainState.ACTIVE);
+        sessionsToDrain = null;
+        initialSessions.set(0);
+        disconnectRequests.set(0);
+        startedAt.set(0);
+        completedAt.set(0);
+        log.info("Node drain cancelled; accepting new MQTT connections");
+        return status(sessionCtxService.getSessionsCount());
     }
 
     @Override
@@ -87,31 +110,31 @@ public class NodeDrainServiceImpl implements NodeDrainService {
     }
 
     private NodeDrainStatus status(int remainingSessions) {
-        return new NodeDrainStatus(state.get(), initialSessions.get(), remainingSessions, disconnectRequests.get(),
-                startedAt.get(), completedAt.get());
+        return new NodeDrainStatus(serviceInfoProvider.getServiceId(), state.get(), initialSessions.get(),
+                remainingSessions, disconnectRequests.get(), startedAt.get(), completedAt.get());
     }
 
-    private void drainBatchSafely() {
+    private void drainBatchSafely(long generation) {
         try {
-            drainBatch();
+            drainBatch(generation);
         } catch (Throwable t) {
             log.error("Unexpected node drain failure", t);
-            scheduleNextBatch();
+            scheduleNextBatch(generation);
         }
     }
 
-    private void drainBatch() {
-        if (state.get() != NodeDrainState.DRAINING) {
+    private synchronized void drainBatch(long generation) {
+        if (!isCurrentDrain(generation)) {
             return;
         }
 
         int remainingSessions = sessionCtxService.getSessionsCount();
         if (remainingSessions == 0) {
-            complete(NodeDrainState.DRAINED);
+            complete(NodeDrainState.DRAINED, generation);
             return;
         }
         if (System.currentTimeMillis() - startedAt.get() >= Math.max(1, settings.getTimeoutMs())) {
-            complete(NodeDrainState.TIMED_OUT);
+            complete(NodeDrainState.TIMED_OUT, generation);
             return;
         }
 
@@ -135,14 +158,18 @@ public class NodeDrainServiceImpl implements NodeDrainService {
                         session.getClientId(), session.getSessionId(), e);
             }
         }
+        if (!sessionsToDrain.hasNext()) {
+            sessionsToDrain = null;
+        }
         log.debug("Node drain requested {} disconnects in this batch; {} sessions remain", submitted, remainingSessions);
-        scheduleNextBatch();
+        scheduleNextBatch(generation);
     }
 
-    private void scheduleNextBatch() {
-        if (state.get() == NodeDrainState.DRAINING) {
+    private void scheduleNextBatch(long generation) {
+        if (isCurrentDrain(generation)) {
             try {
-                executor.schedule(this::drainBatchSafely, Math.max(1, settings.getBatchIntervalMs()), TimeUnit.MILLISECONDS);
+                executor.schedule(() -> drainBatchSafely(generation),
+                        Math.max(1, settings.getBatchIntervalMs()), TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException e) {
                 if (!executor.isShutdown()) {
                     throw e;
@@ -151,8 +178,12 @@ public class NodeDrainServiceImpl implements NodeDrainService {
         }
     }
 
-    private void complete(NodeDrainState terminalState) {
-        if (state.compareAndSet(NodeDrainState.DRAINING, terminalState)) {
+    private boolean isCurrentDrain(long generation) {
+        return state.get() == NodeDrainState.DRAINING && operationGeneration.get() == generation;
+    }
+
+    private void complete(NodeDrainState terminalState, long generation) {
+        if (operationGeneration.get() == generation && state.compareAndSet(NodeDrainState.DRAINING, terminalState)) {
             completedAt.set(System.currentTimeMillis());
             log.info("Node drain finished with state {}. Requested disconnects: {}, remaining sessions: {}",
                     terminalState, disconnectRequests.get(), sessionCtxService.getSessionsCount());

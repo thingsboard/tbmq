@@ -148,6 +148,11 @@ public class ConnectServiceImpl implements ConnectService {
                 sessionExpiryInterval
         );
 
+        if (nodeDrainService.isDraining()) {
+            refuseConnection(sessionCtx, sessionInfo, SERVER_UNAVAILABLE, null);
+            return;
+        }
+
         boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg, sessionInfo);
         if (!proceedWithConnection) {
             return;
@@ -253,12 +258,17 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
+        refuseConnection(clientSessionCtx, clientSessionCtx.getSessionInfo(), reason, t);
+    }
+
+    private void refuseConnection(ClientSessionCtx clientSessionCtx, SessionInfo sessionInfo,
+                                  ClientSessionFailureReason reason, Throwable t) {
         logConnectionRefused(clientSessionCtx, reason, t);
 
         MqttConnectReturnCode returnCode = reason.toMqttReturnCode(clientSessionCtx);
         // Emit the same MQTT CONNACK reason-code name the client receives, matching the pre-connection validation
         // path (which emits MqttConnectReturnCode.name()) so CLIENT_CONNECTION_FAILED speaks a single vocabulary.
-        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, clientSessionCtx.getSessionInfo(), returnCode.name());
+        integrationLifecycleEventPublisher.publishConnectionFailed(clientSessionCtx, sessionInfo, returnCode.name());
 
         sendConnectionRefusedMsgAndDisconnect(clientSessionCtx, returnCode);
     }

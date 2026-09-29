@@ -22,6 +22,11 @@ public interface NodeDrainService {
      */
     NodeDrainStatus startDrain();
 
+    /**
+     * Cancels the current drain operation and allows new MQTT connections again.
+     */
+    NodeDrainStatus cancelDrain();
+
     NodeDrainStatus getStatus();
 
     boolean isDraining();

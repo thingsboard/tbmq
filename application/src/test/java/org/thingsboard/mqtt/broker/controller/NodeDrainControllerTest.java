@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.service.drain.NodeDrainStatus;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,10 +56,23 @@ public class NodeDrainControllerTest {
         mockMvc.perform(post(NodeDrainController.DRAIN_PATH))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("DRAINING"))
+                .andExpect(jsonPath("$.serviceId").value("service-1"))
                 .andExpect(jsonPath("$.initialSessions").value(42))
                 .andExpect(jsonPath("$.remainingSessions").value(42));
 
         verify(nodeDrainService).startDrain();
+    }
+
+    @Test
+    public void givenDrainInProgress_whenCancelDrain_thenReturnsActiveStatus() throws Exception {
+        when(nodeDrainService.cancelDrain()).thenReturn(drainStatus(NodeDrainState.ACTIVE, 0, 7));
+
+        mockMvc.perform(delete(NodeDrainController.DRAIN_PATH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("ACTIVE"))
+                .andExpect(jsonPath("$.serviceId").value("service-1"));
+
+        verify(nodeDrainService).cancelDrain();
     }
 
     @Test
@@ -74,7 +88,7 @@ public class NodeDrainControllerTest {
     }
 
     private static NodeDrainStatus drainStatus(NodeDrainState state, int initialSessions, int remainingSessions) {
-        return new NodeDrainStatus(state, initialSessions, remainingSessions, initialSessions - remainingSessions,
+        return new NodeDrainStatus("service-1", state, initialSessions, remainingSessions, initialSessions - remainingSessions,
                 1_000L, 0L);
     }
 

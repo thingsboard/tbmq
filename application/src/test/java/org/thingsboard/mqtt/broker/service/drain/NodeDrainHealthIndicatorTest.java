@@ -46,7 +46,7 @@ class NodeDrainHealthIndicatorTest {
     }
 
     private NodeDrainStatus status(NodeDrainState state, int remainingSessions) {
-        return new NodeDrainStatus(state, 10, remainingSessions, 3, 100, 0);
+        return new NodeDrainStatus("service-1", state, 10, remainingSessions, 3, 100, 0);
     }
 
 }

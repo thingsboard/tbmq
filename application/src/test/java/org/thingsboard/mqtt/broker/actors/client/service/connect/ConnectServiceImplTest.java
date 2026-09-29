@@ -179,6 +179,22 @@ public class ConnectServiceImplTest {
     }
 
     @Test
+    public void givenNodeDraining_whenStartConnection_thenRefusesBeforeClusterRequest() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(nodeDrainService.isDraining()).thenReturn(true);
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "testClient"), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE_5);
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
     public void givenClientSessionContext_whenRefuseConnection_thenVerifyExecutions() {
         connectService.refuseConnection(ctx, ClientSessionFailureReason.SERVER_UNAVAILABLE, null);
 

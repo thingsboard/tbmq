@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +48,14 @@ public class NodeDrainController extends BaseController {
     @GetMapping(DRAIN_PATH)
     public NodeDrainStatus getDrainStatus() {
         return nodeDrainService.getStatus();
+    }
+
+    @ApiOperation(value = "Cancel draining this broker node (cancelNodeDrain)",
+            notes = "Returns this broker node to ACTIVE state. Sessions already disconnected by the drain are not restored.")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(DRAIN_PATH)
+    public NodeDrainStatus cancelDrain() {
+        return nodeDrainService.cancelDrain();
     }
 
 }

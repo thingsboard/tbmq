@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +51,8 @@ class NodeDrainServiceImplTest {
     private ClientSessionCtxService sessionCtxService;
     @Mock
     private ClientMqttActorManager clientMqttActorManager;
+    @Mock
+    private ServiceInfoProvider serviceInfoProvider;
     private NodeDrainServiceImpl service;
     private Collection<ClientSessionCtx> sessions;
 
@@ -63,7 +67,8 @@ class NodeDrainServiceImplTest {
         sessions = new CopyOnWriteArrayList<>();
         lenient().when(sessionCtxService.getAllClientSessionCtx()).thenAnswer(invocation -> new ArrayList<>(sessions));
         lenient().when(sessionCtxService.getSessionsCount()).thenAnswer(invocation -> sessions.size());
-        service = new NodeDrainServiceImpl(sessionCtxService, clientMqttActorManager, settings);
+        lenient().when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
+        service = new NodeDrainServiceImpl(sessionCtxService, clientMqttActorManager, serviceInfoProvider, settings);
     }
 
     @AfterEach
@@ -78,6 +83,7 @@ class NodeDrainServiceImplTest {
         NodeDrainStatus status = service.startDrain();
 
         assertThat(status.getState()).isEqualTo(NodeDrainState.DRAINING);
+        assertThat(status.getServiceId()).isEqualTo("service-1");
         assertThat(status.getInitialSessions()).isEqualTo(1);
         assertThat(service.isDraining()).isTrue();
     }
@@ -117,6 +123,52 @@ class NodeDrainServiceImplTest {
     }
 
     @Test
+    void givenDrainInProgress_whenCancelled_thenAcceptsConnectionsAndInvalidatesScheduledWork() throws Exception {
+        service.destroy();
+        NodeDrainSettings settings = new NodeDrainSettings();
+        settings.setLoadBalancerWaitMs(200);
+        settings.setBatchSize(2);
+        settings.setBatchIntervalMs(10);
+        settings.setTimeoutMs(1_000);
+        service = new NodeDrainServiceImpl(sessionCtxService, clientMqttActorManager, serviceInfoProvider, settings);
+        sessions.add(session("client-1"));
+        service.startDrain();
+
+        NodeDrainStatus status = service.cancelDrain();
+
+        assertThat(status.getState()).isEqualTo(NodeDrainState.ACTIVE);
+        assertThat(status.getStartedAt()).isZero();
+        assertThat(status.getDisconnectRequests()).isZero();
+        assertThat(service.isDraining()).isFalse();
+
+        Thread.sleep(250);
+        verify(clientMqttActorManager, never()).disconnect(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void givenSessionAppearsAfterInitialSnapshot_whenDraining_thenItIsFoundOnRescan() {
+        ClientSessionCtx first = session("client-1");
+        ClientSessionCtx late = session("client-2");
+        sessions.add(first);
+
+        service.startDrain();
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
+                verify(clientMqttActorManager).disconnect(org.mockito.ArgumentMatchers.eq(first.getClientId()),
+                        org.mockito.ArgumentMatchers.any(MqttDisconnectMsg.class)));
+
+        sessions.remove(first);
+        sessions.add(late);
+
+        await().atMost(Duration.ofSeconds(2)).untilAsserted(() ->
+                verify(clientMqttActorManager).disconnect(org.mockito.ArgumentMatchers.eq(late.getClientId()),
+                        org.mockito.ArgumentMatchers.any(MqttDisconnectMsg.class)));
+        sessions.clear();
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
+                assertThat(service.getStatus().getState()).isEqualTo(NodeDrainState.DRAINED));
+    }
+
+    @Test
     void givenSessionDoesNotDisconnectBeforeTimeout_whenDraining_thenReportsTimedOut() {
         NodeDrainSettings settings = new NodeDrainSettings();
         settings.setLoadBalancerWaitMs(0);
@@ -124,7 +176,7 @@ class NodeDrainServiceImplTest {
         settings.setBatchIntervalMs(5);
         settings.setTimeoutMs(25);
         service.destroy();
-        service = new NodeDrainServiceImpl(sessionCtxService, clientMqttActorManager, settings);
+        service = new NodeDrainServiceImpl(sessionCtxService, clientMqttActorManager, serviceInfoProvider, settings);
         sessions.add(session("stuck-client"));
 
         service.startDrain();
