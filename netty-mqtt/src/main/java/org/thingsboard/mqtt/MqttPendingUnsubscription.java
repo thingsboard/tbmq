@@ -28,6 +28,7 @@ final class MqttPendingUnsubscription {
 
     private final Promise<Void> future;
     private final String topic;
+    private final MqttUnsubscribeMessage unsubscribeMessage;
 
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttUnsubscribeMessage> retransmissionHandler;
@@ -42,6 +43,7 @@ final class MqttPendingUnsubscription {
     ) {
         this.future = future;
         this.topic = topic;
+        this.unsubscribeMessage = unsubscribeMessage;
 
         retransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, operation, ownerId);
         retransmissionHandler.setOriginalMessage(unsubscribeMessage);

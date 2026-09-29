@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 /**
@@ -103,7 +104,11 @@ final class MqttClientImpl implements MqttClient {
     private final ConcurrentMap<Integer, MqttPendingSubscription> pendingSubscriptions = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final Set<String> pendingSubscribeTopics = ConcurrentHashMap.newKeySet();
-    private final AtomicInteger nextMessageId = new AtomicInteger(1);
+    /**
+     * Guards {@link #nextMessageId}, and makes taking a message ID and registering the entry that holds it one step.
+     */
+    private final Object messageIdLock = new Object();
+    private int nextMessageId = 1;
 
     @Getter
     private final MqttClientConfig clientConfig;
@@ -142,6 +147,7 @@ final class MqttClientImpl implements MqttClient {
     private final ListeningExecutor handlerExecutor;
 
     private final static int DISCONNECT_FALLBACK_DELAY_SECS = 1;
+    private final static int MAX_MESSAGE_ID = 0xffff;
 
     /**
      * Construct the MqttClientImpl with default config
@@ -383,8 +389,8 @@ final class MqttClientImpl implements MqttClient {
      * @param handler The handler to invoke when we receive a message
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
-     * the retransmissions run out. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
+     * connection closes or the client disconnects before the SUBACK, {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out, or {@link MessageIdsExhaustedException} when all message IDs are in use. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
      * next connection - made before the first connect(), for that connect's - and fails with
      * {@link ChannelClosedException} at once when no connection is coming: a connect failed, or the connection closed,
      * with no reconnect scheduled and no connect() called since
@@ -403,8 +409,8 @@ final class MqttClientImpl implements MqttClient {
      *                is in flight
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
-     * connection closes or the client disconnects before the SUBACK, or {@link MaxRetransmissionsReachedException} when
-     * the retransmissions run out. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
+     * connection closes or the client disconnects before the SUBACK, {@link MaxRetransmissionsReachedException} when
+     * the retransmissions run out, or {@link MessageIdsExhaustedException} when all message IDs are in use. Made while the client is not connected, the SUBSCRIBE waits for the CONNACK of the
      * next connection - made before the first connect(), for that connect's - and fails with
      * {@link ChannelClosedException} at once when no connection is coming: a connect failed, or the connection closed,
      * with no reconnect scheduled and no connect() called since
@@ -421,8 +427,9 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic filter to unsubscribe for
      * @param handler The handler the filter must currently have
      * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
-     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
-     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK,
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> off(String topic, MqttHandler handler) {
@@ -440,8 +447,9 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic The topic filter to unsubscribe for
      * @return A future which will be completed when the server acknowledges our unsubscribe request, or fails
-     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK, or
-     * {@link MaxRetransmissionsReachedException} when the retransmissions run out
+     * with {@link ChannelClosedException} when the connection closes before the UNSUBACK,
+     * {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> off(String topic) {
@@ -460,7 +468,8 @@ final class MqttClientImpl implements MqttClient {
      * @param topic   The topic to publish to
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, or with {@link ChannelClosedException} when the client is not connected
+     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload) {
@@ -475,7 +484,8 @@ final class MqttClientImpl implements MqttClient {
      * @param qos     The qos to use while publishing
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
-     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
+     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos) {
@@ -489,7 +499,8 @@ final class MqttClientImpl implements MqttClient {
      * @param payload The payload to send; ownership passes to the client, so the caller must not release it
      * @param retain  true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is sent out of the MqttClient, or fails with the
-     * write's cause, or with {@link ChannelClosedException} when the client is not connected
+     * write's cause, with {@link ChannelClosedException} when the client is not connected, or with
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, boolean retain) {
@@ -505,12 +516,18 @@ final class MqttClientImpl implements MqttClient {
      * @param retain  true if you want to retain the message on the server, false otherwise
      * @return A future which will be completed when the message is delivered to the server, or fails with the
      * write's cause, {@link ChannelClosedException} when the client is not connected or the connection closes
-     * before the acknowledgement, or {@link MaxRetransmissionsReachedException} when the retransmissions run out
+     * before the acknowledgement, {@link MaxRetransmissionsReachedException} when the retransmissions run out, or
+     * {@link MessageIdsExhaustedException} when all message IDs are in use
      */
     @Override
     public Future<Void> publish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         log.trace("[{}] Publishing message to {}", channel != null ? channel.id() : "UNKNOWN", topic);
         MqttPendingPublish pendingPublish = registerPendingPublish(topic, payload, qos, retain);
+        if (pendingPublish == null) {
+            // nothing was registered or written, so the caller's reference is still ours to release
+            payload.release();
+            return this.eventLoop.next().newFailedFuture(newMessageIdsExhaustedException());
+        }
         Promise<Void> future = pendingPublish.getFuture();
         if (!pendingPublish.markSent()) {
             // a CONNACK arriving meanwhile resent it and now owns the caller's reference through that write
@@ -535,47 +552,48 @@ final class MqttClientImpl implements MqttClient {
      * Builds the pending publish for a new message and registers it in the pending publishes, unsent. Its message
      * carries the caller's reference to {@code payload}, and the entry holds one more of its own. Whoever then claims
      * the first write with {@link MqttPendingPublish#markSent()} writes the message and completes that write through
-     * {@link #onFirstWriteComplete}.
+     * {@link #onFirstWriteComplete}. Returns null, registering nothing and leaving {@code payload} untouched, when all
+     * message IDs are in use.
      */
     MqttPendingPublish registerPendingPublish(String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
         Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
-        MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, getNewMessageId().messageId());
-        // the message carries the caller's reference, which the write hands to netty; the pending publish holds its own
-        MqttPublishMessage message = new MqttPublishMessage(fixedHeader, variableHeader, payload);
+        return registerWithNewMessageId(this.pendingPublishes, messageId -> {
+            MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, messageId);
+            // the message carries the caller's reference, which the write hands to netty; the pending publish holds its own
+            MqttPublishMessage message = new MqttPublishMessage(fixedHeader, variableHeader, payload);
 
-        final var self = new AtomicReference<MqttPendingPublish>();
-        final var pendingPublish = MqttPendingPublish.builder()
-                .messageId(variableHeader.packetId())
-                .future(future)
-                .payload(payload.retain())
-                .message(message)
-                .qos(qos)
-                .ownerId(clientConfig.getOwnerId())
-                .retransmissionConfig(clientConfig.getRetransmissionConfig())
-                .pendingOperation(new PendingOperation() {
-                    @Override
-                    public boolean isCancelled() {
-                        // identity, not the packet id: once this entry is gone its id may already belong to a new publish
-                        return pendingPublishes.get(variableHeader.packetId()) != self.get();
-                    }
-
-                    @Override
-                    public void onMaxRetransmissionAttemptsReached() {
-                        MqttPendingPublish exhausted = self.get();
-                        if (!pendingPublishes.remove(variableHeader.packetId(), exhausted)) {
-                            return; // acknowledged, failed or closed meanwhile: whoever removed it released it
+            final var self = new AtomicReference<MqttPendingPublish>();
+            final var pendingPublish = MqttPendingPublish.builder()
+                    .messageId(variableHeader.packetId())
+                    .future(future)
+                    .payload(payload.retain())
+                    .message(message)
+                    .qos(qos)
+                    .ownerId(clientConfig.getOwnerId())
+                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
+                    .pendingOperation(new PendingOperation() {
+                        @Override
+                        public boolean isCancelled() {
+                            // identity, not the packet id: once this entry is gone its id may already belong to a new publish
+                            return pendingPublishes.get(variableHeader.packetId()) != self.get();
                         }
-                        var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
-                        exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                        exhausted.getPayload().release();
-                    }
-                }).build();
-        self.set(pendingPublish);
 
-        this.pendingPublishes.put(pendingPublish.getMessageId(), pendingPublish);
-        return pendingPublish;
+                        @Override
+                        public void onMaxRetransmissionAttemptsReached() {
+                            MqttPendingPublish exhausted = self.get();
+                            if (!pendingPublishes.remove(variableHeader.packetId(), exhausted)) {
+                                return; // acknowledged, failed or closed meanwhile: whoever removed it released it
+                            }
+                            var message = "Unable to deliver publish message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.packetId());
+                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
+                            exhausted.getPayload().release();
+                        }
+                    }).build();
+            self.set(pendingPublish);
+            return pendingPublish;
+        });
     }
 
     /**
@@ -689,13 +707,37 @@ final class MqttClientImpl implements MqttClient {
         return ch.newFailedFuture(new ChannelClosedException("Channel is closed!"));
     }
 
-    private MqttMessageIdVariableHeader getNewMessageId() {
-        int messageId;
-        synchronized (this.nextMessageId) {
-            this.nextMessageId.compareAndSet(0xffff, 1);
-            messageId = this.nextMessageId.getAndIncrement();
+    /**
+     * Registers in {@code pending} the entry {@code newEntry} builds for a new message ID: the next one in turn that no
+     * pending publish, subscribe or unsubscribe holds, as MQTT forbids reusing the ID of one not yet acknowledged.
+     * Taking the ID and registering its entry is one step, so that no other caller can take the same ID in between.
+     *
+     * @return the entry registered, or null when all 65 535 IDs are in use; nothing is built or registered then
+     */
+    private <T> T registerWithNewMessageId(Map<Integer, T> pending, IntFunction<T> newEntry) {
+        synchronized (this.messageIdLock) {
+            for (int i = 0; i < MAX_MESSAGE_ID; i++) {
+                int messageId = this.nextMessageId;
+                this.nextMessageId = messageId == MAX_MESSAGE_ID ? 1 : messageId + 1;
+                if (!isMessageIdInUse(messageId)) {
+                    T entry = newEntry.apply(messageId);
+                    pending.put(messageId, entry);
+                    return entry;
+                }
+            }
+            return null;
         }
-        return MqttMessageIdVariableHeader.from(messageId);
+    }
+
+    private MessageIdsExhaustedException newMessageIdsExhaustedException() {
+        return new MessageIdsExhaustedException("All %d message IDs are in use by publishes, subscribes and unsubscribes in flight for client '%s'"
+                .formatted(MAX_MESSAGE_ID, clientConfig.getClientId()));
+    }
+
+    private boolean isMessageIdInUse(int messageId) {
+        return this.pendingPublishes.containsKey(messageId)
+                || this.pendingSubscriptions.containsKey(messageId)
+                || this.pendingServerUnsubscribes.containsKey(messageId);
     }
 
     private Future<MqttQoS> createSubscription(String topic, MqttHandler handler, MqttQoS qos) {
@@ -720,38 +762,43 @@ final class MqttClientImpl implements MqttClient {
         Promise<MqttQoS> future = new DefaultPromise<>(this.eventLoop.next());
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
         MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
-        MqttMessageIdVariableHeader variableHeader = getNewMessageId();
         MqttSubscribePayload payload = new MqttSubscribePayload(Collections.singletonList(subscription));
-        MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader, variableHeader, payload);
 
-        final var pendingSubscription = MqttPendingSubscription.builder()
-                .future(future)
-                .topic(topic)
-                .handler(handler)
-                .subscribeMessage(message)
-                .connectAttempt(attempt)
-                .ownerId(clientConfig.getOwnerId())
-                .retransmissionConfig(clientConfig.getRetransmissionConfig())
-                .pendingOperation(new PendingOperation() {
-                    @Override
-                    public boolean isCancelled() {
-                        return !pendingSubscriptions.containsKey(variableHeader.messageId());
-                    }
+        final var pendingSubscription = registerWithNewMessageId(this.pendingSubscriptions, messageId -> {
+            MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
+            MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader, variableHeader, payload);
 
-                    @Override
-                    public void onMaxRetransmissionAttemptsReached() {
-                        // remove, then fail outside the map: a listener that subscribes again updates this map
-                        MqttPendingSubscription exhausted = pendingSubscriptions.remove(variableHeader.messageId());
-                        if (exhausted == null) {
-                            return;
+            return MqttPendingSubscription.builder()
+                    .future(future)
+                    .topic(topic)
+                    .handler(handler)
+                    .subscribeMessage(message)
+                    .connectAttempt(attempt)
+                    .ownerId(clientConfig.getOwnerId())
+                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
+                    .pendingOperation(new PendingOperation() {
+                        @Override
+                        public boolean isCancelled() {
+                            return !pendingSubscriptions.containsKey(variableHeader.messageId());
                         }
-                        var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
-                        exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                    }
-                }).build();
 
-        this.pendingSubscriptions.put(variableHeader.messageId(), pendingSubscription);
+                        @Override
+                        public void onMaxRetransmissionAttemptsReached() {
+                            // remove, then fail outside the map: a listener that subscribes again updates this map
+                            MqttPendingSubscription exhausted = pendingSubscriptions.remove(variableHeader.messageId());
+                            if (exhausted == null) {
+                                return;
+                            }
+                            var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
+                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
+                        }
+                    }).build();
+        });
+        if (pendingSubscription == null) {
+            future.setFailure(newMessageIdsExhaustedException());
+            return future;
+        }
         this.pendingSubscribeTopics.add(topic);
         if (this.disconnected) {
             // a disconnected client never connects again, and disconnect() may have swept the pending subscriptions
@@ -764,7 +811,7 @@ final class MqttClientImpl implements MqttClient {
             // sent only when written to an active channel: a write to a channel that closed is refused, and the
             // SUBSCRIBE is left to the CONNACK resend of the next connection, which skips one counted as sent
             if (pendingSubscription.markSent()) {
-                this.sendAndFlushPacket(ch, message);
+                this.sendAndFlushPacket(ch, pendingSubscription.getSubscribeMessage());
                 pendingSubscription.startRetransmitTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
             }
         } else if (this.abandonedConnectAttempt.get() >= attempt) {
@@ -796,40 +843,45 @@ final class MqttClientImpl implements MqttClient {
         if (this.subscriptions.stream().noneMatch(s -> s.getTopic().equals(topic))
                 && this.serverSubscriptions.containsKey(topic)) {
             MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-            MqttMessageIdVariableHeader variableHeader = getNewMessageId();
             MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Collections.singletonList(topic));
-            MqttUnsubscribeMessage message = new MqttUnsubscribeMessage(fixedHeader, variableHeader, payload);
 
-            final var pendingUnsubscription = MqttPendingUnsubscription.builder()
-                    .future(promise)
-                    .topic(topic)
-                    .unsubscribeMessage(message)
-                    .ownerId(clientConfig.getOwnerId())
-                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
-                    .pendingOperation(new PendingOperation() {
-                        @Override
-                        public boolean isCancelled() {
-                            return !pendingServerUnsubscribes.containsKey(variableHeader.messageId());
-                        }
+            final var pendingUnsubscription = registerWithNewMessageId(this.pendingServerUnsubscribes, messageId -> {
+                MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
+                MqttUnsubscribeMessage message = new MqttUnsubscribeMessage(fixedHeader, variableHeader, payload);
 
-                        @Override
-                        public void onMaxRetransmissionAttemptsReached() {
-                            // remove, then fail outside the map: a listener that unsubscribes again updates this map
-                            MqttPendingUnsubscription exhausted = pendingServerUnsubscribes.remove(variableHeader.messageId());
-                            if (exhausted == null) {
-                                return;
+                return MqttPendingUnsubscription.builder()
+                        .future(promise)
+                        .topic(topic)
+                        .unsubscribeMessage(message)
+                        .ownerId(clientConfig.getOwnerId())
+                        .retransmissionConfig(clientConfig.getRetransmissionConfig())
+                        .pendingOperation(new PendingOperation() {
+                            @Override
+                            public boolean isCancelled() {
+                                return !pendingServerUnsubscribes.containsKey(variableHeader.messageId());
                             }
-                            var message = "Unable to deliver unsubscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
-                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                        }
-                    }).build();
 
-            this.pendingServerUnsubscribes.put(variableHeader.messageId(), pendingUnsubscription);
+                            @Override
+                            public void onMaxRetransmissionAttemptsReached() {
+                                // remove, then fail outside the map: a listener that unsubscribes again updates this map
+                                MqttPendingUnsubscription exhausted = pendingServerUnsubscribes.remove(variableHeader.messageId());
+                                if (exhausted == null) {
+                                    return;
+                                }
+                                var message = "Unable to deliver unsubscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                        .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
+                                exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
+                            }
+                        }).build();
+            });
+            if (pendingUnsubscription == null) {
+                promise.setFailure(newMessageIdsExhaustedException());
+                return;
+            }
             final Channel ch = this.channel;
             pendingUnsubscription.startRetransmissionTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
 
-            this.sendAndFlushPacket(ch, message);
+            this.sendAndFlushPacket(ch, pendingUnsubscription.getUnsubscribeMessage());
         } else {
             promise.setSuccess(null);
         }
