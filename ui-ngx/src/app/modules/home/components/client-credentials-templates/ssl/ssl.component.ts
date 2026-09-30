@@ -109,7 +109,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
 
   writeValue(mqttSsl: string) {
     if (isDefinedAndNotNull(mqttSsl) && !isEmptyStr(mqttSsl)) {
-      const value = JSON.parse(mqttSsl);
+      const value = {clientIdPattern: null, clientIdIsRegex: false, ...JSON.parse(mqttSsl)};
       this.updateCertificateCnView(value?.certCnIsRegex);
       this.updateClientIdView(value?.clientIdIsRegex);
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
