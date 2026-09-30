@@ -346,7 +346,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
             SettableFuture<Void> future = validationTask.getFuture();
             if (validationResponseMsg.hasError()) {
                 String errorMsg = JavaSerDesUtil.decode(validationResponseMsg.getError().toByteArray());
-                future.setException(new RuntimeException(errorMsg));
+                // the executor rejected the submitted configuration or could not connect with it: a client error (400)
+                future.setException(new DataValidationException(errorMsg));
             } else {
                 future.set(null);
             }
