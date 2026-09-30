@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,26 +59,19 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
             throw new AuthenticationException(CAN_NOT_PARSE_SSL_CREDS.getErrorMsg());
         }
 
-        List<PubSubAuthorizationRules> matchingRules = credentials.getAuthRulesMapping().entrySet().stream()
-                .filter(entry -> {
-                    String certificateMatcherRegex = entry.getKey();
-                    Pattern pattern = Pattern.compile(certificateMatcherRegex);
-                    Matcher commonNameMatcher = pattern.matcher(clientCommonName);
-                    return commonNameMatcher.find();
-                })
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+        List<AuthRulePatterns> authRulePatterns = new ArrayList<>();
+        for (Map.Entry<String, PubSubAuthorizationRules> entry : credentials.getAuthRulesMapping().entrySet()) {
+            Pattern certificateMatcherPattern = Pattern.compile(entry.getKey());
+            if (certificateMatcherPattern.matcher(clientCommonName).find()) {
+                authRulePatterns.add(newAuthRulePatterns(entry.getValue(), clientCommonName, clientId));
+            }
+        }
 
-        if (matchingRules.isEmpty()) {
+        if (authRulePatterns.isEmpty()) {
             String errorMsg = String.format(NO_AUTH_RULES_FOR_CN_IN_CREDS.getErrorMsg(),
                     clientCommonName, clientTypeSslMqttCredentials.getName());
             log.warn(errorMsg);
             throw new AuthenticationException(errorMsg);
-        }
-
-        List<AuthRulePatterns> authRulePatterns = new ArrayList<>(matchingRules.size());
-        for (PubSubAuthorizationRules rules : matchingRules) {
-            authRulePatterns.add(newAuthRulePatterns(rules, clientCommonName, clientId));
         }
 
         return authRulePatterns;
