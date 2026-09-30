@@ -298,7 +298,6 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
         mqttClientCredentials.setCredentialsId(credentialsId);
-        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
     }
 
     private void preprocessScramMqttCredentials(MqttClientCredentials mqttClientCredentials) {

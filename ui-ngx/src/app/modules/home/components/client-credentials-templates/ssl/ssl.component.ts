@@ -117,7 +117,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   }
 
   updateView(value: SslMqttCredentials) {
-    const formValue = JSON.stringify(value);
+    const {clientIdPattern, clientIdIsRegex, ...credentials} = value;
+    const formValue = JSON.stringify(clientIdPattern?.length ? {...credentials, clientIdPattern, clientIdIsRegex} : credentials);
     this.updateCertificateCnView(value?.certCnIsRegex);
     this.updateClientIdView(value?.clientIdIsRegex);
     this.propagateChange(formValue);
