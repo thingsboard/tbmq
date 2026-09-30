@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
@@ -35,8 +36,12 @@ public class SslMqttCredentials implements Serializable {
     @NoXss
     private String certCnPattern;
     private boolean certCnIsRegex;
+    // Omitted when unset so that credentials without a client ID constraint keep the JSON shape
+    // older versions can read (the DB value and the shared sslRegexBasedCredentials cache entry).
     @NoXss
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private String clientIdPattern;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     private boolean clientIdIsRegex;
     private Map<String, PubSubAuthorizationRules> authRulesMapping;
 

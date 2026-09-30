@@ -165,6 +165,21 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         mqttClientCredentialsService.saveCredentials(validScramMqttClientCredentials());
     }
 
+    @Test
+    public void givenSslCredentialsWithEmptyClientIdFields_whenSave_thenStoredWithoutClientIdFields() throws Exception {
+        MqttClientCredentials clientCredentials = validMqttSslClientCredentials(ClientType.DEVICE);
+        String certCn = JacksonUtil.fromString(clientCredentials.getCredentialsValue(), SslMqttCredentials.class).getCertCnPattern();
+        clientCredentials.setCredentialsValue("{\"certCnPattern\":\"" + certCn + "\",\"certCnIsRegex\":false," +
+                "\"clientIdPattern\":null,\"clientIdIsRegex\":false,\"authRulesMapping\":{\".*\":{\"pubAuthRulePatterns\":[\".*\"],\"subAuthRulePatterns\":[\".*\"]}}}");
+
+        MqttClientCredentials saved = mqttClientCredentialsService.saveCredentials(clientCredentials);
+        try {
+            Assert.assertFalse(saved.getCredentialsValue().contains("clientId"));
+        } finally {
+            mqttClientCredentialsService.deleteCredentials(saved.getId());
+        }
+    }
+
     @Test(expected = DataValidationException.class)
     public void testCreateCredentialsWithSystemWebSocketCredentialsName() throws JsonProcessingException {
         mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME, "client", "user", null));
