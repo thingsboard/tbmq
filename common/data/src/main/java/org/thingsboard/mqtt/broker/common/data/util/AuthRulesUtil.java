@@ -77,10 +77,6 @@ public class AuthRulesUtil {
                 .toList();
     }
 
-    public static String processPattern(String pattern, String clientCommonName) {
-        return processPattern(pattern, clientCommonName, null);
-    }
-
     public static String processPattern(String pattern, String clientCommonName, String clientId) {
         try {
             String result = processVar(pattern, COMMON_NAME_PLACEHOLDER, clientCommonName);

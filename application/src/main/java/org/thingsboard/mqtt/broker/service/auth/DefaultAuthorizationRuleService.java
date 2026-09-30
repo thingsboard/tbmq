@@ -53,11 +53,6 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
 
     @Override
-    public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {
-        return parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName, null);
-    }
-
-    @Override
     public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials,
                                                             String clientCommonName, String clientId) throws AuthenticationException {
         SslMqttCredentials credentials = clientTypeSslMqttCredentials.getSslMqttCredentials();

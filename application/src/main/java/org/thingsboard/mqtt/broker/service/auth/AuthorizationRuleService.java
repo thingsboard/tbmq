@@ -25,8 +25,6 @@ import java.util.List;
 
 public interface AuthorizationRuleService {
 
-    List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException;
-
     List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials,
                                                      String clientCommonName, String clientId) throws AuthenticationException;
 
