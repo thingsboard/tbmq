@@ -60,7 +60,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,8 +67,12 @@ import static org.mockito.Mockito.when;
 public class SslMqttClientAuthProviderTest {
 
     private static final String CERT_CN = "shared-cert";
+    private static final String LEAF_CN = "gateway-1";
+    private static final String CA_CN = "MyCA";
 
     private static X509Certificate certificate;
+    private static X509Certificate leafCertificate;
+    private static X509Certificate caCertificate;
 
     @Mock
     private MqttClientCredentialsService clientCredentialsService;
@@ -85,15 +88,21 @@ public class SslMqttClientAuthProviderTest {
     private SslMqttClientAuthProvider provider;
 
     @BeforeClass
-    public static void generateCertificate() throws Exception {
+    public static void generateCertificates() throws Exception {
+        certificate = generateCertificate(CERT_CN);
+        leafCertificate = generateCertificate(LEAF_CN);
+        caCertificate = generateCertificate(CA_CN);
+    }
+
+    private static X509Certificate generateCertificate(String cn) throws Exception {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         KeyPair keyPair = generator.generateKeyPair();
-        X500Name subject = new X500Name("CN=" + CERT_CN);
+        X500Name subject = new X500Name("CN=" + cn);
         long now = System.currentTimeMillis();
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(subject, BigInteger.ONE,
                 new Date(now - TimeUnit.DAYS.toMillis(1)), new Date(now + TimeUnit.DAYS.toMillis(1)), subject, keyPair.getPublic());
-        certificate = new JcaX509CertificateConverter()
+        return new JcaX509CertificateConverter()
                 .getCertificate(builder.build(new JcaContentSignerBuilder("SHA256WithRSA").build(keyPair.getPrivate())));
     }
 
@@ -103,7 +112,8 @@ public class SslMqttClientAuthProviderTest {
                 mqttAuthProviderService, mqttHandlerCtx, cacheOps);
         ReflectionTestUtils.setField(provider, "enabled", true);
         ReflectionTestUtils.setField(provider, "configuration", new SslMqttAuthProviderConfiguration());
-        when(authorizationRuleService.parseSslAuthorizationRule(any(), eq(CERT_CN), any())).thenReturn(Collections.emptyList());
+        when(authorizationRuleService.parseSslAuthorizationRule(any(), any(), any())).thenReturn(Collections.emptyList());
+        when(clientCredentialsService.findMatchingCredentials(any())).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -150,10 +160,60 @@ public class SslMqttClientAuthProviderTest {
         assertThat(response.getAuthDetails()).isEqualTo("exact");
     }
 
+    @Test
+    public void givenLeafExactCnCredentialsWithMismatchingClientId_whenAuthenticate_thenParentCnCredentialsAreNotUsed() {
+        mockRegexCredentials();
+        mockExactCnCredentials(LEAF_CN, "leaf", "gw-1");
+        mockExactCnCredentials(CA_CN, "ca", null);
+
+        AuthResponse response = provider.authenticate(authContext("anything-else", leafCertificate, caCertificate));
+
+        assertThat(response.isSuccess()).isFalse();
+        assertThat(response.getReason()).contains("anything-else").contains(LEAF_CN);
+    }
+
+    @Test
+    public void givenLeafExactCnCredentialsWithMatchingClientId_whenAuthenticate_thenLeafCredentialsAreUsed() {
+        mockRegexCredentials();
+        mockExactCnCredentials(LEAF_CN, "leaf", "gw-1");
+        mockExactCnCredentials(CA_CN, "ca", null);
+
+        AuthResponse response = provider.authenticate(authContext("gw-1", leafCertificate, caCertificate));
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getAuthDetails()).isEqualTo("leaf");
+    }
+
+    @Test
+    public void givenNoLeafCredentials_whenAuthenticate_thenParentCnCredentialsAreUsed() {
+        mockRegexCredentials();
+        mockExactCnCredentials(CA_CN, "ca", null);
+
+        AuthResponse response = provider.authenticate(authContext("anything-else", leafCertificate, caCertificate));
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getAuthDetails()).isEqualTo("ca");
+    }
+
+    @Test
+    public void givenLeafRegexCredentialsWithMismatchingClientId_whenAuthenticate_thenParentCnCredentialsAreNotUsed() {
+        mockRegexCredentials(
+                new ClientTypeSslMqttCredentials(ClientType.DEVICE, sslCredentials("^gateway-.*$", true, "gw-1"), "leaf"),
+                new ClientTypeSslMqttCredentials(ClientType.DEVICE, sslCredentials("^MyCA$", true, null), "ca"));
+
+        AuthResponse response = provider.authenticate(authContext("anything-else", leafCertificate, caCertificate));
+
+        assertThat(response.isSuccess()).isFalse();
+    }
+
     private AuthContext authContext(String clientId) {
+        return authContext(clientId, certificate);
+    }
+
+    private AuthContext authContext(String clientId, X509Certificate... chain) {
         SSLSession session = mock(SSLSession.class);
         try {
-            when(session.getPeerCertificates()).thenReturn(new X509Certificate[]{certificate});
+            when(session.getPeerCertificates()).thenReturn(chain);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -175,12 +235,16 @@ public class SslMqttClientAuthProviderTest {
     }
 
     private void mockExactCnCredentials(String name, String clientIdPattern) {
+        mockExactCnCredentials(CERT_CN, name, clientIdPattern);
+    }
+
+    private void mockExactCnCredentials(String cn, String name, String clientIdPattern) {
         MqttClientCredentials credentials = new MqttClientCredentials();
         credentials.setName(name);
         credentials.setClientType(ClientType.DEVICE);
         credentials.setCredentialsType(ClientCredentialsType.X_509);
-        credentials.setCredentialsValue(JacksonUtil.toString(sslCredentials(CERT_CN, false, clientIdPattern)));
-        when(clientCredentialsService.findMatchingCredentials(List.of(ProtocolUtil.sslCredentialsId(CERT_CN))))
+        credentials.setCredentialsValue(JacksonUtil.toString(sslCredentials(cn, false, clientIdPattern)));
+        when(clientCredentialsService.findMatchingCredentials(List.of(ProtocolUtil.sslCredentialsId(cn))))
                 .thenReturn(List.of(credentials));
     }
 
