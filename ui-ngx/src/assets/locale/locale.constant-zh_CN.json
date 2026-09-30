@@ -730,7 +730,7 @@
         "hint-authorization-ssl-example": "示例详见说明，包括 <code>[${cn}/.*]</code> 展开与匹配效果。",
         "hint-authorization-basic": "基于正则的模式控制可发布/订阅的 topics：",
         "hint-regex-patterns": "<ul><li><b>允许特定 topic</b>：<code>country/.*</code></li><li><b>允许任意 topic</b>：<code>.*</code></li><li><b>全部禁止</b>：规则为空</li></ul>",
-        "hint-regex-patterns-basic": "<ul><li><b>允许特定 topic</b>：<code>country/.*</code></li><li><b>允许任意 topic</b>：<code>.*</code></li><li><b>全部禁止</b>：规则为空</li><li><b>允许客户端专属 topic</b>：<code>devices/${clientId}/.*</code> 仅允许 <code>devices/</code> 后接自身 client ID 的 topic，client ID 中的正则特殊字符会自动转义</li></ul>",
+        "hint-client-id-placeholder": "<ul><li><b>允许客户端专属 topic</b>：<code>devices/${clientId}/.*</code> 仅允许 <code>devices/</code> 后接自身 client ID 的 topic，client ID 中的正则特殊字符会自动转义</li></ul>",
         "rule": "规则",
         "type-basic": "Basic",
         "type-ssl": "X.509 Certificate Chain",
