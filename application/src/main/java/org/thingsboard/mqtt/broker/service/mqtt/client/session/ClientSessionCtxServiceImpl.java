@@ -87,6 +87,11 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
     }
 
     @Override
+    public int getSessionsCount() {
+        return clientContextMap.size();
+    }
+
+    @Override
     public Collection<ClientSessionCtx> getAllClientSessionCtx() {
         if (isTraceEnabled) {
             log.trace("Executing getAllClientSessionCtx");

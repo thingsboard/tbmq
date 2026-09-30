@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt;
 
+/**
+ * Fails the future {@link MqttClient#publish} returns for a QoS 2 publish the server refuses: its MQTT 5 PUBREC carries
+ * a reason code of {@code 0x80} or above. The QoS 2 exchange ends there, with no PUBREL.
+ */
+public class MqttPublishFailedException extends RuntimeException {
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import java.util.Collection;
-
-public interface ClientSessionCtxService {
-
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    int getSessionsCount();
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+    public MqttPublishFailedException(String message) {
+        super(message);
+    }
 
 }

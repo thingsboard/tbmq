@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt;
 
+/**
+ * Fails the future {@link MqttClient#on} returns when the server refuses the topic filter: its SUBACK carries the
+ * failure code {@code 0x80} for it. Nothing is registered for the filter then.
+ */
+public class MqttSubscriptionFailedException extends RuntimeException {
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import java.util.Collection;
-
-public interface ClientSessionCtxService {
-
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    int getSessionsCount();
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+    public MqttSubscriptionFailedException(String message) {
+        super(message);
+    }
 
 }

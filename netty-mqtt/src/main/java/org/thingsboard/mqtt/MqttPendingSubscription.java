@@ -16,70 +16,101 @@
 package org.thingsboard.mqtt;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
-import static java.util.Objects.requireNonNullElseGet;
 
 @Getter(AccessLevel.PACKAGE)
 final class MqttPendingSubscription {
 
-    private final Promise<Void> future;
+    private final Promise<MqttQoS> future;
     private final String topic;
-    private final Set<MqttPendingHandler> handlers;
+    /**
+     * The handler to register on SUBACK. Callers replace it while the SUBSCRIBE is in flight, so the last {@code on()}
+     * for the filter wins; the event loop reads it once, on SUBACK.
+     */
+    private volatile MqttHandler handler;
     private final MqttSubscribeMessage subscribeMessage;
+    /**
+     * The client's latest connect attempt when this was made, 0 before the first: giving up on that attempt or a later
+     * one fails this while it still waits for a connection, whereas giving up on an earlier one spares it.
+     */
+    private final int connectAttempt;
 
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttSubscribeMessage> retransmissionHandler;
 
-    @Setter(AccessLevel.PACKAGE)
-    private boolean sent = false;
+    @Getter(AccessLevel.NONE)
+    private final AtomicBoolean sent = new AtomicBoolean();
 
     private MqttPendingSubscription(
-            Promise<Void> future,
+            Promise<MqttQoS> future,
             String topic,
-            Set<MqttPendingHandler> handlers,
+            MqttHandler handler,
             MqttSubscribeMessage subscribeMessage,
+            int connectAttempt,
             String ownerId,
             MqttClientConfig.RetransmissionConfig retransmissionConfig,
             PendingOperation operation
     ) {
         this.future = future;
         this.topic = topic;
-        this.handlers = requireNonNullElseGet(handlers, HashSet::new);
+        this.handler = handler;
         this.subscribeMessage = subscribeMessage;
+        this.connectAttempt = connectAttempt;
 
         retransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, operation, ownerId);
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
-    record MqttPendingHandler(MqttHandler handler, boolean once) {}
-
-    void addHandler(MqttHandler handler, boolean once) {
-        handlers.add(new MqttPendingHandler(handler, once));
+    /**
+     * The handler registered when the SUBACK grants the filter; the last {@code on()} for a filter in flight wins,
+     * except one racing the SUBACK itself, whose handler can be lost while its shared future still succeeds.
+     */
+    void setHandler(MqttHandler handler) {
+        this.handler = handler;
     }
 
+    /**
+     * Claims the write of {@link #getSubscribeMessage()}: only the caller that gets {@code true} may write it, and must
+     * write it to an active channel - {@code on()} when the client's channel is active, else the CONNACK resend of the
+     * next connection. A claim counts the SUBSCRIBE as sent, so the CONNACK resend skips it from then on.
+     */
+    boolean markSent() {
+        return sent.compareAndSet(false, true);
+    }
+
+    /** Only the caller that won {@link #markSent()} starts the timer, so it starts at most once. */
     void startRetransmitTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
-        if (sent) { // If the packet is sent, we can start the retransmission timer
-            retransmissionHandler.setHandler((fixedHeader, originalMessage) ->
-                    sendPacket.accept(new MqttSubscribeMessage(fixedHeader, originalMessage.variableHeader(), originalMessage.payload())));
-            retransmissionHandler.start(eventLoop);
-        }
+        retransmissionHandler.setHandler((fixedHeader, originalMessage) ->
+                sendPacket.accept(new MqttSubscribeMessage(fixedHeader, originalMessage.variableHeader(), originalMessage.payload())));
+        retransmissionHandler.start(eventLoop);
     }
 
     void onSubackReceived() {
         retransmissionHandler.stop();
     }
 
+    /**
+     * Must only be called by the path that removed this entry from the pending subscriptions. Fails the future: the
+     * SUBACK it waits for can no longer arrive.
+     */
     void onChannelClosed() {
+        fail(new ChannelClosedException("Channel closed before the SUBACK arrived"));
+    }
+
+    /**
+     * Fails the future with {@code cause} and stops retransmitting. Must only be called by the path that removed this
+     * entry from the pending subscriptions.
+     */
+    void fail(Throwable cause) {
         retransmissionHandler.stop();
+        future.tryFailure(cause);
     }
 
     static Builder builder() {
@@ -88,15 +119,16 @@ final class MqttPendingSubscription {
 
     static class Builder {
 
-        private Promise<Void> future;
+        private Promise<MqttQoS> future;
         private String topic;
-        private Set<MqttPendingHandler> handlers;
+        private MqttHandler handler;
         private MqttSubscribeMessage subscribeMessage;
+        private int connectAttempt;
         private String ownerId;
         private PendingOperation pendingOperation;
         private MqttClientConfig.RetransmissionConfig retransmissionConfig;
 
-        Builder future(Promise<Void> future) {
+        Builder future(Promise<MqttQoS> future) {
             this.future = future;
             return this;
         }
@@ -106,13 +138,18 @@ final class MqttPendingSubscription {
             return this;
         }
 
-        Builder handlers(Set<MqttPendingHandler> handlers) {
-            this.handlers = handlers;
+        Builder handler(MqttHandler handler) {
+            this.handler = handler;
             return this;
         }
 
         Builder subscribeMessage(MqttSubscribeMessage subscribeMessage) {
             this.subscribeMessage = subscribeMessage;
+            return this;
+        }
+
+        Builder connectAttempt(int connectAttempt) {
+            this.connectAttempt = connectAttempt;
             return this;
         }
 
@@ -132,7 +169,7 @@ final class MqttPendingSubscription {
         }
 
         MqttPendingSubscription build() {
-            return new MqttPendingSubscription(future, topic, handlers, subscribeMessage, ownerId, retransmissionConfig, pendingOperation);
+            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, connectAttempt, ownerId, retransmissionConfig, pendingOperation);
         }
 
     }

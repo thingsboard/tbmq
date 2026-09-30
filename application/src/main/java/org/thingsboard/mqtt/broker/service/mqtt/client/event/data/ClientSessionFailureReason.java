@@ -23,13 +23,15 @@ public enum ClientSessionFailureReason {
 
     UNSPECIFIED_ERROR,
     QUOTA_EXCEEDED,
-    SERVER_UNAVAILABLE;
+    SERVER_UNAVAILABLE,
+    USE_ANOTHER_SERVER;
 
     public MqttConnectReturnCode toMqttReturnCode(ClientSessionCtx ctx) {
         return switch (this) {
             case UNSPECIFIED_ERROR -> MqttReasonCodeResolver.connectionRefusedUnspecified(ctx);
             case QUOTA_EXCEEDED -> MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx);
             case SERVER_UNAVAILABLE -> MqttReasonCodeResolver.connectionRefusedServerUnavailable(ctx);
+            case USE_ANOTHER_SERVER -> MqttReasonCodeResolver.connectionRefusedUseAnotherServer(ctx);
         };
     }
 }

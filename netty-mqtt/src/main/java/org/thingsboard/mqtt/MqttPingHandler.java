@@ -52,6 +52,8 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
         } else if (message.fixedHeader().messageType() == MqttMessageType.PINGRESP) {
             this.handlePingResp(ctx.channel());
         } else {
+            // MqttChannelHandler's deferred handler dispatch depends on this retain: it is the reference that survives
+            // SimpleChannelInboundHandler's auto-release, and invokeHandlerForIncomingPublish releases it
             ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
         }
     }

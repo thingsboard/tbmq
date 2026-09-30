@@ -25,4 +25,10 @@ public interface IntegrationMsgProcessor {
 
     void clearIntegrationMessages(String integrationId);
 
+    /** queue.integration-msg.pack-processing-timeout: how long a pack of messages is awaited before the ack strategy decides. */
+    long getPackProcessingTimeoutMs();
+
+    /** queue.integration-event.pack-processing-timeout: the same for a pack of lifecycle events. */
+    long getEventPackProcessingTimeoutMs();
+
 }

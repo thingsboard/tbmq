@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt;
 
+/**
+ * Fails a QoS 1 or 2 publish, subscribe or unsubscribe made while all 65 535 message IDs are held by ones still in
+ * flight: MQTT forbids reusing the ID of one not yet acknowledged, so the new one is not sent. It may succeed once one
+ * completes. A QoS 0 publish takes no ID, so it never fails this way.
+ */
+public class MessageIdsExhaustedException extends RuntimeException {
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import java.util.Collection;
-
-public interface ClientSessionCtxService {
-
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    int getSessionsCount();
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+    public MessageIdsExhaustedException(String message) {
+        super(message);
+    }
 
 }

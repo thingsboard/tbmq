@@ -522,7 +522,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     }
 
     private MqttHandler getHandler(CountDownLatch latch, AtomicInteger integer) {
-        return (s, byteBuf) -> {
+        return msg -> {
             integer.incrementAndGet();
             latch.countDown();
             return Futures.immediateVoidFuture();

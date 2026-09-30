@@ -37,6 +37,19 @@ public interface IntegrationContext {
 
     boolean isExceptionStackTraceEnabled();
 
+    /**
+     * integrations.allow-local-network-hosts: false forbids connecting to loopback, link-local and private addresses.
+     * Save-time validation gets the same flag; this makes it available where the connection is made, for hosts that
+     * are only known then (SRV targets, discovered cluster members).
+     */
+    boolean isAllowLocalNetworkHosts();
+
+    /** How long the executor awaits a pack of messages before its ack strategy decides (queue.integration-msg.pack-processing-timeout). */
+    long getMsgPackProcessingTimeoutMs();
+
+    /** The same for a pack of lifecycle events (queue.integration-event.pack-processing-timeout). */
+    long getEventPackProcessingTimeoutMs();
+
     void startProcessingIntegrationMessages(TbPlatformIntegration integration);
 
     void stopProcessingPersistedMessages(String integrationId);

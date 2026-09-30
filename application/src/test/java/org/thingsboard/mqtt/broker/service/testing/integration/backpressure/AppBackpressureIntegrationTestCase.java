@@ -128,8 +128,8 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         subscriberConfig.setClientId(appClientId);
 
         AtomicInteger counter = new AtomicInteger();
-        MqttHandler mqttHandler = (topic, payload) -> {
-            log.debug("[{}] Received msg: {}", topic, counter.incrementAndGet());
+        MqttHandler mqttHandler = msg -> {
+            log.debug("[{}] Received msg: {}", msg.variableHeader().topicName(), counter.incrementAndGet());
             latch.countDown();
             return Futures.immediateVoidFuture();
         };
@@ -184,8 +184,8 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         subscriberConfig.setClientId(appClientId);
 
         AtomicInteger counter = new AtomicInteger();
-        MqttHandler mqttHandler = (t, payload) -> {
-            log.debug("[{}] Received shared subs msg: {}", t, counter.incrementAndGet());
+        MqttHandler mqttHandler = msg -> {
+            log.debug("[{}] Received shared subs msg: {}", msg.variableHeader().topicName(), counter.incrementAndGet());
             latch.countDown();
             return Futures.immediateVoidFuture();
         };

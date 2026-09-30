@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -65,11 +66,13 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,6 +117,8 @@ public class ConnectServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    @MockitoBean
+    NodeDrainService nodeDrainService;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -159,6 +164,38 @@ public class ConnectServiceImplTest {
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
         verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));
         verify(queuedMqttMessages, times(1)).process(any());
+    }
+
+    @Test
+    public void givenDrainStartedAfterClusterConnect_whenAcceptConnection_thenCompletesConnectionForDrainBatch() {
+        // The session is already reserved cluster-wide: refusing it here would tear it down before its persisted
+        // QoS 2 state is loaded and overwrite that state with an empty set. The drain batch disconnects it instead.
+        when(nodeDrainService.isDraining()).thenReturn(true);
+        when(actorState.getQueuedMessages()).thenReturn(mock(QueuedMqttMessages.class));
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        connectService.acceptConnection(actorState, getConnectionAcceptedMsg(null), mock(TbActorRef.class));
+
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(clientSessionCtxService).registerSession(eq(ctx));
+        verify(msgPersistenceManager).startProcessingPersistedMessages(eq(actorState));
+    }
+
+    @Test
+    public void givenNodeDraining_whenStartConnection_thenRefusesBeforeClusterRequest() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(nodeDrainService.isDraining()).thenReturn(true);
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "testClient"), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_USE_ANOTHER_SERVER);
+        verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_USE_ANOTHER_SERVER"));
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
     }
 
     @Test

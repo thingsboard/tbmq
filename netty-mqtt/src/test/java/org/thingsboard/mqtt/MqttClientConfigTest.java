@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt;
 
+import org.junit.jupiter.api.Test;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Collection;
+class MqttClientConfigTest {
 
-public interface ClientSessionCtxService {
+    @Test
+    void retransmissionConfigCannotBeSetToNull() {
+        var clientConfig = new MqttClientConfig();
 
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    boolean hasSession(String clientId);
-
-    int getSessionsCount();
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+        assertThatThrownBy(() -> clientConfig.setRetransmissionConfig(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("retransmissionConfig");
+        assertThat(clientConfig.getRetransmissionConfig()).isNotNull();
+    }
 
 }
