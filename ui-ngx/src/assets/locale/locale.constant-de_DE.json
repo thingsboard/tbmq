@@ -794,7 +794,7 @@
         "hint-authorization-ssl-example": "Beispiel:<ul><li>Client-Zertifikat mit CN <b>cn_example_1</b> – Regex z. B. <code>cn_example_1</code>, <code>example_1</code> oder <code>.*example.*</code></li><li>Publish-Regeln: <code>[pub_topic/one/.*, pub_topic/two/.*]</code> → erlaubt nur diese Topics</li><li>Subscribe-Regel: <code>[.*]</code> → erlaubt alle Topics</li><li>Leere Regeln → keine Berechtigung</li></ul>",
         "hint-authorization-basic": "Regelausdrücke für Topics, auf die Clients Zugriff erhalten (Regex-Syntax):",
         "hint-regex-patterns": "<ul><li><b>Spezifische Topics erlauben</b> – <code>country/.*</code></li><li><b>Alle Topics erlauben</b> – <code>.*</code></li><li><b>Keine Topics erlauben</b> – leeres Muster</li></ul>",
-        "hint-regex-patterns-basic": "<ul><li><b>Spezifische Topics erlauben</b> – <code>country/.*</code></li><li><b>Alle Topics erlauben</b> – <code>.*</code></li><li><b>Keine Topics erlauben</b> – leeres Muster</li><li>Bei Basic Credentials wird <code>${clientId}</code> durch die sicher maskierte MQTT Client ID ersetzt.</li></ul>",
+        "hint-regex-patterns-basic": "<ul><li><b>Spezifische Topics erlauben</b> – <code>country/.*</code></li><li><b>Alle Topics erlauben</b> – <code>.*</code></li><li><b>Keine Topics erlauben</b> – leeres Muster</li><li><b>Client-spezifische Topics erlauben</b> – <code>devices/${clientId}/.*</code> erlaubt nur Topics unter <code>devices/</code> mit der eigenen Client ID; Regex-Sonderzeichen in der Client ID werden automatisch maskiert</li></ul>",
         "rule": "Regel",
         "type-basic": "Basic",
         "type-ssl": "X.509 Certificate Chain",
