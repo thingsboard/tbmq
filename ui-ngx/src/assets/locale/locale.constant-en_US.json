@@ -825,7 +825,7 @@
         "certificate-common-name-required": "Certificate common name is required.",
         "certificate-common-name-regex-label": "Certificate common name regex",
         "certificate-common-name-regex": "Use certificate CN regex",
-        "client-id-pattern": "Client ID (optional)",
+        "client-id-pattern": "Client ID",
         "client-id-regex-label": "Client ID regex",
         "client-id-regex": "Use client ID regex",
         "certificate-common-name-search-hint": "Search by certificate CN is supported only for 'X.509 Certificate Chain' credentials type.",

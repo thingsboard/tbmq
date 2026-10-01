@@ -708,7 +708,7 @@
         "certificate-common-name-required": "证书 Common Name 必填。",
         "certificate-common-name-regex-label": "证书 Common Name Regex",
         "certificate-common-name-regex": "使用 certificate CN regex",
-        "client-id-pattern": "Client ID（可选）",
+        "client-id-pattern": "Client ID",
         "client-id-regex-label": "Client ID 正则表达式",
         "client-id-regex": "使用 Client ID 正则表达式",
         "certificate-common-name-search-hint": "按 Certificate CN 搜索仅适用于 'X.509 Certificate Chain'。",

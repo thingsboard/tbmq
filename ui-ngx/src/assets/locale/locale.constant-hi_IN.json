@@ -772,7 +772,7 @@
         "certificate-common-name-required": "Common Name आवश्यक है।",
         "certificate-common-name-regex-label": "Common Name Regex",
         "certificate-common-name-regex": "Certificate CN regex का उपयोग करें",
-        "client-id-pattern": "Client ID (वैकल्पिक)",
+        "client-id-pattern": "Client ID",
         "client-id-regex-label": "Client ID regex",
         "client-id-regex": "Client ID regex का उपयोग करें",
         "certificate-common-name-search-hint": "Certificate CN द्वारा खोज केवल 'X.509 Certificate Chain' के लिए।",
