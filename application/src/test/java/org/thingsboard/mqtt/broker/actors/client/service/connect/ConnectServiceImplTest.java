@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
-import com.google.common.util.concurrent.SettableFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -27,7 +26,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
@@ -71,9 +69,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -200,31 +196,6 @@ public class ConnectServiceImplTest {
         verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_USE_ANOTHER_SERVER"));
         verify(clientSessionEventService, never()).requestConnection(any(), any());
         verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
-    }
-
-    @Test
-    public void givenNonZeroConnectExpiryCappedToZero_whenStartConnection_thenSessionNotMarkedAsZeroExpiryOnConnect() throws Exception {
-        UUID sessionId = UUID.randomUUID();
-        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
-        when(actorState.getClientId()).thenReturn("testClient");
-        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
-        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
-        doReturn(true).when(connectService).shouldProceedWithConnection(any(), any(), any());
-        when(clientSessionEventService.requestConnection(any(), any())).thenReturn(SettableFuture.create());
-        MqttProperties properties = new MqttProperties();
-        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID, 0xFFFFFFFF));
-
-        Object maxExpiryInterval = ReflectionTestUtils.getField(connectService, "maxExpiryInterval");
-        ReflectionTestUtils.setField(connectService, "maxExpiryInterval", 0);
-        try {
-            connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "testClient", null, properties), false);
-        } finally {
-            ReflectionTestUtils.setField(connectService, "maxExpiryInterval", maxExpiryInterval);
-        }
-
-        verify(ctx).setSessionInfo(argThat(info -> info.getSessionExpiryInterval() == 0));
-        // [MQTT-3.14.2-2] is about the interval the client sent on CONNECT, not the capped one
-        verify(ctx).setZeroSessionExpiryOnConnect(false);
     }
 
     @Test

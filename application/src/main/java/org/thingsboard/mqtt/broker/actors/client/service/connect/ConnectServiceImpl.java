@@ -161,7 +161,6 @@ public class ConnectServiceImpl implements ConnectService {
 
         // SessionInfo should be set for ctx only after validating the connection by shouldProceedWithConnection method
         // to process disconnection correctly
-        sessionCtx.setZeroSessionExpiryOnConnect(isZeroSessionExpiryOnConnect(msg));
         sessionCtx.setSessionInfo(sessionInfo);
 
         if (flowControlEnabled) {
@@ -387,11 +386,6 @@ public class ConnectServiceImpl implements ConnectService {
 
     private int getSessionExpiryInterval(MqttConnectMsg msg) {
         return MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(msg.getProperties(), maxExpiryInterval);
-    }
-
-    private boolean isZeroSessionExpiryOnConnect(MqttConnectMsg msg) {
-        // uncapped: max-expiry-interval may turn a non-zero interval into zero
-        return MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(msg.getProperties(), Integer.MAX_VALUE) == 0;
     }
 
     int getKeepAliveSeconds(ClientActorStateInfo actorState, MqttConnectMsg msg) {
