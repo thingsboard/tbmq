@@ -38,8 +38,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Keeps {@link IntegrationTemplate#ROOTS} in step with the JSON bodies the integrations actually build: renaming or
- * adding a body field without updating the template names turns this red.
+ * Keeps {@link IntegrationTemplate#ROOTS} in step with the JSON bodies the integrations actually build. Every root must
+ * be written by some body, and every scalar field of the message body, plus every field common to all lifecycle event
+ * types, must be a root. Renaming one, or adding one without updating the template names, turns this red. Per-type
+ * event fields (e.g. {@code reason}, {@code topic}) are deliberately not roots. {@link #fullMessage()} and
+ * {@link #fullEvent} must set every common proto field the body builders read, or a new one goes unnoticed.
  */
 class IntegrationTemplateEnvelopeParityTest {
 
@@ -82,6 +85,22 @@ class IntegrationTemplateEnvelopeParityTest {
         scalars.removeAll(Set.of("payload", "props", "metadata"));
 
         assertThat(IntegrationTemplate.ROOTS).containsAll(scalars);
+    }
+
+    @Test
+    void everyFieldCommonToAllEventTypesIsARoot() {
+        Set<String> common = null;
+        for (ClientLifecycleEventType type : ClientLifecycleEventType.values()) {
+            Set<String> keys = keysOf(probe.event(fullEvent(type)));
+            if (common == null) {
+                common = keys;
+            } else {
+                common.retainAll(keys);
+            }
+        }
+        common.remove("metadata");
+
+        assertThat(IntegrationTemplate.ROOTS).containsAll(common);
     }
 
     @Test

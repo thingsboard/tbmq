@@ -39,8 +39,9 @@ public final class IntegrationTemplate {
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]*)}");
 
     /**
-     * Top-level body fields a placeholder may name: the union of the message and lifecycle-event bodies, because one
-     * template serves both. IntegrationTemplateEnvelopeParityTest pins this set against the real body builders.
+     * Top-level body fields a placeholder may name: every scalar field of the message body plus the fields common to all
+     * lifecycle event types, because one template serves both (per-type event fields such as {@code reason} are not
+     * included). IntegrationTemplateEnvelopeParityTest pins this set against the real body builders.
      */
     static final Set<String> ROOTS = Set.of("topicName", "clientId", "username", "qos", "retain", "ts", "eventType",
             "tbmqNode", "tbmqIeNode", "clientCertCn", "sessionId", "ipAddress");
