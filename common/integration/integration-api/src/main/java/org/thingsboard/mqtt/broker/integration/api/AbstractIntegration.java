@@ -175,10 +175,20 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected ObjectNode constructBody(PublishIntegrationMsgProto msg) {
+        return constructBody(msg, true);
+    }
+
+    /**
+     * @param includePayload false builds the metadata-only body, e.g. to resolve key/header templates when only the raw
+     *                       payload is sent, without copying the payload into the JSON tree.
+     */
+    protected ObjectNode constructBody(PublishIntegrationMsgProto msg, boolean includePayload) {
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
 
         ObjectNode request = JacksonUtil.newObjectNode();
-        request.put("payload", publishMsgProto.getPayload().toByteArray());
+        if (includePayload) {
+            request.put("payload", publishMsgProto.getPayload().toByteArray());
+        }
         request.put("topicName", publishMsgProto.getTopicName());
         request.put("clientId", publishMsgProto.getClientId());
         request.put("eventType", "PUBLISH_MSG");
@@ -187,6 +197,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.put("tbmqIeNode", context.getServiceId());
         request.put("tbmqNode", msg.getTbmqNode());
         request.put("ts", msg.getTimestamp());
+        if (publishMsgProto.hasUsername()) {
+            putIfNotEmpty(request, "username", publishMsgProto.getUsername());
+        }
         if (publishMsgProto.hasClientCertCn()) {
             request.put("clientCertCn", publishMsgProto.getClientCertCn());
         }
