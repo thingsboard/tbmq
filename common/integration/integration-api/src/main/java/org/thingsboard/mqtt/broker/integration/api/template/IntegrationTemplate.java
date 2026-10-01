@@ -45,7 +45,10 @@ public final class IntegrationTemplate {
      */
     static final Set<String> ROOTS = Set.of("topicName", "clientId", "username", "qos", "retain", "ts", "eventType",
             "tbmqNode", "tbmqIeNode", "clientCertCn", "sessionId", "ipAddress");
-    /** Body objects whose entries are addressed as {@code ${root.key}}. */
+    /**
+     * Flat body objects whose entries are addressed as {@code ${root.key}}. The key is everything after the first dot, so
+     * {@code ${props.app.version}} reads the user property {@code app.version}.
+     */
     static final Set<String> NESTED = Set.of("props", "metadata");
 
     private static final String ALLOWED = ROOTS.stream().sorted().map(root -> "${" + root + "}")
@@ -104,9 +107,6 @@ public final class IntegrationTemplate {
             String key = dot < 0 ? "" : name.substring(dot + 1);
             if (key.isEmpty()) {
                 throw new IllegalArgumentException(label + ": placeholder '${" + name + "}' needs a key, e.g. ${" + root + ".<key>}");
-            }
-            if (key.contains(".")) {
-                throw unknown(label, name);
             }
             return new String[]{root, key};
         }

@@ -34,8 +34,8 @@ class IntegrationTemplateTest {
         body.put("retain", false);
         body.put("ts", 1000L);
         body.put("username", "");
-        body.putObject("props").put("site", "A");
-        body.putObject("metadata").put("integrationName", "kafka");
+        body.putObject("props").put("site", "A").put("app.version", "1.2");
+        body.putObject("metadata").put("integrationName", "kafka").put("device.type", "meter");
         return body;
     }
 
@@ -56,6 +56,12 @@ class IntegrationTemplateTest {
     void givenNestedPlaceholders_whenResolve_thenFilledFromObjects() {
         assertThat(IntegrationTemplate.parse("Key", "${props.site}:${metadata.integrationName}").resolve(body()))
                 .contains("A:kafka");
+    }
+
+    @Test
+    void givenDottedNestedKey_whenResolve_thenWholeRestIsTheKey() {
+        assertThat(IntegrationTemplate.parse("Key", "${props.app.version}:${metadata.device.type}").resolve(body()))
+                .contains("1.2:meter");
     }
 
     @Test
@@ -120,7 +126,6 @@ class IntegrationTemplateTest {
     @CsvSource(delimiter = '|', quoteCharacter = '"', value = {
             "${foo}          | Key: unknown placeholder '${foo}'",
             "${foo.bar}      | Key: unknown placeholder '${foo.bar}'",
-            "${props.a.b}    | Key: unknown placeholder '${props.a.b}'",
             "${}             | Key: empty placeholder '${}'",
             "${props}        | Key: placeholder '${props}' needs a key, e.g. ${props.<key>}",
             "${metadata.}    | Key: placeholder '${metadata.}' needs a key, e.g. ${metadata.<key>}",
