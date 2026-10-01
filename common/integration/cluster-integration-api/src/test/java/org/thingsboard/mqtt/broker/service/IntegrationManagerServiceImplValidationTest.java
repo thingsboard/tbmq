@@ -20,19 +20,26 @@ import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.JavaSerDesUtil;
 import org.thingsboard.mqtt.broker.common.data.callback.TbCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationRequestProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationResponseProto;
+import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
+import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
+import org.thingsboard.mqtt.broker.integration.api.util.TbPlatformIntegrationUtil;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationDownlinkQueueProvider;
+import org.thingsboard.mqtt.broker.service.state.ValidationTaskType;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -40,7 +47,10 @@ import java.util.concurrent.ExecutionException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,6 +91,27 @@ class IntegrationManagerServiceImplValidationTest {
         service.handleValidationResponse(IntegrationValidationResponseProto.newBuilder(sentRequest()).build(), mock(TbCallback.class));
 
         assertThat(future.get()).isNull();
+    }
+
+    @Test
+    void givenValidateTask_whenValidatedLocally_thenSaveTimeChecksRunToo() throws Exception {
+        IntegrationLifecycleMsg lifecycleMsg = IntegrationLifecycleMsg.builder().type(IntegrationType.KAFKA).build();
+        IntegrationContext context = mock(IntegrationContext.class);
+        when(context.getLifecycleMsg()).thenReturn(lifecycleMsg);
+        IntegrationContextProvider contextProvider = mock(IntegrationContextProvider.class);
+        when(contextProvider.buildIntegrationContext(any(Integration.class), any())).thenReturn(context);
+        IntegrationManagerServiceImpl localService = new IntegrationManagerServiceImpl(null, null, null, null, contextProvider, Optional.empty());
+        TbPlatformIntegration platformIntegration = mock(TbPlatformIntegration.class);
+        BasicCallback callback = mock(BasicCallback.class);
+
+        try (MockedStatic<TbPlatformIntegrationUtil> util = mockStatic(TbPlatformIntegrationUtil.class)) {
+            util.when(() -> TbPlatformIntegrationUtil.createPlatformIntegration(IntegrationType.KAFKA)).thenReturn(platformIntegration);
+            localService.doValidateLocally(ValidationTaskType.VALIDATE, integration(), callback);
+        }
+
+        verify(platformIntegration).validateConfiguration(eq(lifecycleMsg), anyBoolean());
+        verify(platformIntegration).validateConfigurationOnSave(lifecycleMsg);
+        verify(callback).onSuccess();
     }
 
     private IntegrationValidationResponseProto sentRequest() {

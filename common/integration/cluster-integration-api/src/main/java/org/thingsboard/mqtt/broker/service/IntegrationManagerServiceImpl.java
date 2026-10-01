@@ -245,13 +245,14 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
         return false;
     }
 
-    private void doValidateLocally(ValidationTaskType validationTaskType, Integration configuration, BasicCallback callback) throws Exception {
+    void doValidateLocally(ValidationTaskType validationTaskType, Integration configuration, BasicCallback callback) throws Exception {
         IntegrationContext context = integrationContextProvider.buildIntegrationContext(configuration, callback);
 
         TbPlatformIntegration integration = createPlatformIntegration(context.getLifecycleMsg().getType());
         switch (validationTaskType) {
             case VALIDATE:
                 integration.validateConfiguration(context.getLifecycleMsg(), allowLocalNetworkHosts);
+                integration.validateConfigurationOnSave(context.getLifecycleMsg());
                 callback.onSuccess();
                 break;
             case CHECK_CONNECTION:

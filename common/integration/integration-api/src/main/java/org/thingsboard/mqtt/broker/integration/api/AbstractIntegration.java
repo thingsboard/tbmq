@@ -121,6 +121,14 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     @Override
+    public void validateConfigurationOnSave(IntegrationLifecycleMsg lifecycleMsg) throws ThingsboardException {
+        if (lifecycleMsg == null || lifecycleMsg.getConfiguration() == null) {
+            throw new IllegalArgumentException("Integration configuration is empty!");
+        }
+        doValidateConfigurationOnSave(lifecycleMsg.getConfiguration().get("clientConfiguration"));
+    }
+
+    @Override
     public void checkConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
         if (integration == null || integration.getConfiguration() == null) {
             throw new IllegalArgumentException("Integration configuration is empty!");
@@ -370,6 +378,13 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
+
+    }
+
+    /**
+     * Save-time-only checks, see {@link TbPlatformIntegration#validateConfigurationOnSave}.
+     */
+    protected void doValidateConfigurationOnSave(JsonNode clientConfiguration) throws ThingsboardException {
 
     }
 

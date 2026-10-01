@@ -53,7 +53,6 @@ public class KafkaConfigValidator {
             throw new IllegalArgumentException("Invalid compression type");
         }
         validateOtherProps(kafkaIntegrationConfig);
-        validateTemplates(kafkaIntegrationConfig);
     }
 
     public static void validateBootstrapServers(String bootstrapServers) {
@@ -126,7 +125,8 @@ public class KafkaConfigValidator {
         }
     }
 
-    private static void validateTemplates(KafkaIntegrationConfig kafkaIntegrationConfig) {
+    // Save-time only: KafkaIntegration.init falls back to sending a stored value that fails this check literally.
+    public static void validateTemplates(KafkaIntegrationConfig kafkaIntegrationConfig) {
         if (StringUtils.isNotEmpty(kafkaIntegrationConfig.getKey())) {
             IntegrationTemplate.validate(KEY_LABEL, kafkaIntegrationConfig.getKey());
         }

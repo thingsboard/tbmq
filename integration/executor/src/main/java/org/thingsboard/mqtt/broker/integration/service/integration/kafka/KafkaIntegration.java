@@ -72,6 +72,15 @@ public class KafkaIntegration extends AbstractIntegration {
     }
 
     @Override
+    public void doValidateConfigurationOnSave(JsonNode clientConfiguration) throws ThingsboardException {
+        try {
+            KafkaConfigValidator.validateTemplates(getClientConfiguration(clientConfiguration, KafkaIntegrationConfig.class));
+        } catch (Exception e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+        }
+    }
+
+    @Override
     public void doCheckConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
         try {
             KafkaIntegrationConfig kafkaConfig = getClientConfiguration(integration, KafkaIntegrationConfig.class);

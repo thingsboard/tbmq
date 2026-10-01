@@ -218,40 +218,50 @@ class KafkaConfigValidatorTest {
     }
 
     @Test
-    void givenTemplatedKeyAndHeaders_whenValidate_thenPasses() {
+    void givenTemplatedKeyAndHeaders_whenValidateTemplates_thenPasses() {
         KafkaIntegrationConfig config = validConfig();
         config.setKey("${clientId}");
         config.setKafkaHeaders(Map.of("mqtt-topic", "${topicName}", "user", "${username}"));
 
-        KafkaConfigValidator.validate(config);
+        KafkaConfigValidator.validateTemplates(config);
     }
 
     @Test
-    void givenEmptyKey_whenValidate_thenPasses() {
+    void givenEmptyKey_whenValidateTemplates_thenPasses() {
         KafkaIntegrationConfig config = validConfig();
         config.setKey("");
 
-        KafkaConfigValidator.validate(config);
+        KafkaConfigValidator.validateTemplates(config);
     }
 
     @Test
-    void givenUnknownKeyPlaceholder_whenValidate_thenThrows() {
+    void givenUnknownKeyPlaceholder_whenValidateTemplates_thenThrows() {
         KafkaIntegrationConfig config = validConfig();
         config.setKey("${clientID}");
 
-        assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
+        assertThatThrownBy(() -> KafkaConfigValidator.validateTemplates(config))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageStartingWith("Key: unknown placeholder '${clientID}'");
     }
 
     @Test
-    void givenUnclosedHeaderPlaceholder_whenValidate_thenThrows() {
+    void givenUnclosedHeaderPlaceholder_whenValidateTemplates_thenThrows() {
         KafkaIntegrationConfig config = validConfig();
         config.setKafkaHeaders(Map.of("mqtt-topic", "${topicName"));
 
-        assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
+        assertThatThrownBy(() -> KafkaConfigValidator.validateTemplates(config))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Header 'mqtt-topic': unclosed placeholder in '${topicName'");
+    }
+
+    @Test
+    void givenInvalidTemplates_whenValidate_thenPasses() {
+        // validate() also runs when a stored integration starts; templates are checked only on save
+        KafkaIntegrationConfig config = validConfig();
+        config.setKey("${topic}");
+        config.setKafkaHeaders(Map.of("mqtt-topic", "abc${topicName"));
+
+        KafkaConfigValidator.validate(config);
     }
 
 }

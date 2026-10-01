@@ -27,6 +27,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
@@ -47,6 +48,8 @@ import java.util.concurrent.Callable;
 import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -212,6 +215,25 @@ class KafkaIntegrationTest {
         assertThat(record.key()).isEqualTo("c1");
     }
 
+    // ── validation ───────────────────────────────────────────────────────────
+
+    @Test
+    void givenStoredInvalidTemplate_whenValidatedOnStartup_thenAccepted() {
+        // the executor runs validateConfiguration before init() on every restart and re-enable
+        IntegrationLifecycleMsg lifecycleMsg = lifecycleMsg(baseConfig().put("key", "${topic}"));
+
+        assertThatCode(() -> new KafkaIntegration().validateConfiguration(lifecycleMsg, true)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenInvalidTemplate_whenValidatedOnSave_thenRejected() {
+        IntegrationLifecycleMsg lifecycleMsg = lifecycleMsg(baseConfig().put("key", "${topic}"));
+
+        assertThatThrownBy(() -> new KafkaIntegration().validateConfigurationOnSave(lifecycleMsg))
+                .isInstanceOf(ThingsboardException.class)
+                .hasMessageStartingWith("Key: unknown placeholder '${topic}'");
+    }
+
     // ── lifecycle events ─────────────────────────────────────────────────────
 
     @Test
@@ -251,14 +273,18 @@ class KafkaIntegrationTest {
         return config;
     }
 
-    private KafkaIntegration start(ObjectNode clientConfiguration) throws Exception {
+    private static IntegrationLifecycleMsg lifecycleMsg(ObjectNode clientConfiguration) {
         ObjectNode configuration = JacksonUtil.newObjectNode();
         configuration.set("clientConfiguration", clientConfiguration);
-        IntegrationLifecycleMsg lifecycleMsg = IntegrationLifecycleMsg.builder()
+        return IntegrationLifecycleMsg.builder()
                 .integrationId(UUID.randomUUID())
                 .name("kafka")
                 .configuration(configuration)
                 .build();
+    }
+
+    private KafkaIntegration start(ObjectNode clientConfiguration) throws Exception {
+        IntegrationLifecycleMsg lifecycleMsg = lifecycleMsg(clientConfiguration);
         when(context.getLifecycleMsg()).thenReturn(lifecycleMsg);
         KafkaIntegration integration = new KafkaIntegration() {
             @Override
