@@ -47,6 +47,7 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 @Slf4j
 public class KafkaIntegration extends AbstractIntegration {
@@ -58,6 +59,7 @@ public class KafkaIntegration extends AbstractIntegration {
     private Producer<String, String> producer;
     private IntegrationTemplate keyTemplate;
     private List<HeaderTemplate> headerTemplates;
+    private Set<String> configuredHeaderNames;
     private boolean templated;
 
     @Override
@@ -135,6 +137,7 @@ public class KafkaIntegration extends AbstractIntegration {
         headerTemplates = config.getKafkaHeaders().entrySet().stream()
                 .map(header -> new HeaderTemplate(header.getKey(), compile(KafkaConfigValidator.headerLabel(header.getKey()), header.getValue())))
                 .toList();
+        configuredHeaderNames = Set.copyOf(config.getKafkaHeaders().keySet());
         templated = (keyTemplate != null && keyTemplate.hasPlaceholders())
                 || headerTemplates.stream().anyMatch(header -> header.value().hasPlaceholders());
     }
@@ -184,7 +187,11 @@ public class KafkaIntegration extends AbstractIntegration {
             Headers headers = buildHeaders(body);
             if (config.isForwardUserProperties()) {
                 for (UserPropertyProto property : msg.getPublishMsgProto().getUserPropertiesList()) {
-                    headers.add(new RecordHeader(property.getKey(), property.getValue().getBytes(headersCharset)));
+                    // A configured header name is reserved, even when its template resolved empty for this message:
+                    // otherwise a publisher could forge it (consumers commonly read the last header of a given name).
+                    if (!configuredHeaderNames.contains(property.getKey())) {
+                        headers.add(new RecordHeader(property.getKey(), property.getValue().getBytes(headersCharset)));
+                    }
                 }
             }
             send(new ProducerRecord<>(config.getTopic(), null, resolveKey(body), value, headers), callback);

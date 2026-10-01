@@ -592,7 +592,7 @@
         "kafka-headers": "Kafka headers",
         "kafka-headers-hint": "header 值可使用与 key 相同的占位符，例如 ${topicName} 或 ${username}。若占位符在消息中没有值，则省略该 header。",
         "forward-user-properties": "将用户属性作为 headers 转发",
-        "forward-user-properties-hint": "按发送顺序，将消息的每个 MQTT 5 用户属性添加为同名的 Kafka header。重复的名称，或与已配置 header 同名的属性，会生成多个同名 header。",
+        "forward-user-properties-hint": "按发送顺序，将消息的每个 MQTT 5 用户属性添加为同名的 Kafka header。重复的名称会生成多个同名 header。与已配置 header 同名的用户属性不会被转发，以防客户端覆盖该 header。",
         "compression": "压缩",
         "keep-alive-sec": "Keep alive（秒）",
         "connect-timeout-sec": "连接超时（秒）",

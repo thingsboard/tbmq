@@ -636,7 +636,7 @@
         "kafka-headers": "Kafka headers",
         "kafka-headers-hint": "Header values में key जैसे ही placeholders उपयोग किए जा सकते हैं, जैसे ${topicName} या ${username}। जिस header के placeholder का कोई मान नहीं है, उसे छोड़ दिया जाता है।",
         "forward-user-properties": "User properties को headers के रूप में भेजें",
-        "forward-user-properties-hint": "संदेश की हर MQTT 5 user property को उसी नाम के Kafka header के रूप में, भेजे गए क्रम में जोड़ता है। दोहराए गए नाम, या किसी configured header से मेल खाने वाले नाम, उसी नाम के कई headers बनाते हैं।",
+        "forward-user-properties-hint": "संदेश की हर MQTT 5 user property को उसी नाम के Kafka header के रूप में, भेजे गए क्रम में जोड़ता है। दोहराए गए नाम उसी नाम के कई headers बनाते हैं। किसी configured header के नाम वाली user property आगे नहीं भेजी जाती, ताकि client उस header को बदल न सके।",
         "compression": "कंप्रेशन",
         "keep-alive-sec": "Keep alive (सेकंड)",
         "connect-timeout-sec": "कनेक्ट टाइमआउट (सेकंड)",

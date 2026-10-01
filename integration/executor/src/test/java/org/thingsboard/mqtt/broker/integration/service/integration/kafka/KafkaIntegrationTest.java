@@ -125,16 +125,38 @@ class KafkaIntegrationTest {
     }
 
     @Test
-    void givenForwardUserProperties_whenProcess_thenConfiguredHeadersFirstThenPropertiesInOrderWithDuplicates() throws Exception {
+    void givenForwardUserProperties_whenProcess_thenPropertiesInOrderWithDuplicates() throws Exception {
+        start(baseConfig().put("forwardUserProperties", true)).process(message(), callback);
+
+        ProducerRecord<String, String> record = single();
+        assertThat(headerNames(record)).containsExactly("site", "tag", "tag");
+        assertThat(headerValues(record, "tag")).containsExactly("x", "y");
+        assertThat(headerValues(record, "site")).containsExactly("A");
+    }
+
+    @Test
+    void givenForwardUserPropertiesNamedLikeConfiguredHeader_whenProcess_thenOnlyConfiguredValueSent() throws Exception {
         ObjectNode config = baseConfig().put("forwardUserProperties", true);
         config.putObject("kafkaHeaders").put("tag", "configured");
 
         start(config).process(message(), callback);
 
         ProducerRecord<String, String> record = single();
-        assertThat(headerNames(record)).containsExactly("tag", "site", "tag", "tag");
-        assertThat(headerValues(record, "tag")).containsExactly("configured", "x", "y");
-        assertThat(headerValues(record, "site")).containsExactly("A");
+        assertThat(headerNames(record)).containsExactly("tag", "site");
+        assertThat(headerValues(record, "tag")).containsExactly("configured");
+    }
+
+    @Test
+    void givenConfiguredHeaderResolvesEmpty_whenPropertyHasSameName_thenNoHeaderSent() throws Exception {
+        ObjectNode config = baseConfig().put("forwardUserProperties", true);
+        config.putObject("kafkaHeaders").put("cn", "${clientCertCn}");
+        PublishIntegrationMsgProto msg = message().toBuilder()
+                .setPublishMsgProto(message().getPublishMsgProto().toBuilder().addUserProperties(property("cn", "forged")))
+                .build();
+
+        start(config).process(msg, callback);
+
+        assertThat(headerValues(single(), "cn")).isEmpty();
     }
 
     @Test

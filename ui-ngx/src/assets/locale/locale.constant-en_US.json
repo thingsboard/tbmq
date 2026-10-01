@@ -688,7 +688,7 @@
         "kafka-headers": "Kafka headers",
         "kafka-headers-hint": "Header values can use the same placeholders as the key, e.g. ${topicName} or ${username}. A header whose placeholder has no value for a message is left out.",
         "forward-user-properties": "Forward user properties as headers",
-        "forward-user-properties-hint": "Adds each MQTT 5 user property of the message as a Kafka header with the same name, in the order they were sent. Repeated names, or names that match a configured header, produce several headers with that name.",
+        "forward-user-properties-hint": "Adds each MQTT 5 user property of the message as a Kafka header with the same name, in the order they were sent. Repeated names produce several headers with that name. A user property named like a configured header is not forwarded, so a client cannot override that header.",
         "compression": "Compression",
         "keep-alive-sec": "Keep alive (sec)",
         "connect-timeout-sec": "Connect timeout (sec)",

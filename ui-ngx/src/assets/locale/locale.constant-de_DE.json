@@ -636,7 +636,7 @@
         "kafka-headers": "Kafka-Header",
         "kafka-headers-hint": "Header-Werte können dieselben Platzhalter wie der Key verwenden, z. B. ${topicName} oder ${username}. Ein Header, dessen Platzhalter für eine Nachricht keinen Wert hat, wird weggelassen.",
         "forward-user-properties": "User Properties als Header weiterleiten",
-        "forward-user-properties-hint": "Fügt jede MQTT 5 User Property der Nachricht als Kafka-Header mit demselben Namen hinzu, in der gesendeten Reihenfolge. Wiederholte Namen oder Namen, die einem konfigurierten Header entsprechen, ergeben mehrere Header mit diesem Namen.",
+        "forward-user-properties-hint": "Fügt jede MQTT 5 User Property der Nachricht als Kafka-Header mit demselben Namen hinzu, in der gesendeten Reihenfolge. Wiederholte Namen ergeben mehrere Header mit diesem Namen. Eine User Property mit dem Namen eines konfigurierten Headers wird nicht weitergeleitet, damit ein Client diesen Header nicht überschreiben kann.",
         "compression": "Komprimierung",
         "keep-alive-sec": "Keep-Alive (Sek.)",
         "connect-timeout-sec": "Verbindungszeitüberschreitung (Sek.)",
