@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.integration.api.template.IntegrationTemplate;
 
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
@@ -53,6 +54,7 @@ public class KafkaIntegration extends AbstractIntegration {
     private static final int TIMEOUT_MS = 10_000;
 
     private KafkaIntegrationConfig config;
+    private Charset headersCharset;
     private Producer<String, String> producer;
     private IntegrationTemplate keyTemplate;
     private List<HeaderTemplate> headerTemplates;
@@ -103,6 +105,7 @@ public class KafkaIntegration extends AbstractIntegration {
         super.init(params);
 
         config = getClientConfiguration(lifecycleMsg, KafkaIntegrationConfig.class);
+        headersCharset = config.getKafkaHeadersCharset();
         compileTemplates();
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
@@ -181,7 +184,7 @@ public class KafkaIntegration extends AbstractIntegration {
             Headers headers = buildHeaders(body);
             if (config.isForwardUserProperties()) {
                 for (UserPropertyProto property : msg.getPublishMsgProto().getUserPropertiesList()) {
-                    headers.add(new RecordHeader(property.getKey(), property.getValue().getBytes(config.getKafkaHeadersCharset())));
+                    headers.add(new RecordHeader(property.getKey(), property.getValue().getBytes(headersCharset)));
                 }
             }
             send(new ProducerRecord<>(config.getTopic(), null, resolveKey(body), value, headers), callback);
@@ -236,7 +239,7 @@ public class KafkaIntegration extends AbstractIntegration {
         Headers headers = new RecordHeaders();
         for (HeaderTemplate header : headerTemplates) {
             header.value().resolve(body).ifPresent(value ->
-                    headers.add(new RecordHeader(header.name(), value.getBytes(config.getKafkaHeadersCharset()))));
+                    headers.add(new RecordHeader(header.name(), value.getBytes(headersCharset))));
         }
         return headers;
     }
