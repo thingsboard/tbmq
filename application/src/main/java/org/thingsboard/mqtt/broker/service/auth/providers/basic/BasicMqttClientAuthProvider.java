@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProvi
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
@@ -54,6 +55,7 @@ import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS
 public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicMqttAuthProviderConfiguration> {
 
     private final AuthorizationRuleService authorizationRuleService;
+    private final AuthorizationPolicyService authorizationPolicyService;
     private final MqttClientCredentialsService clientCredentialsService;
     private final TbCacheOps cacheOps;
     private final MqttAuthProviderService mqttAuthProviderService;
@@ -90,7 +92,9 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
             MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
             log.debug("[{}] Authenticated as {} with username {}", clientId, basicCredentials.getClientType(), username);
             BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
-            AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
+            var authorizationRules = authorizationPolicyService.resolveRules(
+                    basicCredentials.getAuthorizationPolicyId(), credentials.getAuthRules());
+            AuthRulePatterns authRulePatterns = authorizationRuleService.parsePubSubAuthorizationRule(authorizationRules);
             return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns), basicCredentials.getName());
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);

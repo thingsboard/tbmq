@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
@@ -85,6 +86,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(
                 credentialsServiceMock,
                 authorizationRuleServiceMock,
+                mock(AuthorizationPolicyService.class),
                 mqttAuthProviderService
         ));
     }

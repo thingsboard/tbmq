@@ -22,12 +22,13 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import {
   ClientCredentials,
+  AuthorizationPolicy,
   CredentialsType,
   CredentialsTypes,
   credentialsTypeTranslationMap
 } from '@shared/models/credentials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -41,12 +42,14 @@ import { MqttCredentialsBasicComponent } from '@home/components/client-credentia
 import { MqttCredentialsSslComponent } from '@home/components/client-credentials-templates/ssl/ssl.component';
 import { MqttCredentialsScramComponent } from '@home/components/client-credentials-templates/scram/scram.component';
 import { MatTooltip } from '@angular/material/tooltip';
+import { AuthorizationPolicyService } from '@core/http/authorization-policy.service';
+import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
 
 @Component({
     selector: 'tb-client-credentials',
     templateUrl: './client-credentials.component.html',
     styleUrls: ['./client-credentials.component.scss'],
-    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe, MatTooltip]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatHint, MatLabel, MatInput, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe, MatTooltip]
 })
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
 
@@ -57,13 +60,21 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
 
   ClientType = ClientType;
   clientTypeTranslationMap = clientTypeTranslationMap;
+  authorizationPolicies: AuthorizationPolicy[] = [];
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: ClientCredentials,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<ClientCredentials>,
               public fb: UntypedFormBuilder,
-              protected cd: ChangeDetectorRef) {
+              protected cd: ChangeDetectorRef,
+              private authorizationPolicyService: AuthorizationPolicyService) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
+    this.authorizationPolicyService.getPolicies(new PageLink(MAX_SAFE_PAGE_SIZE)).subscribe(
+      page => {
+        this.authorizationPolicies = page.data;
+        this.cd.markForCheck();
+      }
+    );
   }
 
   hideDelete() {
@@ -88,6 +99,7 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
         name: [entity ? entity.name : null, [Validators.required, Validators.maxLength(255), Validators.pattern(/(?:.|\s)*\S(&:.|\s)*/)]],
         clientType: [entity ? entity.clientType : null, [Validators.required]],
         credentialsType: [entity ? entity.credentialsType : null, [Validators.required]],
+        authorizationPolicyId: [entity ? entity.authorizationPolicyId : null],
         credentialsValue: [entity ? entity.credentialsValue : null, []],
         additionalInfo: this.fb.group(
           {
@@ -116,6 +128,7 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
   updateForm(entity: ClientCredentials) {
     this.entityForm.patchValue({name: entity.name});
     this.entityForm.patchValue({credentialsType: entity.credentialsType});
+    this.entityForm.patchValue({authorizationPolicyId: entity.authorizationPolicyId});
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
     this.entityForm.patchValue({clientType: entity.clientType});
     this.entityForm.patchValue({additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}});

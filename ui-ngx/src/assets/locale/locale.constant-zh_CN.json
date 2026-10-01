@@ -1339,5 +1339,23 @@
         "unauthorized-client": "未授权客户端",
         "unauthorized-clients": "未授权客户端",
         "unauthorized-client-name-starts-with": "Client ID 以 '{{prefix}}' 开头的未授权客户端"
+    },
+    "authorization-policy": {
+        "policies": "授权策略",
+        "policy": "授权策略",
+        "name": "名称",
+        "list": "授权策略列表",
+        "name-starts-with": "策略名称开头为",
+        "details": "授权策略详情",
+        "add": "添加授权策略",
+        "no-policies": "未找到授权策略",
+        "search": "搜索授权策略",
+        "selected-policies": "已选择的授权策略",
+        "embedded-rules": "使用凭据内嵌授权规则",
+        "selection-hint": "选择策略后，将覆盖此凭据中内嵌的授权规则。",
+        "rules-hint": "定义可复用的发布和订阅主题规则。策略可跨认证方式共享，因此不支持 ${cn} 占位符。",
+        "delete-title": "删除授权策略“{{name}}”？",
+        "delete-text": "仅当没有 MQTT 客户端凭据引用该策略时才能删除。",
+        "delete-many-title": "删除 {{count}} 个授权策略？"
     }
 }
