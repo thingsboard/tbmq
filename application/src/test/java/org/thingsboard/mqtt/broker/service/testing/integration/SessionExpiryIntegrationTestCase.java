@@ -133,6 +133,27 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
     }
 
     @Test
+    public void givenSessionWithCleanStartAndNoSessionExpiryInterval_whenDisconnectWithExpiryInterval_thenSessionIsCleared() throws Throwable {
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setCleanStart(true);
+
+        MqttAsyncClient client = new MqttAsyncClient(SERVER_URI + mqttPort, CLIENT_ID);
+        client.connect(options).waitForCompletion();
+        client.subscribe(MY_TOPIC, 1).waitForCompletion();
+
+        // [MQTT-3.14.2-2]: a non-zero interval on DISCONNECT is a Protocol Error when the CONNECT one was zero,
+        // so the session ends with the CONNECT interval rather than being kept for 60 seconds
+        MqttProperties disconnectProperties = new MqttProperties();
+        disconnectProperties.setSessionExpiryInterval(60L);
+        client.disconnect(0, null, null, 0, disconnectProperties).waitForCompletion();
+        client.close();
+
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(this::clientSessionCleared);
+    }
+
+    @Test
     public void givenSessionWithoutCleanStartAndWithSessionExpiryInterval_whenDisconnect_thenSessionIsClearedAfterDelay() throws Throwable {
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setCleanStart(false);
