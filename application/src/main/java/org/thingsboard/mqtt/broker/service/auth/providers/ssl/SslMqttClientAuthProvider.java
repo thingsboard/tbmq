@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.CLIENT_ID_NOT_ALLOWED_FOR_CN;
 import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.FAILED_TO_GET_CERT_CN;
 import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.FAILED_TO_GET_CLIENT_CERT_CN;
 import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.NO_CERTS_IN_CHAIN;
@@ -111,7 +112,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                         clientId, clientTypeSslMqttCredentials.getType(), protocol);
             }
             String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
-            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
+            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(
+                    clientTypeSslMqttCredentials, clientCommonName, clientId);
             return AuthResponse.sslSuccess(clientTypeSslMqttCredentials.getType(), authRulePatterns, clientTypeSslMqttCredentials.getName(), clientCommonName);
         } catch (Exception e) {
             log.debug("[{}] Authentication failed", clientId, e);
@@ -170,12 +172,16 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             }
             log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
 
+            boolean commonNameMatched = false;
             List<ClientTypeSslMqttCredentials> regexCreds = sslCredentialsCacheValue.getCredentials();
             if (!regexCreds.isEmpty()) {
                 for (var creds : regexCreds) {
                     Pattern pattern = Pattern.compile(creds.getSslMqttCredentials().getCertCnPattern());
                     if (pattern.matcher(commonName).find()) {
-                        return creds;
+                        if (creds.getSslMqttCredentials().matchesClientId(clientId)) {
+                            return creds;
+                        }
+                        commonNameMatched = true;
                     }
                 }
             }
@@ -185,7 +191,16 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             if (!matchingCredentials.isEmpty()) {
                 MqttClientCredentials mqttClientCredentials = matchingCredentials.get(0);
                 SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
+                if (sslMqttCredentials.matchesClientId(clientId)) {
+                    return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
+                }
+                commonNameMatched = true;
+            }
+
+            // Credentials exist for this certificate but none allow the client ID: refuse instead of
+            // falling through to the credentials of a parent certificate in the chain.
+            if (commonNameMatched) {
+                throw new AuthenticationException(String.format(CLIENT_ID_NOT_ALLOWED_FOR_CN.getErrorMsg(), clientId, commonName));
             }
         }
         return null;

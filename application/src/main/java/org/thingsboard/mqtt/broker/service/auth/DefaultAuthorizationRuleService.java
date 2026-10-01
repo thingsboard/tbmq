@@ -27,12 +27,12 @@ import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,25 +46,26 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFail
 @Getter
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
 
+    static final String INVALID_CLIENT_ID_PLACEHOLDER_ERROR =
+            "Client ID contains characters not allowed with the ${clientId} placeholder";
+
     private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
 
     @Override
-    public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {
+    public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials,
+                                                            String clientCommonName, String clientId) throws AuthenticationException {
         SslMqttCredentials credentials = clientTypeSslMqttCredentials.getSslMqttCredentials();
         if (credentials == null) {
             throw new AuthenticationException(CAN_NOT_PARSE_SSL_CREDS.getErrorMsg());
         }
 
-        List<AuthRulePatterns> authRulePatterns = credentials.getAuthRulesMapping().entrySet().stream()
-                .filter(entry -> {
-                    String certificateMatcherRegex = entry.getKey();
-                    Pattern pattern = Pattern.compile(certificateMatcherRegex);
-                    Matcher commonNameMatcher = pattern.matcher(clientCommonName);
-                    return commonNameMatcher.find();
-                })
-                .map(Map.Entry::getValue)
-                .map(pubSubAuthRules -> newAuthRulePatterns(pubSubAuthRules, clientCommonName))
-                .collect(Collectors.toList());
+        List<AuthRulePatterns> authRulePatterns = new ArrayList<>();
+        for (Map.Entry<String, PubSubAuthorizationRules> entry : credentials.getAuthRulesMapping().entrySet()) {
+            Pattern certificateMatcherPattern = Pattern.compile(entry.getKey());
+            if (certificateMatcherPattern.matcher(clientCommonName).find()) {
+                authRulePatterns.add(newAuthRulePatterns(entry.getValue(), clientCommonName, clientId));
+            }
+        }
 
         if (authRulePatterns.isEmpty()) {
             String errorMsg = String.format(NO_AUTH_RULES_FOR_CN_IN_CREDS.getErrorMsg(),
@@ -78,23 +79,49 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
 
     @Override
     public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException {
+        return parseAuthorizationRule(credentials, null);
+    }
+
+    @Override
+    public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials, String clientId) throws AuthenticationException {
         if (credentials == null) {
             throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
         }
-        return parsePubSubAuthorizationRule(credentials.getAuthRules());
+        return newAuthRulePatterns(credentials.getAuthRules(), null, clientId);
     }
 
-    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName) {
+    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName,
+                                                 String clientId) throws AuthenticationException {
+        validateClientIdPlaceholder(pubSubAuthRules, clientId);
         return new AuthRulePatterns(
-                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName),
-                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName));
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName, clientId),
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName, clientId));
     }
 
-    private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName) {
+    private void validateClientIdPlaceholder(PubSubAuthorizationRules authRules, String clientId) throws AuthenticationException {
+        if (clientId == null || !containsMqttTopicSyntax(clientId)) {
+            return;
+        }
+        if (containsClientIdPlaceholder(authRules.getPubAuthRulePatterns()) ||
+                containsClientIdPlaceholder(authRules.getSubAuthRulePatterns())) {
+            throw new AuthenticationException(INVALID_CLIENT_ID_PLACEHOLDER_ERROR);
+        }
+    }
+
+    private boolean containsClientIdPlaceholder(List<String> patterns) {
+        return !CollectionUtils.isEmpty(patterns) && patterns.stream()
+                .anyMatch(pattern -> pattern.contains(AuthRulesUtil.CLIENT_ID_PLACEHOLDER));
+    }
+
+    private boolean containsMqttTopicSyntax(String clientId) {
+        return clientId.indexOf('+') >= 0 || clientId.indexOf('#') >= 0 || clientId.indexOf('/') >= 0;
+    }
+
+    private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName, String clientId) {
         return CollectionUtils.isEmpty(authRulePatterns) ? Collections.emptyList() :
                 authRulePatterns
                         .stream()
-                        .map(pattern -> AuthRulesUtil.processPattern(pattern, clientCommonName))
+                        .map(pattern -> AuthRulesUtil.processPattern(pattern, clientCommonName, clientId))
                         .map(Pattern::compile)
                         .collect(Collectors.toList());
     }

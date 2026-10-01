@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
@@ -24,10 +24,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class SslMqttCredentials implements Serializable {
 
     @Serial
@@ -36,15 +36,40 @@ public class SslMqttCredentials implements Serializable {
     @NoXss
     private String certCnPattern;
     private boolean certCnIsRegex;
+    // Omitted when unset so that credentials without a client ID constraint keep the JSON shape
+    // older versions can read (the DB value and the shared sslRegexBasedCredentials cache entry).
+    @NoXss
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String clientIdPattern;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    private boolean clientIdIsRegex;
     private Map<String, PubSubAuthorizationRules> authRulesMapping;
 
     public SslMqttCredentials(String certCnPattern, Map<String, PubSubAuthorizationRules> authRulesMapping) {
+        this(certCnPattern, false, null, false, authRulesMapping);
+    }
+
+    public SslMqttCredentials(String certCnPattern, boolean certCnIsRegex, String clientIdPattern,
+                              boolean clientIdIsRegex, Map<String, PubSubAuthorizationRules> authRulesMapping) {
         this.certCnPattern = certCnPattern;
-        this.certCnIsRegex = false;
+        this.certCnIsRegex = certCnIsRegex;
+        this.clientIdPattern = clientIdPattern;
+        this.clientIdIsRegex = clientIdIsRegex;
         this.authRulesMapping = authRulesMapping;
     }
 
     public static SslMqttCredentials newInstance(String certCommonName, String key, List<String> authRules) {
-        return new SslMqttCredentials(certCommonName, false, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+        return new SslMqttCredentials(certCommonName, false, null, false,
+                Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+    }
+
+    public boolean matchesClientId(String clientId) {
+        if (clientIdPattern == null || clientIdPattern.isEmpty()) {
+            return true;
+        }
+        if (clientId == null) {
+            return false;
+        }
+        return clientIdIsRegex ? Pattern.matches(clientIdPattern, clientId) : clientIdPattern.equals(clientId);
     }
 }

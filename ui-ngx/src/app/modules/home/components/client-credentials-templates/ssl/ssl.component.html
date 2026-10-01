@@ -38,6 +38,20 @@
     <mat-slide-toggle formControlName="certCnIsRegex" style="padding: 8px 0 16px 8px">
       {{ 'mqtt-client-credentials.certificate-common-name-regex' | translate }}
     </mat-slide-toggle>
+    <mat-form-field class="mat-block">
+      <mat-label>{{ clientIdLabel | translate }}</mat-label>
+      <input matInput formControlName="clientIdPattern">
+      <tb-copy-button matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup?.get('clientIdPattern').value?.length"
+        [copyText]="credentialsMqttFormGroup?.get('clientIdPattern').value">
+      </tb-copy-button>
+    </mat-form-field>
+    <div class="tb-hint" [innerHTML]="clientIdHint | translate"></div>
+    <mat-slide-toggle formControlName="clientIdIsRegex"
+                      [disabled]="!credentialsMqttFormGroup?.get('clientIdPattern').value?.length"
+                      style="padding: 8px 0 16px 8px">
+      {{ 'mqtt-client-credentials.client-id-regex' | translate }}
+    </mat-slide-toggle>
   </fieldset>
   <tb-auth-rules [entity]="entity()" formControlName="authRulesMapping"></tb-auth-rules>
 </section>
