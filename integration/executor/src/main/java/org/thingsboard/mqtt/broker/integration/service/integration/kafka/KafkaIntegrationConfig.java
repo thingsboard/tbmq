@@ -49,6 +49,7 @@ public class KafkaIntegrationConfig {
     private Map<String, String> otherProperties;
     private Map<String, String> kafkaHeaders;
     private String kafkaHeadersCharset;
+    private boolean forwardUserProperties;
 
     public String getClientIdPrefix() {
         return StringUtils.isEmpty(clientIdPrefix) ? "tbmq-ie-kafka-producer" : clientIdPrefix;
