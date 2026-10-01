@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *       CONNECT packet is parsed: {@link #mqttVersion} and, for MQTT 5 enhanced authentication, the
  *       {@link #enhancedAuthState} auth method and buffered CONNECT.</li>
  *   <li><b>Client actor thread</b> — while the CONNECT/AUTH exchange is processed: {@link #sessionInfo},
- *       {@link #authRulePatterns}, {@link #clientType}, the authentication results ({@link #username},
+ *       {@link #zeroSessionExpiryOnConnect}, {@link #authRulePatterns}, {@link #clientType}, the authentication results ({@link #username},
  *       {@link #authDetails}, {@link #clientCertCn}), the {@link #enhancedAuthState} SCRAM server, and
  *       {@link #publishedInFlightCtx}.</li>
  * </ul>
@@ -94,6 +94,9 @@ public class ClientSessionCtx implements SessionContext {
     private volatile InetSocketAddress address;
     private volatile ChannelHandlerContext channel;
     private volatile SessionInfo sessionInfo;
+    // Whether the client sent a zero Session Expiry Interval on CONNECT, before it was capped to max-expiry-interval
+    // into sessionInfo; [MQTT-3.14.2-2] then makes a non-zero interval on DISCONNECT a Protocol Error.
+    private volatile boolean zeroSessionExpiryOnConnect;
     private volatile List<AuthRulePatterns> authRulePatterns;
     private volatile ClientType clientType;
     private volatile MqttVersion mqttVersion;
