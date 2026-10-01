@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,7 +42,7 @@ public class SparkplugCertificateRepublisherImplTest {
     private RetainedMsgProcessor retainedMsgProcessor;
     private SparkplugCertificateRepublisherImpl republisher;
     private SessionInfo sessionInfo;
-    private final String clientCertCn = "cn-edge";
+    private final PublisherIdentity publisher = new PublisherIdentity("edge-user", "cn-edge");
 
     @Before
     public void setUp() {
@@ -64,10 +65,10 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         ArgumentCaptor<PublishMsg> captor = ArgumentCaptor.forClass(PublishMsg.class);
-        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(clientCertCn), any());
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(publisher), any());
         PublishMsg sent = captor.getValue();
         assertThat(sent.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/NBIRTH/E1");
         assertThat(sent.isRetained()).isTrue();
@@ -86,10 +87,10 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         ArgumentCaptor<PublishMsg> captor = ArgumentCaptor.forClass(PublishMsg.class);
-        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(clientCertCn), any());
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(publisher), any());
         PublishMsg sent = captor.getValue();
         assertThat(sent.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/DBIRTH/E1/D1");
         assertThat(sent.isRetained()).isTrue();
@@ -107,7 +108,7 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
     }
@@ -122,7 +123,7 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
     }
@@ -137,7 +138,7 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
     }
@@ -152,10 +153,10 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         ArgumentCaptor<PublishMsg> captor = ArgumentCaptor.forClass(PublishMsg.class);
-        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(clientCertCn), any());
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), captor.capture(), eq(publisher), any());
         assertThat(captor.getValue().getQos()).isEqualTo(2);
     }
 
@@ -170,12 +171,12 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         InOrder order = inOrder(retainedMsgProcessor, msgDispatcherService);
         ArgumentCaptor<PublishMsg> retainedCaptor = ArgumentCaptor.forClass(PublishMsg.class);
         order.verify(retainedMsgProcessor).process(retainedCaptor.capture());
-        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(clientCertCn), any());
+        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(publisher), any());
 
         PublishMsg storedAsRetained = retainedCaptor.getValue();
         assertThat(storedAsRetained.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/NBIRTH/E1");
@@ -194,12 +195,12 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         InOrder order = inOrder(retainedMsgProcessor, msgDispatcherService);
         ArgumentCaptor<PublishMsg> retainedCaptor = ArgumentCaptor.forClass(PublishMsg.class);
         order.verify(retainedMsgProcessor).process(retainedCaptor.capture());
-        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(clientCertCn), any());
+        order.verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(), eq(publisher), any());
 
         PublishMsg storedAsRetained = retainedCaptor.getValue();
         assertThat(storedAsRetained.getTopicName()).isEqualTo("$sparkplug/certificates/spBv1.0/G1/DBIRTH/E1/D1");
@@ -217,7 +218,7 @@ public class SparkplugCertificateRepublisherImplTest {
                 .isDup(false)
                 .build();
 
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         verify(retainedMsgProcessor, never()).process(any());
     }
@@ -234,7 +235,7 @@ public class SparkplugCertificateRepublisherImplTest {
         when(retainedMsgProcessor.process(any())).thenThrow(new RuntimeException("retain store down"));
 
         // Must not propagate — the §10.1.4 hook must never break the primary publish path.
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         verifyNoInteractions(msgDispatcherService);
     }
@@ -252,7 +253,7 @@ public class SparkplugCertificateRepublisherImplTest {
                 .when(msgDispatcherService).persistPublishMsg(any(), any(), any(), any());
 
         // Must not propagate — the §10.1.4 hook must never break the primary publish path.
-        republisher.maybeRepublish(sessionInfo, original, clientCertCn);
+        republisher.maybeRepublish(sessionInfo, original, publisher);
 
         // retain-store was still attempted before the dispatch failure
         verify(retainedMsgProcessor).process(any());

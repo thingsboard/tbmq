@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRepublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -407,13 +408,14 @@ public class MqttPublishHandlerTest {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         when(ctx.getClientCertCn()).thenReturn("cn-edge");
+        when(ctx.getUsername()).thenReturn("edge-user");
 
         PublishMsg publishMsg = getPublishMsg(1, "spBv1.0/G1/NBIRTH/E1", 0);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
 
         verify(sparkplugCertificateRepublisher, times(1))
-                .maybeRepublish(eq(sessionInfo), eq(publishMsg), eq("cn-edge"));
+                .maybeRepublish(eq(sessionInfo), eq(publishMsg), eq(new PublisherIdentity("edge-user", "cn-edge")));
     }
 
     @Test
@@ -443,6 +445,19 @@ public class MqttPublishHandlerTest {
         // certificate republish hook invoked exactly once
         verify(sparkplugCertificateRepublisher, times(1))
                 .maybeRepublish(any(), eq(publishMsg), any());
+    }
+
+    @Test
+    public void givenSessionWithUsernameAndCert_whenPersistPubMsg_thenDispatchesPublisherIdentity() {
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(ctx.getUsername()).thenReturn("alice");
+        when(ctx.getClientCertCn()).thenReturn("CN=dev");
+        PublishMsg publishMsg = getPublishMsg(1, "sensors/1", 1);
+
+        mqttPublishHandler.persistPubMsg(ctx, publishMsg, actorRef, null);
+
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), eq(publishMsg), eq(new PublisherIdentity("alice", "CN=dev")), any());
     }
 
     private MqttPublishMsg createMqttPubMsg(PublishMsg publishMsg) {

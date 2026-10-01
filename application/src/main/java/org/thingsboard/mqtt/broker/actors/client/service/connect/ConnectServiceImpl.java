@@ -60,6 +60,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -214,7 +215,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         lastWillService.cancelLastWillDelayIfScheduled(sessionCtx.getClientId());
         if (connectionAcceptedMsg.getLastWillMsg() != null) {
-            lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg(), sessionCtx.getClientCertCn());
+            lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg(), PublisherIdentity.of(sessionCtx));
         }
 
         pushConnAckMsg(actorState, connectionAcceptedMsg);

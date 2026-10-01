@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
@@ -75,14 +76,14 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
+    public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher) {
         log.trace("[{}][{}] Saving last will msg, topic - [{}]",
                 sessionInfo.getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientId(), sessionId);
             }
-            return new MsgWithSessionInfo(publishMsg, sessionInfo, clientCertCn);
+            return new MsgWithSessionInfo(publishMsg, sessionInfo, publisher);
         });
     }
 
@@ -151,7 +152,7 @@ public class DefaultLastWillService implements LastWillService {
         if (publishMsg.isRetained()) {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
-        persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getClientCertCn());
+        persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getPublisherIdentity());
         delayedLastWillFuturesMap.remove(getClientId(lastWillMsgWithSessionInfo));
     }
 
@@ -159,8 +160,8 @@ public class DefaultLastWillService implements LastWillService {
         return lastWillMsgWithSessionInfo.getClientId();
     }
 
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
-        msgDispatcherService.persistPublishMsg(sessionInfo, publishMsg, clientCertCn,
+    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher) {
+        msgDispatcherService.persistPublishMsg(sessionInfo, publishMsg, publisher,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -184,7 +185,7 @@ public class DefaultLastWillService implements LastWillService {
 
         private final PublishMsg publishMsg;
         private final SessionInfo sessionInfo;
-        private final String clientCertCn;
+        private final PublisherIdentity publisherIdentity;
 
         private String getClientId() {
             return sessionInfo.getClientId();

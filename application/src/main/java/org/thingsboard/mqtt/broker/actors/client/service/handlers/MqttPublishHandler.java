@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRepublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -136,7 +137,7 @@ public class MqttPublishHandler {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 
-        sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn());
+        sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx));
 
         clientLogger.logEventWithDetails(ctx.getClientId(), getClass(), logCtx -> logCtx
                 .msg("Persisting PUBLISH in queue")
@@ -222,7 +223,7 @@ public class MqttPublishHandler {
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn(), new TbQueueCallback() {
+        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 callbackProcessor.submit(() -> {
