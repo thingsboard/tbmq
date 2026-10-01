@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -154,12 +155,14 @@ public class ConnectServiceImplTest {
         QueuedMqttMessages queuedMqttMessages = mock(QueuedMqttMessages.class);
         when(actorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getUsername()).thenReturn("alice");
+        when(ctx.getClientCertCn()).thenReturn("CN=dev");
 
         PublishMsg publishMsg = PublishMsg.builder().build();
         ConnectionAcceptedMsg connectionAcceptedMsg = getConnectionAcceptedMsg(publishMsg);
         connectService.acceptConnection(actorState, connectionAcceptedMsg, actorRef);
 
-        verify(lastWillService, times(1)).saveLastWillMsg(any(), eq(publishMsg), any());
+        verify(lastWillService, times(1)).saveLastWillMsg(any(), eq(publishMsg), eq(new PublisherIdentity("alice", "CN=dev")));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
         verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));
