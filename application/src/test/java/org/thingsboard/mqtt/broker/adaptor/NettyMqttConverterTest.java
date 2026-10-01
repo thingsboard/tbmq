@@ -297,6 +297,27 @@ public class NettyMqttConverterTest {
     }
 
     @Test
+    public void givenZeroExpiryOnConnect_whenDisconnectAsksNeverToExpire_thenProtocolError() {
+        UUID sessionId = UUID.randomUUID();
+        ClientSessionCtx ctx = new ClientSessionCtx(null, sessionId, null, "");
+        ctx.setMqttVersion(MqttVersion.MQTT_5);
+        ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(0).build());
+
+        // 0xFFFFFFFF is non-zero: the Four Byte Integer is unsigned
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID, 0xFFFFFFFF));
+        MqttReasonCodeAndPropertiesVariableHeader variableHeader = new MqttReasonCodeAndPropertiesVariableHeader(
+                MqttReasonCodes.Disconnect.NORMAL_DISCONNECT.byteValue(),
+                properties
+        );
+        MqttMessage msg = new MqttMessage(new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0), variableHeader);
+
+        MqttDisconnectMsg mqttDisconnectMsg = NettyMqttConverter.createMqttDisconnectMsg(ctx, msg);
+
+        Assert.assertEquals(DisconnectReasonType.ON_PROTOCOL_ERROR, mqttDisconnectMsg.getReason().getType());
+    }
+
+    @Test
     public void testCreateMqtt3DisconnectMsg() {
         UUID sessionId = UUID.randomUUID();
         ClientSessionCtx ctx = new ClientSessionCtx(null, sessionId, null, "");

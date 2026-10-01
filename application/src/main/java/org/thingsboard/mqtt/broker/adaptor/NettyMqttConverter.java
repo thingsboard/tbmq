@@ -147,7 +147,8 @@ public class NettyMqttConverter {
             var variableHeader = (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader();
 
             properties = variableHeader.properties();
-            int sessionExpiryInterval = getDisconnectSessionExpiryIntervalValue(properties);
+            // uncapped: only whether the interval is non-zero matters here
+            int sessionExpiryInterval = getDisconnectSessionExpiryIntervalValue(properties, Integer.MAX_VALUE);
             if (ctx.getSessionInfo().getSessionExpiryInterval() == 0 && sessionExpiryInterval > 0) {
                 // It is a Protocol Error to set a non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client
                 // if the Session Expiry Interval in the CONNECT packet was zero
