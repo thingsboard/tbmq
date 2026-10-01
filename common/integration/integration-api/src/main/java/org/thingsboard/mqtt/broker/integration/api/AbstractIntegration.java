@@ -247,6 +247,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         putIfNotEmpty(body, "ipAddress", msg.getIpAddress());
         body.put("ts", msg.getTs());
         putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
+        body.put("tbmqIeNode", context.getServiceId());
         putIfNotEmpty(body, "username", msg.getUsername());
         putIfNotEmpty(body, "clientCertCn", msg.getClientCertCn());
 

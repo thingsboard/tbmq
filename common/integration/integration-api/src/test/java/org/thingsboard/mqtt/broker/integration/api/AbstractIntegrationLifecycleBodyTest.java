@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AbstractIntegrationLifecycleBodyTest {
 
@@ -69,6 +71,23 @@ public class AbstractIntegrationLifecycleBodyTest {
         integration = new TestIntegration();
         // Set an empty metadata template so constructLifecycleEventBody doesn't NPE.
         integration.metadataTemplate = new UplinkMetaData(ContentType.JSON, Map.of());
+        IntegrationContext context = mock(IntegrationContext.class);
+        when(context.getServiceId()).thenReturn("ie-1");
+        integration.context = context;
+    }
+
+    // ── COMMON: the integration-executor node, as on the message body ─────────
+
+    @Test
+    void givenAnyEvent_whenBuildBody_thenHasTbmqIeNode() {
+        ClientLifecycleEventMsgProto msg = ClientLifecycleEventMsgProto.newBuilder()
+                .setEventType("CLIENT_DISCONNECTED")
+                .setClientId("c1")
+                .setTbmqNode("tbmq-1")
+                .build();
+        ObjectNode body = integration.body(msg);
+        assertEquals("ie-1", body.get("tbmqIeNode").asText());
+        assertEquals("tbmq-1", body.get("tbmqNode").asText());
     }
 
     // ── COMMON: username present in every event type ──────────────────────────

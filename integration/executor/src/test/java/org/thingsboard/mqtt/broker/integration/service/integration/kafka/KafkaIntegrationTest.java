@@ -252,6 +252,16 @@ class KafkaIntegrationTest {
     }
 
     @Test
+    void givenIeNodeHeader_whenLifecycleEvent_thenHeaderSent() throws Exception {
+        ObjectNode config = baseConfig();
+        config.putObject("kafkaHeaders").put("ie-node", "${tbmqIeNode}");
+
+        start(config).processLifecycleEvent(event(), callback);
+
+        assertThat(headerValues(single(), "ie-node")).containsExactly("ie-1");
+    }
+
+    @Test
     void givenMessageOnlyKeyPlaceholder_whenLifecycleEvent_thenNullKeyAndDelivered() throws Exception {
         start(baseConfig().put("key", "${props.site}").put("forwardUserProperties", true))
                 .processLifecycleEvent(event(), callback);
