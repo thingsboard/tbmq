@@ -1,0 +1,106 @@
+#
+# Copyright © 2016-2026 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Publish OpenAPI specification
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish the specification for
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish-openapi-spec:
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: msa/tbmq/configs/docker-compose.yml
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Validate release configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          grep -q "image: \"thingsboard/tbmq:${version}\"" "${COMPOSE_FILE}"
+
+      - name: Create Docker volumes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for volume in \
+            tbmq-postgres-data \
+            tbmq-kafka-data \
+            tbmq-kafka-secrets \
+            tbmq-kafka-config \
+            tbmq-valkey-data \
+            tbmq-logs \
+            tbmq-data; do
+            docker volume create "${volume}"
+          done
+
+      - name: Start TBMQ
+        run: docker compose -f "${COMPOSE_FILE}" up -d postgres kafka valkey tbmq
+
+      - name: Export and validate OpenAPI specification
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          output="tbmq-openapi-${version}.json"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 60 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            http://localhost:8083/v3/api-docs/TBMQ \
+            --output "${output}"
+          jq -e '
+            (.openapi | startswith("3.")) and
+            (.info.title == "TBMQ REST API") and
+            ((.paths | length) > 0)
+          ' "${output}" > /dev/null
+
+      - name: Upload specification to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          gh release upload "${RELEASE_TAG}" \
+            "tbmq-openapi-${version}.json#TBMQ ${version} OpenAPI specification" \
+            --clobber
+
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose -f "${COMPOSE_FILE}" logs --no-color
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f "${COMPOSE_FILE}" down
