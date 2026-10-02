@@ -52,7 +52,7 @@ public final class IntegrationTemplate {
     static final Set<String> NESTED = Set.of("props", "metadata");
 
     private static final String ALLOWED = ROOTS.stream().sorted().map(root -> "${" + root + "}")
-            .collect(Collectors.joining(", ")) + ", ${props.<key>}, ${metadata.<key>}";
+            .collect(Collectors.joining(", ")) + ", ${props.KEY}, ${metadata.KEY}";
 
     private final String template;
     private final List<String> literals;       // placeholders.size() + 1 entries
@@ -106,7 +106,7 @@ public final class IntegrationTemplate {
         if (NESTED.contains(root)) {
             String key = dot < 0 ? "" : name.substring(dot + 1);
             if (key.isEmpty()) {
-                throw new IllegalArgumentException(label + ": placeholder '${" + name + "}' needs a key, e.g. ${" + root + ".<key>}");
+                throw new IllegalArgumentException(label + ": placeholder '${" + name + "}' needs a key, e.g. ${" + root + ".KEY}");
             }
             return new String[]{root, key};
         }

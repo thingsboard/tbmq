@@ -127,8 +127,8 @@ class IntegrationTemplateTest {
             "${foo}          | Key: unknown placeholder '${foo}'",
             "${foo.bar}      | Key: unknown placeholder '${foo.bar}'",
             "${}             | Key: empty placeholder '${}'",
-            "${props}        | Key: placeholder '${props}' needs a key, e.g. ${props.<key>}",
-            "${metadata.}    | Key: placeholder '${metadata.}' needs a key, e.g. ${metadata.<key>}",
+            "${props}        | Key: placeholder '${props}' needs a key, e.g. ${props.KEY}",
+            "${metadata.}    | Key: placeholder '${metadata.}' needs a key, e.g. ${metadata.KEY}",
             "abc${clientId   | Key: unclosed placeholder in 'abc${clientId'"
     })
     void givenInvalidTemplate_whenParse_thenThrowsWithLabel(String template, String expectedMessageStart) {
@@ -148,6 +148,15 @@ class IntegrationTemplateTest {
     void givenUnknownPlaceholder_whenParse_thenMessageListsAllowedNames() {
         assertThatThrownBy(() -> IntegrationTemplate.parse("Key", "${topic}"))
                 .hasMessageContaining("${topicName}")
-                .hasMessageContaining("${props.<key>}");
+                .hasMessageContaining("${props.KEY}")
+                .hasMessageContaining("${metadata.KEY}");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"${topic}", "${props}", "${metadata.}"})
+    void givenInvalidTemplate_whenParse_thenMessageHasNoAngleBrackets(String template) {
+        // The UI shows server errors as HTML, so a '<key>' in the message would be dropped as an unknown tag.
+        assertThatThrownBy(() -> IntegrationTemplate.parse("Key", template))
+                .message().doesNotContain("<", ">");
     }
 }
