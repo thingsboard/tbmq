@@ -88,7 +88,7 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
             log.trace("[{}] Scheduling disconnect due to {}", channel.id(), idleEvent);
             this.pingRespTimeout = channel.eventLoop().schedule(() -> {
                 if (!channel.config().isAutoRead()) {
-                    // paused since the PINGREQ went out: stand down, whoever paused it
+                    // paused for good by a disconnect() draining its deliveries, which never resumes reading
                     this.pingRespTimeout = null;
                     return;
                 }
@@ -97,6 +97,18 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
                 channel.writeAndFlush(new MqttMessage(fixedHeader2)).addListener(ChannelFutureListener.CLOSE);
                 //TODO: what do when the connection is closed ?
             }, this.keepaliveSeconds, TimeUnit.SECONDS);
+        }
+    }
+
+    /**
+     * Called on the event loop when backpressure pauses reading: a PINGRESP can no longer be read, so a pending check for
+     * one is dropped. Checking at its deadline whether reading is paused would not do: reading may have resumed by then
+     * with the PINGRESP still unread, behind the PUBLISHes read first.
+     */
+    void onReadingPaused() {
+        if (this.pingRespTimeout != null) {
+            this.pingRespTimeout.cancel(false);
+            this.pingRespTimeout = null;
         }
     }
 

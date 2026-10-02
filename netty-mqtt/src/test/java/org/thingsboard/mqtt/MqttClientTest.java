@@ -310,6 +310,30 @@ class MqttClientTest {
     }
 
     @Test
+    void aStalledTlsHandshakeIsClosedAtTheConnectTimeoutEvenWhenTheCallerCancelledTheConnect() throws IOException {
+        // GIVEN - a server that accepts TCP and never answers the ClientHello, and reconnect on, 1 s apart
+        try (LocalTcpServer server = LocalTcpServer.silent()) {
+            SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+            var clientConfig = new MqttClientConfig(sslContext);
+            clientConfig.setOwnerId("Test[CancelledTlsConnect]");
+            clientConfig.setClientId("cancelled-tls-connect");
+            clientConfig.setReconnect(true);
+            clientConfig.setReconnectDelay(1);
+            clientConfig.setTimeoutSeconds(0);
+            clientConfig.setConnectTimeoutSec(1);
+            client = MqttClient.create(clientConfig, null, handlerExecutor);
+
+            // WHEN - the caller gives up on the connect first, as MqttIntegration does when its own wait runs out
+            client.connect("127.0.0.1", server.port()).cancel(false);
+
+            // THEN - the timed-out attempt still closed its channel, and the reconnect opened another
+            Awaitility.await("waiting for the reconnect attempt")
+                    .atMost(Duration.ofSeconds(10L))
+                    .until(() -> server.accepted() >= 2);
+        }
+    }
+
+    @Test
     void aReconnectScheduledBeforeDisconnectOpensNoSocket() throws IOException {
         // GIVEN - the server closes each connection before any CONNACK, so the client schedules a reconnect, 1 s out
         try (LocalTcpServer server = LocalTcpServer.closingEachConnection()) {
@@ -971,7 +995,7 @@ class MqttClientTest {
         Promise<MqttConnectResult> connectFuture = client.connect(broker.getHost(), broker.getMqttPort());
 
         // THEN
-        // past SslHandler's own 10 s handshake timeout, so the await cannot race it
+        // the broker drops a ClientHello it cannot decode, well within the connect timeout of 30 s
         Awaitility.await("waiting for the TLS connect to a plain port to fail")
                 .atMost(Duration.ofSeconds(15L))
                 .until(connectFuture::isDone);

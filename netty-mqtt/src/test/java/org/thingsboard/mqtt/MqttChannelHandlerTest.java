@@ -741,6 +741,33 @@ class MqttChannelHandlerTest {
     }
 
     @Test
+    void aPingResponseCheckIsDroppedWhenReadingPausesAndResumesBeforeItsDeadline() {
+        // GIVEN - a PINGREQ out, its response not yet read
+        Map<Integer, SettableFuture<Void>> handling = new ConcurrentHashMap<>();
+        channel = newChannel(pingTestConfig(), msg -> {
+            SettableFuture<Void> result = SettableFuture.create();
+            handling.put(msg.variableHeader().packetId(), result);
+            return result;
+        }, DIRECT_EXECUTOR);
+        channel.readOutbound(); // the CONNECT
+        channel.pipeline().fireUserEventTriggered(IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT);
+
+        // WHEN - backpressure pauses reading and resumes it before the deadline: the PINGRESP may still be unread,
+        // behind the PUBLISHes read first
+        for (int id = 1; id <= 2; id++) {
+            channel.writeInbound(publish("ping/resumed", MqttQoS.AT_LEAST_ONCE, id, false, payload("in flight")));
+        }
+        handling.values().forEach(result -> result.set(null));
+        assertThat(channel.config().isAutoRead()).isTrue();
+        channel.advanceTimeBy(10, TimeUnit.SECONDS);
+        channel.runScheduledPendingTasks();
+
+        // THEN
+        assertThat(written(channel)).containsExactly("PINGREQ", "PUBACK 1", "PUBACK 2");
+        assertThat(channel.isOpen()).isTrue();
+    }
+
+    @Test
     void thePingResponseCheckResumesWithReading() {
         // GIVEN - reading paused through an idle period, then resumed as the messages in flight complete
         Map<Integer, SettableFuture<Void>> handling = new ConcurrentHashMap<>();
@@ -1150,6 +1177,24 @@ class MqttChannelHandlerTest {
         // THEN
         assertThat(connectFuture.isDone()).isTrue();
         assertThat(connectFuture.cause()).isInstanceOf(ChannelClosedException.class).hasMessage("Client is disconnected");
+    }
+
+    @Test
+    void aConnectTimeoutClosesTheChannelEvenWhenTheCallerCancelledTheConnect() {
+        // GIVEN - the channel is up and the CONNECT is out, and the caller has given up on the connect
+        client = new MqttClientImpl(testConfig(MqttVersion.MQTT_3_1_1), null, DIRECT_EXECUTOR);
+        Promise<MqttConnectResult> connectFuture = ImmediateEventExecutor.INSTANCE.newPromise();
+        channel = new EmbeddedChannel(new MqttPingHandler(client.getClientConfig().getTimeoutSeconds()),
+                new MqttChannelHandler(client, connectFuture, true));
+        client.setEventLoop(channel.eventLoop());
+        connectFuture.cancel(false);
+
+        // WHEN - the connect timeout passes with no CONNACK
+        channel.advanceTimeBy(client.getClientConfig().getConnectTimeoutSec(), TimeUnit.SECONDS);
+        channel.runScheduledPendingTasks();
+
+        // THEN - nothing else would close it: a stalled TLS handshake holds back even the keep-alive's DISCONNECT
+        assertThat(channel.isOpen()).isFalse();
     }
 
     @Test
