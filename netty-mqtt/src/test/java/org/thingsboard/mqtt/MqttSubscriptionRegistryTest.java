@@ -25,6 +25,8 @@ import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -47,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -509,6 +512,133 @@ class MqttSubscriptionRegistryTest {
         assertThat(fixedHeader.get().isRetain()).describedAs("the retain flag the broker set").isTrue();
         assertThat(variableHeader.get().topicName()).describedAs("the PUBLISH's topic, not the filter it matched").isEqualTo(topic);
         assertThat(payload.get()).isEqualTo("21.5");
+    }
+
+    @Test
+    void aCleanSessionClientIsResubscribedAfterAReconnect() {
+        // GIVEN - a clean session: the broker forgets the subscription when the connection drops
+        proxy = MqttTestProxy.builder().localPort(randomPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort()).build();
+        int proxyPort = proxy.getPort();
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[CleanSessionResubscribe]");
+        clientConfig.setClientId("clean-resubscribe");
+        clientConfig.setReconnectDelay(1);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        CountDownLatch reconnected = new CountDownLatch(1);
+        client.setCallback(new MqttClientCallback() {
+            @Override
+            public void connectionLost(Throwable cause) {
+            }
+
+            @Override
+            public void onSuccessfulReconnect() {
+                reconnected.countDown();
+            }
+        });
+        connect(broker.getHost(), proxyPort);
+        List<String> served = Collections.synchronizedList(new ArrayList<>());
+        subscribe("resubscribe/clean", record(served, "resubscribe/clean"));
+
+        // WHEN - the connection drops and the client reconnects on its own
+        proxy.stop();
+        proxy = MqttTestProxy.builder().localPort(proxyPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort()).build();
+        Awaitility.await("waiting for the reconnect").atMost(Duration.ofSeconds(20L)).until(() -> reconnected.getCount() == 0);
+        publish("resubscribe/clean");
+
+        // THEN - no one called on() again
+        Awaitility.await("waiting for the message to reach the filter's handler")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> !served.isEmpty());
+    }
+
+    @Test
+    void aKeptSessionIsNotResubscribedAfterAReconnect() {
+        // GIVEN - a kept session, and a proxy counting the SUBSCRIBEs of the second connection
+        proxy = MqttTestProxy.builder().localPort(randomPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort()).build();
+        int proxyPort = proxy.getPort();
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[KeptSessionNoResubscribe]");
+        clientConfig.setClientId("kept-no-resubscribe");
+        clientConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
+        clientConfig.setCleanSession(false);
+        clientConfig.setReconnectDelay(1);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        CountDownLatch reconnected = new CountDownLatch(1);
+        client.setCallback(new MqttClientCallback() {
+            @Override
+            public void connectionLost(Throwable cause) {
+            }
+
+            @Override
+            public void onSuccessfulReconnect() {
+                reconnected.countDown();
+            }
+        });
+        connect(broker.getHost(), proxyPort);
+        List<String> served = Collections.synchronizedList(new ArrayList<>());
+        subscribe("resubscribe/kept", record(served, "resubscribe/kept"));
+
+        // WHEN
+        proxy.stop();
+        AtomicInteger subscribes = new AtomicInteger();
+        proxy = MqttTestProxy.builder().localPort(proxyPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort())
+                .clientToBrokerInterceptor(msg -> {
+                    if (msg.fixedHeader().messageType() == MqttMessageType.SUBSCRIBE) {
+                        subscribes.incrementAndGet();
+                    }
+                    return true;
+                })
+                .build();
+        Awaitility.await("waiting for the reconnect").atMost(Duration.ofSeconds(20L)).until(() -> reconnected.getCount() == 0);
+        publish("resubscribe/kept");
+
+        // THEN - the kept session still delivers, and nothing was subscribed again
+        Awaitility.await("waiting for the message to reach the filter's handler")
+                .atMost(Duration.ofSeconds(10L))
+                .until(() -> !served.isEmpty());
+        assertThat(subscribes).hasValue(0);
+    }
+
+    @Test
+    void aFilterUnsubscribedWhileDisconnectedIsUnsubscribedWhenTheSessionTurnsOutKept() {
+        // GIVEN - a kept session with one filter
+        proxy = MqttTestProxy.builder().localPort(randomPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort()).build();
+        int proxyPort = proxy.getPort();
+        var clientConfig = new MqttClientConfig();
+        clientConfig.setOwnerId("Test[OffWhileDisconnected]");
+        clientConfig.setClientId("off-while-disconnected");
+        clientConfig.setProtocolVersion(MqttVersion.MQTT_3_1_1);
+        clientConfig.setCleanSession(false);
+        clientConfig.setReconnectDelay(1);
+        clientConfig.setRetransmissionConfig(new MqttClientConfig.RetransmissionConfig(3, 30_000L, 0d));
+        client = MqttClient.create(clientConfig, null, handlerExecutor);
+        connect(broker.getHost(), proxyPort);
+        MqttHandler handler = record(new ArrayList<>(), "off-while-disconnected");
+        subscribe("resubscribe/off", handler);
+        proxy.stop();
+        Awaitility.await("waiting for the close cleanup").atMost(Duration.ofSeconds(10L))
+                .until(() -> ((MqttClientImpl) client).getServerSubscriptions().isEmpty());
+
+        // WHEN - off() while no connection is up: there is no server to send the UNSUBSCRIBE to
+        Future<Void> unsubscribed = client.off("resubscribe/off", handler);
+        AtomicReference<String> unsubscribedOnServer = new AtomicReference<>();
+        proxy = MqttTestProxy.builder().localPort(proxyPort).brokerHost(broker.getHost()).brokerPort(broker.getMqttPort())
+                .clientToBrokerInterceptor(msg -> {
+                    if (msg instanceof MqttUnsubscribeMessage unsubscribe) {
+                        unsubscribedOnServer.set(unsubscribe.payload().topics().get(0));
+                    }
+                    return true;
+                })
+                .build();
+
+        // THEN - the reconnect finds the session kept, and with it the filter nobody wants any more
+        assertThat(unsubscribed.isSuccess()).isTrue();
+        Awaitility.await("waiting for the UNSUBSCRIBE on the new connection")
+                .atMost(Duration.ofSeconds(20L))
+                .until(() -> unsubscribedOnServer.get() != null);
+        assertThat(unsubscribedOnServer.get()).isEqualTo("resubscribe/off");
     }
 
     /**

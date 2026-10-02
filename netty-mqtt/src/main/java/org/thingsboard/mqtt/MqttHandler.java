@@ -21,7 +21,9 @@ import java.util.concurrent.Future;
 
 /**
  * Invoked for each inbound PUBLISH routed to this handler - the first registered filter that matches it, otherwise the
- * client's default handler - on the client's handler executor.
+ * client's default handler - on the client's handler executor, one message at a time per client and in the order the
+ * messages arrived, whatever the executor's pool size. The call returns before the next one starts; the returned
+ * future may complete later, and the message's ack waits for it.
  * <p>
  * The whole message is passed rather than topic and payload alone, so a consumer can forward the QoS the message
  * actually arrived at, its retain and dup flags, its packet id, and - under MQTT 5 - its properties.

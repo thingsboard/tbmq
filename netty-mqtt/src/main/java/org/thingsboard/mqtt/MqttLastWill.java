@@ -57,8 +57,8 @@ public final class MqttLastWill {
         return qos;
     }
 
-    public static MqttLastWill.Builder builder(){
-        return new MqttLastWill.Builder();
+    public static Builder builder(){
+        return new Builder();
     }
 
     public static final class Builder {

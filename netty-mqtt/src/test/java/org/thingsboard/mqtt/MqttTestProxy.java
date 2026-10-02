@@ -44,7 +44,7 @@ public class MqttTestProxy {
     private final EventLoopGroup workerGroup;
 
     private volatile Channel clientToProxyChannel;
-    private Channel proxyToBrokerChannel;
+    private volatile Channel proxyToBrokerChannel;
 
     // closed by stop() itself, so that the port is free for a new proxy once stop() returns; the event loop groups
     // shut down gracefully, and would only close it after their quiet period
@@ -58,11 +58,14 @@ public class MqttTestProxy {
 
     private final UnaryOperator<MqttMessage> brokerToClientRewriter;
 
+    private final Predicate<MqttMessage> clientToBrokerInterceptor;
+
     private MqttTestProxy(Builder builder) {
         log.info("Starting MQTT proxy...");
 
         brokerToClientInterceptor = builder.brokerToClientInterceptor != null ? builder.brokerToClientInterceptor : msg -> true;
         brokerToClientRewriter = builder.brokerToClientRewriter;
+        clientToBrokerInterceptor = builder.clientToBrokerInterceptor;
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);
 
@@ -78,7 +81,7 @@ public class MqttTestProxy {
                         connectToBroker(builder.brokerHost, builder.brokerPort).addListener(future -> {
                             if (future.isSuccess()) {
                                 clientToProxyChannel.pipeline().addLast("mqttDecoder", new MqttDecoder());
-                                clientToProxyChannel.pipeline().addLast("mqttToBroker", new MqttRelayHandler(proxyToBrokerChannel, null, null));
+                                clientToProxyChannel.pipeline().addLast("mqttToBroker", new MqttRelayHandler(proxyToBrokerChannel, clientToBrokerInterceptor, null));
                                 clientToProxyChannel.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
 
                                 clientToProxyChannel.config().setAutoRead(true); // start accepting data for a client
@@ -187,6 +190,15 @@ public class MqttTestProxy {
         clientToProxyChannel.writeAndFlush(msg);
     }
 
+    /**
+     * Whether the proxy's connection to the broker has closed - after a client's DISCONNECT, once the broker has
+     * processed it and every packet the client sent before it.
+     */
+    public boolean isBrokerConnectionClosed() {
+        Channel channel = proxyToBrokerChannel;
+        return channel != null && !channel.isOpen();
+    }
+
     public int getPort() {
         return assignedPort;
     }
@@ -202,6 +214,7 @@ public class MqttTestProxy {
         private int brokerPort;
         private Predicate<MqttMessage> brokerToClientInterceptor;
         private UnaryOperator<MqttMessage> brokerToClientRewriter;
+        private Predicate<MqttMessage> clientToBrokerInterceptor;
 
         public Builder localPort(int localPort) {
             this.localPort = localPort;
@@ -220,6 +233,14 @@ public class MqttTestProxy {
 
         public Builder brokerToClientInterceptor(Predicate<MqttMessage> interceptor) {
             this.brokerToClientInterceptor = interceptor;
+            return this;
+        }
+
+        /**
+         * Sees each message relayed from the client to the broker: return {@code false} to drop it.
+         */
+        public Builder clientToBrokerInterceptor(Predicate<MqttMessage> interceptor) {
+            this.clientToBrokerInterceptor = interceptor;
             return this;
         }
 

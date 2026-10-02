@@ -25,6 +25,8 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
+import java.util.concurrent.TimeUnit;
+
 public interface MqttClient {
 
     /**
@@ -83,11 +85,15 @@ public interface MqttClient {
     ListeningExecutor getHandlerExecutor();
 
     /**
-     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
+     * Subscribe on the given topic. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler.
+     * The handler is registered at once, before the SUBSCRIBE goes out, so a PUBLISH the server sends before its
+     * SUBACK reaches it; when the returned future fails, the registration is removed again.
      * <p>
      * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
-     * keeps the filter's position in delivery order. Handlers survive a reconnect, but the client's record of the
-     * server-side subscriptions does not - after any reconnect call {@code on} again to restore it.
+     * keeps the filter's position in delivery order. Handlers survive a reconnect. After a reconnect whose server lost
+     * the session the client resubscribes every registered filter itself, at the QoS its {@code on} asked for (see
+     * {@link MqttClientCallback#onResubscribeFailed}); after one that kept it, only a filter the kept session may not
+     * hold - its resubscribe failed, or a closed channel cut it short - is sent again.
      * {@link #off(String)} stops routing to a filter.
      *
      * @param topic The topic filter to subscribe to
@@ -101,17 +107,22 @@ public interface MqttClient {
     Future<MqttQoS> on(String topic, MqttHandler handler);
 
     /**
-     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler
+     * Subscribe on the given topic, with the given qos. When a message is received, MqttClient will invoke the {@link MqttHandler#onMessage(MqttPublishMessage)} function of the given handler.
+     * The handler is registered at once, before the SUBSCRIBE goes out, so a PUBLISH the server sends before its
+     * SUBACK reaches it; when the returned future fails, the registration is removed again.
      * <p>
      * A topic filter has at most one handler: calling {@code on} again for the same filter replaces its handler and
-     * keeps the filter's position in delivery order. Handlers survive a reconnect, but the client's record of the
-     * server-side subscriptions does not - after any reconnect call {@code on} again to restore it.
+     * keeps the filter's position in delivery order. Handlers survive a reconnect. After a reconnect whose server lost
+     * the session the client resubscribes every registered filter itself, at the QoS its {@code on} asked for (see
+     * {@link MqttClientCallback#onResubscribeFailed}); after one that kept it, only a filter the kept session may not
+     * hold - its resubscribe failed, or a closed channel cut it short - is sent again.
      * {@link #off(String)} stops routing to a filter.
      *
      * @param topic The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @param qos The qos to request to the server; ignored when the filter is already subscribed or its SUBSCRIBE is
-     *            in flight
+     * @param qos The qos to request to the server. A filter already subscribed on the server keeps its grant and is
+     *            not subscribed again now: this qos is what its resubscribe after a session-less reconnect asks for.
+     *            Ignored when the filter's SUBSCRIBE is in flight
      * @return A future which completes with the QoS the server granted - for a filter already subscribed on the
      * server, the QoS granted then - or fails with {@link MqttSubscriptionFailedException} when the server refuses
      * the filter, in which case this call registers nothing; it also fails with {@link ChannelClosedException} when the
@@ -214,10 +225,21 @@ public interface MqttClient {
     }
 
     /**
-     * Send disconnect and close channel
-     *
+     * Disconnects for good, without a drain: sends DISCONNECT and closes the channel. A delivery whose handler has not
+     * started skips it; one whose handler is still running gets no ack. A disconnected client never connects again.
      */
     void disconnect();
+
+    /**
+     * Disconnects for good, draining first. It stops reading, so a PUBLISH the server sends from here on is never acked
+     * and a kept session redelivers it. Every delivery whose handler has started is left to finish and get its ack
+     * written, for at most {@code timeout}; a delivery whose handler has not started skips it and is never acked. Then it
+     * sends DISCONNECT and closes the channel. A disconnected client never connects again.
+     *
+     * @return a future that completes when the channel has closed - at once when there is none. While a channel is
+     * open, a second call returns the first call's close future; with none, every call returns a completed future
+     */
+    Future<Void> disconnect(long timeout, TimeUnit unit);
 
     /**
      * Sets the {@see #MqttClientCallback} object for this MqttClient
