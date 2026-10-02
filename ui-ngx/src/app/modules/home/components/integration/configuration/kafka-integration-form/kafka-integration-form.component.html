@@ -164,7 +164,9 @@
             </tb-key-val-map>
           </section>
           <section class="security-setting mat-padding">
-            <p translate>integration.kafka-headers</p>
+            <section tb-hint-tooltip-icon="{{ 'integration.kafka-headers-hint' | translate }}">
+              <p translate>integration.kafka-headers</p>
+            </section>
             <div class="flex flex-col gap-6">
               <tb-key-val-map
                 formControlName="kafkaHeaders"
@@ -183,6 +185,11 @@
                   }
                 </mat-select>
               </mat-form-field>
+              <section tb-hint-tooltip-icon="{{ 'integration.forward-user-properties-hint' | translate }}">
+                <mat-slide-toggle formControlName="forwardUserProperties">
+                  <span translate>integration.forward-user-properties</span>
+                </mat-slide-toggle>
+              </section>
             </div>
           </section>
           <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">

@@ -82,6 +82,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupI
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
@@ -111,18 +112,18 @@ public class ProtoConverter {
      */
 
     public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        return convertToPublishMsgProto(sessionInfo, publishMsg, null);
+        return convertToPublishMsgProto(sessionInfo, publishMsg, PublisherIdentity.EMPTY);
     }
 
-    public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn) {
-        return convertToPublishMsgProto(sessionInfo.getClientInfo().getClientId(), publishMsg, clientCertCn);
+    public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher) {
+        return convertToPublishMsgProto(sessionInfo.getClientInfo().getClientId(), publishMsg, publisher);
     }
 
     public static PublishMsgProto convertToPublishMsgProto(String clientId, PublishMsg publishMsg) {
-        return convertToPublishMsgProto(clientId, publishMsg, null);
+        return convertToPublishMsgProto(clientId, publishMsg, PublisherIdentity.EMPTY);
     }
 
-    private static PublishMsgProto convertToPublishMsgProto(String clientId, PublishMsg publishMsg, String clientCertCn) {
+    private static PublishMsgProto convertToPublishMsgProto(String clientId, PublishMsg publishMsg, PublisherIdentity publisher) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg.getProperties());
         PublishMsgProto.Builder builder = PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
@@ -139,8 +140,11 @@ public class ProtoConverter {
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
-        if (clientCertCn != null) {
-            builder.setClientCertCn(clientCertCn);
+        if (publisher.clientCertCn() != null) {
+            builder.setClientCertCn(publisher.clientCertCn());
+        }
+        if (StringUtils.isNotEmpty(publisher.username())) {
+            builder.setUsername(publisher.username());
         }
 
         return builder.build();

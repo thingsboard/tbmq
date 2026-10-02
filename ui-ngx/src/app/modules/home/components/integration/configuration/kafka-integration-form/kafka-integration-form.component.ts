@@ -142,6 +142,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
         otherProperties: [null, []],
         kafkaHeaders: [null, []],
         kafkaHeadersCharset: ['UTF-8', []],
+        forwardUserProperties: [false, []],
       })
     }, {validators: atLeastOneFilterOrEvent});
     this.kafkaIntegrationConfigForm.valueChanges

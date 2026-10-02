@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.sparkplug;
 
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 
 /**
  * Sparkplug 3.0 §10.1.4 — Sparkplug Aware MQTT Server. When an Edge Node publishes an
@@ -37,5 +38,5 @@ public interface SparkplugCertificateRepublisher {
      * republish is logged and swallowed so the primary publish path is never
      * compromised.
      */
-    void maybeRepublish(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn);
+    void maybeRepublish(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher);
 }

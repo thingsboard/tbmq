@@ -33,15 +33,21 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
+import org.thingsboard.mqtt.broker.integration.api.template.IntegrationTemplate;
 
+import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 @Slf4j
 public class KafkaIntegration extends AbstractIntegration {
@@ -49,12 +55,26 @@ public class KafkaIntegration extends AbstractIntegration {
     private static final int TIMEOUT_MS = 10_000;
 
     private KafkaIntegrationConfig config;
+    private Charset headersCharset;
     private Producer<String, String> producer;
+    private IntegrationTemplate keyTemplate;
+    private List<HeaderTemplate> headerTemplates;
+    private Set<String> configuredHeaderNames;
+    private boolean templated;
 
     @Override
     public void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
         try {
             KafkaConfigValidator.validate(getClientConfiguration(clientConfiguration, KafkaIntegrationConfig.class));
+        } catch (Exception e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
+        }
+    }
+
+    @Override
+    public void doValidateConfigurationOnSave(JsonNode clientConfiguration) throws ThingsboardException {
+        try {
+            KafkaConfigValidator.validateTemplates(getClientConfiguration(clientConfiguration, KafkaIntegrationConfig.class));
         } catch (Exception e) {
             throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
         }
@@ -96,6 +116,8 @@ public class KafkaIntegration extends AbstractIntegration {
         super.init(params);
 
         config = getClientConfiguration(lifecycleMsg, KafkaIntegrationConfig.class);
+        headersCharset = config.getKafkaHeadersCharset();
+        compileTemplates();
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
         properties.put(ProducerConfig.CLIENT_ID_CONFIG, constructClientId());
@@ -119,11 +141,32 @@ public class KafkaIntegration extends AbstractIntegration {
         startProcessingIntegrationMessages(this);
     }
 
+    private void compileTemplates() {
+        keyTemplate = StringUtils.isEmpty(config.getKey()) ? null : compile(KafkaConfigValidator.KEY_LABEL, config.getKey());
+        headerTemplates = config.getKafkaHeaders().entrySet().stream()
+                .map(header -> new HeaderTemplate(header.getKey(), compile(KafkaConfigValidator.headerLabel(header.getKey()), header.getValue())))
+                .toList();
+        configuredHeaderNames = Set.copyOf(config.getKafkaHeaders().keySet());
+        templated = (keyTemplate != null && keyTemplate.hasPlaceholders())
+                || headerTemplates.stream().anyMatch(header -> header.value().hasPlaceholders());
+    }
+
+    // Stored configs are not re-validated on upgrade: a value that fails the save-time check keeps its pre-template
+    // behaviour (sent verbatim) instead of stopping the integration from starting.
+    private IntegrationTemplate compile(String label, String value) {
+        try {
+            return IntegrationTemplate.parse(label, value);
+        } catch (IllegalArgumentException e) {
+            log.warn("[{}][{}] {}. Sending the value as literal text", getId(), getName(), e.getMessage());
+            return IntegrationTemplate.literal(value);
+        }
+    }
+
     private String constructClientId() {
         return config.getClientIdPrefix() + "-" + context.getLifecycleMsg().getIntegrationId() + "-" + context.getServiceId();
     }
 
-    KafkaProducer<String, String> getKafkaProducer(Properties properties) {
+    Producer<String, String> getKafkaProducer(Properties properties) {
         return new KafkaProducer<>(properties);
     }
 
@@ -148,22 +191,19 @@ public class KafkaIntegration extends AbstractIntegration {
 
     private void publish(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
         try {
-            Headers headers = new RecordHeaders();
-            config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
-
-            var kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), getRecordValue(msg), headers);
-            producer.send(kvProducerRecord, (metadata, e) -> {
-                if (e == null) {
-                    log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
-                            metadata.partition(), metadata.offset());
-                    integrationStatistics.incMessagesProcessed();
-                    callback.onSuccess();
-                } else {
-                    log.warn("[{}][{}] processException", getId(), getName(), e);
-                    handleMsgProcessingFailure(e);
-                    callback.onFailure(e);
+            ObjectNode body = config.isSendOnlyMsgPayload() ? (templated ? constructBody(msg, false) : null) : constructBody(msg);
+            String value = config.isSendOnlyMsgPayload() ? getPayloadValue(msg) : JacksonUtil.toString(body);
+            Headers headers = buildHeaders(body);
+            if (config.isForwardUserProperties()) {
+                for (UserPropertyProto property : msg.getPublishMsgProto().getUserPropertiesList()) {
+                    // A configured header name is reserved, even when its template resolved empty for this message:
+                    // otherwise a publisher could forge it (consumers commonly read the last header of a given name).
+                    if (!configuredHeaderNames.contains(property.getKey())) {
+                        headers.add(new RecordHeader(property.getKey(), property.getValue().getBytes(headersCharset)));
+                    }
                 }
-            });
+            }
+            send(new ProducerRecord<>(config.getTopic(), null, resolveKey(body), value, headers), callback);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process message: {}", getId(), getName(), msg, e);
             handleMsgProcessingFailure(e);
@@ -175,29 +215,14 @@ public class KafkaIntegration extends AbstractIntegration {
     protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
         String value = JacksonUtil.toString(body);
         context.getExternalCallExecutor().executeAsync(() -> {
-            publishBody(value, callback);
+            publishBody(body, value, callback);
             return null;
         });
     }
 
-    private void publishBody(String body, IntegrationMsgCallback callback) {
+    private void publishBody(ObjectNode body, String value, IntegrationMsgCallback callback) {
         try {
-            Headers headers = new RecordHeaders();
-            config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
-
-            var kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), body, headers);
-            producer.send(kvProducerRecord, (metadata, e) -> {
-                if (e == null) {
-                    log.debug("[{}][{}] publishBody success {}{}{}", getId(), getName(), metadata.topic(),
-                            metadata.partition(), metadata.offset());
-                    integrationStatistics.incMessagesProcessed();
-                    callback.onSuccess();
-                } else {
-                    log.warn("[{}][{}] processException", getId(), getName(), e);
-                    handleMsgProcessingFailure(e);
-                    callback.onFailure(e);
-                }
-            });
+            send(new ProducerRecord<>(config.getTopic(), null, resolveKey(body), value, buildHeaders(body)), callback);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to publish lifecycle event body", getId(), getName(), e);
             handleMsgProcessingFailure(e);
@@ -205,12 +230,42 @@ public class KafkaIntegration extends AbstractIntegration {
         }
     }
 
-    private String getRecordValue(PublishIntegrationMsgProto msg) {
-        if (config.isSendOnlyMsgPayload()) {
-            ByteString payload = msg.getPublishMsgProto().getPayload();
-            return payload.isValidUtf8() ? payload.toStringUtf8() : Base64.getEncoder().encodeToString(payload.toByteArray());
+    private void send(ProducerRecord<String, String> record, IntegrationMsgCallback callback) {
+        producer.send(record, (metadata, e) -> {
+            if (e == null) {
+                log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
+                        metadata.partition(), metadata.offset());
+                integrationStatistics.incMessagesProcessed();
+                callback.onSuccess();
+            } else {
+                log.warn("[{}][{}] processException", getId(), getName(), e);
+                handleMsgProcessingFailure(e);
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    // body is null only when nothing is templated, and a static template returns its text without reading it
+    private String resolveKey(ObjectNode body) {
+        return keyTemplate == null ? null : keyTemplate.resolve(body).orElse(null);
+    }
+
+    // Built per record: the producer marks a record's Headers read-only on send, and interceptors may add to them.
+    private Headers buildHeaders(ObjectNode body) {
+        Headers headers = new RecordHeaders();
+        for (HeaderTemplate header : headerTemplates) {
+            header.value().resolve(body).ifPresent(value ->
+                    headers.add(new RecordHeader(header.name(), value.getBytes(headersCharset))));
         }
-        return constructValue(msg);
+        return headers;
+    }
+
+    private String getPayloadValue(PublishIntegrationMsgProto msg) {
+        ByteString payload = msg.getPublishMsgProto().getPayload();
+        return payload.isValidUtf8() ? payload.toStringUtf8() : Base64.getEncoder().encodeToString(payload.toByteArray());
+    }
+
+    private record HeaderTemplate(String name, IntegrationTemplate value) {
     }
 
 }

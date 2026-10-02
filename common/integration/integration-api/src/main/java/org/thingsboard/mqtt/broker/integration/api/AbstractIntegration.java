@@ -121,6 +121,14 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     @Override
+    public void validateConfigurationOnSave(IntegrationLifecycleMsg lifecycleMsg) throws ThingsboardException {
+        if (lifecycleMsg == null || lifecycleMsg.getConfiguration() == null) {
+            throw new IllegalArgumentException("Integration configuration is empty!");
+        }
+        doValidateConfigurationOnSave(lifecycleMsg.getConfiguration().get("clientConfiguration"));
+    }
+
+    @Override
     public void checkConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
         if (integration == null || integration.getConfiguration() == null) {
             throw new IllegalArgumentException("Integration configuration is empty!");
@@ -175,10 +183,20 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected ObjectNode constructBody(PublishIntegrationMsgProto msg) {
+        return constructBody(msg, true);
+    }
+
+    /**
+     * @param includePayload false builds the metadata-only body, e.g. to resolve key/header templates when only the raw
+     *                       payload is sent, without copying the payload into the JSON tree.
+     */
+    protected ObjectNode constructBody(PublishIntegrationMsgProto msg, boolean includePayload) {
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
 
         ObjectNode request = JacksonUtil.newObjectNode();
-        request.put("payload", publishMsgProto.getPayload().toByteArray());
+        if (includePayload) {
+            request.put("payload", publishMsgProto.getPayload().toByteArray());
+        }
         request.put("topicName", publishMsgProto.getTopicName());
         request.put("clientId", publishMsgProto.getClientId());
         request.put("eventType", "PUBLISH_MSG");
@@ -187,6 +205,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.put("tbmqIeNode", context.getServiceId());
         request.put("tbmqNode", msg.getTbmqNode());
         request.put("ts", msg.getTimestamp());
+        if (publishMsgProto.hasUsername()) {
+            putIfNotEmpty(request, "username", publishMsgProto.getUsername());
+        }
         if (publishMsgProto.hasClientCertCn()) {
             request.put("clientCertCn", publishMsgProto.getClientCertCn());
         }
@@ -226,6 +247,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         putIfNotEmpty(body, "ipAddress", msg.getIpAddress());
         body.put("ts", msg.getTs());
         putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
+        body.put("tbmqIeNode", context.getServiceId());
         putIfNotEmpty(body, "username", msg.getUsername());
         putIfNotEmpty(body, "clientCertCn", msg.getClientCertCn());
 
@@ -357,6 +379,13 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
+
+    }
+
+    /**
+     * Save-time-only checks, see {@link TbPlatformIntegration#validateConfigurationOnSave}.
+     */
+    protected void doValidateConfigurationOnSave(JsonNode clientConfiguration) throws ThingsboardException {
 
     }
 

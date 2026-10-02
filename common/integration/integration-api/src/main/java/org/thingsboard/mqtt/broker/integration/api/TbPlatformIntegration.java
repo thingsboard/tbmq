@@ -30,6 +30,14 @@ public interface TbPlatformIntegration {
 
     void validateConfiguration(IntegrationLifecycleMsg lifecycleMsg, boolean allowLocalNetworkHosts) throws ThingsboardException;
 
+    /**
+     * Extra checks run only when a configuration is saved, after {@link #validateConfiguration}. They never run when a
+     * stored integration starts, so a check added in a newer version can't stop an integration saved before it from
+     * starting after an upgrade.
+     */
+    default void validateConfigurationOnSave(IntegrationLifecycleMsg lifecycleMsg) throws ThingsboardException {
+    }
+
     void checkConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException;
 
     void init(TbIntegrationInitParams params) throws Exception;

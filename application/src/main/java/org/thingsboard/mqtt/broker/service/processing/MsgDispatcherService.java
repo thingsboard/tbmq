@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface MsgDispatcherService {
 
-    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn, TbQueueCallback callback);
+    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher, TbQueueCallback callback);
 
     /**
      * Persists a broker-originated PUBLISH (no client session behind it, e.g. the REST API) under the given

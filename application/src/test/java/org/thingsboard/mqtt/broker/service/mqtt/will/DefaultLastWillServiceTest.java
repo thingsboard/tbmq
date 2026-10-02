@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -37,10 +38,10 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -123,11 +124,23 @@ public class DefaultLastWillServiceTest {
         verify(tbMessageStatsReportClient, never()).reportDroppedMsgs();
     }
 
+    @Test
+    public void givenPublisherIdentity_whenLastWillExecuted_thenIdentityCarriedToScheduledWill() {
+        PublisherIdentity publisher = new PublisherIdentity("alice", "CN=dev");
+        lastWillService.saveLastWillMsg(sessionInfo, getPublishMsg(), publisher);
+
+        removeAndExecuteLastWillIfNeeded(savedSessionId, true);
+
+        ArgumentCaptor<DefaultLastWillService.MsgWithSessionInfo> captor = ArgumentCaptor.forClass(DefaultLastWillService.MsgWithSessionInfo.class);
+        verify(lastWillService).scheduleLastWill(captor.capture(), anyInt());
+        assertEquals(publisher, captor.getValue().getPublisherIdentity());
+    }
+
     private TbQueueCallback persistPublishMsgAndCaptureCallback() {
-        lastWillService.persistPublishMsg(sessionInfo, getPublishMsg(), null);
+        lastWillService.persistPublishMsg(sessionInfo, getPublishMsg(), PublisherIdentity.EMPTY);
 
         ArgumentCaptor<TbQueueCallback> callbackCaptor = ArgumentCaptor.forClass(TbQueueCallback.class);
-        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(PublishMsg.class), isNull(), callbackCaptor.capture());
+        verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), any(PublishMsg.class), eq(PublisherIdentity.EMPTY), callbackCaptor.capture());
         return callbackCaptor.getValue();
     }
 
@@ -136,7 +149,7 @@ public class DefaultLastWillServiceTest {
     }
 
     private void saveLastWillMsg() {
-        lastWillService.saveLastWillMsg(sessionInfo, getPublishMsg(), null);
+        lastWillService.saveLastWillMsg(sessionInfo, getPublishMsg(), PublisherIdentity.EMPTY);
     }
 
     private PublishMsg getPublishMsg() {

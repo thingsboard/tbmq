@@ -40,6 +40,7 @@ message PublishMsgProto {
   repeated UserPropertyProto userProperties = 7;
   optional MqttPropertiesProto mqttProperties = 8;
   optional string clientCertCn = 9;
+  optional string username = 10;
 }
 
 message MqttPropertiesProto {
