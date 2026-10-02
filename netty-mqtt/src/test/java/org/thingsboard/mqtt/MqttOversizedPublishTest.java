@@ -137,6 +137,26 @@ class MqttOversizedPublishTest {
     }
 
     @Test
+    void aPublishAtTheLimitIsHandledAndOneByteOverIsSkipped() {
+        // GIVEN - remaining lengths of exactly the limit and one more: the guard and netty's MqttDecoder must draw the
+        // line at the same byte, or a PUBLISH between the two fails the decoder and closes the connection
+        String topic = "edge";
+        int payloadAtLimit = LIMIT - (2 + topic.length() + 2);
+        channel = newChannel();
+        repliesWritten(); // the CONNECT
+
+        // WHEN
+        writeInChunks(encode(publish(topic, MqttQoS.AT_LEAST_ONCE, 1, "x".repeat(payloadAtLimit))), 1_000);
+        writeInChunks(encode(publish(topic, MqttQoS.AT_LEAST_ONCE, 2, "x".repeat(payloadAtLimit + 1))), 1_000);
+
+        // THEN
+        assertThat(handled).containsExactly(topic);
+        assertThat(tooLarge).containsExactly(topic + " QoS 1 " + (LIMIT + 1) + " bytes");
+        assertThat(repliesWritten()).containsExactly("PUBACK 1", "PUBACK 2");
+        assertThat(channel.isOpen()).isTrue();
+    }
+
+    @Test
     void anOversizedQos0PublishIsSkippedAndReportedWithoutAnAck() {
         // GIVEN
         channel = newChannel();

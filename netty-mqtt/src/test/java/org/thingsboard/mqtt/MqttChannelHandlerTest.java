@@ -451,6 +451,26 @@ class MqttChannelHandlerTest {
         assertThat(reasonCode(ack)).isEqualTo((byte) 0x80);
     }
 
+    @Test
+    void aFailedQoS2HandlerUnderMqtt5FreesItsPacketIdForTheNextMessage() {
+        // GIVEN - under MQTT 5 a PUBREC of 0x80 ends the exchange, and the server may reuse the packet id right away
+        AtomicInteger calls = new AtomicInteger();
+        channel = newChannel(msg -> {
+            calls.incrementAndGet();
+            return Futures.immediateFailedFuture(new IllegalStateException("forwarding failed"));
+        }, MqttVersion.MQTT_5);
+        channel.readOutbound(); // the CONNECT
+        channel.writeInbound(publish("pin/ack", MqttQoS.EXACTLY_ONCE, 4, false, payload("fails")));
+        assertThat(client.getQos2Received()).doesNotContainKey(4);
+
+        // WHEN - a new message under the same packet id
+        channel.writeInbound(publish("pin/ack", MqttQoS.EXACTLY_ONCE, 4, false, payload("next")));
+
+        // THEN - it reaches the handler, not answered as a resend of the first
+        assertThat(calls).hasValue(2);
+        assertThat(written(channel)).containsExactly("PUBREC 4", "PUBREC 4");
+    }
+
     @ParameterizedTest
     @EnumSource(value = MqttQoS.class, names = {"AT_LEAST_ONCE", "EXACTLY_ONCE"})
     void aFailedHandlerIsAckedWithAPlainAckUnderMqtt311(MqttQoS qos) {
@@ -636,11 +656,11 @@ class MqttChannelHandlerTest {
         executor.runAll();
         channel.writeInbound(publish("drain/acks", MqttQoS.AT_LEAST_ONCE, 2, false, payload("queued")));
 
-        // WHEN
+        // WHEN - message 2's turn comes after the disconnect, while the drain still waits for message 1
         Future<Void> disconnected = client.disconnect(5, TimeUnit.SECONDS);
+        executor.runAll();
         assertThat(written(channel)).describedAs("written while message 1 is still being handled").isEmpty();
         handling.get(1).set(null);
-        executor.runAll(); // message 2's turn comes after the disconnect
 
         // THEN
         assertThat(written(channel)).containsExactly("PUBACK 1", "DISCONNECT");
@@ -745,6 +765,29 @@ class MqttChannelHandlerTest {
         // THEN
         assertThat(written(channel)).containsExactly("PINGREQ", "PUBACK 1", "PUBACK 2", "PINGREQ", "DISCONNECT");
         assertThat(channel.isOpen()).isFalse();
+    }
+
+    @Test
+    void aPingResponseCheckPendingAtADrainedDisconnectDoesNotCutTheDrainShort() {
+        // GIVEN - a PINGREQ out, its response not yet read, and a started handler that takes longer than a keep-alive
+        SettableFuture<Void> handled = SettableFuture.create();
+        channel = newChannel(pingTestConfig(), msg -> handled, DIRECT_EXECUTOR);
+        client.setChannel(channel);
+        channel.readOutbound(); // the CONNECT
+        channel.pipeline().fireUserEventTriggered(IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT);
+        channel.writeInbound(publish("ping/drain", MqttQoS.AT_LEAST_ONCE, 1, false, payload("started")));
+
+        // WHEN - the drain pauses reading, so the PINGRESP would wait unread, and a keep-alive passes
+        Future<Void> disconnected = client.disconnect(30, TimeUnit.SECONDS);
+        channel.advanceTimeBy(10, TimeUnit.SECONDS);
+        channel.runScheduledPendingTasks();
+
+        // THEN - the drain still waits for the handler, and its ack goes out before the DISCONNECT
+        assertThat(written(channel)).containsExactly("PINGREQ");
+        assertThat(channel.isOpen()).isTrue();
+        handled.set(null);
+        assertThat(written(channel)).containsExactly("PUBACK 1", "DISCONNECT");
+        assertThat(disconnected.isDone()).isTrue();
     }
 
     /** Keep-alive 10 s, and backpressure watermarks of 2 and 1: two messages in flight pause reading. */
@@ -883,6 +926,28 @@ class MqttChannelHandlerTest {
         // THEN - a failed on() leaves nothing registered
         assertThat(subscribed.cause()).isInstanceOf(MqttSubscriptionFailedException.class);
         assertThat(client.getSubscriptions()).isEmpty();
+    }
+
+    @Test
+    void anOnThatRacesAFailingResubscribeRegistersNothingAndKeepsTheResubscribedHandler() {
+        // GIVEN - a resubscribe after a session-less reconnect, refused by the event loop right after an on() for its
+        // filter found it pending: the entry and its topic are still where that on() looked them up
+        MqttHandler resubscribed = msg -> Futures.immediateVoidFuture();
+        channel = newChannel(null, MqttVersion.MQTT_3_1_1);
+        channel.writeInbound(connAck(false));
+        subscribeAndGrant(channel, "a/#", resubscribed);
+        EmbeddedChannel reconnected = newChannelFor(client);
+        reconnected.writeInbound(connAck(false));
+        MqttPendingSubscription inFlight = client.getPendingSubscriptions().get(pendingSubscriptionIdFor("a/#"));
+        client.failSubscription(inFlight, new MqttSubscriptionFailedException("refused"));
+        client.getPendingSubscribeTopics().add("a/#");
+
+        // WHEN
+        Future<MqttQoS> subscribed = client.on("a/#", msg -> Futures.immediateVoidFuture(), MqttQoS.AT_LEAST_ONCE);
+
+        // THEN - the failed on() registers nothing, and the next reconnect resubscribes the filter with its handler
+        assertThat(subscribed.cause()).isInstanceOf(MqttSubscriptionFailedException.class);
+        assertThat(client.getSubscriptions()).extracting(MqttSubscription::getHandler).containsExactly(resubscribed);
     }
 
     @Test

@@ -210,6 +210,7 @@ class MqttIntegrationTest {
 
         assertEquals("built", e.getMessage());
         assertEquals(0, built.get().getTimeoutSeconds());
+        assertEquals(10, built.get().getConnectTimeoutSec());
     }
 
     @Test

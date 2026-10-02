@@ -281,7 +281,9 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         if (this.connectTimeout) {
             long remainingNanos = Math.max(0L, this.connectDeadlineNanos - System.nanoTime());
             this.connackTimeout = ctx.executor().schedule(() -> {
-                if (this.connectFuture.tryFailure(new ConnectTimeoutException("No CONNACK within the connect timeout of "
+                SslHandler sslHandler = ctx.pipeline().get(SslHandler.class);
+                String phase = sslHandler != null && !sslHandler.handshakeFuture().isDone() ? "TLS handshake" : "CONNACK";
+                if (this.connectFuture.tryFailure(new ConnectTimeoutException("No " + phase + " within the connect timeout of "
                         + this.client.getClientConfig().getConnectTimeoutSec() + " s"))) {
                     ctx.close();
                 }
@@ -829,12 +831,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         }
         long count = increment ? publishMsgCount.incrementAndGet() : publishMsgCount.decrementAndGet();
         if (increment && count >= highWatermark && channel.config().isAutoRead()) {
-            // only an inbound PUBLISH increments, so this runs on the event loop, as the ping handler requires
             channel.config().setAutoRead(false);
-            MqttPingHandler pingHandler = channel.pipeline().get(MqttPingHandler.class);
-            if (pingHandler != null) {
-                pingHandler.onReadingPaused();
-            }
             log.debug("Paused MQTT reads: queue {} >= {}", count, highWatermark);
         } else if (!increment && count < lowWatermark && !channel.config().isAutoRead() && !client.isDisconnected()) {
             // a disconnect() stopped reading for good: its drain must not start it again

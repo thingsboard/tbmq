@@ -206,6 +206,10 @@ public class MqttIntegration extends AbstractIntegration {
         clientConfig.setOwnerId("tbmq");
         clientConfig.setClientId(mqttIntegrationConfig.getClientId());
         clientConfig.setTimeoutSeconds(mqttIntegrationConfig.getKeepAliveSec());
+        if (mqttIntegrationConfig.getConnectTimeoutSec() > 0) {
+            // bounds every connect attempt, the client's own reconnects too, not only the first one connectClient waits for
+            clientConfig.setConnectTimeoutSec(mqttIntegrationConfig.getConnectTimeoutSec());
+        }
         clientConfig.setProtocolVersion(getMqttVersion(mqttIntegrationConfig));
         prepareAuthConfigWhenBasic(mqttIntegrationConfig, clientConfig);
         boolean reconnect = mqttIntegrationConfig.getReconnectPeriodSec() != 0;

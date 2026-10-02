@@ -105,12 +105,12 @@ final class MqttPendingSubscription {
         retransmissionHandler.start(eventLoop);
     }
 
-    /** Whether this SUBSCRIBE failed, its handler unregistered. Under the client's registry lock only. */
+    /** Whether this SUBSCRIBE failed: an on() that joins it then registers nothing. Under the client's registry lock only. */
     boolean isFailed() {
         return failed;
     }
 
-    /** Under the client's registry lock only, together with unregistering the handler. */
+    /** Under the client's registry lock only, together with unregistering a caller's handler. */
     void markFailed() {
         failed = true;
     }

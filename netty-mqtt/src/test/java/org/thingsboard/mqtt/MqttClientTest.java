@@ -23,6 +23,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
@@ -31,6 +33,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslContext;
@@ -578,8 +581,18 @@ class MqttClientTest {
         client = MqttClient.create(subscriberConfig, null, handlerExecutor);
         Promise<MqttConnectResult> subscriberConnect = client.connect(broker.getHost(), broker.getMqttPort());
         Awaitility.await("waiting for subscriber to connect").atMost(Duration.ofSeconds(10L)).until(subscriberConnect::isSuccess);
-        // the PUBLISHes the subscriber has read and not yet done with: what grows without bound when reads are not paused
-        MqttChannelHandler subscriberHandler = subscriberConnect.getNow().getCloseFuture().channel().pipeline().get(MqttChannelHandler.class);
+        // the PUBLISHes the subscriber reads, counted apart from the back pressure's own count: what grows without bound
+        // when reads are not paused
+        AtomicInteger read = new AtomicInteger();
+        subscriberConnect.getNow().getCloseFuture().channel().pipeline().addBefore("mqttHandler", "publishCounter", new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                if (msg instanceof MqttPublishMessage) {
+                    read.incrementAndGet();
+                }
+                ctx.fireChannelRead(msg);
+            }
+        });
 
         String topic = "qos0-backpressure";
         CountDownLatch release = new CountDownLatch(1);
@@ -634,20 +647,20 @@ class MqttClientTest {
             // be read after that is the rest of the current read buffer (at most 64 KiB, i.e. about 4 PUBLISHes of
             // 16 KiB) plus a partial message held by the decoder, so correct code stays at or below about 9. Without back
             // pressure the client reads the whole burst of 60 at line rate. 20 separates the two with a wide margin.
-            int maxInFlightWhileStalled = 20;
-            Awaitility.await("the in-flight count must stay bounded while the handler is stalled")
+            int maxReadWhileStalled = 20;
+            Awaitility.await("the read count must stay bounded while the handler is stalled")
                     .during(Duration.ofSeconds(2))
                     .atMost(Duration.ofSeconds(5))
-                    .untilAsserted(() -> assertThat(subscriberHandler.inFlightPublishes()).isLessThanOrEqualTo(maxInFlightWhileStalled));
-            long stalledInFlight = subscriberHandler.inFlightPublishes();
-            log.info("QoS 0 back pressure: {} of {} in flight while stalled, delivered {}", stalledInFlight, burst, delivered.get());
+                    .untilAsserted(() -> assertThat(read.get()).isLessThanOrEqualTo(maxReadWhileStalled));
+            int stalledRead = read.get();
+            log.info("QoS 0 back pressure: read {} of {} while stalled, delivered {}", stalledRead, burst, delivered.get());
 
             // releasing the handler drains the in-flight PUBLISHes below the low watermark, so reads must resume:
-            // more PUBLISHes than were in flight while stalled get delivered, which only new reads can supply
+            // more PUBLISHes than were read while stalled get delivered, which only new reads can supply
             release.countDown();
             Awaitility.await("delivery must resume once the handler is released")
                     .atMost(Duration.ofSeconds(10L))
-                    .untilAsserted(() -> assertThat((long) delivered.get()).isGreaterThan(stalledInFlight));
+                    .untilAsserted(() -> assertThat(delivered.get()).isGreaterThan(stalledRead));
             log.info("QoS 0 back pressure: resumed, delivered {}", delivered.get());
         } finally {
             release.countDown();
@@ -1886,9 +1899,11 @@ class MqttClientTest {
         // THEN - message 0 is acked before the DISCONNECT; 1 and 2 never reach the handler, and are not acked
         Awaitility.await("waiting for the drained disconnect").atMost(Duration.ofSeconds(15L)).until(disconnected::isDone);
         assertThat(handled).containsExactly("0");
-        assertThat(sentByClient.stream().filter(t -> t == MqttMessageType.PUBACK || t == MqttMessageType.DISCONNECT).toList())
-                .describedAs("the client's acks and its DISCONNECT, in order")
-                .containsExactly(MqttMessageType.PUBACK, MqttMessageType.DISCONNECT);
+        // the proxy records what it decodes on its own loop, which nothing orders against the client's close
+        Awaitility.await("waiting for the proxy to see the DISCONNECT").atMost(Duration.ofSeconds(5L))
+                .untilAsserted(() -> assertThat(sentByClient.stream().filter(t -> t == MqttMessageType.PUBACK || t == MqttMessageType.DISCONNECT).toList())
+                        .describedAs("the client's acks and its DISCONNECT, in order")
+                        .containsExactly(MqttMessageType.PUBACK, MqttMessageType.DISCONNECT));
 
         // and the kept session gives 1 and 2 to the next client with the same id - once the broker has processed the
         // PUBACK: it orders packets per connection, and a take-over processed first would resend 0 as well

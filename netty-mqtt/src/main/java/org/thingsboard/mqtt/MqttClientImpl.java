@@ -44,6 +44,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
@@ -885,7 +886,8 @@ final class MqttClientImpl implements MqttClient {
                 // the SUBSCRIBE in flight keeps the QoS it asked for, and every caller observes its grant or refusal.
                 // Under the registry lock, as failSubscription marks and unregisters under it: either this registers
                 // first and failSubscription unregisters this handler, or this finds the entry failed and registers
-                // nothing - a failed on() leaves nothing registered even when it races the failure.
+                // nothing - a failed on() leaves nothing registered even when it races the failure, and a failed
+                // resubscribe keeps the handler it had.
                 synchronized (this.registryLock) {
                     if (!inFlight.isFailed()) {
                         inFlight.setHandler(handler);
@@ -980,11 +982,11 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
-     * Fails a pending subscription that its caller has just removed from the pending subscriptions. A caller's on()
-     * leaves nothing behind: the entry is marked failed and the handler it registered is removed, if the filter still
-     * has that handler. A resubscribe of the library's own is neither marked nor unregistered: its filter stays
-     * registered, for the next reconnect to try again, and an on() that joins it now registers its handler. Its failure
-     * is reported - unless a closed channel ended it, as the next accepted CONNACK sends it again.
+     * Fails a pending subscription that its caller has just removed from the pending subscriptions. The entry is marked
+     * failed, so an on() that joins it from now on registers nothing. A caller's on() leaves nothing behind: the handler
+     * it registered is removed, if the filter still has that handler. A resubscribe of the library's own is not
+     * unregistered: its filter stays registered, with its handler, for the next reconnect to try again. Its failure is
+     * reported - unless a closed channel ended it, as the next accepted CONNACK sends it again.
      */
     void failSubscription(MqttPendingSubscription pendingSubscription, Throwable cause) {
         this.pendingSubscribeTopics.remove(pendingSubscription.getTopic());
@@ -993,9 +995,9 @@ final class MqttClientImpl implements MqttClient {
         // holds while it replaces the handler, making the resubscribe its own: the handler read here is the last one
         // registered, and a resubscribe read here is still the library's
         synchronized (this.registryLock) {
+            pendingSubscription.markFailed();
             resubscribe = pendingSubscription.isResubscribe();
             if (!resubscribe) {
-                pendingSubscription.markFailed();
                 unregister(pendingSubscription.getTopic(), pendingSubscription.getHandler());
             }
         }
@@ -1196,7 +1198,10 @@ final class MqttClientImpl implements MqttClient {
         @Override
         protected void initChannel(Channel ch) {
             if (sslContext != null) {
-                ch.pipeline().addLast(sslContext.newHandler(ch.alloc(), host, port));
+                SslHandler sslHandler = sslContext.newHandler(ch.alloc(), host, port);
+                // the connect timeout bounds the handshake, which netty's own default of 10 s would otherwise cut short
+                sslHandler.setHandshakeTimeoutMillis(0);
+                ch.pipeline().addLast(sslHandler);
             }
 
             // in front of the decoder, with the same limit: an oversized PUBLISH is skipped rather than failing the decoder
