@@ -57,4 +57,5 @@ export enum MenuId {
   mqtt_auth_provider = 'mqtt_auth_provider',
   authentication = 'authentication',
   blocked_clients = 'blocked_clients',
+  client_traces = 'client_traces',
 }
