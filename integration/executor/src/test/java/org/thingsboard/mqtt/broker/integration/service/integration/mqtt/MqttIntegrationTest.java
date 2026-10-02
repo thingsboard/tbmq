@@ -29,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.MqttClient;
+import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -39,7 +40,10 @@ import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -183,6 +187,29 @@ class MqttIntegrationTest {
     void testDoCheckConnection_Failure() {
         Integration integration = new Integration();
         assertThrows(ThingsboardException.class, () -> mqttIntegration.doCheckConnection(integration, mockContext));
+    }
+
+    /** 0 is what the form offers for "no keep-alive", and netty-mqtt takes it now: the client is built with it. */
+    @Test
+    void testDoCheckConnection_keepAliveZeroBuildsTheClient() {
+        config.setKeepAliveSec(0);
+        AtomicReference<MqttClientConfig> built = new AtomicReference<>();
+        MqttIntegration integration = new MqttIntegration() {
+            @Override
+            MqttClient getMqttClient(MqttClientConfig clientConfig) {
+                built.set(clientConfig);
+                throw new IllegalStateException("built");
+            }
+        };
+        ObjectNode configuration = JacksonUtil.newObjectNode();
+        configuration.set("clientConfiguration", JacksonUtil.valueToTree(config));
+        Integration entity = new Integration();
+        entity.setConfiguration(configuration);
+
+        ThingsboardException e = assertThrows(ThingsboardException.class, () -> integration.doCheckConnection(entity, mockContext));
+
+        assertEquals("built", e.getMessage());
+        assertEquals(0, built.get().getTimeoutSeconds());
     }
 
     @Test

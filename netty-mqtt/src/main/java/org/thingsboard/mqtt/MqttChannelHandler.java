@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
@@ -34,6 +35,7 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
@@ -46,12 +48,14 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.MqttOrderedAcknowledgementCtx.MqttMsgWrapper;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
@@ -59,10 +63,38 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> {
+
+    /**
+     * Set on a channel whose CONNACK accepted the connection: only such a channel was ever up, so only its close is
+     * reported as {@link MqttClientCallback#connectionLost}.
+     */
+    static final AttributeKey<Boolean> CONNACK_ACCEPTED = AttributeKey.valueOf(MqttChannelHandler.class, "connackAccepted");
+
+    /** The MQTT 5 Session Expiry Interval that never expires: 0xFFFFFFFF, a four-byte unsigned integer. */
+    static final int SESSION_NEVER_EXPIRES = 0xFFFFFFFF;
+
+    /**
+     * The result of a delivery whose handler had not started when the client was disconnected: it skips the handler and
+     * is never acked, so a kept session redelivers it to the next client.
+     */
+    static final RuntimeException DELIVERY_SKIPPED = new DeliverySkippedException();
+
+    private static final class DeliverySkippedException extends RuntimeException {
+        private DeliverySkippedException() {
+            super("Delivery skipped: the client was disconnected before its handler started", null, false, false);
+        }
+    }
+
+    /** An inbound PUBLISH on its way to its handler: the handler's future, and whether the handler was called. */
+    record Delivery(ListenableFuture<Void> future, AtomicBoolean handlerCalled) {
+    }
 
     private final AtomicLong publishMsgCount = new AtomicLong(0);
 
@@ -74,8 +106,28 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     private final Promise<MqttConnectResult> connectFuture;
     private final MqttOrderedAcknowledgementCtx mqttOrderedAcknowledgementCtxQoS1;
     private final MqttOrderedAcknowledgementCtx mqttOrderedAcknowledgementCtxQoS2;
+    /**
+     * Whether this channel bounds its wait for the CONNACK: only a channel the client connects does, so the rest of
+     * its connect timeout runs from channelActive.
+     */
+    private final boolean connectTimeout;
+    /** When the connect timeout ends (System.nanoTime()): set when the channel is built, as its TCP connect starts. */
+    private final long connectDeadlineNanos;
+    private ScheduledFuture<?> connackTimeout;
+    /** Deliveries of this channel whose handler was called and whose ack is not yet written; see {@link #drain}. */
+    private final AtomicInteger startedDeliveries = new AtomicInteger();
+    private volatile Promise<Void> drained;
+    /**
+     * Handler failures since the last delivery a handler completed, on this channel: a handler forwarding to a store
+     * that is down fails every message, so only the first of a run is logged as a warning; see {@link #onHandlerFailed}.
+     */
+    private final AtomicInteger handlerFailureRun = new AtomicInteger();
 
     MqttChannelHandler(MqttClientImpl client, Promise<MqttConnectResult> connectFuture) {
+        this(client, connectFuture, false);
+    }
+
+    MqttChannelHandler(MqttClientImpl client, Promise<MqttConnectResult> connectFuture, boolean connectTimeout) {
         this.client = client;
         this.connectFuture = connectFuture;
         this.backPressureEnabled = client.getClientConfig().isBackPressureEnabled();
@@ -84,6 +136,8 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         MqttVersion mqttVersion = client.getClientConfig().getProtocolVersion();
         this.mqttOrderedAcknowledgementCtxQoS1 = new MqttOrderedAcknowledgementCtx(client.getClientConfig().getClientId(), mqttVersion, MqttMessageType.PUBACK);
         this.mqttOrderedAcknowledgementCtxQoS2 = new MqttOrderedAcknowledgementCtx(client.getClientConfig().getClientId(), mqttVersion, MqttMessageType.PUBREC);
+        this.connectTimeout = connectTimeout;
+        this.connectDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(client.getClientConfig().getConnectTimeoutSec());
     }
 
     @Override
@@ -94,7 +148,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     handleConack(ctx.channel(), (MqttConnAckMessage) msg);
                     break;
                 case SUBACK:
-                    handleSubAck((MqttSubAckMessage) msg);
+                    handleSubAck(ctx.channel(), (MqttSubAckMessage) msg);
                     break;
                 case PUBLISH:
                     handlePublish(ctx.channel(), (MqttPublishMessage) msg);
@@ -125,6 +179,78 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg instanceof MqttOversizedPublish oversized) {
+            handleOversizedPublish(ctx.channel(), oversized);
+            return;
+        }
+        super.channelRead(ctx, msg);
+    }
+
+    /**
+     * A PUBLISH over the limit, which MqttOversizedPublishGuard skipped: acked the way a failed handler is - 0x80 under
+     * MQTT 5, a plain ack under 3.x - in order with the other acks, and reported to
+     * {@link MqttClientCallback#onPublishTooLarge}. Under 3.x a QoS 2 one stays in the receive state until its PUBREL, so
+     * a resend of it is answered again and not reported twice.
+     */
+    private void handleOversizedPublish(Channel channel, MqttOversizedPublish publish) {
+        log.debug("[{}][{}] Skipped a PUBLISH to '{}' of {} bytes, over the limit of {}", client.getClientConfig().getOwnerId(),
+                client.getClientConfig().getClientId(), publish.topic(), publish.remainingLength(), client.getClientConfig().getMaxBytesInMessage());
+        switch (publish.qos()) {
+            case AT_MOST_ONCE -> reportTooLarge(publish);
+            case AT_LEAST_ONCE -> {
+                processPubAck(channel, mqttOrderedAcknowledgementCtxQoS1.addMsgId(publish.packetId()), PubAck.UNSPECIFIED_ERROR.byteValue());
+                reportTooLarge(publish);
+            }
+            case EXACTLY_ONCE -> {
+                var msgWrapper = mqttOrderedAcknowledgementCtxQoS2.addMsgId(publish.packetId());
+                ListenableFuture<Byte> received = client.getQos2Received().get(publish.packetId());
+                if (received != null) {
+                    received.addListener(() -> processPubRec(channel, msgWrapper, Futures.getUnchecked(received)), MoreExecutors.directExecutor());
+                    return;
+                }
+                byte code = PubRec.UNSPECIFIED_ERROR.byteValue();
+                if (!MqttVersion.MQTT_5.equals(client.getClientConfig().getProtocolVersion())) {
+                    // under MQTT 5 the failure code ends the exchange; under 3.x a PUBREL follows
+                    client.getQos2Received().put(publish.packetId(), Futures.immediateFuture(code));
+                }
+                processPubRec(channel, msgWrapper, code);
+                reportTooLarge(publish);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void reportTooLarge(MqttOversizedPublish publish) {
+        MqttClientCallback callback = client.getCallback();
+        if (callback != null) {
+            try {
+                callback.onPublishTooLarge(publish.topic(), publish.qos(), publish.remainingLength());
+            } catch (Exception e) {
+                log.warn("[{}] onPublishTooLarge threw", client.getClientConfig().getOwnerId(), e);
+            }
+        }
+    }
+
+    /**
+     * The CONNECT properties. MQTT 5 split Clean Session into Clean Start and a Session Expiry Interval, whose absence
+     * means 0: the session ends when the connection closes [MQTT-3.1.2.11.2], so Clean Start 0 alone never finds one to
+     * resume. A client that keeps its session asks for it never to expire (0xFFFFFFFF), which is what a 3.x Clean
+     * Session of 0 means; the server may lower it in its CONNACK.
+     */
+    private MqttProperties connectProperties() {
+        MqttClientConfig config = this.client.getClientConfig();
+        if (config.getProtocolVersion() != MqttVersion.MQTT_5 || config.isCleanSession()) {
+            return MqttProperties.NO_PROPERTIES;
+        }
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(),
+                SESSION_NEVER_EXPIRES));
+        return properties;
+    }
+
+    @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
 
@@ -141,7 +267,8 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                         : 0,
                 this.client.getClientConfig().getLastWill() != null,                // Has Will
                 this.client.getClientConfig().isCleanSession(),                     // Clean Session
-                this.client.getClientConfig().getTimeoutSeconds()                   // Timeout
+                this.client.getClientConfig().getTimeoutSeconds(),                  // Timeout
+                connectProperties()
         );
         MqttConnectPayload payload = new MqttConnectPayload(
                 this.client.getClientConfig().getClientId(),
@@ -151,23 +278,48 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                 this.client.getClientConfig().getPassword() != null ? this.client.getClientConfig().getPassword().getBytes(CharsetUtil.UTF_8) : null
         );
         ctx.channel().writeAndFlush(new MqttConnectMessage(fixedHeader, variableHeader, payload));
+        if (this.connectTimeout) {
+            long remainingNanos = Math.max(0L, this.connectDeadlineNanos - System.nanoTime());
+            this.connackTimeout = ctx.executor().schedule(() -> {
+                if (this.connectFuture.tryFailure(new ConnectTimeoutException("No CONNACK within the connect timeout of "
+                        + this.client.getClientConfig().getConnectTimeoutSec() + " s"))) {
+                    ctx.close();
+                }
+            }, remainingNanos, TimeUnit.NANOSECONDS);
+        }
     }
 
     /**
      * Fails the connect future if the channel closes before a CONNACK completed it: a failed TLS handshake with the
-     * handshake's cause, anything else - a broker closing the connection, a disconnect() - as a closed channel. Once a
-     * CONNACK completed the future this is a no-op. An SslHandler ahead of this handler has failed its handshake by the
-     * time this runs, since it does so in its own channelInactive before passing the event on.
+     * handshake's cause, a channel closed because the client was disconnected as "Client is disconnected", anything
+     * else - a broker closing the connection - as a closed channel. Once a CONNACK completed the future this is a
+     * no-op. An SslHandler ahead of this handler has failed its handshake by the time this runs, since it does so in its
+     * own channelInactive before passing the event on.
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        cancelConnackTimeout();
         if (!this.connectFuture.isDone()) {
             SslHandler sslHandler = ctx.pipeline().get(SslHandler.class);
             Throwable handshakeFailure = sslHandler != null ? sslHandler.handshakeFuture().cause() : null;
-            this.connectFuture.tryFailure(handshakeFailure != null ? tlsFailureCause(handshakeFailure)
-                    : new ChannelClosedException("Channel closed before CONNACK"));
+            Throwable cause;
+            if (handshakeFailure != null) {
+                cause = tlsFailureCause(handshakeFailure);
+            } else if (this.client.isDisconnected()) {
+                cause = new ChannelClosedException("Client is disconnected");
+            } else {
+                cause = new ChannelClosedException("Channel closed before CONNACK");
+            }
+            this.connectFuture.tryFailure(cause);
         }
         super.channelInactive(ctx);
+    }
+
+    private void cancelConnackTimeout() {
+        if (this.connackTimeout != null) {
+            this.connackTimeout.cancel(false);
+            this.connackTimeout = null;
+        }
     }
 
     /**
@@ -186,27 +338,73 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         return handshakeFailure;
     }
 
-    ListenableFuture<Void> invokeHandlerForIncomingPublish(MqttPublishMessage message) {
+    Delivery invokeHandlerForIncomingPublish(MqttPublishMessage message) {
         String topic = message.variableHeader().topicName();
         ByteBuf payload = message.payload();
+        AtomicBoolean handlerCalled = new AtomicBoolean();
 
         MqttHandler handler = resolveHandler(topic);
         if (handler == null) {
             payload.release();
-            return Futures.immediateVoidFuture();
+            return new Delivery(Futures.immediateVoidFuture(), handlerCalled);
         }
 
-        // never run a handler on the netty event loop
+        // never on the netty event loop, and one at a time per client, in arrival order
         ListenableFuture<Void> future;
         try {
-            future = Futures.submitAsync(() -> adaptFuture(handler.onMessage(message)), client.getHandlerExecutor());
+            future = Futures.submitAsync(() -> {
+                // counted before the check: disconnect() sets the flag before it reads this count, so either this
+                // delivery sees the flag and skips, or the drain sees the count and waits for it
+                startedDeliveries.incrementAndGet();
+                if (client.isDisconnected()) {
+                    finishDelivery();
+                    return Futures.immediateFailedFuture(DELIVERY_SKIPPED);
+                }
+                handlerCalled.set(true);
+                return adaptFuture(handler.onMessage(message));
+            }, client.getDeliveryExecutor());
         } catch (RejectedExecutionException e) {
             // submitAsync throws where transformAsync failed the future; keep failing it so the payload is released
             future = Futures.immediateFailedFuture(e);
         }
         // releases the reference MqttPingHandler retained, which is what keeps the payload valid past channelRead0
         future.addListener(payload::release, MoreExecutors.directExecutor());
-        return future;
+        return new Delivery(future, handlerCalled);
+    }
+
+    /**
+     * Counts a delivery out of {@link #startedDeliveries} once the callback that writes its ack has run: registered
+     * after that callback, and Guava runs a future's listeners in the order they were added.
+     */
+    private void trackForDrain(Delivery delivery) {
+        delivery.future().addListener(() -> {
+            if (delivery.handlerCalled().get()) {
+                finishDelivery();
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private void finishDelivery() {
+        if (startedDeliveries.decrementAndGet() == 0) {
+            Promise<Void> promise = this.drained;
+            if (promise != null) {
+                promise.trySuccess(null);
+            }
+        }
+    }
+
+    /**
+     * Completes once every delivery of this channel whose handler was called has its ack written. Only
+     * {@link MqttClientImpl#disconnect(long, TimeUnit)} calls it, after setting the client's disconnected flag, from
+     * which point no delivery calls its handler.
+     */
+    io.netty.util.concurrent.Future<Void> drain(Channel channel) {
+        Promise<Void> promise = channel.eventLoop().newPromise();
+        this.drained = promise;
+        if (startedDeliveries.get() == 0) {
+            promise.trySuccess(null);
+        }
+        return promise;
     }
 
     /**
@@ -224,12 +422,24 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     }
 
     private void handleConack(Channel channel, MqttConnAckMessage message) {
+        cancelConnackTimeout();
         if (log.isTraceEnabled()) {
             log.trace("[{}][{}] Handling CONNACK: {}", client.getClientConfig().getOwnerId(), client.getClientConfig().getClientId(), message);
         }
+        if (this.client.isDisconnected()) {
+            // disconnect() ran while this CONNACK was on its way, and is closing the channel: the connection is never
+            // reported as up, so its close is not reported as lost either. The channel is left to disconnect(), whose
+            // DISCONNECT keeps the server from publishing the will.
+            this.connectFuture.tryFailure(new ChannelClosedException("Client is disconnected"));
+            return;
+        }
         switch (message.variableHeader().connectReturnCode()) {
             case CONNECTION_ACCEPTED:
-                this.connectFuture.setSuccess(new MqttConnectResult(true, MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
+                channel.attr(CONNACK_ACCEPTED).set(Boolean.TRUE);
+                // before the connect future completes, so that an on() its listeners make finds the session settled; the
+                // resubscribes this makes go out with the CONNACK resend of the pending subscriptions just below
+                this.client.onSessionEstablished(channel, message.variableHeader().isSessionPresent());
+                this.connectFuture.trySuccess(new MqttConnectResult(true, MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
 
                 this.client.getPendingSubscriptions().forEach((id, subscription) -> {
                     // claim the write, or on() may write the same SUBSCRIBE too
@@ -254,7 +464,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
             case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
             case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
             default: // every other code refuses too, e.g. the MQTT 5 reason codes
-                this.connectFuture.setSuccess(new MqttConnectResult(false, message.variableHeader().connectReturnCode(), channel.closeFuture()));
+                this.connectFuture.trySuccess(new MqttConnectResult(false, message.variableHeader().connectReturnCode(), channel.closeFuture()));
                 channel.close();
                 // Don't start reconnecting logic here
                 break;
@@ -264,7 +474,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         }
     }
 
-    private void handleSubAck(MqttSubAckMessage message) {
+    private void handleSubAck(Channel channel, MqttSubAckMessage message) {
         MqttPendingSubscription pendingSubscription = this.client.getPendingSubscriptions().remove(message.variableHeader().messageId());
         if (pendingSubscription == null) {
             return;
@@ -277,17 +487,26 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         int code = codes.isEmpty() ? MqttQoS.FAILURE.value() : codes.get(0);
         if (code == MqttQoS.FAILURE.value()) {
             log.debug("[{}][{}] Server refused the subscription to {}", client.getClientConfig().getOwnerId(), client.getClientConfig().getClientId(), topic);
-            pendingSubscription.getFuture().tryFailure(new MqttSubscriptionFailedException(
+            // also unregisters the handler its on() registered
+            this.client.failSubscription(pendingSubscription, new MqttSubscriptionFailedException(
                     codes.isEmpty() ? "SUBACK for topic filter '" + topic + "' carries no return code"
                             : "Server refused the subscription to topic filter '" + topic + "'"));
         } else {
             MqttQoS grantedQos = MqttQoS.valueOf(code);
-            this.client.register(new MqttSubscription(topic, pendingSubscription.getHandler()));
+            // the handler was registered by on(), before the SUBSCRIBE went out
             this.client.getServerSubscriptions().put(topic, grantedQos);
             pendingSubscription.getFuture().trySuccess(grantedQos);
+            if (pendingSubscription.isResubscribe() && grantedQos.value() < pendingSubscription.getRequestedQos().value()) {
+                log.info("[{}][{}] Resubscribed {} at QoS {}, below the {} asked for", client.getClientConfig().getOwnerId(),
+                        client.getClientConfig().getClientId(), topic, grantedQos.value(), pendingSubscription.getRequestedQos().value());
+            }
+            // only after recording the grant: an on() racing this SUBACK that finds the topic no longer pending finds the grant
+            this.client.getPendingSubscribeTopics().remove(topic);
+            if (!this.client.isRegistered(topic)) {
+                // off() ran while this SUBSCRIBE was in flight, when there was nothing on the server to unsubscribe yet
+                this.client.unsubscribeOnServer(channel, topic);
+            }
         }
-        // only after recording a grant: an on() racing this SUBACK that finds the topic no longer pending then finds the grant
-        this.client.getPendingSubscribeTopics().remove(topic);
         if (this.client.getCallback() != null) {
             this.client.getCallback().onSubAck(message);
         }
@@ -303,14 +522,21 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
 
         switch (qoS) {
             case AT_MOST_ONCE -> {
-                var future = invokeHandlerForIncomingPublish(message);
+                var delivery = invokeHandlerForIncomingPublish(message);
+                var future = delivery.future();
                 DonAsynchron.withCallback(future,
-                        (_) -> checkBackPressure(channel, false),
+                        (_) -> {
+                            onHandlerSucceeded();
+                            checkBackPressure(channel, false);
+                        },
                         (t) -> {
-                            log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.AT_MOST_ONCE, t);
+                            if (t != DELIVERY_SKIPPED) {
+                                onHandlerFailed(message, t);
+                            }
                             checkBackPressure(channel, false);
                         }
                 );
+                trackForDrain(delivery);
             }
 
             case AT_LEAST_ONCE -> {
@@ -322,49 +548,102 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
                     return;
                 }
 
-                var future = invokeHandlerForIncomingPublish(message);
+                var delivery = invokeHandlerForIncomingPublish(message);
+                var future = delivery.future();
                 DonAsynchron.withCallback(future,
                         (_) -> {
+                            onHandlerSucceeded();
                             processPubAck(channel, msgWrapper, PubAck.SUCCESS.byteValue());
                             checkBackPressure(channel, false);
                         },
                         (t) -> {
-                            log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.AT_LEAST_ONCE, t);
+                            if (t == DELIVERY_SKIPPED) {
+                                // never acked: a kept session redelivers it to the next client
+                                checkBackPressure(channel, false);
+                                return;
+                            }
+                            onHandlerFailed(message, t);
                             processPubAck(channel, msgWrapper, PubAck.UNSPECIFIED_ERROR.byteValue());
                             checkBackPressure(channel, false);
                         }
                 );
+                trackForDrain(delivery);
             }
 
             case EXACTLY_ONCE -> {
                 final int msgId = message.variableHeader().packetId();
-
-                if (!client.getQos2PendingMsgIds().add(msgId)) {
-                    log.debug("Duplicate QoS2 message received for client {} with msgId {}. Skipping processing.", client.getClientConfig().getClientId(), msgId);
-                    processPubRec(channel, msgId, PubRec.PACKET_IDENTIFIER_IN_USE.byteValue());
-                    dropPublish(channel, message);
-                    return;
-                }
-
                 var msgWrapper = mqttOrderedAcknowledgementCtxQoS2.addMsgId(msgId);
                 if (msgWrapper == null) {
                     dropPublish(channel, message);
                     return;
                 }
-                var future = invokeHandlerForIncomingPublish(message);
+                SettableFuture<Byte> outcome = SettableFuture.create();
+                ListenableFuture<Byte> received = client.getQos2Received().putIfAbsent(msgId, outcome);
+                if (received != null) {
+                    // A resend of a message this client already has, from this connection or one before: it never reaches
+                    // a handler again, and gets its PUBREC once the original has a result, with the original's code.
+                    log.debug("Duplicate QoS2 message received for client {} with msgId {}. Skipping processing.", client.getClientConfig().getClientId(), msgId);
+                    dropPublish(channel, message);
+                    received.addListener(() -> processPubRec(channel, msgWrapper, Futures.getUnchecked(received)), MoreExecutors.directExecutor());
+                    return;
+                }
+                var delivery = invokeHandlerForIncomingPublish(message);
+                var future = delivery.future();
                 DonAsynchron.withCallback(future,
                         (_) -> {
+                            onHandlerSucceeded();
+                            outcome.set(PubRec.SUCCESS.byteValue());
                             processPubRec(channel, msgWrapper, PubRec.SUCCESS.byteValue());
                             checkBackPressure(channel, false);
                         },
                         (t) -> {
-                            log.error("Error invoke future for client {} with QoS {}", client.getClientConfig().getClientId(), MqttQoS.EXACTLY_ONCE, t);
-                            processPubRec(channel, msgWrapper, PubRec.UNSPECIFIED_ERROR.byteValue());
-                            client.getQos2PendingMsgIds().remove(msgId);
+                            if (t == DELIVERY_SKIPPED) {
+                                // never acked, so nothing of it may stay in the receive state
+                                client.getQos2Received().remove(msgId, outcome);
+                                checkBackPressure(channel, false);
+                                return;
+                            }
+                            onHandlerFailed(message, t);
+                            byte code = PubRec.UNSPECIFIED_ERROR.byteValue();
+                            if (MqttVersion.MQTT_5.equals(client.getClientConfig().getProtocolVersion())) {
+                                // under MQTT 5 a failure code ends the exchange: no PUBREL follows to release the id
+                                client.getQos2Received().remove(msgId, outcome);
+                            }
+                            outcome.set(code);
+                            processPubRec(channel, msgWrapper, code);
                             checkBackPressure(channel, false);
                         }
                 );
+                trackForDrain(delivery);
             }
+        }
+    }
+
+    /**
+     * Logs a handler's failure: the first of a run as a warning, the rest at DEBUG, so that a handler forwarding to a
+     * store that is down does not log a stack trace per message. {@link #onHandlerSucceeded} ends the run.
+     */
+    private void onHandlerFailed(MqttPublishMessage message, Throwable t) {
+        String ownerId = client.getClientConfig().getOwnerId();
+        String clientId = client.getClientConfig().getClientId();
+        String topic = message.variableHeader().topicName();
+        int qos = message.fixedHeader().qosLevel().value();
+        if (handlerFailureRun.getAndIncrement() == 0) {
+            log.warn("[{}][{}] The handler failed for a QoS {} message on '{}'; further failures are logged at DEBUG until a message is handled",
+                    ownerId, clientId, qos, topic, t);
+        } else {
+            log.debug("[{}][{}] The handler failed for a QoS {} message on '{}'", ownerId, clientId, qos, topic, t);
+        }
+    }
+
+    private void onHandlerSucceeded() {
+        if (handlerFailureRun.get() == 0) {
+            return;
+        }
+        int failed = handlerFailureRun.getAndSet(0);
+        if (failed > 0) {
+            log.info("[{}][{}] A message was handled again, after {} failed", client.getClientConfig().getOwnerId(),
+                    client.getClientConfig().getClientId(), failed);
         }
     }
 
@@ -457,10 +736,6 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         pendingPublish.startPubrelRetransmissionTimer(this.client.retransmissionLoop(channel), this.client::sendAndFlushPacket);
     }
 
-    private void processPubRec(Channel channel, int msgId, byte reasonCodeValue) {
-        sendMqttReply(channel, MqttMessageType.PUBREC, msgId, reasonCodeValue);
-    }
-
     private void processPubRel(Channel channel, int msgId, byte reasonCodeValue) {
         sendMqttReply(channel, MqttMessageType.PUBREL, msgId, reasonCodeValue);
     }
@@ -468,7 +743,7 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
     private void handlePubrel(Channel channel, MqttMessage message) {
         log.trace("[{}][{}] Handling PUBREL: {}", client.getClientConfig().getOwnerId(), client.getClientConfig().getClientId(), message);
         final int msgId = ((MqttMessageIdVariableHeader) message.variableHeader()).messageId();
-        byte reasonCode = this.client.getQos2PendingMsgIds().remove(msgId)
+        byte reasonCode = this.client.getQos2Received().remove(msgId) != null
                 ? PubComp.SUCCESS.byteValue()
                 : PubComp.PACKET_IDENTIFIER_NOT_FOUND.byteValue();
         processPubComp(channel, msgId, reasonCode);
@@ -554,12 +829,23 @@ final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> 
         }
         long count = increment ? publishMsgCount.incrementAndGet() : publishMsgCount.decrementAndGet();
         if (increment && count >= highWatermark && channel.config().isAutoRead()) {
+            // only an inbound PUBLISH increments, so this runs on the event loop, as the ping handler requires
             channel.config().setAutoRead(false);
+            MqttPingHandler pingHandler = channel.pipeline().get(MqttPingHandler.class);
+            if (pingHandler != null) {
+                pingHandler.onReadingPaused();
+            }
             log.debug("Paused MQTT reads: queue {} >= {}", count, highWatermark);
-        } else if (!increment && count < lowWatermark && !channel.config().isAutoRead()) {
+        } else if (!increment && count < lowWatermark && !channel.config().isAutoRead() && !client.isDisconnected()) {
+            // a disconnect() stopped reading for good: its drain must not start it again
             channel.config().setAutoRead(true);
             log.debug("Resumed MQTT reads: queue {} < {}", count, lowWatermark);
         }
+    }
+
+    /** PUBLISHes read and not yet done with, as the backpressure counts them. For tests. */
+    long inFlightPublishes() {
+        return publishMsgCount.get();
     }
 
 }

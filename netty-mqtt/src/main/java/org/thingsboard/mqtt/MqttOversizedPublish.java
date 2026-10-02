@@ -15,17 +15,12 @@
  */
 package org.thingsboard.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
 
-final class MqttIncomingQos2Publish {
-
-    private final MqttPublishMessage incomingPublish;
-
-    MqttIncomingQos2Publish(MqttPublishMessage incomingPublish) {
-        this.incomingPublish = incomingPublish;
-    }
-
-    MqttPublishMessage getIncomingPublish() {
-        return incomingPublish;
-    }
+/**
+ * Takes the place, in the pipeline, of a PUBLISH over the client's {@code maxBytesInMessage} that
+ * {@link MqttOversizedPublishGuard} skipped: what the client needs to acknowledge and report it. {@code packetId} is -1
+ * for QoS 0, and {@code remainingLength} is the packet's size past its fixed header.
+ */
+record MqttOversizedPublish(String topic, MqttQoS qos, int packetId, int remainingLength) {
 }

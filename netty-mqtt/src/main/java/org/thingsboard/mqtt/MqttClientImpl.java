@@ -15,16 +15,19 @@
  */
 package org.thingsboard.mqtt;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -39,12 +42,15 @@ import io.netty.handler.codec.mqtt.MqttSubscribePayload;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -59,7 +65,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -88,10 +96,22 @@ final class MqttClientImpl implements MqttClient {
      */
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<String, MqttQoS> serverSubscriptions = new ConcurrentHashMap<>();
+    /**
+     * The grants of the connection that closed last, set aside until the next accepted CONNACK says whether the server
+     * kept its session, and with it these subscriptions.
+     */
+    private final Map<String, MqttQoS> lastSessionGrants = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingUnsubscription> pendingServerUnsubscribes = new ConcurrentHashMap<>();
+    /**
+     * The QoS 2 PUBLISHes received and not yet released by their PUBREL, by packet id, each with its PUBREC code once its
+     * handler's future has a result. Kept across channel closes, as the server keeps its side of an unfinished exchange
+     * in the session; cleared when an accepted CONNACK reports no session, and by disconnect(). An entry is only
+     * replaced or removed if it is still the same entry, so a handler of an earlier connection that completes late
+     * never touches the entry of a message that reuses its id.
+     */
     @Getter(AccessLevel.PACKAGE)
-    private final Set<Integer> qos2PendingMsgIds = ConcurrentHashMap.newKeySet();
+    private final ConcurrentMap<Integer, ListenableFuture<Byte>> qos2Received = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
     @Getter(AccessLevel.PACKAGE)
@@ -136,8 +156,19 @@ final class MqttClientImpl implements MqttClient {
      * -1 while none is, so that one made before the first connect() waits for it.
      */
     private final AtomicInteger abandonedConnectAttempt = new AtomicInteger(-1);
+    /** The reconnect scheduleConnectIfRequired scheduled last, for disconnect() to cancel. */
+    private volatile ScheduledFuture<?> scheduledReconnect;
+    /** The TCP connect of the latest connect attempt, for disconnect() to cancel while it is in flight. */
+    private volatile ChannelFuture pendingConnect;
     @Getter
     private volatile boolean reconnect = false;
+    /**
+     * Test only, null otherwise: run by disconnect() after its already-disconnected check and before it sets the flag,
+     * so a test can complete a connect, connect()'s listener included, in that window.
+     */
+    @VisibleForTesting
+    @Setter(AccessLevel.PACKAGE)
+    private volatile Runnable disconnectRaceHook;
     private String host;
     private int port;
     @Getter
@@ -146,6 +177,14 @@ final class MqttClientImpl implements MqttClient {
 
     @Getter
     private final ListeningExecutor handlerExecutor;
+
+    /**
+     * Runs every handler call of this client, one at a time and in arrival order, on the handler executor's threads:
+     * MQTT orders a client's messages, and that must not depend on the pool a caller passes. Null with no handler
+     * executor.
+     */
+    @Getter(AccessLevel.PACKAGE)
+    private final Executor deliveryExecutor;
 
     private final static int DISCONNECT_FALLBACK_DELAY_SECS = 1;
     private final static int MAX_MESSAGE_ID = 0xffff;
@@ -167,7 +206,12 @@ final class MqttClientImpl implements MqttClient {
         this.clientConfig = clientConfig;
         this.defaultHandler = defaultHandler;
         this.handlerExecutor = handlerExecutor;
+        this.deliveryExecutor = handlerExecutor != null ? MoreExecutors.newSequentialExecutor(handlerExecutor) : null;
         this.reconnectStrategy = new ReconnectStrategyExponential(getClientConfig().getReconnectDelay());
+    }
+
+    boolean isDisconnected() {
+        return this.disconnected;
     }
 
     /**
@@ -199,6 +243,11 @@ final class MqttClientImpl implements MqttClient {
     }
 
     private Promise<MqttConnectResult> connect(String host, int port, boolean reconnect) {
+        if (this.disconnected) {
+            // disconnect() is final: a disconnected client never opens another socket
+            return ImmediateEventExecutor.INSTANCE.<MqttConnectResult>newPromise()
+                    .setFailure(new ChannelClosedException("Client is disconnected"));
+        }
         log.trace("[{}] Connecting to server, isReconnect - {}", channel != null ? channel.id() : "UNKNOWN", reconnect);
         if (this.eventLoop == null) {
             this.eventLoop = new NioEventLoopGroup();
@@ -212,8 +261,16 @@ final class MqttClientImpl implements MqttClient {
         bootstrap.group(this.eventLoop);
         bootstrap.channel(clientConfig.getChannelClass());
         bootstrap.remoteAddress(host, port);
+        // the TCP part of the connect timeout; MqttChannelHandler bounds the rest, up to the CONNACK
+        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                (int) Math.min(Integer.MAX_VALUE, TimeUnit.SECONDS.toMillis(clientConfig.getConnectTimeoutSec())));
         bootstrap.handler(new MqttChannelInitializer(connectFuture, host, port, clientConfig.getSslContext()));
         ChannelFuture future = bootstrap.connect();
+        this.pendingConnect = future;
+        if (this.disconnected) {
+            // disconnect() ran after the check above and may have missed this connect: cancel it here instead
+            future.cancel(false);
+        }
 
         // Once the TCP connect succeeds, MqttChannelHandler completes connectFuture: with the CONNACK, or failed when
         // the channel closes before one arrives. Here only a failed TCP connect is left to fail it.
@@ -223,7 +280,7 @@ final class MqttClientImpl implements MqttClient {
                 // completing after it would otherwise leave a live session that nobody holds a reference to.
                 MqttClientImpl.this.channel = f.channel();
                 // Before the re-check, so that closing a channel connected after disconnect() fails what waits for it too
-                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> onChannelClosed(host, port, attempt));
+                MqttClientImpl.this.channel.closeFuture().addListener((ChannelFutureListener) channelFuture -> onChannelClosed(channelFuture.channel(), host, port, attempt));
                 if (disconnected) {
                     log.debug("[{}][{}] Connected after disconnect(); closing channel {}", host, port, f.channel().id());
                     f.channel().close();
@@ -238,7 +295,10 @@ final class MqttClientImpl implements MqttClient {
                     // listener on it retrying connect() keeps the subscriptions it makes for the retry
                     giveUpConnectAttempt(attempt, new ChannelClosedException("Connect failed and no reconnect is scheduled", f.cause()));
                 }
-                connectFuture.tryFailure(f.cause());
+                // netty closes the channel of a failed or cancelled connect too, started or not; this close does not
+                // rely on it
+                f.channel().close();
+                connectFuture.tryFailure(disconnected ? new ChannelClosedException("Client is disconnected", f.cause()) : f.cause());
             }
         });
         return connectFuture;
@@ -251,18 +311,20 @@ final class MqttClientImpl implements MqttClient {
      * so a listener or callback that calls {@link #disconnect()} inline stops it. With no reconnect to schedule, the
      * attempt that opened the channel is given up on then, unless one of them started another connect.
      */
-    private void onChannelClosed(String host, int port, int attempt) {
+    void onChannelClosed(Channel closed, String host, int port, int attempt) {
         if (isConnected()) {
             return;
         }
-        log.debug("[{}][{}] Channel is closed {}!", host, port, this.channel.id());
+        log.debug("[{}][{}] Channel is closed {}!", host, port, closed.id());
+        lastSessionGrants.putAll(serverSubscriptions);
         serverSubscriptions.clear();
-        qos2PendingMsgIds.clear();
         pendingSubscribeTopics.clear();
-        drain(pendingSubscriptions, MqttPendingSubscription::onChannelClosed);
+        drain(pendingSubscriptions, pendingSubscription -> failSubscription(pendingSubscription,
+                new ChannelClosedException("Channel closed before the SUBACK arrived")));
         drain(pendingServerUnsubscribes, MqttPendingUnsubscription::onChannelClosed);
         drain(pendingPublishes, MqttPendingPublish::onChannelClosed);
-        if (callback != null) {
+        // only a connection its CONNACK accepted was ever up, so only such a one can be lost
+        if (callback != null && Boolean.TRUE.equals(closed.attr(MqttChannelHandler.CONNACK_ACCEPTED).get())) {
             callback.connectionLost(new ChannelClosedException("Channel is closed!"));
         }
         if (!scheduleConnectIfRequired(host, port, true)) {
@@ -320,7 +382,7 @@ final class MqttClientImpl implements MqttClient {
 
             final long nextReconnectDelay = reconnectStrategy.getNextReconnectDelay();
             log.debug("[{}][{}][{}] Scheduling reconnect in [{}] sec", host, port, channel != null ? channel.id() : "UNKNOWN", nextReconnectDelay);
-            eventLoop.schedule((Runnable) () -> connect(host, port, reconnect), nextReconnectDelay, TimeUnit.SECONDS);
+            this.scheduledReconnect = eventLoop.schedule((Runnable) () -> connect(host, port, reconnect), nextReconnectDelay, TimeUnit.SECONDS);
             return true;
         }
         return false;
@@ -341,10 +403,7 @@ final class MqttClientImpl implements MqttClient {
      */
     private void failPendingSubscriptions(Throwable cause, int upToAttempt) {
         drain(pendingSubscriptions, pendingSubscription -> pendingSubscription.getConnectAttempt() <= upToAttempt,
-                pendingSubscription -> {
-                    pendingSubscribeTopics.remove(pendingSubscription.getTopic());
-                    pendingSubscription.fail(cause);
-                });
+                pendingSubscription -> failSubscription(pendingSubscription, cause));
     }
 
     @Override
@@ -406,8 +465,9 @@ final class MqttClientImpl implements MqttClient {
      *
      * @param topic   The topic filter to subscribe to
      * @param handler The handler to invoke when we receive a message
-     * @param qos     The qos to request to the server; ignored when the filter is already subscribed or its SUBSCRIBE
-     *                is in flight
+     * @param qos     The qos to request to the server. A filter already subscribed on the server keeps its grant and
+     *                is not subscribed again now: this qos is what its resubscribe after a session-less reconnect asks
+     *                for. Ignored when the filter's SUBSCRIBE is in flight
      * @return A future which completes with the QoS the server granted, or fails with
      * {@link MqttSubscriptionFailedException} when the server refuses the filter, {@link ChannelClosedException} when the
      * connection closes or the client disconnects before the SUBACK, {@link MaxRetransmissionsReachedException} when
@@ -439,7 +499,7 @@ final class MqttClientImpl implements MqttClient {
         synchronized (this.registryLock) {
             this.subscriptions.removeIf(s -> s.getTopic().equals(topic) && s.getHandler().equals(handler));
         }
-        this.checkSubscriptions(topic, future);
+        this.checkSubscriptions(this.channel, topic, future);
         return future;
     }
 
@@ -459,7 +519,7 @@ final class MqttClientImpl implements MqttClient {
         synchronized (this.registryLock) {
             this.subscriptions.removeIf(s -> s.getTopic().equals(topic));
         }
-        this.checkSubscriptions(topic, future);
+        this.checkSubscriptions(this.channel, topic, future);
         return future;
     }
 
@@ -675,29 +735,78 @@ final class MqttClientImpl implements MqttClient {
 
     @Override
     public void disconnect() {
-        if (disconnected) {
-            return;
-        }
+        disconnect(0, TimeUnit.MILLISECONDS);
+    }
 
+    @Override
+    public Future<Void> disconnect(long timeout, TimeUnit unit) {
+        if (disconnected) {
+            Channel ch = this.channel;
+            return ch != null ? ch.closeFuture() : ImmediateEventExecutor.INSTANCE.newSucceededFuture(null);
+        }
+        Runnable raceHook = this.disconnectRaceHook;
+        if (raceHook != null) {
+            raceHook.run();
+        }
         disconnected = true;
-        // Pin the channel: a reconnect may replace the field, and the fallback below would then close the new one.
+        // Read only after setting the flag: connect()'s listener stores the channel and then reads the flag, so either
+        // it sees the flag and closes the channel, or this sees the channel and closes it. Pinned, as a reconnect may
+        // replace the field, and the close below would then close the new one.
         final Channel ch = this.channel;
         log.trace("[{}] Disconnecting from server", ch != null ? ch.id() : "UNKNOWN");
-        if (ch != null) {
-            MqttMessage message = new MqttMessage(new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0));
-
-            sendAndFlushPacket(ch, message).addListener((ChannelFutureListener) future -> future.channel().close());
-            eventLoop.schedule(() -> {
-                if (ch.isOpen()) {
-                    log.trace("[{}] Channel still open after {} second; forcing close now", ch.id(), DISCONNECT_FALLBACK_DELAY_SECS);
-                    ch.close();
-                }
-            }, DISCONNECT_FALLBACK_DELAY_SECS, TimeUnit.SECONDS);
+        // disconnect() is final: neither a reconnect already scheduled nor a TCP connect in flight may open a socket
+        ScheduledFuture<?> reconnectTask = this.scheduledReconnect;
+        if (reconnectTask != null) {
+            reconnectTask.cancel(false);
         }
+        ChannelFuture connecting = this.pendingConnect;
+        if (connecting != null) {
+            // a connect in flight is cancellable too: netty closes its socket before channelActive, so no CONNECT goes
+            // out. A no-op once the connect has completed: connect()'s listener re-checks and closes that channel, or
+            // the close below does. Only a cancel racing the completion itself loses: netty fires channelActive
+            // anyway, the CONNECT is written, and netty closes the channel right after.
+            connecting.cancel(false);
+        }
+        this.qos2Received.clear();
         // whatever the channel: with none, or one already closed while a reconnect was pending, no close is left to
         // fail what waits for a CONNACK; a live channel's close finds these gone, and a connect still in flight closes
         // the channel it gets, which fails whatever was added meanwhile
         failPendingSubscriptions(new ChannelClosedException("Client is disconnected"));
+        if (ch == null || !ch.isOpen()) {
+            return ImmediateEventExecutor.INSTANCE.newSucceededFuture(null);
+        }
+        // nothing more is read: a PUBLISH the server sends from here on is never acked, and a kept session redelivers it
+        ch.config().setAutoRead(false);
+        MqttChannelHandler handler = ch.pipeline().get(MqttChannelHandler.class);
+        Future<Void> drained = timeout > 0 && handler != null ? handler.drain(ch) : ImmediateEventExecutor.INSTANCE.<Void>newSucceededFuture(null);
+        AtomicBoolean disconnectWritten = new AtomicBoolean();
+        Runnable writeDisconnect = () -> {
+            if (disconnectWritten.compareAndSet(false, true)) {
+                writeDisconnectAndClose(ch);
+            }
+        };
+        drained.addListener(f -> writeDisconnect.run());
+        if (timeout > 0) {
+            ch.eventLoop().schedule(writeDisconnect, timeout, unit);
+        }
+        return ch.closeFuture();
+    }
+
+    private void writeDisconnectAndClose(Channel ch) {
+        MqttMessage message = new MqttMessage(new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0));
+        sendAndFlushPacket(ch, message).addListener((ChannelFutureListener) future -> future.channel().close());
+        ch.eventLoop().schedule(() -> {
+            if (ch.isOpen()) {
+                log.trace("[{}] Channel still open after {} second; forcing close now", ch.id(), DISCONNECT_FALLBACK_DELAY_SECS);
+                ch.close();
+            }
+        }, DISCONNECT_FALLBACK_DELAY_SECS, TimeUnit.SECONDS);
+    }
+
+    /** For tests: a channel the client did not connect itself, which disconnect() then drains and closes. */
+    @VisibleForTesting
+    void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
 
@@ -766,60 +875,41 @@ final class MqttClientImpl implements MqttClient {
 
     private Future<MqttQoS> createSubscription(String topic, MqttHandler handler, MqttQoS qos) {
         log.trace("[{}] Creating subscription to {}", channel != null ? channel.id() : "UNKNOWN", topic);
+        // The handler is registered before any SUBSCRIBE goes out: the server may send matching PUBLISHes before its
+        // SUBACK (MQTT 3.1.1 §3.8.4), and a kept session flushes its backlog right after the CONNACK. A failed on()
+        // removes it again (see failSubscription).
         if (this.pendingSubscribeTopics.contains(topic)) {
             Optional<Map.Entry<Integer, MqttPendingSubscription>> subscriptionEntry = this.pendingSubscriptions.entrySet().stream().filter((e) -> e.getValue().getTopic().equals(topic)).findAny();
             if (subscriptionEntry.isPresent()) {
-                // the SUBSCRIBE in flight registers the handler given last; every caller observes its grant or refusal
-                subscriptionEntry.get().getValue().setHandler(handler);
-                return subscriptionEntry.get().getValue().getFuture();
+                MqttPendingSubscription inFlight = subscriptionEntry.get().getValue();
+                // the SUBSCRIBE in flight keeps the QoS it asked for, and every caller observes its grant or refusal.
+                // Under the registry lock, as failSubscription marks and unregisters under it: either this registers
+                // first and failSubscription unregisters this handler, or this finds the entry failed and registers
+                // nothing - a failed on() leaves nothing registered even when it races the failure.
+                synchronized (this.registryLock) {
+                    if (!inFlight.isFailed()) {
+                        inFlight.setHandler(handler);
+                        register(new MqttSubscription(topic, handler, inFlight.getRequestedQos()));
+                    }
+                }
+                return inFlight.getFuture();
             }
         }
         MqttQoS grantedQos = this.serverSubscriptions.get(topic);
         if (grantedQos != null) {
-            register(new MqttSubscription(topic, handler));
-            // already subscribed on the server, which granted this QoS then; no SUBSCRIBE is sent for the QoS asked now
+            register(new MqttSubscription(topic, handler, qos));
+            // already subscribed on the server, which granted this QoS then; no SUBSCRIBE is sent for the QoS asked now,
+            // which is recorded for the resubscribe after a session-less reconnect
             return this.eventLoop.next().newSucceededFuture(grantedQos);
         }
 
         // read first: a connect() started from here on is one this subscription may wait for
         final int attempt = connectAttempts.get();
         Promise<MqttQoS> future = new DefaultPromise<>(this.eventLoop.next());
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
-        MqttSubscribePayload payload = new MqttSubscribePayload(Collections.singletonList(subscription));
-
-        final var pendingSubscription = registerWithNewMessageId(this.pendingSubscriptions, messageId -> {
-            MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
-            MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader, variableHeader, payload);
-
-            return MqttPendingSubscription.builder()
-                    .future(future)
-                    .topic(topic)
-                    .handler(handler)
-                    .subscribeMessage(message)
-                    .connectAttempt(attempt)
-                    .ownerId(clientConfig.getOwnerId())
-                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
-                    .pendingOperation(new PendingOperation() {
-                        @Override
-                        public boolean isCancelled() {
-                            return !pendingSubscriptions.containsKey(variableHeader.messageId());
-                        }
-
-                        @Override
-                        public void onMaxRetransmissionAttemptsReached() {
-                            // remove, then fail outside the map: a listener that subscribes again updates this map
-                            MqttPendingSubscription exhausted = pendingSubscriptions.remove(variableHeader.messageId());
-                            if (exhausted == null) {
-                                return;
-                            }
-                            var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
-                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
-                            exhausted.getFuture().tryFailure(new MaxRetransmissionsReachedException(message));
-                        }
-                    }).build();
-        });
+        register(new MqttSubscription(topic, handler, qos));
+        final var pendingSubscription = newPendingSubscription(topic, handler, qos, attempt, future, false);
         if (pendingSubscription == null) {
+            unregister(topic, handler);
             future.setFailure(newMessageIdsExhaustedException());
             return future;
         }
@@ -848,6 +938,184 @@ final class MqttClientImpl implements MqttClient {
     }
 
     /**
+     * Registers a pending subscription under a new message id, its SUBSCRIBE built but not yet written. Returns null,
+     * registering nothing, when all message ids are in use.
+     */
+    private MqttPendingSubscription newPendingSubscription(String topic, MqttHandler handler, MqttQoS qos, int attempt,
+                                                           Promise<MqttQoS> future, boolean resubscribe) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+        MqttSubscribePayload payload = new MqttSubscribePayload(Collections.singletonList(new MqttTopicSubscription(topic, qos)));
+        return registerWithNewMessageId(this.pendingSubscriptions, messageId -> {
+            MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
+            MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader, variableHeader, payload);
+
+            return MqttPendingSubscription.builder()
+                    .future(future)
+                    .topic(topic)
+                    .handler(handler)
+                    .subscribeMessage(message)
+                    .connectAttempt(attempt)
+                    .resubscribe(resubscribe)
+                    .ownerId(clientConfig.getOwnerId())
+                    .retransmissionConfig(clientConfig.getRetransmissionConfig())
+                    .pendingOperation(new PendingOperation() {
+                        @Override
+                        public boolean isCancelled() {
+                            return !pendingSubscriptions.containsKey(variableHeader.messageId());
+                        }
+
+                        @Override
+                        public void onMaxRetransmissionAttemptsReached() {
+                            // remove, then fail outside the map: a listener that subscribes again updates this map
+                            MqttPendingSubscription exhausted = pendingSubscriptions.remove(variableHeader.messageId());
+                            if (exhausted == null) {
+                                return;
+                            }
+                            var message = "Unable to deliver subscribe message due to max retransmission attempts (%s) being reached for client '%s' on topic '%s' (message ID: %d)"
+                                    .formatted(clientConfig.getRetransmissionConfig().maxAttempts(), clientConfig.getClientId(), topic, variableHeader.messageId());
+                            failSubscription(exhausted, new MaxRetransmissionsReachedException(message));
+                        }
+                    }).build();
+        });
+    }
+
+    /**
+     * Fails a pending subscription that its caller has just removed from the pending subscriptions. A caller's on()
+     * leaves nothing behind: the entry is marked failed and the handler it registered is removed, if the filter still
+     * has that handler. A resubscribe of the library's own is neither marked nor unregistered: its filter stays
+     * registered, for the next reconnect to try again, and an on() that joins it now registers its handler. Its failure
+     * is reported - unless a closed channel ended it, as the next accepted CONNACK sends it again.
+     */
+    void failSubscription(MqttPendingSubscription pendingSubscription, Throwable cause) {
+        this.pendingSubscribeTopics.remove(pendingSubscription.getTopic());
+        boolean resubscribe;
+        // read, marked and unregistered in one step under the registry lock, which an on() for the filter in flight
+        // holds while it replaces the handler, making the resubscribe its own: the handler read here is the last one
+        // registered, and a resubscribe read here is still the library's
+        synchronized (this.registryLock) {
+            resubscribe = pendingSubscription.isResubscribe();
+            if (!resubscribe) {
+                pendingSubscription.markFailed();
+                unregister(pendingSubscription.getTopic(), pendingSubscription.getHandler());
+            }
+        }
+        if (resubscribe && !(cause instanceof ChannelClosedException)) {
+            reportResubscribeFailure(pendingSubscription.getTopic(), cause);
+        }
+        // failed only after unregistering: a listener that calls on() again registers a handler this leaves alone
+        pendingSubscription.fail(cause);
+    }
+
+    private void reportResubscribeFailure(String topic, Throwable cause) {
+        log.warn("[{}][{}] Resubscribing {} after a reconnect failed: {}", clientConfig.getOwnerId(), clientConfig.getClientId(), topic, cause.getMessage());
+        MqttClientCallback cb = this.callback;
+        if (cb != null) {
+            try {
+                cb.onResubscribeFailed(topic, cause);
+            } catch (Exception e) {
+                log.warn("[{}][{}] onResubscribeFailed threw", clientConfig.getOwnerId(), clientConfig.getClientId(), e);
+            }
+        }
+    }
+
+    /**
+     * Settles the server subscriptions against the session an accepted CONNACK reports, before anything else of the
+     * connection is handled.
+     * <ul>
+     * <li>Session present (never under MQTT 3.1, which has no such flag): the server kept its subscriptions, so the
+     * grants set aside at the last close hold again and are not sent again - a SUBSCRIBE identical to a kept one would
+     * make the server resend its retained messages [MQTT-3.8.4-3]. A filter unregistered meanwhile is unsubscribed.</li>
+     * <li>No session: the grants are cleared.</li>
+     * </ul>
+     * Then every registered filter with neither a grant nor a SUBSCRIBE in flight is resubscribed. With no session that
+     * is every such filter; with one it is only a filter the kept session may not hold - one whose resubscribe failed,
+     * or a closed channel cut short before its SUBACK - so a kept session holding every grant sends nothing.
+     */
+    void onSessionEstablished(Channel ch, boolean sessionPresent) {
+        if (sessionPresent && this.clientConfig.getProtocolVersion() != MqttVersion.MQTT_3_1) {
+            Map<String, MqttQoS> kept = Map.copyOf(this.lastSessionGrants);
+            this.lastSessionGrants.clear();
+            kept.forEach((topic, grantedQos) -> {
+                this.serverSubscriptions.putIfAbsent(topic, grantedQos);
+                if (!isRegistered(topic)) {
+                    // off() ran while no connection was up, when there was nothing to unsubscribe on
+                    unsubscribeOnServer(ch, topic);
+                }
+            });
+        } else {
+            this.lastSessionGrants.clear();
+            this.serverSubscriptions.clear();
+            // the server dropped its side of every unfinished QoS 2 exchange, and will reuse those ids for new messages
+            this.qos2Received.clear();
+        }
+        resubscribeFiltersNotHeld();
+    }
+
+    /**
+     * Gives every registered filter with neither a grant nor a SUBSCRIBE in flight a SUBSCRIBE of the library's own
+     * (see {@link MqttPendingSubscription#isResubscribe()}), at the QoS its on() asked for, one per filter. They go out
+     * together with the CONNACK resend of the pending subscriptions.
+     */
+    private void resubscribeFiltersNotHeld() {
+        final int attempt = this.connectAttempts.get();
+        for (MqttSubscription subscription : this.subscriptions) {
+            String topic = subscription.getTopic();
+            if (this.serverSubscriptions.containsKey(topic)) {
+                continue; // the kept session holds it
+            }
+            if (this.pendingSubscribeTopics.contains(topic)) {
+                continue; // a caller's on() is already on its way, and goes out with the CONNACK resend
+            }
+            Promise<MqttQoS> future = new DefaultPromise<>(this.eventLoop.next());
+            MqttPendingSubscription resubscription = newPendingSubscription(topic, subscription.getHandler(),
+                    subscription.getRequestedQos(), attempt, future, true);
+            if (resubscription == null) {
+                reportResubscribeFailure(topic, newMessageIdsExhaustedException());
+                continue;
+            }
+            this.pendingSubscribeTopics.add(topic);
+        }
+    }
+
+    /**
+     * Removes {@code topic}'s registration if its handler is {@code handler}, the very instance, and leaves a
+     * registration by any other handler alone.
+     */
+    void unregister(String topic, MqttHandler handler) {
+        synchronized (this.registryLock) {
+            this.subscriptions.removeIf(s -> s.getTopic().equals(topic) && s.getHandler() == handler);
+        }
+    }
+
+    boolean isRegistered(String topic) {
+        return this.subscriptions.stream().anyMatch(s -> s.getTopic().equals(topic));
+    }
+
+    /**
+     * Unsubscribes {@code topic} on the server, on {@code ch}, if the server holds it and nothing is registered for it
+     * any more: for a filter whose grant arrived after its off(). Like off() itself, this races an on() for the filter
+     * that registers between the check and the UNSUBSCRIBE: that on() succeeds with its handler registered while the
+     * server drops the filter.
+     */
+    void unsubscribeOnServer(Channel ch, String topic) {
+        Promise<Void> promise = new DefaultPromise<>(this.eventLoop.next());
+        // nobody else waits on this UNSUBSCRIBE: a failure would otherwise leave the server holding a filter with no handler.
+        // Not logged for a closed channel, as reportResubscribeFailure does not: the grant is set aside at the close, and
+        // the next session-present CONNACK unsubscribes the filters no longer registered
+        promise.addListener(f -> {
+            if (!f.isSuccess()) {
+                Throwable cause = f.cause();
+                if (cause instanceof ChannelClosedException) {
+                    return;
+                }
+                log.warn("[{}][{}] Unsubscribing {} on the server failed: {}", clientConfig.getOwnerId(), clientConfig.getClientId(), topic,
+                        cause != null ? cause.getMessage() : "cancelled");
+            }
+        });
+        checkSubscriptions(ch, topic, promise);
+    }
+
+    /**
      * Registers {@code subscription}. A topic filter has at most one handler: when the filter is already registered its
      * handler is replaced in place, keeping the filter's position in delivery order; otherwise the filter is appended.
      */
@@ -863,7 +1131,7 @@ final class MqttClientImpl implements MqttClient {
         }
     }
 
-    private void checkSubscriptions(String topic, Promise<Void> promise) {
+    private void checkSubscriptions(Channel ch, String topic, Promise<Void> promise) {
         if (this.subscriptions.stream().noneMatch(s -> s.getTopic().equals(topic))
                 && this.serverSubscriptions.containsKey(topic)) {
             MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -902,7 +1170,6 @@ final class MqttClientImpl implements MqttClient {
                 promise.setFailure(newMessageIdsExhaustedException());
                 return;
             }
-            final Channel ch = this.channel;
             pendingUnsubscription.startRetransmissionTimer(retransmissionLoop(ch), this::sendAndFlushPacket);
 
             this.sendAndFlushPacket(ch, pendingUnsubscription.getUnsubscribeMessage());
@@ -911,7 +1178,7 @@ final class MqttClientImpl implements MqttClient {
         }
     }
 
-    private class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
+    class MqttChannelInitializer extends ChannelInitializer<Channel> {
 
         private final Promise<MqttConnectResult> connectFuture;
         private final String host;
@@ -927,16 +1194,23 @@ final class MqttClientImpl implements MqttClient {
         }
 
         @Override
-        protected void initChannel(SocketChannel ch) {
+        protected void initChannel(Channel ch) {
             if (sslContext != null) {
                 ch.pipeline().addLast(sslContext.newHandler(ch.alloc(), host, port));
             }
 
+            // in front of the decoder, with the same limit: an oversized PUBLISH is skipped rather than failing the decoder
+            ch.pipeline().addLast("oversizedPublishGuard", new MqttOversizedPublishGuard(clientConfig.getMaxBytesInMessage()));
             ch.pipeline().addLast("mqttDecoder", new MqttDecoder(clientConfig.getMaxBytesInMessage()));
             ch.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
-            ch.pipeline().addLast("idleStateHandler", new IdleStateHandler(MqttClientImpl.this.clientConfig.getTimeoutSeconds(), MqttClientImpl.this.clientConfig.getTimeoutSeconds(), 0));
-            ch.pipeline().addLast("mqttPingHandler", new MqttPingHandler(MqttClientImpl.this.clientConfig.getTimeoutSeconds()));
-            ch.pipeline().addLast("mqttHandler", new MqttChannelHandler(MqttClientImpl.this, connectFuture));
+            int keepAliveSeconds = MqttClientImpl.this.clientConfig.getTimeoutSeconds();
+            if (keepAliveSeconds > 0) {
+                // with keep-alive off (0) the client never pings, so nothing watches for idleness
+                ch.pipeline().addLast("idleStateHandler", new IdleStateHandler(keepAliveSeconds, keepAliveSeconds, 0));
+            }
+            // always there: it answers the server's PINGREQ, and retains each message for MqttChannelHandler
+            ch.pipeline().addLast("mqttPingHandler", new MqttPingHandler(keepAliveSeconds));
+            ch.pipeline().addLast("mqttHandler", new MqttChannelHandler(MqttClientImpl.this, connectFuture, true));
         }
 
     }

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -31,15 +32,23 @@ final class MqttSubscription {
     @Getter
     private final MqttHandler handler;
 
-    MqttSubscription(String topic, MqttHandler handler) {
+    /** The QoS the caller's on() asked for, which a resubscribe asks for again. */
+    @Getter(AccessLevel.PACKAGE)
+    private final MqttQoS requestedQos;
+
+    MqttSubscription(String topic, MqttHandler handler, MqttQoS requestedQos) {
         if (topic == null) {
             throw new NullPointerException("topic");
         }
         if (handler == null) {
             throw new NullPointerException("handler");
         }
+        if (requestedQos == null) {
+            throw new NullPointerException("requestedQos");
+        }
         this.topic = topic;
         this.handler = handler;
+        this.requestedQos = requestedQos;
         this.filter = MqttTopicFilter.of(topic);
     }
 

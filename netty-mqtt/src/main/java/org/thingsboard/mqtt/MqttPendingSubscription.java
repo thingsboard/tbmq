@@ -30,10 +30,7 @@ final class MqttPendingSubscription {
 
     private final Promise<MqttQoS> future;
     private final String topic;
-    /**
-     * The handler to register on SUBACK. Callers replace it while the SUBSCRIBE is in flight, so the last {@code on()}
-     * for the filter wins; the event loop reads it once, on SUBACK.
-     */
+    /** The handler this SUBSCRIBE's on() registered, or the one a later on() for the filter replaced it with; a failure unregisters it. */
     private volatile MqttHandler handler;
     private final MqttSubscribeMessage subscribeMessage;
     /**
@@ -41,12 +38,25 @@ final class MqttPendingSubscription {
      * one fails this while it still waits for a connection, whereas giving up on an earlier one spares it.
      */
     private final int connectAttempt;
+    /**
+     * Whether the library made this SUBSCRIBE itself, to restore a registered filter the server may not hold after a
+     * reconnect. Its failure keeps the filter registered and is reported to
+     * {@link MqttClientCallback#onResubscribeFailed}; a caller's on() that joins it takes it over.
+     */
+    private volatile boolean resubscribe;
 
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttSubscribeMessage> retransmissionHandler;
 
     @Getter(AccessLevel.NONE)
     private final AtomicBoolean sent = new AtomicBoolean();
+
+    /**
+     * Set by {@link MqttClientImpl#failSubscription}; read and written only under the client's registry lock, which
+     * orders it against the handler replacement of an on() for the filter in flight.
+     */
+    @Getter(AccessLevel.NONE)
+    private boolean failed;
 
     private MqttPendingSubscription(
             Promise<MqttQoS> future,
@@ -56,24 +66,27 @@ final class MqttPendingSubscription {
             int connectAttempt,
             String ownerId,
             MqttClientConfig.RetransmissionConfig retransmissionConfig,
-            PendingOperation operation
+            PendingOperation operation,
+            boolean resubscribe
     ) {
         this.future = future;
         this.topic = topic;
         this.handler = handler;
         this.subscribeMessage = subscribeMessage;
         this.connectAttempt = connectAttempt;
+        this.resubscribe = resubscribe;
 
         retransmissionHandler = new RetransmissionHandler<>(retransmissionConfig, operation, ownerId);
         retransmissionHandler.setOriginalMessage(subscribeMessage);
     }
 
     /**
-     * The handler registered when the SUBACK grants the filter; the last {@code on()} for a filter in flight wins,
-     * except one racing the SUBACK itself, whose handler can be lost while its shared future still succeeds.
+     * Replaces the handler, for an on() made while this SUBSCRIBE is in flight: the last one wins, and a resubscribe
+     * becomes that on()'s own. Called under the client's registry lock, and only while {@link #isFailed()} is false.
      */
     void setHandler(MqttHandler handler) {
         this.handler = handler;
+        this.resubscribe = false;
     }
 
     /**
@@ -92,16 +105,23 @@ final class MqttPendingSubscription {
         retransmissionHandler.start(eventLoop);
     }
 
-    void onSubackReceived() {
-        retransmissionHandler.stop();
+    /** Whether this SUBSCRIBE failed, its handler unregistered. Under the client's registry lock only. */
+    boolean isFailed() {
+        return failed;
     }
 
-    /**
-     * Must only be called by the path that removed this entry from the pending subscriptions. Fails the future: the
-     * SUBACK it waits for can no longer arrive.
-     */
-    void onChannelClosed() {
-        fail(new ChannelClosedException("Channel closed before the SUBACK arrived"));
+    /** Under the client's registry lock only, together with unregistering the handler. */
+    void markFailed() {
+        failed = true;
+    }
+
+    /** The QoS this SUBSCRIBE asks for. */
+    MqttQoS getRequestedQos() {
+        return subscribeMessage.payload().topicSubscriptions().get(0).qualityOfService();
+    }
+
+    void onSubackReceived() {
+        retransmissionHandler.stop();
     }
 
     /**
@@ -127,6 +147,7 @@ final class MqttPendingSubscription {
         private String ownerId;
         private PendingOperation pendingOperation;
         private MqttClientConfig.RetransmissionConfig retransmissionConfig;
+        private boolean resubscribe;
 
         Builder future(Promise<MqttQoS> future) {
             this.future = future;
@@ -168,8 +189,13 @@ final class MqttPendingSubscription {
             return this;
         }
 
+        Builder resubscribe(boolean resubscribe) {
+            this.resubscribe = resubscribe;
+            return this;
+        }
+
         MqttPendingSubscription build() {
-            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, connectAttempt, ownerId, retransmissionConfig, pendingOperation);
+            return new MqttPendingSubscription(future, topic, handler, subscribeMessage, connectAttempt, ownerId, retransmissionConfig, pendingOperation, resubscribe);
         }
 
     }
