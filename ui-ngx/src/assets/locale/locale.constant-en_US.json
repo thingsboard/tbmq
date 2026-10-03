@@ -1485,7 +1485,8 @@
             "online": "Online / offline",
             "shared": "Shared groups",
             "integrations": "Integrations",
-            "dropped": "Dropped 24h"
+            "dropped": "Dropped 24h",
+            "dropped-hint": "Total drops of topics that had drops in the last 24 h"
         },
         "tab": {
             "subscriptions": "Subscriptions",

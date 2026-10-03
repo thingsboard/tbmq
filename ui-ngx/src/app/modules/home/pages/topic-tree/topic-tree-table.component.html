@@ -128,7 +128,8 @@
       </ng-container>
 
       <ng-container matColumnDef="dropped">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.dropped' | translate }}</th>
+        <th mat-header-cell *matHeaderCellDef class="num"
+            [matTooltip]="'topic-tree.column.dropped-hint' | translate">{{ 'topic-tree.column.dropped' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
           @if (row.kind === 'node' && (row.node.dropped24h ?? null) !== null) {
             <button type="button" class="chip red" [class.zero]="!row.node.dropped24h" (click)="clickChip($event, row, 'dropped')">{{ row.node.dropped24h | number }}</button>
