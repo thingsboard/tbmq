@@ -63,6 +63,8 @@ export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
 // Heartbeats arrive once per stats interval; two missed ones mean the node is gone even if its status still reads ACTIVE.
 export const STALE_AFTER_INTERVALS = 2;
+export const KAFKA_NODE_ID = 'kafka';
+export const KAFKA_TOP_GROUPS = 5;
 export const CLUSTER_RATE_KEYS = [
   ChartKey.incomingMsgs,
   ChartKey.outgoingMsgs,
@@ -115,12 +117,22 @@ export interface ClusterClientsVm {
   connectedSessions: number;
 }
 
+export interface ClusterKafkaGroupVm {
+  groupId: string;
+  state: string;
+  members: number;
+  lag: number;
+}
+
 export interface ClusterKafkaVm {
   x: number;
   y: number;
   points: string;
   brokerCount: number | null;
   totalLag: number | null;
+  brokers: KafkaBroker[];
+  groupCount: number | null;
+  topGroups: ClusterKafkaGroupVm[];
 }
 
 export interface ClusterTotalVm {
@@ -236,7 +248,7 @@ export function emptyClusterVm(): ClusterMapVm {
     clients: {x: COLUMN_X.clients, y: centerY, hasSessionStats: false, totalSessions: 0, connectedSessions: 0},
     brokers: [],
     executors: [],
-    kafka: {x: COLUMN_X.kafka, y: centerY, points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS), brokerCount: null, totalLag: null},
+    kafka: {x: COLUMN_X.kafka, y: centerY, points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS), brokerCount: null, totalLag: null, brokers: [], groupCount: null, topGroups: []},
     total: {brokerCount: 0, executorCount: 0, hasSessionStats: false, totalSessions: 0, connectedSessions: 0, rates: zeroRates(), hasDrops: false},
     edges: []
   };
@@ -299,6 +311,12 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   const totalSessions = nodeStats.reduce((sum, s) => sum + s.totalCount, 0);
   const connectedSessions = nodeStats.reduce((sum, s) => sum + s.connectedCount, 0);
   const totalRates = messageRates(raw.latestTotal, statsIntervalMinutes);
+  const groups = raw.consumerGroups?.data.map(group => ({
+    groupId: group.groupId,
+    state: group.state,
+    members: group.members,
+    lag: Number(group.lag) || 0
+  })) ?? null;
   return {
     width: VIEWBOX_WIDTH,
     height,
@@ -310,9 +328,10 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
       y: centerY,
       points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS),
       brokerCount: raw.kafkaBrokers?.totalElements ?? prev.kafka.brokerCount,
-      totalLag: raw.consumerGroups
-        ? raw.consumerGroups.data.reduce((sum, group) => sum + (Number(group.lag) || 0), 0)
-        : prev.kafka.totalLag
+      totalLag: groups ? groups.reduce((sum, group) => sum + group.lag, 0) : prev.kafka.totalLag,
+      brokers: raw.kafkaBrokers?.data ?? prev.kafka.brokers,
+      groupCount: raw.consumerGroups?.totalElements ?? prev.kafka.groupCount,
+      topGroups: groups ? [...groups].sort((a, b) => b.lag - a.lag).slice(0, KAFKA_TOP_GROUPS) : prev.kafka.topGroups
     },
     total: {
       brokerCount: brokers.length,

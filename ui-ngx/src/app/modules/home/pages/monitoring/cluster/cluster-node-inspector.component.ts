@@ -47,6 +47,7 @@ import {
   MessageChartSeries
 } from '@home/pages/monitoring/cluster/cluster-messages-chart.component';
 import {
+  ClusterKafkaVm,
   ClusterNodeVm,
   ClusterTotalVm,
   compactBytes,
@@ -77,6 +78,7 @@ export class ClusterNodeInspectorComponent {
 
   readonly node = input<ClusterNodeVm | null>(null);
   readonly total = input.required<ClusterTotalVm>();
+  readonly kafka = input<ClusterKafkaVm | null>(null);
   readonly series = input<MessageSeries>(emptyMessageSeries());
 
   readonly cleared = output<void>();
@@ -96,7 +98,7 @@ export class ClusterNodeInspectorComponent {
     ];
   });
   readonly staleSeconds = computed(() => Math.round((Date.now() - (this.node()?.lastUpdateTime ?? Date.now())) / 1000));
-  readonly showChart = computed(() => this.node()?.kind !== 'executor');
+  readonly showChart = computed(() => !this.kafka() && this.node()?.kind !== 'executor');
   readonly unit = signal<ChartUnit>('messages');
   readonly chartSeries = computed<MessageChartSeries[]>(() => {
     const {rates} = this.node() ?? this.total();
@@ -119,9 +121,14 @@ export class ClusterNodeInspectorComponent {
   });
 
   readonly formatLargeNumber = formatLargeNumber;
+  readonly compactNumber = compactNumber;
 
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+
+  open(path: string) {
+    this.router.navigate([path]);
+  }
 
   openSessions(nodeId?: string) {
     this.router.navigate(['/sessions'], nodeId ? {queryParams: {nodeIdList: nodeId}} : undefined);

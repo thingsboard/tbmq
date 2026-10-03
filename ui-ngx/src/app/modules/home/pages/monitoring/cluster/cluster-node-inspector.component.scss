@@ -140,6 +140,44 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   align-self: flex-start;
 }
 
+.tb-inspector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tb-inspector-list-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.tb-inspector-list-key {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: $tb-mono;
+}
+
+.tb-inspector-list-value {
+  flex: 0 0 auto;
+  font-family: $tb-mono;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tb-inspector-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .tb-divider {
   height: 1px;
   background: rgba(0, 0, 0, 0.06);

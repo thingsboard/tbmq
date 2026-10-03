@@ -37,6 +37,9 @@ import {
   ClusterNodeVm,
   COLUMN_X,
   compactNumber,
+  hexagonPoints,
+  KAFKA_NODE_ID,
+  KAFKA_RADIUS,
   ringArcDash
 } from '@home/pages/monitoring/cluster/cluster.models';
 
@@ -56,12 +59,22 @@ export class ClusterMapComponent {
   readonly nodeSelected = output<string>();
 
   readonly columnX = COLUMN_X;
+  readonly kafkaNodeId = KAFKA_NODE_ID;
   readonly compactNumber = compactNumber;
   readonly ringArcDash = ringArcDash;
 
   onSelect(node: ClusterNodeVm, event?: Event) {
     event?.preventDefault();
     this.nodeSelected.emit(node.id);
+  }
+
+  onSelectKafka(event?: Event) {
+    event?.preventDefault();
+    this.nodeSelected.emit(KAFKA_NODE_ID);
+  }
+
+  kafkaHaloPoints(map: ClusterMapVm): string {
+    return hexagonPoints(map.kafka.x, map.kafka.y, KAFKA_RADIUS + 7);
   }
 
   particleBegin(slot: number, slots: number, durSec: number): string {

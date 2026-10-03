@@ -84,6 +84,10 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   }
 }
 
+.tb-kafka-halo {
+  stroke-width: 2;
+}
+
 .tb-kafka-hex {
   fill: #f4f6f5;
   stroke: $tb-neutral;

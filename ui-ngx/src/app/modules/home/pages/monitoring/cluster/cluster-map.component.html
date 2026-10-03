@@ -78,7 +78,10 @@
     <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
   }
 
-  <g class="tb-kafka">
+  <g [class]="selectedId() === kafkaNodeId ? 'tb-kafka tb-node tb-node-selected' : 'tb-kafka tb-node'" role="button" tabindex="0"
+     [attr.aria-pressed]="selectedId() === kafkaNodeId" [attr.aria-label]="'monitoring.cluster.kafka' | translate"
+     (click)="onSelectKafka()" (keydown.enter)="onSelectKafka($event)" (keydown.space)="onSelectKafka($event)">
+    <polygon class="tb-halo tb-kafka-halo" [attr.points]="kafkaHaloPoints(map)"/>
     <polygon class="tb-kafka-hex" [attr.points]="map.kafka.points"/>
     <text class="tb-node-count" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y - 2" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
     <text class="tb-node-hint" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 13" text-anchor="middle">

@@ -61,6 +61,7 @@ import {
   emptyClusterVm,
   emptyMessageSeries,
   HISTORY_WINDOW_MS,
+  KAFKA_NODE_ID,
   MAX_SAMPLES,
   mergeHistory,
   MessageSeries
@@ -96,6 +97,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
     const {brokers, executors} = this.vm();
     return brokers.concat(executors).find(node => node.id === id) ?? null;
   });
+  readonly selectedKafka = computed(() => this.selectedId() === KAFKA_NODE_ID ? this.vm().kafka : null);
   readonly selectedSeries = computed(() => this.samples()[this.selectedId() ?? TOTAL_ENTITY_ID] ?? emptyMessageSeries());
 
   private readonly timeseriesService = inject(TimeseriesService);
@@ -227,7 +229,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   private ensureSelection(vm: ClusterMapVm) {
     const selected = this.selectedId();
-    if (selected && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
+    if (selected && selected !== KAFKA_NODE_ID && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
       this.select(null);
     }
   }

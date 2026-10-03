@@ -84,6 +84,66 @@
       </div>
     }
   </div>
+} @else if (kafka(); as k) {
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-id">{{ 'monitoring.cluster.kafka' | translate }}</div>
+      <div class="tb-inspector-meta">
+        <span class="tb-inspector-type">
+          {{ (k.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: k.brokerCount ?? '—'} }}
+          · {{ 'monitoring.cluster.consumer-groups' | translate: {count: k.groupCount ?? '—'} }}
+        </span>
+      </div>
+    </div>
+    <button mat-icon-button type="button" class="tb-inspector-close"
+            [matTooltip]="'monitoring.cluster.show-cluster-total' | translate"
+            [attr.aria-label]="'monitoring.cluster.show-cluster-total' | translate"
+            (click)="cleared.emit()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="tb-stat">
+    <span class="tb-stat-label">{{ 'monitoring.cluster.consumer-lag' | translate }}</span>
+    <span class="tb-stat-value">{{ k.totalLag !== null ? formatLargeNumber(k.totalLag) : '—' }}</span>
+  </div>
+
+  @if (k.brokers.length) {
+    <div class="tb-divider"></div>
+    <span class="tb-stat-label">{{ 'monitoring.cluster.brokers-list' | translate }}</span>
+    <ul class="tb-inspector-list">
+      @for (broker of k.brokers; track broker.brokerId) {
+        <li class="tb-inspector-list-row">
+          <span class="tb-inspector-list-key">{{ broker.brokerId }}</span>
+          <span class="tb-inspector-list-value">{{ broker.address }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (k.topGroups.length) {
+    <div class="tb-divider"></div>
+    <span class="tb-stat-label">{{ 'monitoring.cluster.top-groups-by-lag' | translate }}</span>
+    <ul class="tb-inspector-list">
+      @for (group of k.topGroups; track group.groupId) {
+        <li class="tb-inspector-list-row" [matTooltip]="group.groupId">
+          <span class="tb-inspector-list-key">{{ group.groupId }}</span>
+          <span class="tb-inspector-list-value">{{ compactNumber(group.lag) }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="tb-inspector-links">
+    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/kafka/brokers')">
+      {{ 'monitoring.cluster.open-kafka-brokers' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </button>
+    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/kafka/consumer-groups')">
+      {{ 'monitoring.cluster.open-consumer-groups' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </button>
+  </div>
 } @else {
   @let t = total();
   <div class="tb-inspector-head">
