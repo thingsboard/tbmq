@@ -37,11 +37,13 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 
 import java.time.LocalDateTime;
@@ -73,6 +75,7 @@ public class HistoricalStatsTotalConsumer {
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgService;
+    private final ClientSessionPageInfos clientSessionPageInfos;
     private final TimeseriesService timeseriesService;
     private final HistoricalDataReportProperties historicalDataReportProperties;
 
@@ -152,6 +155,18 @@ public class HistoricalStatsTotalConsumer {
         DonAsynchron.withCallback(savedTsFuture,
                 unused -> log.trace("[{}] Successfully saved timeseries entries {}", ENTITY_ID_TOTAL, entries),
                 throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
+        saveNodeSessionsCount(ts);
+    }
+
+    // Per-node session history backs the per-broker trend on the cluster map; each node writes only its own count.
+    private void saveNodeSessionsCount(long ts) {
+        String serviceId = serviceInfoProvider.getServiceId();
+        ClientSessionNodeStatsInfoDto nodeStats = clientSessionPageInfos.getClientSessionStatsInfoByNode().get(serviceId);
+        long count = nodeStats == null ? 0 : nodeStats.getTotalCount();
+        List<TsKvEntry> entries = List.of(new BasicTsKvEntry(ts, new LongDataEntry(SESSIONS, count)));
+        DonAsynchron.withCallback(timeseriesService.save(serviceId, entries),
+                unused -> log.trace("[{}] Successfully saved node sessions count {}", serviceId, count),
+                throwable -> log.error("[{}] Failed to save node sessions count", serviceId, throwable));
     }
 
     // Package-private (not private) so the same-package unit test can invoke it directly, like the other
