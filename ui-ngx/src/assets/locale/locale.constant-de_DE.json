@@ -1155,6 +1155,8 @@
         "replicas": "Replikas",
         "size": "Größe",
         "lag": "Verzögerung",
+        "lag-trend": "Lag-Verlauf",
+        "lag-trend-tooltip": "Letzte {{count}} Messwerte, min {{min}}, max {{max}}",
         "id": "ID",
         "state": "Status",
         "members": "Mitglieder",

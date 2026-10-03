@@ -1155,6 +1155,8 @@
         "replicas": "Réplicas",
         "size": "Tamaño",
         "lag": "Lag",
+        "lag-trend": "Tendencia del retraso",
+        "lag-trend-tooltip": "Últimas {{count}} muestras, mín {{min}}, máx {{max}}",
         "id": "ID",
         "state": "Estado",
         "members": "Miembros",

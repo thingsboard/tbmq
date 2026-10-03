@@ -1155,6 +1155,8 @@
         "replicas": "प्रतिलिपियाँ",
         "size": "आकार",
         "lag": "Lag",
+        "lag-trend": "लैग रुझान",
+        "lag-trend-tooltip": "पिछले {{count}} नमूने, न्यूनतम {{min}}, अधिकतम {{max}}",
         "id": "ID",
         "state": "स्थिति",
         "members": "सदस्य",
