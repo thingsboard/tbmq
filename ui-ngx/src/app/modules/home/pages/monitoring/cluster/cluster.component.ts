@@ -30,6 +30,7 @@
 ///
 
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
@@ -46,27 +47,23 @@ import { ConfigService } from '@core/http/config.service';
 import { RequestConfig } from '@core/http/http-utils';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { Direction } from '@shared/models/page/sort-order';
 import { ChartKey, TimeseriesData, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ServiceType } from '@shared/models/resource-usage.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { IntegrationInfo } from '@shared/models/integration.models';
-import { AggregationType, SECOND } from '@shared/models/time/time.models';
+import { SECOND } from '@shared/models/time/time.models';
+import { LiveStatsService } from '@core/services/live-stats.service';
+import { emptyRateSeries } from '@shared/models/live-stats.model';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
 import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
 import {
-  appendLatest,
   assembleClusterVm,
   ClusterMapVm,
   ClusterRawData,
   CLUSTER_RATE_KEYS,
   emptyClusterVm,
-  emptyMessageSeries,
   HISTORY_WINDOW_MS,
-  KAFKA_NODE_ID,
-  MAX_SAMPLES,
-  mergeHistory,
-  MessageSeries
+  KAFKA_NODE_ID
 } from '@home/pages/monitoring/cluster/cluster.models';
 
 const REFRESH_INTERVAL = 10 * SECOND;
@@ -88,7 +85,6 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   readonly vm = signal<ClusterMapVm>(emptyClusterVm());
   readonly selectedId = signal<string | null>(null);
-  readonly samples = signal<Record<string, MessageSeries>>({});
   readonly lastTickOk = signal(true);
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
@@ -101,13 +97,24 @@ export class ClusterComponent implements OnInit, OnDestroy {
     return brokers.concat(executors).find(node => node.id === id) ?? null;
   });
   readonly selectedKafka = computed(() => this.selectedId() === KAFKA_NODE_ID ? this.vm().kafka : null);
-  readonly selectedSeries = computed(() => this.samples()[this.selectedId() ?? TOTAL_ENTITY_ID] ?? emptyMessageSeries());
+  // Executors and Kafka have no message timeseries, so their inspector shows no chart and nothing is watched for them.
+  private readonly seriesSource = computed(() => {
+    const id = this.selectedId();
+    const isBroker = !id || this.vm().brokers.some(broker => broker.id === id);
+    return {entityId: isBroker ? (id ?? TOTAL_ENTITY_ID) : null, windowMs: this.historyWindow()};
+  }, {equal: (a, b) => a.entityId === b.entityId && a.windowMs === b.windowMs});
+  readonly selectedSeries = toSignal(toObservable(this.seriesSource).pipe(
+    switchMap(({entityId, windowMs}) => entityId
+      ? this.liveStats.watch(entityId, MESSAGE_RATE_KEYS, {windowMs})
+      : of(emptyRateSeries(MESSAGE_RATE_KEYS)))
+  ), {initialValue: emptyRateSeries(MESSAGE_RATE_KEYS)});
 
   private readonly timeseriesService = inject(TimeseriesService);
   private readonly clientSessionService = inject(ClientSessionService);
   private readonly kafkaService = inject(KafkaService);
   private readonly integrationService = inject(IntegrationService);
   private readonly configService = inject(ConfigService);
+  private readonly liveStats = inject(LiveStatsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -115,15 +122,12 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private kafkaBrokers: PageData<KafkaBroker> | null = null;
   private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
   private integrations: PageData<IntegrationInfo> | null = null;
-  private readonly historyLoaded = new Set<string>();
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit() {
-    this.loadHistory(TOTAL_ENTITY_ID);
     const nodeId = this.route.snapshot.queryParamMap.get('nodeId');
     if (nodeId) {
       this.selectedId.set(nodeId);
-      this.loadHistory(nodeId);
     }
     timer(0, REFRESH_INTERVAL).pipe(
       switchMap(tick => this.loadTick(tick)),
@@ -138,13 +142,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   }
 
   toggleSelection(id: string) {
-    const next = this.selectedId() === id ? null : id;
-    this.select(next);
-    if (!next) {
-      this.loadHistory(TOTAL_ENTITY_ID);
-    } else if (this.vm().brokers.some(broker => broker.id === next)) {
-      this.loadHistory(next);
-    }
+    this.select(this.selectedId() === id ? null : id);
   }
 
   clearSelection() {
@@ -152,13 +150,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   }
 
   setHistoryWindow(windowMs: number) {
-    if (windowMs === this.historyWindow()) {
-      return;
-    }
     this.historyWindow.set(windowMs);
-    this.historyLoaded.clear();
-    this.samples.set({});
-    this.loadHistory(this.selectedId() ?? TOTAL_ENTITY_ID);
   }
 
   private select(id: string | null) {
@@ -204,31 +196,6 @@ export class ClusterComponent implements OnInit, OnDestroy {
     );
   }
 
-  private loadHistory(key: string) {
-    if (this.historyLoaded.has(key)) {
-      return;
-    }
-    this.historyLoaded.add(key);
-    const endTs = Date.now();
-    const windowMs = this.historyWindow();
-    this.timeseriesService.getEntityTimeseries(key, endTs - windowMs, endTs, MESSAGE_RATE_KEYS, MAX_SAMPLES,
-      AggregationType.NONE, undefined, Direction.ASC
-    ).pipe(
-      catchError(() => of(null)),
-      takeUntil(this.destroy$)
-    ).subscribe(history => {
-      if (!history) {
-        this.historyLoaded.delete(key);
-        return;
-      }
-      const statsInterval = this.statsInterval();
-      this.samples.update(samples => ({
-        ...samples,
-        [key]: mergeHistory(samples[key] ?? emptyMessageSeries(), history, statsInterval, windowMs)
-      }));
-    });
-  }
-
   private applyTick(raw: ClusterRawData) {
     if (!raw.services) {
       this.lastTickOk.set(false);
@@ -244,7 +211,6 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.lastUpdated = Date.now();
     this.lastTickOk.set(true);
     this.ensureSelection(vm);
-    this.recordSamples(raw);
   }
 
   private ensureSelection(vm: ClusterMapVm) {
@@ -252,18 +218,6 @@ export class ClusterComponent implements OnInit, OnDestroy {
     if (selected && selected !== KAFKA_NODE_ID && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
       this.select(null);
     }
-  }
-
-  private recordSamples(raw: ClusterRawData) {
-    const statsInterval = this.statsInterval();
-    const latestByKey = {...raw.latestByBroker, [TOTAL_ENTITY_ID]: raw.latestTotal};
-    this.samples.update(samples => {
-      const next = {...samples};
-      for (const [key, latest] of Object.entries(latestByKey)) {
-        next[key] = appendLatest(next[key] ?? emptyMessageSeries(), latest, statsInterval, this.historyWindow());
-      }
-      return next;
-    });
   }
 
   private statsInterval(): number {

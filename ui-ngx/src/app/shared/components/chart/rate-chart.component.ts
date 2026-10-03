@@ -33,11 +33,10 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TsValue } from '@shared/models/chart.model';
-import { ClusterRateKey } from '@home/pages/monitoring/cluster/cluster.models';
 
-export type MessageSeriesKey = ClusterRateKey;
+export type MessageSeriesKey = string;
 
-export interface MessageChartSeries {
+export interface RateChartSeries {
   key: MessageSeriesKey;
   label: string;
   points: TsValue[];
@@ -83,17 +82,17 @@ const AXIS_BAND = 16;
 const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
 
 @Component({
-    selector: 'tb-cluster-messages-chart',
+    selector: 'tb-rate-chart',
     template: `
       <div class="tb-chart">
         <svg class="tb-chart-svg" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" tabindex="0"
-             [attr.aria-label]="'monitoring.cluster.chart-aria-label' | translate"
+             [attr.aria-label]="ariaLabel() | translate"
              (pointermove)="onPointerMove($event)" (pointerleave)="hoverIndex.set(null)"
              (keydown)="onKeydown($event)" (blur)="hoverIndex.set(null)">
           @if (geometry(); as g) {
             <defs>
               @for (path of g.paths; track path.key) {
-                <linearGradient [attr.id]="'tb-cluster-chart-fill-' + path.key" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient [attr.id]="'tb-rate-chart-fill-' + path.key" x1="0" y1="0" x2="0" y2="1">
                   <stop [class]="'tb-chart-fill-stop tb-series-' + path.key" offset="0%" stop-opacity="0.16"/>
                   <stop [class]="'tb-chart-fill-stop tb-series-' + path.key" offset="100%" stop-opacity="0"/>
                 </linearGradient>
@@ -101,7 +100,7 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
             </defs>
             <line class="tb-chart-baseline" [attr.x1]="padX" [attr.x2]="width - padX" [attr.y1]="plotBottom" [attr.y2]="plotBottom"/>
             @for (path of g.paths; track path.key) {
-              <path class="tb-chart-area" [attr.d]="path.areaPath" [attr.fill]="'url(#tb-cluster-chart-fill-' + path.key + ')'"/>
+              <path class="tb-chart-area" [attr.d]="path.areaPath" [attr.fill]="'url(#tb-rate-chart-fill-' + path.key + ')'"/>
               <path [class]="'tb-chart-line tb-series-' + path.key" [attr.d]="path.linePath"/>
               <circle [class]="'tb-chart-marker tb-series-' + path.key" [attr.cx]="path.endX" [attr.cy]="path.endY" r="3.5"/>
             }
@@ -115,7 +114,7 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
             }
           } @else {
             <text class="tb-chart-empty" [attr.x]="width / 2" [attr.y]="plotBottom / 2" text-anchor="middle" dominant-baseline="central">
-              {{ 'monitoring.cluster.collecting-samples' | translate }}
+              {{ 'rate-chart.collecting-samples' | translate }}
             </text>
           }
         </svg>
@@ -143,13 +142,14 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
         }
       </div>
     `,
-    styleUrls: ['./cluster-messages-chart.component.scss'],
+    styleUrls: ['./rate-chart.component.scss'],
     imports: [DatePipe, TranslateModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ClusterMessagesChartComponent {
+export class RateChartComponent {
 
-  readonly series = input<MessageChartSeries[]>([]);
+  readonly series = input<RateChartSeries[]>([]);
+  readonly ariaLabel = input('rate-chart.aria-label');
 
   readonly hoverIndex = signal<number | null>(null);
 

@@ -310,6 +310,10 @@
     "entity": {
         "create-new": "新建"
     },
+    "rate-chart": {
+        "aria-label": "随时间变化的数值",
+        "collecting-samples": "正在收集样本…"
+    },
     "fullscreen": {
         "exit": "退出",
         "expand": "展开"

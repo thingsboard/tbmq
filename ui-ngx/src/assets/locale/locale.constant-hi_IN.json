@@ -310,6 +310,10 @@
     "entity": {
         "create-new": "नया बनाएँ"
     },
+    "rate-chart": {
+        "aria-label": "समय के साथ मान",
+        "collecting-samples": "नमूने एकत्र किए जा रहे हैं…"
+    },
     "fullscreen": {
         "exit": "बंद करें",
         "expand": "फैलाएँ"

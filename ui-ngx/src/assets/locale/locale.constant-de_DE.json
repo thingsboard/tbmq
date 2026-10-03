@@ -310,6 +310,10 @@
     "entity": {
         "create-new": "Neu erstellen"
     },
+    "rate-chart": {
+        "aria-label": "Werte im Zeitverlauf",
+        "collecting-samples": "Messwerte werden gesammelt…"
+    },
     "fullscreen": {
         "exit": "Exit",
         "expand": "Expand"

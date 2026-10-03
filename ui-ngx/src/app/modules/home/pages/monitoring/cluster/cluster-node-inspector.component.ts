@@ -43,10 +43,8 @@ import {
 import { formatLargeNumber } from '@core/utils';
 import { ChartKey } from '@shared/models/chart.model';
 import { HOUR, MINUTE } from '@shared/models/time/time.models';
-import {
-  ClusterMessagesChartComponent,
-  MessageChartSeries
-} from '@home/pages/monitoring/cluster/cluster-messages-chart.component';
+import { RateChartComponent, RateChartSeries } from '@shared/components/chart/rate-chart.component';
+import { RateSeries } from '@shared/models/live-stats.model';
 import {
   ClusterKafkaVm,
   ClusterNodeVm,
@@ -54,10 +52,8 @@ import {
   compactBytes,
   compactNumber,
   ClusterRateKey,
-  emptyMessageSeries,
   HISTORY_WINDOW_MS,
   HISTORY_WINDOWS,
-  MessageSeries,
   UsageLevel,
   usageLevel
 } from '@home/pages/monitoring/cluster/cluster.models';
@@ -74,7 +70,7 @@ interface MeterVm {
     selector: 'tb-cluster-node-inspector',
     templateUrl: './cluster-node-inspector.component.html',
     styleUrls: ['./cluster-node-inspector.component.scss'],
-    imports: [TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, ClusterMessagesChartComponent],
+    imports: [TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, RateChartComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClusterNodeInspectorComponent {
@@ -82,7 +78,7 @@ export class ClusterNodeInspectorComponent {
   readonly node = input<ClusterNodeVm | null>(null);
   readonly total = input.required<ClusterTotalVm>();
   readonly kafka = input<ClusterKafkaVm | null>(null);
-  readonly series = input<MessageSeries>(emptyMessageSeries());
+  readonly series = input<RateSeries>({});
 
   readonly historyWindow = input(HISTORY_WINDOW_MS);
 
@@ -106,14 +102,14 @@ export class ClusterNodeInspectorComponent {
   readonly staleSeconds = computed(() => Math.round((Date.now() - (this.node()?.lastUpdateTime ?? Date.now())) / 1000));
   readonly showChart = computed(() => !this.kafka() && this.node()?.kind !== 'executor');
   readonly unit = signal<ChartUnit>('messages');
-  readonly chartSeries = computed<MessageChartSeries[]>(() => {
+  readonly chartSeries = computed<RateChartSeries[]>(() => {
     const {rates} = this.node() ?? this.total();
     const series = this.series();
     const perMinute = this.translate.instant('monitoring.cluster.per-min');
     const asMessages = (value: number) => `${compactNumber(value)} ${this.translate.instant('monitoring.cluster.msg-per-min')}`;
     const asBytes = (value: number) => `${compactBytes(value)}${perMinute}`;
-    const build = (key: ClusterRateKey, label: string, format: (value: number) => string): MessageChartSeries =>
-      ({key, label, points: series[key], current: rates[key], format});
+    const build = (key: ClusterRateKey, label: string, format: (value: number) => string): RateChartSeries =>
+      ({key, label, points: series[key] ?? [], current: rates[key], format});
     return this.unit() === 'messages'
       ? [
         build(ChartKey.incomingMsgs, 'monitoring.cluster.incoming-messages', asMessages),

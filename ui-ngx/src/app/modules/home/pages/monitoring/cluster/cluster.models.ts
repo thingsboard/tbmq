@@ -34,9 +34,12 @@ import { ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/mode
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
 import { IntegrationInfo } from '@shared/models/integration.models';
-import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
-import { HOUR, MINUTE } from '@shared/models/time/time.models';
+import { ChartKey, TimeseriesData } from '@shared/models/chart.model';
+import { MINUTE } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
+import { compactNumber, LIVE_STATS_WINDOW_MS, LIVE_STATS_WINDOWS, RateSeries, scaledValue } from '@shared/models/live-stats.model';
+
+export { compactBytes, compactNumber } from '@shared/models/live-stats.model';
 
 export type UsageLevel = 'ok' | 'warn' | 'crit';
 export type ClusterNodeKind = 'broker' | 'executor';
@@ -58,9 +61,8 @@ export const EXECUTOR_DISC_RADIUS = 11;
 export const KAFKA_RADIUS = 46;
 export const EDGE_GAP = 4;
 export const EXECUTOR_EDGE_WEIGHT = 0.3;
-export const HISTORY_WINDOW_MS = HOUR;
-export const HISTORY_WINDOWS = [15 * MINUTE, HOUR, 6 * HOUR];
-export const MAX_SAMPLES = 720;
+export const HISTORY_WINDOW_MS = LIVE_STATS_WINDOW_MS;
+export const HISTORY_WINDOWS = LIVE_STATS_WINDOWS;
 export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
 // Heartbeats arrive once per stats interval; two missed ones mean the node is gone even if its status still reads ACTIVE.
@@ -77,7 +79,7 @@ export const CLUSTER_RATE_KEYS = [
 
 export type ClusterRateKey = typeof CLUSTER_RATE_KEYS[number];
 export type MessageRates = Record<ClusterRateKey, number>;
-export type MessageSeries = Record<ClusterRateKey, TsValue[]>;
+export type MessageSeries = RateSeries;
 
 export interface ClusterNodeVm {
   id: string;
@@ -174,12 +176,6 @@ export interface ClusterRawData {
   integrations: PageData<IntegrationInfo> | null;
 }
 
-const compactFormatter = new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1});
-
-export function compactNumber(value: number | null): string {
-  return isDefinedAndNotNull(value) ? compactFormatter.format(value) : '—';
-}
-
 export function usageLevel(percent: number | null): UsageLevel {
   if (percent === null) {
     return 'ok';
@@ -215,36 +211,8 @@ export function ringArcDash(ringR: number, percent: number | null): string {
   return `${filled.toFixed(1)} ${circumference.toFixed(1)}`;
 }
 
-export function emptyMessageSeries(): MessageSeries {
-  return byRateKey(() => []);
-}
-
 export function zeroRates(): MessageRates {
   return byRateKey(() => 0);
-}
-
-export function appendLatest(series: MessageSeries, latest: TimeseriesData | null, statsIntervalMinutes: number,
-                             windowMs = HISTORY_WINDOW_MS): MessageSeries {
-  return byRateKey(key => appendSample(series[key], latestSample(latest, key, statsIntervalMinutes), windowMs));
-}
-
-export function mergeHistory(series: MessageSeries, history: TimeseriesData, statsIntervalMinutes: number,
-                             windowMs = HISTORY_WINDOW_MS): MessageSeries {
-  return byRateKey(key => trimSamples(series[key].concat(toRateSamples(history[key], statsIntervalMinutes)), windowMs));
-}
-
-export function compactBytes(value: number | null): string {
-  if (!isDefinedAndNotNull(value)) {
-    return '—';
-  }
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let scaled = value;
-  let unit = 0;
-  while (scaled >= 1024 && unit < units.length - 1) {
-    scaled /= 1024;
-    unit++;
-  }
-  return `${unit === 0 ? Math.round(scaled) : scaled.toFixed(scaled >= 10 ? 0 : 1)} ${units[unit]}`;
 }
 
 function byRateKey<T>(build: (key: ClusterRateKey) => T): Record<ClusterRateKey, T> {
@@ -389,38 +357,7 @@ function relativeTo(value: number, max: number): number {
 }
 
 function messageRates(data: TimeseriesData | null, statsIntervalMinutes: number): MessageRates {
-  return byRateKey(key => toRate(data?.[key]?.[0]?.value, statsIntervalMinutes));
-}
-
-function toRate(count: number | undefined, statsIntervalMinutes: number): number {
-  return (Number(count) || 0) / (statsIntervalMinutes > 0 ? statsIntervalMinutes : 1);
-}
-
-function latestSample(data: TimeseriesData | null, key: ChartKey, statsIntervalMinutes: number): TsValue | null {
-  const latest = data?.[key]?.[0];
-  return latest ? {ts: latest.ts, value: toRate(latest.value, statsIntervalMinutes)} : null;
-}
-
-function toRateSamples(values: TsValue[] | undefined, statsIntervalMinutes: number): TsValue[] {
-  return (values ?? []).map(sample => ({ts: sample.ts, value: toRate(sample.value, statsIntervalMinutes)}));
-}
-
-function appendSample(samples: TsValue[], sample: TsValue | null, windowMs: number): TsValue[] {
-  const last = samples[samples.length - 1];
-  if (!sample || (last && last.ts === sample.ts)) {
-    return samples;
-  }
-  return trimSamples([...samples, sample], windowMs);
-}
-
-function trimSamples(samples: TsValue[], windowMs: number): TsValue[] {
-  const byTs = new Map<number, TsValue>();
-  for (const sample of samples) {
-    byTs.set(sample.ts, sample);
-  }
-  const sorted = [...byTs.values()].sort((a, b) => a.ts - b.ts);
-  const oldest = (sorted[sorted.length - 1]?.ts ?? 0) - windowMs;
-  return sorted.filter(sample => sample.ts >= oldest).slice(-MAX_SAMPLES);
+  return byRateKey(key => scaledValue(data?.[key]?.[0]?.value, statsIntervalMinutes));
 }
 
 function percentOrNull(value: number | null | undefined): number | null {

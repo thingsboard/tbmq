@@ -331,6 +331,10 @@
     "entity": {
         "create-new": "Create new"
     },
+    "rate-chart": {
+        "aria-label": "Incoming and outgoing values over time",
+        "collecting-samples": "Collecting samples…"
+    },
     "fullscreen": {
         "exit": "Exit",
         "expand": "Expand"
