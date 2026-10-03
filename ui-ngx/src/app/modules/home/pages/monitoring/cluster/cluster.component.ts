@@ -92,6 +92,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly lastTickOk = signal(true);
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
+  readonly historyWindow = signal(HISTORY_WINDOW_MS);
   readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   readonly selectedNode = computed(() => {
@@ -150,6 +151,16 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.select(null);
   }
 
+  setHistoryWindow(windowMs: number) {
+    if (windowMs === this.historyWindow()) {
+      return;
+    }
+    this.historyWindow.set(windowMs);
+    this.historyLoaded.clear();
+    this.samples.set({});
+    this.loadHistory(this.selectedId() ?? TOTAL_ENTITY_ID);
+  }
+
   private select(id: string | null) {
     this.selectedId.set(id);
     this.router.navigate([], {relativeTo: this.route, queryParams: {nodeId: id}, queryParamsHandling: 'merge', replaceUrl: true});
@@ -199,7 +210,8 @@ export class ClusterComponent implements OnInit, OnDestroy {
     }
     this.historyLoaded.add(key);
     const endTs = Date.now();
-    this.timeseriesService.getEntityTimeseries(key, endTs - HISTORY_WINDOW_MS, endTs, MESSAGE_RATE_KEYS, MAX_SAMPLES,
+    const windowMs = this.historyWindow();
+    this.timeseriesService.getEntityTimeseries(key, endTs - windowMs, endTs, MESSAGE_RATE_KEYS, MAX_SAMPLES,
       AggregationType.NONE, undefined, Direction.ASC
     ).pipe(
       catchError(() => of(null)),
@@ -212,7 +224,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
       const statsInterval = this.statsInterval();
       this.samples.update(samples => ({
         ...samples,
-        [key]: mergeHistory(samples[key] ?? emptyMessageSeries(), history, statsInterval)
+        [key]: mergeHistory(samples[key] ?? emptyMessageSeries(), history, statsInterval, windowMs)
       }));
     });
   }
@@ -248,7 +260,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.samples.update(samples => {
       const next = {...samples};
       for (const [key, latest] of Object.entries(latestByKey)) {
-        next[key] = appendLatest(next[key] ?? emptyMessageSeries(), latest, statsInterval);
+        next[key] = appendLatest(next[key] ?? emptyMessageSeries(), latest, statsInterval, this.historyWindow());
       }
       return next;
     });

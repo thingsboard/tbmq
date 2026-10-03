@@ -713,6 +713,7 @@
             "connected": "{{count}} verbunden",
             "open-in-sessions": "In Sitzungen öffnen",
             "outgoing-messages": "Ausgehende Nachrichten",
+            "history-window": "Zeitfenster",
             "integrations-on-executor": "Integrationen auf dem Executor",
             "integrations-failed": "{{count}} fehlgeschlagen",
             "open-integrations": "Integrationen öffnen",

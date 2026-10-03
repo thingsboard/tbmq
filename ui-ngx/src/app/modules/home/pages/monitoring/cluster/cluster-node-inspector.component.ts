@@ -42,6 +42,7 @@ import {
 } from '@shared/models/resource-usage.model';
 import { formatLargeNumber } from '@core/utils';
 import { ChartKey } from '@shared/models/chart.model';
+import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import {
   ClusterMessagesChartComponent,
   MessageChartSeries
@@ -54,6 +55,8 @@ import {
   compactNumber,
   ClusterRateKey,
   emptyMessageSeries,
+  HISTORY_WINDOW_MS,
+  HISTORY_WINDOWS,
   MessageSeries,
   UsageLevel,
   usageLevel
@@ -81,7 +84,10 @@ export class ClusterNodeInspectorComponent {
   readonly kafka = input<ClusterKafkaVm | null>(null);
   readonly series = input<MessageSeries>(emptyMessageSeries());
 
+  readonly historyWindow = input(HISTORY_WINDOW_MS);
+
   readonly cleared = output<void>();
+  readonly historyWindowChange = output<number>();
 
   readonly statusStyle = computed(() => resourceUsageStatusStyle.get(this.node()?.status));
   readonly statusLabel = computed(() => resourceUsageStatusTranslationMap.get(this.node()?.status));
@@ -121,10 +127,15 @@ export class ClusterNodeInspectorComponent {
   });
 
   readonly formatLargeNumber = formatLargeNumber;
+  readonly historyWindows = HISTORY_WINDOWS;
   readonly compactNumber = compactNumber;
 
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+
+  windowLabel(windowMs: number): string {
+    return windowMs < HOUR ? `${windowMs / MINUTE}m` : `${windowMs / HOUR}h`;
+  }
 
   open(path: string) {
     this.router.navigate([path]);

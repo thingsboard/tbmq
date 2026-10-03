@@ -59,6 +59,7 @@ export const KAFKA_RADIUS = 46;
 export const EDGE_GAP = 4;
 export const EXECUTOR_EDGE_WEIGHT = 0.3;
 export const HISTORY_WINDOW_MS = HOUR;
+export const HISTORY_WINDOWS = [15 * MINUTE, HOUR, 6 * HOUR];
 export const MAX_SAMPLES = 720;
 export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
@@ -222,12 +223,14 @@ export function zeroRates(): MessageRates {
   return byRateKey(() => 0);
 }
 
-export function appendLatest(series: MessageSeries, latest: TimeseriesData | null, statsIntervalMinutes: number): MessageSeries {
-  return byRateKey(key => appendSample(series[key], latestSample(latest, key, statsIntervalMinutes)));
+export function appendLatest(series: MessageSeries, latest: TimeseriesData | null, statsIntervalMinutes: number,
+                             windowMs = HISTORY_WINDOW_MS): MessageSeries {
+  return byRateKey(key => appendSample(series[key], latestSample(latest, key, statsIntervalMinutes), windowMs));
 }
 
-export function mergeHistory(series: MessageSeries, history: TimeseriesData, statsIntervalMinutes: number): MessageSeries {
-  return byRateKey(key => trimSamples(series[key].concat(toRateSamples(history[key], statsIntervalMinutes))));
+export function mergeHistory(series: MessageSeries, history: TimeseriesData, statsIntervalMinutes: number,
+                             windowMs = HISTORY_WINDOW_MS): MessageSeries {
+  return byRateKey(key => trimSamples(series[key].concat(toRateSamples(history[key], statsIntervalMinutes)), windowMs));
 }
 
 export function compactBytes(value: number | null): string {
@@ -402,21 +405,21 @@ function toRateSamples(values: TsValue[] | undefined, statsIntervalMinutes: numb
   return (values ?? []).map(sample => ({ts: sample.ts, value: toRate(sample.value, statsIntervalMinutes)}));
 }
 
-function appendSample(samples: TsValue[], sample: TsValue | null): TsValue[] {
+function appendSample(samples: TsValue[], sample: TsValue | null, windowMs: number): TsValue[] {
   const last = samples[samples.length - 1];
   if (!sample || (last && last.ts === sample.ts)) {
     return samples;
   }
-  return trimSamples([...samples, sample]);
+  return trimSamples([...samples, sample], windowMs);
 }
 
-function trimSamples(samples: TsValue[]): TsValue[] {
+function trimSamples(samples: TsValue[], windowMs: number): TsValue[] {
   const byTs = new Map<number, TsValue>();
   for (const sample of samples) {
     byTs.set(sample.ts, sample);
   }
   const sorted = [...byTs.values()].sort((a, b) => a.ts - b.ts);
-  const oldest = (sorted[sorted.length - 1]?.ts ?? 0) - HISTORY_WINDOW_MS;
+  const oldest = (sorted[sorted.length - 1]?.ts ?? 0) - windowMs;
   return sorted.filter(sample => sample.ts >= oldest).slice(-MAX_SAMPLES);
 }
 

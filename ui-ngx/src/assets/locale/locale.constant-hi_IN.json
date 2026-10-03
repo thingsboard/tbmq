@@ -713,6 +713,7 @@
             "connected": "{{count}} कनेक्टेड",
             "open-in-sessions": "सत्रों में खोलें",
             "outgoing-messages": "आउटगोइंग संदेश",
+            "history-window": "इतिहास विंडो",
             "integrations-on-executor": "एक्ज़ीक्यूटर पर एकीकरण",
             "integrations-failed": "{{count}} विफल",
             "open-integrations": "एकीकरण खोलें",

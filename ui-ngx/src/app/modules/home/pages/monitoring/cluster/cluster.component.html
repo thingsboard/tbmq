@@ -55,7 +55,8 @@
                         (nodeSelected)="toggleSelection($event)"></tb-cluster-map>
       </div>
       <tb-cluster-node-inspector class="tb-cluster-inspector" [node]="selectedNode()" [total]="vm().total" [kafka]="selectedKafka()"
-                                 [series]="selectedSeries()" (cleared)="clearSelection()">
+                                 [series]="selectedSeries()" [historyWindow]="historyWindow()"
+                                 (cleared)="clearSelection()" (historyWindowChange)="setHistoryWindow($event)">
       </tb-cluster-node-inspector>
     </div>
   </div>

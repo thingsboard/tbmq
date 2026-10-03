@@ -198,7 +198,14 @@
         {{ 'monitoring.cluster.bytes' | translate }}
       </button>
     </span>
-    <span class="tb-spark-unit">{{ 'monitoring.cluster.last-hour' | translate }}</span>
+    <span class="tb-unit-switch" role="group" [attr.aria-label]="'monitoring.cluster.history-window' | translate">
+      @for (windowMs of historyWindows; track windowMs) {
+        <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="historyWindow() === windowMs"
+                [attr.aria-pressed]="historyWindow() === windowMs" (click)="historyWindowChange.emit(windowMs)">
+          {{ windowLabel(windowMs) }}
+        </button>
+      }
+    </span>
   </div>
   <tb-cluster-messages-chart [series]="chartSeries()"></tb-cluster-messages-chart>
 }
