@@ -35,6 +35,9 @@
   @if (loading) {
     <mat-progress-bar mode="indeterminate" class="tb-topic-tree-progress"></mat-progress-bar>
   }
+  @if (searchMode && !loading) {
+    <div class="search-total">{{ 'topic-tree.search-total' | translate: { count: (searchTotal | number) } }}</div>
+  }
   <div class="table-container">
     <table mat-table [dataSource]="rows" [trackBy]="trackRow">
       <ng-container matColumnDef="topic">
@@ -57,7 +60,7 @@
                   <mat-icon>{{ row.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
                 }
               </button>
-              <span class="mono segment" [class.wild]="row.node.wildcard" [class.empty]="row.node.segment === ''">
+              <span class="mono segment" [class.wild]="row.node.wildcard" [class.empty-segment]="row.node.segment === ''">
                 {{ row.node.segment === '' ? '∅' : row.node.segment }}
               </span>
               @if (row.node.childrenCount) {
@@ -82,7 +85,7 @@
       <ng-container matColumnDef="clients">
         <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.clients' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
-          @if (row.kind === 'node' && row.node.clientsTotal != null) {
+          @if (row.kind === 'node' && (row.node.clientsTotal ?? null) !== null) {
             <button type="button" class="chip" [class.zero]="!row.node.clientsTotal" (click)="clickChip($event, row, 'clients')">{{ row.node.clientsTotal | number }}</button>
           }
         </td>
@@ -100,7 +103,7 @@
       <ng-container matColumnDef="online">
         <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.online' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
-          @if (row.kind === 'node' && row.node.clientsOnline != null) {
+          @if (row.kind === 'node' && (row.node.clientsOnline ?? null) !== null) {
             <span class="split">{{ row.node.clientsOnline | number }} / {{ row.node.clientsOffline | number }}</span>
           }
         </td>
@@ -109,7 +112,7 @@
       <ng-container matColumnDef="shared">
         <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.shared' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
-          @if (row.kind === 'node' && row.node.sharedGroupsTotal != null) {
+          @if (row.kind === 'node' && (row.node.sharedGroupsTotal ?? null) !== null) {
             <button type="button" class="chip violet" [class.zero]="!row.node.sharedGroupsTotal" (click)="clickChip($event, row, 'shared')">{{ row.node.sharedGroupsTotal | number }}</button>
           }
         </td>
@@ -118,7 +121,7 @@
       <ng-container matColumnDef="integrations">
         <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.integrations' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
-          @if (row.kind === 'node' && row.node.integrationsTotal != null) {
+          @if (row.kind === 'node' && (row.node.integrationsTotal ?? null) !== null) {
             <button type="button" class="chip blue" [class.zero]="!row.node.integrationsTotal" (click)="clickChip($event, row, 'integrations')">{{ row.node.integrationsTotal | number }}</button>
           }
         </td>
@@ -127,7 +130,7 @@
       <ng-container matColumnDef="dropped">
         <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.dropped' | translate }}</th>
         <td mat-cell *matCellDef="let row" class="num">
-          @if (row.kind === 'node' && row.node.dropped24h != null) {
+          @if (row.kind === 'node' && (row.node.dropped24h ?? null) !== null) {
             <button type="button" class="chip red" [class.zero]="!row.node.dropped24h" (click)="clickChip($event, row, 'dropped')">{{ row.node.dropped24h | number }}</button>
           }
         </td>

@@ -57,7 +57,7 @@
       <div class="row flex flex-row items-center gap-2">
         <span class="primary flex-1">{{ r.primary }}</span>
         @if (r.secondary) {<span class="secondary mono">{{ r.secondary }}</span>}
-        @if (r.value != null) {<span class="value">{{ r.value }}</span>}
+        @if ((r.value ?? null) !== null) {<span class="value">{{ r.value }}</span>}
       </div>
     }
     @if (!loading) {

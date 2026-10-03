@@ -1473,6 +1473,7 @@
         "exact-total": "{{exact}} exact, {{total}} including subtopics",
         "no-topics": "No subscriptions yet",
         "no-matches": "No topics match the filter",
+        "search-total": "{{count}} matching topics",
         "chart-button": "Chart",
         "column": {
             "topic": "Topic",

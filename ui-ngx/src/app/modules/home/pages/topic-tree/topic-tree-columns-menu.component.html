@@ -35,9 +35,9 @@
 </button>
 <mat-menu #menu="matMenu">
   @for (col of allColumns; track col.id) {
-    <div mat-menu-item (click)="$event.stopPropagation(); toggle(col.id)">
+    <button mat-menu-item type="button" (click)="$event.stopPropagation(); toggle(col.id)">
       <mat-checkbox [checked]="isSelected(col.id)" (click)="$event.preventDefault()">{{ col.titleKey | translate }}</mat-checkbox>
-    </div>
+    </button>
   }
   <mat-divider></mat-divider>
   <button mat-menu-item type="button" (click)="reset()">{{ 'topic-tree.reset-columns' | translate }}</button>
