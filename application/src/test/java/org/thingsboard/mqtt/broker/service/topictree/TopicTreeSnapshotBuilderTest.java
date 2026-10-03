@@ -43,7 +43,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TopicTreeSnapshotBuilderTest {
+public class TopicTreeSnapshotBuilderTest {
 
     static ClientTopicSubscription sub(String filter, int qos) {
         return new ClientTopicSubscription(filter, qos);
@@ -57,7 +57,7 @@ class TopicTreeSnapshotBuilderTest {
         return ClientSessionInfo.builder().clientId(clientId).connected(connected).build();
     }
 
-    TopicTreeSnapshot fixture() {
+    public TopicTreeSnapshot fixture() {
         Map<String, Set<TopicSubscription>> subs = new HashMap<>();
         subs.put("c1", Set.of(sub("sensors/+/temperature", 1), sub("sensors/room1/#", 0)));
         subs.put("c2", Set.of(shared("sensors/+/temperature", "g1")));
