@@ -47,6 +47,7 @@ import {
 } from '@shared/models/topic-tree.models';
 import { TopicTreeTableComponent } from './topic-tree-table.component';
 import { TopicTreeColumnsMenuComponent } from './topic-tree-columns-menu.component';
+import { TopicTreeResolveComponent } from './topic-tree-resolve.component';
 import { TopicTreeDetailsComponent, TopicTreeTab } from './topic-tree-details.component';
 
 const FILTER_MIN_LENGTH = 2;
@@ -55,7 +56,7 @@ const FILTER_MIN_LENGTH = 2;
   selector: 'tb-topic-tree',
   templateUrl: './topic-tree.component.html',
   styleUrls: ['./topic-tree.component.scss'],
-  imports: [ReactiveFormsModule, MatToolbar, MatButton, MatIconButton, MatIcon, MatTooltip, MatFormField, MatHint, MatPrefix, MatSuffix, MatInput, MatDrawer, MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent]
+  imports: [ReactiveFormsModule, MatToolbar, MatButton, MatIconButton, MatIcon, MatTooltip, MatFormField, MatHint, MatPrefix, MatSuffix, MatInput, MatDrawer, MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent, TopicTreeResolveComponent]
 })
 export class TopicTreeComponent implements OnInit, AfterViewInit {
 
@@ -131,6 +132,18 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
 
   clearFilter(): void {
     this.filterControl.setValue('');
+  }
+
+  revealPath(path: string): void {
+    this.filterControl.setValue('');
+    this.filter = '';
+    this.selectedNode = null;
+    // the table must see the cleared filter input before it reloads the tree
+    setTimeout(() => this.table.reveal(path));
+  }
+
+  openSubscriptions(filter: string): void {
+    this.router.navigate(['/subscriptions'], { queryParams: { topicFilter: filter, topicMatch: 'EXACT' } });
   }
 
   refresh(): void {

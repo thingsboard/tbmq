@@ -1,0 +1,70 @@
+<!--
+
+    ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+
+    Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+
+    NOTICE: All information contained herein is, and remains
+    the property of ThingsBoard, Inc. and its suppliers,
+    if any.  The intellectual and technical concepts contained
+    herein are proprietary to ThingsBoard, Inc.
+    and its suppliers and may be covered by U.S. and Foreign Patents,
+    patents in process, and are protected by trade secret or copyright law.
+
+    Dissemination of this information or reproduction of this material is strictly forbidden
+    unless prior written permission is obtained from COMPANY.
+
+    Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+    managers or contractors who have executed Confidentiality and Non-disclosure agreements
+    explicitly covering such access.
+
+    The copyright notice above does not evidence any actual or intended publication
+    or disclosure  of  this source code, which includes
+    information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+    ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+    OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+    THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+    AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+    THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+    DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+    OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+
+-->
+<div class="tb-topic-tree-resolve flex flex-col gap-1">
+  <form class="flex flex-row items-center gap-2" (ngSubmit)="resolve()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="topic-field">
+      <mat-label>{{ 'topic-tree.resolve-topic' | translate }}</mat-label>
+      <input matInput [formControl]="topic" [placeholder]="'topic-tree.resolve-placeholder' | translate">
+      @if (topic.touched && topic.invalid && topic.value) {
+        <mat-error>{{ 'topic-tree.resolve-invalid' | translate }}</mat-error>
+      }
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="submit" [disabled]="loading">{{ 'topic-tree.resolve' | translate }}</button>
+    @if (result) {
+      <button mat-icon-button type="button" (click)="clear()"><mat-icon>close</mat-icon></button>
+    }
+  </form>
+  @if (result) {
+    <div class="result">
+      @if (result.matches.length) {
+        <div class="summary">{{ 'topic-tree.resolve-result' | translate: { subscribers: result.subscribersTotal, clients: result.clientsTotal } }}</div>
+        @for (m of result.matches; track m.topicFilter) {
+          <div class="match flex flex-row items-center gap-2">
+            <span class="mono filter">{{ m.topicFilter }}</span>
+            <span class="chip">{{ m.subscriptions | number }}</span>
+            <span class="meta">
+              @for (q of m.qos | keyvalue; track q.key) {<span>QoS {{ q.key }}: {{ q.value }}</span>}
+              @if (m.integrations) {<span>· {{ m.integrations }} {{ 'topic-tree.column.integrations' | translate }}</span>}
+              @if (m.sharedGroups) {<span>· {{ m.sharedGroups }} {{ 'topic-tree.column.shared' | translate }}</span>}
+            </span>
+            <span class="flex-1"></span>
+            <button mat-button type="button" (click)="showInTree.emit(m.topicFilter)">{{ 'topic-tree.show-in-tree' | translate }}</button>
+            <button mat-button type="button" (click)="openInSubscriptions.emit(m.topicFilter)">{{ 'topic-tree.open-in-subscriptions' | translate }}</button>
+          </div>
+        }
+      } @else {
+        <div class="summary">{{ 'topic-tree.resolve-none' | translate }}</div>
+      }
+    </div>
+  }
+</div>

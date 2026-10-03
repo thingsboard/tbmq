@@ -52,6 +52,7 @@
       <mat-icon>refresh</mat-icon>
     </button>
   </mat-toolbar>
+  <tb-topic-tree-resolve (showInTree)="revealPath($event)" (openInSubscriptions)="openSubscriptions($event)"></tb-topic-tree-resolve>
   <mat-drawer-container class="flex-1" [hasBackdrop]="false">
     <mat-drawer-content class="flex flex-col">
       <tb-topic-tree-table #table class="flex-1"
