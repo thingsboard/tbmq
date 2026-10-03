@@ -55,7 +55,7 @@ public final class TopicTreeSnapshotBuilder {
         TopicTreeNode root = new TopicTreeNode(null, null, 0);
         for (Map.Entry<String, Set<TopicSubscription>> e : subscriptions.entrySet()) {
             String clientId = e.getKey();
-            for (TopicSubscription ts : e.getValue()) {
+            for (TopicSubscription ts : new ArrayList<>(e.getValue())) {
                 TopicTreeNode node = walk(root, ts.getTopicFilter());
                 boolean integration = ts instanceof IntegrationTopicSubscription;
                 node.addRef(new SubRef(clientId, ts.getQos(), integration, ts.getShareName()));

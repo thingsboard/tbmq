@@ -36,7 +36,16 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCach
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+
+import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -101,5 +110,52 @@ class TopicTreeServiceImplTest {
         service.getSnapshot();
         queued.get(0).run();
         assertThat(service.getSnapshot()).isSameAs(a);
+    }
+
+    @Test
+    void concurrentModificationOnFirstIterationIsRetried() {
+        AtomicInteger iterations = new AtomicInteger();
+        Set<TopicSubscription> flaky = new AbstractSet<>() {
+            private final List<TopicSubscription> items = List.of(new ClientTopicSubscription("a/b", 1));
+
+            @Override
+            public Iterator<TopicSubscription> iterator() {
+                if (iterations.incrementAndGet() == 1) {
+                    throw new ConcurrentModificationException();
+                }
+                return items.iterator();
+            }
+
+            @Override
+            public int size() {
+                return items.size();
+            }
+        };
+        when(subs.getAllClientSubscriptions()).thenReturn(Map.of("c1", flaky));
+
+        TopicTreeSnapshot s = service.getSnapshot();
+
+        assertThat(iterations.get()).isEqualTo(2);
+        assertThat(s.find("a/b").subscriptionsExact()).isEqualTo(1);
+    }
+
+    @Test
+    void rejectedExecutionResetsRebuildingFlag() {
+        TopicTreeSnapshot a = service.getSnapshot();
+        now.addAndGet(6000);
+        service.executor = r -> {
+            throw new RejectedExecutionException();
+        };
+        assertThat(service.getSnapshot()).isSameAs(a);
+        service.executor = queued::add;
+        service.getSnapshot();
+        assertThat(queued).hasSize(1);
+    }
+
+    @Test
+    void disabledServiceDoesNotBuild() {
+        service = new TopicTreeServiceImpl(subs, retained, sessions, false, 5000, 500, 2);
+        assertThat(service.getSnapshot().nodesCount()).isEqualTo(1);
+        verify(subs, times(0)).getAllClientSubscriptions();
     }
 }

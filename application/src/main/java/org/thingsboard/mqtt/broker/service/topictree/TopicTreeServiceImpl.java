@@ -40,7 +40,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
+import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,6 +88,9 @@ public class TopicTreeServiceImpl implements TopicTreeService {
     @Override
     public TopicTreeSnapshot getSnapshot() {
         TopicTreeSnapshot current = snapshot;
+        if (!enabled) {
+            return current != null ? current : emptySnapshot();
+        }
         if (current == null) {
             synchronized (this) {
                 if (snapshot == null) {
@@ -95,20 +100,44 @@ public class TopicTreeServiceImpl implements TopicTreeService {
             }
         }
         if (clock.getAsLong() - current.getBuiltAt() >= ttlMs && rebuilding.compareAndSet(false, true)) {
-            executor.execute(() -> {
-                try {
-                    snapshot = build();
-                } catch (Exception e) {
-                    log.warn("Failed to rebuild topic tree snapshot, keeping the previous one", e);
-                } finally {
-                    rebuilding.set(false);
-                }
-            });
+            try {
+                executor.execute(this::rebuild);
+            } catch (RuntimeException e) {
+                rebuilding.set(false);
+                log.warn("Failed to schedule topic tree snapshot rebuild, keeping the previous one", e);
+            }
         }
         return current;
     }
 
+    private void rebuild() {
+        try {
+            snapshot = build();
+        } catch (Throwable t) {
+            rebuilding.set(false);
+            if (t instanceof VirtualMachineError error) {
+                throw error;
+            }
+            log.warn("Failed to rebuild topic tree snapshot, keeping the previous one", t);
+            return;
+        }
+        rebuilding.set(false);
+    }
+
+    private TopicTreeSnapshot emptySnapshot() {
+        return TopicTreeSnapshotBuilder.build(Map.of(), List.of(), Map.of(), clock.getAsLong());
+    }
+
     private TopicTreeSnapshot build() {
+        try {
+            return doBuild();
+        } catch (ConcurrentModificationException e) {
+            log.debug("Concurrent subscription change while building topic tree snapshot, retrying once");
+            return doBuild();
+        }
+    }
+
+    private TopicTreeSnapshot doBuild() {
         long start = System.nanoTime();
         List<String> retained = retainedMsgListenerService.getRetainedMessages().stream().map(RetainedMsg::getTopic).toList();
         TopicTreeSnapshot result = TopicTreeSnapshotBuilder.build(
