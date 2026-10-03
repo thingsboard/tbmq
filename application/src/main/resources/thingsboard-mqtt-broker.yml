@@ -964,6 +964,15 @@ mqtt:
   retain-msg:
     # Processing period for clearing retained messages by the MQTT expiry feature (in ms).
     expiry-processing-period-ms: "${MQTT_RETAIN_MSG_EXPIRY_PROCESSING_PERIOD_MS:60000}"
+  topic-tree:
+    # Enables the Topic tree page API (PE). Snapshots are built from in-memory subscription, retained message and session replicas.
+    enabled: "${MQTT_TOPIC_TREE_ENABLED:true}"
+    # How long a built snapshot is served before a background rebuild is triggered (in ms).
+    snapshot-ttl-ms: "${MQTT_TOPIC_TREE_SNAPSHOT_TTL_MS:5000}"
+    # Upper bound for pageSize/limit on Topic tree endpoints; larger values are clamped.
+    max-page-size: "${MQTT_TOPIC_TREE_MAX_PAGE_SIZE:500}"
+    # Minimum length of the topic filter text used by the search and chart endpoints.
+    filter-min-length: "${MQTT_TOPIC_TREE_FILTER_MIN_LENGTH:2}"
   client-session-expiry:
     # Cron job to schedule clearing of expired and inactive client sessions. Defaults to 'every hour', e.g. at 20:00:00 UTC.
     cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"
