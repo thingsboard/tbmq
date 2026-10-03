@@ -30,5 +30,32 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TopicResolveDto {
+
+    private String topic;
+    private int subscribersTotal;
+    private int clientsTotal;
+    private List<Match> matches;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Match {
+        private String topicFilter;
+        private int subscriptions;
+        private int clients;
+        private Map<Integer, Integer> qos;
+        private int integrations;
+        private int sharedGroups;
+    }
 }

@@ -154,6 +154,18 @@ public class TopicTreeController extends BaseController {
                 .toList();
     }
 
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping("/resolve")
+    public TopicResolveDto resolve(@RequestParam String topic) throws ThingsboardException {
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        snapshotEnabledCheck();
+        try {
+            return topicResolveService.resolve(topic);
+        } catch (IllegalArgumentException e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+    }
+
     private void snapshotEnabledCheck() throws ThingsboardException {
         if (!topicTreeService.isEnabled()) {
             throw new ThingsboardException("Topic tree is disabled", ThingsboardErrorCode.ITEM_NOT_FOUND);
