@@ -61,6 +61,7 @@ public final class TopicTreeSnapshot {
     private final TopicTreeNode root;
     private final List<TopicTreeNode> allNodes;
     private final Map<String, ClientSessionInfo> sessions;
+    private volatile String[] lowerPaths;
     @Getter
     private final long builtAt;
 
@@ -69,6 +70,7 @@ public final class TopicTreeSnapshot {
         this.allNodes = allNodes;
         this.sessions = sessions;
         this.builtAt = builtAt;
+        this.lowerPaths = lowerPaths();
     }
 
     public int nodesCount() {
@@ -101,7 +103,7 @@ public final class TopicTreeSnapshot {
         if (cached != null) {
             return cached;
         }
-        Set<String> clients = new HashSet<>();
+        Set<String> clients = new HashSet<>(Math.max(16, (int) (node.subscriptionsTotal / 0.75f) + 1));
         Deque<TopicTreeNode> stack = new ArrayDeque<>();
         stack.push(node);
         while (!stack.isEmpty()) {
@@ -144,9 +146,10 @@ public final class TopicTreeSnapshot {
     public PageData<TopicTreeNode> search(String text, PageLink link) {
         String needle = text.toLowerCase(Locale.ROOT);
         List<TopicTreeNode> hits = new ArrayList<>();
-        for (TopicTreeNode n : allNodes) {
-            if (n.path() != null && n.path().toLowerCase(Locale.ROOT).contains(needle)) {
-                hits.add(n);
+        String[] lower = lowerPaths();
+        for (int i = 0; i < lower.length; i++) {
+            if (lower[i] != null && lower[i].contains(needle)) {
+                hits.add(allNodes.get(i));
             }
         }
         Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder());
@@ -206,6 +209,19 @@ public final class TopicTreeSnapshot {
             hits = head;
         }
         return hits.size() > limit ? new ArrayList<>(hits.subList(0, limit)) : hits;
+    }
+
+    private String[] lowerPaths() {
+        String[] result = lowerPaths;
+        if (result == null) {
+            result = new String[allNodes.size()];
+            for (int i = 0; i < result.length; i++) {
+                String path = allNodes.get(i).path();
+                result[i] = path == null ? null : path.toLowerCase(Locale.ROOT);
+            }
+            lowerPaths = result;
+        }
+        return result;
     }
 
     private static Comparator<TopicTreeNode> comparator(SortOrder sortOrder) {

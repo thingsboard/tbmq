@@ -42,7 +42,7 @@ public final class TopicTreeNode {
     private final String segment;
     private final String path;
     private final int depth;
-    private final Map<String, TopicTreeNode> children = new HashMap<>(4);
+    private Map<String, TopicTreeNode> children = Collections.emptyMap();
     private List<SubRef> refs = Collections.emptyList();
 
     int subscriptionsExact;
@@ -64,7 +64,16 @@ public final class TopicTreeNode {
     }
 
     TopicTreeNode child(String segment) {
-        return children.computeIfAbsent(segment, s -> new TopicTreeNode(s, path == null ? s : path + "/" + s, depth + 1));
+        TopicTreeNode existing = children.get(segment);
+        if (existing != null) {
+            return existing;
+        }
+        if (children.isEmpty()) {
+            children = new HashMap<>(4);
+        }
+        TopicTreeNode created = new TopicTreeNode(segment, path == null ? segment : path + "/" + segment, depth + 1);
+        children.put(segment, created);
+        return created;
     }
 
     TopicTreeNode existingChild(String segment) {
