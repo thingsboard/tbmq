@@ -39,11 +39,18 @@ import {
   serviceTypeMap
 } from '@app/shared/models/resource-usage.model';
 import { DialogService } from '@core/services/dialog.service';
+import { tap } from 'rxjs/operators';
+import { TsValue } from '@shared/models/chart.model';
+import { inlineSparkline } from '@shared/models/live-stats.model';
+import { isDefinedAndNotNull } from '@core/utils';
+
+const CPU_TREND_SAMPLES = 60;
 
 @Injectable()
 export class ResourceUsageTableConfigResolver {
 
   private readonly config: EntityTableConfig<ResourceUsage> = new EntityTableConfig<ResourceUsage>();
+  private readonly cpuHistory = new Map<string, TsValue[]>();
 
   constructor(private timeseriesService: TimeseriesService,
               private translate: TranslateService,
@@ -64,7 +71,9 @@ export class ResourceUsageTableConfigResolver {
     this.config.displayPagination = false;
 
     this.config.cellActionDescriptors = this.configureCellActions();
-    this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos();
+    this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos().pipe(
+      tap(page => this.recordCpu(page.data))
+    );
 
     this.config.columns.push(
       new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'common.update-time', this.datePipe, '150px', undefined, undefined, false),
@@ -73,6 +82,9 @@ export class ResourceUsageTableConfigResolver {
           entity => serviceTypeMap.get(entity.serviceType), undefined, false),
       new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '100px', (entity) => this.usageCell(entity.cpuUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.cpuUsage, 'cpu', entity.cpuCount)),
+      new EntityTableColumn<ResourceUsage>('cpuTrend', 'monitoring.resource-usage.cpu-trend', '120px',
+        (entity) => inlineSparkline((this.cpuHistory.get(entity.serviceId) ?? []).map(sample => sample.value)), undefined, false, undefined,
+        (entity) => this.cpuTrendTooltip(entity)),
       new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '100px', (entity) => this.usageCell(entity.memoryUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.memoryUsage, 'ram', entity.totalMemory)),
       new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '100px', (entity) => this.usageCell(entity.diskUsage),
@@ -123,6 +135,27 @@ export class ResourceUsageTableConfigResolver {
         }
       }
     );
+  }
+
+  // Snapshots are kept per page visit; the Cluster tab charts the stored history.
+  private recordCpu(usages: ResourceUsage[]) {
+    const ts = Date.now();
+    for (const usage of usages) {
+      if (!isDefinedAndNotNull(usage.cpuUsage)) {
+        continue;
+      }
+      const samples = this.cpuHistory.get(usage.serviceId) ?? [];
+      this.cpuHistory.set(usage.serviceId, [...samples, {ts, value: usage.cpuUsage}].slice(-CPU_TREND_SAMPLES));
+    }
+  }
+
+  private cpuTrendTooltip(usage: ResourceUsage): string {
+    const values = (this.cpuHistory.get(usage.serviceId) ?? []).map(sample => sample.value);
+    if (values.length < 2) {
+      return undefined;
+    }
+    return this.translate.instant('monitoring.resource-usage.cpu-trend-tooltip',
+      {min: Math.round(Math.min(...values)), max: Math.round(Math.max(...values)), count: values.length});
   }
 
   private toGb(value: number): string {

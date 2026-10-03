@@ -34,7 +34,6 @@ import { defer, Observable, of, timer } from 'rxjs';
 import { catchError, map, scan, shareReplay, startWith, switchMap } from 'rxjs/operators';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { ConfigService } from '@core/http/config.service';
-import { ChartKey } from '@shared/models/chart.model';
 import { AggregationType } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
 import {
@@ -61,7 +60,7 @@ export class LiveStatsService {
   private readonly configService = inject(ConfigService);
   private readonly streams = new Map<string, Observable<RateSeries>>();
 
-  watch(entityId: string, keys: readonly ChartKey[], options: LiveStatsOptions = {}): Observable<RateSeries> {
+  watch(entityId: string, keys: readonly string[], options: LiveStatsOptions = {}): Observable<RateSeries> {
     const windowMs = options.windowMs ?? LIVE_STATS_WINDOW_MS;
     const perMinute = options.perMinute ?? true;
     const cacheKey = `${entityId}|${keys.join(',')}|${windowMs}|${perMinute}`;
@@ -73,7 +72,7 @@ export class LiveStatsService {
     return stream;
   }
 
-  private buildStream(entityId: string, keys: readonly ChartKey[], windowMs: number, perMinute: boolean): Observable<RateSeries> {
+  private buildStream(entityId: string, keys: readonly string[], windowMs: number, perMinute: boolean): Observable<RateSeries> {
     const divisor = () => perMinute ? (this.configService.brokerConfig?.statsCollectionInterval || 1) : 1;
     return defer(() => {
       const endTs = Date.now();

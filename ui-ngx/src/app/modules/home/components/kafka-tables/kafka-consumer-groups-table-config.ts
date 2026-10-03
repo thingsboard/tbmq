@@ -24,6 +24,7 @@ import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { TsValue } from '@shared/models/chart.model';
+import { inlineSparkline } from '@shared/models/live-stats.model';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
@@ -84,22 +85,7 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
   }
 
   private lagTrendCell(group: KafkaConsumerGroup): string {
-    const samples = this.lagHistory.get(group.groupId) ?? [];
-    if (samples.length < 2) {
-      return '<span style="color: rgba(0,0,0,.38)">—</span>';
-    }
-    const values = samples.map(sample => sample.value);
-    const max = Math.max(1, ...values);
-    const width = 96;
-    const height = 20;
-    const stepX = width / (values.length - 1);
-    const points = values.map((value, i) => `${(i * stepX).toFixed(1)},${(height - 2 - value / max * (height - 4)).toFixed(1)}`).join(' ');
-    const last = values[values.length - 1];
-    const first = values[0];
-    const color = last > first ? '#d12730' : last < first ? '#198038' : 'rgba(0,0,0,.54)';
-    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="display:block;overflow:visible">` +
-      `<polyline fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="${points}"/>` +
-      `</svg>`;
+    return inlineSparkline((this.lagHistory.get(group.groupId) ?? []).map(sample => sample.value));
   }
 
   private lagTrendTooltip(group: KafkaConsumerGroup): string {

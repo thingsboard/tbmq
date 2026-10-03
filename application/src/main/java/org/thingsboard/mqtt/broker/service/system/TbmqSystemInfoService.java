@@ -117,7 +117,11 @@ public class TbmqSystemInfoService implements SystemInfoService {
         getCpuCount().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, (long) value))));
         getTotalDiskSpace().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, value))));
 
-        withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
+        if (tsList.isEmpty()) {
+            return;
+        }
+        // Stored as history (not latest-only) so the UI can chart CPU, memory and disk per node.
+        withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
         }, throwable -> log.warn("Failed to process TBMQ service info {}", serviceInfo, throwable));
     }
 
@@ -152,7 +156,10 @@ public class TbmqSystemInfoService implements SystemInfoService {
             tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, systemInfo.getTotalDiskSpace())));
         }
 
-        withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
+        if (tsList.isEmpty()) {
+            return;
+        }
+        withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
         }, throwable -> log.warn("Failed to process IE service info {}", serviceInfo, throwable));
     }
 

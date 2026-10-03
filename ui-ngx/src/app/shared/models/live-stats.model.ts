@@ -29,7 +29,7 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
+import { TimeseriesData, TsValue } from '@shared/models/chart.model';
 import { HOUR, MINUTE, SECOND } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
 
@@ -66,7 +66,7 @@ export function compactBytes(value: number | null): string {
   return `${unit === 0 ? Math.round(scaled) : scaled.toFixed(scaled >= 10 ? 0 : 1)} ${units[unit]}`;
 }
 
-export function emptyRateSeries(keys: readonly ChartKey[]): RateSeries {
+export function emptyRateSeries(keys: readonly string[]): RateSeries {
   return Object.fromEntries(keys.map(key => [key, []]));
 }
 
@@ -74,12 +74,12 @@ export function scaledValue(count: number | undefined, divisor: number): number 
   return (Number(count) || 0) / (divisor > 0 ? divisor : 1);
 }
 
-export function seedRateSeries(keys: readonly ChartKey[], history: TimeseriesData, divisor: number, windowMs: number): RateSeries {
+export function seedRateSeries(keys: readonly string[], history: TimeseriesData, divisor: number, windowMs: number): RateSeries {
   return Object.fromEntries(keys.map(key => [key, trimSamples(
     (history[key] ?? []).map(sample => ({ts: sample.ts, value: scaledValue(sample.value, divisor)})), windowMs)]));
 }
 
-export function appendLatestToSeries(series: RateSeries, keys: readonly ChartKey[], latest: TimeseriesData | null,
+export function appendLatestToSeries(series: RateSeries, keys: readonly string[], latest: TimeseriesData | null,
                                      divisor: number, windowMs: number): RateSeries {
   return Object.fromEntries(keys.map(key => {
     const samples = series[key] ?? [];
@@ -100,4 +100,30 @@ function trimSamples(samples: TsValue[], windowMs: number): TsValue[] {
   const sorted = [...byTs.values()].sort((a, b) => a.ts - b.ts);
   const oldest = (sorted[sorted.length - 1]?.ts ?? 0) - windowMs;
   return sorted.filter(sample => sample.ts >= oldest).slice(-LIVE_STATS_MAX_SAMPLES);
+}
+
+export interface InlineSparklineOptions {
+  width?: number;
+  height?: number;
+  // Stroke by direction: first vs last sample. Falls back to a neutral grey when flat.
+  risingColor?: string;
+  fallingColor?: string;
+}
+
+// Markup-string sparkline for table cells rendered through [innerHTML]; components use tb-rate-chart instead.
+export function inlineSparkline(values: number[], options: InlineSparklineOptions = {}): string {
+  if (values.length < 2) {
+    return '<span style="color: rgba(0,0,0,.38)">—</span>';
+  }
+  const width = options.width ?? 96;
+  const height = options.height ?? 20;
+  const max = Math.max(1, ...values);
+  const stepX = width / (values.length - 1);
+  const points = values.map((value, i) => `${(i * stepX).toFixed(1)},${(height - 2 - value / max * (height - 4)).toFixed(1)}`).join(' ');
+  const first = values[0];
+  const last = values[values.length - 1];
+  const color = last > first ? (options.risingColor ?? '#d12730') : last < first ? (options.fallingColor ?? '#198038') : 'rgba(0,0,0,.54)';
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="display:block;overflow:visible">` +
+    `<polyline fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="${points}"/>` +
+    `</svg>`;
 }
