@@ -136,6 +136,11 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   color: rgba(0, 0, 0, 0.54);
 }
 
+.tb-stat-sub-failed {
+  color: $tb-crit;
+  font-weight: 500;
+}
+
 .tb-inspector-link {
   align-self: flex-start;
 }

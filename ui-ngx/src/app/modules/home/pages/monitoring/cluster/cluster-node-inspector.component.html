@@ -67,6 +67,20 @@
       {{ 'monitoring.cluster.open-in-sessions' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
     </button>
+  } @else {
+    <div class="tb-stat">
+      <span class="tb-stat-label">{{ 'monitoring.cluster.integrations-on-executor' | translate }}</span>
+      <span class="tb-stat-value">{{ n.integrations ? n.integrations.total : '—' }}</span>
+      @if (n.integrations) {
+        <span class="tb-stat-sub" [class.tb-stat-sub-failed]="n.integrations.failed > 0">
+          {{ 'monitoring.cluster.integrations-failed' | translate: {count: n.integrations.failed} }}
+        </span>
+      }
+    </div>
+    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/integrations')">
+      {{ 'monitoring.cluster.open-integrations' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </button>
   }
 
   <div class="tb-divider"></div>

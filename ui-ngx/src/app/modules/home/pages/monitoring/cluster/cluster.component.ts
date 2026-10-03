@@ -41,6 +41,7 @@ import { catchError, map, retry, switchMap, takeUntil } from 'rxjs/operators';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { KafkaService } from '@core/http/kafka.service';
+import { IntegrationService } from '@core/http/integration.service';
 import { ConfigService } from '@core/http/config.service';
 import { RequestConfig } from '@core/http/http-utils';
 import { PageLink } from '@shared/models/page/page-link';
@@ -49,6 +50,7 @@ import { Direction } from '@shared/models/page/sort-order';
 import { ChartKey, TimeseriesData, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ServiceType } from '@shared/models/resource-usage.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
+import { IntegrationInfo } from '@shared/models/integration.models';
 import { AggregationType, SECOND } from '@shared/models/time/time.models';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
 import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
@@ -103,6 +105,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private readonly timeseriesService = inject(TimeseriesService);
   private readonly clientSessionService = inject(ClientSessionService);
   private readonly kafkaService = inject(KafkaService);
+  private readonly integrationService = inject(IntegrationService);
   private readonly configService = inject(ConfigService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -110,6 +113,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private lastUpdated: number | null = null;
   private kafkaBrokers: PageData<KafkaBroker> | null = null;
   private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
+  private integrations: PageData<IntegrationInfo> | null = null;
   private readonly historyLoaded = new Set<string>();
   private readonly destroy$ = new Subject<void>();
 
@@ -162,7 +166,10 @@ export class ClusterComponent implements OnInit, OnDestroy {
         : of(this.kafkaBrokers),
       consumerGroups: refreshKafka
         ? quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST))
-        : of(this.consumerGroups)
+        : of(this.consumerGroups),
+      integrations: refreshKafka
+        ? quiet(this.integrationService.getIntegrationsInfo(new PageLink(1000), QUIET_REQUEST))
+        : of(this.integrations)
     }).pipe(
       switchMap(partial => {
         const brokerIds = (partial.services?.data ?? [])
@@ -218,6 +225,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
     }
     this.kafkaBrokers = raw.kafkaBrokers ?? this.kafkaBrokers;
     this.consumerGroups = raw.consumerGroups ?? this.consumerGroups;
+    this.integrations = raw.integrations ?? this.integrations;
 
     const vm = assembleClusterVm(raw, this.vm(), this.statsInterval());
     this.vm.set(vm);

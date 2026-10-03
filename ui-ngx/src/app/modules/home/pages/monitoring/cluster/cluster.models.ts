@@ -33,6 +33,7 @@ import { ResourceUsage, ResourceUsageStatus, ServiceType } from '@shared/models/
 import { ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/models/session.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
+import { IntegrationInfo } from '@shared/models/integration.models';
 import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
 import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -89,6 +90,7 @@ export interface ClusterNodeVm {
   disk: number | null;
   cpuLevel: UsageLevel;
   sessions: ClientSessionStatsInfo | null;
+  integrations: ClusterIntegrationsVm | null;
   rates: MessageRates;
   hasDrops: boolean;
   x: number;
@@ -96,6 +98,11 @@ export interface ClusterNodeVm {
   ringR: number;
   discR: number;
   countLabel: string;
+}
+
+export interface ClusterIntegrationsVm {
+  total: number;
+  failed: number;
 }
 
 export interface ClusterEdgeVm {
@@ -163,6 +170,7 @@ export interface ClusterRawData {
   consumerGroups: PageData<KafkaConsumerGroup> | null;
   latestByBroker: Record<string, TimeseriesData | null>;
   latestTotal: TimeseriesData | null;
+  integrations: PageData<IntegrationInfo> | null;
 }
 
 const compactFormatter = new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1});
@@ -275,6 +283,7 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     ringR: BROKER_RING_RADIUS,
     discR: discRadius(sessions[i]?.totalCount ?? 0, maxSessions),
     sessions: sessions[i],
+    integrations: null,
     rates: rates[i],
     statsIntervalMinutes
   }));
@@ -284,6 +293,7 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     ringR: EXECUTOR_RING_RADIUS,
     discR: EXECUTOR_DISC_RADIUS,
     sessions: null,
+    integrations: executorIntegrations(raw.integrations, info.serviceId),
     rates: zeroRates(),
     statsIntervalMinutes
   }));
@@ -354,6 +364,15 @@ function nodeSessions(byNode: ClientSessionNodeStatsInfo | null, serviceId: stri
   return byNode[serviceId] ?? {connectedCount: 0, disconnectedCount: 0, totalCount: 0};
 }
 
+// Integrations report the executor they run on in status.serviceId; those not started yet have no status.
+function executorIntegrations(integrations: PageData<IntegrationInfo> | null, serviceId: string): ClusterIntegrationsVm | null {
+  if (!integrations) {
+    return null;
+  }
+  const mine = integrations.data.filter(integration => integration.status?.serviceId === serviceId);
+  return {total: mine.length, failed: mine.filter(integration => integration.status?.success === false).length};
+}
+
 function byServiceId(a: ResourceUsage, b: ResourceUsage): number {
   return a.serviceId.localeCompare(b.serviceId);
 }
@@ -411,6 +430,7 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
   ringR: number;
   discR: number;
   sessions: ClientSessionStatsInfo | null;
+  integrations: ClusterIntegrationsVm | null;
   rates: MessageRates;
   statsIntervalMinutes: number;
 }): ClusterNodeVm {
@@ -429,6 +449,7 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
     disk: percentOrNull(info.diskUsage),
     cpuLevel: usageLevel(cpu),
     sessions: layout.sessions,
+    integrations: layout.integrations,
     rates: layout.rates,
     hasDrops: layout.rates[ChartKey.droppedMsgs] > 0,
     x: layout.x,
