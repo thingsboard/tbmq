@@ -113,4 +113,4 @@ export interface TopicTreeRow {
 }
 
 export const toTreePath = (filter: string): string =>
-  filter.startsWith('$share/') ? filter.split('/').slice(2).join('/') : filter;
+  !filter ? '' : filter.startsWith('$share/') ? filter.split('/').slice(2).join('/') : filter;

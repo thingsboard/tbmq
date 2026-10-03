@@ -30,7 +30,8 @@ import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild,
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime } from 'rxjs/operators';
+import { EMPTY, Observable, Subject, merge } from 'rxjs';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import * as echarts from 'echarts/core';
 import { BarChart } from 'echarts/charts';
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
@@ -74,6 +75,7 @@ export class TopicTreeChartComponent implements AfterViewInit, OnDestroy {
   private readonly service = inject(TopicTreeService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly reload$ = new Subject<void>();
   private chart: ECharts;
   private resizeObserver: ResizeObserver;
 
@@ -87,39 +89,53 @@ export class TopicTreeChartComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.chart = echarts.init(this.chartEl.nativeElement);
     this.chart.on('click', params => {
-      this.router.navigate(['/topic-tree'], { queryParams: { path: this.points[this.points.length - 1 - params.dataIndex].path } });
+      const point = this.points[this.points.length - 1 - params.dataIndex];
+      if (point) {
+        this.router.navigate(['/topic-tree'], { queryParams: { path: point.path } });
+      }
     });
     this.resizeObserver = new ResizeObserver(() => this.chart.resize());
     this.resizeObserver.observe(this.chartEl.nativeElement);
-    this.form.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load());
-    this.load();
+    merge(this.form.valueChanges.pipe(debounceTime(300)), this.reload$).pipe(
+      switchMap(() => this.fetch()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(points => {
+      this.points = points;
+      this.loading = false;
+      this.render();
+    });
+    this.reload$.next();
   }
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
     this.chart?.dispose();
+    this.chart = null;
   }
 
   load(): void {
+    this.reload$.next();
+  }
+
+  private fetch(): Observable<TopicChartPoint[]> {
     const { filter, metric, limit, depth } = this.form.value;
     const text = (filter ?? '').trim();
     if (text && text.length < FILTER_MIN_LENGTH) {
-      return;
+      return EMPTY;
     }
     this.loading = true;
-    this.service.getChart(text, metric, limit, depth ?? undefined).subscribe({
-      next: points => {
-        this.points = points;
+    return this.service.getChart(text, metric, limit, depth ?? undefined).pipe(
+      catchError(() => {
         this.loading = false;
-        this.render();
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+        return EMPTY;
+      })
+    );
   }
 
   private render(): void {
+    if (!this.chart) {
+      return;
+    }
     const reversed = [...this.points].reverse();
     const subsLabel = this.translate.instant('topic-tree.column.subscriptions');
     const clientsLabel = this.translate.instant('topic-tree.column.clients');
