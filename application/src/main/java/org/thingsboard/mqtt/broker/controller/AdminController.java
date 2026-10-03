@@ -28,7 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -77,7 +79,14 @@ public class AdminController extends BaseController {
     @GetMapping(value = "/settings/{key}")
     public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         checkParameter("key", key);
-        AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
+        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey(key);
+        if (adminSettings == null && SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey().equals(key)) {
+            // Never saved yet: hand out the built-in thresholds instead of a 404 so the monitoring pages stay quiet.
+            adminSettings = new AdminSettings();
+            adminSettings.setKey(key);
+            adminSettings.setJsonValue(JacksonUtil.valueToTree(ResourceUsageAlertSettings.defaults()));
+        }
+        adminSettings = checkNotNull(adminSettings, "No Administration settings found for key: " + key);
         if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
             ((ObjectNode) adminSettings.getJsonValue()).remove("password");
         }
