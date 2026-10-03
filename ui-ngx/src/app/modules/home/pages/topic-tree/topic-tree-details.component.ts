@@ -29,7 +29,7 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { Clipboard } from '@angular/cdk/clipboard';
@@ -70,6 +70,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
   @Input() node: TopicTreeNode;
   @Input() tab: TopicTreeTab = 'subscriptions';
   @Output() closed = new EventEmitter<void>();
+  @Output() tabChange = new EventEmitter<TopicTreeTab>();
 
   readonly tabs = TOPIC_TREE_TABS;
   full: TopicTreeNode;
@@ -82,25 +83,29 @@ export class TopicTreeDetailsComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly clipboard = inject(Clipboard);
   private readonly cd = inject(ChangeDetectorRef);
+  private requestId = 0;
 
   get tabIndex(): number {
     return this.tabs.indexOf(this.tab);
   }
 
-  ngOnChanges(): void {
+  get displayTotal(): number {
+    return this.tab === 'dropped' ? (this.full?.dropped24h ?? 0) : this.total;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
     if (!this.node) {
       return;
     }
-    this.full = null;
-    this.topicTree.getNode(this.node.path, ['clients', 'online', 'shared', 'integrations']).subscribe(full => {
-      this.full = full;
-      this.cd.markForCheck();
-    });
+    if (changes.node) {
+      this.loadFull();
+    }
     this.loadTab();
   }
 
   selectTab(index: number): void {
     this.tab = this.tabs[index];
+    this.tabChange.emit(this.tab);
     this.loadTab();
   }
 
@@ -143,14 +148,29 @@ export class TopicTreeDetailsComponent implements OnChanges {
     }
   }
 
+  private loadFull(): void {
+    const node = this.node;
+    this.full = null;
+    this.topicTree.getNode(node.path, ['clients', 'online', 'shared', 'integrations', 'dropped']).subscribe({
+      next: full => {
+        if (node !== this.node) {
+          return;
+        }
+        this.full = full;
+        this.cd.markForCheck();
+      },
+      error: () => {}
+    });
+  }
+
   private loadTab(): void {
     this.loading = true;
     this.rows = [];
     this.cd.markForCheck();
-    const tab = this.tab;
-    this.fetch(tab).subscribe({
+    const requestId = ++this.requestId;
+    this.fetch(this.tab).subscribe({
       next: ({ rows, total }) => {
-        if (tab !== this.tab) {
+        if (requestId !== this.requestId) {
           return;
         }
         this.rows = rows;
@@ -159,8 +179,10 @@ export class TopicTreeDetailsComponent implements OnChanges {
         this.cd.markForCheck();
       },
       error: () => {
-        this.loading = false;
-        this.cd.markForCheck();
+        if (requestId === this.requestId) {
+          this.loading = false;
+          this.cd.markForCheck();
+        }
       }
     });
   }
@@ -191,7 +213,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
       case 'retained':
         return of({ total: this.node.retainedTotal, rows: [] });
       case 'dropped':
-        return of({ total: this.node.dropped24h ?? 0, rows: [] });
+        return of({ total: 0, rows: [] });
     }
   }
 }

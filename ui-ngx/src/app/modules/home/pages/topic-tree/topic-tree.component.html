@@ -65,7 +65,7 @@
     </mat-drawer-content>
     <mat-drawer mode="side" position="end" [opened]="!!selectedNode" class="tb-topic-tree-drawer mat-elevation-z4">
       @if (selectedNode) {
-        <tb-topic-tree-details [node]="selectedNode" [tab]="selectedTab" (closed)="closeDetails()"></tb-topic-tree-details>
+        <tb-topic-tree-details [node]="selectedNode" [tab]="selectedTab" (closed)="closeDetails()" (tabChange)="selectedTab = $event"></tb-topic-tree-details>
       }
     </mat-drawer>
   </mat-drawer-container>

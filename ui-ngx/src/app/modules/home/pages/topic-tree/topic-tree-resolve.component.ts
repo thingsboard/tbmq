@@ -30,7 +30,7 @@
 ///
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output, inject } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, KeyValuePipe } from '@angular/common';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatFormField, MatError, MatLabel } from '@angular/material/form-field';
@@ -47,7 +47,7 @@ const CONCRETE_TOPIC = /^[^+#]+$/;
   templateUrl: './topic-tree-resolve.component.html',
   styleUrls: ['./topic-tree-resolve.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DecimalPipe, KeyValuePipe, MatButton, MatIconButton, MatFormField, MatLabel, MatError, MatIcon, MatInput, TranslateModule]
+  imports: [FormsModule, ReactiveFormsModule, DecimalPipe, KeyValuePipe, MatButton, MatIconButton, MatFormField, MatLabel, MatError, MatIcon, MatInput, TranslateModule]
 })
 export class TopicTreeResolveComponent {
 

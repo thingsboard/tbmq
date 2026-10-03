@@ -62,7 +62,7 @@
     }
     @if (!loading) {
       <div class="summary">
-        {{ total | number }}
+        {{ displayTotal | number }}
         <button mat-button type="button" color="primary" (click)="openIn()">{{ ('topic-tree.open-in-' + openTarget()) | translate }}</button>
       </div>
     }

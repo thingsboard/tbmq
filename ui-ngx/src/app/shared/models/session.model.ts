@@ -220,7 +220,7 @@ export class SessionQuery {
     if (this.clientIpAddress?.length) {
       query += `&clientIpAddress=${this.clientIpAddress}`;
     }
-    if (this.topicFilter?.length) {
+    if (this.topicFilter?.length || (this.topicFilter != null && this.topicMatch)) {
       query += `&topicFilter=${encodeURIComponent(this.topicFilter)}`;
       if (this.topicMatch) {
         query += `&topicMatch=${this.topicMatch}`;

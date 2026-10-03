@@ -124,7 +124,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
         this.subscriptionsFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;
       }
-      if (routerQueryParams?.topicFilter) {
+      if (routerQueryParams?.topicFilter || (routerQueryParams?.topicFilter === '' && routerQueryParams.topicMatch)) {
         this.subscriptionsFilterConfig.topicFilter = routerQueryParams?.topicFilter;
         delete queryParams.topicFilter;
       }

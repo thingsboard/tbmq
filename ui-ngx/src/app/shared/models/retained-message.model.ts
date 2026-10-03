@@ -56,6 +56,7 @@ export class RetainedMessagesQuery {
     this.topicMatch = filter?.topicMatch;
     this.payload = filter?.payload;
     this.qosList = filter?.qosList;
+    this.topicName = filter?.topicName;
     if (isNotEmptyStr(filter?.topicName)) {
       this.pageLink.textSearch = filter.topicName;
     }
@@ -65,6 +66,9 @@ export class RetainedMessagesQuery {
     let query = this.pageLink.toQuery();
     if (this.topicMatch) {
       query += `&topicMatch=${this.topicMatch}`;
+      if (this.topicName === '') {
+        query += '&textSearch=';
+      }
     }
     if (this.payload?.length) {
       query += `&payload=${encodeURIComponent(this.payload)}`;

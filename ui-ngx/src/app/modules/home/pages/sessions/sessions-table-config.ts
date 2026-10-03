@@ -136,7 +136,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;
       }
-      if (routerQueryParams?.topicFilter) {
+      if (routerQueryParams?.topicFilter || (routerQueryParams?.topicFilter === '' && routerQueryParams.topicMatch)) {
         this.sessionFilterConfig.topicFilter = routerQueryParams?.topicFilter;
         this.sessionFilterConfig.topicMatch = routerQueryParams?.topicMatch;
         delete queryParams.topicFilter;

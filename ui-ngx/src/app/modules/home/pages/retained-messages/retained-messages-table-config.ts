@@ -106,7 +106,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     const routerQueryParams: RetainedMessagesFilterConfig = this.route.snapshot.queryParams;
     if (routerQueryParams) {
       const queryParams = deepClone(routerQueryParams);
-      if (routerQueryParams?.topicName) {
+      if (routerQueryParams?.topicName || (routerQueryParams?.topicName === '' && routerQueryParams.topicMatch)) {
         this.retainedMessagesFilterConfig.topicName = routerQueryParams?.topicName;
         delete queryParams.topicName;
       }

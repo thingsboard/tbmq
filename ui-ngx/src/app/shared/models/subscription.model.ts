@@ -80,7 +80,7 @@ export class ClientSubscriptionsQuery {
     if (this.clientId?.length) {
       query += `&clientId=${encodeURIComponent(this.clientId)}`;
     }
-    if (this.topicFilter?.length) {
+    if (this.topicFilter?.length || (this.topicFilter != null && this.topicMatch)) {
       query += `&topicFilter=${encodeURIComponent(this.topicFilter)}`;
     }
     if (this.topicMatch) {
