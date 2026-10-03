@@ -29,9 +29,9 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -41,6 +41,7 @@ import {
   serviceTypeMap
 } from '@shared/models/resource-usage.model';
 import { formatLargeNumber } from '@core/utils';
+import { ChartKey } from '@shared/models/chart.model';
 import {
   ClusterMessagesChartComponent,
   MessageChartSeries
@@ -48,11 +49,16 @@ import {
 import {
   ClusterNodeVm,
   ClusterTotalVm,
+  compactBytes,
+  compactNumber,
+  ClusterRateKey,
   emptyMessageSeries,
   MessageSeries,
   UsageLevel,
   usageLevel
 } from '@home/pages/monitoring/cluster/cluster.models';
+
+type ChartUnit = 'messages' | 'bytes';
 
 interface MeterVm {
   label: string;
@@ -90,18 +96,31 @@ export class ClusterNodeInspectorComponent {
     ];
   });
   readonly showChart = computed(() => this.node()?.kind !== 'executor');
+  readonly unit = signal<ChartUnit>('messages');
   readonly chartSeries = computed<MessageChartSeries[]>(() => {
-    const rates = this.node() ?? this.total();
+    const {rates} = this.node() ?? this.total();
     const series = this.series();
-    return [
-      {key: 'incoming', label: 'monitoring.cluster.incoming-messages', points: series.incoming, current: rates.incomingRate},
-      {key: 'outgoing', label: 'monitoring.cluster.outgoing-messages', points: series.outgoing, current: rates.outgoingRate}
-    ];
+    const perMinute = this.translate.instant('monitoring.cluster.per-min');
+    const asMessages = (value: number) => `${compactNumber(value)} ${this.translate.instant('monitoring.cluster.msg-per-min')}`;
+    const asBytes = (value: number) => `${compactBytes(value)}${perMinute}`;
+    const build = (key: ClusterRateKey, label: string, format: (value: number) => string): MessageChartSeries =>
+      ({key, label, points: series[key], current: rates[key], format});
+    return this.unit() === 'messages'
+      ? [
+        build(ChartKey.incomingMsgs, 'monitoring.cluster.incoming-messages', asMessages),
+        build(ChartKey.outgoingMsgs, 'monitoring.cluster.outgoing-messages', asMessages),
+        build(ChartKey.droppedMsgs, 'monitoring.cluster.dropped-messages', asMessages)
+      ]
+      : [
+        build(ChartKey.inboundPayloadTraffic, 'monitoring.cluster.inbound-traffic', asBytes),
+        build(ChartKey.outboundPayloadTraffic, 'monitoring.cluster.outbound-traffic', asBytes)
+      ];
   });
 
   readonly formatLargeNumber = formatLargeNumber;
 
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   openSessions(nodeId?: string) {
     this.router.navigate(['/sessions'], nodeId ? {queryParams: {nodeIdList: nodeId}} : undefined);

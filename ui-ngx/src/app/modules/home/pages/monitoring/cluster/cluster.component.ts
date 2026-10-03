@@ -52,6 +52,7 @@ import {
   assembleClusterVm,
   ClusterMapVm,
   ClusterRawData,
+  CLUSTER_RATE_KEYS,
   emptyClusterVm,
   emptyMessageSeries,
   HISTORY_WINDOW_MS,
@@ -64,7 +65,7 @@ const REFRESH_INTERVAL = 10 * SECOND;
 // Consumer-group lag is computed through the Kafka admin client, so it is refreshed less often than node stats.
 const KAFKA_REFRESH_EVERY_TICKS = 6;
 const QUIET_REQUEST: RequestConfig = {ignoreLoading: true, ignoreErrors: true};
-const MESSAGE_RATE_KEYS = [ChartKey.incomingMsgs, ChartKey.outgoingMsgs];
+const MESSAGE_RATE_KEYS: ChartKey[] = [...CLUSTER_RATE_KEYS];
 
 const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(catchError(() => of(null)));
 

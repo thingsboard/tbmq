@@ -105,6 +105,12 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   fill: #fff;
   stroke: rgba(0, 0, 0, 0.09);
   stroke-width: 3.6;
+
+  // Node is dropping messages right now (STATUS_COLOR.INACTIVE red at low alpha, under the CPU arc).
+  &.tb-ring-track-drops {
+    fill: rgba(209, 39, 48, 0.06);
+    stroke: rgba(209, 39, 48, 0.4);
+  }
 }
 
 .tb-ring-arc {

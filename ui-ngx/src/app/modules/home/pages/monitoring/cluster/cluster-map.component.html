@@ -98,7 +98,8 @@
          [attr.aria-label]="'monitoring.cluster.node-aria-label' | translate: {id: node.id, sessions: node.sessions?.totalCount ?? 0, cpu: node.cpu ?? 0}"
          (click)="onSelect(node)" (keydown.enter)="onSelect(node, $event)" (keydown.space)="onSelect(node, $event)">
     <svg:circle class="tb-halo" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR + 7"/>
-    <svg:circle class="tb-ring-track" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"/>
+    <svg:circle [class]="node.hasDrops ? 'tb-ring-track tb-ring-track-drops' : 'tb-ring-track'"
+                [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"/>
     <svg:circle [class]="'tb-ring-arc tb-' + node.cpuLevel" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"
                 [attr.stroke-dasharray]="ringArcDash(node.ringR, node.cpu)" [attr.transform]="'rotate(-90 ' + node.x + ' ' + node.y + ')'"/>
     <svg:circle [class]="'tb-disc tb-status-' + node.status" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>

@@ -33,13 +33,19 @@
   display: block;
 }
 
-// Validated pair (deutan/protan/tritan separation and contrast against the white card).
-.tb-series-incoming {
+// Validated triple (deutan/protan/tritan separation and contrast against the white card).
+.tb-series-incomingMsgs,
+.tb-series-inboundPayloadTraffic {
   --tb-series: #58519e;
 }
 
-.tb-series-outgoing {
+.tb-series-outgoingMsgs,
+.tb-series-outboundPayloadTraffic {
   --tb-series: #00897b;
+}
+
+.tb-series-droppedMsgs {
+  --tb-series: #d47d18;
 }
 
 .tb-chart {
@@ -67,16 +73,6 @@
   stroke: rgba(0, 0, 0, 0.1);
   stroke-width: 1;
   shape-rendering: crispEdges;
-}
-
-.tb-chart-area {
-  &.tb-series-incoming {
-    fill: url(#tb-cluster-chart-fill-incoming);
-  }
-
-  &.tb-series-outgoing {
-    fill: url(#tb-cluster-chart-fill-outgoing);
-  }
 }
 
 .tb-chart-line {

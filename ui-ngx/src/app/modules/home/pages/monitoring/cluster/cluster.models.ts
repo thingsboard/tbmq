@@ -61,6 +61,17 @@ export const HISTORY_WINDOW_MS = HOUR;
 export const MAX_SAMPLES = 720;
 export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
+export const CLUSTER_RATE_KEYS = [
+  ChartKey.incomingMsgs,
+  ChartKey.outgoingMsgs,
+  ChartKey.droppedMsgs,
+  ChartKey.inboundPayloadTraffic,
+  ChartKey.outboundPayloadTraffic
+] as const;
+
+export type ClusterRateKey = typeof CLUSTER_RATE_KEYS[number];
+export type MessageRates = Record<ClusterRateKey, number>;
+export type MessageSeries = Record<ClusterRateKey, TsValue[]>;
 
 export interface ClusterNodeVm {
   id: string;
@@ -73,8 +84,8 @@ export interface ClusterNodeVm {
   disk: number | null;
   cpuLevel: UsageLevel;
   sessions: ClientSessionStatsInfo | null;
-  incomingRate: number;
-  outgoingRate: number;
+  rates: MessageRates;
+  hasDrops: boolean;
   x: number;
   y: number;
   ringR: number;
@@ -114,13 +125,8 @@ export interface ClusterTotalVm {
   hasSessionStats: boolean;
   totalSessions: number;
   connectedSessions: number;
-  incomingRate: number;
-  outgoingRate: number;
-}
-
-export interface MessageSeries {
-  incoming: TsValue[];
-  outgoing: TsValue[];
+  rates: MessageRates;
+  hasDrops: boolean;
 }
 
 export interface ClusterMapVm {
@@ -141,11 +147,6 @@ export interface ClusterRawData {
   consumerGroups: PageData<KafkaConsumerGroup> | null;
   latestByBroker: Record<string, TimeseriesData | null>;
   latestTotal: TimeseriesData | null;
-}
-
-interface MessageRates {
-  incoming: number;
-  outgoing: number;
 }
 
 const compactFormatter = new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1});
@@ -190,21 +191,37 @@ export function ringArcDash(ringR: number, percent: number | null): string {
 }
 
 export function emptyMessageSeries(): MessageSeries {
-  return {incoming: [], outgoing: []};
+  return byRateKey(() => []);
+}
+
+export function zeroRates(): MessageRates {
+  return byRateKey(() => 0);
 }
 
 export function appendLatest(series: MessageSeries, latest: TimeseriesData | null, statsIntervalMinutes: number): MessageSeries {
-  return {
-    incoming: appendSample(series.incoming, latestSample(latest, ChartKey.incomingMsgs, statsIntervalMinutes)),
-    outgoing: appendSample(series.outgoing, latestSample(latest, ChartKey.outgoingMsgs, statsIntervalMinutes))
-  };
+  return byRateKey(key => appendSample(series[key], latestSample(latest, key, statsIntervalMinutes)));
 }
 
 export function mergeHistory(series: MessageSeries, history: TimeseriesData, statsIntervalMinutes: number): MessageSeries {
-  return {
-    incoming: trimSamples(series.incoming.concat(toRateSamples(history[ChartKey.incomingMsgs], statsIntervalMinutes))),
-    outgoing: trimSamples(series.outgoing.concat(toRateSamples(history[ChartKey.outgoingMsgs], statsIntervalMinutes)))
-  };
+  return byRateKey(key => trimSamples(series[key].concat(toRateSamples(history[key], statsIntervalMinutes))));
+}
+
+export function compactBytes(value: number | null): string {
+  if (!isDefinedAndNotNull(value)) {
+    return '—';
+  }
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let scaled = value;
+  let unit = 0;
+  while (scaled >= 1024 && unit < units.length - 1) {
+    scaled /= 1024;
+    unit++;
+  }
+  return `${unit === 0 ? Math.round(scaled) : scaled.toFixed(scaled >= 10 ? 0 : 1)} ${units[unit]}`;
+}
+
+function byRateKey<T>(build: (key: ClusterRateKey) => T): Record<ClusterRateKey, T> {
+  return Object.fromEntries(CLUSTER_RATE_KEYS.map(key => [key, build(key)])) as Record<ClusterRateKey, T>;
 }
 
 export function emptyClusterVm(): ClusterMapVm {
@@ -216,7 +233,7 @@ export function emptyClusterVm(): ClusterMapVm {
     brokers: [],
     executors: [],
     kafka: {x: COLUMN_X.kafka, y: centerY, points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS), brokerCount: null, totalLag: null},
-    total: {brokerCount: 0, executorCount: 0, hasSessionStats: false, totalSessions: 0, connectedSessions: 0, incomingRate: 0, outgoingRate: 0},
+    total: {brokerCount: 0, executorCount: 0, hasSessionStats: false, totalSessions: 0, connectedSessions: 0, rates: zeroRates(), hasDrops: false},
     edges: []
   };
 }
@@ -233,8 +250,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   const rates = brokerInfos.map(info => messageRates(raw.latestByBroker[info.serviceId], statsIntervalMinutes));
   const sessions = brokerInfos.map(info => nodeSessions(raw.sessionsByNode, info.serviceId));
   const maxSessions = Math.max(0, ...sessions.map(s => s?.totalCount ?? 0));
-  const maxIncoming = Math.max(0, ...rates.map(r => r.incoming));
-  const maxOutgoing = Math.max(0, ...rates.map(r => r.outgoing));
+  const maxIncoming = Math.max(0, ...rates.map(r => r[ChartKey.incomingMsgs]));
+  const maxOutgoing = Math.max(0, ...rates.map(r => r[ChartKey.outgoingMsgs]));
 
   const brokers = brokerInfos.map((info, i) => buildNode(info, 'broker', {
     x: COLUMN_X.brokers,
@@ -250,7 +267,7 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     ringR: EXECUTOR_RING_RADIUS,
     discR: EXECUTOR_DISC_RADIUS,
     sessions: null,
-    rates: {incoming: 0, outgoing: 0}
+    rates: zeroRates()
   }));
 
   const edges: ClusterEdgeVm[] = [];
@@ -258,11 +275,11 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     edges.push(buildEdge(`e-in-${broker.id}`,
       COLUMN_X.clients + CLIENTS_PILL_HALF_WIDTH + EDGE_GAP, centerY,
       broker.x - broker.ringR - EDGE_GAP, broker.y,
-      relativeTo(broker.incomingRate, maxIncoming)));
+      relativeTo(broker.rates[ChartKey.incomingMsgs], maxIncoming)));
     edges.push(buildEdge(`e-out-${broker.id}`,
       broker.x + broker.ringR + EDGE_GAP, broker.y,
       COLUMN_X.kafka - KAFKA_RADIUS - EDGE_GAP, centerY,
-      relativeTo(broker.outgoingRate, maxOutgoing)));
+      relativeTo(broker.rates[ChartKey.outgoingMsgs], maxOutgoing)));
   }
   for (const executor of executors) {
     edges.push(buildEdge(`e-ie-${executor.id}`,
@@ -297,8 +314,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
       hasSessionStats,
       totalSessions,
       connectedSessions,
-      incomingRate: totalRates.incoming,
-      outgoingRate: totalRates.outgoing
+      rates: totalRates,
+      hasDrops: totalRates[ChartKey.droppedMsgs] > 0
     },
     edges
   };
@@ -325,10 +342,7 @@ function relativeTo(value: number, max: number): number {
 }
 
 function messageRates(data: TimeseriesData | null, statsIntervalMinutes: number): MessageRates {
-  return {
-    incoming: toRate(data?.[ChartKey.incomingMsgs]?.[0]?.value, statsIntervalMinutes),
-    outgoing: toRate(data?.[ChartKey.outgoingMsgs]?.[0]?.value, statsIntervalMinutes)
-  };
+  return byRateKey(key => toRate(data?.[key]?.[0]?.value, statsIntervalMinutes));
 }
 
 function toRate(count: number | undefined, statsIntervalMinutes: number): number {
@@ -386,8 +400,8 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
     disk: percentOrNull(info.diskUsage),
     cpuLevel: usageLevel(cpu),
     sessions: layout.sessions,
-    incomingRate: layout.rates.incoming,
-    outgoingRate: layout.rates.outgoing,
+    rates: layout.rates,
+    hasDrops: layout.rates[ChartKey.droppedMsgs] > 0,
     x: layout.x,
     y: layout.y,
     ringR: layout.ringR,

@@ -108,7 +108,16 @@
 @if (showChart()) {
   <div class="tb-divider"></div>
   <div class="tb-spark-head">
-    <span class="tb-stat-label">{{ 'monitoring.cluster.messages' | translate }}</span>
+    <span class="tb-unit-switch" role="group" [attr.aria-label]="'monitoring.cluster.chart-unit' | translate">
+      <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="unit() === 'messages'"
+              [attr.aria-pressed]="unit() === 'messages'" (click)="unit.set('messages')">
+        {{ 'monitoring.cluster.messages' | translate }}
+      </button>
+      <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="unit() === 'bytes'"
+              [attr.aria-pressed]="unit() === 'bytes'" (click)="unit.set('bytes')">
+        {{ 'monitoring.cluster.bytes' | translate }}
+      </button>
+    </span>
     <span class="tb-spark-unit">{{ 'monitoring.cluster.last-hour' | translate }}</span>
   </div>
   <tb-cluster-messages-chart [series]="chartSeries()"></tb-cluster-messages-chart>

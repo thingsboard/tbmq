@@ -33,15 +33,16 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TsValue } from '@shared/models/chart.model';
-import { compactNumber } from '@home/pages/monitoring/cluster/cluster.models';
+import { ClusterRateKey } from '@home/pages/monitoring/cluster/cluster.models';
 
-export type MessageSeriesKey = 'incoming' | 'outgoing';
+export type MessageSeriesKey = ClusterRateKey;
 
 export interface MessageChartSeries {
   key: MessageSeriesKey;
   label: string;
   points: TsValue[];
   current: number;
+  format: (value: number) => string;
 }
 
 interface SeriesPath {
@@ -64,7 +65,7 @@ interface ChartGeometry {
 interface HoverRow {
   key: MessageSeriesKey;
   label: string;
-  value: number;
+  value: string;
   y: number;
 }
 
@@ -91,18 +92,16 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
              (keydown)="onKeydown($event)" (blur)="hoverIndex.set(null)">
           @if (geometry(); as g) {
             <defs>
-              <linearGradient id="tb-cluster-chart-fill-incoming" x1="0" y1="0" x2="0" y2="1">
-                <stop class="tb-chart-fill-stop tb-series-incoming" offset="0%" stop-opacity="0.16"/>
-                <stop class="tb-chart-fill-stop tb-series-incoming" offset="100%" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="tb-cluster-chart-fill-outgoing" x1="0" y1="0" x2="0" y2="1">
-                <stop class="tb-chart-fill-stop tb-series-outgoing" offset="0%" stop-opacity="0.16"/>
-                <stop class="tb-chart-fill-stop tb-series-outgoing" offset="100%" stop-opacity="0"/>
-              </linearGradient>
+              @for (path of g.paths; track path.key) {
+                <linearGradient [attr.id]="'tb-cluster-chart-fill-' + path.key" x1="0" y1="0" x2="0" y2="1">
+                  <stop [class]="'tb-chart-fill-stop tb-series-' + path.key" offset="0%" stop-opacity="0.16"/>
+                  <stop [class]="'tb-chart-fill-stop tb-series-' + path.key" offset="100%" stop-opacity="0"/>
+                </linearGradient>
+              }
             </defs>
             <line class="tb-chart-baseline" [attr.x1]="padX" [attr.x2]="width - padX" [attr.y1]="plotBottom" [attr.y2]="plotBottom"/>
             @for (path of g.paths; track path.key) {
-              <path [class]="'tb-chart-area tb-series-' + path.key" [attr.d]="path.areaPath"/>
+              <path class="tb-chart-area" [attr.d]="path.areaPath" [attr.fill]="'url(#tb-cluster-chart-fill-' + path.key + ')'"/>
               <path [class]="'tb-chart-line tb-series-' + path.key" [attr.d]="path.linePath"/>
               <circle [class]="'tb-chart-marker tb-series-' + path.key" [attr.cx]="path.endX" [attr.cy]="path.endY" r="3.5"/>
             }
@@ -126,7 +125,7 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
             @for (row of h.rows; track row.key) {
               <div class="tb-chart-tooltip-row">
                 <span [class]="'tb-legend-key tb-series-' + row.key"></span>
-                <span class="tb-chart-tooltip-value">{{ compactNumber(row.value) }}</span>
+                <span class="tb-chart-tooltip-value">{{ row.value }}</span>
                 <span class="tb-chart-tooltip-label">{{ row.label | translate }}</span>
               </div>
             }
@@ -139,7 +138,7 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
                   [attr.aria-pressed]="!isHidden(item.key)" (click)="toggle(item.key)">
             <span [class]="'tb-legend-key tb-series-' + item.key"></span>
             <span class="tb-legend-label">{{ item.label | translate }}</span>
-            <span class="tb-legend-value">{{ compactNumber(item.current) }} {{ 'monitoring.cluster.msg-per-min' | translate }}</span>
+            <span class="tb-legend-value">{{ item.format(item.current) }}</span>
           </button>
         }
       </div>
@@ -159,7 +158,6 @@ export class ClusterMessagesChartComponent {
   readonly padX = PAD_X;
   readonly padTop = PAD_TOP;
   readonly plotBottom = PLOT_BOTTOM;
-  readonly compactNumber = compactNumber;
 
   private readonly hidden = signal<ReadonlySet<MessageSeriesKey>>(new Set());
 
@@ -203,7 +201,7 @@ export class ClusterMessagesChartComponent {
     const ts = geometry.timeline[index];
     const rows = this.visibleSeries().flatMap(item => {
       const point = item.points.find(p => p.ts === ts);
-      return point ? [{key: item.key, label: item.label, value: point.value, y: geometry.toY(point.value)}] : [];
+      return point ? [{key: item.key, label: item.label, value: item.format(point.value), y: geometry.toY(point.value)}] : [];
     });
     return {x: geometry.toX(ts), ts, rows};
   });
