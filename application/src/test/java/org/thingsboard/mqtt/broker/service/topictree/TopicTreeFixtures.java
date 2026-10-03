@@ -90,4 +90,26 @@ public final class TopicTreeFixtures {
         }
         return new Data(subs, retainedTopics, sessions);
     }
+
+    // Spec heap budget shape: about 1M subscriptions on about 100k nodes. Extra application clients fan out over the
+    // existing fleet filters, so subscriptions grow without adding nodes.
+    public static Data fanOut(int devices, int fleetFilters, int retained, int targetSubscriptions) {
+        Data base = synthetic(devices, fleetFilters, retained);
+        String[] regions = {"eu", "us", "ap", "sa"};
+        int existing = base.subs().values().stream().mapToInt(Set::size).sum();
+        int perClient = 50;
+        Random rnd = new Random(7);
+        for (int c = 0; existing < targetSubscriptions; c++) {
+            String id = "fan-" + c;
+            Set<TopicSubscription> s = new HashSet<>();
+            for (int k = 0; k < perClient; k++) {
+                int f = rnd.nextInt(fleetFilters);
+                s.add(new ClientTopicSubscription("fleet/" + regions[f % 4] + "/site" + (f % 37) + "/line" + (f % 11) + "/+/telemetry" + f, 1));
+            }
+            existing += s.size();
+            base.subs().put(id, s);
+            base.sessions().put(id, ClientSessionInfo.builder().clientId(id).connected(true).build());
+        }
+        return base;
+    }
 }

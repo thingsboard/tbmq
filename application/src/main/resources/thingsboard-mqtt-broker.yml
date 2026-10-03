@@ -973,6 +973,8 @@ mqtt:
     max-page-size: "${MQTT_TOPIC_TREE_MAX_PAGE_SIZE:500}"
     # Minimum length of the topic filter text used by the search and chart endpoints.
     filter-min-length: "${MQTT_TOPIC_TREE_FILTER_MIN_LENGTH:2}"
+    # Releases the snapshot when no Topic tree request arrived for this long (in ms), freeing its heap; the next request rebuilds it synchronously. 0 disables eviction.
+    idle-evict-ms: "${MQTT_TOPIC_TREE_IDLE_EVICT_MS:600000}"
   client-session-expiry:
     # Cron job to schedule clearing of expired and inactive client sessions. Defaults to 'every hour', e.g. at 20:00:00 UTC.
     cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"

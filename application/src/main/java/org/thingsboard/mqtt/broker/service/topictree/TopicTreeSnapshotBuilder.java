@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -52,7 +53,7 @@ public final class TopicTreeSnapshotBuilder {
                                           Collection<String> retainedTopics,
                                           Map<String, ClientSessionInfo> sessions,
                                           long builtAt) {
-        TopicTreeNode root = new TopicTreeNode(null, null, 0);
+        TopicTreeNode root = new TopicTreeNode(null, null);
         for (Map.Entry<String, Set<TopicSubscription>> e : subscriptions.entrySet()) {
             String clientId = e.getKey();
             for (TopicSubscription ts : new ArrayList<>(e.getValue())) {
@@ -69,13 +70,28 @@ public final class TopicTreeSnapshotBuilder {
             walk(root, topic).retainedExact++;
         }
         List<TopicTreeNode> all = new ArrayList<>();
+        int[] parents = new int[1024];
         Deque<TopicTreeNode> stack = new ArrayDeque<>();
+        int[] parentStack = new int[1024];
         stack.push(root);
+        parentStack[0] = -1;
         while (!stack.isEmpty()) {
             TopicTreeNode n = stack.pop();
+            int index = all.size();
+            if (index == parents.length) {
+                parents = Arrays.copyOf(parents, index * 2);
+            }
+            parents[index] = parentStack[stack.size()];
             all.add(n);
+            n.trimRefs();
             n.sharedGroupsExact = countGroups(n.refs());
-            n.children().forEach(stack::push);
+            for (TopicTreeNode c : n.children()) {
+                if (stack.size() == parentStack.length) {
+                    parentStack = Arrays.copyOf(parentStack, stack.size() * 2);
+                }
+                parentStack[stack.size()] = index;
+                stack.push(c);
+            }
         }
         for (int i = all.size() - 1; i >= 0; i--) {
             TopicTreeNode n = all.get(i);
@@ -90,7 +106,7 @@ public final class TopicTreeSnapshotBuilder {
                 n.retainedTotal += c.retainedTotal;
             }
         }
-        return new TopicTreeSnapshot(root, all, sessions, builtAt);
+        return new TopicTreeSnapshot(root, all.toArray(new TopicTreeNode[0]), Arrays.copyOf(parents, all.size()), sessions, builtAt);
     }
 
     private static TopicTreeNode walk(TopicTreeNode root, String filter) {

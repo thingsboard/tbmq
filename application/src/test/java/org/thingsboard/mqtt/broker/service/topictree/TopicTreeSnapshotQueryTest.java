@@ -36,6 +36,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TopicTreeSnapshotQueryTest {
@@ -94,5 +96,11 @@ class TopicTreeSnapshotQueryTest {
         PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(Integer.MAX_VALUE, Integer.MAX_VALUE));
         assertThat(p.getData()).isEmpty();
         assertThat(p.getTotalElements()).isEqualTo(s.getRoot().childrenCount());
+    }
+
+    @Test
+    void searchMatchesAcrossLevelsAndInheritsToDescendants() {
+        List<String> paths = s.search("RS/RO", new PageLink(100, 0)).getData().stream().map(TopicTreeNode::path).toList();
+        assertThat(paths).contains("sensors/room1", "sensors/room1/#", "sensors/room2/temperature").doesNotContain("sensors");
     }
 }

@@ -30,20 +30,26 @@
  */
 package org.thingsboard.mqtt.broker.service.topictree;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class TopicTreeNode {
 
+    // Most nodes have a handful of children, where a HashMap costs several times the array; large fan-outs switch to a map.
+    private static final int ARRAY_CHILDREN_LIMIT = 8;
+    private static final TopicTreeNode[] NO_CHILDREN = new TopicTreeNode[0];
+    private static final SubRef[] NO_REFS = new SubRef[0];
+
     private final String segment;
-    private final String path;
+    private final TopicTreeNode parent;
     private final int depth;
-    private Map<String, TopicTreeNode> children = Collections.emptyMap();
-    private List<SubRef> refs = Collections.emptyList();
+    private TopicTreeNode[] childArray = NO_CHILDREN;
+    private Map<String, TopicTreeNode> childMap;
+    private SubRef[] refs = NO_REFS;
+    private int refsCount;
 
     int subscriptionsExact;
     int subscriptionsTotal;
@@ -57,42 +63,64 @@ public final class TopicTreeNode {
     volatile TopicTreeSnapshot.ClientCounts clientCounts;
     volatile TopicTreeNode[] sortedChildren;
 
-    TopicTreeNode(String segment, String path, int depth) {
+    TopicTreeNode(String segment, TopicTreeNode parent) {
         this.segment = segment;
-        this.path = path;
-        this.depth = depth;
+        this.parent = parent;
+        this.depth = parent == null ? 0 : parent.depth + 1;
     }
 
     TopicTreeNode child(String segment) {
-        TopicTreeNode existing = children.get(segment);
+        TopicTreeNode existing = existingChild(segment);
         if (existing != null) {
             return existing;
         }
-        if (children.isEmpty()) {
-            children = new HashMap<>(4);
+        TopicTreeNode created = new TopicTreeNode(segment, this);
+        if (childMap != null) {
+            childMap.put(segment, created);
+        } else if (childArray.length < ARRAY_CHILDREN_LIMIT) {
+            childArray = Arrays.copyOf(childArray, childArray.length + 1);
+            childArray[childArray.length - 1] = created;
+        } else {
+            childMap = new HashMap<>(ARRAY_CHILDREN_LIMIT * 4);
+            for (TopicTreeNode c : childArray) {
+                childMap.put(c.segment, c);
+            }
+            childMap.put(segment, created);
+            childArray = null;
         }
-        TopicTreeNode created = new TopicTreeNode(segment, path == null ? segment : path + "/" + segment, depth + 1);
-        children.put(segment, created);
         return created;
     }
 
     TopicTreeNode existingChild(String segment) {
-        return children.get(segment);
+        if (childMap != null) {
+            return childMap.get(segment);
+        }
+        for (TopicTreeNode c : childArray) {
+            if (c.segment.equals(segment)) {
+                return c;
+            }
+        }
+        return null;
     }
 
     void addRef(SubRef ref) {
-        if (refs.isEmpty()) {
-            refs = new ArrayList<>(2);
+        if (refsCount == refs.length) {
+            refs = Arrays.copyOf(refs, Math.max(2, refsCount * 2));
         }
-        refs.add(ref);
+        refs[refsCount++] = ref;
+    }
+
+    void trimRefs() {
+        if (refsCount < refs.length) {
+            refs = Arrays.copyOf(refs, refsCount);
+        }
     }
 
     public String segment() { return segment; }
-    public String path() { return path; }
     public int depth() { return depth; }
-    public Collection<TopicTreeNode> children() { return children.values(); }
-    public int childrenCount() { return children.size(); }
-    public List<SubRef> refs() { return refs; }
+    public Collection<TopicTreeNode> children() { return childMap != null ? childMap.values() : Arrays.asList(childArray); }
+    public int childrenCount() { return childMap != null ? childMap.size() : childArray.length; }
+    public List<SubRef> refs() { return Arrays.asList(refs).subList(0, refsCount); }
     public boolean isWildcard() { return "+".equals(segment) || "#".equals(segment); }
     public int subscriptionsExact() { return subscriptionsExact; }
     public int subscriptionsTotal() { return subscriptionsTotal; }
@@ -102,4 +130,25 @@ public final class TopicTreeNode {
     public int sharedGroupsTotal() { return sharedGroupsTotal; }
     public int retainedExact() { return retainedExact; }
     public int retainedTotal() { return retainedTotal; }
+
+    // Derived rather than stored: a full path per node dominated the snapshot heap.
+    public String path() {
+        if (parent == null) {
+            return null;
+        }
+        TopicTreeNode[] chain = new TopicTreeNode[depth];
+        int length = depth - 1;
+        for (TopicTreeNode n = this; n.parent != null; n = n.parent) {
+            chain[n.depth - 1] = n;
+            length += n.segment.length();
+        }
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < chain.length; i++) {
+            if (i > 0) {
+                sb.append('/');
+            }
+            sb.append(chain[i].segment);
+        }
+        return sb.toString();
+    }
 }

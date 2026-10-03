@@ -44,7 +44,8 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 
@@ -59,13 +60,15 @@ public class TopicTreeServiceImpl implements TopicTreeService {
     private final long ttlMs;
     private final int maxPageSize;
     private final int filterMinLength;
-    private final ExecutorService ownExecutor;
+    private final long idleEvictMs;
+    private final ScheduledExecutorService ownExecutor;
     private final AtomicBoolean rebuilding = new AtomicBoolean();
 
     LongSupplier clock = System::currentTimeMillis;
     Executor executor;
 
     private volatile TopicTreeSnapshot snapshot;
+    private volatile long lastAccess;
 
     public TopicTreeServiceImpl(ClientSubscriptionCache clientSubscriptionCache,
                                 RetainedMsgListenerService retainedMsgListenerService,
@@ -73,7 +76,8 @@ public class TopicTreeServiceImpl implements TopicTreeService {
                                 @Value("${mqtt.topic-tree.enabled:true}") boolean enabled,
                                 @Value("${mqtt.topic-tree.snapshot-ttl-ms:5000}") long ttlMs,
                                 @Value("${mqtt.topic-tree.max-page-size:500}") int maxPageSize,
-                                @Value("${mqtt.topic-tree.filter-min-length:2}") int filterMinLength) {
+                                @Value("${mqtt.topic-tree.filter-min-length:2}") int filterMinLength,
+                                @Value("${mqtt.topic-tree.idle-evict-ms:600000}") long idleEvictMs) {
         this.clientSubscriptionCache = clientSubscriptionCache;
         this.retainedMsgListenerService = retainedMsgListenerService;
         this.clientSessionCache = clientSessionCache;
@@ -81,12 +85,27 @@ public class TopicTreeServiceImpl implements TopicTreeService {
         this.ttlMs = ttlMs;
         this.maxPageSize = maxPageSize;
         this.filterMinLength = filterMinLength;
-        this.ownExecutor = ThingsBoardExecutors.initSingleExecutorService("topic-tree-builder");
+        this.idleEvictMs = idleEvictMs;
+        this.ownExecutor = ThingsBoardExecutors.newSingleScheduledThreadPool("topic-tree-builder");
         this.executor = ownExecutor;
+        if (enabled && idleEvictMs > 0) {
+            long period = Math.max(1000, Math.min(idleEvictMs, 60_000));
+            ownExecutor.scheduleWithFixedDelay(this::evictIfIdle, period, period, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    // A large broker's snapshot holds hundreds of MB; once nobody has looked at the page for a while, release it
+    // and let the next request rebuild synchronously.
+    void evictIfIdle() {
+        if (snapshot != null && clock.getAsLong() - lastAccess >= idleEvictMs) {
+            snapshot = null;
+            log.debug("Evicted idle topic tree snapshot");
+        }
     }
 
     @Override
     public TopicTreeSnapshot getSnapshot() {
+        lastAccess = clock.getAsLong();
         TopicTreeSnapshot current = snapshot;
         if (!enabled) {
             return current != null ? current : emptySnapshot();

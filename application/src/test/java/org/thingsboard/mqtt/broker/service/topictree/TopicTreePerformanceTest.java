@@ -67,4 +67,36 @@ class TopicTreePerformanceTest {
         assertThat(warm).isLessThan(20);
         assertThat(search).isLessThan(100);
     }
+
+    @Test
+    void heap() {
+        TopicTreeFixtures.Data spec = TopicTreeFixtures.fanOut(30_000, 3_000, 5_000, 1_000_000);
+        long specBytes = retainedBytes(spec);
+        TopicTreeFixtures.Data large = TopicTreeFixtures.synthetic(450_000, 3_000, 5_000);
+        retainedBytes(large);
+        assertThat(specBytes).isLessThan(150L * 1024 * 1024);
+    }
+
+    private static long retainedBytes(TopicTreeFixtures.Data d) {
+        long before = usedAfterGc();
+        TopicTreeSnapshot s = TopicTreeSnapshotBuilder.build(d.subs(), d.retained(), d.sessions(), 0);
+        long bytes = usedAfterGc() - before;
+        log.info("heap subs={} nodes={} retained={} MB", s.getRoot().subscriptionsTotal(), s.nodesCount(), bytes / (1024 * 1024));
+        return bytes;
+    }
+
+    private static long usedAfterGc() {
+        Runtime rt = Runtime.getRuntime();
+        long used = Long.MAX_VALUE;
+        for (int i = 0; i < 5; i++) {
+            System.gc();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            used = Math.min(used, rt.totalMemory() - rt.freeMemory());
+        }
+        return used;
+    }
 }

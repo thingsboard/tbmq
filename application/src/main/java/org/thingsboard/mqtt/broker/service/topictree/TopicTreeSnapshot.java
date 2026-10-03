@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public final class TopicTreeSnapshot {
 
@@ -59,26 +60,29 @@ public final class TopicTreeSnapshot {
 
     @Getter
     private final TopicTreeNode root;
-    private final List<TopicTreeNode> allNodes;
+    // Preorder (index 0 is the root): the nodes, each node's parent index and its lower-cased segment. Search and
+    // the chart scan these flat arrays instead of chasing tree pointers or keeping a full path string per node.
+    private final TopicTreeNode[] preorder;
+    private final int[] parents;
+    private final String[] lowerSegments;
     private final Map<String, ClientSessionInfo> sessions;
-    private volatile String[] lowerPaths;
     @Getter
     private final long builtAt;
 
-    TopicTreeSnapshot(TopicTreeNode root, List<TopicTreeNode> allNodes, Map<String, ClientSessionInfo> sessions, long builtAt) {
+    TopicTreeSnapshot(TopicTreeNode root, TopicTreeNode[] preorder, int[] parents, Map<String, ClientSessionInfo> sessions, long builtAt) {
         this.root = root;
-        this.allNodes = allNodes;
+        this.preorder = preorder;
+        this.parents = parents;
         this.sessions = sessions;
         this.builtAt = builtAt;
-        this.lowerPaths = lowerPaths();
+        this.lowerSegments = new String[preorder.length];
+        for (int i = 1; i < preorder.length; i++) {
+            lowerSegments[i] = preorder[i].segment().toLowerCase(Locale.ROOT);
+        }
     }
 
     public int nodesCount() {
-        return allNodes.size();
-    }
-
-    List<TopicTreeNode> allNodes() {
-        return allNodes;
+        return preorder.length;
     }
 
     public TopicTreeNode find(String path) {
@@ -146,12 +150,7 @@ public final class TopicTreeSnapshot {
     public PageData<TopicTreeNode> search(String text, PageLink link) {
         String needle = text.toLowerCase(Locale.ROOT);
         List<TopicTreeNode> hits = new ArrayList<>();
-        String[] lower = lowerPaths();
-        for (int i = 0; i < lower.length; i++) {
-            if (lower[i] != null && lower[i].contains(needle)) {
-                hits.add(allNodes.get(i));
-            }
-        }
+        forEachMatching(needle, hits::add);
         Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder());
         hits.sort(cmp != null ? cmp : BY_SUBSCRIPTIONS_DESC);
         return page(hits, link);
@@ -188,20 +187,14 @@ public final class TopicTreeSnapshot {
 
     public List<TopicTreeNode> top(String filter, Integer depth, boolean byClients, int limit) {
         String needle = filter == null ? null : filter.toLowerCase(Locale.ROOT);
-        List<TopicTreeNode> hits = new ArrayList<>();
-        for (TopicTreeNode n : allNodes) {
-            if (n.path() == null) {
-                continue;
+        List<TopicTreeNode> matches = new ArrayList<>();
+        forEachMatching(needle, n -> {
+            if (depth == null || n.depth() == depth) {
+                matches.add(n);
             }
-            if (depth != null && n.depth() != depth) {
-                continue;
-            }
-            if (needle != null && !n.path().toLowerCase(Locale.ROOT).contains(needle)) {
-                continue;
-            }
-            hits.add(n);
-        }
-        hits.sort(BY_SUBSCRIPTIONS_DESC);
+        });
+        matches.sort(BY_SUBSCRIPTIONS_DESC);
+        List<TopicTreeNode> hits = matches;
         if (byClients) {
             int prefilter = Math.min(hits.size(), limit * 4);
             List<TopicTreeNode> head = new ArrayList<>(hits.subList(0, prefilter));
@@ -211,17 +204,49 @@ public final class TopicTreeSnapshot {
         return hits.size() > limit ? new ArrayList<>(hits.subList(0, limit)) : hits;
     }
 
-    private String[] lowerPaths() {
-        String[] result = lowerPaths;
-        if (result == null) {
-            result = new String[allNodes.size()];
-            for (int i = 0; i < result.length; i++) {
-                String path = allNodes.get(i).path();
-                result[i] = path == null ? null : path.toLowerCase(Locale.ROOT);
+    // A node matches when its parent did, or when the needle ends inside its own segment. In preorder the shared
+    // buffer always starts with the parent's path, so each path is built from its parent's by one append. A null
+    // needle matches every node except the root.
+    private void forEachMatching(String needle, Consumer<TopicTreeNode> action) {
+        int n = preorder.length;
+        if (needle == null) {
+            for (int i = 1; i < n; i++) {
+                action.accept(preorder[i]);
             }
-            lowerPaths = result;
+            return;
         }
-        return result;
+        int needleLength = needle.length();
+        // Without a '/' the needle cannot span two levels, so only the node's own segment needs checking.
+        boolean crossesLevels = needle.indexOf('/') >= 0;
+        int[] lengths = new int[n];
+        boolean[] matched = new boolean[n];
+        StringBuilder path = new StringBuilder(256);
+        for (int i = 1; i < n; i++) {
+            int parent = parents[i];
+            if (matched[parent]) {
+                matched[i] = true;
+                action.accept(preorder[i]);
+                continue;
+            }
+            if (!crossesLevels) {
+                if (lowerSegments[i].contains(needle)) {
+                    matched[i] = true;
+                    action.accept(preorder[i]);
+                }
+                continue;
+            }
+            int parentLength = lengths[parent];
+            path.setLength(parentLength);
+            if (parent != 0) {
+                path.append('/');
+            }
+            path.append(lowerSegments[i]);
+            lengths[i] = path.length();
+            if (path.indexOf(needle, Math.max(0, parentLength - needleLength + 1)) >= 0) {
+                matched[i] = true;
+                action.accept(preorder[i]);
+            }
+        }
     }
 
     private static Comparator<TopicTreeNode> comparator(SortOrder sortOrder) {
@@ -242,7 +267,7 @@ public final class TopicTreeSnapshot {
 
     private static <T> PageData<T> page(List<T> all, PageLink link) {
         int from = (int) Math.min((long) link.getPage() * link.getPageSize(), all.size());
-        int to = Math.min(from + link.getPageSize(), all.size());
+        int to = (int) Math.min((long) from + link.getPageSize(), all.size());
         int totalPages = link.getPageSize() == 0 ? 0 : (all.size() + link.getPageSize() - 1) / link.getPageSize();
         return new PageData<>(new ArrayList<>(all.subList(from, to)), totalPages, all.size(), to < all.size());
     }

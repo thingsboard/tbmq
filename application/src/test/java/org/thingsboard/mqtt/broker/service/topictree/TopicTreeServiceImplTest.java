@@ -70,7 +70,7 @@ class TopicTreeServiceImplTest {
         when(subs.getAllClientSubscriptions()).thenReturn(Map.of());
         when(retained.getRetainedMessages()).thenReturn(List.of());
         when(sessions.getAllClientSessions()).thenReturn(Map.of());
-        service = new TopicTreeServiceImpl(subs, retained, sessions, true, 5000, 500, 2);
+        service = new TopicTreeServiceImpl(subs, retained, sessions, true, 5000, 500, 2, 600_000);
         service.clock = now::get;
         service.executor = queued::add;
     }
@@ -154,8 +154,21 @@ class TopicTreeServiceImplTest {
 
     @Test
     void disabledServiceDoesNotBuild() {
-        service = new TopicTreeServiceImpl(subs, retained, sessions, false, 5000, 500, 2);
+        service = new TopicTreeServiceImpl(subs, retained, sessions, false, 5000, 500, 2, 600_000);
         assertThat(service.getSnapshot().nodesCount()).isEqualTo(1);
         verify(subs, times(0)).getAllClientSubscriptions();
+    }
+
+    @Test
+    void idleSnapshotIsEvictedAndRebuiltOnNextRequest() {
+        TopicTreeSnapshot first = service.getSnapshot();
+        now.addAndGet(599_999);
+        service.evictIfIdle();
+        assertThat(service.getSnapshot()).isSameAs(first);
+        now.addAndGet(600_000);
+        service.evictIfIdle();
+        TopicTreeSnapshot rebuilt = service.getSnapshot();
+        assertThat(rebuilt).isNotSameAs(first);
+        assertThat(rebuilt.getBuiltAt()).isEqualTo(now.get());
     }
 }
