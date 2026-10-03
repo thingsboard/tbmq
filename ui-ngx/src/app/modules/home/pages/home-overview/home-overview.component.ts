@@ -26,7 +26,8 @@ import { CredentialsHomeCardConfig, HomePageTitleType, SessionsHomeCardConfig } 
 import { NetworkSettingsComponent } from '@home/components/home/network-settings.component';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { SummaryPanelComponent } from '@home/components/home/summary-panel.component';
+import { HomeCardTrend, SummaryPanelComponent } from '@home/components/home/summary-panel.component';
+import { ChartKey, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ConnectionDetailsComponent } from '@home/components/home/connection-details.component';
 
 @Component({
@@ -42,6 +43,12 @@ export class HomeOverviewComponent extends PageComponent {
   sessions$ = this.clientSessionService.getClientSessionsStats();
   credentials$ = this.clientCredentialsService.getClientCredentialsStatsInfo();
   sessionConfig = SessionsHomeCardConfig;
+  sessionsTrend: HomeCardTrend = {
+    entityId: TOTAL_ENTITY_ID,
+    keys: [ChartKey.sessions],
+    labels: {[ChartKey.sessions]: 'monitoring.chart.sessions'},
+    perMinute: false
+  };
   credentialsConfig = CredentialsHomeCardConfig;
 
   constructor(

@@ -19,6 +19,14 @@
   display: flex;
   flex: 1 1 0;
 
+  .tb-home-card-container {
+    flex-direction: column;
+  }
+
+  .tb-trend {
+    margin-top: 12px;
+  }
+
   .cards {
     display: flex;
     flex: 1 1 0;

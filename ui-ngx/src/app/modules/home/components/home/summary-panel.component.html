@@ -29,4 +29,7 @@
       </div>
     }
   </section>
+  @if (trendChart(); as chart) {
+    <tb-rate-chart class="tb-trend" [series]="chart"></tb-rate-chart>
+  }
 </div>

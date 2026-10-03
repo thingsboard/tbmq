@@ -14,26 +14,56 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, input, OnDestroy, signal } from '@angular/core';
-import { Observable, retry, Subject } from 'rxjs';
+import { AfterViewInit, Component, computed, inject, input, OnDestroy, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Observable, of, retry, Subject } from 'rxjs';
 import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { shareReplay, switchMap, take, takeUntil } from 'rxjs/operators';
 import { TimeService } from '@core/services/time.service';
+import { LiveStatsService } from '@core/services/live-stats.service';
+import { RateChartComponent, RateChartSeries } from '@shared/components/chart/rate-chart.component';
+import { compactNumber } from '@shared/models/live-stats.model';
+import { ChartKey } from '@shared/models/chart.model';
+
+export interface HomeCardTrend {
+  entityId: string;
+  keys: ChartKey[];
+  labels: Record<string, string>;
+  perMinute: boolean;
+}
+
 
 @Component({
     selector: 'tb-home-summary-panel',
     templateUrl: './summary-panel.component.html',
     styleUrls: ['summary-panel.component.scss'],
-    imports: [CardTitleButtonComponent, TranslateModule]
+    imports: [CardTitleButtonComponent, TranslateModule, RateChartComponent]
 })
 export class SummaryPanelComponent implements AfterViewInit, OnDestroy {
 
   readonly cardType = input<HomePageTitleType>();
   readonly config = input<HomeCardFilter[]>();
   readonly entities$ = input<Observable<any>>();
+  readonly trend = input<HomeCardTrend | null>(null);
+
+  private readonly liveStats = inject(LiveStatsService);
+  private readonly trendSeries = toSignal(toObservable(this.trend).pipe(
+    switchMap(trend => trend ? this.liveStats.watch(trend.entityId, trend.keys, {perMinute: trend.perMinute}) : of(null))
+  ), {initialValue: null});
+  readonly trendChart = computed<RateChartSeries[] | null>(() => {
+    const trend = this.trend();
+    const series = this.trendSeries();
+    if (!trend || !series) {
+      return null;
+    }
+    return trend.keys.map(key => {
+      const points = series[key] ?? [];
+      return {key, label: trend.labels[key], points, current: points[points.length - 1]?.value ?? 0, format: compactNumber};
+    });
+  });
 
   readonly latestValues = signal({initialValue: null});
 
