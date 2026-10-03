@@ -33,11 +33,15 @@ package org.thingsboard.mqtt.broker.common.data.mqtt.dropped;
 /**
  * How a text filter is compared. {@code CONTAINS} is the default and matches a case-insensitive substring;
  * {@code EXACT} requires the whole value to be equal; {@code PREFIX} matches the value itself and everything
- * below it in the topic hierarchy ({@code a} matches {@code a} and {@code a/b} but not {@code ab/c}). An empty filter value means "no filter" in either mode.
+ * below it in the topic hierarchy ({@code a} matches {@code a} and {@code a/b} but not {@code ab/c}).
  *
- * <p>The two modes are case-asymmetric: {@code CONTAINS} lowercases both sides of the comparison, so it is
- * case-insensitive, while {@code EXACT} compares the raw values with {@code =} and is therefore
- * case-sensitive. A filter value typed in the wrong case returns zero rows under {@code EXACT} with no
+ * <p>An empty filter value means "no filter" only under {@code CONTAINS}. Under {@code EXACT} and {@code PREFIX}
+ * it is literal: {@code EXACT ""} matches only the empty value, and {@code PREFIX ""} matches the empty topic and
+ * every topic starting with {@code /}.
+ *
+ * <p>The modes are case-asymmetric: {@code CONTAINS} lowercases both sides of the comparison, so it is
+ * case-insensitive, while {@code EXACT} and {@code PREFIX} compare the raw values with {@code =} and are therefore
+ * case-sensitive. A filter value typed in the wrong case returns zero rows under {@code EXACT} or {@code PREFIX} with no
  * indication why - there is no server-side error, just an empty result.
  */
 public enum MatchMode {
