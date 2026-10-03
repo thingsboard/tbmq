@@ -40,10 +40,12 @@ import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshotBuilderTest;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +92,7 @@ class TopicTreeControllerTest {
     @Test
     void droppedColumnFillsCountsPerPathAndIsOmittedOtherwise() throws Exception {
         when(service.getMaxPageSize()).thenReturn(50);
-        when(droppedMsgPageService.sumDroppedByTopicPrefixSince(eq("sensors"), anyLong())).thenReturn(7L);
+        when(droppedMsgPageService.sumDroppedByTopicPrefixesSince(anyCollection(), anyLong())).thenReturn(Map.of("sensors", 7L));
         PageData<TopicTreeNodeDto> withDropped = controller.doChildren(null, "dropped", 100, 0, null, null);
         TopicTreeNodeDto sensors = withDropped.getData().stream().filter(d -> "sensors".equals(d.getPath())).findFirst().orElseThrow();
         assertThat(sensors.getDropped24h()).isEqualTo(7L);

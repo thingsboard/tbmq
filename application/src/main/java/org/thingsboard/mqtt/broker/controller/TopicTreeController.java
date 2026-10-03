@@ -54,6 +54,8 @@ import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -221,8 +223,9 @@ public class TopicTreeController extends BaseController {
         List<TopicTreeNodeDto> result = new ArrayList<>(dtos);
         if (cols.contains(TopicTreeColumn.DROPPED)) {
             long since = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
-            result.forEach(dto -> dto.setDropped24h(dto.getPath() == null ? null
-                    : droppedMsgPageService.sumDroppedByTopicPrefixSince(dto.getPath(), since)));
+            List<String> paths = result.stream().map(TopicTreeNodeDto::getPath).filter(Objects::nonNull).toList();
+            Map<String, Long> dropped = droppedMsgPageService.sumDroppedByTopicPrefixesSince(paths, since);
+            result.forEach(dto -> dto.setDropped24h(dto.getPath() == null ? null : dropped.getOrDefault(dto.getPath(), 0L)));
         }
         return result;
     }
