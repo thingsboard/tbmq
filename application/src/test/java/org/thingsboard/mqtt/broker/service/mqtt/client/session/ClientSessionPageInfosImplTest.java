@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -106,12 +107,15 @@ public class ClientSessionPageInfosImplTest {
                 "c3", getClientSessionInfo("c3", "tbmq2", true)
         )).when(clientSessionCache).getAllClientSessions();
 
-        Map<String, ClientSessionStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        Map<String, ClientSessionNodeStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
 
         assertEquals(Set.of("tbmq1", "tbmq2"), statsByNode.keySet());
         assertEquals(1, statsByNode.get("tbmq1").getConnectedCount());
         assertEquals(1, statsByNode.get("tbmq1").getDisconnectedCount());
         assertEquals(2, statsByNode.get("tbmq1").getTotalCount());
+        assertEquals(2, statsByNode.get("tbmq1").getDeviceCount());
+        assertEquals(0, statsByNode.get("tbmq1").getApplicationCount());
+        assertEquals(0, statsByNode.get("tbmq1").getIntegrationCount());
         assertEquals(1, statsByNode.get("tbmq2").getConnectedCount());
         assertEquals(0, statsByNode.get("tbmq2").getDisconnectedCount());
         assertEquals(1, statsByNode.get("tbmq2").getTotalCount());
@@ -121,7 +125,7 @@ public class ClientSessionPageInfosImplTest {
     public void testGetClientSessionStatsInfoByNodeWhenNoSessions() {
         doReturn(Map.of()).when(clientSessionCache).getAllClientSessions();
 
-        Map<String, ClientSessionStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        Map<String, ClientSessionNodeStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
 
         assertTrue(statsByNode.isEmpty());
     }

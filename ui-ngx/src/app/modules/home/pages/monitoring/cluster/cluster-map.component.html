@@ -61,14 +61,20 @@
   }
 
   <g class="tb-clients">
-    @for (offset of [-30, 0, 30]; track offset) {
-      <rect [class]="offset === 0 ? 'tb-clients-pill' : 'tb-clients-pill tb-clients-pill-side'"
-            [attr.x]="map.clients.x - 26" [attr.y]="map.clients.y + offset - 9" width="52" height="18" rx="9"/>
+    @for (pill of clientPills(map); track pill.key) {
+      <g>
+        <title>{{ pill.label | translate }}: {{ pill.count ?? '—' }}</title>
+        <rect [class]="pill.count ? 'tb-clients-pill' : 'tb-clients-pill tb-clients-pill-side'"
+              [attr.x]="map.clients.x - 26" [attr.y]="map.clients.y + pill.offset - 9" width="52" height="18" rx="9"/>
+        <text class="tb-pill-count" [attr.x]="map.clients.x" [attr.y]="map.clients.y + pill.offset" text-anchor="middle" dominant-baseline="central">
+          {{ pill.count === null ? '' : compactNumber(pill.count) }}
+        </text>
+      </g>
     }
     <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 62" text-anchor="middle">
       {{ map.clients.hasSessionStats ? compactNumber(map.clients.totalSessions) : '—' }} {{ 'monitoring.cluster.sessions' | translate }}
     </text>
-    <text class="tb-node-hint" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 76" text-anchor="middle">{{ 'monitoring.cluster.clients-protocols' | translate }}</text>
+    <text class="tb-node-hint" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 76" text-anchor="middle">{{ 'monitoring.cluster.clients-types' | translate }}</text>
   </g>
 
   @if (!map.brokers.length) {

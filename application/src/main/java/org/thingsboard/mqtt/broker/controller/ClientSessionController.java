@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
@@ -144,7 +145,7 @@ public class ClientSessionController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/client-session/info/by-node")
-    public Map<String, ClientSessionStatsInfoDto> getClientSessionsStatsInfoByNode() throws ThingsboardException {
+    public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionsStatsInfoByNode() throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfoByNode());
     }

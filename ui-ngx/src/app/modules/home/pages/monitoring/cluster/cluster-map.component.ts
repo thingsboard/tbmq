@@ -68,6 +68,15 @@ export class ClusterMapComponent {
     this.nodeSelected.emit(node.id);
   }
 
+  clientPills(map: ClusterMapVm): {key: string; offset: number; count: number | null; label: string}[] {
+    const known = map.clients.hasSessionStats;
+    return [
+      {key: 'device', offset: -30, count: known ? map.clients.deviceSessions : null, label: 'monitoring.cluster.devices'},
+      {key: 'application', offset: 0, count: known ? map.clients.applicationSessions : null, label: 'monitoring.cluster.applications'},
+      {key: 'integration', offset: 30, count: known ? map.clients.integrationSessions : null, label: 'monitoring.cluster.integration-clients'}
+    ];
+  }
+
   onSelectKafka(event?: Event) {
     event?.preventDefault();
     this.nodeSelected.emit(KAFKA_NODE_ID);

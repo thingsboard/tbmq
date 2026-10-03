@@ -112,7 +112,13 @@ export interface ClientSessionStatsInfo {
   totalCount: number;
 }
 
-export type ClientSessionNodeStatsInfo = Record<string, ClientSessionStatsInfo>;
+export interface ClientSessionNodeStats extends ClientSessionStatsInfo {
+  deviceCount: number;
+  applicationCount: number;
+  integrationCount: number;
+}
+
+export type ClientSessionNodeStatsInfo = Record<string, ClientSessionNodeStats>;
 
 export interface SessionFilterConfig {
   connectedStatusList?: ConnectionState[];

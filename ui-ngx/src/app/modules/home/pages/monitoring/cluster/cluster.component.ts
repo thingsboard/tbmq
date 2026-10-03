@@ -37,7 +37,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
-import { forkJoin, Observable, of, Subject, timer } from 'rxjs';
+import { combineLatest, forkJoin, Observable, of, Subject, timer } from 'rxjs';
 import { catchError, map, retry, switchMap, takeUntil } from 'rxjs/operators';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { ClientSessionService } from '@core/http/client-session.service';
@@ -63,7 +63,9 @@ import {
   CLUSTER_RATE_KEYS,
   emptyClusterVm,
   HISTORY_WINDOW_MS,
-  KAFKA_NODE_ID
+  KAFKA_NODE_ID,
+  RESOURCE_KEYS,
+  SESSIONS_KEY
 } from '@home/pages/monitoring/cluster/cluster.models';
 
 const REFRESH_INTERVAL = 10 * SECOND;
@@ -104,9 +106,18 @@ export class ClusterComponent implements OnInit, OnDestroy {
     return {entityId: isBroker ? (id ?? TOTAL_ENTITY_ID) : null, windowMs: this.historyWindow()};
   }, {equal: (a, b) => a.entityId === b.entityId && a.windowMs === b.windowMs});
   readonly selectedSeries = toSignal(toObservable(this.seriesSource).pipe(
-    switchMap(({entityId, windowMs}) => entityId
-      ? this.liveStats.watch(entityId, MESSAGE_RATE_KEYS, {windowMs})
-      : of(emptyRateSeries(MESSAGE_RATE_KEYS)))
+    switchMap(({entityId, windowMs}) => {
+      if (!entityId) {
+        return of(emptyRateSeries(MESSAGE_RATE_KEYS));
+      }
+      return combineLatest([
+        this.liveStats.watch(entityId, MESSAGE_RATE_KEYS, {windowMs}),
+        this.liveStats.watch(entityId, [SESSIONS_KEY], {windowMs, perMinute: false}),
+        this.liveStats.watch(entityId, RESOURCE_KEYS, {windowMs, perMinute: false})
+      ]).pipe(
+        map(([rates, sessions, resources]) => ({...rates, ...sessions, ...resources}))
+      );
+    })
   ), {initialValue: emptyRateSeries(MESSAGE_RATE_KEYS)});
 
   private readonly timeseriesService = inject(TimeseriesService);

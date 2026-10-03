@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -44,6 +45,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
+
+    private static final int CONNECTED = 0;
+    private static final int TOTAL = 1;
+    private static final int DEVICES = 2;
+    private static final int APPLICATIONS = 3;
+    private static final int INTEGRATIONS = 4;
+    private static final int NODE_COUNTERS = 5;
 
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
@@ -111,23 +119,35 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
     }
 
     @Override
-    public Map<String, ClientSessionStatsInfoDto> getClientSessionStatsInfoByNode() {
-        Map<String, long[]> connectedAndTotalByNode = new HashMap<>();
+    public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode() {
+        Map<String, long[]> countsByNode = new HashMap<>();
         for (ClientSessionInfo clientSessionInfo : clientSessionCache.getAllClientSessions().values()) {
             String nodeId = clientSessionInfo.getServiceId();
             if (nodeId == null) {
                 continue;
             }
-            long[] counts = connectedAndTotalByNode.computeIfAbsent(nodeId, id -> new long[2]);
-            counts[1]++;
+            long[] counts = countsByNode.computeIfAbsent(nodeId, id -> new long[NODE_COUNTERS]);
+            counts[TOTAL]++;
             if (clientSessionInfo.isConnected()) {
-                counts[0]++;
+                counts[CONNECTED]++;
+            }
+            if (clientSessionInfo.getType() != null) {
+                counts[clientTypeCounter(clientSessionInfo.getType())]++;
             }
         }
-        Map<String, ClientSessionStatsInfoDto> result = new HashMap<>(connectedAndTotalByNode.size());
-        connectedAndTotalByNode.forEach((nodeId, counts) ->
-                result.put(nodeId, new ClientSessionStatsInfoDto(counts[0], counts[1] - counts[0], counts[1])));
+        Map<String, ClientSessionNodeStatsInfoDto> result = new HashMap<>(countsByNode.size());
+        countsByNode.forEach((nodeId, counts) -> result.put(nodeId, new ClientSessionNodeStatsInfoDto(
+                counts[CONNECTED], counts[TOTAL] - counts[CONNECTED], counts[TOTAL],
+                counts[DEVICES], counts[APPLICATIONS], counts[INTEGRATIONS])));
         return result;
+    }
+
+    private static int clientTypeCounter(ClientType type) {
+        return switch (type) {
+            case DEVICE -> DEVICES;
+            case APPLICATION -> APPLICATIONS;
+            case INTEGRATION -> INTEGRATIONS;
+        };
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {

@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.permission.Operation;
-import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.service.entity.clientsession.TbClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
@@ -101,14 +101,16 @@ public class ClientSessionControllerTest {
     @Test
     void givenSessionsOnTwoNodes_whenGetStatsByNode_thenJsonKeyedByNodeId() throws Exception {
         when(clientSessionPageInfos.getClientSessionStatsInfoByNode()).thenReturn(Map.of(
-                "tbmq1", new ClientSessionStatsInfoDto(1, 1, 2),
-                "tbmq2", new ClientSessionStatsInfoDto(1, 0, 1)));
+                "tbmq1", new ClientSessionNodeStatsInfoDto(1, 1, 2, 2, 0, 0),
+                "tbmq2", new ClientSessionNodeStatsInfoDto(1, 0, 1, 0, 1, 0)));
 
         mockMvc.perform(get("/api/client-session/info/by-node"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tbmq1.connectedCount").value(1))
                 .andExpect(jsonPath("$.tbmq1.disconnectedCount").value(1))
                 .andExpect(jsonPath("$.tbmq1.totalCount").value(2))
+                .andExpect(jsonPath("$.tbmq1.deviceCount").value(2))
+                .andExpect(jsonPath("$.tbmq2.applicationCount").value(1))
                 .andExpect(jsonPath("$.tbmq2.connectedCount").value(1))
                 .andExpect(jsonPath("$.tbmq2.totalCount").value(1));
 

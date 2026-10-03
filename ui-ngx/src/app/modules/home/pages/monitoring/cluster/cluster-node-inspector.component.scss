@@ -255,6 +255,21 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   background: rgba(0, 0, 0, 0.05);
 }
 
+.tb-unit-switch-wide {
+  display: flex;
+
+  .tb-unit-option {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.tb-spark-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
 .tb-unit-option {
   padding: 2px 8px;
   border: 0;

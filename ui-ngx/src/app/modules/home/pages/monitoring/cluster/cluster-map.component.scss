@@ -84,6 +84,13 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   }
 }
 
+.tb-pill-count {
+  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+}
+
 .tb-kafka-halo {
   stroke-width: 2;
 }

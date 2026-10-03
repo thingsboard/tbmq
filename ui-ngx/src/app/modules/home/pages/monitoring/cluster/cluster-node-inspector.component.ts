@@ -46,6 +46,7 @@ import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { RateChartComponent, RateChartSeries } from '@shared/components/chart/rate-chart.component';
 import { RateSeries } from '@shared/models/live-stats.model';
 import {
+  ChartUnit,
   ClusterKafkaVm,
   ClusterNodeVm,
   ClusterTotalVm,
@@ -54,11 +55,11 @@ import {
   ClusterRateKey,
   HISTORY_WINDOW_MS,
   HISTORY_WINDOWS,
+  RESOURCE_KEYS,
+  SESSIONS_KEY,
   UsageLevel,
   usageLevel
 } from '@home/pages/monitoring/cluster/cluster.models';
-
-type ChartUnit = 'messages' | 'bytes';
 
 interface MeterVm {
   label: string;
@@ -102,28 +103,50 @@ export class ClusterNodeInspectorComponent {
   readonly staleSeconds = computed(() => Math.round((Date.now() - (this.node()?.lastUpdateTime ?? Date.now())) / 1000));
   readonly showChart = computed(() => !this.kafka() && this.node()?.kind !== 'executor');
   readonly unit = signal<ChartUnit>('messages');
+  // Resource history exists per node only; the cluster total and Kafka have no CPU, memory or disk series.
+  readonly unitOptions = computed<ChartUnit[]>(() => this.node() ? ['messages', 'bytes', 'sessions', 'resources'] : ['messages', 'bytes', 'sessions']);
+  readonly activeUnit = computed<ChartUnit>(() => this.unitOptions().includes(this.unit()) ? this.unit() : 'messages');
   readonly chartSeries = computed<RateChartSeries[]>(() => {
     const {rates} = this.node() ?? this.total();
     const series = this.series();
     const perMinute = this.translate.instant('monitoring.cluster.per-min');
     const asMessages = (value: number) => `${compactNumber(value)} ${this.translate.instant('monitoring.cluster.msg-per-min')}`;
     const asBytes = (value: number) => `${compactBytes(value)}${perMinute}`;
-    const build = (key: ClusterRateKey, label: string, format: (value: number) => string): RateChartSeries =>
-      ({key, label, points: series[key] ?? [], current: rates[key], format});
-    return this.unit() === 'messages'
-      ? [
-        build(ChartKey.incomingMsgs, 'monitoring.cluster.incoming-messages', asMessages),
-        build(ChartKey.outgoingMsgs, 'monitoring.cluster.outgoing-messages', asMessages),
-        build(ChartKey.droppedMsgs, 'monitoring.cluster.dropped-messages', asMessages)
-      ]
-      : [
-        build(ChartKey.inboundPayloadTraffic, 'monitoring.cluster.inbound-traffic', asBytes),
-        build(ChartKey.outboundPayloadTraffic, 'monitoring.cluster.outbound-traffic', asBytes)
-      ];
+    const asPercent = (value: number) => `${Math.round(value)}%`;
+    const last = (key: string) => series[key]?.[series[key].length - 1]?.value ?? 0;
+    const build = (key: string, label: string, current: number, format: (value: number) => string): RateChartSeries =>
+      ({key, label, points: series[key] ?? [], current, format});
+    switch (this.activeUnit()) {
+      case 'bytes':
+        return [
+          build(ChartKey.inboundPayloadTraffic, 'monitoring.cluster.inbound-traffic', rates[ChartKey.inboundPayloadTraffic], asBytes),
+          build(ChartKey.outboundPayloadTraffic, 'monitoring.cluster.outbound-traffic', rates[ChartKey.outboundPayloadTraffic], asBytes)
+        ];
+      case 'sessions':
+        return [build(SESSIONS_KEY, 'monitoring.chart.sessions', last(SESSIONS_KEY), compactNumber)];
+      case 'resources':
+        return [
+          build(RESOURCE_KEYS[0], 'monitoring.resource-usage.cpu-usage', this.node()?.cpu ?? 0, asPercent),
+          build(RESOURCE_KEYS[1], 'monitoring.resource-usage.memory-usage', this.node()?.ram ?? 0, asPercent),
+          build(RESOURCE_KEYS[2], 'monitoring.resource-usage.disk-usage', this.node()?.disk ?? 0, asPercent)
+        ];
+      default:
+        return [
+          build(ChartKey.incomingMsgs, 'monitoring.cluster.incoming-messages', rates[ChartKey.incomingMsgs], asMessages),
+          build(ChartKey.outgoingMsgs, 'monitoring.cluster.outgoing-messages', rates[ChartKey.outgoingMsgs], asMessages),
+          build(ChartKey.droppedMsgs, 'monitoring.cluster.dropped-messages', rates[ChartKey.droppedMsgs], asMessages)
+        ];
+    }
   });
 
   readonly formatLargeNumber = formatLargeNumber;
   readonly historyWindows = HISTORY_WINDOWS;
+  readonly unitLabels: Record<ChartUnit, string> = {
+    messages: 'monitoring.cluster.messages',
+    bytes: 'monitoring.cluster.bytes',
+    sessions: 'monitoring.chart.sessions',
+    resources: 'monitoring.cluster.resources'
+  };
   readonly compactNumber = compactNumber;
 
   private readonly router = inject(Router);

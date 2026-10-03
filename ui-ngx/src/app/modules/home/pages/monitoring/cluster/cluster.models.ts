@@ -30,7 +30,7 @@
 ///
 
 import { ResourceUsage, ResourceUsageStatus, ServiceType } from '@shared/models/resource-usage.model';
-import { ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/models/session.model';
+import { ClientSessionNodeStats, ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/models/session.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
 import { IntegrationInfo } from '@shared/models/integration.models';
@@ -78,6 +78,9 @@ export const CLUSTER_RATE_KEYS = [
 ] as const;
 
 export type ClusterRateKey = typeof CLUSTER_RATE_KEYS[number];
+export const SESSIONS_KEY = ChartKey.sessions;
+export const RESOURCE_KEYS = ['cpuUsage', 'memoryUsage', 'diskUsage'] as const;
+export type ChartUnit = 'messages' | 'bytes' | 'sessions' | 'resources';
 export type MessageRates = Record<ClusterRateKey, number>;
 export type MessageSeries = RateSeries;
 
@@ -125,6 +128,9 @@ export interface ClusterClientsVm {
   hasSessionStats: boolean;
   totalSessions: number;
   connectedSessions: number;
+  deviceSessions: number;
+  applicationSessions: number;
+  integrationSessions: number;
 }
 
 export interface ClusterKafkaGroupVm {
@@ -224,7 +230,7 @@ export function emptyClusterVm(): ClusterMapVm {
   return {
     width: VIEWBOX_WIDTH,
     height: BASE_HEIGHT,
-    clients: {x: COLUMN_X.clients, y: centerY, hasSessionStats: false, totalSessions: 0, connectedSessions: 0},
+    clients: {x: COLUMN_X.clients, y: centerY, hasSessionStats: false, totalSessions: 0, connectedSessions: 0, deviceSessions: 0, applicationSessions: 0, integrationSessions: 0},
     brokers: [],
     executors: [],
     kafka: {x: COLUMN_X.kafka, y: centerY, points: hexagonPoints(COLUMN_X.kafka, centerY, KAFKA_RADIUS), brokerCount: null, totalLag: null, brokers: [], groupCount: null, topGroups: []},
@@ -289,8 +295,9 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
 
   const nodeStats = Object.values(raw.sessionsByNode ?? {});
   const hasSessionStats = isDefinedAndNotNull(raw.sessionsByNode);
-  const totalSessions = nodeStats.reduce((sum, s) => sum + s.totalCount, 0);
-  const connectedSessions = nodeStats.reduce((sum, s) => sum + s.connectedCount, 0);
+  const sumOf = (pick: (stats: ClientSessionNodeStats) => number) => nodeStats.reduce((sum, stats) => sum + (pick(stats) || 0), 0);
+  const totalSessions = sumOf(stats => stats.totalCount);
+  const connectedSessions = sumOf(stats => stats.connectedCount);
   const totalRates = messageRates(raw.latestTotal, statsIntervalMinutes);
   const groups = raw.consumerGroups?.data.map(group => ({
     groupId: group.groupId,
@@ -301,7 +308,16 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   return {
     width: VIEWBOX_WIDTH,
     height,
-    clients: {x: COLUMN_X.clients, y: centerY, hasSessionStats, totalSessions, connectedSessions},
+    clients: {
+      x: COLUMN_X.clients,
+      y: centerY,
+      hasSessionStats,
+      totalSessions,
+      connectedSessions,
+      deviceSessions: sumOf(stats => stats.deviceCount),
+      applicationSessions: sumOf(stats => stats.applicationCount),
+      integrationSessions: sumOf(stats => stats.integrationCount)
+    },
     brokers,
     executors,
     kafka: {
@@ -332,7 +348,7 @@ function nodeSessions(byNode: ClientSessionNodeStatsInfo | null, serviceId: stri
   if (!byNode) {
     return null;
   }
-  return byNode[serviceId] ?? {connectedCount: 0, disconnectedCount: 0, totalCount: 0};
+  return byNode[serviceId] ?? {connectedCount: 0, disconnectedCount: 0, totalCount: 0, deviceCount: 0, applicationCount: 0, integrationCount: 0};
 }
 
 // Integrations report the executor they run on in status.serviceId; those not started yet have no status.
