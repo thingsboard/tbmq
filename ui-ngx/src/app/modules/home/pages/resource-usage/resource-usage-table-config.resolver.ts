@@ -39,7 +39,10 @@ import {
   serviceTypeMap
 } from '@app/shared/models/resource-usage.model';
 import { DialogService } from '@core/services/dialog.service';
-import { tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { SettingsService } from '@core/http/settings.service';
+import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
+import { map, tap } from 'rxjs/operators';
 import { TsValue } from '@shared/models/chart.model';
 import { inlineSparkline } from '@shared/models/live-stats.model';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -51,11 +54,13 @@ export class ResourceUsageTableConfigResolver {
 
   private readonly config: EntityTableConfig<ResourceUsage> = new EntityTableConfig<ResourceUsage>();
   private readonly cpuHistory = new Map<string, TsValue[]>();
+  private thresholds: ResourceUsageThresholds = {...defaultResourceUsageAlertSettings};
 
   constructor(private timeseriesService: TimeseriesService,
               private translate: TranslateService,
               private dialogService: DialogService,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              private settingsService: SettingsService) {
 
     this.config.entityType = EntityType.RESOURCE_USAGE;
     this.config.entityComponent = null;
@@ -100,8 +105,13 @@ export class ResourceUsageTableConfigResolver {
     );
   }
 
-  resolve(): EntityTableConfig<ResourceUsage> {
-    return this.config;
+  resolve(): Observable<EntityTableConfig<ResourceUsage>> {
+    return this.settingsService.getResourceUsageThresholds().pipe(
+      map(thresholds => {
+        this.thresholds = thresholds;
+        return this.config;
+      })
+    );
   }
 
   private configureCellActions(): Array<CellActionDescriptor<ResourceUsage>> {
@@ -198,10 +208,10 @@ export class ResourceUsageTableConfigResolver {
   }
 
   private isCritical(usage: number): boolean {
-    return usage > 85;
+    return usage > this.thresholds.criticalUsage;
   }
 
   private isHigh(usage: number): boolean {
-    return usage > 75;
+    return usage > this.thresholds.highUsage;
   }
 }

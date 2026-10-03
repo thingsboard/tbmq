@@ -18,7 +18,15 @@ import { Component, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  AbstractControl,
+  FormsModule,
+  ReactiveFormsModule,
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  ValidationErrors,
+  Validators
+} from '@angular/forms';
 import { Subject } from 'rxjs';
 import {
   AdminSettings,
@@ -27,6 +35,7 @@ import {
   connectivitySettingsKey,
   generalSettingsKey,
   GeneralSettings,
+  ResourceUsageAlertSettings,
   WebSocketSettings,
 } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
@@ -45,6 +54,13 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
 import { ToggleOption } from '@shared/components/toggle-header.component';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 
+// The critical band must sit above the high band, otherwise a node could be critical without ever being high.
+const thresholdsOrdered = (group: AbstractControl): ValidationErrors | null => {
+  const high = group.get('highUsage')?.value;
+  const critical = group.get('criticalUsage')?.value;
+  return high !== null && critical !== null && Number(critical) <= Number(high) ? {thresholdsOrder: true} : null;
+};
+
 @Component({
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
@@ -56,6 +72,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   generalSettingsForm: UntypedFormGroup;
   webSocketSettingsForm: UntypedFormGroup;
   connectivitySettingsForm: UntypedFormGroup;
+  resourceUsageAlertsForm: UntypedFormGroup;
 
   protocol = 'mqtt';
   listenerPortMap = new Map<ConnectivityProtocol, number>();
@@ -63,6 +80,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private generalSettings: AdminSettings<GeneralSettings>;
   private webSocketSettings: AdminSettings<WebSocketSettings>;
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
+  private resourceUsageAlertSettings: AdminSettings<ResourceUsageAlertSettings>;
 
   private destroy$ = new Subject<void>();
 
@@ -119,6 +137,17 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
       });
   }
 
+  saveResourceUsageAlertSettings() {
+    const settings: AdminSettings<ResourceUsageAlertSettings> = JSON.parse(JSON.stringify(this.resourceUsageAlertSettings));
+    settings.jsonValue = {...settings.jsonValue, ...this.resourceUsageAlertsForm.value};
+    this.settingsService.saveAdminSettings(settings)
+      .subscribe(saved => this.processResourceUsageAlertSettings(saved));
+  }
+
+  discardResourceUsageAlertSettings(): void {
+    this.resourceUsageAlertsForm.reset(this.resourceUsageAlertSettings.jsonValue);
+  }
+
   discardGeneralSettings(): void {
     const generalSettings = this.generalSettings.jsonValue;
     this.generalSettingsForm.reset(generalSettings);
@@ -157,6 +186,8 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
       return this.generalSettingsForm;
     } else if (this.webSocketSettingsForm.dirty) {
       return this.webSocketSettingsForm;
+    } else if (this.resourceUsageAlertsForm.dirty) {
+      return this.resourceUsageAlertsForm;
     }
     return this.connectivitySettingsForm;
   }
@@ -165,6 +196,16 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.buildGeneralSettingsForm();
     this.buildWebSocketSettingsForm();
     this.buildConnectivitySettingsForm();
+    this.buildResourceUsageAlertsForm();
+  }
+
+  private buildResourceUsageAlertsForm() {
+    this.resourceUsageAlertsForm = this.fb.group({
+      highUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
+      criticalUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
+      emailEnabled: [false, []],
+      emails: ['', []]
+    }, {validators: [thresholdsOrdered]});
   }
 
   private buildGeneralSettingsForm() {
@@ -222,6 +263,11 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.webSocketSettingsForm.reset(this.webSocketSettings.jsonValue);
   }
 
+  private processResourceUsageAlertSettings(settings: AdminSettings<ResourceUsageAlertSettings>): void {
+    this.resourceUsageAlertSettings = settings;
+    this.resourceUsageAlertsForm.reset(settings.jsonValue);
+  }
+
   private processConnectivitySettings(settings: AdminSettings<ConnectivitySettings>): void {
     this.connectivitySettings = settings;
     this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
@@ -231,6 +277,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.getConnectivitySettings();
     this.getWebSocketGeneralSettings();
     this.getGeneralSettings();
+    this.settingsService.getResourceUsageAlertSettings().subscribe(settings => this.processResourceUsageAlertSettings(settings));
   }
 
   private getConnectivitySettings() {

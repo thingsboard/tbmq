@@ -38,6 +38,7 @@ import { ChartKey, TimeseriesData } from '@shared/models/chart.model';
 import { MINUTE } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
 import { compactNumber, LIVE_STATS_WINDOW_MS, LIVE_STATS_WINDOWS, RateSeries, scaledValue } from '@shared/models/live-stats.model';
+import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
 
 export { compactBytes, compactNumber } from '@shared/models/live-stats.model';
 
@@ -63,8 +64,6 @@ export const EDGE_GAP = 4;
 export const EXECUTOR_EDGE_WEIGHT = 0.3;
 export const HISTORY_WINDOW_MS = LIVE_STATS_WINDOW_MS;
 export const HISTORY_WINDOWS = LIVE_STATS_WINDOWS;
-export const CRITICAL_USAGE = 85;
-export const HIGH_USAGE = 75;
 // Heartbeats arrive once per stats interval; two missed ones mean the node is gone even if its status still reads ACTIVE.
 export const STALE_AFTER_INTERVALS = 2;
 export const KAFKA_NODE_ID = 'kafka';
@@ -182,14 +181,19 @@ export interface ClusterRawData {
   integrations: PageData<IntegrationInfo> | null;
 }
 
-export function usageLevel(percent: number | null): UsageLevel {
+export const DEFAULT_THRESHOLDS: ResourceUsageThresholds = {
+  highUsage: defaultResourceUsageAlertSettings.highUsage,
+  criticalUsage: defaultResourceUsageAlertSettings.criticalUsage
+};
+
+export function usageLevel(percent: number | null, thresholds: ResourceUsageThresholds = DEFAULT_THRESHOLDS): UsageLevel {
   if (percent === null) {
     return 'ok';
   }
-  if (percent > CRITICAL_USAGE) {
+  if (percent > thresholds.criticalUsage) {
     return 'crit';
   }
-  return percent > HIGH_USAGE ? 'warn' : 'ok';
+  return percent > thresholds.highUsage ? 'warn' : 'ok';
 }
 
 export function discRadius(sessions: number, maxSessions: number): number {
@@ -239,7 +243,8 @@ export function emptyClusterVm(): ClusterMapVm {
   };
 }
 
-export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, statsIntervalMinutes: number): ClusterMapVm {
+export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, statsIntervalMinutes: number,
+                                  thresholds: ResourceUsageThresholds = DEFAULT_THRESHOLDS): ClusterMapVm {
   const services = raw.services?.data ?? [];
   const brokerInfos = services.filter(s => s.serviceType === ServiceType.TBMQ).sort(byServiceId);
   const executorInfos = services.filter(s => s.serviceType === ServiceType.TBMQ_INTEGRATION_EXECUTOR).sort(byServiceId);
@@ -262,7 +267,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     sessions: sessions[i],
     integrations: null,
     rates: rates[i],
-    statsIntervalMinutes
+    statsIntervalMinutes,
+    thresholds
   }));
   const executors = executorInfos.map((info, i) => buildNode(info, 'executor', {
     x: COLUMN_X.executors,
@@ -272,7 +278,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     sessions: null,
     integrations: executorIntegrations(raw.integrations, info.serviceId),
     rates: zeroRates(),
-    statsIntervalMinutes
+    statsIntervalMinutes,
+    thresholds
   }));
 
   const edges: ClusterEdgeVm[] = [];
@@ -389,6 +396,7 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
   integrations: ClusterIntegrationsVm | null;
   rates: MessageRates;
   statsIntervalMinutes: number;
+  thresholds: ResourceUsageThresholds;
 }): ClusterNodeVm {
   const cpu = percentOrNull(info.cpuUsage);
   const stale = info.status === ResourceUsageStatus.ACTIVE && !!info.lastUpdateTime
@@ -403,7 +411,7 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
     cpu,
     ram: percentOrNull(info.memoryUsage),
     disk: percentOrNull(info.diskUsage),
-    cpuLevel: usageLevel(cpu),
+    cpuLevel: usageLevel(cpu, layout.thresholds),
     sessions: layout.sessions,
     integrations: layout.integrations,
     rates: layout.rates,

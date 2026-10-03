@@ -21,6 +21,24 @@ export const connectivitySettingsKey = 'connectivity';
 export const webSocketSettingsKey = 'websocket';
 export const mqttAuthorizationSettingsKey = 'mqttAuthorization';
 export const generalSettingsKey = 'general';
+export const resourceUsageAlertSettingsKey = 'resourceUsageAlerts';
+
+export interface ResourceUsageThresholds {
+  highUsage: number;
+  criticalUsage: number;
+}
+
+export interface ResourceUsageAlertSettings extends ResourceUsageThresholds {
+  emailEnabled: boolean;
+  emails: string;
+}
+
+export const defaultResourceUsageAlertSettings: ResourceUsageAlertSettings = {
+  highUsage: 75,
+  criticalUsage: 85,
+  emailEnabled: false,
+  emails: ''
+};
 export const DEFAULT_HOST = window.location.hostname;
 
 export interface AdminSettings<T> {

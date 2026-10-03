@@ -70,6 +70,8 @@ public class TbmqSystemInfoServiceTest {
     private CacheProperties cacheProperties;
     @Mock
     private HashOperations<String, Object, Object> hashOperations;
+    @Mock
+    private ResourceUsageAlertService resourceUsageAlertService;
 
     @InjectMocks
     private TbmqSystemInfoService systemInfoService;
@@ -80,7 +82,7 @@ public class TbmqSystemInfoServiceTest {
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties);
+        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties, resourceUsageAlertService);
         systemInfoService.setServiceRegistryKey(SERVICE_REGISTRY_KEY);
     }
 
@@ -93,11 +95,11 @@ public class TbmqSystemInfoServiceTest {
     public void testSaveCurrentServiceInfo() {
         ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("test-service").build();
         when(serviceInfoProvider.getServiceInfo()).thenReturn(serviceInfo);
-        when(timeseriesService.saveLatest(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
+        when(timeseriesService.save(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
 
         systemInfoService.saveCurrentServiceInfo();
 
-        verify(timeseriesService).saveLatest(eq("test-service"), anyList());
+        verify(timeseriesService).save(eq("test-service"), anyList());
     }
 
     @Test
@@ -115,7 +117,7 @@ public class TbmqSystemInfoServiceTest {
 
     @Test
     public void testProcessIeServiceInfoWithSystemInfo() {
-        when(timeseriesService.saveLatest(eq("svc2"), anyList())).thenReturn(Futures.immediateFuture(null));
+        when(timeseriesService.save(eq("svc2"), anyList())).thenReturn(Futures.immediateFuture(null));
 
         ServiceInfo serviceInfo = ServiceInfo
                 .newBuilder()
@@ -134,7 +136,7 @@ public class TbmqSystemInfoServiceTest {
 
         systemInfoService.processIeServiceInfo(serviceInfo);
 
-        verify(timeseriesService).saveLatest(eq("svc2"), anyList());
+        verify(timeseriesService).save(eq("svc2"), anyList());
     }
 
     @Test

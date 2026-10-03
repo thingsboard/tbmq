@@ -54,6 +54,7 @@ import { IntegrationInfo } from '@shared/models/integration.models';
 import { SECOND } from '@shared/models/time/time.models';
 import { LiveStatsService } from '@core/services/live-stats.service';
 import { emptyRateSeries } from '@shared/models/live-stats.model';
+import { SettingsService } from '@core/http/settings.service';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
 import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
 import {
@@ -61,6 +62,7 @@ import {
   ClusterMapVm,
   ClusterRawData,
   CLUSTER_RATE_KEYS,
+  DEFAULT_THRESHOLDS,
   emptyClusterVm,
   HISTORY_WINDOW_MS,
   KAFKA_NODE_ID,
@@ -91,6 +93,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
   readonly historyWindow = signal(HISTORY_WINDOW_MS);
+  readonly thresholds = toSignal(inject(SettingsService).getResourceUsageThresholds(), {initialValue: DEFAULT_THRESHOLDS});
   readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   readonly selectedNode = computed(() => {
@@ -217,7 +220,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
     this.consumerGroups = raw.consumerGroups ?? this.consumerGroups;
     this.integrations = raw.integrations ?? this.integrations;
 
-    const vm = assembleClusterVm(raw, this.vm(), this.statsInterval());
+    const vm = assembleClusterVm(raw, this.vm(), this.statsInterval(), this.thresholds());
     this.vm.set(vm);
     this.lastUpdated = Date.now();
     this.lastTickOk.set(true);

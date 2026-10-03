@@ -44,7 +44,9 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -78,6 +80,9 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final TimeseriesService timeseriesService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final CacheProperties cacheProperties;
+    private final ResourceUsageAlertService resourceUsageAlertService;
+
+    private static final Set<String> USAGE_PERCENT_KEYS = Set.of(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
 
     private ScheduledExecutorService scheduler;
     @Setter
@@ -120,6 +125,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (tsList.isEmpty()) {
             return;
         }
+        resourceUsageAlertService.evaluate(serviceInfo.getServiceId(), serviceInfoProvider.getServiceType(), usagePercents(tsList));
         // Stored as history (not latest-only) so the UI can chart CPU, memory and disk per node.
         withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
         }, throwable -> log.warn("Failed to process TBMQ service info {}", serviceInfo, throwable));
@@ -159,8 +165,19 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (tsList.isEmpty()) {
             return;
         }
+        resourceUsageAlertService.evaluate(serviceInfo.getServiceId(), serviceInfo.getServiceType(), usagePercents(tsList));
         withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
         }, throwable -> log.warn("Failed to process IE service info {}", serviceInfo, throwable));
+    }
+
+    private static Map<String, Long> usagePercents(List<TsKvEntry> tsList) {
+        Map<String, Long> usage = new HashMap<>();
+        for (TsKvEntry entry : tsList) {
+            if (USAGE_PERCENT_KEYS.contains(entry.getKey())) {
+                entry.getLongValue().ifPresent(value -> usage.put(entry.getKey(), value));
+            }
+        }
+        return usage;
     }
 
     @Override

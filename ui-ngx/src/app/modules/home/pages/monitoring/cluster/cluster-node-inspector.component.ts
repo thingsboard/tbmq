@@ -45,6 +45,7 @@ import { ChartKey } from '@shared/models/chart.model';
 import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { RateChartComponent, RateChartSeries } from '@shared/components/chart/rate-chart.component';
 import { RateSeries } from '@shared/models/live-stats.model';
+import { ResourceUsageThresholds } from '@shared/models/settings.models';
 import {
   ChartUnit,
   ClusterKafkaVm,
@@ -53,6 +54,7 @@ import {
   compactBytes,
   compactNumber,
   ClusterRateKey,
+  DEFAULT_THRESHOLDS,
   HISTORY_WINDOW_MS,
   HISTORY_WINDOWS,
   RESOURCE_KEYS,
@@ -82,6 +84,7 @@ export class ClusterNodeInspectorComponent {
   readonly series = input<RateSeries>({});
 
   readonly historyWindow = input(HISTORY_WINDOW_MS);
+  readonly thresholds = input<ResourceUsageThresholds>(DEFAULT_THRESHOLDS);
 
   readonly cleared = output<void>();
   readonly historyWindowChange = output<number>();
@@ -95,9 +98,9 @@ export class ClusterNodeInspectorComponent {
       return [];
     }
     return [
-      {label: 'monitoring.resource-usage.cpu-usage', value: node.cpu, level: usageLevel(node.cpu)},
-      {label: 'monitoring.resource-usage.memory-usage', value: node.ram, level: usageLevel(node.ram)},
-      {label: 'monitoring.resource-usage.disk-usage', value: node.disk, level: usageLevel(node.disk)}
+      {label: 'monitoring.resource-usage.cpu-usage', value: node.cpu, level: usageLevel(node.cpu, this.thresholds())},
+      {label: 'monitoring.resource-usage.memory-usage', value: node.ram, level: usageLevel(node.ram, this.thresholds())},
+      {label: 'monitoring.resource-usage.disk-usage', value: node.disk, level: usageLevel(node.disk, this.thresholds())}
     ];
   });
   readonly staleSeconds = computed(() => Math.round((Date.now() - (this.node()?.lastUpdateTime ?? Date.now())) / 1000));
