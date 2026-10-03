@@ -53,10 +53,7 @@ export class TopicTreeService {
   public getChildren(path: string | null, columns: string[], page: number, pageSize: number,
                      config?: RequestConfig): Observable<PageData<TopicTreeNode>> {
     const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(',') };
-    if (path !== null) {
-      queryParams.path = path;
-    }
-    return this.http.get<PageData<TopicTreeNode>>('/api/topic-tree/children', this.options(queryParams, config));
+    return this.http.get<PageData<TopicTreeNode>>(this.url('/api/topic-tree/children', path), this.options(queryParams, config));
   }
 
   public search(filter: string, columns: string[], page: number, pageSize: number,
@@ -67,19 +64,13 @@ export class TopicTreeService {
 
   public getNode(path: string | null, columns: string[], config?: RequestConfig): Observable<TopicTreeNode> {
     const queryParams: QueryParams = { columns: columns.join(',') };
-    if (path !== null) {
-      queryParams.path = path;
-    }
-    return this.http.get<TopicTreeNode>('/api/topic-tree/node', this.options(queryParams, config));
+    return this.http.get<TopicTreeNode>(this.url('/api/topic-tree/node', path), this.options(queryParams, config));
   }
 
   public getEntities(path: string | null, kind: TopicTreeEntityKind, page: number, pageSize: number,
                      config?: RequestConfig): Observable<PageData<TopicTreeEntity>> {
     const queryParams: QueryParams = { kind, page: `${page}`, pageSize: `${pageSize}` };
-    if (path !== null) {
-      queryParams.path = path;
-    }
-    return this.http.get<PageData<TopicTreeEntity>>('/api/topic-tree/entities', this.options(queryParams, config));
+    return this.http.get<PageData<TopicTreeEntity>>(this.url('/api/topic-tree/entities', path), this.options(queryParams, config));
   }
 
   public resolve(topic: string, config?: RequestConfig): Observable<TopicResolve> {
@@ -96,6 +87,11 @@ export class TopicTreeService {
       queryParams.depth = `${depth}`;
     }
     return this.http.get<TopicChartPoint[]>('/api/topic-tree/chart', this.options(queryParams, config));
+  }
+
+  // cleanQueryParams drops empty strings, but path '' addresses the node with an empty segment (root is null)
+  private url(base: string, path: string | null): string {
+    return path === null ? base : `${base}?path=${encodeURIComponent(path)}`;
   }
 
   private options(queryParams: QueryParams, config?: RequestConfig) {

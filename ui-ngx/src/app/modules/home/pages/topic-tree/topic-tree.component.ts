@@ -31,10 +31,9 @@
 
 import { AfterViewInit, Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ReactiveFormsModule } from '@angular/forms';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -75,7 +74,10 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
     const params = this.route.snapshot.queryParamMap;
     if (params.get('columns')) {
       const ids = params.get('columns').split(',') as TopicTreeColumnId[];
-      this.columns = topicTreeColumns.map(c => c.id).filter(id => ids.includes(id));
+      const valid = topicTreeColumns.map(c => c.id).filter(id => ids.includes(id));
+      if (valid.length) {
+        this.columns = valid;
+      }
     }
     this.initialPath = params.get('path');
     const filter = params.get('filter') ?? '';
@@ -129,7 +131,10 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
     try {
       const stored = JSON.parse(localStorage.getItem(TOPIC_TREE_COLUMNS_STORAGE_KEY) ?? 'null');
       if (Array.isArray(stored)) {
-        return topicTreeColumns.map(c => c.id).filter(id => stored.includes(id));
+        const valid = topicTreeColumns.map(c => c.id).filter(id => stored.includes(id));
+        if (valid.length) {
+          return valid;
+        }
       }
     } catch { /* ignore */ }
     return topicTreeColumns.filter(c => c.default).map(c => c.id);

@@ -40,7 +40,7 @@
       @if (filterControl.value) {
         <button matSuffix mat-icon-button type="button" (click)="clearFilter()"><mat-icon>close</mat-icon></button>
       }
-      @if (filterControl.value && filterControl.value.length < filterMinLength) {
+      @if (filterControl.value && filterControl.value.trim().length < filterMinLength) {
         <mat-hint>{{ 'topic-tree.filter-hint' | translate: { min: filterMinLength } }}</mat-hint>
       }
     </mat-form-field>

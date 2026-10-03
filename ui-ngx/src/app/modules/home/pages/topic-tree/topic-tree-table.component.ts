@@ -29,10 +29,22 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, forkJoin, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subscription, forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { DecimalPipe } from '@angular/common';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -70,7 +82,11 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   loading = false;
 
   private treeRows: TopicTreeRow[] = [];
+  private treeStale = false;
   private searchPage = 0;
+  private loadToken = 0;
+  private rootSubscription: Subscription;
+  private searchSubscription: Subscription;
   private readonly service = inject(TopicTreeService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
@@ -79,8 +95,17 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
     return ['topic', ...this.columns];
   }
 
+  private get filterActive(): boolean {
+    return !!this.filter && this.filter.length >= this.filterMinLength;
+  }
+
   ngOnInit(): void {
-    this.loadRoot();
+    if (this.filterActive) {
+      this.treeStale = true;
+      this.applyFilter();
+    } else {
+      this.loadRoot();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -97,6 +122,7 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
 
   reload(): void {
     if (this.searchMode) {
+      this.treeStale = true;
       this.runSearch(true);
       return;
     }
@@ -111,11 +137,11 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
       ancestors.push(segments.slice(0, i).join('/'));
     }
     this.selectedPath = path;
-    this.loadRoot(ancestors);
+    this.loadRoot(ancestors, path);
   }
 
   toggle(row: TopicTreeRow): void {
-    if (row.kind !== 'node' || !row.node.hasChildren || this.searchMode) {
+    if (row.kind !== 'node' || !row.node.hasChildren || row.loading || this.searchMode) {
       return;
     }
     if (row.expanded) {
@@ -142,7 +168,6 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   }
 
   loadNextSearchPage(): void {
-    this.searchPage++;
     this.runSearch(false);
   }
 
@@ -154,33 +179,86 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
     return topicTreeColumns.filter(c => this.columns.includes(c.id) && c.backend).map(c => c.backend);
   }
 
-  private loadRoot(expandPaths: (string | null)[] = []): void {
+  private loadRoot(expandPaths: (string | null)[] = [], revealPath?: string): void {
+    const token = ++this.loadToken;
+    this.rootSubscription?.unsubscribe();
+    this.treeStale = false;
     this.loading = true;
+    this.cd.markForCheck();
     const root$ = this.rootPath === null
       ? this.fetchLevel(null, 0, 0)
       : this.service.getNode(this.rootPath, this.backendColumns()).pipe(map(node => [this.nodeRow(node, 0, null)]));
-    root$.subscribe(rows => {
-      this.treeRows = rows;
-      this.expandSequentially(expandPaths.filter(p => p !== this.rootPath || this.rootPath !== null), () => {
-        if (this.rootPath !== null && this.treeRows.length && !this.treeRows[0].expanded && this.treeRows[0].node.hasChildren) {
-          this.expand(this.treeRows[0]).subscribe(() => this.finishLoad());
-        } else {
-          this.finishLoad();
-        }
-      });
+    this.rootSubscription = root$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: rows => {
+        this.treeRows = rows;
+        this.expandSequentially(token, expandPaths, () => {
+          if (this.rootPath !== null && this.treeRows.length && !this.treeRows[0].expanded && this.treeRows[0].node.hasChildren) {
+            this.expand(this.treeRows[0]).subscribe(() => this.finishLoad(token, revealPath));
+          } else {
+            this.finishLoad(token, revealPath);
+          }
+        });
+      },
+      error: () => {
+        this.loading = false;
+        this.cd.markForCheck();
+      }
     });
   }
 
-  private finishLoad(): void {
+  private finishLoad(token: number, revealPath?: string): void {
+    if (token !== this.loadToken) {
+      return;
+    }
     this.loading = false;
-    if (this.filter && this.filter.length >= this.filterMinLength) {
+    if (this.filterActive) {
       this.applyFilter();
     } else {
       this.publish();
     }
+    if (revealPath !== undefined) {
+      this.selectRevealed(token, revealPath);
+    }
   }
 
-  private expandSequentially(paths: (string | null)[], done: () => void): void {
+  private selectRevealed(token: number, path: string): void {
+    const found = this.treeRows.find(r => r.kind === 'node' && r.node.path === path);
+    if (found) {
+      this.nodeSelected.emit(found.node);
+      return;
+    }
+    const segments = path.split('/');
+    const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : null;
+    const parentRow = parentPath === null ? null : this.treeRows.find(r => r.kind === 'node' && r.node.path === parentPath);
+    if (parentPath !== null && !parentRow) {
+      return;
+    }
+    this.service.getNode(path, this.backendColumns()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: node => {
+        if (token !== this.loadToken) {
+          return;
+        }
+        const depth = parentRow ? parentRow.depth + 1 : 0;
+        const start = parentRow ? this.treeRows.indexOf(parentRow) + 1 : 0;
+        let end = start;
+        while (end < this.treeRows.length && this.treeRows[end].depth >= depth) {
+          end++;
+        }
+        const last = this.treeRows[end - 1];
+        const insertAt = end > start && last.kind === 'more' && last.depth === depth ? end - 1 : end;
+        const row = this.nodeRow(node, depth, parentPath);
+        this.treeRows.splice(insertAt, 0, row);
+        this.publish();
+        this.nodeSelected.emit(node);
+      },
+      error: () => {}
+    });
+  }
+
+  private expandSequentially(token: number, paths: (string | null)[], done: () => void): void {
+    if (token !== this.loadToken) {
+      return;
+    }
     if (!paths.length) {
       done();
       return;
@@ -188,21 +266,33 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
     const [head, ...rest] = paths;
     const row = this.treeRows.find(r => r.kind === 'node' && r.node.path === head);
     if (!row || row.expanded || !row.node.hasChildren) {
-      this.expandSequentially(rest, done);
+      this.expandSequentially(token, rest, done);
       return;
     }
-    this.expand(row).subscribe(() => this.expandSequentially(rest, done));
+    this.expand(row).subscribe(() => this.expandSequentially(token, rest, done));
   }
 
   private expand(row: TopicTreeRow): Observable<void> {
+    if (row.loading || row.expanded) {
+      return of(undefined);
+    }
     row.loading = true;
     this.publish();
-    return this.fetchLevel(row.node.path, row.depth + 1, 0).pipe(map(children => {
-      row.loading = false;
-      row.expanded = true;
-      const index = this.treeRows.indexOf(row);
-      this.treeRows.splice(index + 1, 0, ...children);
-    }));
+    return this.fetchLevel(row.node.path, row.depth + 1, 0).pipe(
+      map(children => {
+        row.loading = false;
+        const index = this.treeRows.indexOf(row);
+        if (index >= 0) {
+          row.expanded = true;
+          this.treeRows.splice(index + 1, 0, ...children);
+        }
+      }),
+      catchError(() => {
+        row.loading = false;
+        this.publish();
+        return of(undefined);
+      })
+    );
   }
 
   private collapse(row: TopicTreeRow): void {
@@ -217,12 +307,23 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   }
 
   private loadMore(more: TopicTreeRow): void {
+    if (more.loading) {
+      return;
+    }
     more.loading = true;
     this.publish();
-    this.fetchLevel(more.parentPath, more.depth, more.nextPage).subscribe(rows => {
-      const index = this.treeRows.indexOf(more);
-      this.treeRows.splice(index, 1, ...rows);
-      this.publish();
+    this.fetchLevel(more.parentPath, more.depth, more.nextPage).subscribe({
+      next: rows => {
+        const index = this.treeRows.indexOf(more);
+        if (index >= 0) {
+          this.treeRows.splice(index, 1, ...rows);
+        }
+        this.publish();
+      },
+      error: () => {
+        more.loading = false;
+        this.publish();
+      }
     });
   }
 
@@ -245,10 +346,16 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   }
 
   private applyFilter(): void {
-    const active = !!this.filter && this.filter.length >= this.filterMinLength;
-    if (!active) {
+    if (!this.filterActive) {
+      this.searchSubscription?.unsubscribe();
       this.searchMode = false;
-      this.publish();
+      this.searchTotal = 0;
+      if (this.treeStale) {
+        this.loadRoot();
+      } else {
+        this.loading = false;
+        this.publish();
+      }
       return;
     }
     this.searchMode = true;
@@ -257,20 +364,29 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   }
 
   private runSearch(reset: boolean): void {
+    this.searchSubscription?.unsubscribe();
     this.loading = true;
     this.cd.markForCheck();
+    const start = reset ? 0 : this.searchPage + 1;
     const pages = reset ? this.searchPage + 1 : 1;
-    const start = reset ? 0 : this.searchPage;
     const requests = Array.from({ length: pages }, (_, i) =>
       this.service.search(this.filter, this.backendColumns(), start + i, this.pageSize));
-    forkJoin(requests.length ? requests : [of(null)]).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(results => {
-      const nodes = results.filter(Boolean).flatMap(r => r.data);
-      const last = results[results.length - 1];
-      this.searchTotal = last ? last.totalElements : 0;
-      const searchRows = nodes.map(n => this.nodeRow(n, 0, null));
-      this.rows = reset ? searchRows : [...this.rows, ...searchRows];
-      this.loading = false;
-      this.cd.markForCheck();
+    this.searchSubscription = forkJoin(requests).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: results => {
+        const nodes = results.flatMap(r => r.data);
+        this.searchTotal = results[results.length - 1].totalElements;
+        const searchRows = nodes.map(n => this.nodeRow(n, 0, null));
+        this.rows = reset ? searchRows : [...this.rows, ...searchRows];
+        if (!reset) {
+          this.searchPage++;
+        }
+        this.loading = false;
+        this.cd.markForCheck();
+      },
+      error: () => {
+        this.loading = false;
+        this.cd.markForCheck();
+      }
     });
   }
 
@@ -281,4 +397,3 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
     this.cd.markForCheck();
   }
 }
-

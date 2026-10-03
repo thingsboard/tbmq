@@ -63,4 +63,3 @@ export class TopicTreeColumnsMenuComponent {
     this.selectedChange.emit(this.allColumns.filter(c => c.default).map(c => c.id));
   }
 }
-
