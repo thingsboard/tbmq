@@ -51,6 +51,18 @@ const routes: Routes = [
           auth: [Authority.SYS_ADMIN],
           title: 'topic-tree.topic-tree'
         }
+      },
+      {
+        path: 'chart',
+        loadComponent: () => import('@home/pages/topic-tree/topic-tree-chart.component').then(m => m.TopicTreeChartComponent),
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'topic-tree.chart.title',
+          breadcrumb: {
+            label: 'topic-tree.chart.title',
+            icon: 'bar_chart'
+          }
+        }
       }
     ]
   }
