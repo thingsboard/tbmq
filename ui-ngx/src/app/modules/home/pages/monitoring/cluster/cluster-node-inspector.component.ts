@@ -95,6 +95,7 @@ export class ClusterNodeInspectorComponent {
       {label: 'monitoring.resource-usage.disk-usage', value: node.disk, level: usageLevel(node.disk)}
     ];
   });
+  readonly staleSeconds = computed(() => Math.round((Date.now() - (this.node()?.lastUpdateTime ?? Date.now())) / 1000));
   readonly showChart = computed(() => this.node()?.kind !== 'executor');
   readonly unit = signal<ChartUnit>('messages');
   readonly chartSeries = computed<MessageChartSeries[]>(() => {

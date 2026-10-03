@@ -35,9 +35,15 @@
     <div class="tb-inspector-title">
       <div class="tb-inspector-id">{{ n.id }}</div>
       <div class="tb-inspector-meta">
-        <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
-          {{ statusLabel() | translate }}
-        </span>
+        @if (n.stale) {
+          <span class="tb-status-pill tb-status-pill-stale" [matTooltip]="'monitoring.cluster.stale-hint' | translate: {seconds: staleSeconds()}">
+            {{ 'monitoring.cluster.stale' | translate }}
+          </span>
+        } @else {
+          <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
+            {{ statusLabel() | translate }}
+          </span>
+        }
         <span class="tb-inspector-type">{{ serviceTypeLabel() }}</span>
       </div>
     </div>

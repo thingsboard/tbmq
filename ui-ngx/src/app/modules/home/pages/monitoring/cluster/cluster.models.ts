@@ -34,7 +34,7 @@ import { ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/mode
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
 import { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
-import { HOUR } from '@shared/models/time/time.models';
+import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
 
 export type UsageLevel = 'ok' | 'warn' | 'crit';
@@ -61,6 +61,8 @@ export const HISTORY_WINDOW_MS = HOUR;
 export const MAX_SAMPLES = 720;
 export const CRITICAL_USAGE = 85;
 export const HIGH_USAGE = 75;
+// Heartbeats arrive once per stats interval; two missed ones mean the node is gone even if its status still reads ACTIVE.
+export const STALE_AFTER_INTERVALS = 2;
 export const CLUSTER_RATE_KEYS = [
   ChartKey.incomingMsgs,
   ChartKey.outgoingMsgs,
@@ -79,6 +81,7 @@ export interface ClusterNodeVm {
   serviceType: ServiceType;
   status: ResourceUsageStatus;
   lastUpdateTime: number | null;
+  stale: boolean;
   cpu: number | null;
   ram: number | null;
   disk: number | null;
@@ -97,6 +100,7 @@ export interface ClusterEdgeVm {
   id: string;
   path: string;
   rel: number;
+  rate: number | null;
   strokeWidth: number;
   opacity: number;
   particleSlots: number[];
@@ -259,7 +263,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     ringR: BROKER_RING_RADIUS,
     discR: discRadius(sessions[i]?.totalCount ?? 0, maxSessions),
     sessions: sessions[i],
-    rates: rates[i]
+    rates: rates[i],
+    statsIntervalMinutes
   }));
   const executors = executorInfos.map((info, i) => buildNode(info, 'executor', {
     x: COLUMN_X.executors,
@@ -267,7 +272,8 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     ringR: EXECUTOR_RING_RADIUS,
     discR: EXECUTOR_DISC_RADIUS,
     sessions: null,
-    rates: zeroRates()
+    rates: zeroRates(),
+    statsIntervalMinutes
   }));
 
   const edges: ClusterEdgeVm[] = [];
@@ -275,11 +281,11 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     edges.push(buildEdge(`e-in-${broker.id}`,
       COLUMN_X.clients + CLIENTS_PILL_HALF_WIDTH + EDGE_GAP, centerY,
       broker.x - broker.ringR - EDGE_GAP, broker.y,
-      relativeTo(broker.rates[ChartKey.incomingMsgs], maxIncoming)));
+      relativeTo(broker.rates[ChartKey.incomingMsgs], maxIncoming), broker.rates[ChartKey.incomingMsgs]));
     edges.push(buildEdge(`e-out-${broker.id}`,
       broker.x + broker.ringR + EDGE_GAP, broker.y,
       COLUMN_X.kafka - KAFKA_RADIUS - EDGE_GAP, centerY,
-      relativeTo(broker.rates[ChartKey.outgoingMsgs], maxOutgoing)));
+      relativeTo(broker.rates[ChartKey.outgoingMsgs], maxOutgoing), broker.rates[ChartKey.outgoingMsgs]));
   }
   for (const executor of executors) {
     edges.push(buildEdge(`e-ie-${executor.id}`,
@@ -387,14 +393,18 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
   discR: number;
   sessions: ClientSessionStatsInfo | null;
   rates: MessageRates;
+  statsIntervalMinutes: number;
 }): ClusterNodeVm {
   const cpu = percentOrNull(info.cpuUsage);
+  const stale = info.status === ResourceUsageStatus.ACTIVE && !!info.lastUpdateTime
+    && Date.now() - info.lastUpdateTime > STALE_AFTER_INTERVALS * layout.statsIntervalMinutes * MINUTE;
   return {
     id: info.serviceId,
     kind,
     serviceType: info.serviceType,
     status: info.status,
     lastUpdateTime: info.lastUpdateTime || null,
+    stale,
     cpu,
     ram: percentOrNull(info.memoryUsage),
     disk: percentOrNull(info.diskUsage),
@@ -410,12 +420,13 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
   };
 }
 
-function buildEdge(id: string, x1: number, y1: number, x2: number, y2: number, rel: number): ClusterEdgeVm {
+function buildEdge(id: string, x1: number, y1: number, x2: number, y2: number, rel: number, rate: number | null = null): ClusterEdgeVm {
   const particles = rel <= 0 ? 0 : 1 + Math.round(3 * rel);
   return {
     id,
     path: cubicPath(x1, y1, x2, y2),
     rel,
+    rate,
     strokeWidth: 1.5 + 4.5 * rel,
     opacity: 0.25 + 0.6 * rel,
     particleSlots: Array.from({length: particles}, (_, i) => i),

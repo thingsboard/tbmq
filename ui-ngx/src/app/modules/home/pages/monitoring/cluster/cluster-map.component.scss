@@ -60,6 +60,14 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   transition: stroke-width 0.5s ease, stroke-opacity 0.5s ease;
 }
 
+// Wide invisible twin of the edge so the browser tooltip does not need a pixel-perfect hover.
+.tb-edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+
 .tb-particle {
   fill: var(--tb-primary-500);
   opacity: 0.85;
@@ -148,6 +156,12 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
     stroke: $tb-neutral;
     stroke-dasharray: 3 2;
   }
+
+  &.tb-status-STALE {
+    fill: rgba(212, 125, 24, 0.08);
+    stroke: $tb-warn;
+    stroke-dasharray: 3 2;
+  }
 }
 
 .tb-node-count {
@@ -163,6 +177,11 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
 }
 
 .tb-node-sub {
+  &.tb-stale {
+    fill: $tb-warn;
+    font-weight: 700;
+  }
+
   font-size: 10px;
   letter-spacing: 0.02em;
   fill: rgba(0, 0, 0, 0.6);

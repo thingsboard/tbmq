@@ -98,6 +98,11 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   text-transform: uppercase;
 }
 
+.tb-status-pill-stale {
+  color: $tb-warn;
+  background: rgba(212, 125, 24, 0.12);
+}
+
 .tb-inspector-type {
   font-size: 12px;
   color: rgba(0, 0, 0, 0.54);

@@ -43,6 +43,11 @@
   @for (edge of map.edges; track edge.id) {
     <path class="tb-edge" [attr.id]="edge.id" [attr.d]="edge.path"
           [attr.stroke-width]="edge.strokeWidth" [attr.stroke-opacity]="edge.opacity"/>
+    @if (edge.rate !== null) {
+      <path class="tb-edge-hit" [attr.d]="edge.path">
+        <title>{{ 'monitoring.cluster.edge-tooltip' | translate: {rate: compactNumber(edge.rate)} }}</title>
+      </path>
+    }
     @if (animate()) {
       @for (slot of edge.particleSlots; track slot) {
         <circle class="tb-particle" r="2.5">
@@ -102,13 +107,19 @@
                 [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"/>
     <svg:circle [class]="'tb-ring-arc tb-' + node.cpuLevel" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"
                 [attr.stroke-dasharray]="ringArcDash(node.ringR, node.cpu)" [attr.transform]="'rotate(-90 ' + node.x + ' ' + node.y + ')'"/>
-    <svg:circle [class]="'tb-disc tb-status-' + node.status" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>
+    <svg:circle [class]="'tb-disc tb-status-' + (node.stale ? 'STALE' : node.status)" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>
     @if (node.countLabel) {
       <svg:text class="tb-node-count" [attr.x]="node.x" [attr.y]="node.y" text-anchor="middle" dominant-baseline="central">{{ node.countLabel }}</svg:text>
     }
     <svg:text class="tb-node-id" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 18" text-anchor="middle">{{ node.id }}</svg:text>
-    <svg:text [class]="'tb-node-sub tb-' + node.cpuLevel" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
-      {{ node.cpu !== null ? node.cpu + '% CPU' : '—' }}
-    </svg:text>
+    @if (node.stale) {
+      <svg:text class="tb-node-sub tb-stale" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
+        {{ 'monitoring.cluster.stale' | translate }}
+      </svg:text>
+    } @else {
+      <svg:text [class]="'tb-node-sub tb-' + node.cpuLevel" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
+        {{ node.cpu !== null ? node.cpu + '% CPU' : '—' }}
+      </svg:text>
+    }
   </svg:g>
 </ng-template>
