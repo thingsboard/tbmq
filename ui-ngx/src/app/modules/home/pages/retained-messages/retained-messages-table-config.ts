@@ -110,6 +110,10 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
         this.retainedMessagesFilterConfig.topicName = routerQueryParams?.topicName;
         delete queryParams.topicName;
       }
+      if (routerQueryParams?.topicMatch) {
+        this.retainedMessagesFilterConfig.topicMatch = routerQueryParams?.topicMatch;
+        delete queryParams.topicMatch;
+      }
       if (routerQueryParams?.payload) {
         this.retainedMessagesFilterConfig.payload = routerQueryParams?.payload;
         delete queryParams.payload;
@@ -128,6 +132,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     const filter: RetainedMessagesFilterConfig = {};
     if (subscriptionsFilterConfig) {
       filter.topicName = subscriptionsFilterConfig.topicName;
+      filter.topicMatch = subscriptionsFilterConfig.topicMatch;
       filter.payload = subscriptionsFilterConfig.payload;
       filter.qosList = subscriptionsFilterConfig.qosList;
     }

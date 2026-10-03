@@ -40,12 +40,14 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatFormField, MatHint, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatDrawer, MatDrawerContainer, MatDrawerContent } from '@angular/material/sidenav';
 import { TranslateModule } from '@ngx-translate/core';
 import {
   TOPIC_TREE_COLUMNS_STORAGE_KEY, TopicTreeColumnId, TopicTreeNode, topicTreeColumns
 } from '@shared/models/topic-tree.models';
 import { TopicTreeTableComponent } from './topic-tree-table.component';
 import { TopicTreeColumnsMenuComponent } from './topic-tree-columns-menu.component';
+import { TopicTreeDetailsComponent, TopicTreeTab } from './topic-tree-details.component';
 
 const FILTER_MIN_LENGTH = 2;
 
@@ -53,7 +55,7 @@ const FILTER_MIN_LENGTH = 2;
   selector: 'tb-topic-tree',
   templateUrl: './topic-tree.component.html',
   styleUrls: ['./topic-tree.component.scss'],
-  imports: [ReactiveFormsModule, MatToolbar, MatButton, MatIconButton, MatIcon, MatTooltip, MatFormField, MatHint, MatPrefix, MatSuffix, MatInput, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent]
+  imports: [ReactiveFormsModule, MatToolbar, MatButton, MatIconButton, MatIcon, MatTooltip, MatFormField, MatHint, MatPrefix, MatSuffix, MatInput, MatDrawer, MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent]
 })
 export class TopicTreeComponent implements OnInit, AfterViewInit {
 
@@ -64,6 +66,7 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
   columns: TopicTreeColumnId[] = this.loadColumns();
   filter = '';
   selectedNode: TopicTreeNode | null = null;
+  selectedTab: TopicTreeTab = 'subscriptions';
   private initialPath: string | null = null;
 
   private readonly route = inject(ActivatedRoute);
@@ -106,12 +109,23 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
   }
 
   onNodeSelected(node: TopicTreeNode): void {
+    this.selectedTab = 'subscriptions';
     this.selectedNode = node;
     this.syncUrl();
   }
 
   onChipClicked(event: { node: TopicTreeNode; column: TopicTreeColumnId }): void {
+    const tabByColumn: Partial<Record<TopicTreeColumnId, TopicTreeTab>> = {
+      subscriptions: 'subscriptions', clients: 'clients', online: 'clients', shared: 'shared',
+      integrations: 'integrations', retained: 'retained', dropped: 'dropped'
+    };
+    this.selectedTab = tabByColumn[event.column] ?? 'subscriptions';
     this.selectedNode = event.node;
+    this.syncUrl();
+  }
+
+  closeDetails(): void {
+    this.selectedNode = null;
     this.syncUrl();
   }
 

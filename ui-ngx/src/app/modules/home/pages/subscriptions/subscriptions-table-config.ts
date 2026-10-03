@@ -128,6 +128,10 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
         this.subscriptionsFilterConfig.topicFilter = routerQueryParams?.topicFilter;
         delete queryParams.topicFilter;
       }
+      if (routerQueryParams?.topicMatch) {
+        this.subscriptionsFilterConfig.topicMatch = routerQueryParams?.topicMatch;
+        delete queryParams.topicMatch;
+      }
       if (routerQueryParams?.qosList) {
         this.subscriptionsFilterConfig.qosList = routerQueryParams?.qosList;
         delete queryParams.qosList;
@@ -167,6 +171,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     if (subscriptionsFilterConfig) {
       filter.clientId = subscriptionsFilterConfig.clientId;
       filter.topicFilter = subscriptionsFilterConfig.topicFilter;
+      filter.topicMatch = subscriptionsFilterConfig.topicMatch;
       filter.qosList = subscriptionsFilterConfig.qosList;
       filter.noLocalList = subscriptionsFilterConfig.noLocalList;
       filter.retainAsPublishList = subscriptionsFilterConfig.retainAsPublishList;

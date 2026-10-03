@@ -15,6 +15,7 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
+import { TopicMatch } from '@shared/models/subscription.model';
 import { TimePageLink } from '@shared/models/page/page-link';
 import {
   isArraysEqualIgnoreUndefined,
@@ -38,6 +39,7 @@ export interface UserProperties {
 
 export interface RetainedMessagesFilterConfig {
   topicName?: string;
+  topicMatch?: TopicMatch;
   payload?: string;
   qosList?: string[];
 }
@@ -45,11 +47,13 @@ export interface RetainedMessagesFilterConfig {
 export class RetainedMessagesQuery {
   pageLink: TimePageLink;
   topicName: string;
+  topicMatch: TopicMatch;
   payload: string;
   qosList: string[];
 
   constructor(pageLink: TimePageLink, filter: RetainedMessagesFilterConfig) {
     this.pageLink = pageLink;
+    this.topicMatch = filter?.topicMatch;
     this.payload = filter?.payload;
     this.qosList = filter?.qosList;
     if (isNotEmptyStr(filter?.topicName)) {
@@ -59,6 +63,9 @@ export class RetainedMessagesQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
+    if (this.topicMatch) {
+      query += `&topicMatch=${this.topicMatch}`;
+    }
     if (this.payload?.length) {
       query += `&payload=${encodeURIComponent(this.payload)}`;
     }

@@ -136,6 +136,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;
       }
+      if (routerQueryParams?.topicFilter) {
+        this.sessionFilterConfig.topicFilter = routerQueryParams?.topicFilter;
+        this.sessionFilterConfig.topicMatch = routerQueryParams?.topicMatch;
+        delete queryParams.topicFilter;
+        delete queryParams.topicMatch;
+      }
       if (routerQueryParams?.openSession) {
         openSession = coerceBooleanProperty(queryParams.openSession);
         delete queryParams.openSession;
@@ -340,6 +346,8 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     const sessionFilter: SessionFilterConfig = {};
     if (sessionFilterConfig) {
       sessionFilter.clientId = sessionFilterConfig.clientId;
+      sessionFilter.topicFilter = sessionFilterConfig.topicFilter;
+      sessionFilter.topicMatch = sessionFilterConfig.topicMatch;
       sessionFilter.connectedStatusList = sessionFilterConfig.connectedStatusList;
       sessionFilter.clientTypeList = sessionFilterConfig.clientTypeList;
       sessionFilter.cleanStartList = sessionFilterConfig.cleanStartList;

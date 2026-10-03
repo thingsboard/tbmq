@@ -16,6 +16,7 @@
 
 import { ClientType } from '@shared/models/client.model';
 import { BaseData } from '@shared/models/base-data';
+import { TopicMatch } from '@shared/models/subscription.model';
 import {
   isArraysEqualIgnoreUndefined,
   isDefinedAndNotNull,
@@ -120,6 +121,8 @@ export interface SessionFilterConfig {
   subscriptions?: number;
   subscriptionOperation?: string;
   clientId?: string;
+  topicFilter?: string;
+  topicMatch?: TopicMatch;
   clientIpAddress?: string;
   openSession?: boolean;
 }
@@ -177,6 +180,8 @@ export class SessionQuery {
   subscriptions: number;
   subscriptionOperation: string;
   clientIpAddress: string;
+  topicFilter: string;
+  topicMatch: TopicMatch;
 
   constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
     this.pageLink = pageLink;
@@ -187,6 +192,8 @@ export class SessionQuery {
     this.subscriptions = sessionFilter?.subscriptions;
     this.subscriptionOperation = sessionFilter?.subscriptionOperation;
     this.clientIpAddress = sessionFilter?.clientIpAddress;
+    this.topicFilter = sessionFilter?.topicFilter;
+    this.topicMatch = sessionFilter?.topicMatch;
     if (isNotEmptyStr(sessionFilter?.clientId)) {
       this.pageLink.textSearch = sessionFilter.clientId;
     }
@@ -212,6 +219,12 @@ export class SessionQuery {
     }
     if (this.clientIpAddress?.length) {
       query += `&clientIpAddress=${this.clientIpAddress}`;
+    }
+    if (this.topicFilter?.length) {
+      query += `&topicFilter=${encodeURIComponent(this.topicFilter)}`;
+      if (this.topicMatch) {
+        query += `&topicMatch=${this.topicMatch}`;
+      }
     }
     return query;
   }

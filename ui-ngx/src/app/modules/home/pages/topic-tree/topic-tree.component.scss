@@ -55,3 +55,8 @@
     max-width: 100%;
   }
 }
+
+mat-drawer-container {
+  min-height: 0;
+  background: transparent;
+}
