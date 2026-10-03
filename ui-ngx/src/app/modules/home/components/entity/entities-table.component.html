@@ -234,7 +234,7 @@
                             matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
                             matTooltipPosition="above"
                             (click)="column.actionCell.onAction($event, entity)">
-                            <tb-icon [style]="column.actionCell.style">{{column.actionCell}}</tb-icon>
+                            <tb-icon [style]="column.actionCell.style">{{ column.actionCell.iconFunction ? column.actionCell.iconFunction(entity) : column.actionCell.icon }}</tb-icon>
                           </button>
                         }
                       }

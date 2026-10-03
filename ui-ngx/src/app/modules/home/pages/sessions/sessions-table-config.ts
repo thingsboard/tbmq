@@ -110,7 +110,16 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         }),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px', undefined, undefined, true,
+        undefined, undefined, false, {
+          name: this.translate.instant('monitoring.cluster.show-on-cluster-map'),
+          icon: 'mdi:lan',
+          isEnabled: (entity) => !!entity.nodeId,
+          onAction: ($event, entity) => {
+            $event?.stopPropagation();
+            this.router.navigate(['/monitoring/cluster'], {queryParams: {nodeId: entity.nodeId}});
+          }
+        }),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

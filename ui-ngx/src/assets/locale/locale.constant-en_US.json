@@ -764,6 +764,7 @@
             "connected": "{{count}} connected",
             "open-in-sessions": "Open in Sessions",
             "outgoing-messages": "Outgoing messages",
+            "show-on-cluster-map": "Show on cluster map",
             "history-window": "History window",
             "integrations-on-executor": "Integrations on executor",
             "integrations-failed": "{{count}} failed",

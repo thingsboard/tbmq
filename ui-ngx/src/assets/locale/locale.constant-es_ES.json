@@ -713,6 +713,7 @@
             "connected": "{{count}} conectadas",
             "open-in-sessions": "Abrir en Sesiones",
             "outgoing-messages": "Mensajes salientes",
+            "show-on-cluster-map": "Mostrar en el mapa del clúster",
             "history-window": "Ventana de historial",
             "integrations-on-executor": "Integraciones en el ejecutor",
             "integrations-failed": "{{count}} con error",

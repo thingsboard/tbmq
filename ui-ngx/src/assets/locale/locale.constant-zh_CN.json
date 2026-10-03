@@ -649,6 +649,7 @@
             "connected": "{{count}} 个已连接",
             "open-in-sessions": "在会话中打开",
             "outgoing-messages": "出站消息",
+            "show-on-cluster-map": "在集群图上显示",
             "history-window": "历史时间窗口",
             "integrations-on-executor": "执行器上的集成",
             "integrations-failed": "{{count}} 个失败",
