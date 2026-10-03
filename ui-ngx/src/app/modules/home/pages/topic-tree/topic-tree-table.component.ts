@@ -34,6 +34,7 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
   inject,
   Input,
@@ -89,6 +90,7 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   private searchSubscription: Subscription;
   private readonly service = inject(TopicTreeService);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
 
   get displayedColumns(): string[] {
@@ -222,37 +224,49 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   }
 
   private selectRevealed(token: number, path: string): void {
-    const found = this.treeRows.find(r => r.kind === 'node' && r.node.path === path);
-    if (found) {
-      this.nodeSelected.emit(found.node);
-      return;
+    this.ensureRow(token, path).subscribe(row => {
+      if (row) {
+        this.publish();
+        this.nodeSelected.emit(row.node);
+        setTimeout(() => this.host.nativeElement.querySelector('tr.selected')?.scrollIntoView({ block: 'center' }));
+      }
+    });
+  }
+
+  private ensureRow(token: number, path: string | null): Observable<TopicTreeRow | null> {
+    const found = this.findRow(path);
+    if (found || path === null) {
+      return of(found ?? null);
     }
     const segments = path.split('/');
     const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : null;
-    const parentRow = parentPath === null ? null : this.treeRows.find(r => r.kind === 'node' && r.node.path === parentPath);
+    const parentRow = parentPath === null ? null : this.findRow(parentPath);
     if (parentPath !== null && !parentRow) {
-      return;
+      return of(null);
     }
-    this.service.getNode(path, this.backendColumns()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: node => {
-        if (token !== this.loadToken) {
-          return;
-        }
-        const depth = parentRow ? parentRow.depth + 1 : 0;
-        const start = parentRow ? this.treeRows.indexOf(parentRow) + 1 : 0;
-        let end = start;
-        while (end < this.treeRows.length && this.treeRows[end].depth >= depth) {
-          end++;
-        }
-        const last = this.treeRows[end - 1];
-        const insertAt = end > start && last.kind === 'more' && last.depth === depth ? end - 1 : end;
-        const row = this.nodeRow(node, depth, parentPath);
-        this.treeRows.splice(insertAt, 0, row);
-        this.publish();
-        this.nodeSelected.emit(node);
-      },
-      error: () => {}
-    });
+    return this.service.getNode(path, this.backendColumns()).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      map(node => token === this.loadToken ? this.insertRow(node, parentRow, parentPath) : null),
+      catchError(() => of(null))
+    );
+  }
+
+  private insertRow(node: TopicTreeNode, parentRow: TopicTreeRow | null, parentPath: string | null): TopicTreeRow {
+    const depth = parentRow ? parentRow.depth + 1 : 0;
+    const start = parentRow ? this.treeRows.indexOf(parentRow) + 1 : 0;
+    let end = start;
+    while (end < this.treeRows.length && this.treeRows[end].depth >= depth) {
+      end++;
+    }
+    const last = this.treeRows[end - 1];
+    const insertAt = end > start && last.kind === 'more' && last.depth === depth ? end - 1 : end;
+    const row = this.nodeRow(node, depth, parentPath);
+    this.treeRows.splice(insertAt, 0, row);
+    return row;
+  }
+
+  private findRow(path: string | null): TopicTreeRow | undefined {
+    return this.treeRows.find(r => r.kind === 'node' && r.node.path === path);
   }
 
   private expandSequentially(token: number, paths: (string | null)[], done: () => void): void {
@@ -264,12 +278,16 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
       return;
     }
     const [head, ...rest] = paths;
-    const row = this.treeRows.find(r => r.kind === 'node' && r.node.path === head);
-    if (!row || row.expanded || !row.node.hasChildren) {
-      this.expandSequentially(token, rest, done);
-      return;
-    }
-    this.expand(row).subscribe(() => this.expandSequentially(token, rest, done));
+    this.ensureRow(token, head).subscribe(row => {
+      if (token !== this.loadToken) {
+        return;
+      }
+      if (!row || row.expanded || !row.node.hasChildren) {
+        this.expandSequentially(token, rest, done);
+        return;
+      }
+      this.expand(row).subscribe(() => this.expandSequentially(token, rest, done));
+    });
   }
 
   private expand(row: TopicTreeRow): Observable<void> {
@@ -316,7 +334,8 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
       next: rows => {
         const index = this.treeRows.indexOf(more);
         if (index >= 0) {
-          this.treeRows.splice(index, 1, ...rows);
+          const loaded = new Set(this.treeRows.filter(r => r.kind === 'node' && r.parentPath === more.parentPath).map(r => r.node.path));
+          this.treeRows.splice(index, 1, ...rows.filter(r => r.kind === 'more' || !loaded.has(r.node.path)));
         }
         this.publish();
       },
