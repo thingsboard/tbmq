@@ -119,7 +119,7 @@ public class RetainedMsgPageServiceImplTest {
     @Test
     public void testGetRetainedMessagesByQueryWithTopicName() {
         TimePageLink pageLink = new TimePageLink(10);
-        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, "topic/", Set.of(), null));
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, "topic/", Set.of(), null, null));
 
         assertEquals(3, retainedMessages.getData().size());
     }
@@ -127,7 +127,7 @@ public class RetainedMsgPageServiceImplTest {
     @Test
     public void testGetRetainedMessagesByQueryWithPayload() {
         TimePageLink pageLink = new TimePageLink(10);
-        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "ylo"));
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "ylo", null));
 
         assertEquals(5, retainedMessages.getData().size());
     }
@@ -135,7 +135,7 @@ public class RetainedMsgPageServiceImplTest {
     @Test
     public void testGetRetainedMessagesByQueryWithWrongPayload() {
         TimePageLink pageLink = new TimePageLink(10);
-        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "aaaayloddddd"));
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "aaaayloddddd", null));
 
         assertEquals(0, retainedMessages.getData().size());
     }
@@ -143,7 +143,7 @@ public class RetainedMsgPageServiceImplTest {
     @Test
     public void testGetRetainedMessagesByQueryWithWrongQosSet() {
         TimePageLink pageLink = new TimePageLink(10);
-        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(0, 2), null));
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(0, 2), null, null));
 
         assertEquals(0, retainedMessages.getData().size());
     }
@@ -151,7 +151,7 @@ public class RetainedMsgPageServiceImplTest {
     @Test
     public void testGetRetainedMessagesByQueryWithQosSet() {
         TimePageLink pageLink = new TimePageLink(10);
-        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(1), null));
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(1), null, null));
 
         assertEquals(5, retainedMessages.getData().size());
     }

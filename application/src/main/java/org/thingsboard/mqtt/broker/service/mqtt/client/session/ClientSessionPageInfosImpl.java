@@ -24,16 +24,21 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
+import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
+import org.thingsboard.mqtt.broker.common.data.util.TopicMatchUtil;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +73,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         Integer subscriptions = query.getSubscriptions();
         SubscriptionOperation operation = query.getOperation();
         String ipAddress = query.getClientIpAddress();
+        Set<String> topicClientIds = clientIdsByTopic(query.getTopicFilter(), query.getTopicMatch());
 
         List<ClientSessionInfo> filteredClientSessionInfos = allClientSessions
                 .values()
@@ -80,9 +86,27 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .filter(clientSessionInfo -> filterByNodeId(nodeIdSet, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByClientIpAddress(ipAddress, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByTimeRange(startTime, endTime, clientSessionInfo))
+                .filter(clientSessionInfo -> topicClientIds == null || topicClientIds.contains(clientSessionInfo.getClientId()))
                 .toList();
 
         return mapToPageDataResponse(filteredClientSessionInfos, pageLink);
+    }
+
+    private Set<String> clientIdsByTopic(String topicFilter, MatchMode mode) {
+        if (topicFilter == null || (topicFilter.isEmpty() && mode == null)) {
+            return null;
+        }
+        Set<String> result = new HashSet<>();
+        clientSubscriptionCache.getAllClientSubscriptions().forEach((clientId, subscriptions) -> {
+            for (TopicSubscription subscription : subscriptions) {
+                if (!(subscription instanceof IntegrationTopicSubscription)
+                        && TopicMatchUtil.matches(mode, subscription.getTopicFilter(), topicFilter)) {
+                    result.add(clientId);
+                    return;
+                }
+            }
+        });
+        return result;
     }
 
     private PageData<ShortClientSessionInfoDto> mapToPageDataResponse(List<ClientSessionInfo> filteredClientSessionInfos, PageLink pageLink) {

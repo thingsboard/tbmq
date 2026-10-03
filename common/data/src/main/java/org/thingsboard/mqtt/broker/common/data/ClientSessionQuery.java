@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
+import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
 import java.util.List;
@@ -37,5 +38,7 @@ public class ClientSessionQuery {
     private Integer subscriptions;
     private SubscriptionOperation operation;
     private String clientIpAddress;
+    private String topicFilter;
+    private MatchMode topicMatch;
 
 }

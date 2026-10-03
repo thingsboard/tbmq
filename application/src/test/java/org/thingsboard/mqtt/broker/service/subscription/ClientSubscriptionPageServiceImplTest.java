@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -309,6 +310,30 @@ public class ClientSubscriptionPageServiceImplTest {
         );
 
         return subscriptions;
+    }
+
+    @Test
+    public void givenPrefixMatch_whenGetClientSubscriptions_thenReturnOnlySubtree() {
+        when(clientSubscriptionCache.getAllClientSubscriptions()).thenReturn(Map.of(
+                "c1", Set.of(new ClientTopicSubscription("a/b", 0), new ClientTopicSubscription("ab/c", 0), new ClientTopicSubscription("a", 1))));
+        ClientSubscriptionQuery query = ClientSubscriptionQuery.builder()
+                .pageLink(new PageLink(10, 0)).topicFilter("a").topicMatch(MatchMode.PREFIX).build();
+
+        PageData<ClientSubscriptionInfoDto> result = clientSubscriptionPageService.getClientSubscriptions(query);
+
+        assertEquals(2, result.getTotalElements());
+    }
+
+    @Test
+    public void givenEmptyPrefixMatch_whenGetClientSubscriptions_thenReturnRootLevelAndLeadingSlashOnly() {
+        when(clientSubscriptionCache.getAllClientSubscriptions()).thenReturn(Map.of(
+                "c1", Set.of(new ClientTopicSubscription("/x", 0), new ClientTopicSubscription("a/b", 0))));
+        ClientSubscriptionQuery query = ClientSubscriptionQuery.builder()
+                .pageLink(new PageLink(10, 0)).topicFilter("").topicMatch(MatchMode.PREFIX).build();
+
+        PageData<ClientSubscriptionInfoDto> result = clientSubscriptionPageService.getClientSubscriptions(query);
+
+        assertEquals(1, result.getTotalElements());
     }
 
     private Map<String, Set<TopicSubscription>> getSubscriptionsMap() {

@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
@@ -118,7 +119,9 @@ public class ClientSessionController extends BaseController {
                                                                             @RequestParam(required = false) String[] nodeIdList,
                                                                             @RequestParam(required = false) Integer subscriptions,
                                                                             @RequestParam(required = false) String subscriptionOperation,
-                                                                            @RequestParam(required = false) String clientIpAddress) throws ThingsboardException {
+                                                                            @RequestParam(required = false) String clientIpAddress,
+                                                                            @RequestParam(required = false) String topicFilter,
+                                                                            @RequestParam(required = false) MatchMode topicMatch) throws ThingsboardException {
         List<ConnectionState> connectedStatuses = parseEnumList(ConnectionState.class, connectedStatusList);
         List<ClientType> clientTypes = parseEnumList(ClientType.class, clientTypeList);
         List<Boolean> cleanStarts = collectBooleanQueryParams(cleanStartList);
@@ -131,7 +134,7 @@ public class ClientSessionController extends BaseController {
 
         return checkNotNull(clientSessionPageInfos.getClientSessionInfos(
                 new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts,
-                        brokerNodeIdSet, subscriptions, operation, clientIpAddress)
+                        brokerNodeIdSet, subscriptions, operation, clientIpAddress, topicFilter, topicMatch)
         ));
     }
 

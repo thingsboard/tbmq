@@ -35,17 +35,22 @@ import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
+import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
+import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshotBuilderTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class TopicTreeControllerTest {
 
     TopicTreeService service = mock(TopicTreeService.class);
+    DroppedMsgPageService droppedMsgPageService = mock(DroppedMsgPageService.class);
     TopicTreeController controller;
 
     @BeforeEach
@@ -54,7 +59,7 @@ class TopicTreeControllerTest {
         when(service.getMaxPageSize()).thenReturn(2);
         when(service.getFilterMinLength()).thenReturn(2);
         when(service.getSnapshot()).thenReturn(new TopicTreeSnapshotBuilderTest().fixture());
-        controller = new TopicTreeController(service, null);
+        controller = new TopicTreeController(service, mock(TopicResolveService.class), droppedMsgPageService);
     }
 
     @Test
@@ -80,5 +85,15 @@ class TopicTreeControllerTest {
     void disabledIs404() {
         when(service.isEnabled()).thenReturn(false);
         assertThatThrownBy(() -> controller.doChildren(null, "", 10, 0, null, null)).isInstanceOf(ThingsboardException.class);
+    }
+
+    @Test
+    void droppedColumnFillsCountsPerPathAndIsOmittedOtherwise() throws Exception {
+        when(service.getMaxPageSize()).thenReturn(50);
+        when(droppedMsgPageService.sumDroppedByTopicPrefixSince(eq("sensors"), anyLong())).thenReturn(7L);
+        PageData<TopicTreeNodeDto> withDropped = controller.doChildren(null, "dropped", 100, 0, null, null);
+        TopicTreeNodeDto sensors = withDropped.getData().stream().filter(d -> "sensors".equals(d.getPath())).findFirst().orElseThrow();
+        assertThat(sensors.getDropped24h()).isEqualTo(7L);
+        assertThat(controller.doChildren(null, "", 100, 0, null, null).getData()).allMatch(d -> d.getDropped24h() == null);
     }
 }

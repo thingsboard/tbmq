@@ -45,22 +45,28 @@ import org.thingsboard.mqtt.broker.dto.TopicChartPointDto;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
+import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeColumn;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeNode;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/topic-tree")
 public class TopicTreeController extends BaseController {
 
+    private static final int MAX_DROPPED_PAGE_SIZE = 100;
+
     private final TopicTreeService topicTreeService;
     private final TopicResolveService topicResolveService;
+    private final DroppedMsgPageService droppedMsgPageService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/children")
@@ -92,7 +98,9 @@ public class TopicTreeController extends BaseController {
                                     @RequestParam(required = false) String columns) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         TopicTreeSnapshot s = snapshot();
-        return TopicTreeNodeDto.of(node(s, path), s, parseColumns(columns));
+        Set<TopicTreeColumn> cols = parseColumns(columns);
+        List<TopicTreeNodeDto> dtos = withDropped(List.of(TopicTreeNodeDto.of(node(s, path), s, cols)), cols);
+        return dtos.get(0);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -126,10 +134,10 @@ public class TopicTreeController extends BaseController {
                                           String sortProperty, String sortOrder) throws ThingsboardException {
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseColumns(columns);
-        PageLink link = createPageLink(clamp(pageSize), page, null, sortProperty, sortOrder);
+        PageLink link = createPageLink(clamp(pageSize, cols), page, null, sortProperty, sortOrder);
         PageData<TopicTreeNode> nodes = s.children(node(s, path), link);
-        return new PageData<>(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(),
-                nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
+        List<TopicTreeNodeDto> dtos = withDropped(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(), cols);
+        return new PageData<>(dtos, nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
     }
 
     PageData<TopicTreeNodeDto> doSearch(String filter, String columns, int pageSize, int page,
@@ -137,10 +145,10 @@ public class TopicTreeController extends BaseController {
         checkFilter(filter);
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseColumns(columns);
-        PageLink link = createPageLink(clamp(pageSize), page, null, sortProperty, sortOrder);
+        PageLink link = createPageLink(clamp(pageSize, cols), page, null, sortProperty, sortOrder);
         PageData<TopicTreeNode> nodes = s.search(filter, link);
-        return new PageData<>(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(),
-                nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
+        List<TopicTreeNodeDto> dtos = withDropped(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(), cols);
+        return new PageData<>(dtos, nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
     }
 
     List<TopicChartPointDto> doChart(String filter, String metric, int limit, Integer depth) throws ThingsboardException {
@@ -202,5 +210,20 @@ public class TopicTreeController extends BaseController {
 
     private int clamp(int size) {
         return Math.max(1, Math.min(size, topicTreeService.getMaxPageSize()));
+    }
+
+    private int clamp(int size, Set<TopicTreeColumn> cols) {
+        int clamped = clamp(size);
+        return cols.contains(TopicTreeColumn.DROPPED) ? Math.min(clamped, MAX_DROPPED_PAGE_SIZE) : clamped;
+    }
+
+    private List<TopicTreeNodeDto> withDropped(List<TopicTreeNodeDto> dtos, Set<TopicTreeColumn> cols) {
+        List<TopicTreeNodeDto> result = new ArrayList<>(dtos);
+        if (cols.contains(TopicTreeColumn.DROPPED)) {
+            long since = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+            result.forEach(dto -> dto.setDropped24h(dto.getPath() == null ? null
+                    : droppedMsgPageService.sumDroppedByTopicPrefixSince(dto.getPath(), since)));
+        }
+        return result;
     }
 }
