@@ -19,6 +19,7 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
 import { SubscriptionService } from '@core/http/subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
