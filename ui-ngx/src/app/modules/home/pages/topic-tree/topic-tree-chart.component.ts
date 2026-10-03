@@ -26,7 +26,7 @@
 /// AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
 /// THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
 
-import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -60,7 +60,7 @@ const FILTER_MIN_LENGTH = 2;
   styleUrls: ['./topic-tree-chart.component.scss'],
   imports: [ReactiveFormsModule, MatButtonToggleGroup, MatButtonToggle, MatIconButton, MatFormField, MatLabel, MatPrefix, MatIcon, MatInput, MatSelect, MatOption, MatProgressBar, TranslateModule]
 })
-export class TopicTreeChartComponent implements AfterViewInit, OnDestroy {
+export class TopicTreeChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('chart', { static: true }) chartEl: ElementRef<HTMLDivElement>;
 
@@ -86,6 +86,18 @@ export class TopicTreeChartComponent implements AfterViewInit, OnDestroy {
     depth: [null as number | null]
   });
 
+  ngOnInit(): void {
+    merge(this.form.valueChanges.pipe(debounceTime(300)), this.reload$).pipe(
+      switchMap(() => this.fetch()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(points => {
+      this.points = points;
+      this.loading = false;
+      this.render();
+    });
+    this.reload$.next();
+  }
+
   ngAfterViewInit(): void {
     this.chart = echarts.init(this.chartEl.nativeElement);
     this.chart.on('click', params => {
@@ -96,15 +108,7 @@ export class TopicTreeChartComponent implements AfterViewInit, OnDestroy {
     });
     this.resizeObserver = new ResizeObserver(() => this.chart.resize());
     this.resizeObserver.observe(this.chartEl.nativeElement);
-    merge(this.form.valueChanges.pipe(debounceTime(300)), this.reload$).pipe(
-      switchMap(() => this.fetch()),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(points => {
-      this.points = points;
-      this.loading = false;
-      this.render();
-    });
-    this.reload$.next();
+    this.render();
   }
 
   ngOnDestroy(): void {
