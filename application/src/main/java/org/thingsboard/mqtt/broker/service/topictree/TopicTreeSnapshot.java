@@ -241,7 +241,7 @@ public final class TopicTreeSnapshot {
     }
 
     private static <T> PageData<T> page(List<T> all, PageLink link) {
-        int from = Math.min(link.getPage() * link.getPageSize(), all.size());
+        int from = (int) Math.min((long) link.getPage() * link.getPageSize(), all.size());
         int to = Math.min(from + link.getPageSize(), all.size());
         int totalPages = link.getPageSize() == 0 ? 0 : (all.size() + link.getPageSize() - 1) / link.getPageSize();
         return new PageData<>(new ArrayList<>(all.subList(from, to)), totalPages, all.size(), to < all.size());
