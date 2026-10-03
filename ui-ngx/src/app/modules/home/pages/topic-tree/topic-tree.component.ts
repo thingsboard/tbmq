@@ -30,11 +30,23 @@
 ///
 
 import { Component } from '@angular/core';
+import { TopicTreeTableComponent } from './topic-tree-table.component';
+import { TopicTreeColumnId, TopicTreeNode, topicTreeColumns } from '@shared/models/topic-tree.models';
 
 @Component({
   selector: 'tb-topic-tree',
   templateUrl: './topic-tree.component.html',
-  styleUrls: ['./topic-tree.component.scss']
+  styleUrls: ['./topic-tree.component.scss'],
+  imports: [TopicTreeTableComponent]
 })
 export class TopicTreeComponent {
+
+  columns: TopicTreeColumnId[] = topicTreeColumns.filter(c => c.default).map(c => c.id);
+  filter = '';
+
+  onNodeSelected(node: TopicTreeNode): void {
+  }
+
+  onChipClicked(event: { node: TopicTreeNode; column: TopicTreeColumnId }): void {
+  }
 }

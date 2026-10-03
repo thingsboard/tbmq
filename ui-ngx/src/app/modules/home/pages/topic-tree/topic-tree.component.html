@@ -30,4 +30,11 @@
     OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 
 -->
-<div class="tb-topic-tree flex flex-1 flex-col"></div>
+<div class="tb-topic-tree flex flex-1 flex-col">
+  <tb-topic-tree-table #table class="flex-1"
+                       [columns]="columns"
+                       [filter]="filter"
+                       (nodeSelected)="onNodeSelected($event)"
+                       (chipClicked)="onChipClicked($event)">
+  </tb-topic-tree-table>
+</div>
