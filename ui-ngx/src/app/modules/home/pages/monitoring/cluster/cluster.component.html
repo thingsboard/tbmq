@@ -31,9 +31,15 @@
 
 -->
 <div class="mat-padding flex flex-1 flex-col">
-  <div class="tb-cluster-card">
+  <div class="tb-cluster-card" tb-fullscreen [fullscreen]="fullscreen()" (fullscreenChanged)="fullscreen.set($event)">
     <div class="tb-cluster-card-head">
       <span class="tb-cluster-title">{{ 'monitoring.cluster.cluster' | translate }}</span>
+      <button mat-icon-button type="button" class="tb-cluster-fullscreen"
+              [matTooltip]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
+              [attr.aria-label]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
+              (click)="fullscreen.set(!fullscreen())">
+        <mat-icon>{{ fullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
       <span class="tb-live" [class.tb-live-stale]="!lastTickOk()">
         <span class="tb-live-dot"></span>
         @if (lastTickOk()) {

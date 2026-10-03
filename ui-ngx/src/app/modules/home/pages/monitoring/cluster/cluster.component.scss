@@ -61,6 +61,31 @@ $tb-line: rgba(0, 0, 0, 0.06);
   font-weight: 500;
 }
 
+.tb-cluster-fullscreen {
+  --mdc-icon-button-state-layer-size: 32px;
+
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-cluster-card.tb-fullscreen {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+
+  .tb-cluster-card-body {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tb-cluster-map-wrap {
+    display: flex;
+    align-items: center;
+  }
+}
+
 .tb-live {
   display: inline-flex;
   align-items: center;

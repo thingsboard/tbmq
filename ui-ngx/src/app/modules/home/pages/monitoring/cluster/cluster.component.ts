@@ -30,7 +30,12 @@
 ///
 
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { forkJoin, Observable, of, Subject, timer } from 'rxjs';
 import { catchError, map, retry, switchMap, takeUntil } from 'rxjs/operators';
 import { TimeseriesService } from '@core/http/timeseries.service';
@@ -73,7 +78,7 @@ const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(ca
     selector: 'tb-cluster',
     templateUrl: './cluster.component.html',
     styleUrls: ['./cluster.component.scss'],
-    imports: [TranslateModule, ClusterMapComponent, ClusterNodeInspectorComponent],
+    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, FullscreenDirective, ClusterMapComponent, ClusterNodeInspectorComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClusterComponent implements OnInit, OnDestroy {
@@ -83,6 +88,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly samples = signal<Record<string, MessageSeries>>({});
   readonly lastTickOk = signal(true);
   readonly staleSeconds = signal(0);
+  readonly fullscreen = signal(false);
   readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   readonly selectedNode = computed(() => {
@@ -96,6 +102,8 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private readonly clientSessionService = inject(ClientSessionService);
   private readonly kafkaService = inject(KafkaService);
   private readonly configService = inject(ConfigService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   private lastUpdated: number | null = null;
   private kafkaBrokers: PageData<KafkaBroker> | null = null;
@@ -105,6 +113,11 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadHistory(TOTAL_ENTITY_ID);
+    const nodeId = this.route.snapshot.queryParamMap.get('nodeId');
+    if (nodeId) {
+      this.selectedId.set(nodeId);
+      this.loadHistory(nodeId);
+    }
     timer(0, REFRESH_INTERVAL).pipe(
       switchMap(tick => this.loadTick(tick)),
       retry({delay: REFRESH_INTERVAL}),
@@ -119,7 +132,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   toggleSelection(id: string) {
     const next = this.selectedId() === id ? null : id;
-    this.selectedId.set(next);
+    this.select(next);
     if (!next) {
       this.loadHistory(TOTAL_ENTITY_ID);
     } else if (this.vm().brokers.some(broker => broker.id === next)) {
@@ -128,7 +141,12 @@ export class ClusterComponent implements OnInit, OnDestroy {
   }
 
   clearSelection() {
-    this.selectedId.set(null);
+    this.select(null);
+  }
+
+  private select(id: string | null) {
+    this.selectedId.set(id);
+    this.router.navigate([], {relativeTo: this.route, queryParams: {nodeId: id}, queryParamsHandling: 'merge', replaceUrl: true});
   }
 
   private loadTick(tick: number): Observable<ClusterRawData> {
@@ -210,7 +228,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private ensureSelection(vm: ClusterMapVm) {
     const selected = this.selectedId();
     if (selected && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
-      this.selectedId.set(null);
+      this.select(null);
     }
   }
 
