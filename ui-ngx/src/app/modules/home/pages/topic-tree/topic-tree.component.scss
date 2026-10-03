@@ -33,3 +33,25 @@
   flex: 1;
   min-height: 0;
 }
+
+.tb-topic-tree {
+  min-height: 0;
+  background: #fff;
+}
+
+.tb-topic-tree-toolbar {
+  background: transparent;
+  min-height: 56px;
+  height: auto;
+  flex-wrap: wrap;
+
+  .title {
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .filter-field {
+    width: 280px;
+    max-width: 100%;
+  }
+}

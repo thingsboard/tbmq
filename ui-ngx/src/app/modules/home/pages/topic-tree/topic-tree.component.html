@@ -31,9 +31,31 @@
 
 -->
 <div class="tb-topic-tree flex flex-1 flex-col">
+  <mat-toolbar class="tb-topic-tree-toolbar flex flex-row items-center gap-2">
+    <span class="title">{{ 'topic-tree.topic-tree' | translate }}</span>
+    <span class="flex-1"></span>
+    <mat-form-field class="filter-field mat-block" appearance="outline" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="filterControl" [placeholder]="'topic-tree.filter' | translate">
+      @if (filterControl.value) {
+        <button matSuffix mat-icon-button type="button" (click)="clearFilter()"><mat-icon>close</mat-icon></button>
+      }
+      @if (filterControl.value && filterControl.value.length < filterMinLength) {
+        <mat-hint>{{ 'topic-tree.filter-hint' | translate: { min: filterMinLength } }}</mat-hint>
+      }
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="openChart()">
+      <mat-icon>bar_chart</mat-icon>{{ 'topic-tree.chart-button' | translate }}
+    </button>
+    <tb-topic-tree-columns-menu [selected]="columns" (selectedChange)="onColumnsChange($event)"></tb-topic-tree-columns-menu>
+    <button mat-icon-button type="button" (click)="refresh()" [matTooltip]="'action.refresh' | translate">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-toolbar>
   <tb-topic-tree-table #table class="flex-1"
                        [columns]="columns"
                        [filter]="filter"
+                       [filterMinLength]="filterMinLength"
                        (nodeSelected)="onNodeSelected($event)"
                        (chipClicked)="onChipClicked($event)">
   </tb-topic-tree-table>
