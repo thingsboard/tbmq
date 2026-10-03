@@ -54,6 +54,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { MatFormField } from '@angular/material/form-field';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
@@ -79,7 +80,7 @@ export interface SessionFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent, MatCheckbox]
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
@@ -140,6 +141,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       cleanStartList: [null, []],
       nodeIdList: [null, []],
       clientId: [null, []],
+      topicFilter: [null, []],
+      topicMatchPrefix: [false, []],
       subscriptions: [null, []],
       subscriptionOperation: [null, []],
       clientIpAddress: [null, []],
@@ -265,6 +268,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       cleanStartList: sessiohFilterConfig?.cleanStartList,
       nodeIdList: sessiohFilterConfig?.nodeIdList,
       clientId: sessiohFilterConfig?.clientId,
+      topicFilter: sessiohFilterConfig?.topicFilter,
+      topicMatchPrefix: sessiohFilterConfig?.topicMatch === 'PREFIX',
       subscriptions: sessiohFilterConfig?.subscriptions,
       subscriptionOperation: sessiohFilterConfig?.subscriptionOperation || NumericOperation.EQUAL,
       clientIpAddress: sessiohFilterConfig?.clientIpAddress,
@@ -284,6 +289,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       cleanStartList: formValue.cleanStartList,
       nodeIdList: formValue.nodeIdList,
       clientId: formValue.clientId,
+      topicFilter: formValue.topicMatchPrefix ? (formValue.topicFilter ?? '') : formValue.topicFilter,
+      topicMatch: formValue.topicMatchPrefix ? 'PREFIX' : undefined,
       subscriptions: formValue.subscriptions,
       subscriptionOperation: formValue.subscriptionOperation,
       clientIpAddress: formValue.clientIpAddress,};
@@ -314,6 +321,16 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
         const clientId = this.sessionFilterConfig.clientId;
         filterTextParts.push(clientId);
         filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
+      }
+      if (this.sessionFilterConfig?.topicMatch === 'PREFIX') {
+        const topicFilter = `${this.sessionFilterConfig.topicFilter ?? ''}/#`;
+        filterTextParts.push(topicFilter);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.topic-filter')}: ${topicFilter} ` +
+          `(${this.translate.instant('mqtt-client-session.match-prefix')})`);
+      } else if (this.sessionFilterConfig?.topicFilter?.length) {
+        const topicFilter = this.sessionFilterConfig.topicFilter;
+        filterTextParts.push(topicFilter);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.topic-filter')}: ${topicFilter}`);
       }
       if (this.sessionFilterConfig?.clientIpAddress?.length) {
         const clientIpAddress = this.sessionFilterConfig.clientIpAddress;

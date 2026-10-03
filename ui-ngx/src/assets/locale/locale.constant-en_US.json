@@ -877,6 +877,7 @@
     },
     "mqtt-client-session": {
         "add": "Add session",
+        "match-prefix": "Prefix",
         "add-subscription": "Add subscription",
         "connect": "Connect",
         "connected": "Connected",
@@ -1018,6 +1019,7 @@
         "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation, all empty <a target='_blank' href='https://tbmq.io/docs/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message nodes</a> will be cleared.",
         "details": "Retained message details",
         "search": "Search by topic",
+        "match-prefix": "Prefix",
         "selected-retained-messages": "{ count, plural, =1 {1 Retained message} other {# Retained messages} } selected",
         "type-retained-message": "Retained message",
         "type-retained-messages": "Retained messages",

@@ -155,6 +155,12 @@ export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2
     if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
       return false;
     }
+    if (!isEqualIgnoreUndefined(filter1.topicFilter, filter2.topicFilter)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.topicMatch, filter2.topicMatch)) {
+      return false;
+    }
     if (!isEqualIgnoreUndefined(filter1.clientIpAddress, filter2.clientIpAddress)) {
       return false;
     }

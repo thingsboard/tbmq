@@ -30,9 +30,12 @@
     <div class="tb-form-panel tb-retained-messages-filter-config-component no-padding no-border" [formGroup]="retainedMessagesFilterConfigForm">
       <div class="tb-form-row space-between column-xs">
         <div class="fixed-title-width" translate>retained-message.topic</div>
-        <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
-          <input matInput type="text" formControlName="topicName">
-        </mat-form-field>
+        <div class="flex flex-1 flex-row items-center gap-2">
+          <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
+            <input matInput type="text" formControlName="topicName">
+          </mat-form-field>
+          <mat-checkbox formControlName="topicMatchPrefix">{{ 'retained-message.match-prefix' | translate }}</mat-checkbox>
+        </div>
       </div>
       <div class="tb-form-row space-between column-xs">
         <div class="fixed-title-width" translate>retained-message.payload</div>

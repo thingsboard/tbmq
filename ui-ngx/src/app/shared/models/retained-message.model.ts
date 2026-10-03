@@ -57,7 +57,7 @@ export class RetainedMessagesQuery {
     this.payload = filter?.payload;
     this.qosList = filter?.qosList;
     this.topicName = filter?.topicName;
-    if (isNotEmptyStr(filter?.topicName)) {
+    if (!this.topicMatch && isNotEmptyStr(filter?.topicName)) {
       this.pageLink.textSearch = filter.topicName;
     }
   }
@@ -65,10 +65,7 @@ export class RetainedMessagesQuery {
   public toQuery(): string {
     let query = this.pageLink.toQuery();
     if (this.topicMatch) {
-      query += `&topicMatch=${this.topicMatch}`;
-      if (this.topicName === '') {
-        query += '&textSearch=';
-      }
+      query += `&topicMatch=${this.topicMatch}&topicName=${encodeURIComponent(this.topicName ?? '')}`;
     }
     if (this.payload?.length) {
       query += `&payload=${encodeURIComponent(this.payload)}`;
@@ -88,6 +85,9 @@ export const retainedMessagesFilterConfigEquals = (filter1?: RetainedMessagesFil
     return true;
   } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
     if (!isEqualIgnoreUndefined(filter1.topicName, filter2.topicName)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.topicMatch, filter2.topicMatch)) {
       return false;
     }
     if (!isEqualIgnoreUndefined(filter1.payload, filter2.payload)) {
