@@ -378,7 +378,9 @@ public class MqttPublishHandlerTest {
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
 
-        verify(mqttPublishHandler, times(2)).processExactlyOnce(eq(ctx), eq(1));
+        // the duplicate arrives while the first msg is still being persisted, so it gets no entry in the ordered queue
+        verify(mqttPublishHandler, times(1)).processExactlyOnce(eq(ctx), eq(1));
+        assertThat(queueSize(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages())).isEqualTo(1);
         verify(mqttPublishHandler).persistPubMsg(eq(ctx), any(), eq(actorRef), any()); // second process will not cause to persist a duplicate msg into Kafka
     }
 
@@ -542,6 +544,42 @@ public class MqttPublishHandlerTest {
         inOrder.verify(mqttMessageGenerator).createPubRecMsg(21, MqttReasonCodes.PubRec.SUCCESS);
         assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(20).isPersisted()).isTrue();
         assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(21).isPersisted()).isTrue();
+    }
+
+    @Test
+    public void givenMqtt311Qos2MsgBeingPersisted_whenDuplicateReceived_thenLaterPubRecsAreNotHeldBack() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+
+        processPublishMsgs(2, 1);
+        processPublishMsgs(2, 1); // retransmitted while the first one is still being persisted
+        processPublishMsgs(2, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+        callbacks.get(0).onSuccess(null);
+        callbacks.get(1).onSuccess(null);
+        processPubResponsesSentToActor(2);
+
+        InOrder inOrder = inOrder(mqttMessageGenerator);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(1, null);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(2, null);
+        assertThat(queueSize(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages())).isZero();
+    }
+
+    @Test
+    public void givenPersistedQos2MsgAwaitingPubRel_whenDuplicateReceived_thenPubRecResentWithoutPersistingAgain() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 1);
+        capturePersistCallbacks(1).get(0).onSuccess(null);
+        processPubResponsesSentToActor(1);
+
+        processPublishMsgs(2, 1); // the client didn't get the PUBREC and retransmits
+        processPubResponsesSentToActor(2);
+
+        verify(mqttMessageGenerator, times(2)).createPubRecMsg(1, MqttReasonCodes.PubRec.SUCCESS);
+        verify(msgDispatcherService, times(1)).persistPublishMsg(any(), any(), any(), any());
+        assertThat(queueSize(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages())).isZero();
     }
 
     @Test

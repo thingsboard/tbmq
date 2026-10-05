@@ -118,8 +118,13 @@ public class MqttPublishHandler {
         MqttMsgWrapper mqttMsgWrapper = null; // for QoS 0
         try {
             if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQos()) {
+                AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
+                if (awaitingPacketInfo != null) {
+                    processDuplicateExactlyOnce(ctx, actorRef, awaitingPacketInfo);
+                    return;
+                }
                 mqttMsgWrapper = processExactlyOnce(ctx, msgId);
-                if (ensureMsgPersistedAwaitingPubRel(ctx, actorRef, mqttMsgWrapper)) return;
+                ctx.getAwaitingPubRelPacketsCtx().await(ctx.getClientId(), msgId);
             } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQos()) {
                 mqttMsgWrapper = processAtLeastOnce(ctx, msgId);
             }
@@ -299,24 +304,20 @@ public class MqttPublishHandler {
     }
 
     // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean ensureMsgPersistedAwaitingPubRel(ClientSessionCtx ctx, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        int msgId = mqttMsgWrapper.getMsgId();
-        String clientId = ctx.getClientId();
+    private void processDuplicateExactlyOnce(ClientSessionCtx ctx, TbActorRef actorRef, AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo) {
+        int msgId = awaitingPacketInfo.getPacketId();
         UUID sessionId = ctx.getSessionId();
-        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
-        if (awaitingPacketInfo == null) {
-            ctx.getAwaitingPubRelPacketsCtx().await(clientId, msgId);
-        } else if (!awaitingPacketInfo.isPersisted()) {
+        if (!awaitingPacketInfo.isPersisted()) {
+            // no entry in the ordered queue: it would never be acked, and the PUBREC of the msg being persisted answers the duplicate too
             if (isTraceEnabled) {
-                log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+                log.trace("[{}][{}] Message {} is awaiting to be persisted.", ctx.getClientId(), sessionId, msgId);
             }
-        } else {
-            if (isTraceEnabled) {
-                log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
-            }
-            sendPubResponseEventToActor(actorRef, sessionId, mqttMsgWrapper, MqttQoS.EXACTLY_ONCE);
+            return;
         }
-        return awaitingPacketInfo != null;
+        if (isTraceEnabled) {
+            log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", ctx.getClientId(), sessionId, msgId);
+        }
+        sendPubResponseEventToActor(actorRef, sessionId, processExactlyOnce(ctx, msgId), MqttQoS.EXACTLY_ONCE);
     }
 
     private void sendPubResponseEventToActor(TbActorRef actorRef, UUID sessionId, MqttMsgWrapper mqttMsgWrapper, MqttQoS mqttQoS) {
