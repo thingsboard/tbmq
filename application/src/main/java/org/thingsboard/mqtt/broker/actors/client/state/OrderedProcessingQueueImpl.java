@@ -51,7 +51,7 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
     }
 
     @Override
-    public List<Integer> ack(MqttMsgWrapper msgWrapper) {
+    public List<MqttMsgWrapper> ack(MqttMsgWrapper msgWrapper) {
         if (msgWrapper == null) {
             return Collections.emptyList();
         }
@@ -60,8 +60,8 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
         return tryProcess();
     }
 
-    private List<Integer> tryProcess() {
-        List<Integer> list = new ArrayList<>();
+    private List<MqttMsgWrapper> tryProcess() {
+        List<MqttMsgWrapper> list = new ArrayList<>();
 
         MqttMsgWrapper head;
         while ((head = receivedMsgQueue.peek()) != null && head.isAck()) {
@@ -75,7 +75,7 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
                     if (head != polled) {  // double-check
                         throw new RuntimeException("Polled head [" + polled + "] is not the same as peeked head [" + head + "]. Msg order is broken");
                     }
-                    list.add(polled.getMsgId());
+                    list.add(polled);
                 }
             } finally {
                 lock.unlock();
