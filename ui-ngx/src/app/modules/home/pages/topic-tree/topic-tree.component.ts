@@ -29,16 +29,16 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { AfterViewInit, Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatFormField, MatHint, MatPrefix, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatDrawer, MatDrawerContainer, MatDrawerContent } from '@angular/material/sidenav';
 import { TranslateModule } from '@ngx-translate/core';
@@ -52,22 +52,29 @@ import { TopicTreeDetailsComponent, TopicTreeTab } from './topic-tree-details.co
 
 const FILTER_MIN_LENGTH = 2;
 
+type ToolbarMode = 'default' | 'search' | 'subscribers';
+
 @Component({
   selector: 'tb-topic-tree',
   templateUrl: './topic-tree.component.html',
   styleUrls: ['./topic-tree.component.scss'],
-  imports: [ReactiveFormsModule, MatToolbar, MatButton, MatIconButton, MatIcon, MatTooltip, MatFormField, MatHint, MatPrefix, MatSuffix, MatInput, MatDrawer, MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent, TopicTreeResolveComponent]
+  imports: [ReactiveFormsModule, MatToolbar, MatIconButton, MatIcon, MatTooltip, MatFormField, MatLabel, MatSuffix, MatInput, MatDrawer,
+    MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent,
+    TopicTreeResolveComponent]
 })
 export class TopicTreeComponent implements OnInit, AfterViewInit {
 
   @ViewChild('table') table: TopicTreeTableComponent;
+  @ViewChild('resolve') resolve: TopicTreeResolveComponent;
+  @ViewChild('searchInput') searchInput: ElementRef<HTMLInputElement>;
 
   readonly filterMinLength = FILTER_MIN_LENGTH;
   readonly filterControl = new FormControl<string>('');
   columns: TopicTreeColumnId[] = this.loadColumns();
   filter = '';
   selectedNode: TopicTreeNode | null = null;
-  selectedTab: TopicTreeTab = 'subscriptions';
+  selectedTab: TopicTreeTab = 'details';
+  toolbarMode: ToolbarMode = 'default';
   private initialPath: string | null = null;
 
   private readonly route = inject(ActivatedRoute);
@@ -87,6 +94,9 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
     const filter = params.get('filter') ?? '';
     this.filterControl.setValue(filter, { emitEvent: false });
     this.filter = filter;
+    if (filter) {
+      this.toolbarMode = 'search';
+    }
     this.filterControl.valueChanges.pipe(
       debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)
     ).subscribe(value => {
@@ -110,7 +120,7 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
   }
 
   onNodeSelected(node: TopicTreeNode): void {
-    this.selectedTab = 'subscriptions';
+    this.selectedTab = 'details';
     this.selectedNode = node;
     this.syncUrl();
   }
@@ -130,7 +140,17 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
     this.syncUrl();
   }
 
-  clearFilter(): void {
+  enterMode(mode: ToolbarMode): void {
+    this.toolbarMode = mode;
+    if (mode === 'search') {
+      setTimeout(() => this.searchInput.nativeElement.focus());
+    } else if (mode === 'subscribers') {
+      this.resolve.focus();
+    }
+  }
+
+  exitSearch(): void {
+    this.toolbarMode = 'default';
     this.filterControl.setValue('');
   }
 
@@ -148,10 +168,6 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
 
   refresh(): void {
     this.table.reload();
-  }
-
-  openChart(): void {
-    this.router.navigate(['/topic-tree/chart'], { queryParams: { filter: this.filter || null } });
   }
 
   private loadColumns(): TopicTreeColumnId[] {

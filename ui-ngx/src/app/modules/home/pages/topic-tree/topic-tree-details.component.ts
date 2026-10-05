@@ -31,57 +31,115 @@
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
-import { Clipboard } from '@angular/cdk/clipboard';
-import { Observable, of } from 'rxjs';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MatButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTab, MatTabGroup } from '@angular/material/tabs';
+import { MatTab, MatTabContent, MatTabGroup } from '@angular/material/tabs';
+import { MatTableModule } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
+import { DetailsPanelComponent } from '@home/components/details-panel.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import { SubscriptionService } from '@core/http/subscription.service';
+import { RetainedMsgService } from '@core/http/retained-msg.service';
+import { DroppedMsgService } from '@core/http/dropped-msg.service';
 import { ClientSubscriptionsQuery } from '@shared/models/subscription.model';
-import { PageLink } from '@shared/models/page/page-link';
+import { RetainedMessagesQuery } from '@shared/models/retained-message.model';
+import { DroppedMessagesQuery, droppedMsgReasonTranslationMap, MatchMode } from '@shared/models/dropped-message.model';
+import { PageLink, TimePageLink } from '@shared/models/page/page-link';
+import { Direction } from '@shared/models/page/sort-order';
+import { qosFromName } from '@shared/models/session.model';
+import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { TopicTreeEntityKind, TopicTreeNode } from '@shared/models/topic-tree.models';
 
-export const TOPIC_TREE_TABS = ['subscriptions', 'clients', 'shared', 'integrations', 'retained', 'dropped'] as const;
+export const TOPIC_TREE_TABS = ['details', 'subscriptions', 'clients', 'shared', 'integrations', 'retained', 'dropped'] as const;
 export type TopicTreeTab = typeof TOPIC_TREE_TABS[number];
+type PreviewTab = Exclude<TopicTreeTab, 'details'>;
 
-interface DetailsRow {
-  primary: string;
-  secondary?: string;
-  value?: string | number;
+interface PreviewColumn {
+  key: string;
+  titleKey: string;
+  number?: boolean;
+  translate?: boolean;
 }
 
+type PreviewRow = Record<string, string | number>;
+
 const PREVIEW_SIZE = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const PREVIEW_COLUMNS: Record<PreviewTab, PreviewColumn[]> = {
+  subscriptions: [
+    { key: 'clientId', titleKey: 'topic-tree.entity.client-id' },
+    { key: 'topicFilter', titleKey: 'topic-tree.entity.topic-filter' },
+    { key: 'qos', titleKey: 'topic-tree.entity.qos', number: true }
+  ],
+  clients: [
+    { key: 'id', titleKey: 'topic-tree.entity.client-id' },
+    { key: 'status', titleKey: 'topic-tree.entity.status', translate: true },
+    { key: 'clientType', titleKey: 'topic-tree.entity.client-type', translate: true },
+    { key: 'subscriptions', titleKey: 'topic-tree.entity.subscriptions', number: true }
+  ],
+  shared: [
+    { key: 'id', titleKey: 'topic-tree.entity.group' },
+    { key: 'subscriptions', titleKey: 'topic-tree.entity.subscriptions', number: true }
+  ],
+  integrations: [
+    { key: 'id', titleKey: 'topic-tree.entity.integration' },
+    { key: 'subscriptions', titleKey: 'topic-tree.entity.subscriptions', number: true }
+  ],
+  retained: [
+    { key: 'topic', titleKey: 'topic-tree.entity.topic' },
+    { key: 'payload', titleKey: 'topic-tree.entity.payload' },
+    { key: 'qos', titleKey: 'topic-tree.entity.qos', number: true }
+  ],
+  dropped: [
+    { key: 'topic', titleKey: 'topic-tree.entity.topic' },
+    { key: 'clientId', titleKey: 'topic-tree.entity.client-id' },
+    { key: 'reason', titleKey: 'topic-tree.entity.reason', translate: true },
+    { key: 'count', titleKey: 'topic-tree.entity.count', number: true }
+  ]
+};
+
+const OPEN_IN_KEYS: Record<PreviewTab, string> = {
+  subscriptions: 'topic-tree.open-in-subscriptions',
+  clients: 'topic-tree.open-in-sessions',
+  shared: 'topic-tree.open-in-shared',
+  integrations: 'topic-tree.open-in-integrations',
+  retained: 'topic-tree.open-in-retained',
+  dropped: 'topic-tree.open-in-dropped'
+};
 
 @Component({
   selector: 'tb-topic-tree-details',
   templateUrl: './topic-tree-details.component.html',
   styleUrls: ['./topic-tree-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, MatButton, MatIconButton, MatIcon, MatProgressBar, MatTab, MatTabGroup, MatTooltip, TranslateModule]
+  imports: [DecimalPipe, NgTemplateOutlet, MatButton, MatProgressBar, MatTab, MatTabContent, MatTabGroup, MatTableModule,
+    MatTooltip, TranslateModule, DetailsPanelComponent, CopyButtonComponent]
 })
 export class TopicTreeDetailsComponent implements OnChanges {
 
   @Input() node: TopicTreeNode;
-  @Input() tab: TopicTreeTab = 'subscriptions';
+  @Input() tab: TopicTreeTab = 'details';
   @Output() closed = new EventEmitter<void>();
   @Output() tabChange = new EventEmitter<TopicTreeTab>();
 
   readonly tabs = TOPIC_TREE_TABS;
+  readonly openInKeys = OPEN_IN_KEYS;
   full: TopicTreeNode;
-  rows: DetailsRow[] = [];
+  rows: PreviewRow[] = [];
   total = 0;
   loading = false;
 
   private readonly topicTree = inject(TopicTreeService);
   private readonly subscriptions = inject(SubscriptionService);
+  private readonly retained = inject(RetainedMsgService);
+  private readonly dropped = inject(DroppedMsgService);
   private readonly router = inject(Router);
-  private readonly clipboard = inject(Clipboard);
   private readonly cd = inject(ChangeDetectorRef);
   private requestId = 0;
 
@@ -89,8 +147,16 @@ export class TopicTreeDetailsComponent implements OnChanges {
     return this.tabs.indexOf(this.tab);
   }
 
-  get displayTotal(): number {
-    return this.tab === 'dropped' ? (this.full?.dropped24h ?? 0) : this.total;
+  get previewTab(): PreviewTab | null {
+    return this.tab === 'details' ? null : this.tab;
+  }
+
+  get previewColumns(): PreviewColumn[] {
+    return this.previewTab ? PREVIEW_COLUMNS[this.previewTab] : [];
+  }
+
+  get previewColumnKeys(): string[] {
+    return this.previewColumns.map(c => c.key);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -109,24 +175,13 @@ export class TopicTreeDetailsComponent implements OnChanges {
     this.loadTab();
   }
 
-  copyPath(): void {
-    this.clipboard.copy(this.node.path ?? '');
+  openTab(tab: TopicTreeTab): void {
+    this.selectTab(this.tabs.indexOf(tab));
   }
 
-  openTarget(): string {
-    switch (this.tab) {
-      case 'clients': return 'sessions';
-      case 'shared': return 'shared';
-      case 'integrations': return 'integrations';
-      case 'retained': return 'retained';
-      case 'dropped': return 'dropped';
-      default: return 'subscriptions';
-    }
-  }
-
-  openIn(tab: TopicTreeTab = this.tab): void {
+  openIn(): void {
     const path = this.node.path;
-    switch (tab) {
+    switch (this.previewTab) {
       case 'subscriptions':
         this.router.navigate(['/subscriptions'], { queryParams: { topicFilter: path, topicMatch: 'PREFIX' } });
         break;
@@ -164,11 +219,17 @@ export class TopicTreeDetailsComponent implements OnChanges {
   }
 
   private loadTab(): void {
-    this.loading = true;
-    this.rows = [];
-    this.cd.markForCheck();
     const requestId = ++this.requestId;
-    this.fetch(this.tab).subscribe({
+    this.rows = [];
+    this.total = 0;
+    if (!this.previewTab) {
+      this.loading = false;
+      this.cd.markForCheck();
+      return;
+    }
+    this.loading = true;
+    this.cd.markForCheck();
+    this.fetch(this.previewTab).subscribe({
       next: ({ rows, total }) => {
         if (requestId !== this.requestId) {
           return;
@@ -187,14 +248,14 @@ export class TopicTreeDetailsComponent implements OnChanges {
     });
   }
 
-  private fetch(tab: TopicTreeTab): Observable<{ rows: DetailsRow[]; total: number }> {
+  private fetch(tab: PreviewTab): Observable<{ rows: PreviewRow[]; total: number }> {
     const path = this.node.path;
     switch (tab) {
       case 'subscriptions': {
         const query = new ClientSubscriptionsQuery(new PageLink(PREVIEW_SIZE, 0), { topicFilter: path, topicMatch: 'PREFIX' });
         return this.subscriptions.getClientSubscriptionsV2(query).pipe(map(p => ({
           total: p.totalElements,
-          rows: p.data.map(s => ({ primary: s.clientId, secondary: s.subscription.topicFilter, value: 'QoS ' + s.subscription.qos }))
+          rows: p.data.map(s => ({ clientId: s.clientId, topicFilter: s.subscription.topicFilter, qos: qosFromName(s.subscription.qos) }))
         })));
       }
       case 'clients':
@@ -204,16 +265,34 @@ export class TopicTreeDetailsComponent implements OnChanges {
         return this.topicTree.getEntities(path, kind, 0, PREVIEW_SIZE).pipe(map(p => ({
           total: p.totalElements,
           rows: p.data.map(e => ({
-            primary: e.id,
-            secondary: e.clientType ?? (e.connected == null ? undefined : (e.connected ? 'online' : 'offline')),
-            value: e.subscriptions
+            id: e.id,
+            subscriptions: e.subscriptions,
+            status: e.connected == null ? '' : (e.connected ? 'topic-tree.online' : 'topic-tree.offline'),
+            clientType: clientTypeTranslationMap.get(e.clientType as ClientType) ?? ''
           }))
         })));
       }
-      case 'retained':
-        return of({ total: this.node.retainedTotal, rows: [] });
-      case 'dropped':
-        return of({ total: 0, rows: [] });
+      case 'retained': {
+        const query = new RetainedMessagesQuery(new TimePageLink(PREVIEW_SIZE, 0), { topicName: path, topicMatch: 'PREFIX' });
+        return this.retained.getRetainedMessagesV2(query).pipe(map(p => ({
+          total: p.totalElements,
+          rows: p.data.map(m => ({ topic: m.topic, payload: m.payload, qos: m.qos }))
+        })));
+      }
+      case 'dropped': {
+        const now = Date.now();
+        const pageLink = new TimePageLink(PREVIEW_SIZE, 0, null, { property: 'lastEventTime', direction: Direction.DESC }, now - DAY_MS, now);
+        const query = new DroppedMessagesQuery(pageLink, { topicName: path, topicMatch: MatchMode.PREFIX });
+        return this.dropped.getDroppedMessages(query).pipe(map(p => ({
+          total: p.totalElements,
+          rows: p.data.map(m => ({
+            topic: m.topic,
+            clientId: m.clientId,
+            reason: droppedMsgReasonTranslationMap.get(m.reason) ?? m.reason ?? '',
+            count: m.droppedCount
+          }))
+        })));
+      }
     }
   }
 }

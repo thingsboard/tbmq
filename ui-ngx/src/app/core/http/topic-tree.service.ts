@@ -35,7 +35,6 @@ import { Observable } from 'rxjs';
 import { createDefaultHttpOptions, QueryParams, RequestConfig } from './http-utils';
 import { PageData } from '@shared/models/page/page-data';
 import {
-  TopicChartPoint,
   TopicResolve,
   TopicTreeEntity,
   TopicTreeEntityKind,
@@ -75,18 +74,6 @@ export class TopicTreeService {
 
   public resolve(topic: string, config?: RequestConfig): Observable<TopicResolve> {
     return this.http.get<TopicResolve>('/api/topic-tree/resolve', this.options({ topic }, config));
-  }
-
-  public getChart(filter: string, metric: 'subscriptions' | 'clients', limit: number, depth?: number,
-                  config?: RequestConfig): Observable<TopicChartPoint[]> {
-    const queryParams: QueryParams = { metric, limit: `${limit}` };
-    if (filter) {
-      queryParams.filter = filter;
-    }
-    if (depth) {
-      queryParams.depth = `${depth}`;
-    }
-    return this.http.get<TopicChartPoint[]>('/api/topic-tree/chart', this.options(queryParams, config));
   }
 
   // cleanQueryParams drops empty strings, but path '' addresses the node with an empty segment (root is null)

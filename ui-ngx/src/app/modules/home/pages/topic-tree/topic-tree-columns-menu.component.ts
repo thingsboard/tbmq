@@ -42,6 +42,7 @@ import { TopicTreeColumnId, topicTreeColumns } from '@shared/models/topic-tree.m
 @Component({
   selector: 'tb-topic-tree-columns-menu',
   templateUrl: './topic-tree-columns-menu.component.html',
+  styleUrls: ['./topic-tree-columns-menu.component.scss'],
   imports: [MatIconButton, MatIcon, MatTooltip, MatMenu, MatMenuItem, MatMenuTrigger, MatCheckbox, MatDivider, TranslateModule]
 })
 export class TopicTreeColumnsMenuComponent {

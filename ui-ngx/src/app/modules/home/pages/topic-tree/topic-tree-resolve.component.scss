@@ -28,12 +28,30 @@
  * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
-:host { display: block; padding: 0 16px 8px; }
-.topic-field { width: 360px; max-width: 100%; }
-.result { border: 1px dashed rgba(0, 0, 0, .2); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
-.summary { font-weight: 500; margin-bottom: 4px; }
-.match { min-height: 32px; flex-wrap: wrap; }
-.mono { font-family: 'Roboto Mono', monospace; }
-.filter { min-width: 200px; }
-.chip { padding: 1px 8px; border-radius: 999px; background: rgba(21, 96, 53, .12); color: #0f4a29; font-size: 12px; font-weight: 500; }
-.meta { opacity: .7; display: inline-flex; gap: 6px; }
+:host {
+  display: block;
+  border-bottom: 1px solid rgba(0, 0, 0, .12);
+}
+
+.result {
+  max-height: 280px;
+}
+
+.table-container {
+  overflow: auto;
+  min-height: 0;
+}
+
+.summary {
+  padding: 8px 24px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, .54);
+
+  &.error {
+    color: #f44336;
+  }
+}
+
+th.mat-number-cell {
+  text-align: end;
+}

@@ -28,41 +28,7 @@
  * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
-
-:host {
-  display: block;
-  padding: 16px;
-  overflow: auto;
-}
-
-.filter {
-  width: 280px;
-  max-width: 100%;
-}
-
-.small {
-  width: 110px;
-}
-
-.hint {
-  font-size: 12px;
-  opacity: .6;
-}
-
-.chart-wrap {
-  position: relative;
-}
-
-.chart {
-  width: 100%;
-  min-height: 240px;
-}
-
-.empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: .6;
+// The row button owns the click; a checkbox reacting too would toggle its own state out of sync with the binding.
+.tb-topic-tree-column-item mat-checkbox {
+  pointer-events: none;
 }

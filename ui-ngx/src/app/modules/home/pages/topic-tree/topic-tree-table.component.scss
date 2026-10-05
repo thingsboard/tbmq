@@ -54,29 +54,19 @@
   overflow: auto;
 }
 
-table {
-  width: 100%;
+.mat-column-topic {
+  width: 40%;
 }
 
 .mat-mdc-row {
   cursor: pointer;
-  height: 36px;
-
-  &:hover {
-    background: rgba(0, 0, 0, .04);
-  }
-
-  &.selected {
-    background: rgba(21, 96, 53, .12);
-  }
 }
 
 .compact .mat-mdc-row {
-  height: 30px;
+  height: 36px;
 }
 
-.num {
-  text-align: right;
+.mat-number-cell {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -89,41 +79,27 @@ table {
 }
 
 .caret {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  line-height: 24px;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
 
   &.invisible {
     visibility: hidden;
   }
-
-  .mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-  }
-}
-
-.mono {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 13px;
 }
 
 .segment.wild {
-  padding: 0 5px;
-  border-radius: 3px;
-  background: rgba(79, 52, 120, .12);
-  color: #4f3478;
+  font-weight: 500;
+  color: var(--tb-primary-500);
 }
 
 .segment.empty-segment {
-  opacity: .6;
+  color: rgba(0, 0, 0, .38);
 }
 
 .children-count {
-  font-size: 11px;
-  opacity: .55;
+  font-size: 12px;
+  color: rgba(0, 0, 0, .38);
 }
 
 .path {
@@ -135,43 +111,47 @@ table {
   vertical-align: middle;
 }
 
-.chip {
+.count {
   border: 0;
-  cursor: pointer;
-  min-width: 28px;
-  padding: 1px 8px;
-  border-radius: 999px;
+  padding: 0;
+  background: transparent;
   font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  background: rgba(21, 96, 53, .12);
-  color: #0f4a29;
+  color: inherit;
+  cursor: pointer;
 
-  &.amber { background: rgba(240, 180, 40, .2); color: #7a5300; }
-  &.blue { background: rgba(35, 74, 122, .12); color: #234a7a; }
-  &.violet { background: rgba(79, 52, 120, .12); color: #4f3478; }
-  &.red { background: rgba(138, 42, 34, .12); color: #8a2a22; }
-  &.zero { background: transparent; color: rgba(0, 0, 0, .38); font-weight: 400; }
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &.zero {
+    color: rgba(0, 0, 0, .38);
+    cursor: default;
+    text-decoration: none;
+  }
 }
 
 .more {
-  color: #156035;
+  color: var(--tb-primary-500);
   font-weight: 500;
 }
 
 .empty {
   padding: 32px;
   text-align: center;
-  opacity: .6;
+  color: rgba(0, 0, 0, .54);
 }
 
 .search-total {
-  padding: 8px 16px;
-  font-size: 13px;
-  opacity: .7;
+  padding: 8px 24px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, .54);
 }
 
 .search-more {
   align-self: center;
   margin: 8px;
+}
+
+th.mat-number-cell {
+  text-align: end;
 }

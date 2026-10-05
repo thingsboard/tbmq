@@ -228,7 +228,7 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
       if (row) {
         this.publish();
         this.nodeSelected.emit(row.node);
-        setTimeout(() => this.host.nativeElement.querySelector('tr.selected')?.scrollIntoView({ block: 'center' }));
+        setTimeout(() => this.host.nativeElement.querySelector('tr.tb-current-entity')?.scrollIntoView({ block: 'center' }));
       }
     });
   }

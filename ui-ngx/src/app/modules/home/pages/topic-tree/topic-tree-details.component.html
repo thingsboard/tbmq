@@ -30,46 +30,104 @@
     OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 
 -->
-<div class="tb-topic-tree-details flex flex-col">
-  <div class="header flex flex-col">
-    <div class="flex flex-row items-center">
-      <span class="label flex-1">{{ 'topic-tree.topic-tree' | translate }}</span>
-      <button mat-icon-button type="button" (click)="closed.emit()"><mat-icon>close</mat-icon></button>
-    </div>
-    <span class="path mono">{{ node.path ?? ('topic-tree.root' | translate) }}</span>
-    <span class="hint">{{ 'topic-tree.exact-total' | translate: { exact: node.subscriptionsExact, total: node.subscriptionsTotal } }}</span>
-  </div>
-  <div class="tiles">
-    <div class="tile"><div class="v">{{ node.subscriptionsTotal | number }}</div><div class="l">{{ 'topic-tree.column.subscriptions' | translate }}</div></div>
-    <div class="tile"><div class="v">{{ full?.clientsTotal ?? '–' }}</div><div class="l">{{ 'topic-tree.column.clients' | translate }}</div></div>
-    <div class="tile"><div class="v">{{ full ? (full.clientsOnline + ' / ' + full.clientsOffline) : '–' }}</div><div class="l">{{ 'topic-tree.column.online' | translate }}</div></div>
-  </div>
-  <mat-tab-group [selectedIndex]="tabIndex" (selectedIndexChange)="selectTab($event)" mat-stretch-tabs="false" animationDuration="0ms">
+<tb-details-panel class="flex flex-1"
+                  [headerTitle]="node.path ?? ('topic-tree.root' | translate)"
+                  [headerSubtitle]="'topic-tree.topic-details' | translate"
+                  [isReadOnly]="true"
+                  (closeDetails)="closed.emit()">
+  <mat-tab-group class="tb-absolute-fill flex flex-1" mat-stretch-tabs="false" animationDuration="0ms"
+                 [selectedIndex]="tabIndex" (selectedIndexChange)="selectTab($event)">
     @for (t of tabs; track t) {
-      <mat-tab [label]="('topic-tree.tab.' + t) | translate"></mat-tab>
+      <mat-tab [label]="(t === 'details' ? 'details.details' : 'topic-tree.tab.' + t) | translate">
+        <ng-template matTabContent>
+          @if (t === 'details') {
+            <ng-container [ngTemplateOutlet]="details"></ng-container>
+          } @else {
+            <ng-container [ngTemplateOutlet]="preview"></ng-container>
+          }
+        </ng-template>
+      </mat-tab>
     }
   </mat-tab-group>
-  <div class="tab-body flex-1">
+</tb-details-panel>
+
+<ng-template #details>
+  <div class="tb-topic-tree-overview flex flex-col gap-4">
+    <div class="path-row flex flex-row items-center gap-2">
+      <span class="path flex-1">{{ node.path ?? ('topic-tree.root' | translate) }}</span>
+      @if (node.path !== null) {
+        <tb-copy-button [copyText]="node.path" [tooltipText]="'topic-tree.copy-path' | translate" tooltipPosition="above"
+                        icon="content_copy"></tb-copy-button>
+      }
+    </div>
+    <div class="tiles">
+      <button type="button" class="tile" (click)="openTab('subscriptions')"
+              [matTooltip]="'topic-tree.exact-total' | translate: { exact: node.subscriptionsExact, total: node.subscriptionsTotal }">
+        <span class="value">{{ node.subscriptionsTotal | number }}</span>
+        <span class="label">{{ 'topic-tree.column.subscriptions' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('clients')">
+        <span class="value">{{ full ? (full.clientsTotal | number) : '–' }}</span>
+        <span class="label">{{ 'topic-tree.column.clients' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('clients')">
+        <span class="value">{{ full ? (full.clientsOnline | number) + ' / ' + (full.clientsOffline | number) : '–' }}</span>
+        <span class="label">{{ 'topic-tree.column.online' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('retained')">
+        <span class="value">{{ node.retainedTotal | number }}</span>
+        <span class="label">{{ 'topic-tree.column.retained' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('shared')">
+        <span class="value">{{ full ? (full.sharedGroupsTotal | number) : '–' }}</span>
+        <span class="label">{{ 'topic-tree.column.shared' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('integrations')">
+        <span class="value">{{ full ? (full.integrationsTotal | number) : '–' }}</span>
+        <span class="label">{{ 'topic-tree.column.integrations' | translate }}</span>
+      </button>
+      <button type="button" class="tile" (click)="openTab('dropped')" [matTooltip]="'topic-tree.column.dropped-hint' | translate">
+        <span class="value">{{ full ? (full.dropped24h | number) : '–' }}</span>
+        <span class="label">{{ 'topic-tree.column.dropped' | translate }}</span>
+      </button>
+      <div class="tile static">
+        <span class="value">{{ node.childrenCount | number }}</span>
+        <span class="label">{{ 'topic-tree.subtopics' | translate }}</span>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #preview>
+  <div class="tb-topic-tree-preview flex flex-col">
     @if (loading) {
       <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
-    @for (r of rows; track r.primary + r.secondary) {
-      <div class="row flex flex-row items-center gap-2">
-        <span class="primary flex-1">{{ r.primary }}</span>
-        @if (r.secondary) {<span class="secondary mono">{{ r.secondary }}</span>}
-        @if ((r.value ?? null) !== null) {<span class="value">{{ r.value }}</span>}
-      </div>
-    }
+    <div class="table-container flex-1">
+      <table mat-table [dataSource]="rows">
+        @for (column of previewColumns; track column.key) {
+          <ng-container [matColumnDef]="column.key">
+            <th mat-header-cell *matHeaderCellDef [class.mat-number-cell]="column.number">{{ column.titleKey | translate }}</th>
+            <td mat-cell *matCellDef="let row" [class.mat-number-cell]="column.number">
+              <span class="cell-text" [matTooltip]="column.translate ? '' : row[column.key]" matTooltipPosition="above"
+                    [matTooltipDisabled]="column.number">
+                {{ column.translate ? (row[column.key] ? (row[column.key] | translate) : '') : row[column.key] }}
+              </span>
+            </td>
+          </ng-container>
+        }
+        <tr mat-header-row *matHeaderRowDef="previewColumnKeys; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: previewColumnKeys"></tr>
+      </table>
+      @if (!loading && !rows.length) {
+        <span class="no-data-found flex flex-row items-center justify-center">{{ 'topic-tree.no-data' | translate }}</span>
+      }
+    </div>
     @if (!loading) {
-      <div class="summary">
-        {{ displayTotal | number }}
-        <button mat-button type="button" color="primary" (click)="openIn()">{{ ('topic-tree.open-in-' + openTarget()) | translate }}</button>
+      <div class="preview-footer flex flex-row items-center gap-2">
+        <span class="flex-1">{{ 'topic-tree.shown-of-total' | translate: { shown: (rows.length | number), total: (total | number) } }}</span>
+        <button mat-button color="primary" type="button" (click)="openIn()">{{ openInKeys[previewTab] | translate }}</button>
       </div>
     }
   </div>
-  <div class="actions flex flex-row flex-wrap gap-2">
-    <button mat-stroked-button type="button" (click)="openIn('subscriptions')">{{ 'topic-tree.open-in-subscriptions' | translate }}</button>
-    <button mat-stroked-button type="button" (click)="copyPath()">{{ 'topic-tree.copy-path' | translate }}</button>
-    <button mat-stroked-button type="button" disabled [matTooltip]="'topic-tree.watch-traffic-hint' | translate">{{ 'topic-tree.watch-traffic' | translate }}</button>
-  </div>
-</div>
+</ng-template>

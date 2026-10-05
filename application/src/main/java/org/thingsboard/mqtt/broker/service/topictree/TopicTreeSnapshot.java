@@ -60,8 +60,8 @@ public final class TopicTreeSnapshot {
 
     @Getter
     private final TopicTreeNode root;
-    // Preorder (index 0 is the root): the nodes, each node's parent index and its lower-cased segment. Search and
-    // the chart scan these flat arrays instead of chasing tree pointers or keeping a full path string per node.
+    // Preorder (index 0 is the root): the nodes, each node's parent index and its lower-cased segment. Search scans
+    // these flat arrays instead of chasing tree pointers or keeping a full path string per node.
     private final TopicTreeNode[] preorder;
     private final int[] parents;
     private final String[] lowerSegments;
@@ -185,36 +185,10 @@ public final class TopicTreeSnapshot {
         return page(rows, link);
     }
 
-    public List<TopicTreeNode> top(String filter, Integer depth, boolean byClients, int limit) {
-        String needle = filter == null ? null : filter.toLowerCase(Locale.ROOT);
-        List<TopicTreeNode> matches = new ArrayList<>();
-        forEachMatching(needle, n -> {
-            if (depth == null || n.depth() == depth) {
-                matches.add(n);
-            }
-        });
-        matches.sort(BY_SUBSCRIPTIONS_DESC);
-        List<TopicTreeNode> hits = matches;
-        if (byClients) {
-            int prefilter = Math.min(hits.size(), limit * 4);
-            List<TopicTreeNode> head = new ArrayList<>(hits.subList(0, prefilter));
-            head.sort(Comparator.comparingInt((TopicTreeNode n) -> clientCounts(n).total()).reversed());
-            hits = head;
-        }
-        return hits.size() > limit ? new ArrayList<>(hits.subList(0, limit)) : hits;
-    }
-
     // A node matches when its parent did, or when the needle ends inside its own segment. In preorder the shared
-    // buffer always starts with the parent's path, so each path is built from its parent's by one append. A null
-    // needle matches every node except the root.
+    // buffer always starts with the parent's path, so each path is built from its parent's by one append.
     private void forEachMatching(String needle, Consumer<TopicTreeNode> action) {
         int n = preorder.length;
-        if (needle == null) {
-            for (int i = 1; i < n; i++) {
-                action.accept(preorder[i]);
-            }
-            return;
-        }
         int needleLength = needle.length();
         // Without a '/' the needle cannot span two levels, so only the node's own segment needs checking.
         boolean crossesLevels = needle.indexOf('/') >= 0;

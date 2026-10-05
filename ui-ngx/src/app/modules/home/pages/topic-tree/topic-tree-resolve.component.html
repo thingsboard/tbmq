@@ -30,41 +30,77 @@
     OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 
 -->
-<div class="tb-topic-tree-resolve flex flex-col gap-1">
-  <form class="flex flex-row items-center gap-2" (ngSubmit)="resolve()">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="topic-field">
-      <mat-label>{{ 'topic-tree.resolve-topic' | translate }}</mat-label>
-      <input matInput [formControl]="topic" [placeholder]="'topic-tree.resolve-placeholder' | translate">
-      @if (topic.touched && topic.invalid && topic.value) {
-        <mat-error>{{ 'topic-tree.resolve-invalid' | translate }}</mat-error>
-      }
+<mat-toolbar class="mat-mdc-table-toolbar">
+  <form class="mat-toolbar-tools" (ngSubmit)="resolve()">
+    <button mat-icon-button type="button" [matTooltip]="'topic-tree.find-subscribers-hint' | translate" matTooltipPosition="above">
+      <mat-icon svgIcon="mdi:account-search"></mat-icon>
+    </button>
+    <mat-form-field class="flex flex-1" appearance="fill">
+      <mat-label>&nbsp;</mat-label>
+      <input #topicInput matInput [formControl]="topic" [placeholder]="'topic-tree.find-subscribers-placeholder' | translate"/>
     </mat-form-field>
-    <button mat-flat-button color="primary" type="submit" [disabled]="loading">{{ 'topic-tree.resolve' | translate }}</button>
-    @if (result) {
-      <button mat-icon-button type="button" (click)="clear()"><mat-icon>close</mat-icon></button>
-    }
+    <button mat-button color="primary" type="submit" [disabled]="loading || !topic.value">{{ 'topic-tree.find' | translate }}</button>
+    <button mat-icon-button type="button" (click)="close()" [matTooltip]="'action.close' | translate" matTooltipPosition="above">
+      <mat-icon>close</mat-icon>
+    </button>
   </form>
-  @if (result) {
-    <div class="result">
-      @if (result.matches.length) {
-        <div class="summary">{{ 'topic-tree.resolve-result' | translate: { subscribers: result.subscribersTotal, clients: result.clientsTotal } }}</div>
-        @for (m of result.matches; track m.topicFilter) {
-          <div class="match flex flex-row items-center gap-2">
-            <span class="mono filter">{{ m.topicFilter }}</span>
-            <span class="chip">{{ m.subscriptions | number }}</span>
-            <span class="meta">
-              @for (q of m.qos | keyvalue; track q.key) {<span>QoS {{ q.key }}: {{ q.value }}</span>}
-              @if (m.integrations) {<span>· {{ m.integrations }} {{ 'topic-tree.column.integrations' | translate }}</span>}
-              @if (m.sharedGroups) {<span>· {{ m.sharedGroups }} {{ 'topic-tree.column.shared' | translate }}</span>}
-            </span>
-            <span class="flex-1"></span>
-            <button mat-button type="button" (click)="showInTree.emit(m.topicFilter)">{{ 'topic-tree.show-in-tree' | translate }}</button>
-            <button mat-button type="button" (click)="openInSubscriptions.emit(m.topicFilter)">{{ 'topic-tree.open-in-subscriptions' | translate }}</button>
-          </div>
-        }
-      } @else {
-        <div class="summary">{{ 'topic-tree.resolve-none' | translate }}</div>
-      }
-    </div>
-  }
-</div>
+</mat-toolbar>
+@if (loading) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+@if (invalid) {
+  <div class="summary error">{{ 'topic-tree.find-subscribers-invalid' | translate }}</div>
+} @else if (result) {
+  <div class="result flex flex-col">
+    @if (result.matches.length) {
+      <div class="summary">{{ 'topic-tree.subscribers-result' | translate: { subscribers: (result.subscribersTotal | number), clients: (result.clientsTotal | number) } }}</div>
+      <div class="table-container">
+        <table mat-table [dataSource]="result.matches">
+          <ng-container matColumnDef="topicFilter">
+            <th mat-header-cell *matHeaderCellDef>{{ 'topic-tree.entity.topic-filter' | translate }}</th>
+            <td mat-cell *matCellDef="let m">{{ m.topicFilter }}</td>
+          </ng-container>
+          <ng-container matColumnDef="subscriptions">
+            <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.subscriptions' | translate }}</th>
+            <td mat-cell *matCellDef="let m" class="mat-number-cell">{{ m.subscriptions | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="clients">
+            <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.clients' | translate }}</th>
+            <td mat-cell *matCellDef="let m" class="mat-number-cell">{{ m.clients | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="qos">
+            <th mat-header-cell *matHeaderCellDef>{{ 'topic-tree.entity.qos' | translate }}</th>
+            <td mat-cell *matCellDef="let m">{{ qosText(m) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="integrations">
+            <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.integrations' | translate }}</th>
+            <td mat-cell *matCellDef="let m" class="mat-number-cell">{{ m.integrations | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="sharedGroups">
+            <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.shared' | translate }}</th>
+            <td mat-cell *matCellDef="let m" class="mat-number-cell">{{ m.sharedGroups | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let m">
+              <div class="flex flex-row justify-end">
+                <button mat-icon-button type="button" (click)="showInTree.emit(m.topicFilter)"
+                        [matTooltip]="'topic-tree.show-in-tree' | translate" matTooltipPosition="above">
+                  <mat-icon svgIcon="mdi:file-tree"></mat-icon>
+                </button>
+                <button mat-icon-button type="button" (click)="openInSubscriptions.emit(m.topicFilter)"
+                        [matTooltip]="'topic-tree.open-in-subscriptions' | translate" matTooltipPosition="above">
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let m; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    } @else {
+      <div class="summary">{{ 'topic-tree.subscribers-none' | translate }}</div>
+    }
+  </div>
+}

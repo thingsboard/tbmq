@@ -48,7 +48,7 @@
               {{ 'topic-tree.show-more' | translate: { count: row.remaining } }}
             </span>
           } @else if (searchMode) {
-            <span class="path mono" [matTooltip]="row.node.path">{{ row.node.path }}</span>
+            <span class="path" [matTooltip]="row.node.path">{{ row.node.path }}</span>
           } @else {
             <span class="node" [style.padding-left.px]="row.depth * 20">
               <button mat-icon-button class="caret" type="button"
@@ -60,11 +60,11 @@
                   <mat-icon>{{ row.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
                 }
               </button>
-              <span class="mono segment" [class.wild]="row.node.wildcard" [class.empty-segment]="row.node.segment === ''">
+              <span class="segment" [class.wild]="row.node.wildcard" [class.empty-segment]="row.node.segment === ''">
                 {{ row.node.segment === '' ? '∅' : row.node.segment }}
               </span>
               @if (row.node.childrenCount) {
-                <span class="children-count">{{ row.node.childrenCount }}</span>
+                <span class="children-count" [matTooltip]="'topic-tree.subtopics' | translate">{{ row.node.childrenCount }}</span>
               }
             </span>
           }
@@ -72,10 +72,10 @@
       </ng-container>
 
       <ng-container matColumnDef="subscriptions">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.subscriptions' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.subscriptions' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node') {
-            <button type="button" class="chip" [class.zero]="!row.node.subscriptionsTotal"
+            <button type="button" class="count" [class.zero]="!row.node.subscriptionsTotal"
                     [matTooltip]="'topic-tree.exact-total' | translate: { exact: row.node.subscriptionsExact, total: row.node.subscriptionsTotal }"
                     (click)="clickChip($event, row, 'subscriptions')">{{ row.node.subscriptionsTotal | number }}</button>
           }
@@ -83,63 +83,63 @@
       </ng-container>
 
       <ng-container matColumnDef="clients">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.clients' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.clients' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node' && (row.node.clientsTotal ?? null) !== null) {
-            <button type="button" class="chip" [class.zero]="!row.node.clientsTotal" (click)="clickChip($event, row, 'clients')">{{ row.node.clientsTotal | number }}</button>
+            <button type="button" class="count" [class.zero]="!row.node.clientsTotal" (click)="clickChip($event, row, 'clients')">{{ row.node.clientsTotal | number }}</button>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="retained">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.retained' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.retained' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node') {
-            <button type="button" class="chip amber" [class.zero]="!row.node.retainedTotal" (click)="clickChip($event, row, 'retained')">{{ row.node.retainedTotal | number }}</button>
+            <button type="button" class="count" [class.zero]="!row.node.retainedTotal" (click)="clickChip($event, row, 'retained')">{{ row.node.retainedTotal | number }}</button>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="online">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.online' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.online' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node' && (row.node.clientsOnline ?? null) !== null) {
-            <span class="split">{{ row.node.clientsOnline | number }} / {{ row.node.clientsOffline | number }}</span>
+            <span>{{ row.node.clientsOnline | number }} / {{ row.node.clientsOffline | number }}</span>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="shared">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.shared' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.shared' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node' && (row.node.sharedGroupsTotal ?? null) !== null) {
-            <button type="button" class="chip violet" [class.zero]="!row.node.sharedGroupsTotal" (click)="clickChip($event, row, 'shared')">{{ row.node.sharedGroupsTotal | number }}</button>
+            <button type="button" class="count" [class.zero]="!row.node.sharedGroupsTotal" (click)="clickChip($event, row, 'shared')">{{ row.node.sharedGroupsTotal | number }}</button>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="integrations">
-        <th mat-header-cell *matHeaderCellDef class="num">{{ 'topic-tree.column.integrations' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell">{{ 'topic-tree.column.integrations' | translate }}</th>
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node' && (row.node.integrationsTotal ?? null) !== null) {
-            <button type="button" class="chip blue" [class.zero]="!row.node.integrationsTotal" (click)="clickChip($event, row, 'integrations')">{{ row.node.integrationsTotal | number }}</button>
+            <button type="button" class="count" [class.zero]="!row.node.integrationsTotal" (click)="clickChip($event, row, 'integrations')">{{ row.node.integrationsTotal | number }}</button>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="dropped">
-        <th mat-header-cell *matHeaderCellDef class="num"
+        <th mat-header-cell *matHeaderCellDef class="mat-number-cell"
             [matTooltip]="'topic-tree.column.dropped-hint' | translate">{{ 'topic-tree.column.dropped' | translate }}</th>
-        <td mat-cell *matCellDef="let row" class="num">
+        <td mat-cell *matCellDef="let row" class="mat-number-cell">
           @if (row.kind === 'node' && (row.node.dropped24h ?? null) !== null) {
-            <button type="button" class="chip red" [class.zero]="!row.node.dropped24h" (click)="clickChip($event, row, 'dropped')">{{ row.node.dropped24h | number }}</button>
+            <button type="button" class="count" [class.zero]="!row.node.dropped24h" (click)="clickChip($event, row, 'dropped')">{{ row.node.dropped24h | number }}</button>
           }
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"
-          [class.selected]="row.kind === 'node' && row.node.path === selectedPath"
+          [class.tb-current-entity]="row.kind === 'node' && row.node.path === selectedPath"
           [class.more-row]="row.kind === 'more'"
           (click)="select(row)" (dblclick)="toggle(row)"></tr>
     </table>

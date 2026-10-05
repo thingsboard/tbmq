@@ -41,7 +41,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.permission.Operation;
-import org.thingsboard.mqtt.broker.dto.TopicChartPointDto;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
@@ -122,16 +121,6 @@ public class TopicTreeController extends BaseController {
         return s.entities(node(s, path), k, new PageLink(clamp(pageSize), page));
     }
 
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping("/chart")
-    public List<TopicChartPointDto> getChart(@RequestParam(required = false) String filter,
-                                             @RequestParam(defaultValue = "subscriptions") String metric,
-                                             @RequestParam(defaultValue = "25") int limit,
-                                             @RequestParam(required = false) Integer depth) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
-        return doChart(filter, metric, limit, depth);
-    }
-
     PageData<TopicTreeNodeDto> doChildren(String path, String columns, int pageSize, int page,
                                           String sortProperty, String sortOrder) throws ThingsboardException {
         TopicTreeSnapshot s = snapshot();
@@ -151,17 +140,6 @@ public class TopicTreeController extends BaseController {
         PageData<TopicTreeNode> nodes = s.search(filter, link);
         List<TopicTreeNodeDto> dtos = withDropped(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(), cols);
         return new PageData<>(dtos, nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
-    }
-
-    List<TopicChartPointDto> doChart(String filter, String metric, int limit, Integer depth) throws ThingsboardException {
-        if (filter != null && !filter.isEmpty()) {
-            checkFilter(filter);
-        }
-        TopicTreeSnapshot s = snapshot();
-        boolean byClients = "clients".equalsIgnoreCase(metric);
-        return s.top(filter, depth, byClients, clamp(limit)).stream()
-                .map(n -> new TopicChartPointDto(n.path(), n.subscriptionsTotal(), s.clientCounts(n).total()))
-                .toList();
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

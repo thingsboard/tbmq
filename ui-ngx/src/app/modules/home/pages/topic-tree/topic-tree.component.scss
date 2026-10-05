@@ -28,35 +28,62 @@
  * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
+@use 'constants' as *;
+
 :host {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
+  width: 100%;
+  height: 100%;
+  display: block;
 
-.tb-topic-tree {
-  min-height: 0;
-  background: #fff;
-}
-
-.tb-topic-tree-toolbar {
-  background: transparent;
-  min-height: 56px;
-  height: auto;
-  flex-wrap: wrap;
-
-  .title {
-    font-size: 18px;
-    font-weight: 500;
+  mat-drawer-container {
+    overflow: clip;
   }
 
-  .filter-field {
-    width: 280px;
-    max-width: 100%;
-  }
-}
+  .tb-entity-table {
+    .tb-entity-table-content {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      overflow: hidden;
 
-mat-drawer-container {
-  min-height: 0;
-  background: transparent;
+      &.tb-outlined-border {
+        border: solid 1px #e0e0e0;
+        border-radius: 4px;
+      }
+
+      .mat-toolbar-tools {
+        min-height: auto;
+      }
+
+      .tb-entity-table-title {
+        padding-right: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .filter-hint {
+        padding-right: 8px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, .54);
+        white-space: nowrap;
+      }
+    }
+  }
+
+  @media #{$mat-xs} {
+    .mat-toolbar {
+      height: auto;
+      min-height: 100px;
+
+      .mat-toolbar-tools {
+        height: auto;
+      }
+
+      .tb-entity-table-title {
+        padding-bottom: 5px;
+        width: 100%;
+      }
+    }
+  }
 }

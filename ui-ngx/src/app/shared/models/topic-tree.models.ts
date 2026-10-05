@@ -76,12 +76,6 @@ export interface TopicResolve {
   matches: TopicResolveMatch[];
 }
 
-export interface TopicChartPoint {
-  path: string;
-  subscriptionsTotal: number;
-  clientsTotal: number;
-}
-
 export interface TopicTreeColumnDef {
   id: TopicTreeColumnId;
   titleKey: string;

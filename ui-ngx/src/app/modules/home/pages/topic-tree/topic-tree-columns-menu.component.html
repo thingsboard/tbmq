@@ -30,13 +30,13 @@
     OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 
 -->
-<button mat-icon-button type="button" [matMenuTriggerFor]="menu" [matTooltip]="'topic-tree.columns' | translate">
+<button mat-icon-button type="button" [matMenuTriggerFor]="menu" [matTooltip]="'topic-tree.columns' | translate" matTooltipPosition="above">
   <mat-icon>view_column</mat-icon>
 </button>
-<mat-menu #menu="matMenu">
+<mat-menu #menu="matMenu" xPosition="before">
   @for (col of allColumns; track col.id) {
-    <button mat-menu-item type="button" (click)="$event.stopPropagation(); toggle(col.id)">
-      <mat-checkbox [checked]="isSelected(col.id)" (click)="$event.preventDefault()">{{ col.titleKey | translate }}</mat-checkbox>
+    <button mat-menu-item type="button" class="tb-topic-tree-column-item" (click)="$event.stopPropagation(); toggle(col.id)">
+      <mat-checkbox [checked]="isSelected(col.id)" tabindex="-1">{{ col.titleKey | translate }}</mat-checkbox>
     </button>
   }
   <mat-divider></mat-divider>

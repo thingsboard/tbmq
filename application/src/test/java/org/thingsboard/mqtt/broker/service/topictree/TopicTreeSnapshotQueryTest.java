@@ -86,12 +86,6 @@ class TopicTreeSnapshotQueryTest {
     }
 
     @Test
-    void topByClientsHonoursDepthAndLimit() {
-        assertThat(s.top("sensors", 3, true, 1)).extracting(TopicTreeNode::path).containsExactly("sensors/+/temperature");
-        assertThat(s.top("sensors", null, false, 10).get(0).path()).isEqualTo("sensors");
-    }
-
-    @Test
     void pageBeyondIntRangeIsEmptyInsteadOfFailing() {
         PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(Integer.MAX_VALUE, Integer.MAX_VALUE));
         assertThat(p.getData()).isEmpty();
