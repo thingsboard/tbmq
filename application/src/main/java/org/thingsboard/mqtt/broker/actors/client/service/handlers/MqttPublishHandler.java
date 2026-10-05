@@ -182,10 +182,13 @@ public class MqttPublishHandler {
         }
     }
 
-    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg) {
+    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            handleMqtt5ErrorResponse(ctx, publishMsg,
-                    MqttReasonCodeResolver.pubRecError(), MqttReasonCodeResolver.pubAckError());
+            if (mqttMsgWrapper != null) {
+                // the error PUBACK/PUBREC goes through the ordered queue, otherwise the failed msg blocks all later responses
+                mqttMsgWrapper.setPersistFailed(true);
+                sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
+            }
         } else {
             disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
         }
@@ -243,38 +246,47 @@ public class MqttPublishHandler {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
                     tbMessageStatsReportClient.reportDroppedMsgs();
-                    handleMsgPersistenceFailure(ctx, publishMsg);
+                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper);
                 });
             }
         });
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {
-        MqttReasonCodes.PubAck code = MqttReasonCodeResolver.pubAckSuccess(ctx);
-        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().ack(msg.getMqttMsgWrapper());
-        if (CollectionUtils.isEmpty(ackMsgIds)) {
+        List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().ack(msg.getMqttMsgWrapper());
+        if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
         }
-        for (var ackMsgId : ackMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsgId, code));
+        for (var ackMsg : ackMsgs) {
+            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubAckError() : MqttReasonCodeResolver.pubAckSuccess(ctx);
+            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, PubRecResponseMsg msg) {
-        MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(ctx);
-        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(msg.getMqttMsgWrapper());
-        if (CollectionUtils.isEmpty(ackMsgIds)) {
+        MqttMsgWrapper mqttMsgWrapper = msg.getMqttMsgWrapper();
+        List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(mqttMsgWrapper);
+        boolean persistFailed = mqttMsgWrapper != null && mqttMsgWrapper.isPersistFailed();
+        if (persistFailed) {
+            // a failure PUBREC ends the QoS 2 flow: no PUBREL follows and the client may reuse the packet id.
+            // Not after the empty check: a msg waiting behind a pending one is released while processing another msg
+            ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), mqttMsgWrapper.getMsgId());
+        }
+        if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
         }
-        for (var ackMsgId : ackMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsgId, code));
+        for (var ackMsg : ackMsgs) {
+            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubRecError() : MqttReasonCodeResolver.pubRecSuccess(ctx);
+            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
 
-        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msg.getMessageId());
-        if (isNotPersisted(awaitingPacketInfo)) {
-            awaitingPacketInfo.setPersisted(true);
+        if (!persistFailed) {
+            AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msg.getMessageId());
+            if (isNotPersisted(awaitingPacketInfo)) {
+                awaitingPacketInfo.setPersisted(true);
+            }
         }
     }
 

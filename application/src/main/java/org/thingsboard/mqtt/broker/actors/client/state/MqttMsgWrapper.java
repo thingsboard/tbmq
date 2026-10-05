@@ -28,6 +28,8 @@ public class MqttMsgWrapper {
     private final int msgId;
     @Setter
     private volatile boolean ack;
+    @Setter
+    private volatile boolean persistFailed;
 
     public static MqttMsgWrapper newInstance(int msgId) {
         return MqttMsgWrapper.builder().msgId(msgId).build();

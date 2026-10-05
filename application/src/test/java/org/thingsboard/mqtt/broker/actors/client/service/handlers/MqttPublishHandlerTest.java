@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -32,10 +33,14 @@ import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
+import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
+import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueueImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -51,6 +56,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,8 +64,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,6 +101,7 @@ public class MqttPublishHandlerTest {
     ClientSessionCtx ctx;
     TbActorRef actorRef;
     AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx;
+    int processedActorMsgsCount;
 
     @Before
     public void setUp() {
@@ -458,6 +467,130 @@ public class MqttPublishHandlerTest {
         mqttPublishHandler.persistPubMsg(ctx, publishMsg, actorRef, null);
 
         verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), eq(publishMsg), eq(new PublisherIdentity("alice", "CN=dev")), any());
+    }
+
+    @Test
+    public void givenMqtt5Qos1MsgFailedToPersist_whenLaterMsgsPersisted_thenPubAcksReleasedInOrderWithErrorCodeForFailedMsg() {
+        givenMqtt5Session();
+        processPublishMsgs(1, 1, 2, 3);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(3);
+
+        callbacks.get(0).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+        callbacks.get(1).onSuccess(null);
+        callbacks.get(2).onSuccess(null);
+        processPubResponsesSentToActor(3);
+
+        InOrder inOrder = inOrder(mqttMessageGenerator);
+        inOrder.verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.UNSPECIFIED_ERROR);
+        inOrder.verify(mqttMessageGenerator).createPubAckMsg(2, MqttReasonCodes.PubAck.SUCCESS);
+        inOrder.verify(mqttMessageGenerator).createPubAckMsg(3, MqttReasonCodes.PubAck.SUCCESS);
+        assertThat(queueSize(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages())).isZero();
+    }
+
+    @Test
+    public void givenMqtt5Qos2MsgFailedToPersist_whenLaterMsgPersisted_thenPubRecsReleasedInOrderAndFailedPacketIdIsFreed() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 20, 21);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.get(0).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+        callbacks.get(1).onSuccess(null);
+        processPubResponsesSentToActor(2);
+
+        InOrder inOrder = inOrder(mqttMessageGenerator);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(20, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(21, MqttReasonCodes.PubRec.SUCCESS);
+        assertThat(queueSize(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages())).isZero();
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(20)).isNull();
+    }
+
+    @Test
+    public void givenMqtt5Qos2MsgFailedToPersistBehindPendingMsg_whenPendingMsgPersisted_thenFailedPacketIdIsFreed() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 20, 21);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        // the failure of 21 is handled while 20 is still in flight, so its error PUBREC can't be released yet
+        callbacks.get(1).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+        processPubResponsesSentToActor(1);
+        verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
+
+        callbacks.get(0).onSuccess(null);
+        processPubResponsesSentToActor(2);
+
+        InOrder inOrder = inOrder(mqttMessageGenerator);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(20, MqttReasonCodes.PubRec.SUCCESS);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(21, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(21)).isNull();
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(20)).isNotNull();
+    }
+
+    @Test
+    public void givenMqtt5Qos2MsgFailedToPersist_whenClientReusesPacketId_thenNewMsgIsPersisted() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 20);
+        capturePersistCallbacks(1).get(0).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+        processPubResponsesSentToActor(1);
+
+        // after a PUBREC with a failure reason code the packet id is free for reuse (MQTT 5, 4.3.3)
+        processPublishMsgs(2, 20);
+
+        verify(msgDispatcherService, times(2)).persistPublishMsg(any(), any(), any(), any());
+    }
+
+    @Test
+    public void givenMqtt311Qos1MsgFailedToPersist_whenFailureCallback_thenDisconnectClient() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        processPublishMsgs(1, 1);
+
+        capturePersistCallbacks(1).get(0).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+
+        ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, timeout(5000)).disconnect(eq("clientId"), disconnectCaptor.capture());
+        assertThat(disconnectCaptor.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_ERROR);
+        verify(actorRef, never()).tell(any());
+    }
+
+    private void givenMqtt5Session() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+    }
+
+    private void processPublishMsgs(int qos, int... packetIds) {
+        for (int packetId : packetIds) {
+            mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(packetId, qos)), actorRef);
+        }
+    }
+
+    private List<TbQueueCallback> capturePersistCallbacks(int expectedCount) {
+        ArgumentCaptor<TbQueueCallback> callbackCaptor = ArgumentCaptor.forClass(TbQueueCallback.class);
+        verify(msgDispatcherService, times(expectedCount)).persistPublishMsg(any(), any(), any(), callbackCaptor.capture());
+        return callbackCaptor.getAllValues();
+    }
+
+    // plays the client actor role: hands the responses produced by the persist callbacks back to the handler
+    private void processPubResponsesSentToActor(int expectedTotalCount) {
+        ArgumentCaptor<TbActorMsg> actorMsgCaptor = ArgumentCaptor.forClass(TbActorMsg.class);
+        verify(actorRef, timeout(5000).times(expectedTotalCount)).tell(actorMsgCaptor.capture());
+        List<TbActorMsg> actorMsgs = actorMsgCaptor.getAllValues();
+        List<TbActorMsg> newActorMsgs = actorMsgs.subList(processedActorMsgsCount, actorMsgs.size());
+        processedActorMsgsCount = actorMsgs.size();
+        for (TbActorMsg actorMsg : newActorMsgs) {
+            if (actorMsg instanceof PubAckResponseMsg pubAckResponseMsg) {
+                mqttPublishHandler.processPubAckResponse(ctx, pubAckResponseMsg);
+            } else if (actorMsg instanceof PubRecResponseMsg pubRecResponseMsg) {
+                mqttPublishHandler.processPubRecResponse(ctx, pubRecResponseMsg);
+            }
+        }
+    }
+
+    private int queueSize(OrderedProcessingQueue orderedProcessingQueue) {
+        return ((OrderedProcessingQueueImpl) orderedProcessingQueue).getQueueSize().get();
     }
 
     private MqttPublishMsg createMqttPubMsg(PublishMsg publishMsg) {
