@@ -128,9 +128,9 @@ public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSub
             rawClient.send(qos2Publish(packetId, "reused".getBytes(StandardCharsets.UTF_8)));
             // before the fix the reused msg was taken for a duplicate still being persisted and silently dropped
             assertPubRec(rawClient.receive(), packetId, MqttReasonCodes.PubRec.SUCCESS);
-            rawClient.send(new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0),
-                    MqttMessageIdVariableHeader.from(packetId)));
-            assertThat(rawClient.receive().fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBCOMP);
+            rawClient.send(pubRel(packetId));
+            // 0x92 (Packet Identifier not found) here would mean the awaiting PUBREL state of the reused id is wrong
+            assertPubComp(rawClient.receive(), packetId, MqttReasonCodes.PubComp.SUCCESS);
         }
 
         Awaitility.await("the msg published with the reused packet id is delivered")
@@ -147,11 +147,24 @@ public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSub
                 .build();
     }
 
+    private MqttMessage pubRel(int packetId) {
+        return new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(packetId));
+    }
+
     private void assertPubRec(MqttMessage msg, int packetId, MqttReasonCodes.PubRec reasonCode) {
-        assertThat(msg.fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBREC);
-        MqttPubReplyMessageVariableHeader pubRec = (MqttPubReplyMessageVariableHeader) msg.variableHeader();
-        assertThat(pubRec.messageId()).isEqualTo(packetId);
-        assertThat(pubRec.reasonCode()).isEqualTo(reasonCode.byteValue());
+        assertPubReply(msg, MqttMessageType.PUBREC, packetId, reasonCode.byteValue());
+    }
+
+    private void assertPubComp(MqttMessage msg, int packetId, MqttReasonCodes.PubComp reasonCode) {
+        assertPubReply(msg, MqttMessageType.PUBCOMP, packetId, reasonCode.byteValue());
+    }
+
+    private void assertPubReply(MqttMessage msg, MqttMessageType type, int packetId, byte reasonCode) {
+        assertThat(msg.fixedHeader().messageType()).isEqualTo(type);
+        MqttPubReplyMessageVariableHeader pubReply = (MqttPubReplyMessageVariableHeader) msg.variableHeader();
+        assertThat(pubReply.messageId()).isEqualTo(packetId);
+        assertThat(pubReply.reasonCode()).isEqualTo(reasonCode);
     }
 
     private void verifyPubResponsesAfterFailedPersist(String clientId, int qos) throws MqttException {
