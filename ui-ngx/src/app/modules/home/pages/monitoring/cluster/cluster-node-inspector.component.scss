@@ -103,6 +103,20 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   background: rgba(212, 125, 24, 0.12);
 }
 
+.tb-status-info {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.42);
+  outline: none;
+
+  &:focus-visible {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--tb-primary-300);
+  }
+}
+
 .tb-inspector-type {
   font-size: 12px;
   color: rgba(0, 0, 0, 0.54);
@@ -260,6 +274,8 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 
   .tb-unit-option {
     flex: 1;
+    min-width: 0;
+    padding: 2px 4px;
     text-align: center;
   }
 }

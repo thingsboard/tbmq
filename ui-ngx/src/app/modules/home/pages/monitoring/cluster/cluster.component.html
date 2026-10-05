@@ -33,21 +33,19 @@
 <div class="mat-padding flex flex-1 flex-col">
   <div class="tb-cluster-card" tb-fullscreen [fullscreen]="fullscreen()" (fullscreenChanged)="fullscreen.set($event)">
     <div class="tb-cluster-card-head">
-      <span class="tb-cluster-title">{{ 'monitoring.cluster.cluster' | translate }}</span>
+      <span class="tb-cluster-title">{{ 'monitoring.cluster.live-map' | translate }}</span>
+      <span class="tb-live-dot" [class.tb-live-dot-stale]="!lastTickOk()"></span>
+      @if (!lastTickOk()) {
+        <span class="tb-live-stale">{{ 'monitoring.cluster.updated-ago' | translate: {seconds: staleSeconds()} }}</span>
+      }
+      <span class="flex-1"></span>
+      <div tb-help="monitoring"></div>
       <button mat-icon-button type="button" class="tb-cluster-fullscreen"
               [matTooltip]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
               [attr.aria-label]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
               (click)="fullscreen.set(!fullscreen())">
         <mat-icon>{{ fullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
-      <span class="tb-live" [class.tb-live-stale]="!lastTickOk()">
-        <span class="tb-live-dot"></span>
-        @if (lastTickOk()) {
-          {{ 'monitoring.cluster.updated-just-now' | translate }}
-        } @else {
-          {{ 'monitoring.cluster.updated-ago' | translate: {seconds: staleSeconds()} }}
-        }
-      </span>
     </div>
     <div class="tb-cluster-card-body flex lt-lg:flex-col">
       <div class="tb-cluster-map-wrap min-w-0 flex-1">

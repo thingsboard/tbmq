@@ -30,7 +30,8 @@
  */
 
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 // Validated triple (deutan/protan/tritan separation and contrast against the white card).
@@ -48,14 +49,33 @@
   --tb-series: #d47d18;
 }
 
+// Taken from the echarts palette in chart.model.ts.
+.tb-series-sessions,
+.tb-series-cpuUsage {
+  --tb-series: #58519e;
+}
+
+.tb-series-memoryUsage {
+  --tb-series: #4fa889;
+}
+
+.tb-series-diskUsage {
+  --tb-series: #d1a656;
+}
+
+// The svg is taken out of flow so the chart can follow the box height without feeding its own size back.
 .tb-chart {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 84px;
 }
 
 .tb-chart-svg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   outline: none;
   touch-action: none;
 

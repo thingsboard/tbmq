@@ -37,6 +37,7 @@ import {
   ClusterNodeVm,
   COLUMN_X,
   compactNumber,
+  CLIENTS_RING_RADIUS,
   hexagonPoints,
   KAFKA_NODE_ID,
   KAFKA_RADIUS,
@@ -60,6 +61,7 @@ export class ClusterMapComponent {
 
   readonly columnX = COLUMN_X;
   readonly kafkaNodeId = KAFKA_NODE_ID;
+  readonly clientsRingR = CLIENTS_RING_RADIUS;
   readonly compactNumber = compactNumber;
   readonly ringArcDash = ringArcDash;
 
@@ -68,12 +70,12 @@ export class ClusterMapComponent {
     this.nodeSelected.emit(node.id);
   }
 
-  clientPills(map: ClusterMapVm): {key: string; offset: number; count: number | null; label: string}[] {
+  clientTypes(map: ClusterMapVm): {key: string; count: number | null; label: string}[] {
     const known = map.clients.hasSessionStats;
     return [
-      {key: 'device', offset: -30, count: known ? map.clients.deviceSessions : null, label: 'monitoring.cluster.devices'},
-      {key: 'application', offset: 0, count: known ? map.clients.applicationSessions : null, label: 'monitoring.cluster.applications'},
-      {key: 'integration', offset: 30, count: known ? map.clients.integrationSessions : null, label: 'monitoring.cluster.integration-clients'}
+      {key: 'device', count: known ? map.clients.deviceSessions : null, label: 'monitoring.cluster.devices'},
+      {key: 'application', count: known ? map.clients.applicationSessions : null, label: 'monitoring.cluster.applications'},
+      {key: 'integration', count: known ? map.clients.integrationSessions : null, label: 'monitoring.cluster.integrations'}
     ];
   }
 

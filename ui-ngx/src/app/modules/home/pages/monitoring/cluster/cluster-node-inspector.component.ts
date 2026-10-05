@@ -36,9 +36,10 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import {
+  ResourceUsageStatus,
   resourceUsageStatusStyle,
   resourceUsageStatusTranslationMap,
-  serviceTypeMap
+  resourceUsageTooltipTranslationMap
 } from '@shared/models/resource-usage.model';
 import { formatLargeNumber } from '@core/utils';
 import { ChartKey } from '@shared/models/chart.model';
@@ -91,7 +92,8 @@ export class ClusterNodeInspectorComponent {
 
   readonly statusStyle = computed(() => resourceUsageStatusStyle.get(this.node()?.status));
   readonly statusLabel = computed(() => resourceUsageStatusTranslationMap.get(this.node()?.status));
-  readonly serviceTypeLabel = computed(() => serviceTypeMap.get(this.node()?.serviceType));
+  readonly statusHint = computed(() => resourceUsageTooltipTranslationMap.get(this.node()?.status));
+  readonly activeStatus = ResourceUsageStatus.ACTIVE;
   readonly meters = computed<MeterVm[]>(() => {
     const node = this.node();
     if (!node) {

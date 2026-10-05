@@ -47,7 +47,7 @@ export type ClusterNodeKind = 'broker' | 'executor';
 
 export const VIEWBOX_WIDTH = 1060;
 export const BASE_HEIGHT = 476;
-export const ROW_GAP = 104;
+export const ROW_GAP = 118;
 export const PAD_Y = 90;
 export const COLUMN_X = {
   clients: 120,
@@ -55,7 +55,7 @@ export const COLUMN_X = {
   kafka: 720,
   executors: 960
 };
-export const CLIENTS_PILL_HALF_WIDTH = 26;
+export const CLIENTS_RING_RADIUS = 34;
 export const BROKER_RING_RADIUS = 34;
 export const EXECUTOR_RING_RADIUS = 22;
 export const EXECUTOR_DISC_RADIUS = 11;
@@ -270,13 +270,14 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
     statsIntervalMinutes,
     thresholds
   }));
+  const activeExecutors = executorInfos.filter(info => info.status === ResourceUsageStatus.ACTIVE).length;
   const executors = executorInfos.map((info, i) => buildNode(info, 'executor', {
     x: COLUMN_X.executors,
     y: rowY(centerY, i, executorInfos.length),
     ringR: EXECUTOR_RING_RADIUS,
     discR: EXECUTOR_DISC_RADIUS,
     sessions: null,
-    integrations: executorIntegrations(raw.integrations, info.serviceId),
+    integrations: executorIntegrations(raw.integrations, info.serviceId, activeExecutors === 1 && info.status === ResourceUsageStatus.ACTIVE),
     rates: zeroRates(),
     statsIntervalMinutes,
     thresholds
@@ -285,7 +286,7 @@ export function assembleClusterVm(raw: ClusterRawData, prev: ClusterMapVm, stats
   const edges: ClusterEdgeVm[] = [];
   for (const broker of brokers) {
     edges.push(buildEdge(`e-in-${broker.id}`,
-      COLUMN_X.clients + CLIENTS_PILL_HALF_WIDTH + EDGE_GAP, centerY,
+      COLUMN_X.clients + CLIENTS_RING_RADIUS + EDGE_GAP, centerY,
       broker.x - broker.ringR - EDGE_GAP, broker.y,
       relativeTo(broker.rates[ChartKey.incomingMsgs], maxIncoming), broker.rates[ChartKey.incomingMsgs]));
     edges.push(buildEdge(`e-out-${broker.id}`,
@@ -359,11 +360,14 @@ function nodeSessions(byNode: ClientSessionNodeStatsInfo | null, serviceId: stri
 }
 
 // Integrations report the executor they run on in status.serviceId; those not started yet have no status.
-function executorIntegrations(integrations: PageData<IntegrationInfo> | null, serviceId: string): ClusterIntegrationsVm | null {
+// A failed status names the executor that reported it; a healthy status does not, so healthy integrations can only be
+// attributed when a single active executor runs them all.
+function executorIntegrations(integrations: PageData<IntegrationInfo> | null, serviceId: string, soleActiveExecutor: boolean): ClusterIntegrationsVm | null {
   if (!integrations) {
     return null;
   }
-  const mine = integrations.data.filter(integration => integration.status?.serviceId === serviceId);
+  const mine = integrations.data.filter(integration =>
+    integration.status?.serviceId === serviceId || (soleActiveExecutor && integration.enabled && integration.status?.success));
   return {total: mine.length, failed: mine.filter(integration => integration.status?.success === false).length};
 }
 
@@ -431,8 +435,8 @@ function buildEdge(id: string, x1: number, y1: number, x2: number, y2: number, r
     path: cubicPath(x1, y1, x2, y2),
     rel,
     rate,
-    strokeWidth: 1.5 + 4.5 * rel,
-    opacity: 0.25 + 0.6 * rel,
+    strokeWidth: 1.5 + 2.5 * rel,
+    opacity: 0.25 + 0.45 * rel,
     particleSlots: Array.from({length: particles}, (_, i) => i),
     // Bucketed so a small rate change does not rewrite `dur`, which would restart the SMIL timeline.
     durSec: rel > 0.66 ? 2.4 : rel > 0.33 ? 3.6 : 5

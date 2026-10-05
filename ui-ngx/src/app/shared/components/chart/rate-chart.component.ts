@@ -29,7 +29,18 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TsValue } from '@shared/models/chart.model';
@@ -79,13 +90,12 @@ const HEIGHT = 84;
 const PAD_X = 5;
 const PAD_TOP = 8;
 const AXIS_BAND = 16;
-const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
 
 @Component({
     selector: 'tb-rate-chart',
     template: `
-      <div class="tb-chart">
-        <svg class="tb-chart-svg" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" tabindex="0"
+      <div #chartBox class="tb-chart">
+        <svg class="tb-chart-svg" [attr.viewBox]="'0 0 ' + width() + ' ' + height()" role="img" tabindex="0"
              [attr.aria-label]="ariaLabel() | translate"
              (pointermove)="onPointerMove($event)" (pointerleave)="hoverIndex.set(null)"
              (keydown)="onKeydown($event)" (blur)="hoverIndex.set(null)">
@@ -98,28 +108,28 @@ const PLOT_BOTTOM = HEIGHT - AXIS_BAND;
                 </linearGradient>
               }
             </defs>
-            <line class="tb-chart-baseline" [attr.x1]="padX" [attr.x2]="width - padX" [attr.y1]="plotBottom" [attr.y2]="plotBottom"/>
+            <line class="tb-chart-baseline" [attr.x1]="padX" [attr.x2]="width() - padX" [attr.y1]="plotBottom()" [attr.y2]="plotBottom()"/>
             @for (path of g.paths; track path.key) {
               <path class="tb-chart-area" [attr.d]="path.areaPath" [attr.fill]="'url(#tb-rate-chart-fill-' + path.key + ')'"/>
               <path [class]="'tb-chart-line tb-series-' + path.key" [attr.d]="path.linePath"/>
               <circle [class]="'tb-chart-marker tb-series-' + path.key" [attr.cx]="path.endX" [attr.cy]="path.endY" r="3.5"/>
             }
-            <text class="tb-chart-tick" [attr.x]="padX" [attr.y]="height - 3">{{ g.startTs | date: 'HH:mm' }}</text>
-            <text class="tb-chart-tick" [attr.x]="width - padX" [attr.y]="height - 3" text-anchor="end">{{ g.endTs | date: 'HH:mm' }}</text>
+            <text class="tb-chart-tick" [attr.x]="padX" [attr.y]="height() - 3">{{ g.startTs | date: 'HH:mm' }}</text>
+            <text class="tb-chart-tick" [attr.x]="width() - padX" [attr.y]="height() - 3" text-anchor="end">{{ g.endTs | date: 'HH:mm' }}</text>
             @if (hover(); as h) {
-              <line class="tb-chart-cursor" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padTop" [attr.y2]="plotBottom"/>
+              <line class="tb-chart-cursor" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padTop" [attr.y2]="plotBottom()"/>
               @for (row of h.rows; track row.key) {
                 <circle [class]="'tb-chart-marker tb-series-' + row.key" [attr.cx]="h.x" [attr.cy]="row.y" r="3.5"/>
               }
             }
           } @else {
-            <text class="tb-chart-empty" [attr.x]="width / 2" [attr.y]="plotBottom / 2" text-anchor="middle" dominant-baseline="central">
+            <text class="tb-chart-empty" [attr.x]="width() / 2" [attr.y]="plotBottom() / 2" text-anchor="middle" dominant-baseline="central">
               {{ 'rate-chart.collecting-samples' | translate }}
             </text>
           }
         </svg>
         @if (hover(); as h) {
-          <div class="tb-chart-tooltip" [class.tb-chart-tooltip-left]="h.x > width / 2" [style.left.%]="h.x / width * 100">
+          <div class="tb-chart-tooltip" [class.tb-chart-tooltip-left]="h.x > width() / 2" [style.left.%]="h.x / width() * 100">
             <div class="tb-chart-tooltip-time">{{ h.ts | date: 'HH:mm' }}</div>
             @for (row of h.rows; track row.key) {
               <div class="tb-chart-tooltip-row">
@@ -153,13 +163,30 @@ export class RateChartComponent {
 
   readonly hoverIndex = signal<number | null>(null);
 
-  readonly width = WIDTH;
-  readonly height = HEIGHT;
   readonly padX = PAD_X;
   readonly padTop = PAD_TOP;
-  readonly plotBottom = PLOT_BOTTOM;
+
+  private readonly chartBox = viewChild.required<ElementRef<HTMLElement>>('chartBox');
+  private readonly size = signal({width: WIDTH, height: HEIGHT});
+  readonly width = computed(() => this.size().width);
+  readonly height = computed(() => this.size().height);
+  readonly plotBottom = computed(() => this.height() - AXIS_BAND);
 
   private readonly hidden = signal<ReadonlySet<MessageSeriesKey>>(new Set());
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const observer = new ResizeObserver(([entry]) => {
+        const {width, height} = entry.contentRect;
+        if (width > 0 && height > 0) {
+          this.size.set({width: Math.round(width), height: Math.round(height)});
+        }
+      });
+      observer.observe(this.chartBox().nativeElement);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
 
   readonly visibleSeries = computed(() => this.series().filter(item => !this.hidden().has(item.key)));
 
@@ -172,8 +199,10 @@ export class RateChartComponent {
     const startTs = timeline[0];
     const endTs = timeline[timeline.length - 1];
     const max = Math.max(1, ...visible.flatMap(item => item.points.map(point => point.value)));
-    const toX = (ts: number) => PAD_X + (ts - startTs) / (endTs - startTs) * (WIDTH - 2 * PAD_X);
-    const toY = (value: number) => PLOT_BOTTOM - value / max * (PLOT_BOTTOM - PAD_TOP);
+    const width = this.width();
+    const plotBottom = this.plotBottom();
+    const toX = (ts: number) => PAD_X + (ts - startTs) / (endTs - startTs) * (width - 2 * PAD_X);
+    const toY = (value: number) => plotBottom - value / max * (plotBottom - PAD_TOP);
     const paths = visible
       .filter(item => item.points.length)
       .map(item => {
@@ -184,7 +213,7 @@ export class RateChartComponent {
         return {
           key: item.key,
           linePath,
-          areaPath: `${linePath} L ${endX.toFixed(1)} ${PLOT_BOTTOM} L ${firstX.toFixed(1)} ${PLOT_BOTTOM} Z`,
+          areaPath: `${linePath} L ${endX.toFixed(1)} ${plotBottom} L ${firstX.toFixed(1)} ${plotBottom} Z`,
           endX,
           endY
         };
@@ -226,7 +255,7 @@ export class RateChartComponent {
       return;
     }
     const rect = (event.currentTarget as SVGSVGElement).getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width * WIDTH;
+    const x = (event.clientX - rect.left) / rect.width * this.width();
     let nearest = 0;
     for (let i = 1; i < geometry.timeline.length; i++) {
       if (Math.abs(geometry.toX(geometry.timeline[i]) - x) < Math.abs(geometry.toX(geometry.timeline[nearest]) - x)) {

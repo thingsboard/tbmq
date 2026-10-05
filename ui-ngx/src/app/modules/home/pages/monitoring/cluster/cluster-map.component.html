@@ -50,7 +50,7 @@
     }
     @if (animate()) {
       @for (slot of edge.particleSlots; track slot) {
-        <circle class="tb-particle" r="2.5">
+        <circle class="tb-particle" r="3">
           <animateMotion [attr.dur]="edge.durSec + 's'" repeatCount="indefinite"
                          [attr.begin]="particleBegin(slot, edge.particleSlots.length, edge.durSec)">
             <mpath [attr.href]="'#' + edge.id"/>
@@ -61,20 +61,21 @@
   }
 
   <g class="tb-clients">
-    @for (pill of clientPills(map); track pill.key) {
-      <g>
-        <title>{{ pill.label | translate }}: {{ pill.count ?? '—' }}</title>
-        <rect [class]="pill.count ? 'tb-clients-pill' : 'tb-clients-pill tb-clients-pill-side'"
-              [attr.x]="map.clients.x - 26" [attr.y]="map.clients.y + pill.offset - 9" width="52" height="18" rx="9"/>
-        <text class="tb-pill-count" [attr.x]="map.clients.x" [attr.y]="map.clients.y + pill.offset" text-anchor="middle" dominant-baseline="central">
-          {{ pill.count === null ? '' : compactNumber(pill.count) }}
-        </text>
-      </g>
-    }
-    <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 62" text-anchor="middle">
-      {{ map.clients.hasSessionStats ? compactNumber(map.clients.totalSessions) : '—' }} {{ 'monitoring.cluster.sessions' | translate }}
+    <title>{{ 'monitoring.cluster.clients-title' | translate: {connected: map.clients.connectedSessions, total: map.clients.totalSessions} }}</title>
+    <circle class="tb-ring-track" [attr.cx]="map.clients.x" [attr.cy]="map.clients.y" [attr.r]="clientsRingR"/>
+    <circle class="tb-disc tb-disc-clients" [attr.cx]="map.clients.x" [attr.cy]="map.clients.y" [attr.r]="clientsRingR - 10"/>
+    <text class="tb-node-count" [attr.x]="map.clients.x" [attr.y]="map.clients.y" text-anchor="middle" dominant-baseline="central">
+      {{ map.clients.hasSessionStats ? compactNumber(map.clients.connectedSessions) + '/' + compactNumber(map.clients.totalSessions) : '—' }}
     </text>
-    <text class="tb-node-hint" [attr.x]="map.clients.x" [attr.y]="map.clients.y + 76" text-anchor="middle">{{ 'monitoring.cluster.clients-types' | translate }}</text>
+    <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 18" text-anchor="middle">
+      {{ 'monitoring.cluster.connected-of-sessions' | translate }}
+    </text>
+    @for (type of clientTypes(map); track type.key; let i = $index) {
+      <text [class]="type.count ? 'tb-node-hint tb-client-type' : 'tb-node-hint tb-client-type tb-client-type-idle'"
+            [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 33 + i * 13" text-anchor="middle">
+        {{ type.label | translate }} {{ type.count === null ? '—' : compactNumber(type.count) }}
+      </text>
+    }
   </g>
 
   @if (!map.brokers.length) {

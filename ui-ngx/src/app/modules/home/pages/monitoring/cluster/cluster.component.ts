@@ -30,6 +30,7 @@
 ///
 
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { HelpComponent } from '@shared/components/help.component';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -82,7 +83,8 @@ const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(ca
     selector: 'tb-cluster',
     templateUrl: './cluster.component.html',
     styleUrls: ['./cluster.component.scss'],
-    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, FullscreenDirective, ClusterMapComponent, ClusterNodeInspectorComponent],
+    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, FullscreenDirective, HelpComponent, ClusterMapComponent,
+      ClusterNodeInspectorComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClusterComponent implements OnInit, OnDestroy {
@@ -90,6 +92,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly vm = signal<ClusterMapVm>(emptyClusterVm());
   readonly selectedId = signal<string | null>(null);
   readonly lastTickOk = signal(true);
+  private lastUpdated: number | null = null;
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
   readonly historyWindow = signal(HISTORY_WINDOW_MS);
@@ -132,7 +135,6 @@ export class ClusterComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  private lastUpdated: number | null = null;
   private kafkaBrokers: PageData<KafkaBroker> | null = null;
   private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
   private integrations: PageData<IntegrationInfo> | null = null;

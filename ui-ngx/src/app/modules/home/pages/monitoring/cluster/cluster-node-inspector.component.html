@@ -43,15 +43,18 @@
           <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
             {{ statusLabel() | translate }}
           </span>
+          @if (n.status !== activeStatus) {
+            <mat-icon class="tb-status-info" [matTooltip]="statusHint() | translate" tabindex="0"
+                      [attr.aria-label]="statusHint() | translate">info_outline</mat-icon>
+          }
         }
-        <span class="tb-inspector-type">{{ serviceTypeLabel() }}</span>
       </div>
     </div>
     <button mat-icon-button type="button" class="tb-inspector-close"
-            [matTooltip]="'monitoring.cluster.show-cluster-total' | translate"
-            [attr.aria-label]="'monitoring.cluster.show-cluster-total' | translate"
+            [matTooltip]="'monitoring.cluster.reset' | translate"
+            [attr.aria-label]="'monitoring.cluster.reset' | translate"
             (click)="cleared.emit()">
-      <mat-icon>close</mat-icon>
+      <mat-icon>restart_alt</mat-icon>
     </button>
   </div>
 
@@ -110,10 +113,10 @@
       </div>
     </div>
     <button mat-icon-button type="button" class="tb-inspector-close"
-            [matTooltip]="'monitoring.cluster.show-cluster-total' | translate"
-            [attr.aria-label]="'monitoring.cluster.show-cluster-total' | translate"
+            [matTooltip]="'monitoring.cluster.reset' | translate"
+            [attr.aria-label]="'monitoring.cluster.reset' | translate"
             (click)="cleared.emit()">
-      <mat-icon>close</mat-icon>
+      <mat-icon>restart_alt</mat-icon>
     </button>
   </div>
 

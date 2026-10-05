@@ -39,10 +39,12 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   display: block;
 }
 
+// Scales to whatever box the page gives it; the default preserveAspectRatio keeps the map centred.
 .tb-cluster-svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  min-height: 300px;
   font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
@@ -69,26 +71,22 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
 }
 
 .tb-particle {
-  fill: var(--tb-primary-500);
-  opacity: 0.85;
+  fill: #fff;
+  stroke: var(--tb-primary-700);
+  stroke-width: 1.4;
 }
 
-.tb-clients-pill {
-  fill: var(--tb-primary-50);
-  stroke: var(--tb-primary-300);
-  stroke-width: 1.2;
-
-  &.tb-clients-pill-side {
-    opacity: 0.55;
-    stroke-width: 0.8;
-  }
+.tb-disc-clients {
+  stroke-dasharray: none;
 }
 
-.tb-pill-count {
-  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+.tb-client-type {
   font-size: 9.5px;
-  fill: rgba(0, 0, 0, 0.62);
-  pointer-events: none;
+  fill: rgba(0, 0, 0, 0.6);
+
+  &.tb-client-type-idle {
+    fill: rgba(0, 0, 0, 0.32);
+  }
 }
 
 .tb-kafka-halo {
@@ -101,22 +99,39 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   stroke-width: 1.4;
 }
 
+// Three states, weakest to strongest: hover is a faint dashed halo, a press fills it, selection is a solid ring.
 .tb-node {
   cursor: pointer;
   outline: none;
 
   .tb-halo {
-    fill: none;
+    fill: var(--tb-primary-500);
+    fill-opacity: 0;
     stroke: var(--tb-primary-500);
     stroke-width: 1.5;
+    stroke-dasharray: 3 3;
     opacity: 0;
-    transition: opacity 0.16s ease;
+    transition: opacity 0.16s ease, fill-opacity 0.16s ease;
   }
 
   &:hover .tb-halo,
-  &:focus-visible .tb-halo,
+  &:focus-visible .tb-halo {
+    opacity: 0.6;
+  }
+
+  &:active .tb-halo {
+    opacity: 1;
+    fill-opacity: 0.12;
+  }
+
   &.tb-node-selected .tb-halo {
     opacity: 1;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+
+  &.tb-node-selected .tb-disc {
+    fill: var(--tb-primary-100);
   }
 }
 
