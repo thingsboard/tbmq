@@ -526,6 +526,25 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
+    public void givenMqtt5Qos2MsgPersistedBehindPendingMsg_whenPendingMsgPersisted_thenBothMarkedPersisted() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 20, 21);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        // 21 is stored first, while 20 is still in flight, so its PUBREC can't be released yet
+        callbacks.get(1).onSuccess(null);
+        processPubResponsesSentToActor(1);
+        callbacks.get(0).onSuccess(null);
+        processPubResponsesSentToActor(2);
+
+        InOrder inOrder = inOrder(mqttMessageGenerator);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(20, MqttReasonCodes.PubRec.SUCCESS);
+        inOrder.verify(mqttMessageGenerator).createPubRecMsg(21, MqttReasonCodes.PubRec.SUCCESS);
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(20).isPersisted()).isTrue();
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(21).isPersisted()).isTrue();
+    }
+
+    @Test
     public void givenMqtt5Qos2MsgFailedToPersist_whenClientReusesPacketId_thenNewMsgIsPersisted() {
         givenMqtt5Session();
         processPublishMsgs(2, 20);

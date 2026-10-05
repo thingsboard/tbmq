@@ -267,12 +267,8 @@ public class MqttPublishHandler {
     public void processPubRecResponse(ClientSessionCtx ctx, PubRecResponseMsg msg) {
         MqttMsgWrapper mqttMsgWrapper = msg.getMqttMsgWrapper();
         List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(mqttMsgWrapper);
-        boolean persistFailed = mqttMsgWrapper != null && mqttMsgWrapper.isPersistFailed();
-        if (persistFailed) {
-            // a failure PUBREC ends the QoS 2 flow: no PUBREL follows and the client may reuse the packet id.
-            // Not after the empty check: a msg waiting behind a pending one is released while processing another msg
-            ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), mqttMsgWrapper.getMsgId());
-        }
+        // not after the empty check: a msg waiting behind a pending one is released while processing another msg
+        updateAwaitingPubRelPacket(ctx, mqttMsgWrapper);
         if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
         }
@@ -281,12 +277,20 @@ public class MqttPublishHandler {
             ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
+    }
 
-        if (!persistFailed) {
-            AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msg.getMessageId());
-            if (isNotPersisted(awaitingPacketInfo)) {
-                awaitingPacketInfo.setPersisted(true);
-            }
+    private void updateAwaitingPubRelPacket(ClientSessionCtx ctx, MqttMsgWrapper mqttMsgWrapper) {
+        if (mqttMsgWrapper == null) {
+            return;
+        }
+        if (mqttMsgWrapper.isPersistFailed()) {
+            // a failure PUBREC ends the QoS 2 flow: no PUBREL follows and the client may reuse the packet id
+            ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), mqttMsgWrapper.getMsgId());
+            return;
+        }
+        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(mqttMsgWrapper.getMsgId());
+        if (isNotPersisted(awaitingPacketInfo)) {
+            awaitingPacketInfo.setPersisted(true);
         }
     }
 
