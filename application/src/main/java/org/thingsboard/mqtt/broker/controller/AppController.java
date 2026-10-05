@@ -180,8 +180,9 @@ public class AppController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/service/info")
-    public void removeServiceInfo(@RequestParam String serviceId) throws ThingsboardException {
+    public void removeServiceInfo(@RequestParam String serviceId,
+                                  @RequestParam(required = false) String serviceType) throws ThingsboardException {
         checkParameter("serviceId", serviceId);
-        tbAppService.deleteServiceInfo(serviceId, getCurrentUser());
+        tbAppService.deleteServiceInfo(serviceId, serviceType, getCurrentUser());
     }
 }

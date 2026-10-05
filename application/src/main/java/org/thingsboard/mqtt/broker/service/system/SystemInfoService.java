@@ -30,7 +30,7 @@ public interface SystemInfoService {
 
     ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException;
 
-    void removeServiceInfo(String serviceId) throws ThingsboardException;
+    void removeServiceInfo(String serviceId, String serviceType) throws ThingsboardException;
 
     List<String> getTbmqServiceIds();
 }

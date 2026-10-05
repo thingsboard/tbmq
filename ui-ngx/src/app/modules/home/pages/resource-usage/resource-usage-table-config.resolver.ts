@@ -141,7 +141,7 @@ export class ResourceUsageTableConfigResolver {
       true
     ).subscribe((res) => {
         if (res) {
-          this.timeseriesService.deleteServiceInfo(entity.serviceId).subscribe(() => this.config.getTable().updateData());
+          this.timeseriesService.deleteServiceInfo(entity.serviceId, entity.serviceType).subscribe(() => this.config.getTable().updateData());
         }
       }
     );

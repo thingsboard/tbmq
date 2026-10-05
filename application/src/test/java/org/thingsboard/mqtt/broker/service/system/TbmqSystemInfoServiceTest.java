@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
@@ -112,7 +113,7 @@ public class TbmqSystemInfoServiceTest {
 
         systemInfoService.processIeServiceInfo(serviceInfo);
 
-        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "svc1", "type1");
+        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "type1:svc1", "type1");
     }
 
     @Test
@@ -142,13 +143,67 @@ public class TbmqSystemInfoServiceTest {
     @Test
     public void testRemoveServiceInfoExists() {
         when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc3")).thenReturn(1L);
-        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("svc3"));
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("svc3", TBMQ.name()));
     }
 
     @Test
     public void testRemoveServiceInfoNotFound() {
-        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc4")).thenReturn(0L);
-        assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4"));
+        when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(0L);
+        assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4", null));
+    }
+
+    @Test
+    public void testRemoveExecutorServiceInfoDeletesTypedAndLegacyFields() {
+        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "ie1", "TBMQ_INTEGRATION_EXECUTOR:ie1")).thenReturn(1L);
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("ie1", TBMQ_INTEGRATION_EXECUTOR.name()));
+    }
+
+    @Test
+    public void testRemoveServiceInfoWithoutTypeDeletesEveryVariant() {
+        when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(2L);
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("shared", null));
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "shared", "TBMQ_INTEGRATION_EXECUTOR:shared");
+    }
+
+    @Test
+    public void testRegistryFieldKeepsBrokersBareAndPrefixesExecutors() {
+        assertEquals("node1", TbmqSystemInfoService.registryField("node1", TBMQ.name()));
+        assertEquals("TBMQ_INTEGRATION_EXECUTOR:node1", TbmqSystemInfoService.registryField("node1", TBMQ_INTEGRATION_EXECUTOR.name()));
+    }
+
+    @Test
+    public void testParseRegistryEntryUnderstandsLegacyAndTypedFields() {
+        assertEquals(new TbmqSystemInfoService.RegistryEntry("node1", TBMQ.name()),
+                TbmqSystemInfoService.parseRegistryEntry("node1", TBMQ.name()));
+        assertEquals(new TbmqSystemInfoService.RegistryEntry("node1", TBMQ_INTEGRATION_EXECUTOR.name()),
+                TbmqSystemInfoService.parseRegistryEntry("TBMQ_INTEGRATION_EXECUTOR:node1", TBMQ_INTEGRATION_EXECUTOR.name()));
+        assertEquals(new TbmqSystemInfoService.RegistryEntry("host:1883", TBMQ.name()),
+                TbmqSystemInfoService.parseRegistryEntry("host:1883", TBMQ.name()));
+    }
+
+    @Test
+    public void testGetServiceInfosListsBrokerAndExecutorSharingAnId() throws Exception {
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
+                Map.of("shared", TBMQ.name(), "TBMQ_INTEGRATION_EXECUTOR:shared", TBMQ_INTEGRATION_EXECUTOR.name()));
+        when(timeseriesService.findLatest(eq("shared"), anyList())).thenReturn(getListSettableFuture(System.currentTimeMillis()));
+
+        PageData<ServiceInfoDto> result = systemInfoService.getServiceInfos().get();
+
+        assertEquals(2, result.getData().size());
+        assertThat(result.getData()).extracting(ServiceInfoDto::getServiceType)
+                .containsExactlyInAnyOrder(TBMQ.name(), TBMQ_INTEGRATION_EXECUTOR.name());
+        assertThat(result.getData()).extracting(ServiceInfoDto::getServiceId).containsOnly("shared");
+    }
+
+    @Test
+    public void testProcessIeServiceInfoRegistersUnderTypedFieldAndDropsLegacyOne() {
+        ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("ie1").setServiceType(TBMQ_INTEGRATION_EXECUTOR.name()).build();
+        when(hashOperations.get(SERVICE_REGISTRY_KEY, "ie1")).thenReturn(TBMQ_INTEGRATION_EXECUTOR.name());
+
+        systemInfoService.processIeServiceInfo(serviceInfo);
+
+        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:ie1", TBMQ_INTEGRATION_EXECUTOR.name());
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "ie1");
     }
 
     @Test
@@ -217,7 +272,7 @@ public class TbmqSystemInfoServiceTest {
     public void testGetTbmqServiceIds() {
         when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
                 Map.of("tbmq1", TBMQ.name(), "tbmq-ie1", TBMQ_INTEGRATION_EXECUTOR.name(),
-                        "tbmq2", TBMQ.name(), "tbmq-ie2", TBMQ_INTEGRATION_EXECUTOR.name())
+                        "tbmq2", TBMQ.name(), "TBMQ_INTEGRATION_EXECUTOR:tbmq2", TBMQ_INTEGRATION_EXECUTOR.name())
         );
 
         List<String> tbmqServiceIds = systemInfoService.getTbmqServiceIds();

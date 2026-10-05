@@ -22,6 +22,6 @@ public interface TbAppService {
 
     void deleteKafkaConsumerGroup(String groupId, User currentUser) throws Exception;
 
-    void deleteServiceInfo(String serviceId, User currentUser) throws ThingsboardException;
+    void deleteServiceInfo(String serviceId, String serviceType, User currentUser) throws ThingsboardException;
 
 }

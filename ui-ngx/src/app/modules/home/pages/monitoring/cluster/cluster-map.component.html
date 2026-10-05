@@ -81,7 +81,7 @@
   @if (!map.brokers.length) {
     <text class="tb-node-hint" [attr.x]="columnX.brokers" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-brokers' | translate }}</text>
   }
-  @for (node of map.brokers; track node.id) {
+  @for (node of map.brokers; track node.key) {
     <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
   }
 
@@ -102,14 +102,14 @@
   @if (!map.executors.length) {
     <text class="tb-node-hint" [attr.x]="columnX.executors" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-executors' | translate }}</text>
   }
-  @for (node of map.executors; track node.id) {
+  @for (node of map.executors; track node.key) {
     <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
   }
 </svg>
 
 <ng-template #nodeGlyph let-node="node">
-  <svg:g [class]="node.id === selectedId() ? 'tb-node tb-node-selected' : 'tb-node'" role="button" tabindex="0"
-         [attr.aria-pressed]="node.id === selectedId()"
+  <svg:g [class]="node.key === selectedId() ? 'tb-node tb-node-selected' : 'tb-node'" role="button" tabindex="0"
+         [attr.aria-pressed]="node.key === selectedId()"
          [attr.aria-label]="'monitoring.cluster.node-aria-label' | translate: {id: node.id, sessions: node.sessions?.totalCount ?? 0, cpu: node.cpu ?? 0}"
          (click)="onSelect(node)" (keydown.enter)="onSelect(node, $event)" (keydown.space)="onSelect(node, $event)">
     <svg:circle class="tb-halo" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR + 7"/>

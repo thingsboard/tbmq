@@ -67,6 +67,10 @@ export const HISTORY_WINDOWS = LIVE_STATS_WINDOWS;
 // Heartbeats arrive once per stats interval; two missed ones mean the node is gone even if its status still reads ACTIVE.
 export const STALE_AFTER_INTERVALS = 2;
 export const KAFKA_NODE_ID = 'kafka';
+
+export function nodeKey(kind: ClusterNodeKind, serviceId: string): string {
+  return kind === 'broker' ? serviceId : `${kind}:${serviceId}`;
+}
 export const KAFKA_TOP_GROUPS = 5;
 export const CLUSTER_RATE_KEYS = [
   ChartKey.incomingMsgs,
@@ -85,6 +89,8 @@ export type MessageSeries = RateSeries;
 
 export interface ClusterNodeVm {
   id: string;
+  // Selection key: a broker and an executor may share a service id.
+  key: string;
   kind: ClusterNodeKind;
   serviceType: ServiceType;
   status: ResourceUsageStatus;
@@ -407,6 +413,7 @@ function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
     && Date.now() - info.lastUpdateTime > STALE_AFTER_INTERVALS * layout.statsIntervalMinutes * MINUTE;
   return {
     id: info.serviceId,
+    key: nodeKey(kind, info.serviceId),
     kind,
     serviceType: info.serviceType,
     status: info.status,

@@ -38,7 +38,7 @@ public class DefaultTbAppService extends AbstractTbEntityService implements TbAp
     }
 
     @Override
-    public void deleteServiceInfo(String serviceId, User currentUser) throws ThingsboardException {
-        systemInfoService.removeServiceInfo(serviceId);
+    public void deleteServiceInfo(String serviceId, String serviceType, User currentUser) throws ThingsboardException {
+        systemInfoService.removeServiceInfo(serviceId, serviceType);
     }
 }

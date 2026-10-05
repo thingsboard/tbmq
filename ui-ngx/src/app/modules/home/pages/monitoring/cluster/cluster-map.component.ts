@@ -67,7 +67,7 @@ export class ClusterMapComponent {
 
   onSelect(node: ClusterNodeVm, event?: Event) {
     event?.preventDefault();
-    this.nodeSelected.emit(node.id);
+    this.nodeSelected.emit(node.key);
   }
 
   clientTypes(map: ClusterMapVm): {key: string; count: number | null; label: string}[] {

@@ -44,11 +44,12 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +84,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final ResourceUsageAlertService resourceUsageAlertService;
 
     private static final Set<String> USAGE_PERCENT_KEYS = Set.of(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
+    private static final String REGISTRY_FIELD_SEPARATOR = ":";
 
     private ScheduledExecutorService scheduler;
     @Setter
@@ -182,30 +184,26 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
-        Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(serviceRegistryKey);
-        if (CollectionUtils.isEmpty(serviceMap)) {
+        List<RegistryEntry> services = readServiceRegistry();
+        if (services.isEmpty()) {
             throw new ThingsboardException("Could not find all service ids", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
 
-        List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(serviceMap.size());
-        List<String> serviceIds = new ArrayList<>(serviceMap.size());
-
-        for (Map.Entry<Object, Object> entry : serviceMap.entrySet()) {
-            String serviceId = String.valueOf(entry.getKey());
-            serviceIds.add(serviceId);
-            futures.add(timeseriesService.findLatest(serviceId, SERVICE_INFO_KEYS));
+        List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(services.size());
+        for (RegistryEntry service : services) {
+            futures.add(timeseriesService.findLatest(service.serviceId(), SERVICE_INFO_KEYS));
         }
 
         return Futures.transform(Futures.allAsList(futures), allMetrics -> {
-            List<ServiceInfoDto> response = new ArrayList<>(serviceMap.size());
+            List<ServiceInfoDto> response = new ArrayList<>(services.size());
 
-            for (int i = 0; i < serviceIds.size(); i++) {
-                String serviceId = serviceIds.get(i);
+            for (int i = 0; i < services.size(); i++) {
+                RegistryEntry service = services.get(i);
                 List<TsKvEntry> entries = allMetrics.get(i);
 
                 ServiceInfoDto dto = new ServiceInfoDto();
-                dto.setServiceId(serviceId);
-                dto.setServiceType(Optional.ofNullable(serviceMap.get(serviceId)).map(Object::toString).orElse(UNKNOWN));
+                dto.setServiceId(service.serviceId());
+                dto.setServiceType(service.serviceType());
                 for (TsKvEntry entry : entries) {
                     switch (entry.getKey()) {
                         case CPU_USAGE -> dto.setCpuUsage(entry.getLongValue().orElse(null));
@@ -226,8 +224,11 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public void removeServiceInfo(String serviceId) throws ThingsboardException {
-        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, serviceId);
+    public void removeServiceInfo(String serviceId, String serviceType) throws ThingsboardException {
+        Object[] fields = serviceType == null
+                ? Stream.concat(Stream.of(serviceId), Arrays.stream(ServiceType.values()).map(type -> registryField(serviceId, type.name()))).distinct().toArray()
+                : Stream.of(serviceId, registryField(serviceId, serviceType)).distinct().toArray();
+        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, fields);
         if (delete == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
@@ -235,15 +236,56 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public List<String> getTbmqServiceIds() {
-        return redisTemplate.opsForHash().entries(serviceRegistryKey)
-                .entrySet().stream()
-                .filter(entry -> ServiceType.TBMQ.equals(ServiceType.valueOf(String.valueOf(entry.getValue()))))
-                .map(entry -> String.valueOf(entry.getKey()))
+        return readServiceRegistry().stream()
+                .filter(entry -> ServiceType.TBMQ.name().equals(entry.serviceType()))
+                .map(RegistryEntry::serviceId)
                 .toList();
     }
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {
         log.debug("Updating service registry: {}", serviceInfo);
-        redisTemplate.opsForHash().put(serviceRegistryKey, serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        String field = registryField(serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        redisTemplate.opsForHash().put(serviceRegistryKey, field, serviceInfo.getServiceType());
+        if (!field.equals(serviceInfo.getServiceId())) {
+            // Drop the pre-upgrade entry of this executor, which was keyed by the bare service id.
+            Object legacyType = redisTemplate.opsForHash().get(serviceRegistryKey, serviceInfo.getServiceId());
+            if (serviceInfo.getServiceType().equals(legacyType)) {
+                redisTemplate.opsForHash().delete(serviceRegistryKey, serviceInfo.getServiceId());
+            }
+        }
+    }
+
+    /**
+     * Brokers are registered under their bare service id, as they always were, so older nodes keep finding them.
+     * Every other service type is registered as {@code <type>:<serviceId>}, so an executor and a broker that share
+     * a service id no longer overwrite each other. Entries written before this scheme are still understood.
+     */
+    static String registryField(String serviceId, String serviceType) {
+        return ServiceType.TBMQ.name().equals(serviceType) ? serviceId : serviceType + REGISTRY_FIELD_SEPARATOR + serviceId;
+    }
+
+    static RegistryEntry parseRegistryEntry(String field, String value) {
+        int separator = field.indexOf(REGISTRY_FIELD_SEPARATOR);
+        if (separator > 0) {
+            String prefix = field.substring(0, separator);
+            if (Arrays.stream(ServiceType.values()).anyMatch(type -> type.name().equals(prefix))) {
+                return new RegistryEntry(field.substring(separator + 1), prefix);
+            }
+        }
+        return new RegistryEntry(field, value == null ? UNKNOWN : value);
+    }
+
+    private List<RegistryEntry> readServiceRegistry() {
+        Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(serviceRegistryKey);
+        if (CollectionUtils.isEmpty(serviceMap)) {
+            return List.of();
+        }
+        return serviceMap.entrySet().stream()
+                .map(entry -> parseRegistryEntry(String.valueOf(entry.getKey()), entry.getValue() == null ? null : String.valueOf(entry.getValue())))
+                .distinct()
+                .toList();
+    }
+
+    record RegistryEntry(String serviceId, String serviceType) {
     }
 }

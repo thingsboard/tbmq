@@ -102,13 +102,13 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly selectedNode = computed(() => {
     const id = this.selectedId();
     const {brokers, executors} = this.vm();
-    return brokers.concat(executors).find(node => node.id === id) ?? null;
+    return brokers.concat(executors).find(node => node.key === id) ?? null;
   });
   readonly selectedKafka = computed(() => this.selectedId() === KAFKA_NODE_ID ? this.vm().kafka : null);
   // Executors and Kafka have no message timeseries, so their inspector shows no chart and nothing is watched for them.
   private readonly seriesSource = computed(() => {
     const id = this.selectedId();
-    const isBroker = !id || this.vm().brokers.some(broker => broker.id === id);
+    const isBroker = !id || this.vm().brokers.some(broker => broker.key === id);
     return {entityId: isBroker ? (id ?? TOTAL_ENTITY_ID) : null, windowMs: this.historyWindow()};
   }, {equal: (a, b) => a.entityId === b.entityId && a.windowMs === b.windowMs});
   readonly selectedSeries = toSignal(toObservable(this.seriesSource).pipe(
@@ -231,7 +231,7 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   private ensureSelection(vm: ClusterMapVm) {
     const selected = this.selectedId();
-    if (selected && selected !== KAFKA_NODE_ID && !vm.brokers.concat(vm.executors).some(node => node.id === selected)) {
+    if (selected && selected !== KAFKA_NODE_ID && !vm.brokers.concat(vm.executors).some(node => node.key === selected)) {
       this.select(null);
     }
   }

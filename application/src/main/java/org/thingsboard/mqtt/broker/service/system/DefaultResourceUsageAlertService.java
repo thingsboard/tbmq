@@ -106,7 +106,7 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
         ResourceUsageAlertSettings settings = loadSettings();
         usagePercentByMetric.forEach((metric, usage) -> {
             UsageLevel level = levelOf(usage, settings);
-            UsageLevel previous = levels.put(serviceId + "|" + metric, level);
+            UsageLevel previous = levels.put(serviceType + "|" + serviceId + "|" + metric, level);
             if (previous == null) {
                 previous = UsageLevel.NORMAL;
             }
@@ -148,7 +148,7 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
                        UsageLevel level, ResourceUsageAlertSettings settings) {
         AuditLog auditLog = new AuditLog(UUID.randomUUID());
         auditLog.setCreatedTime(System.currentTimeMillis());
-        auditLog.setEntityId(UUID.nameUUIDFromBytes(serviceId.getBytes(StandardCharsets.UTF_8)));
+        auditLog.setEntityId(UUID.nameUUIDFromBytes((serviceType + ":" + serviceId).getBytes(StandardCharsets.UTF_8)));
         auditLog.setEntityType(EntityType.SERVICE_INFO);
         auditLog.setEntityName(serviceId);
         auditLog.setUserName(SYSTEM_USER_NAME);
