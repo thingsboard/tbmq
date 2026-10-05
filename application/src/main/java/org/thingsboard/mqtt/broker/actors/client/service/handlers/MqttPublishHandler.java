@@ -272,7 +272,8 @@ public class MqttPublishHandler {
     public void processPubRecResponse(ClientSessionCtx ctx, PubRecResponseMsg msg) {
         MqttMsgWrapper mqttMsgWrapper = msg.getMqttMsgWrapper();
         List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(mqttMsgWrapper);
-        // not after the empty check: a msg waiting behind a pending one is released while processing another msg
+        // update the awaiting PUBREL state of the msg whose persist just completed,
+        // even if its PUBREC is still held back behind an earlier msg and nothing is released yet
         updateAwaitingPubRelPacket(ctx, mqttMsgWrapper);
         if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
@@ -317,7 +318,9 @@ public class MqttPublishHandler {
         if (isTraceEnabled) {
             log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", ctx.getClientId(), sessionId, msgId);
         }
-        sendPubResponseEventToActor(actorRef, sessionId, processExactlyOnce(ctx, msgId), MqttQoS.EXACTLY_ONCE);
+        // adds a new entry to the ordered queue: the actor acks it on the PubRecResponseMsg, so the resent PUBREC keeps its place in the order
+        MqttMsgWrapper duplicateMsgWrapper = processExactlyOnce(ctx, msgId);
+        sendPubResponseEventToActor(actorRef, sessionId, duplicateMsgWrapper, MqttQoS.EXACTLY_ONCE);
     }
 
     private void sendPubResponseEventToActor(TbActorRef actorRef, UUID sessionId, MqttMsgWrapper mqttMsgWrapper, MqttQoS mqttQoS) {

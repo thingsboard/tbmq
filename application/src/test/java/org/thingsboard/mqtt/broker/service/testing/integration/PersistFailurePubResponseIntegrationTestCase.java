@@ -15,7 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.mqtt.MqttDecoder;
+import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
+import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
@@ -32,8 +48,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,15 +81,22 @@ public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSub
     private static final int SUCCESS = 0x00;
 
     private MqttAsyncClient pubClient;
+    private MqttClient subClient;
 
     @After
-    public void clear() throws MqttException {
+    public void clear() throws Exception {
         if (pubClient != null) {
             if (pubClient.isConnected()) {
                 // no quiesce: on a failure there are in-flight msgs that would never complete
                 pubClient.disconnect(0).waitForCompletion(PUB_RESPONSE_TIMEOUT_MS);
             }
             pubClient.close();
+        }
+        if (subClient != null) {
+            if (subClient.isConnected()) {
+                subClient.disconnect();
+            }
+            subClient.close();
         }
     }
 
@@ -78,6 +108,50 @@ public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSub
     @Test
     public void givenMqtt5Qos2MsgFailedToPersist_whenPublishMoreMsgs_thenTheirPubRecsAreNotHeldBack() throws Throwable {
         verifyPubResponsesAfterFailedPersist("persist_failure_qos2", 2);
+    }
+
+    @Test
+    public void givenMqtt5Qos2MsgFailedToPersist_whenClientReusesItsPacketId_thenNewMsgIsDelivered() throws Throwable {
+        List<String> received = new CopyOnWriteArrayList<>();
+        // MQTT 3.1.1 subscriber: Paho v5 subscribe with a msg listener fails inside the client (1.2.5)
+        subClient = new MqttClient(SERVER_URI + mqttPort, "persist_failure_reuse_sub", new org.eclipse.paho.client.mqttv3.persist.MemoryPersistence());
+        subClient.connect();
+        subClient.subscribe(TOPIC, 0, (topic, msg) -> received.add(new String(msg.getPayload(), StandardCharsets.UTF_8)));
+
+        // Paho picks packet ids itself, so a raw client is needed to reuse the id of the failed msg
+        try (RawMqtt5Client rawClient = new RawMqtt5Client("persist_failure_reuse_pub")) {
+            int packetId = 1;
+            rawClient.send(qos2Publish(packetId, TOO_LARGE_FOR_KAFKA_PAYLOAD));
+            assertPubRec(rawClient.receive(), packetId, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+
+            // a failure PUBREC ends the QoS 2 flow and frees the packet id (MQTT 5, 4.3.3)
+            rawClient.send(qos2Publish(packetId, "reused".getBytes(StandardCharsets.UTF_8)));
+            // before the fix the reused msg was taken for a duplicate still being persisted and silently dropped
+            assertPubRec(rawClient.receive(), packetId, MqttReasonCodes.PubRec.SUCCESS);
+            rawClient.send(new MqttMessage(new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0),
+                    MqttMessageIdVariableHeader.from(packetId)));
+            assertThat(rawClient.receive().fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBCOMP);
+        }
+
+        Awaitility.await("the msg published with the reused packet id is delivered")
+                .atMost(PUB_RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .until(() -> received.contains("reused"));
+    }
+
+    private MqttMessage qos2Publish(int packetId, byte[] payload) {
+        return MqttMessageBuilders.publish()
+                .topicName(TOPIC)
+                .qos(MqttQoS.EXACTLY_ONCE)
+                .messageId(packetId)
+                .payload(Unpooled.wrappedBuffer(payload))
+                .build();
+    }
+
+    private void assertPubRec(MqttMessage msg, int packetId, MqttReasonCodes.PubRec reasonCode) {
+        assertThat(msg.fixedHeader().messageType()).isEqualTo(MqttMessageType.PUBREC);
+        MqttPubReplyMessageVariableHeader pubRec = (MqttPubReplyMessageVariableHeader) msg.variableHeader();
+        assertThat(pubRec.messageId()).isEqualTo(packetId);
+        assertThat(pubRec.reasonCode()).isEqualTo(reasonCode.byteValue());
     }
 
     private void verifyPubResponsesAfterFailedPersist(String clientId, int qos) throws MqttException {
@@ -99,5 +173,65 @@ public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSub
             assertThat(token.getReasonCodes()).containsOnly(SUCCESS);
         }
         assertThat(pubClient.isConnected()).isTrue();
+    }
+
+    /**
+     * Minimal MQTT 5 client over a plain socket. The encoder and the decoder share one channel, so the decoder
+     * knows the protocol version from the encoded CONNECT.
+     */
+    private class RawMqtt5Client implements AutoCloseable {
+
+        private final Socket socket;
+        private final InputStream in;
+        private final OutputStream out;
+        private final EmbeddedChannel codec = new EmbeddedChannel(MqttEncoder.INSTANCE, new MqttDecoder());
+
+        RawMqtt5Client(String clientId) throws IOException {
+            socket = new Socket(LOCALHOST, mqttPort);
+            socket.setTcpNoDelay(true);
+            socket.setSoTimeout((int) PUB_RESPONSE_TIMEOUT_MS);
+            in = socket.getInputStream();
+            out = socket.getOutputStream();
+            send(MqttMessageBuilders.connect()
+                    .clientId(clientId)
+                    .protocolVersion(MqttVersion.MQTT_5)
+                    .cleanSession(true)
+                    .keepAlive(60)
+                    .build());
+            assertThat(receive().fixedHeader().messageType()).isEqualTo(MqttMessageType.CONNACK);
+        }
+
+        void send(MqttMessage msg) throws IOException {
+            codec.writeOutbound(msg);
+            ByteBuf encoded = codec.readOutbound();
+            try {
+                byte[] bytes = new byte[encoded.readableBytes()];
+                encoded.readBytes(bytes);
+                out.write(bytes);
+                out.flush();
+            } finally {
+                encoded.release();
+            }
+        }
+
+        // fails with SocketTimeoutException when the broker doesn't respond in time
+        MqttMessage receive() throws IOException {
+            byte[] buf = new byte[1024];
+            MqttMessage msg;
+            while ((msg = codec.readInbound()) == null) {
+                int read = in.read(buf);
+                if (read < 0) {
+                    throw new IOException("Connection closed by the broker");
+                }
+                codec.writeInbound(Unpooled.copiedBuffer(buf, 0, read));
+            }
+            return msg;
+        }
+
+        @Override
+        public void close() throws IOException {
+            codec.finishAndReleaseAll();
+            socket.close();
+        }
     }
 }
