@@ -39,8 +39,9 @@
         <pkg.unixLogFolder>/var/log/${pkg.name}</pkg.unixLogFolder>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
         <spring-boot.version>3.5.16</spring-boot.version>
-        <jackson.version>2.21.6</jackson.version> <!-- to fix CVE-2026-59889, CVE-2026-54515, GHSA-mhm7-754m-9p8w. TODO: remove when fixed in spring-boot-dependencies -->
+        <jackson.version>2.21.7</jackson.version> <!-- to fix CVE-2026-59889, CVE-2026-54515, GHSA-mhm7-754m-9p8w, CVE-2026-89425, CVE-2026-89407, CVE-2026-91777, CVE-2026-91776. TODO: remove when fixed in spring-boot-dependencies -->
         <netty.version>4.1.137.Final</netty.version> <!-- to fix CVE-2026-56745, CVE-2026-56822, CVE-2026-59901 and 25 more netty CVEs. TODO: remove when fixed in spring-boot-dependencies -->
+        <tomcat.version>10.1.60</tomcat.version> <!-- to fix CVE-2026-65905, CVE-2026-68525, CVE-2026-65182. TODO: remove when fixed in spring-boot-dependencies -->
         <postgresql.version>42.7.13</postgresql.version> <!-- to fix CVE-2026-54291, CVE-2026-42198. TODO: remove when fixed in spring-boot-dependencies -->
         <httpcore5.version>5.4.3</httpcore5.version> <!-- to fix CVE-2026-54399, CVE-2026-54428. TODO: remove when fixed in spring-boot-dependencies -->
         <httpclient5.version>5.6.4</httpclient5.version> <!-- kept in lockstep with httpcore5 5.4.3. TODO: remove when fixed in spring-boot-dependencies -->
@@ -822,6 +823,23 @@
                 <scope>import</scope>
             </dependency>
             <!-- End of Netty version override -->
+            <!-- Temporary Tomcat version override -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <!-- End of Tomcat version override -->
             <!-- Temporary PostgreSQL driver version override -->
             <dependency>
                 <groupId>org.postgresql</groupId>
