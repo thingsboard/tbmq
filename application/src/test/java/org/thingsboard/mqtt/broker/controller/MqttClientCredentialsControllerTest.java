@@ -440,6 +440,19 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
                 .andExpect(status().is4xxClientError());
     }
 
+    @Test
+    public void givenSavedCredentials_whenGetByNameOnNewAndLegacyPaths_thenBothReturnThem() throws Exception {
+        MqttClientCredentials saved = doPost("/api/mqtt/client/credentials",
+                newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, newBasicMqttCredentials(null), "lookupByName"),
+                MqttClientCredentials.class);
+
+        MqttClientCredentials byNewPath = doGet("/api/mqtt/client/credentials/by-name?name={name}", MqttClientCredentials.class, "lookupByName");
+        MqttClientCredentials byLegacyPath = doGet("/api/mqtt/client/credentials?name={name}", MqttClientCredentials.class, "lookupByName");
+
+        Assert.assertEquals(saved.getId(), byNewPath.getId());
+        Assert.assertEquals(saved.getId(), byLegacyPath.getId());
+    }
+
     private MqttClientCredentials newBasicMqttClientCredentials(ClientCredentialsType credentialsType, BasicMqttCredentials basicMqttCredentials) {
         return newBasicMqttClientCredentials(credentialsType, basicMqttCredentials, "name");
     }

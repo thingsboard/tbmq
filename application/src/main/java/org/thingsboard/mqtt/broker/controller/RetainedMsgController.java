@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,10 +49,17 @@ public class RetainedMsgController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"topicName"})
+    @GetMapping(value = "/by-topic", params = {"topicName"})
     public RetainedMsgDto getRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         checkParameter("topicName", topicName);
         return checkNotNull(retainedMsgListenerService.getRetainedMsgForTopic(topicName));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"topicName"})
+    public RetainedMsgDto getRetainedMessageLegacy(@RequestParam String topicName) throws ThingsboardException {
+        return getRetainedMessage(topicName);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

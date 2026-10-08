@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -69,11 +70,18 @@ public class WebSocketConnectionController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"name"})
+    @GetMapping(value = "/by-name", params = {"name"})
     public WebSocketConnection getWebSocketConnectionByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
         UUID userId = getCurrentUser().getId();
         return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(userId, name));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"name"})
+    public WebSocketConnection getWebSocketConnectionByNameLegacy(@RequestParam String name) throws ThingsboardException {
+        return getWebSocketConnectionByName(name);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

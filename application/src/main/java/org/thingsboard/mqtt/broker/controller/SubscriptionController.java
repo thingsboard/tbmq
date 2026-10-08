@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,10 +67,17 @@ public class SubscriptionController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"clientId"})
+    @GetMapping(value = "/by-client-id", params = {"clientId"})
     public Set<TopicSubscription> getClientSubscriptions(@RequestParam String clientId) throws ThingsboardException {
         checkParameter("clientId", clientId);
         return checkNotNull(clientSubscriptionCache.getClientSubscriptions(clientId));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"clientId"})
+    public Set<TopicSubscription> getClientSubscriptionsLegacy(@RequestParam String clientId) throws ThingsboardException {
+        return getClientSubscriptions(clientId);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

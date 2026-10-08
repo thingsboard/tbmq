@@ -309,6 +309,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
+                        <tbmq.openapi.spec.path>${project.basedir}/../api/openapi.json</tbmq.openapi.spec.path>
                     </systemPropertyVariables>
                     <excludes>
                         <exclude>**/sql/*Test.java</exclude>

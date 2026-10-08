@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -70,10 +71,17 @@ public class AppSharedSubscriptionController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"topic"})
+    @GetMapping(value = "/by-topic", params = {"topic"})
     public ApplicationSharedSubscription getSharedSubscriptionByTopic(@RequestParam String topic) throws ThingsboardException {
         checkParameter("topic", topic);
         return checkNotNull(applicationSharedSubscriptionService.findSharedSubscriptionByTopic(topic));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"topic"})
+    public ApplicationSharedSubscription getSharedSubscriptionByTopicLegacy(@RequestParam String topic) throws ThingsboardException {
+        return getSharedSubscriptionByTopic(topic);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

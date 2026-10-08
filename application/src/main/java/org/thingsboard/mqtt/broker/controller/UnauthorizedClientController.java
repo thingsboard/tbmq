@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,17 +52,31 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "", params = {"clientId"})
+    @GetMapping(value = "/by-client-id", params = {"clientId"})
     public UnauthorizedClient getUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
         checkParameter("clientId", clientId);
         return checkNotNull(unauthorizedClientService.findUnauthorizedClient(clientId).orElse(null));
     }
 
+    @Hidden
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @DeleteMapping(value = "", params = {"clientId"})
+    @GetMapping(value = "", params = {"clientId"})
+    public UnauthorizedClient getUnauthorizedClientLegacy(@RequestParam String clientId) throws ThingsboardException {
+        return getUnauthorizedClient(clientId);
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/by-client-id", params = {"clientId"})
     public void deleteUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
         UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
         tbUnauthorizedClientService.delete(unauthorizedClient, getCurrentUser());
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "", params = {"clientId"})
+    public void deleteUnauthorizedClientLegacy(@RequestParam String clientId) throws ThingsboardException {
+        deleteUnauthorizedClient(clientId);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

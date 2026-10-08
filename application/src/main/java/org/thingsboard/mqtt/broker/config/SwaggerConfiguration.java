@@ -15,11 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.config;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.jackson.TypeNameResolver;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -42,8 +45,6 @@ import io.swagger.v3.oas.models.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
-import org.springdoc.core.customizers.RouterOperationCustomizer;
-import org.springdoc.core.discoverer.SpringDocParameterNameDiscoverer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
@@ -53,11 +54,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
@@ -81,12 +78,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Slf4j
 @Configuration
 @ConditionalOnExpression("'${springdoc.api-docs.enabled:true}'=='true'")
-@Profile("!test")
 public class SwaggerConfiguration {
 
     public static final String LOGIN_ENDPOINT = "/api/auth/login";
     public static final String REFRESH_TOKEN_ENDPOINT = "/api/auth/token";
 
+    private static final String LOGIN_PASSWORD_SCHEME = "HttpLoginForm";
+    // Fixed, so that the generated api/openapi.json is reproducible
+    private static final String EXAMPLE_TIMESTAMP = "2026-01-01T00:00:00.000+00:00";
     private static final ApiResponses loginResponses = loginResponses();
     private static final ApiResponses defaultErrorResponses = defaultErrorResponses(false);
     private static final ApiResponses defaultPostErrorResponses = defaultErrorResponses(true);
@@ -148,7 +147,7 @@ public class SwaggerConfiguration {
                 .bearerFormat("/api/auth/login|X-Authorization");
 
         var openApi = new OpenAPI()
-                .components(new Components().addSecuritySchemes("HTTP login form", securityScheme))
+                .components(new Components().addSecuritySchemes(LOGIN_PASSWORD_SCHEME, securityScheme))
                 .info(info);
         addDefaultSchemas(openApi);
         addLoginOperation(openApi);
@@ -237,11 +236,10 @@ public class SwaggerConfiguration {
     }
 
     @Bean
-    public GroupedOpenApi groupedApi(SpringDocParameterNameDiscoverer localSpringDocParameterNameDiscoverer) {
+    public GroupedOpenApi groupedApi() {
         return GroupedOpenApi.builder()
                 .group(groupName)
                 .pathsToMatch(apiPath)
-                .addRouterOperationCustomizer(routerOperationCustomizer(localSpringDocParameterNameDiscoverer))
                 .addOperationCustomizer(operationCustomizer())
                 .addOpenApiCustomizer(customOpenApiCustomizer())
                 .build();
@@ -272,45 +270,38 @@ public class SwaggerConfiguration {
         };
     }
 
+    // Maps each discriminator value declared by @JsonSubTypes (e.g. CLIENT_ID) to its subtype schema;
+    // without a mapping, generated clients expect schema names (ClientIdBlockedClient) as discriminator values
+    @Bean
+    @Lazy(false)
+    ModelConverter discriminatorMappingConverter() {
+        return (type, context, chain) -> {
+            if (!chain.hasNext()) {
+                return null;
+            }
+            Schema schema = chain.next().resolve(type, context, chain);
+            JavaType javaType = Json.mapper().constructType(type.getType());
+            JsonSubTypes subTypes = javaType != null ? javaType.getRawClass().getAnnotation(JsonSubTypes.class) : null;
+            if (subTypes == null) {
+                return schema;
+            }
+            Schema model = context.getDefinedModels().get(TypeNameResolver.std.nameForType(javaType));
+            if (model != null && model.getDiscriminator() != null && model.getDiscriminator().getMapping() == null) {
+                for (JsonSubTypes.Type subType : subTypes.value()) {
+                    String subTypeName = TypeNameResolver.std.nameForType(Json.mapper().constructType(subType.value()));
+                    model.getDiscriminator().mapping(subType.name(), Components.COMPONENTS_SCHEMAS_REF + subTypeName);
+                }
+            }
+            return schema;
+        };
+    }
+
     private void addDefaultSchemas(OpenAPI openAPI) {
-        var jsonNodeSchema = ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(JsonNode.class)).schema;
-        jsonNodeSchema.setType("any");
-        //noinspection unchecked
-        jsonNodeSchema.setExamples(List.of(JacksonUtil.newObjectNode()));
-        jsonNodeSchema.setDescription("A value representing the any type (object or primitive)");
         openAPI.getComponents()
-                .addSchemas("JsonNode", jsonNodeSchema)
                 .addSchemas("LoginRequest", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(LoginRequest.class)).schema)
                 .addSchemas("LoginResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(LoginResponse.class)).schema)
                 .addSchemas("ThingsboardErrorResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(ThingsboardErrorResponse.class)).schema)
                 .addSchemas("ThingsboardCredentialsExpiredResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(ThingsboardCredentialsExpiredResponse.class)).schema);
-    }
-
-    private RouterOperationCustomizer routerOperationCustomizer(SpringDocParameterNameDiscoverer localSpringDocParameterNameDiscoverer) {
-        return (routerOperation, handlerMethod) -> {
-            String[] pNames = localSpringDocParameterNameDiscoverer.getParameterNames(handlerMethod.getMethod());
-            String[] reflectionParametersNames = Arrays.stream(handlerMethod.getMethod().getParameters()).map(java.lang.reflect.Parameter::getName).toArray(String[]::new);
-            if (pNames == null || Arrays.stream(pNames).anyMatch(Objects::isNull))
-                pNames = reflectionParametersNames;
-            MethodParameter[] parameters = handlerMethod.getMethodParameters();
-            List<String> requestParams = new ArrayList<>();
-            for (var i = 0; i < parameters.length; i++) {
-                var methodParameter = parameters[i];
-                RequestParam requestParam = methodParameter.getParameterAnnotation(RequestParam.class);
-                if (requestParam != null) {
-                    String pName = StringUtils.isNotBlank(requestParam.value()) ? requestParam.value() :
-                            pNames[i];
-                    if (StringUtils.isNotBlank(pName)) {
-                        requestParams.add(pName);
-                    }
-                }
-            }
-            if (!requestParams.isEmpty()) {
-                var path = routerOperation.getPath() + "{?" + String.join(BrokerConstants.COMMA, requestParams) + "}";
-                routerOperation.setPath(path);
-            }
-            return routerOperation;
-        };
     }
 
     private OperationCustomizer operationCustomizer() {
@@ -323,7 +314,7 @@ public class SwaggerConfiguration {
     }
 
     private OpenApiCustomizer customOpenApiCustomizer() {
-        var loginForm = new SecurityRequirement().addList("HTTP login form", Arrays.asList(
+        var loginForm = new SecurityRequirement().addList(LOGIN_PASSWORD_SCHEME, Arrays.asList(
                 Authority.SYS_ADMIN.name()
         ));
         return openAPI -> {
@@ -349,9 +340,36 @@ public class SwaggerConfiguration {
             });
             sortedPaths.setExtensions(paths.getExtensions());
             openAPI.setPaths(sortedPaths);
+            // Set JsonNode last so model scanning cannot overwrite it; no "type" means any JSON value in OAS 3.1
+            var jsonNodeSchema = new Schema<>();
+            jsonNodeSchema.setDescription("A value representing the any type (object or primitive)");
+            //noinspection unchecked
+            jsonNodeSchema.setExamples(List.of(JacksonUtil.newObjectNode()));
+            openAPI.getComponents().addSchemas("JsonNode", jsonNodeSchema);
             var sortedSchemas = new TreeMap<>(openAPI.getComponents().getSchemas());
+            titleCollidingInlineOneOfs(sortedSchemas);
             openAPI.getComponents().setSchemas(new LinkedHashMap<>(sortedSchemas));
         };
+    }
+
+    // openapi-generator names an inline oneOf model <Schema><Property>, overwriting an existing schema of that name
+    // (MqttAuthProvider.configuration -> MqttAuthProviderConfiguration); a title gives the model a name of its own
+    @SuppressWarnings("unchecked")
+    private static void titleCollidingInlineOneOfs(Map<String, Schema> schemas) {
+        schemas.forEach((schemaName, schema) -> {
+            List<Schema> parts = new ArrayList<>();
+            parts.add(schema);
+            if (schema.getAllOf() != null) {
+                parts.addAll(schema.getAllOf());
+            }
+            parts.stream().filter(part -> part.getProperties() != null).forEach(part ->
+                    ((Map<String, Schema>) part.getProperties()).forEach((propertyName, property) -> {
+                        String inlineModelName = schemaName + org.apache.commons.lang3.StringUtils.capitalize(propertyName);
+                        if (property.getOneOf() != null && property.getTitle() == null && schemas.containsKey(inlineModelName)) {
+                            property.setTitle(inlineModelName + "OneOf");
+                        }
+                    }));
+        });
     }
 
 
@@ -448,29 +466,28 @@ public class SwaggerConfiguration {
     private static ApiResponses loginErrorResponses() {
         ApiResponses apiResponses = new ApiResponses();
 
-        apiResponses.addApiResponse("401", errorResponse("Unauthorized",
-                Map.of(
-                        "bad-credentials", errorExample("Bad credentials",
-                                ThingsboardErrorResponse.of("Invalid username or password", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "token-expired", errorExample("JWT token expired",
-                                ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED)),
-                        "account-disabled", errorExample("Disabled account",
-                                ThingsboardErrorResponse.of("User account is not active", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "account-locked", errorExample("Locked account",
-                                ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "authentication-failed", errorExample("General authentication error",
-                                ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED))
-                )
+        Map<String, Example> unauthorizedExamples = new LinkedHashMap<>();
+        unauthorizedExamples.put("bad-credentials", errorExample("Bad credentials",
+                ThingsboardErrorResponse.of("Invalid username or password", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("token-expired", errorExample("JWT token expired",
+                ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("account-disabled", errorExample("Disabled account",
+                ThingsboardErrorResponse.of("User account is not active", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("account-locked", errorExample("Locked account",
+                ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("authentication-failed", errorExample("General authentication error",
+                ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("credentials-expired", errorExample("Expired credentials",
+                ThingsboardCredentialsExpiredResponse.of("User password expired!", "udgDQOpS1Q4ZFEL8qHF9s8cSKQ7d1h")));
+
+        // anyOf, not oneOf: the expired-credentials body is an error response plus resetToken, so it matches both.
+        // The superset goes first, so clients that take the first matching branch keep resetToken
+        Schema<? extends ThingsboardErrorResponse> unauthorizedSchema = new Schema<>();
+        unauthorizedSchema.anyOf(List.of(
+                new Schema<ThingsboardCredentialsExpiredResponse>().$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse"),
+                new Schema<ThingsboardErrorResponse>().$ref("#/components/schemas/ThingsboardErrorResponse")
         ));
-        var credentialsExpiredSchema = new Schema<ThingsboardCredentialsExpiredResponse>();
-        credentialsExpiredSchema.$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse");
-        apiResponses.addApiResponse("401 ", errorResponse("Unauthorized (**Expired credentials**)",
-                Map.of(
-                        "credentials-expired", errorExample("Expired credentials",
-                                ThingsboardCredentialsExpiredResponse.of("User password expired!", StringUtils.randomAlphanumeric(30)))
-                ),
-                credentialsExpiredSchema
-        ));
+        apiResponses.addApiResponse("401", errorResponse("Unauthorized", unauthorizedExamples, unauthorizedSchema));
         return apiResponses;
     }
 
@@ -492,9 +509,11 @@ public class SwaggerConfiguration {
     }
 
     private static Example errorExample(String summary, ThingsboardErrorResponse example) {
+        ObjectNode value = (ObjectNode) JacksonUtil.valueToTree(example);
+        value.put("timestamp", EXAMPLE_TIMESTAMP);
         return new Example()
                 .summary(summary)
-                .value(example);
+                .value(value);
     }
 
 }

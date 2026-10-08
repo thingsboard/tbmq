@@ -62,7 +62,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DaoSqlTest
 @TestPropertySource(properties = {
         "server.rest_publish.max_payload_size=" + MqttPublishControllerTest.MAX_PAYLOAD_SIZE,
-        "server.rest_publish.timeout_ms=500"
+        "server.rest_publish.timeout_ms=500",
+        "springdoc.api-docs.enabled=true"
 })
 public class MqttPublishControllerTest extends AbstractControllerTest {
 
@@ -301,10 +302,10 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenOpenApiDocs_whenReadPublishOperation_thenAllResponseCodesDocumented() throws Exception {
-        doGet("/v3/api-docs")
+        doGet("/v3/api-docs/TBMQ")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses.keys()")
-                        .value(containsInAnyOrder("200", "202", "400", "411", "413", "415", "429", "503")))
+                        .value(containsInAnyOrder("200", "202", "400", "401", "403", "404", "411", "413", "415", "429", "503")))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['202'].content['application/json'].schema.$ref")
                         .value("#/components/schemas/RestPublishResponse"))
                 .andExpect(jsonPath("$.paths['/api/mqtt/publish'].post.responses['429'].content['application/json'].schema.$ref")
