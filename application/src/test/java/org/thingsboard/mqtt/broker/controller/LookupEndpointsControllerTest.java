@@ -18,10 +18,15 @@ package org.thingsboard.mqtt.broker.controller;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,10 +35,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DaoSqlTest
 public class LookupEndpointsControllerTest extends AbstractControllerTest {
 
-    private static final List<Class<?>> CONTROLLERS_WITH_LEGACY_LOOKUPS = List.of(
-            AppSharedSubscriptionController.class, ClientSessionController.class, MqttClientCredentialsController.class,
-            RetainedMsgController.class, SubscriptionController.class, UnauthorizedClientController.class,
-            WebSocketConnectionController.class);
+    private static final String LEGACY_SUFFIX = "Legacy";
+
+    @Autowired
+    @Qualifier("requestMappingHandlerMapping")
+    private RequestMappingHandlerMapping handlerMapping;
 
     @Before
     public void beforeTest() throws Exception {
@@ -76,23 +82,54 @@ public class LookupEndpointsControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void givenLegacyHandlers_thenHiddenAndSameAuthorityAsDocumentedTwin() throws Exception {
-        int legacyCount = 0;
-        for (Class<?> controller : CONTROLLERS_WITH_LEGACY_LOOKUPS) {
-            for (Method legacy : controller.getDeclaredMethods()) {
-                if (!legacy.getName().endsWith("Legacy")) {
-                    continue;
-                }
-                legacyCount++;
-                Method documented = controller.getDeclaredMethod(
-                        legacy.getName().substring(0, legacy.getName().length() - "Legacy".length()), legacy.getParameterTypes());
-                assertThat(legacy.isAnnotationPresent(Hidden.class)).as(legacy + " must be @Hidden").isTrue();
-                assertThat(legacy.getAnnotation(PreAuthorize.class)).as(legacy + " @PreAuthorize").isNotNull();
-                assertThat(legacy.getAnnotation(PreAuthorize.class).value())
-                        .as(legacy + " must have the same @PreAuthorize as " + documented)
-                        .isEqualTo(documented.getAnnotation(PreAuthorize.class).value());
+    public void givenLegacyTwinWithDivergentAuthority_whenCheckParity_thenViolationReported() throws Exception {
+        Method legacy = DivergentTwinController.class.getDeclaredMethod("lookupLegacy", String.class);
+        assertThat(legacyTwinViolations(List.of(legacy))).hasSize(1);
+    }
+
+    @Test
+    public void givenLegacyHandlers_thenHiddenAndSameAuthorityAsDocumentedTwin() {
+        List<Method> legacyHandlers = handlerMapping.getHandlerMethods().values().stream()
+                .map(HandlerMethod::getMethod)
+                .filter(method -> method.getName().endsWith(LEGACY_SUFFIX))
+                .distinct()
+                .toList();
+        assertThat(legacyHandlers).hasSizeGreaterThanOrEqualTo(8);
+        assertThat(legacyTwinViolations(legacyHandlers)).isEmpty();
+    }
+
+    private static List<String> legacyTwinViolations(List<Method> legacyHandlers) {
+        List<String> violations = new ArrayList<>();
+        for (Method legacy : legacyHandlers) {
+            String documentedName = legacy.getName().substring(0, legacy.getName().length() - LEGACY_SUFFIX.length());
+            Method documented;
+            try {
+                documented = legacy.getDeclaringClass().getDeclaredMethod(documentedName, legacy.getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                violations.add(legacy + " has no documented twin " + documentedName);
+                continue;
+            }
+            if (!legacy.isAnnotationPresent(Hidden.class)) {
+                violations.add(legacy + " must be @Hidden");
+            }
+            PreAuthorize legacyAuthority = legacy.getAnnotation(PreAuthorize.class);
+            PreAuthorize documentedAuthority = documented.getAnnotation(PreAuthorize.class);
+            if (legacyAuthority == null || documentedAuthority == null || !legacyAuthority.value().equals(documentedAuthority.value())) {
+                violations.add(legacy + " must have the same @PreAuthorize as " + documented);
             }
         }
-        assertThat(legacyCount).isEqualTo(8);
+        return violations;
+    }
+
+    private static class DivergentTwinController {
+
+        @PreAuthorize("hasAuthority('SYS_ADMIN')")
+        public void lookup(String key) {
+        }
+
+        @Hidden
+        @PreAuthorize("permitAll()")
+        public void lookupLegacy(String key) {
+        }
     }
 }
