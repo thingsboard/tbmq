@@ -97,7 +97,7 @@ Check out our [Getting Started guide](https://tbmq.io/docs/getting-started/) to 
 Utilize diverse communication patterns effectively, ensuring comprehensive coverage of your use cases. TBMQ places particular emphasis on mastering fan-in, fan-out, and point-to-point (p2p) messaging.
 
 ### 1. Fan-in (telemetry ingestion)
-Numerous devices generate a large volume of messages that are consumed by specific applications. Normally, a few applications are set up to handle these lots of incoming data. It must be ensured that they do not miss any single message.
+Numerous devices generate a large volume of messages that are consumed by specific applications. Normally, a few applications are set up to handle this large volume of incoming data, and they must not miss a single message.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/bbc92bcf-c09b-4141-b71d-d5e469ceeec2" 
        alt="Diagram showing fan-in communication pattern" 
@@ -105,7 +105,7 @@ Numerous devices generate a large volume of messages that are consumed by specif
 </p>
 
 ### 2. Fan-out (broadcast messaging)
-Numerous devices subscribing to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data.
+Numerous devices subscribe to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/85fe89da-ae81-4bef-8d50-c0c21e60b60f" 
        alt="Diagram showing fan-out communication pattern" 
@@ -208,7 +208,7 @@ Gain full visibility over your IoT ecosystem with the user-friendly session mana
 
 Efficiently manage subscriptions with a powerful and intuitive interface, ensuring optimal client communication and data flow across your IoT network.
 
-![TBMQ Client Sessions](https://img.thingsboard.io/mqtt-broker/product/administer-client-subscriptions.webp)
+![TBMQ Client Subscriptions](https://img.thingsboard.io/mqtt-broker/product/administer-client-subscriptions.webp)
 
 <div align="center">
 
@@ -218,7 +218,7 @@ Efficiently manage subscriptions with a powerful and intuitive interface, ensuri
 
 ## 🔒 MQTT clients security & management
 
-Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authenticaion methods as [**Basic**](https://tbmq.io/docs/security/authentication/basic/), [**JWT**](https://tbmq.io/docs/security/authentication/jwt/), [**X.509 Certificate Chain**](https://tbmq.io/docs/security/authentication/x509/) and [**SCRAM**](https://tbmq.io/docs/security/authentication/scram/).
+Strengthen your IoT security using the MQTT client credentials management system, crafted to handle authentication methods such as [**Basic**](https://tbmq.io/docs/security/authentication/basic/), [**JWT**](https://tbmq.io/docs/security/authentication/jwt/), [**X.509 Certificate Chain**](https://tbmq.io/docs/security/authentication/x509/), [**SCRAM**](https://tbmq.io/docs/security/authentication/scram/) and [**HTTP**](https://tbmq.io/docs/security/authentication/http/).
 
 Manage fine-grained access with per-client ACL rules, and easily monitor or control connectivity using built-in tools for handling [**Blocked clients**](https://tbmq.io/docs/other/blocked-client/) and [**Unauthorized clients**](https://tbmq.io/docs/user-guide/ui/unauthorized-clients/).
 
@@ -254,11 +254,11 @@ Enable smooth data transmission between IoT devices, the broker, and external pl
 
 </div>
 
-## 🧪 MQTT websocket connectivity
+## 🧪 MQTT WebSocket connectivity
 
 Interact with your IoT devices in real-time through the WebSocket client, offering a streamlined and responsive interface for device messaging and monitoring.
 
-![MQTT websocket connectivity](https://img.thingsboard.io/mqtt-broker/product/websocket-client-connectivity.webp)
+![MQTT WebSocket connectivity](https://img.thingsboard.io/mqtt-broker/product/websocket-client-connectivity.webp)
 
 <div align="center">
 
