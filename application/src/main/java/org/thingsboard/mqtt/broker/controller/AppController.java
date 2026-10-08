@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,8 +33,10 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 import org.thingsboard.mqtt.broker.service.entity.app.TbAppService;
@@ -178,10 +181,15 @@ public class AppController extends BaseController {
         return result;
     }
 
+    @ApiOperation(value = "Remove service info",
+            notes = "Removes a service from the service registry. A broker and an integration executor may share a service id, " +
+                    "so pass 'serviceType' to remove only one of them. Without 'serviceType' every registry entry of the id is removed.")
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "/service/info")
-    public void removeServiceInfo(@RequestParam String serviceId,
-                                  @RequestParam(required = false) String serviceType) throws ThingsboardException {
+    public void removeServiceInfo(@Parameter(description = "Service id of the broker or integration executor node.", required = true)
+                                  @RequestParam String serviceId,
+                                  @Parameter(description = "Type of the service to remove. When omitted, every service registered under 'serviceId' is removed.")
+                                  @RequestParam(required = false) ServiceType serviceType) throws ThingsboardException {
         checkParameter("serviceId", serviceId);
         tbAppService.deleteServiceInfo(serviceId, serviceType, getCurrentUser());
     }

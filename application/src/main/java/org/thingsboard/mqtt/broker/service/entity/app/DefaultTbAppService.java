@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
@@ -38,7 +39,7 @@ public class DefaultTbAppService extends AbstractTbEntityService implements TbAp
     }
 
     @Override
-    public void deleteServiceInfo(String serviceId, String serviceType, User currentUser) throws ThingsboardException {
+    public void deleteServiceInfo(String serviceId, ServiceType serviceType, User currentUser) throws ThingsboardException {
         systemInfoService.removeServiceInfo(serviceId, serviceType);
     }
 }

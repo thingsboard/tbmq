@@ -22,18 +22,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -46,6 +52,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_M
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SESSIONS;
 
 
 @Slf4j
@@ -54,6 +61,8 @@ public class HistoricalStatsTotalConsumerTest {
 
     private TimeseriesService timeseriesService;
     private HistoricalDataReportProperties historicalDataReportProperties;
+    private ServiceInfoProvider serviceInfoProvider;
+    private ClientSessionPageInfos clientSessionPageInfos;
 
     private HistoricalStatsTotalConsumer historicalStatsTotalConsumer;
 
@@ -64,11 +73,34 @@ public class HistoricalStatsTotalConsumerTest {
         ts = System.currentTimeMillis();
         timeseriesService = mock(TimeseriesService.class);
         historicalDataReportProperties = mock(HistoricalDataReportProperties.class);
+        serviceInfoProvider = mock(ServiceInfoProvider.class);
+        clientSessionPageInfos = mock(ClientSessionPageInfos.class);
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
-                null, null, null, null, null, null, null,
+                null, null, serviceInfoProvider, null, null, null, clientSessionPageInfos,
                 timeseriesService, historicalDataReportProperties
         ));
         historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());
+    }
+
+    @Test
+    public void givenSessionsOnThisNode_whenSaveNodeSessionsCount_thenNodeCountIsSavedUnderItsServiceId() {
+        verifyNodeSessionsCountSaved(7);
+    }
+
+    @Test
+    public void givenNoSessionsOnThisNode_whenSaveNodeSessionsCount_thenZeroIsSaved() {
+        verifyNodeSessionsCountSaved(0);
+    }
+
+    private void verifyNodeSessionsCountSaved(long sessionsOnNode) {
+        when(serviceInfoProvider.getServiceId()).thenReturn("tbmq-node-1");
+        when(clientSessionPageInfos.countSessionsOnNode("tbmq-node-1")).thenReturn(sessionsOnNode);
+        when(timeseriesService.save(eq("tbmq-node-1"), anyList())).thenReturn(Futures.immediateFuture(null));
+
+        historicalStatsTotalConsumer.saveNodeSessionsCount(ts);
+
+        verify(timeseriesService).save("tbmq-node-1", List.of(new BasicTsKvEntry(ts, new LongDataEntry(SESSIONS, sessionsOnNode))));
+        verify(clientSessionPageInfos, never()).getClientSessionStatsInfoByNode();
     }
 
     @Test

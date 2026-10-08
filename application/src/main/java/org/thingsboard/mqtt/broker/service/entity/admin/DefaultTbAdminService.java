@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
+import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlertService;
 import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
@@ -46,6 +47,7 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
     private final MailService mailService;
     private final SystemSettingsNotificationService systemSettingsNotificationService;
     private final SystemSecurityService systemSecurityService;
+    private final ResourceUsageAlertService resourceUsageAlertService;
 
     @Override
     public User save(AdminDto adminDto, User currentUser) throws ThingsboardException {
@@ -66,6 +68,8 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
                 case MQTT_AUTHORIZATION -> {
                     var mqttAuthSettings = JacksonUtil.convertValue(saved.getJsonValue(), MqttAuthSettings.class);
                     systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
+                }
+                case RESOURCE_USAGE_ALERTS -> resourceUsageAlertService.onSettingsUpdate();
                 }
             }
         });

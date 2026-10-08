@@ -122,6 +122,36 @@ public class ClientSessionPageInfosImplTest {
     }
 
     @Test
+    public void testGetClientSessionStatsInfoByNodeCountsEveryClientTypeAndSkipsSessionsWithoutNode() {
+        long now = System.currentTimeMillis();
+        doReturn(Map.of(
+                "device", getClientSessionInfo("device", true, "tbmq1", true, ClientType.DEVICE, now, 0),
+                "application", getClientSessionInfo("application", false, "tbmq1", false, ClientType.APPLICATION, now, now),
+                "integration", getClientSessionInfo("integration", true, "tbmq1", true, ClientType.INTEGRATION, now, 0),
+                "orphan", getClientSessionInfo("orphan", true, null, true, ClientType.DEVICE, now, 0)
+        )).when(clientSessionCache).getAllClientSessions();
+
+        Map<String, ClientSessionNodeStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
+
+        assertEquals(Map.of("tbmq1", new ClientSessionNodeStatsInfoDto(2, 1, 3, 1, 1, 1)), statsByNode);
+    }
+
+    @Test
+    public void testCountSessionsOnNode() {
+        long now = System.currentTimeMillis();
+        doReturn(Map.of(
+                "c1", getClientSessionInfo("c1", true, "tbmq1", true, ClientType.DEVICE, now, 0),
+                "c2", getClientSessionInfo("c2", false, "tbmq1", false, ClientType.APPLICATION, now, now),
+                "c3", getClientSessionInfo("c3", true, "tbmq2", true, ClientType.DEVICE, now, 0),
+                "c4", getClientSessionInfo("c4", true, null, true, ClientType.DEVICE, now, 0)
+        )).when(clientSessionCache).getAllClientSessions();
+
+        assertEquals(2, clientSessionPageInfos.countSessionsOnNode("tbmq1"));
+        assertEquals(1, clientSessionPageInfos.countSessionsOnNode("tbmq2"));
+        assertEquals(0, clientSessionPageInfos.countSessionsOnNode("tbmq3"));
+    }
+
+    @Test
     public void testGetClientSessionStatsInfoByNodeWhenNoSessions() {
         doReturn(Map.of()).when(clientSessionCache).getAllClientSessions();
 

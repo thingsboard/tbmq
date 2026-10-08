@@ -16,10 +16,12 @@
 package org.thingsboard.mqtt.broker.dao.settings;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.HostNameValidator;
@@ -115,6 +117,23 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                             });
                         }
                     }
+                    if (adminSettings.getKey().equals(SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey())) {
+                        validateResourceUsageAlertSettings(adminSettings.getJsonValue());
+                    }
                 }
             };
+
+    private static void validateResourceUsageAlertSettings(JsonNode jsonValue) {
+        ResourceUsageAlertSettings settings;
+        try {
+            settings = JacksonUtil.convertValue(jsonValue, ResourceUsageAlertSettings.class);
+        } catch (IllegalArgumentException e) {
+            throw new DataValidationException("Invalid resource usage alert settings: " + jsonValue);
+        }
+        if (!settings.hasValidThresholds()) {
+            throw new DataValidationException(String.format("Resource usage thresholds must satisfy %d <= high usage < critical usage <= %d!",
+                    ResourceUsageAlertSettings.MIN_USAGE, ResourceUsageAlertSettings.MAX_USAGE));
+        }
+        settings.emailList().forEach(DataValidator::validateEmail);
+    }
 }

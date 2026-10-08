@@ -43,16 +43,17 @@ import org.thingsboard.mqtt.broker.gen.queue.SystemInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.SERVICE_REGISTRY_KEY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
@@ -84,7 +85,6 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final ResourceUsageAlertService resourceUsageAlertService;
 
     private static final Set<String> USAGE_PERCENT_KEYS = Set.of(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
-    private static final String REGISTRY_FIELD_SEPARATOR = ":";
 
     private ScheduledExecutorService scheduler;
     @Setter
@@ -124,13 +124,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
         getCpuCount().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, (long) value))));
         getTotalDiskSpace().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, value))));
 
-        if (tsList.isEmpty()) {
-            return;
-        }
-        resourceUsageAlertService.evaluate(serviceInfo.getServiceId(), serviceInfoProvider.getServiceType(), usagePercents(tsList));
-        // Stored as history (not latest-only) so the UI can chart CPU, memory and disk per node.
-        withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
-        }, throwable -> log.warn("Failed to process TBMQ service info {}", serviceInfo, throwable));
+        saveServiceInfo(serviceInfo.getServiceId(), serviceInfo.getServiceType(), tsList);
     }
 
     @Override
@@ -164,12 +158,33 @@ public class TbmqSystemInfoService implements SystemInfoService {
             tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, systemInfo.getTotalDiskSpace())));
         }
 
+        saveServiceInfo(serviceInfo.getServiceId(), serviceInfo.getServiceType(), tsList);
+    }
+
+    private void saveServiceInfo(String serviceId, String serviceType, List<TsKvEntry> tsList) {
         if (tsList.isEmpty()) {
             return;
         }
-        resourceUsageAlertService.evaluate(serviceInfo.getServiceId(), serviceInfo.getServiceType(), usagePercents(tsList));
-        withCallback(timeseriesService.save(serviceInfo.getServiceId(), tsList), __ -> {
-        }, throwable -> log.warn("Failed to process IE service info {}", serviceInfo, throwable));
+        String entityId = ServiceInfoIds.timeseriesEntityId(serviceId, serviceType);
+        // Only the usage percents are charted, so only they are kept as history; capacity values stay latest-only.
+        Map<Boolean, List<TsKvEntry>> entriesByHistory = tsList.stream()
+                .collect(Collectors.partitioningBy(entry -> USAGE_PERCENT_KEYS.contains(entry.getKey())));
+        List<TsKvEntry> usageEntries = entriesByHistory.get(true);
+        List<TsKvEntry> capacityEntries = entriesByHistory.get(false);
+        if (!usageEntries.isEmpty()) {
+            withCallback(timeseriesService.save(entityId, usageEntries), __ -> {
+            }, throwable -> log.warn("[{}] Failed to save service usage {}", entityId, usageEntries, throwable));
+        }
+        if (!capacityEntries.isEmpty()) {
+            withCallback(timeseriesService.saveLatest(entityId, capacityEntries), __ -> {
+            }, throwable -> log.warn("[{}] Failed to save service info {}", entityId, capacityEntries, throwable));
+        }
+        // Runs on the persist scheduler: an exception escaping here would cancel every later run of scheduleAtFixedRate.
+        try {
+            resourceUsageAlertService.evaluate(serviceId, serviceType, usagePercents(tsList));
+        } catch (Exception e) {
+            log.warn("[{}] Failed to evaluate resource usage alerts", entityId, e);
+        }
     }
 
     private static Map<String, Long> usagePercents(List<TsKvEntry> tsList) {
@@ -191,7 +206,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
         List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(services.size());
         for (RegistryEntry service : services) {
-            futures.add(timeseriesService.findLatest(service.serviceId(), SERVICE_INFO_KEYS));
+            futures.add(timeseriesService.findLatest(ServiceInfoIds.timeseriesEntityId(service.serviceId(), service.serviceType()), SERVICE_INFO_KEYS));
         }
 
         return Futures.transform(Futures.allAsList(futures), allMetrics -> {
@@ -224,14 +239,25 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public void removeServiceInfo(String serviceId, String serviceType) throws ThingsboardException {
-        Object[] fields = serviceType == null
-                ? Stream.concat(Stream.of(serviceId), Arrays.stream(ServiceType.values()).map(type -> registryField(serviceId, type.name()))).distinct().toArray()
-                : Stream.of(serviceId, registryField(serviceId, serviceType)).distinct().toArray();
-        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, fields);
+    public void removeServiceInfo(String serviceId, ServiceType serviceType) throws ThingsboardException {
+        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, registryFieldsFor(serviceId, serviceType));
         if (delete == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
+    }
+
+    private Object[] registryFieldsFor(String serviceId, ServiceType serviceType) {
+        if (serviceType == null) {
+            Stream<String> typedFields = Arrays.stream(ServiceType.values()).map(type -> ServiceInfoIds.registryField(serviceId, type.name()));
+            return Stream.concat(Stream.of(serviceId), typedFields)
+                    .distinct()
+                    .toArray();
+        }
+        String field = ServiceInfoIds.registryField(serviceId, serviceType.name());
+        if (!field.equals(serviceId) && isLegacyRegistration(serviceId, serviceType.name())) {
+            return new Object[]{field, serviceId};
+        }
+        return new Object[]{field};
     }
 
     @Override
@@ -244,28 +270,23 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {
         log.debug("Updating service registry: {}", serviceInfo);
-        String field = registryField(serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        String field = ServiceInfoIds.registryField(serviceInfo.getServiceId(), serviceInfo.getServiceType());
         redisTemplate.opsForHash().put(serviceRegistryKey, field, serviceInfo.getServiceType());
-        if (!field.equals(serviceInfo.getServiceId())) {
-            // Drop the pre-upgrade entry of this executor, which was keyed by the bare service id.
-            Object legacyType = redisTemplate.opsForHash().get(serviceRegistryKey, serviceInfo.getServiceId());
-            if (serviceInfo.getServiceType().equals(legacyType)) {
-                redisTemplate.opsForHash().delete(serviceRegistryKey, serviceInfo.getServiceId());
-            }
+        if (!field.equals(serviceInfo.getServiceId()) && isLegacyRegistration(serviceInfo.getServiceId(), serviceInfo.getServiceType())) {
+            redisTemplate.opsForHash().delete(serviceRegistryKey, serviceInfo.getServiceId());
         }
     }
 
     /**
-     * Brokers are registered under their bare service id, as they always were, so older nodes keep finding them.
-     * Every other service type is registered as {@code <type>:<serviceId>}, so an executor and a broker that share
-     * a service id no longer overwrite each other. Entries written before this scheme are still understood.
+     * Whether the bare {@code serviceId} field is the pre-upgrade entry of this non-broker service. A bare field
+     * holding another type (a broker that shares the id) must be kept.
      */
-    static String registryField(String serviceId, String serviceType) {
-        return ServiceType.TBMQ.name().equals(serviceType) ? serviceId : serviceType + REGISTRY_FIELD_SEPARATOR + serviceId;
+    private boolean isLegacyRegistration(String serviceId, String serviceType) {
+        return serviceType.equals(redisTemplate.opsForHash().get(serviceRegistryKey, serviceId));
     }
 
     static RegistryEntry parseRegistryEntry(String field, String value) {
-        int separator = field.indexOf(REGISTRY_FIELD_SEPARATOR);
+        int separator = field.indexOf(ServiceInfoIds.SEPARATOR);
         if (separator > 0) {
             String prefix = field.substring(0, separator);
             if (Arrays.stream(ServiceType.values()).anyMatch(type -> type.name().equals(prefix))) {

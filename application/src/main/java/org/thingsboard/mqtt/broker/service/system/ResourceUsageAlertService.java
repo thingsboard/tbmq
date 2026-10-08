@@ -30,14 +30,25 @@
  */
 package org.thingsboard.mqtt.broker.service.system;
 
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+
 import java.util.Map;
 
 public interface ResourceUsageAlertService {
 
     /**
-     * Compares the latest CPU, memory and disk percentages of a node with the configured thresholds and records an
-     * audit log entry (plus an optional email) whenever the node crosses into or out of the high or critical band.
+     * Compares the latest CPU, memory and disk percentages of a node with the configured thresholds. Rising into the
+     * high or critical band records an audit log entry (plus an optional email); dropping back to normal records a
+     * recovery entry. Falling from critical to high only updates the tracked band.
      */
     void evaluate(String serviceId, String serviceType, Map<String, Long> usagePercentByMetric);
+
+    /**
+     * The stored resource usage alert settings, with missing or unreadable values replaced by the defaults.
+     * Never null: when nothing was saved yet, the result carries the defaults and no id.
+     */
+    AdminSettings getAdminSettings();
+
+    void onSettingsUpdate();
 
 }

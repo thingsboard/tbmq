@@ -30,99 +30,99 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.thingsboard.mqtt.broker.cache.TbCacheOps;
-import org.thingsboard.mqtt.broker.common.data.permission.Operation;
-import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
-import org.thingsboard.mqtt.broker.service.entity.clientsession.TbClientSessionService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
-import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
-import org.thingsboard.mqtt.broker.service.security.permission.AccessControlService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
-@ExtendWith(MockitoExtension.class)
-public class ClientSessionControllerTest {
+@DaoSqlTest
+public class ClientSessionControllerTest extends AbstractControllerTest {
 
-    @Mock
-    private SessionSubscriptionService sessionSubscriptionService;
-    @Mock
-    private ClientSessionPageInfos clientSessionPageInfos;
-    @Mock
-    private TbCacheOps cacheOps;
-    @Mock
-    private TbClientSessionService tbClientSessionService;
-    @Mock
-    private AccessControlService accessControlService;
+    private static final String BY_NODE_URL = "/api/client-session/info/by-node";
+    private static final String CONNECTED_CLIENT = "by_node_connected";
+    private static final String PERSISTED_CLIENT = "by_node_persisted";
 
-    private MockMvc mockMvc;
+    @Autowired
+    private ServiceInfoProvider serviceInfoProvider;
 
-    @BeforeEach
-    void setUp() {
-        ClientSessionController controller = new ClientSessionController(
-                sessionSubscriptionService, clientSessionPageInfos, cacheOps, tbClientSessionService);
-        ReflectionTestUtils.setField(controller, "accessControlService", accessControlService);
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    private final List<MqttClient> clients = new ArrayList<>();
+    private String serviceId;
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(mock(SecurityUser.class), null);
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
+    @Before
+    public void beforeTest() throws Exception {
+        serviceId = serviceInfoProvider.getServiceId();
+        loginSysAdmin();
     }
 
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
+    @After
+    public void afterTest() throws Exception {
+        for (MqttClient client : clients) {
+            if (client.isConnected()) {
+                client.disconnect();
+            }
+            client.close();
+        }
+        MqttClient cleaner = new MqttClient(SERVER_URI + mqttPort, PERSISTED_CLIENT);
+        cleaner.connect(options(true, 0L));
+        cleaner.disconnect();
+        cleaner.close();
     }
 
     @Test
-    void givenSessionsOnTwoNodes_whenGetStatsByNode_thenJsonKeyedByNodeId() throws Exception {
-        when(clientSessionPageInfos.getClientSessionStatsInfoByNode()).thenReturn(Map.of(
-                "tbmq1", new ClientSessionNodeStatsInfoDto(1, 1, 2, 2, 0, 0),
-                "tbmq2", new ClientSessionNodeStatsInfoDto(1, 0, 1, 0, 1, 0)));
+    public void givenConnectedAndPersistedSessions_whenGetStatsByNode_thenThisNodeCountsThem() throws Exception {
+        JsonNode before = nodeStats();
 
-        mockMvc.perform(get("/api/client-session/info/by-node"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tbmq1.connectedCount").value(1))
-                .andExpect(jsonPath("$.tbmq1.disconnectedCount").value(1))
-                .andExpect(jsonPath("$.tbmq1.totalCount").value(2))
-                .andExpect(jsonPath("$.tbmq1.deviceCount").value(2))
-                .andExpect(jsonPath("$.tbmq2.applicationCount").value(1))
-                .andExpect(jsonPath("$.tbmq2.connectedCount").value(1))
-                .andExpect(jsonPath("$.tbmq2.totalCount").value(1));
+        connect(CONNECTED_CLIENT, options(true, 0L));
+        connect(PERSISTED_CLIENT, options(false, 3600L)).disconnect();
 
-        verify(accessControlService).checkPermission(any(), eq(Operation.READ));
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            JsonNode after = nodeStats();
+            assertThat(delta(before, after, "totalCount")).isEqualTo(2);
+            assertThat(delta(before, after, "connectedCount")).isEqualTo(1);
+            assertThat(delta(before, after, "disconnectedCount")).isEqualTo(1);
+            assertThat(delta(before, after, "deviceCount")).isEqualTo(2);
+            assertThat(delta(before, after, "applicationCount")).isZero();
+            assertThat(delta(before, after, "integrationCount")).isZero();
+        });
     }
 
-    @Test
-    void givenNoSessions_whenGetStatsByNode_thenEmptyJsonObject() throws Exception {
-        when(clientSessionPageInfos.getClientSessionStatsInfoByNode()).thenReturn(Map.of());
-
-        mockMvc.perform(get("/api/client-session/info/by-node"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{}"));
+    private JsonNode nodeStats() throws Exception {
+        Map<String, JsonNode> statsByNode = doGetTyped(BY_NODE_URL, new TypeReference<>() {
+        });
+        return statsByNode.get(serviceId);
     }
+
+    private static long delta(JsonNode before, JsonNode after, String field) {
+        long beforeValue = before == null ? 0 : before.get(field).asLong();
+        return after == null ? -beforeValue : after.get(field).asLong() - beforeValue;
+    }
+
+    private MqttClient connect(String clientId, MqttConnectionOptions options) throws Exception {
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, clientId);
+        clients.add(client);
+        client.connect(options);
+        return client;
+    }
+
+    private static MqttConnectionOptions options(boolean cleanStart, long sessionExpiryInterval) {
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setCleanStart(cleanStart);
+        options.setSessionExpiryInterval(sessionExpiryInterval);
+        return options;
+    }
+
 }

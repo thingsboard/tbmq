@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.system;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public interface SystemInfoService {
 
     ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException;
 
-    void removeServiceInfo(String serviceId, String serviceType) throws ThingsboardException;
+    void removeServiceInfo(String serviceId, ServiceType serviceType) throws ThingsboardException;
 
     List<String> getTbmqServiceIds();
 }

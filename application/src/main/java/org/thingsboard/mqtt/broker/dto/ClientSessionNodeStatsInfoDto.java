@@ -30,16 +30,25 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-@Data
-public class ClientSessionNodeStatsInfoDto {
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class ClientSessionNodeStatsInfoDto extends ClientSessionStatsInfoDto {
 
-    private final long connectedCount;
-    private final long disconnectedCount;
-    private final long totalCount;
     private final long deviceCount;
     private final long applicationCount;
     private final long integrationCount;
+
+    public ClientSessionNodeStatsInfoDto(long connectedCount, long disconnectedCount, long totalCount,
+                                         long deviceCount, long applicationCount, long integrationCount) {
+        super(connectedCount, disconnectedCount, totalCount);
+        this.deviceCount = deviceCount;
+        this.applicationCount = applicationCount;
+        this.integrationCount = integrationCount;
+    }
 
 }

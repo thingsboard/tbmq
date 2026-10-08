@@ -34,4 +34,6 @@ public interface ClientSessionPageInfos {
 
     Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode();
 
+    long countSessionsOnNode(String serviceId);
+
 }

@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsData;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.service.entity.timeseries.TbTimeseriesService;
@@ -61,6 +62,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_ID;
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_IDS;
 
 @RestController
 @RequestMapping("/api/timeseries")
@@ -86,6 +88,37 @@ public class TimeseriesController extends BaseController {
             future = timeseriesService.findLatest(entityId, toKeysList(keysStr));
         }
         Futures.addCallback(future, getTsKvListCallback(result, useStrictDataTypes), MoreExecutors.directExecutor());
+        return result;
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/latest/batch")
+    public DeferredResult<ResponseEntity> getLatestTimeseriesBatch(
+            @RequestParam("entityIds") String entityIdsStr,
+            @RequestParam(name = "keys", required = false) String keysStr,
+            @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
+        checkParameter(ENTITY_IDS, entityIdsStr);
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        List<String> entityIds = toKeysList(entityIdsStr).stream().filter(StringUtils::isNotBlank).distinct().toList();
+        List<String> keys = toKeysList(keysStr);
+        List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(entityIds.size());
+        for (String entityId : entityIds) {
+            futures.add(keys == null ? timeseriesService.findAllLatest(entityId) : timeseriesService.findLatest(entityId, keys));
+        }
+        ListenableFuture<Map<String, Map<String, List<TsData>>>> future = Futures.transform(Futures.allAsList(futures), latestByEntity -> {
+            Map<String, Map<String, List<TsData>>> response = new LinkedHashMap<>();
+            for (int i = 0; i < entityIds.size(); i++) {
+                response.put(entityIds.get(i), toTsDataMap(latestByEntity.get(i), useStrictDataTypes));
+            }
+            return response;
+        }, MoreExecutors.directExecutor());
+        DeferredResult<ResponseEntity> result = new DeferredResult<>();
+        DonAsynchron.withCallback(future,
+                response -> result.setResult(new ResponseEntity<>(response, HttpStatus.OK)),
+                throwable -> {
+                    log.error("Failed to fetch latest timeseries of {}", entityIds, throwable);
+                    handleError(throwable, result, HttpStatus.INTERNAL_SERVER_ERROR);
+                });
         return result;
     }
 
@@ -197,19 +230,7 @@ public class TimeseriesController extends BaseController {
         return new FutureCallback<>() {
             @Override
             public void onSuccess(List<TsKvEntry> data) {
-                if (CollectionUtils.isEmpty(data)) {
-                    response.setResult(new ResponseEntity<>(Collections.emptyMap(), HttpStatus.OK));
-                    return;
-                }
-                Map<String, List<TsData>> result = new LinkedHashMap<>();
-                for (TsKvEntry entry : data) {
-                    if (entry == null) {
-                        continue;
-                    }
-                    Object value = useStrictDataTypes ? entry.getValue() : entry.getValueAsString();
-                    result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(new TsData(entry.getTs(), value));
-                }
-                response.setResult(new ResponseEntity<>(result, HttpStatus.OK));
+                response.setResult(new ResponseEntity<>(toTsDataMap(data, useStrictDataTypes), HttpStatus.OK));
             }
 
             @Override
@@ -218,6 +239,21 @@ public class TimeseriesController extends BaseController {
                 handleError(e, response, HttpStatus.INTERNAL_SERVER_ERROR);
             }
         };
+    }
+
+    private static Map<String, List<TsData>> toTsDataMap(List<TsKvEntry> data, boolean useStrictDataTypes) {
+        if (CollectionUtils.isEmpty(data)) {
+            return Collections.emptyMap();
+        }
+        Map<String, List<TsData>> result = new LinkedHashMap<>();
+        for (TsKvEntry entry : data) {
+            if (entry == null) {
+                continue;
+            }
+            Object value = useStrictDataTypes ? entry.getValue() : entry.getValueAsString();
+            result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(new TsData(entry.getTs(), value));
+        }
+        return result;
     }
 
     private List<String> toKeysList(String keys) {

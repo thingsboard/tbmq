@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -159,10 +158,10 @@ public class HistoricalStatsTotalConsumer {
     }
 
     // Per-node session history backs the per-broker trend on the cluster map; each node writes only its own count.
-    private void saveNodeSessionsCount(long ts) {
+    // Package-private for the same-package unit test, like the other test seams in this class.
+    void saveNodeSessionsCount(long ts) {
         String serviceId = serviceInfoProvider.getServiceId();
-        ClientSessionNodeStatsInfoDto nodeStats = clientSessionPageInfos.getClientSessionStatsInfoByNode().get(serviceId);
-        long count = nodeStats == null ? 0 : nodeStats.getTotalCount();
+        long count = clientSessionPageInfos.countSessionsOnNode(serviceId);
         List<TsKvEntry> entries = List.of(new BasicTsKvEntry(ts, new LongDataEntry(SESSIONS, count)));
         DonAsynchron.withCallback(timeseriesService.save(serviceId, entries),
                 unused -> log.trace("[{}] Successfully saved node sessions count {}", serviceId, count),

@@ -30,7 +30,7 @@
  */
 package org.thingsboard.mqtt.broker.service.system;
 
-import org.junit.jupiter.api.AfterEach;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,9 +39,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.audit.ActionType;
 import org.thingsboard.mqtt.broker.common.data.audit.AuditLog;
 import org.thingsboard.mqtt.broker.common.data.audit.EntityType;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.audit.AuditLogService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
@@ -50,12 +54,13 @@ import org.thingsboard.mqtt.broker.service.mail.MailService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,6 +70,10 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MEMORY_USA
 
 @ExtendWith(MockitoExtension.class)
 class DefaultResourceUsageAlertServiceTest {
+
+    private static final String SETTINGS_KEY = SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey();
+    private static final String TBMQ = "TBMQ";
+    private static final String EXECUTOR = "TBMQ_INTEGRATION_EXECUTOR";
 
     @Mock
     private AdminSettingsService adminSettingsService;
@@ -80,59 +89,222 @@ class DefaultResourceUsageAlertServiceTest {
     @BeforeEach
     void setUp() {
         service = new DefaultResourceUsageAlertService(adminSettingsService, auditLogService, mailService, userService);
-        service.init();
-    }
-
-    @AfterEach
-    void tearDown() {
-        service.destroy();
     }
 
     @Test
-    void givenNoStoredSettings_whenUsageCrossesDefaultThresholds_thenAuditsOncePerCrossing() throws Exception {
-        when(adminSettingsService.findAdminSettingsByKey(anyString())).thenReturn(null);
+    void givenNoStoredSettings_whenUsageCrossesDefaultThresholds_thenAuditsOncePerCrossing() {
+        givenStoredSettings(null);
 
-        service.evaluate("tbmq1", "TBMQ", Map.of(CPU_USAGE, 90L));
-        service.evaluate("tbmq1", "TBMQ", Map.of(CPU_USAGE, 92L));
-        service.evaluate("tbmq1", "TBMQ", Map.of(CPU_USAGE, 40L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 90L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 92L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 40L));
 
-        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
-        verify(auditLogService, times(2)).save(captor.capture());
-        List<AuditLog> logs = captor.getAllValues();
+        List<AuditLog> logs = capturedAuditLogs(2);
         assertEquals(ActionType.RESOURCE_USAGE_ALERT, logs.get(0).getActionType());
         assertEquals(EntityType.SERVICE_INFO, logs.get(0).getEntityType());
+        assertEquals(ServiceInfoIds.auditEntityId("tbmq1", TBMQ), logs.get(0).getEntityId());
         assertEquals("tbmq1", logs.get(0).getEntityName());
         assertNull(logs.get(0).getUserId());
         assertEquals("CRITICAL", logs.get(0).getActionData().get("level").asText());
         assertEquals(90, logs.get(0).getActionData().get("usage").asLong());
         assertEquals(ActionType.RESOURCE_USAGE_RECOVERED, logs.get(1).getActionType());
-        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+        verify(mailService, never()).sendResourceUsageAlertEmailAsync(any(), anyList());
     }
 
     @Test
     void givenUsageBelowThresholds_whenEvaluated_thenNothingIsRecorded() {
-        when(adminSettingsService.findAdminSettingsByKey(anyString())).thenReturn(null);
+        givenStoredSettings(null);
 
-        service.evaluate("tbmq1", "TBMQ", Map.of(CPU_USAGE, 10L, MEMORY_USAGE, 50L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 10L, MEMORY_USAGE, 50L));
 
         verify(auditLogService, never()).save(any());
     }
 
     @Test
-    void givenEmailEnabledWithRecipients_whenUsageBecomesHigh_thenMailIsSentToEachRecipient() throws Exception {
-        ResourceUsageAlertSettings settings = new ResourceUsageAlertSettings(60, 80, true, "ops@example.com, admin@example.com");
-        AdminSettings stored = new AdminSettings();
-        stored.setKey("resourceUsageAlerts");
-        stored.setJsonValue(JacksonUtil.valueToTree(settings));
-        when(adminSettingsService.findAdminSettingsByKey("resourceUsageAlerts")).thenReturn(stored);
+    void givenEmailEnabledWithRecipients_whenUsageBecomesHigh_thenMailIsSentToEachRecipient() {
+        givenStoredSettings(new ResourceUsageAlertSettings(60, 80, true, "ops@example.com, admin@example.com"));
 
-        service.evaluate("tbmq2", "TBMQ", Map.of(MEMORY_USAGE, 70L));
-        service.destroy();
+        service.evaluate("tbmq2", TBMQ, Map.of(MEMORY_USAGE, 70L));
 
         verify(auditLogService).save(any());
-        verify(mailService).sendEmail(eq("ops@example.com"), anyString(), anyString());
-        verify(mailService).sendEmail(eq("admin@example.com"), anyString(), anyString());
+        verify(mailService).sendResourceUsageAlertEmailAsync(
+                new ResourceUsageAlert("tbmq2", TBMQ, MEMORY_USAGE, 70L, "HIGH", 60),
+                List.of("ops@example.com", "admin@example.com"));
         verify(userService, never()).findUsers(any());
+    }
+
+    @Test
+    void givenEmailEnabledWithoutRecipients_whenAlert_thenEveryUserOnEveryPageIsNotified() {
+        givenStoredSettings(new ResourceUsageAlertSettings(60, 80, true, " "));
+        when(userService.findUsers(any(PageLink.class))).thenAnswer(invocation -> {
+            PageLink pageLink = invocation.getArgument(0);
+            return pageLink.getPage() == 0
+                    ? new PageData<>(List.of(user("a@example.com"), user(null)), 2, 3, true)
+                    : new PageData<>(List.of(user("b@example.com")), 2, 3, false);
+        });
+
+        service.evaluate("tbmq2", TBMQ, Map.of(CPU_USAGE, 90L));
+
+        verify(userService, times(2)).findUsers(any(PageLink.class));
+        verify(mailService).sendResourceUsageAlertEmailAsync(
+                new ResourceUsageAlert("tbmq2", TBMQ, CPU_USAGE, 90L, "CRITICAL", 80),
+                List.of("a@example.com", "b@example.com"));
+    }
+
+    @Test
+    void givenInvalidStoredJson_whenEvaluated_thenDefaultsApply() {
+        AdminSettings stored = new AdminSettings();
+        stored.setKey(SETTINGS_KEY);
+        stored.setJsonValue(JacksonUtil.toJsonNode("{\"highUsage\":\"not-a-number\"}"));
+        when(adminSettingsService.findAdminSettingsByKey(SETTINGS_KEY)).thenReturn(stored);
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, ResourceUsageAlertSettings.DEFAULT_HIGH_USAGE + 1L));
+
+        List<AuditLog> logs = capturedAuditLogs(1);
+        assertEquals("HIGH", logs.get(0).getActionData().get("level").asText());
+        assertEquals(ResourceUsageAlertSettings.DEFAULT_HIGH_USAGE, logs.get(0).getActionData().get("highUsage").asInt());
+    }
+
+    @Test
+    void givenHigh_whenUsageRisesAboveCritical_thenAlertsAgain() {
+        givenStoredSettings(new ResourceUsageAlertSettings(75, 85, true, "ops@example.com"));
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 80L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 90L));
+
+        List<AuditLog> logs = capturedAuditLogs(2);
+        assertThat(logs).extracting(AuditLog::getActionType).containsOnly(ActionType.RESOURCE_USAGE_ALERT);
+        assertThat(logs).extracting(log -> log.getActionData().get("level").asText()).containsExactly("HIGH", "CRITICAL");
+        verify(mailService, times(2)).sendResourceUsageAlertEmailAsync(any(), anyList());
+    }
+
+    @Test
+    void givenCritical_whenUsageFallsToHigh_thenStateChangesSilently() {
+        givenStoredSettings(new ResourceUsageAlertSettings(75, 85, true, "ops@example.com"));
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 90L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 78L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 77L));
+
+        List<AuditLog> logs = capturedAuditLogs(1);
+        assertEquals("CRITICAL", logs.get(0).getActionData().get("level").asText());
+        verify(mailService, times(1)).sendResourceUsageAlertEmailAsync(any(), anyList());
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 90L));
+
+        verify(auditLogService, times(2)).save(any());
+    }
+
+    @Test
+    void givenHighThreshold_whenUsageHoversAroundIt_thenRecoveryNeedsTheMargin() {
+        givenStoredSettings(new ResourceUsageAlertSettings(75, 85, false, null));
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 76L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 72L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 74L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 69L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 75L));
+
+        List<AuditLog> logs = capturedAuditLogs(2);
+        assertEquals(ActionType.RESOURCE_USAGE_ALERT, logs.get(0).getActionType());
+        assertEquals(76, logs.get(0).getActionData().get("usage").asLong());
+        assertEquals(ActionType.RESOURCE_USAGE_RECOVERED, logs.get(1).getActionType());
+        assertEquals(69, logs.get(1).getActionData().get("usage").asLong());
+    }
+
+    @Test
+    void givenCriticalThreshold_whenUsageDipsWithinTheMargin_thenStaysCritical() {
+        givenStoredSettings(new ResourceUsageAlertSettings(75, 85, false, null));
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 86L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 81L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 86L));
+
+        assertThat(capturedAuditLogs(1)).extracting(log -> log.getActionData().get("level").asText()).containsExactly("CRITICAL");
+    }
+
+    @Test
+    void givenSeveralNodesAndMetrics_whenEvaluated_thenEachIsTrackedSeparately() {
+        givenStoredSettings(null);
+
+        service.evaluate("node1", TBMQ, Map.of(CPU_USAGE, 90L));
+        service.evaluate("node2", TBMQ, Map.of(CPU_USAGE, 90L));
+        service.evaluate("node1", EXECUTOR, Map.of(CPU_USAGE, 90L));
+        service.evaluate("node1", TBMQ, Map.of(MEMORY_USAGE, 90L));
+        service.evaluate("node1", TBMQ, Map.of(CPU_USAGE, 91L, MEMORY_USAGE, 91L));
+
+        List<AuditLog> logs = capturedAuditLogs(4);
+        assertThat(logs).extracting(AuditLog::getActionType).containsOnly(ActionType.RESOURCE_USAGE_ALERT);
+        assertThat(logs).extracting(AuditLog::getEntityId).containsExactly(
+                ServiceInfoIds.auditEntityId("node1", TBMQ),
+                ServiceInfoIds.auditEntityId("node2", TBMQ),
+                ServiceInfoIds.auditEntityId("node1", EXECUTOR),
+                ServiceInfoIds.auditEntityId("node1", TBMQ));
+    }
+
+    @Test
+    void givenCachedSettings_whenEvaluatedRepeatedly_thenSettingsAreReadOncePerTtlOrUpdate() {
+        givenStoredSettings(null);
+
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 10L));
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 10L));
+        verify(adminSettingsService, times(1)).findAdminSettingsByKey(SETTINGS_KEY);
+
+        service.onSettingsUpdate();
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 10L));
+        verify(adminSettingsService, times(2)).findAdminSettingsByKey(SETTINGS_KEY);
+
+        service.settingsCacheTtlMs = 0;
+        service.evaluate("tbmq1", TBMQ, Map.of(CPU_USAGE, 10L));
+        verify(adminSettingsService, times(3)).findAdminSettingsByKey(SETTINGS_KEY);
+    }
+
+    @Test
+    void givenNoStoredSettings_whenGetAdminSettings_thenDefaultsWithoutId() {
+        givenStoredSettings(null);
+
+        AdminSettings adminSettings = service.getAdminSettings();
+
+        assertNull(adminSettings.getId());
+        assertEquals(SETTINGS_KEY, adminSettings.getKey());
+        assertEquals(JacksonUtil.valueToTree(ResourceUsageAlertSettings.defaults()), adminSettings.getJsonValue());
+    }
+
+    @Test
+    void givenPartialStoredSettings_whenGetAdminSettings_thenMissingValuesAreDefaultsAndIdIsKept() {
+        AdminSettings stored = new AdminSettings(UUID.randomUUID());
+        stored.setKey(SETTINGS_KEY);
+        stored.setJsonValue(JacksonUtil.toJsonNode("{\"highUsage\":60}"));
+        when(adminSettingsService.findAdminSettingsByKey(SETTINGS_KEY)).thenReturn(stored);
+
+        AdminSettings adminSettings = service.getAdminSettings();
+
+        assertEquals(stored.getId(), adminSettings.getId());
+        JsonNode json = adminSettings.getJsonValue();
+        assertEquals(60, json.get("highUsage").asInt());
+        assertEquals(ResourceUsageAlertSettings.DEFAULT_CRITICAL_USAGE, json.get("criticalUsage").asInt());
+    }
+
+    private void givenStoredSettings(ResourceUsageAlertSettings settings) {
+        AdminSettings stored = null;
+        if (settings != null) {
+            stored = new AdminSettings();
+            stored.setKey(SETTINGS_KEY);
+            stored.setJsonValue(JacksonUtil.valueToTree(settings));
+        }
+        when(adminSettingsService.findAdminSettingsByKey(SETTINGS_KEY)).thenReturn(stored);
+    }
+
+    private List<AuditLog> capturedAuditLogs(int expectedCount) {
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogService, times(expectedCount)).save(captor.capture());
+        return captor.getAllValues();
+    }
+
+    private static User user(String email) {
+        User user = new User();
+        user.setEmail(email);
+        return user;
     }
 
 }

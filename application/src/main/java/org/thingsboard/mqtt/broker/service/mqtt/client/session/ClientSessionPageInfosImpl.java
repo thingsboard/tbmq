@@ -46,13 +46,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
-    private static final int CONNECTED = 0;
-    private static final int TOTAL = 1;
-    private static final int DEVICES = 2;
-    private static final int APPLICATIONS = 3;
-    private static final int INTEGRATIONS = 4;
-    private static final int NODE_COUNTERS = 5;
-
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
 
@@ -120,34 +113,51 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     @Override
     public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode() {
-        Map<String, long[]> countsByNode = new HashMap<>();
+        Map<String, NodeSessionCounter> countersByNode = new HashMap<>();
         for (ClientSessionInfo clientSessionInfo : clientSessionCache.getAllClientSessions().values()) {
             String nodeId = clientSessionInfo.getServiceId();
-            if (nodeId == null) {
-                continue;
-            }
-            long[] counts = countsByNode.computeIfAbsent(nodeId, id -> new long[NODE_COUNTERS]);
-            counts[TOTAL]++;
-            if (clientSessionInfo.isConnected()) {
-                counts[CONNECTED]++;
-            }
-            if (clientSessionInfo.getType() != null) {
-                counts[clientTypeCounter(clientSessionInfo.getType())]++;
+            if (nodeId != null) {
+                countersByNode.computeIfAbsent(nodeId, id -> new NodeSessionCounter()).add(clientSessionInfo);
             }
         }
-        Map<String, ClientSessionNodeStatsInfoDto> result = new HashMap<>(countsByNode.size());
-        countsByNode.forEach((nodeId, counts) -> result.put(nodeId, new ClientSessionNodeStatsInfoDto(
-                counts[CONNECTED], counts[TOTAL] - counts[CONNECTED], counts[TOTAL],
-                counts[DEVICES], counts[APPLICATIONS], counts[INTEGRATIONS])));
+        Map<String, ClientSessionNodeStatsInfoDto> result = new HashMap<>(countersByNode.size());
+        countersByNode.forEach((nodeId, counter) -> result.put(nodeId, counter.toDto()));
         return result;
     }
 
-    private static int clientTypeCounter(ClientType type) {
-        return switch (type) {
-            case DEVICE -> DEVICES;
-            case APPLICATION -> APPLICATIONS;
-            case INTEGRATION -> INTEGRATIONS;
-        };
+    @Override
+    public long countSessionsOnNode(String serviceId) {
+        return clientSessionCache.getAllClientSessions().values().stream()
+                .filter(clientSessionInfo -> serviceId.equals(clientSessionInfo.getServiceId()))
+                .count();
+    }
+
+    private static final class NodeSessionCounter {
+
+        private long connected;
+        private long total;
+        private long devices;
+        private long applications;
+        private long integrations;
+
+        void add(ClientSessionInfo clientSessionInfo) {
+            total++;
+            if (clientSessionInfo.isConnected()) {
+                connected++;
+            }
+            if (clientSessionInfo.getType() != null) {
+                switch (clientSessionInfo.getType()) {
+                    case DEVICE -> devices++;
+                    case APPLICATION -> applications++;
+                    case INTEGRATION -> integrations++;
+                }
+            }
+        }
+
+        ClientSessionNodeStatsInfoDto toDto() {
+            return new ClientSessionNodeStatsInfoDto(connected, total - connected, total, devices, applications, integrations);
+        }
+
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {
