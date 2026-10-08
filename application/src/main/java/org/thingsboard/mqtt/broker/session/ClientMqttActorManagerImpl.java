@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
+import org.thingsboard.mqtt.broker.actors.client.messages.CheckSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
@@ -114,6 +115,16 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
             mqttMsg.release();
         } else {
             clientActorRef.tell(mqttMsg);
+        }
+    }
+
+    @Override
+    public void checkSession(String clientId, CheckSessionMsg msg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            msg.getOnAbsent().run();
+        } else {
+            clientActorRef.tell(msg);
         }
     }
 
