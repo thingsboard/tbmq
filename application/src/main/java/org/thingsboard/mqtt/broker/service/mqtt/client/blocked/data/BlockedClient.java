@@ -16,10 +16,13 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+// Interface getters have no stable reflection order; pin it so the generated api/openapi.json is reproducible
+@JsonPropertyOrder({"type", "expirationTime", "description", "regexMatchTarget"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = RegexBlockedClient.class, name = "REGEX"),

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.config;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverters;
@@ -53,7 +54,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -81,12 +81,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Slf4j
 @Configuration
 @ConditionalOnExpression("'${springdoc.api-docs.enabled:true}'=='true'")
-@Profile("!test")
 public class SwaggerConfiguration {
 
     public static final String LOGIN_ENDPOINT = "/api/auth/login";
     public static final String REFRESH_TOKEN_ENDPOINT = "/api/auth/token";
 
+    // Fixed, so that the generated api/openapi.json is reproducible
+    private static final String EXAMPLE_TIMESTAMP = "2026-01-01T00:00:00.000+00:00";
     private static final ApiResponses loginResponses = loginResponses();
     private static final ApiResponses defaultErrorResponses = defaultErrorResponses(false);
     private static final ApiResponses defaultPostErrorResponses = defaultErrorResponses(true);
@@ -448,26 +449,25 @@ public class SwaggerConfiguration {
     private static ApiResponses loginErrorResponses() {
         ApiResponses apiResponses = new ApiResponses();
 
-        apiResponses.addApiResponse("401", errorResponse("Unauthorized",
-                Map.of(
-                        "bad-credentials", errorExample("Bad credentials",
-                                ThingsboardErrorResponse.of("Invalid username or password", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "token-expired", errorExample("JWT token expired",
-                                ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED)),
-                        "account-disabled", errorExample("Disabled account",
-                                ThingsboardErrorResponse.of("User account is not active", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "account-locked", errorExample("Locked account",
-                                ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)),
-                        "authentication-failed", errorExample("General authentication error",
-                                ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED))
-                )
-        ));
+        Map<String, Example> unauthorizedExamples = new LinkedHashMap<>();
+        unauthorizedExamples.put("bad-credentials", errorExample("Bad credentials",
+                ThingsboardErrorResponse.of("Invalid username or password", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("token-expired", errorExample("JWT token expired",
+                ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("account-disabled", errorExample("Disabled account",
+                ThingsboardErrorResponse.of("User account is not active", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("account-locked", errorExample("Locked account",
+                ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        unauthorizedExamples.put("authentication-failed", errorExample("General authentication error",
+                ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
+        apiResponses.addApiResponse("401", errorResponse("Unauthorized", unauthorizedExamples));
+
         var credentialsExpiredSchema = new Schema<ThingsboardCredentialsExpiredResponse>();
         credentialsExpiredSchema.$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse");
         apiResponses.addApiResponse("401 ", errorResponse("Unauthorized (**Expired credentials**)",
                 Map.of(
                         "credentials-expired", errorExample("Expired credentials",
-                                ThingsboardCredentialsExpiredResponse.of("User password expired!", StringUtils.randomAlphanumeric(30)))
+                                ThingsboardCredentialsExpiredResponse.of("User password expired!", "udgDQOpS1Q4ZFEL8qHF9s8cSKQ7d1h"))
                 ),
                 credentialsExpiredSchema
         ));
@@ -492,9 +492,11 @@ public class SwaggerConfiguration {
     }
 
     private static Example errorExample(String summary, ThingsboardErrorResponse example) {
+        ObjectNode value = (ObjectNode) JacksonUtil.valueToTree(example);
+        value.put("timestamp", EXAMPLE_TIMESTAMP);
         return new Example()
                 .summary(summary)
-                .value(example);
+                .value(value);
     }
 
 }

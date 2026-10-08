@@ -16,7 +16,10 @@
 package org.thingsboard.mqtt.broker.common.data.subscription;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+// Interface getters have no stable reflection order; pin it so the generated api/openapi.json is reproducible
+@JsonPropertyOrder({"topicFilter", "qos", "shareName", "options", "subscriptionId"})
 public interface TopicSubscription {
 
     String getTopicFilter();

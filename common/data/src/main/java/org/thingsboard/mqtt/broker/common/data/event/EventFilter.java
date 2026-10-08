@@ -15,9 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.common.data.event;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+// Interface getters have no stable reflection order; pin it so the generated api/openapi.json is reproducible
+@JsonPropertyOrder({"eventType", "notEmpty"})
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         property = "eventType")
