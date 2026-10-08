@@ -480,10 +480,12 @@ public class SwaggerConfiguration {
         unauthorizedExamples.put("credentials-expired", errorExample("Expired credentials",
                 ThingsboardCredentialsExpiredResponse.of("User password expired!", "udgDQOpS1Q4ZFEL8qHF9s8cSKQ7d1h")));
 
+        // anyOf, not oneOf: the expired-credentials body is an error response plus resetToken, so it matches both.
+        // The superset goes first, so clients that take the first matching branch keep resetToken
         Schema<? extends ThingsboardErrorResponse> unauthorizedSchema = new Schema<>();
-        unauthorizedSchema.oneOf(List.of(
-                new Schema<ThingsboardErrorResponse>().$ref("#/components/schemas/ThingsboardErrorResponse"),
-                new Schema<ThingsboardCredentialsExpiredResponse>().$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse")
+        unauthorizedSchema.anyOf(List.of(
+                new Schema<ThingsboardCredentialsExpiredResponse>().$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse"),
+                new Schema<ThingsboardErrorResponse>().$ref("#/components/schemas/ThingsboardErrorResponse")
         ));
         apiResponses.addApiResponse("401", errorResponse("Unauthorized", unauthorizedExamples, unauthorizedSchema));
         return apiResponses;

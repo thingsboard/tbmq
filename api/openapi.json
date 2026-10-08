@@ -9148,12 +9148,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                    },
+                  "anyOf": [
                     {
                       "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
                     }
                   ]
                 },
@@ -9255,12 +9255,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                    },
+                  "anyOf": [
                     {
                       "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
                     }
                   ]
                 },

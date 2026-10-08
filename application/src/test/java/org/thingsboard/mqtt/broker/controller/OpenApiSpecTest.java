@@ -171,6 +171,28 @@ public class OpenApiSpecTest extends AbstractControllerTest {
                 }
             }
         }
+        // A body must match exactly one oneOf branch: two branches that require nothing and carry no discriminator
+        // both accept any common body, so every response fails the schema. Overlapping alternatives need anyOf
+        for (JsonNode oneOf : spec.findValues("oneOf")) {
+            List<String> openBranches = new ArrayList<>();
+            for (JsonNode branch : oneOf) {
+                String ref = branch.path("$ref").asText();
+                JsonNode branchSchema = ref.isEmpty() ? branch : schemas.path(ref.substring(ref.lastIndexOf('/') + 1));
+                boolean hasDiscriminatorParent = false;
+                for (JsonNode part : branchSchema.path("allOf")) {
+                    String partRef = part.path("$ref").asText();
+                    if (!partRef.isEmpty() && schemas.path(partRef.substring(partRef.lastIndexOf('/') + 1)).has("discriminator")) {
+                        hasDiscriminatorParent = true;
+                    }
+                }
+                if (!branchSchema.has("required") && !branchSchema.has("discriminator") && !hasDiscriminatorParent) {
+                    openBranches.add(ref.isEmpty() ? branch.toString() : ref);
+                }
+            }
+            if (openBranches.size() > 1) {
+                problems.add("oneOf branches " + openBranches + " cannot be told apart; use anyOf");
+            }
+        }
         if (spec.findValuesAsText("type").contains("any")) {
             problems.add("Schema with invalid type 'any'");
         }
