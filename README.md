@@ -270,7 +270,7 @@ Interact with your IoT devices in real-time through the WebSocket client, offeri
 
 TBMQ's REST API is described by an OpenAPI 3.1 document committed to the repository and kept in sync with the code by the build:
 
-- Pinned to a release: `https://raw.githubusercontent.com/thingsboard/tbmq/<tag>/api/openapi.json` (available from the first release after 2.4.0)
+- Pinned to a release: `https://raw.githubusercontent.com/thingsboard/tbmq/<tag>/api/openapi.json` (v2.4.1 and later)
 - TBMQ 2.4.0: [openapi.json release asset](https://github.com/thingsboard/tbmq/releases/download/v2.4.0/openapi.json)
 - On a running broker: Swagger UI at `/swagger-ui/` and the raw document at `/v3/api-docs/TBMQ`
 
