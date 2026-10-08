@@ -17372,7 +17372,13 @@
       "BlockedClient": {
         "type": "object",
         "discriminator": {
-          "propertyName": "type"
+          "propertyName": "type",
+          "mapping": {
+            "REGEX": "#/components/schemas/RegexBlockedClient",
+            "CLIENT_ID": "#/components/schemas/ClientIdBlockedClient",
+            "USERNAME": "#/components/schemas/UsernameBlockedClient",
+            "IP_ADDRESS": "#/components/schemas/IpAddressBlockedClient"
+          }
         },
         "properties": {
           "type": {
@@ -17590,7 +17596,12 @@
       },
       "ClientCredentials": {
         "discriminator": {
-          "propertyName": "type"
+          "propertyName": "type",
+          "mapping": {
+            "anonymous": "#/components/schemas/AnonymousCredentials",
+            "basic": "#/components/schemas/BasicCredentials",
+            "cert.PEM": "#/components/schemas/CertPemCredentials"
+          }
         },
         "properties": {
           "type": {
@@ -17824,7 +17835,12 @@
       "EventFilter": {
         "type": "object",
         "discriminator": {
-          "propertyName": "eventType"
+          "propertyName": "eventType",
+          "mapping": {
+            "ERROR": "#/components/schemas/ErrorEventFilter",
+            "LC_EVENT": "#/components/schemas/LifeCycleEventFilter",
+            "STATS": "#/components/schemas/StatisticsEventFilter"
+          }
         },
         "properties": {
           "eventType": {
@@ -18188,7 +18204,11 @@
       },
       "JwtSignAlgorithmConfiguration": {
         "discriminator": {
-          "propertyName": "algorithm"
+          "propertyName": "algorithm",
+          "mapping": {
+            "HMAC_BASED": "#/components/schemas/HmacBasedAlgorithmConfiguration",
+            "PEM_KEY": "#/components/schemas/PemKeyAlgorithmConfiguration"
+          }
         },
         "properties": {
           "algorithm": {
@@ -18212,7 +18232,11 @@
       },
       "JwtVerifierConfiguration": {
         "discriminator": {
-          "propertyName": "jwtVerifierType"
+          "propertyName": "jwtVerifierType",
+          "mapping": {
+            "ALGORITHM_BASED": "#/components/schemas/AlgorithmBasedVerifierConfiguration",
+            "JWKS": "#/components/schemas/JwksVerifierConfiguration"
+          }
         },
         "properties": {
           "jwtVerifierType": {
@@ -18481,7 +18505,14 @@
       },
       "MqttAuthProviderConfiguration": {
         "discriminator": {
-          "propertyName": "type"
+          "propertyName": "type",
+          "mapping": {
+            "MQTT_BASIC": "#/components/schemas/BasicMqttAuthProviderConfiguration",
+            "X_509": "#/components/schemas/SslMqttAuthProviderConfiguration",
+            "JWT": "#/components/schemas/JwtMqttAuthProviderConfiguration",
+            "SCRAM": "#/components/schemas/ScramMqttAuthProviderConfiguration",
+            "HTTP": "#/components/schemas/HttpMqttAuthProviderConfiguration"
+          }
         },
         "properties": {
           "type": {

@@ -15,12 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.config;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.jackson.TypeNameResolver;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -265,6 +267,32 @@ public class SwaggerConfiguration {
             } else {
                 return null;
             }
+        };
+    }
+
+    // Maps each discriminator value declared by @JsonSubTypes (e.g. CLIENT_ID) to its subtype schema;
+    // without a mapping, generated clients expect schema names (ClientIdBlockedClient) as discriminator values
+    @Bean
+    @Lazy(false)
+    ModelConverter discriminatorMappingConverter() {
+        return (type, context, chain) -> {
+            if (!chain.hasNext()) {
+                return null;
+            }
+            Schema schema = chain.next().resolve(type, context, chain);
+            JavaType javaType = Json.mapper().constructType(type.getType());
+            JsonSubTypes subTypes = javaType != null ? javaType.getRawClass().getAnnotation(JsonSubTypes.class) : null;
+            if (subTypes == null) {
+                return schema;
+            }
+            Schema model = context.getDefinedModels().get(TypeNameResolver.std.nameForType(javaType));
+            if (model != null && model.getDiscriminator() != null && model.getDiscriminator().getMapping() == null) {
+                for (JsonSubTypes.Type subType : subTypes.value()) {
+                    String subTypeName = TypeNameResolver.std.nameForType(Json.mapper().constructType(subType.value()));
+                    model.getDiscriminator().mapping(subType.name(), Components.COMPONENTS_SCHEMAS_REF + subTypeName);
+                }
+            }
+            return schema;
         };
     }
 

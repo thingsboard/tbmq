@@ -153,6 +153,24 @@ public class OpenApiSpecTest extends AbstractControllerTest {
                 }
             }
         }
+        for (Map.Entry<String, JsonNode> schema : schemas.properties()) {
+            JsonNode discriminator = schema.getValue().path("discriminator");
+            if (discriminator.isMissingNode()) {
+                continue;
+            }
+            // Without a mapping, generated clients use schema names (ClientIdBlockedClient) instead of the server's values (CLIENT_ID)
+            List<String> mappedRefs = new ArrayList<>();
+            discriminator.path("mapping").forEach(ref -> mappedRefs.add(ref.asText()));
+            String parentRef = "#/components/schemas/" + schema.getKey();
+            for (Map.Entry<String, JsonNode> subtype : schemas.properties()) {
+                for (JsonNode part : subtype.getValue().path("allOf")) {
+                    String subtypeRef = "#/components/schemas/" + subtype.getKey();
+                    if (parentRef.equals(part.path("$ref").asText()) && !mappedRefs.contains(subtypeRef)) {
+                        problems.add("Discriminator of " + schema.getKey() + " has no mapping to subtype " + subtype.getKey());
+                    }
+                }
+            }
+        }
         if (spec.findValuesAsText("type").contains("any")) {
             problems.add("Schema with invalid type 'any'");
         }
