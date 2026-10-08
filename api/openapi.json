@@ -267,7 +267,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -408,7 +408,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -541,7 +541,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -682,7 +682,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -825,7 +825,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -961,7 +961,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1104,7 +1104,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1237,7 +1237,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1380,7 +1380,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1523,7 +1523,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1659,7 +1659,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1795,7 +1795,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -1928,7 +1928,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2061,7 +2061,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2194,7 +2194,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2371,7 +2371,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2548,7 +2548,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2725,7 +2725,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -2902,7 +2902,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3046,7 +3046,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3172,7 +3172,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3305,7 +3305,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3439,7 +3439,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3616,7 +3616,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3757,7 +3757,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -3900,7 +3900,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4026,7 +4026,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4152,7 +4152,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4295,7 +4295,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4429,7 +4429,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4572,7 +4572,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -4705,7 +4705,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -5408,7 +5408,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -5562,7 +5562,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -5723,7 +5723,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -5857,7 +5857,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6082,7 +6082,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6259,7 +6259,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6402,7 +6402,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6545,7 +6545,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6689,7 +6689,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6822,7 +6822,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -6966,7 +6966,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -7230,7 +7230,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -7364,7 +7364,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -7499,7 +7499,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -7633,7 +7633,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -7856,7 +7856,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8030,7 +8030,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8241,7 +8241,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8384,7 +8384,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8520,7 +8520,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8663,7 +8663,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8797,7 +8797,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -8931,7 +8931,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9108,7 +9108,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9411,7 +9411,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9554,7 +9554,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9692,7 +9692,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9828,7 +9828,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -9971,7 +9971,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10114,7 +10114,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10250,7 +10250,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10386,7 +10386,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10563,7 +10563,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10740,7 +10740,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -10881,7 +10881,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11024,7 +11024,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11167,7 +11167,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11300,7 +11300,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11443,7 +11443,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11594,7 +11594,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11728,7 +11728,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -11951,7 +11951,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12123,7 +12123,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12257,7 +12257,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12399,7 +12399,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12541,7 +12541,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12718,7 +12718,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12852,7 +12852,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -12995,7 +12995,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -13121,7 +13121,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -13343,7 +13343,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -13536,7 +13536,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -13677,7 +13677,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -13923,7 +13923,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14070,7 +14070,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14217,7 +14217,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14343,7 +14343,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14503,7 +14503,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14660,7 +14660,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -14838,7 +14838,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15054,7 +15054,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15231,7 +15231,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15355,7 +15355,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15498,7 +15498,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15632,7 +15632,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -15881,7 +15881,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16058,7 +16058,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16199,7 +16199,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16342,7 +16342,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16485,7 +16485,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16619,7 +16619,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16804,7 +16804,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -16945,7 +16945,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -17088,7 +17088,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -17222,7 +17222,7 @@
         },
         "security": [
           {
-            "HTTP login form": [
+            "HttpLoginForm": [
               "SYS_ADMIN"
             ]
           }
@@ -18471,7 +18471,8 @@
               {
                 "$ref": "#/components/schemas/SslMqttAuthProviderConfiguration"
               }
-            ]
+            ],
+            "title": "MqttAuthProviderConfigurationOneOf"
           },
           "additionalInfo": {
             "$ref": "#/components/schemas/JsonNode"
@@ -19861,7 +19862,7 @@
       }
     },
     "securitySchemes": {
-      "HTTP login form": {
+      "HttpLoginForm": {
         "type": "http",
         "description": "Enter Username / Password",
         "scheme": "loginPassword",

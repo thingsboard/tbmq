@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -128,6 +129,28 @@ public class OpenApiSpecTest extends AbstractControllerTest {
                         problems.add("Invalid response code '" + code + "' in " + operation.getKey() + " " + path.getKey());
                     }
                 });
+            }
+        }
+        for (Map.Entry<String, JsonNode> section : spec.path("components").properties()) {
+            section.getValue().fieldNames().forEachRemaining(name -> {
+                if (!name.matches("[a-zA-Z0-9.\\-_]+")) {
+                    problems.add("Invalid component name '" + name + "' in components." + section.getKey());
+                }
+            });
+        }
+        JsonNode schemas = spec.path("components").path("schemas");
+        for (Map.Entry<String, JsonNode> schema : schemas.properties()) {
+            List<JsonNode> parts = new ArrayList<>(List.of(schema.getValue()));
+            schema.getValue().path("allOf").forEach(parts::add);
+            for (JsonNode part : parts) {
+                for (Map.Entry<String, JsonNode> property : part.path("properties").properties()) {
+                    // openapi-generator names an inline oneOf model <Schema>_<property>, i.e. class <Schema><Property>
+                    String inlineModelName = schema.getKey() + StringUtils.capitalize(property.getKey());
+                    if (property.getValue().has("oneOf") && !property.getValue().has("title") && schemas.has(inlineModelName)) {
+                        problems.add("Inline oneOf of " + schema.getKey() + "." + property.getKey() +
+                                " would be generated as model " + inlineModelName + ", overwriting the schema of that name");
+                    }
+                }
             }
         }
         if (spec.findValuesAsText("type").contains("any")) {

@@ -62,6 +62,7 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginResponse;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -80,6 +81,7 @@ public class SwaggerConfiguration {
     public static final String LOGIN_ENDPOINT = "/api/auth/login";
     public static final String REFRESH_TOKEN_ENDPOINT = "/api/auth/token";
 
+    private static final String LOGIN_PASSWORD_SCHEME = "HttpLoginForm";
     // Fixed, so that the generated api/openapi.json is reproducible
     private static final String EXAMPLE_TIMESTAMP = "2026-01-01T00:00:00.000+00:00";
     private static final ApiResponses loginResponses = loginResponses();
@@ -143,7 +145,7 @@ public class SwaggerConfiguration {
                 .bearerFormat("/api/auth/login|X-Authorization");
 
         var openApi = new OpenAPI()
-                .components(new Components().addSecuritySchemes("HTTP login form", securityScheme))
+                .components(new Components().addSecuritySchemes(LOGIN_PASSWORD_SCHEME, securityScheme))
                 .info(info);
         addDefaultSchemas(openApi);
         addLoginOperation(openApi);
@@ -284,7 +286,7 @@ public class SwaggerConfiguration {
     }
 
     private OpenApiCustomizer customOpenApiCustomizer() {
-        var loginForm = new SecurityRequirement().addList("HTTP login form", Arrays.asList(
+        var loginForm = new SecurityRequirement().addList(LOGIN_PASSWORD_SCHEME, Arrays.asList(
                 Authority.SYS_ADMIN.name()
         ));
         return openAPI -> {
@@ -317,8 +319,29 @@ public class SwaggerConfiguration {
             jsonNodeSchema.setExamples(List.of(JacksonUtil.newObjectNode()));
             openAPI.getComponents().addSchemas("JsonNode", jsonNodeSchema);
             var sortedSchemas = new TreeMap<>(openAPI.getComponents().getSchemas());
+            titleCollidingInlineOneOfs(sortedSchemas);
             openAPI.getComponents().setSchemas(new LinkedHashMap<>(sortedSchemas));
         };
+    }
+
+    // openapi-generator names an inline oneOf model <Schema><Property>, overwriting an existing schema of that name
+    // (MqttAuthProvider.configuration -> MqttAuthProviderConfiguration); a title gives the model a name of its own
+    @SuppressWarnings("unchecked")
+    private static void titleCollidingInlineOneOfs(Map<String, Schema> schemas) {
+        schemas.forEach((schemaName, schema) -> {
+            List<Schema> parts = new ArrayList<>();
+            parts.add(schema);
+            if (schema.getAllOf() != null) {
+                parts.addAll(schema.getAllOf());
+            }
+            parts.stream().filter(part -> part.getProperties() != null).forEach(part ->
+                    ((Map<String, Schema>) part.getProperties()).forEach((propertyName, property) -> {
+                        String inlineModelName = schemaName + org.apache.commons.lang3.StringUtils.capitalize(propertyName);
+                        if (property.getOneOf() != null && property.getTitle() == null && schemas.containsKey(inlineModelName)) {
+                            property.setTitle(inlineModelName + "OneOf");
+                        }
+                    }));
+        });
     }
 
 
