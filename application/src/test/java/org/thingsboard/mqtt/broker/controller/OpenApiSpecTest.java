@@ -15,15 +15,25 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,6 +51,10 @@ public class OpenApiSpecTest extends AbstractControllerTest {
     private static final String UPDATE_PROPERTY = "tbmq.openapi.update";
     private static final String REGENERATE_HINT =
             "mvn test -pl application -Dtest=OpenApiSpecTest -D" + UPDATE_PROPERTY + "=true";
+
+    @Autowired
+    @Qualifier("requestMappingHandlerMapping")
+    private RequestMappingHandlerMapping handlerMapping;
 
     @Test
     public void givenBrokerApi_whenGenerateSpec_thenCommittedSpecIsUpToDate() throws Exception {
@@ -63,6 +77,35 @@ public class OpenApiSpecTest extends AbstractControllerTest {
                     ". The generated spec is at " + generatedPath +
                     ". Regenerate with: " + REGENERATE_HINT + " and commit the result.");
         }
+    }
+
+    @Test
+    public void givenDocumentedHandlers_thenNoTwoShareSamePathAndMethod() {
+        Map<String, List<String>> handlersByOperation = new TreeMap<>();
+        handlerMapping.getHandlerMethods().forEach((mapping, handlerMethod) -> {
+            if (handlerMethod.hasMethodAnnotation(Hidden.class) || handlerMethod.getBeanType().isAnnotationPresent(Hidden.class)) {
+                return;
+            }
+            for (String pattern : mapping.getPatternValues()) {
+                if (!pattern.startsWith("/api/")) {
+                    continue;
+                }
+                for (RequestMethod method : mapping.getMethodsCondition().getMethods()) {
+                    handlersByOperation.computeIfAbsent(method + " " + pattern, k -> new ArrayList<>())
+                            .add(handlerMethod.getBeanType().getSimpleName() + "#" + handlerMethod.getMethod().getName());
+                }
+            }
+        });
+        Map<String, List<String>> collisions = new TreeMap<>();
+        handlersByOperation.forEach((operation, handlers) -> {
+            if (handlers.size() > 1) {
+                collisions.put(operation, handlers);
+            }
+        });
+        assertThat(collisions)
+                .as("Handlers sharing path + method collapse into one OpenAPI operation. " +
+                        "Give the lookup its own /by-<key> path and keep the old mapping as a @Hidden *Legacy method.")
+                .isEmpty();
     }
 
     private String fetchSpec() throws Exception {

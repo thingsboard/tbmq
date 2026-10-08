@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -78,10 +79,17 @@ public class ClientSessionController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "/client-session", params = {"clientId"})
+    @GetMapping(value = "/client-session/by-client-id", params = {"clientId"})
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@RequestParam String clientId) throws ThingsboardException {
         checkParameter("clientId", clientId);
         return checkNotNull(sessionSubscriptionService.getDetailedClientSessionInfo(clientId));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session", params = {"clientId"})
+    public DetailedClientSessionInfoDto getDetailedClientSessionInfoLegacy(@RequestParam String clientId) throws ThingsboardException {
+        return getDetailedClientSessionInfo(clientId);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

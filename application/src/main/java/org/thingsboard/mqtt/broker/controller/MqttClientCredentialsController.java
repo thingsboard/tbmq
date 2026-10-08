@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -155,10 +156,17 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "/mqtt/client/credentials", params = {"name"})
+    @GetMapping(value = "/mqtt/client/credentials/by-name", params = {"name"})
     public MqttClientCredentials getClientCredentialsByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
         return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.findCredentialsByName(name));
+    }
+
+    @Hidden
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/mqtt/client/credentials", params = {"name"})
+    public MqttClientCredentials getClientCredentialsByNameLegacy(@RequestParam String name) throws ThingsboardException {
+        return getClientCredentialsByName(name);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
