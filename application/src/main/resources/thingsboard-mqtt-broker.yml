@@ -931,7 +931,7 @@ mqtt:
     # has N + 1 segments (e.g., a/b/c has 3 segments). Topics with more segments than the limit are rejected.
     # Excessively large values may cause processing errors. Defaults to 0, which disables the limit.
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}"
-    # Maximum number of topic aliases per connection. Defaults to 0, which disables the Topic Alias feature.
+    # Maximum number of topic aliases per connection. Set to 0 to disable the Topic Alias feature. Defaults to 10.
     alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"
     # Minimum topic name length that the broker may replace with a topic alias (e.g., topics with more than 50 characters).
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
