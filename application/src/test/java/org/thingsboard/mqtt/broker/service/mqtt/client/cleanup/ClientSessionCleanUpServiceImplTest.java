@@ -32,6 +32,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
+import org.thingsboard.mqtt.broker.actors.client.messages.CheckSessionMsg;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
@@ -67,6 +69,8 @@ public class ClientSessionCleanUpServiceImplTest {
     DisconnectClientCommandService disconnectClientCommandService;
     @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
+    @MockitoBean
+    ClientMqttActorManager clientMqttActorManager;
 
     @MockitoSpyBean
     ClientSessionCleanUpServiceImpl clientSessionCleanUpService;
@@ -104,6 +108,10 @@ public class ClientSessionCleanUpServiceImplTest {
         when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
         when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of("ghostClient", clientSessionInfo));
         when(clientSessionCtxService.hasSession(eq("ghostClient"))).thenReturn(false);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            invocation.getArgument(1, CheckSessionMsg.class).getOnAbsent().run();
+            return null;
+        }).when(clientMqttActorManager).checkSession(eq("ghostClient"), any(CheckSessionMsg.class));
 
         clientSessionCleanUpService.cleanUp();
 

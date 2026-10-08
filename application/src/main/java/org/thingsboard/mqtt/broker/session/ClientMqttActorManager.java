@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
+import org.thingsboard.mqtt.broker.actors.client.messages.CheckSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
@@ -44,6 +45,8 @@ public interface ClientMqttActorManager {
     void connect(String clientId, MqttConnectMsg connectMsg);
 
     void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);
+
+    void checkSession(String clientId, CheckSessionMsg msg);
 
     void notifyConnectionAccepted(String clientId, ConnectionAcceptedMsg connectionAcceptedMsg);
 

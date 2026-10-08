@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.CheckSessionMsg;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientCleanupInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Map;
@@ -44,6 +46,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     private final ClientSessionCache clientSessionCache;
     private final ClientSessionCtxService clientSessionCtxService;
+    private final ClientMqttActorManager clientMqttActorManager;
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -107,7 +110,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         Map<String, ClientSessionInfo> sessions = clientSessionCache.getAllClientSessions();
 
         int removedCount = 0;
-        int fixedGhostCount = 0;
+        int requestedGhostCheckCount = 0;
 
         for (ClientSessionInfo info : sessions.values()) {
             if (!info.getServiceId().equals(myServiceId)) {
@@ -115,9 +118,9 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             }
 
             if (info.isConnected()) {
-                boolean stateFixed = tryFixGhostSessionState(info);
-                if (stateFixed) {
-                    fixedGhostCount++;
+                boolean checkRequested = requestGhostSessionCheck(info);
+                if (checkRequested) {
+                    requestedGhostCheckCount++;
                 }
             } else {
                 Long expiryMs = resolveSessionExpiryIntervalMs(info);
@@ -132,25 +135,27 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             }
         }
 
-        if (removedCount > 0 || fixedGhostCount > 0) {
-            log.info("Session Cleanup Report: Removed [{}] expired, Fixed [{}] ghost sessions.", removedCount, fixedGhostCount);
+        if (removedCount > 0 || requestedGhostCheckCount > 0) {
+            log.info("Session Cleanup Report: Removed [{}] expired, Requested [{}] ghost session checks.", removedCount, requestedGhostCheckCount);
         } else {
             log.info("No expired or ghost client sessions found.");
         }
     }
 
-    private boolean tryFixGhostSessionState(ClientSessionInfo info) {
+    private boolean requestGhostSessionCheck(ClientSessionInfo info) {
         if (clientSessionCtxService.hasSession(info.getClientId())) {
             return false;
         }
 
-        log.info("[{}][{}] Ghost session detected (No physical connection). Marking as Disconnected.",
-                info.getClientId(), info.getSessionId());
-        clientSessionEventService.notifyClientDisconnected(
-                ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info),
-                ON_ADMINISTRATIVE_ACTION,
-                null
-        );
+        clientMqttActorManager.checkSession(info.getClientId(), new CheckSessionMsg(info.getSessionId(), () -> {
+            log.info("[{}][{}] Ghost session confirmed by local actor. Marking as Disconnected.",
+                    info.getClientId(), info.getSessionId());
+            clientSessionEventService.notifyClientDisconnected(
+                    ClientSessionInfoFactory.clientSessionInfoToSessionInfo(info),
+                    ON_ADMINISTRATIVE_ACTION,
+                    null
+            );
+        }));
 
         return true;
     }
