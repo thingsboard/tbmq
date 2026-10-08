@@ -44,4 +44,36 @@ public class MqttPropertiesUtilTest {
         MqttProperties props = new MqttProperties();
         assertEquals(BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, MqttPropertiesUtil.getReceiveMaxValue(props));
     }
+
+    @Test
+    public void getConnectSessionExpiryIntervalValue_neverExpires_returnsMax() {
+        // MQTT-5 §3.1.2.11.2: the interval is a Four Byte Integer (unsigned); 0xFFFFFFFF means the Session does not expire
+        assertEquals(604800, MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(sessionExpiry(0xFFFFFFFF), 604800));
+    }
+
+    @Test
+    public void getConnectSessionExpiryIntervalValue_aboveSignedIntMax_returnsMax() {
+        assertEquals(604800, MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(sessionExpiry(0x80000000), 604800));
+    }
+
+    @Test
+    public void getConnectSessionExpiryIntervalValue_belowMax_returnsIt() {
+        assertEquals(3600, MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(sessionExpiry(3600), 604800));
+    }
+
+    @Test
+    public void getDisconnectSessionExpiryIntervalValue_neverExpires_returnsMax() {
+        assertEquals(604800, MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue(sessionExpiry(0xFFFFFFFF), 604800));
+    }
+
+    @Test
+    public void getDisconnectSessionExpiryIntervalValue_absent_returnsNotSet() {
+        assertEquals(-1, MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue(new MqttProperties(), 604800));
+    }
+
+    private static MqttProperties sessionExpiry(int value) {
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.IntegerProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID, value));
+        return props;
+    }
 }

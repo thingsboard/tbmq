@@ -21,6 +21,7 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
@@ -66,6 +67,9 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final ChannelBackpressureManager channelBackpressureManager;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final StatsManager statsManager;
+
+    @Value("${mqtt.client-session-expiry.max-expiry-interval:604800}")
+    private int maxExpiryInterval;
 
     private ClientDisconnectStats clientDisconnectStats;
 
@@ -115,7 +119,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     }
 
     private int getSessionExpiryInterval(MqttProperties properties) {
-        return MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue(properties);
+        return MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue(properties, maxExpiryInterval);
     }
 
     /**

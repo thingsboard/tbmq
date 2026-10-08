@@ -18,12 +18,18 @@ package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.integration.api.template.IntegrationTemplate;
 
 import java.util.Map;
 
 public class KafkaConfigValidator {
 
     private static final String SSL = "ssl.";
+    public static final String KEY_LABEL = "Key";
+
+    public static String headerLabel(String name) {
+        return "Header '" + name + "'";
+    }
 
     public static void validate(KafkaIntegrationConfig kafkaIntegrationConfig) {
         validateBootstrapServers(kafkaIntegrationConfig.getBootstrapServers());
@@ -117,5 +123,13 @@ public class KafkaConfigValidator {
                 );
             }
         }
+    }
+
+    // Save-time only: KafkaIntegration.init falls back to sending a stored value that fails this check literally.
+    public static void validateTemplates(KafkaIntegrationConfig kafkaIntegrationConfig) {
+        if (StringUtils.isNotEmpty(kafkaIntegrationConfig.getKey())) {
+            IntegrationTemplate.validate(KEY_LABEL, kafkaIntegrationConfig.getKey());
+        }
+        kafkaIntegrationConfig.getKafkaHeaders().forEach((name, value) -> IntegrationTemplate.validate(headerLabel(name), value));
     }
 }

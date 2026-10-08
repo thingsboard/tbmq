@@ -279,6 +279,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void initSession(MqttConnectMessage connectMessage) {
         boolean generated = getClientIdOrElseGenerate(connectMessage);
         clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
+        clientSessionCtx.setZeroSessionExpiryOnConnect(isZeroSessionExpiryOnConnect(connectMessage));
         clientMqttActorManager.initSession(clientId, generated, new SessionInitMsg(
                 clientSessionCtx,
                 connectMessage.payload().userName(),
@@ -288,6 +289,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void initEnhancedAuth(MqttConnectMessage connectMessage, String authMethod, byte[] authData) {
         boolean generated = getClientIdOrElseGenerate(connectMessage);
         clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
+        clientSessionCtx.setZeroSessionExpiryOnConnect(isZeroSessionExpiryOnConnect(connectMessage));
         clientSessionCtx.setConnectMsgFromEnhancedAuth(connectMessage);
         clientSessionCtx.setAuthMethod(authMethod);
         clientMqttActorManager.initEnhancedAuth(clientId, generated, new EnhancedAuthInitMsg(
@@ -300,6 +302,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientId = generated ? UUIDUtil.randomUuid() : clientId;
         clientSessionCtx.getChannel().channel().attr(CLIENT_ID_ATTR).set(clientId);
         return generated;
+    }
+
+    private boolean isZeroSessionExpiryOnConnect(MqttConnectMessage connectMessage) {
+        // uncapped: max-expiry-interval may turn a non-zero interval into zero
+        MqttProperties properties = connectMessage.variableHeader().properties();
+        return MqttPropertiesUtil.getConnectSessionExpiryIntervalValue(properties, Integer.MAX_VALUE) == 0;
     }
 
     private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {

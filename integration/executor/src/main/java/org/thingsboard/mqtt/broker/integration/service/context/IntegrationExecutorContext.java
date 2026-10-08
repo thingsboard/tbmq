@@ -43,6 +43,7 @@ public class IntegrationExecutorContext implements IntegrationContext {
     private final IntegrationLifecycleMsg lifecycleMsg;
     private final IntegrationMsgProcessor integrationMsgProcessor;
     private final IntegrationStatisticsService statisticsService;
+    private final boolean allowLocalNetworkHosts;
     private final LogSettingsComponent logSettingsComponent;
     private final SharedEventLoopGroupService sharedEventLoopGroupService;
     private final EventStorageService eventStorageService;
@@ -60,6 +61,16 @@ public class IntegrationExecutorContext implements IntegrationContext {
     @Override
     public boolean isExceptionStackTraceEnabled() {
         return logSettingsComponent.isExceptionStackTraceEnabled();
+    }
+
+    @Override
+    public long getMsgPackProcessingTimeoutMs() {
+        return integrationMsgProcessor.getPackProcessingTimeoutMs();
+    }
+
+    @Override
+    public long getEventPackProcessingTimeoutMs() {
+        return integrationMsgProcessor.getEventPackProcessingTimeoutMs();
     }
 
     @Override

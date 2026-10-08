@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttReasonCodes.UnsubAck;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Test;
@@ -72,5 +73,23 @@ public class MqttReasonCodeResolverTest {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
 
         assertThat(MqttReasonCodeResolver.unsubAckError(ctx)).isNull();
+    }
+
+    @Test
+    public void givenMqtt5_whenConnectionRefusedUseAnotherServer_thenReturnsUseAnotherServer() {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        assertThat(MqttReasonCodeResolver.connectionRefusedUseAnotherServer(ctx))
+                .isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER);
+    }
+
+    @Test
+    public void givenMqtt311_whenConnectionRefusedUseAnotherServer_thenFallsBackToServerUnavailable() {
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+
+        assertThat(MqttReasonCodeResolver.connectionRefusedUseAnotherServer(ctx))
+                .isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
     }
 }

@@ -139,6 +139,51 @@ public class MqttSessionHandlerTest {
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
     }
 
+    // --- [MQTT-3.14.2-2]: a client may send DISCONNECT right behind CONNECT, before the actor has handled the CONNECT,
+    //     so whether CONNECT carried a zero Session Expiry Interval has to be known on the Netty thread. ---
+
+    @Test
+    public void givenZeroExpiryConnect_whenNonZeroExpiryDisconnectBeforeActorHandledConnect_thenProtocolError() {
+        channelReadConnectAndDisconnect(MqttProperties.NO_PROPERTIES, 60);
+
+        assertThat(captureDisconnectMsg().getReason().getType()).isEqualTo(DisconnectReasonType.ON_PROTOCOL_ERROR);
+    }
+
+    @Test
+    public void givenNeverExpiringConnect_whenNonZeroExpiryDisconnect_thenNormalDisconnect() {
+        // 0xFFFFFFFF is non-zero, whatever max-expiry-interval later caps it to
+        channelReadConnectAndDisconnect(sessionExpiryProperties(0xFFFFFFFF), 60);
+
+        assertThat(captureDisconnectMsg().getReason().getType()).isEqualTo(DisconnectReasonType.ON_DISCONNECT_MSG);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void channelReadConnectAndDisconnect(MqttProperties connectProperties, int disconnectSessionExpiryInterval) {
+        when(addressAttr.get()).thenReturn(REMOTE);
+        when(channel.attr(MqttSessionHandler.CLIENT_ID_ATTR)).thenReturn(mock(Attribute.class));
+
+        handler.channelRead(ctx, MqttMessageBuilders.connect()
+                .clientId("client")
+                .protocolVersion(MqttVersion.MQTT_5)
+                .properties(connectProperties)
+                .build());
+        handler.channelRead(ctx, MqttMessageBuilders.disconnect()
+                .properties(sessionExpiryProperties(disconnectSessionExpiryInterval))
+                .build());
+    }
+
+    private static MqttProperties sessionExpiryProperties(int sessionExpiryInterval) {
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID, sessionExpiryInterval));
+        return properties;
+    }
+
+    private MqttDisconnectMsg captureDisconnectMsg() {
+        ArgumentCaptor<MqttDisconnectMsg> captor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager).disconnect(eq("client"), captor.capture());
+        return captor.getValue();
+    }
+
     // --- close-origin token: a short, stable classification (not prose) so logs stay greppable
     //     and the assertion tracks the value rather than the exact wording. ---
 

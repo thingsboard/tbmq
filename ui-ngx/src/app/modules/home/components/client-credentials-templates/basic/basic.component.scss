@@ -17,4 +17,12 @@
   .tb-hint {
     padding-bottom: 0;
   }
+  .tb-hint-joined-lists {
+    > div:not(:last-child) ::ng-deep ul {
+      margin-bottom: 0;
+    }
+    > div:not(:first-child) ::ng-deep ul {
+      margin-top: 0;
+    }
+  }
 }

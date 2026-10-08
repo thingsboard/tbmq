@@ -209,6 +209,7 @@ export interface KafkaIntegration extends Topics {
     acks: string;
     kafkaHeadersCharset: string;
     kafkaHeaders: {[key: string]: string} | null;
+    forwardUserProperties: boolean;
     otherProperties: {[key: string]: string} | null;
   };
 }

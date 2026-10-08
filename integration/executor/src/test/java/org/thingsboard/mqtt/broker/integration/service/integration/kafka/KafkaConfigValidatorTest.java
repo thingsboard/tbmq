@@ -25,6 +25,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KafkaConfigValidatorTest {
 
+    private static KafkaIntegrationConfig validConfig() {
+        KafkaIntegrationConfig config = new KafkaIntegrationConfig();
+        config.setBootstrapServers("localhost:9092");
+        config.setTopic("test-topic");
+        config.setAcks("all");
+        config.setCompression("gzip");
+        return config;
+    }
+
     @Test
     void testValidConfig() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
@@ -43,7 +52,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         KafkaConfigValidator.validate(config);
     }
@@ -66,7 +76,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -91,7 +102,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -116,7 +128,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -141,7 +154,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -166,7 +180,8 @@ class KafkaConfigValidatorTest {
                 null,
                 Map.of(),
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -194,11 +209,59 @@ class KafkaConfigValidatorTest {
                 null,
                 properties,
                 Map.of(),
-                StandardCharsets.UTF_8.name()
+                StandardCharsets.UTF_8.name(),
+                false
         );
         assertThatThrownBy(() -> KafkaConfigValidator.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Detected SSL-related configurations, but 'security.protocol' is missing");
+    }
+
+    @Test
+    void givenTemplatedKeyAndHeaders_whenValidateTemplates_thenPasses() {
+        KafkaIntegrationConfig config = validConfig();
+        config.setKey("${clientId}");
+        config.setKafkaHeaders(Map.of("mqtt-topic", "${topicName}", "user", "${username}"));
+
+        KafkaConfigValidator.validateTemplates(config);
+    }
+
+    @Test
+    void givenEmptyKey_whenValidateTemplates_thenPasses() {
+        KafkaIntegrationConfig config = validConfig();
+        config.setKey("");
+
+        KafkaConfigValidator.validateTemplates(config);
+    }
+
+    @Test
+    void givenUnknownKeyPlaceholder_whenValidateTemplates_thenThrows() {
+        KafkaIntegrationConfig config = validConfig();
+        config.setKey("${clientID}");
+
+        assertThatThrownBy(() -> KafkaConfigValidator.validateTemplates(config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageStartingWith("Key: unknown placeholder '${clientID}'");
+    }
+
+    @Test
+    void givenUnclosedHeaderPlaceholder_whenValidateTemplates_thenThrows() {
+        KafkaIntegrationConfig config = validConfig();
+        config.setKafkaHeaders(Map.of("mqtt-topic", "${topicName"));
+
+        assertThatThrownBy(() -> KafkaConfigValidator.validateTemplates(config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Header 'mqtt-topic': unclosed placeholder in '${topicName'");
+    }
+
+    @Test
+    void givenInvalidTemplates_whenValidate_thenPasses() {
+        // validate() also runs when a stored integration starts; templates are checked only on save
+        KafkaIntegrationConfig config = validConfig();
+        config.setKey("${topic}");
+        config.setKafkaHeaders(Map.of("mqtt-topic", "abc${topicName"));
+
+        KafkaConfigValidator.validate(config);
     }
 
 }

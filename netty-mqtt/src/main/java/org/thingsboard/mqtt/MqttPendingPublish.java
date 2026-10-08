@@ -23,7 +23,6 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.function.Consumer;
 
@@ -40,9 +39,6 @@ final class MqttPendingPublish {
     private final RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler;
     @Getter(AccessLevel.NONE)
     private final RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler;
-
-    @Setter(AccessLevel.PACKAGE)
-    private boolean sent = false;
 
     private MqttPendingPublish(
             int messageId,
@@ -66,6 +62,8 @@ final class MqttPendingPublish {
     }
 
     void startPublishRetransmissionTimer(EventLoop eventLoop, Consumer<Object> sendPacket) {
+        // eventLoop must be the publishing channel's loop (see MqttClientImpl#retransmissionLoop): this retain is only
+        // safe while it is serialised with every release of the payload, which all run on that loop
         publishRetransmissionHandler.setHandler(((fixedHeader, originalMessage) ->
                 sendPacket.accept(new MqttPublishMessage(fixedHeader, originalMessage.variableHeader(), payload.retain()))));
         publishRetransmissionHandler.start(eventLoop);
@@ -89,12 +87,17 @@ final class MqttPendingPublish {
         pubrelRetransmissionHandler.stop();
     }
 
+    /**
+     * Must only be called by the path that removed this entry from the pending publishes, so the payload reference this
+     * entry holds is released exactly once. Fails the future: the acknowledgement it waits for can no longer arrive.
+     */
     void onChannelClosed() {
         publishRetransmissionHandler.stop();
         pubrelRetransmissionHandler.stop();
         if (payload != null) {
             payload.release();
         }
+        future.tryFailure(new ChannelClosedException("Channel closed before the publish was acknowledged"));
     }
 
     static Builder builder() {

@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRepublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -117,8 +118,13 @@ public class MqttPublishHandler {
         MqttMsgWrapper mqttMsgWrapper = null; // for QoS 0
         try {
             if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQos()) {
+                AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
+                if (awaitingPacketInfo != null) {
+                    processDuplicateExactlyOnce(ctx, actorRef, awaitingPacketInfo);
+                    return;
+                }
                 mqttMsgWrapper = processExactlyOnce(ctx, msgId);
-                if (ensureMsgPersistedAwaitingPubRel(ctx, actorRef, mqttMsgWrapper)) return;
+                ctx.getAwaitingPubRelPacketsCtx().await(ctx.getClientId(), msgId);
             } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQos()) {
                 mqttMsgWrapper = processAtLeastOnce(ctx, msgId);
             }
@@ -136,7 +142,7 @@ public class MqttPublishHandler {
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 
-        sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn());
+        sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx));
 
         clientLogger.logEventWithDetails(ctx.getClientId(), getClass(), logCtx -> logCtx
                 .msg("Persisting PUBLISH in queue")
@@ -181,10 +187,13 @@ public class MqttPublishHandler {
         }
     }
 
-    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg) {
+    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            handleMqtt5ErrorResponse(ctx, publishMsg,
-                    MqttReasonCodeResolver.pubRecError(), MqttReasonCodeResolver.pubAckError());
+            if (mqttMsgWrapper != null) {
+                // the error PUBACK/PUBREC goes through the ordered queue, otherwise the failed msg blocks all later responses
+                mqttMsgWrapper.setPersistFailed(true);
+                sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
+            }
         } else {
             disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
         }
@@ -222,7 +231,7 @@ public class MqttPublishHandler {
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, ctx.getClientCertCn(), new TbQueueCallback() {
+        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 callbackProcessor.submit(() -> {
@@ -242,36 +251,50 @@ public class MqttPublishHandler {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
                     tbMessageStatsReportClient.reportDroppedMsgs();
-                    handleMsgPersistenceFailure(ctx, publishMsg);
+                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper);
                 });
             }
         });
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {
-        MqttReasonCodes.PubAck code = MqttReasonCodeResolver.pubAckSuccess(ctx);
-        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().ack(msg.getMqttMsgWrapper());
-        if (CollectionUtils.isEmpty(ackMsgIds)) {
+        List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().ack(msg.getMqttMsgWrapper());
+        if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
         }
-        for (var ackMsgId : ackMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsgId, code));
+        for (var ackMsg : ackMsgs) {
+            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubAckError() : MqttReasonCodeResolver.pubAckSuccess(ctx);
+            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, PubRecResponseMsg msg) {
-        MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(ctx);
-        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(msg.getMqttMsgWrapper());
-        if (CollectionUtils.isEmpty(ackMsgIds)) {
+        MqttMsgWrapper mqttMsgWrapper = msg.getMqttMsgWrapper();
+        List<MqttMsgWrapper> ackMsgs = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(mqttMsgWrapper);
+        // update the awaiting PUBREL state of the msg whose persist just completed,
+        // even if its PUBREC is still held back behind an earlier msg and nothing is released yet
+        updateAwaitingPubRelPacket(ctx, mqttMsgWrapper);
+        if (CollectionUtils.isEmpty(ackMsgs)) {
             return;
         }
-        for (var ackMsgId : ackMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsgId, code));
+        for (var ackMsg : ackMsgs) {
+            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubRecError() : MqttReasonCodeResolver.pubRecSuccess(ctx);
+            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
+    }
 
-        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msg.getMessageId());
+    private void updateAwaitingPubRelPacket(ClientSessionCtx ctx, MqttMsgWrapper mqttMsgWrapper) {
+        if (mqttMsgWrapper == null) {
+            return;
+        }
+        if (mqttMsgWrapper.isPersistFailed()) {
+            // a failure PUBREC ends the QoS 2 flow: no PUBREL follows and the client may reuse the packet id
+            ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), mqttMsgWrapper.getMsgId());
+            return;
+        }
+        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(mqttMsgWrapper.getMsgId());
         if (isNotPersisted(awaitingPacketInfo)) {
             awaitingPacketInfo.setPersisted(true);
         }
@@ -282,24 +305,22 @@ public class MqttPublishHandler {
     }
 
     // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean ensureMsgPersistedAwaitingPubRel(ClientSessionCtx ctx, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        int msgId = mqttMsgWrapper.getMsgId();
-        String clientId = ctx.getClientId();
+    private void processDuplicateExactlyOnce(ClientSessionCtx ctx, TbActorRef actorRef, AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo) {
+        int msgId = awaitingPacketInfo.getPacketId();
         UUID sessionId = ctx.getSessionId();
-        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
-        if (awaitingPacketInfo == null) {
-            ctx.getAwaitingPubRelPacketsCtx().await(clientId, msgId);
-        } else if (!awaitingPacketInfo.isPersisted()) {
+        if (!awaitingPacketInfo.isPersisted()) {
+            // no entry in the ordered queue: it would never be acked, and the PUBREC of the msg being persisted answers the duplicate too
             if (isTraceEnabled) {
-                log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+                log.trace("[{}][{}] Message {} is awaiting to be persisted.", ctx.getClientId(), sessionId, msgId);
             }
-        } else {
-            if (isTraceEnabled) {
-                log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
-            }
-            sendPubResponseEventToActor(actorRef, sessionId, mqttMsgWrapper, MqttQoS.EXACTLY_ONCE);
+            return;
         }
-        return awaitingPacketInfo != null;
+        if (isTraceEnabled) {
+            log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", ctx.getClientId(), sessionId, msgId);
+        }
+        // adds a new entry to the ordered queue: the actor acks it on the PubRecResponseMsg, so the resent PUBREC keeps its place in the order
+        MqttMsgWrapper duplicateMsgWrapper = processExactlyOnce(ctx, msgId);
+        sendPubResponseEventToActor(actorRef, sessionId, duplicateMsgWrapper, MqttQoS.EXACTLY_ONCE);
     }
 
     private void sendPubResponseEventToActor(TbActorRef actorRef, UUID sessionId, MqttMsgWrapper mqttMsgWrapper, MqttQoS mqttQoS) {

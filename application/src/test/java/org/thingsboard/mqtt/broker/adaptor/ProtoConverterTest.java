@@ -62,6 +62,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTa
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 
@@ -846,10 +847,46 @@ public class ProtoConverterTest {
         assertEquals(1, proto.getQos());
         assertTrue(proto.getRetain());
         assertFalse(proto.hasClientCertCn());
+        assertFalse(proto.hasUsername());
         assertEquals("text/plain", proto.getMqttProperties().getContentType());
         assertEquals(1, proto.getUserPropertiesCount());
         assertEquals("k", proto.getUserProperties(0).getKey());
         assertEquals("v", proto.getUserProperties(0).getValue());
+    }
+
+    @Test
+    public void givenPublisherIdentity_whenConvertToPublishMsgProto_thenUsernameAndCertCnSet() {
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().clientId("cli").build()).build();
+        PublishMsg publishMsg = PublishMsg.builder().topicName("topic").qos(1).properties(new MqttProperties())
+                .payload("p".getBytes(StandardCharsets.UTF_8)).build();
+
+        PublishMsgProto proto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg, new PublisherIdentity("alice", "CN=dev"));
+
+        assertEquals("alice", proto.getUsername());
+        assertEquals("CN=dev", proto.getClientCertCn());
+    }
+
+    @Test
+    public void givenEmptyPublisherIdentity_whenConvertToPublishMsgProto_thenUsernameAndCertCnUnset() {
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().clientId("cli").build()).build();
+        PublishMsg publishMsg = PublishMsg.builder().topicName("topic").qos(1).properties(new MqttProperties())
+                .payload("p".getBytes(StandardCharsets.UTF_8)).build();
+
+        PublishMsgProto proto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg, PublisherIdentity.EMPTY);
+
+        assertFalse(proto.hasUsername());
+        assertFalse(proto.hasClientCertCn());
+    }
+
+    @Test
+    public void givenEmptyUsername_whenConvertToPublishMsgProto_thenUsernameUnset() {
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().clientId("cli").build()).build();
+        PublishMsg publishMsg = PublishMsg.builder().topicName("topic").qos(1).properties(new MqttProperties())
+                .payload("p".getBytes(StandardCharsets.UTF_8)).build();
+
+        PublishMsgProto proto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg, new PublisherIdentity("", null));
+
+        assertFalse(proto.hasUsername());
     }
 
 }

@@ -29,6 +29,11 @@ import java.util.Random;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public final class MqttClientConfig {
 
+    /**
+     * The largest keep-alive MQTT can carry: CONNECT holds it in two bytes.
+     */
+    public static final int MAX_KEEP_ALIVE_SECONDS = 65535;
+
     @Getter
     private final SslContext sslContext;
     private final String randomClientId;
@@ -71,13 +76,16 @@ public final class MqttClientConfig {
     private int maxBytesInMessage = 32368;
 
     @Getter
+    private int connectTimeoutSec = 30;
+
+    @Getter
     private int backPressureHighWatermark = 450;
     @Getter
     private int backPressureLowWatermark = 200;
 
+    @Nonnull
     @Getter
-    @Setter
-    private RetransmissionConfig retransmissionConfig;
+    private RetransmissionConfig retransmissionConfig = new RetransmissionConfig(3, 5000L, 0.15d);
 
     public record RetransmissionConfig(int maxAttempts, long initialDelayMillis, double jitterFactor) {
 
@@ -119,11 +127,27 @@ public final class MqttClientConfig {
         }
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        if (timeoutSeconds != -1 && timeoutSeconds <= 0) {
-            throw new IllegalArgumentException("timeoutSeconds must be > 0 or -1");
+    public void setRetransmissionConfig(@Nonnull RetransmissionConfig retransmissionConfig) {
+        if (retransmissionConfig == null) {
+            throw new NullPointerException("retransmissionConfig");
         }
-        this.timeoutSeconds = timeoutSeconds;
+        this.retransmissionConfig = retransmissionConfig;
+    }
+
+    /**
+     * Sets the keep-alive in seconds: sent in CONNECT, and the idle time after which the client pings the server.
+     *
+     * @param timeoutSeconds 1 to 65535, or 0 to disable keep-alive - CONNECT then carries 0 and the client never pings.
+     *                       -1, which callers used to mean "off", is stored as 0.
+     * @throws IllegalArgumentException for any other value
+     */
+    public void setTimeoutSeconds(int timeoutSeconds) {
+        int keepAlive = timeoutSeconds == -1 ? 0 : timeoutSeconds;
+        if (keepAlive < 0 || keepAlive > MAX_KEEP_ALIVE_SECONDS) {
+            throw new IllegalArgumentException("timeoutSeconds must be between 0 (keep-alive off) and "
+                    + MAX_KEEP_ALIVE_SECONDS + ", but was " + timeoutSeconds);
+        }
+        this.timeoutSeconds = keepAlive;
     }
 
     public void setBackPressureHighWatermark(int backPressureHighWatermark) {
@@ -170,8 +194,24 @@ public final class MqttClientConfig {
     }
 
     /**
-     * Sets the maximum number of bytes in the message for the {@link io.netty.handler.codec.mqtt.MqttDecoder}.
-     * Default value is 8092 as specified by Netty. The absolute maximum size is 256MB as set by the MQTT spec.
+     * Sets how long one connect attempt may take, from the start of its TCP connect to its CONNACK, TLS handshake
+     * included. On expiry the channel is closed and the attempt's future fails with a
+     * {@link io.netty.channel.ConnectTimeoutException}; an automatic reconnect then proceeds as after any failed attempt.
+     * Defaults to 30 seconds, netty's own TCP connect timeout.
+     *
+     * @throws IllegalArgumentException if connectTimeoutSec is not positive
+     */
+    public void setConnectTimeoutSec(int connectTimeoutSec) {
+        if (connectTimeoutSec <= 0) {
+            throw new IllegalArgumentException("connectTimeoutSec must be > 0, but was " + connectTimeoutSec);
+        }
+        this.connectTimeoutSec = connectTimeoutSec;
+    }
+
+    /**
+     * Sets the largest packet the client reads, counted as its remaining length. A PUBLISH over it is skipped without
+     * being buffered, acked as failed and reported to {@link MqttClientCallback#onPublishTooLarge}; any other packet
+     * over it closes the connection. The absolute maximum is 256 MB, as set by the MQTT spec.
      *
      * @param maxBytesInMessage
      * @throws IllegalArgumentException if maxBytesInMessage is smaller than 1 or greater than 256_000_000.

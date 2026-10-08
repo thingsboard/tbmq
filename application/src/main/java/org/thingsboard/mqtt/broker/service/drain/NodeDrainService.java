@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt;
+package org.thingsboard.mqtt.broker.service.drain;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+public interface NodeDrainService {
 
-final class MqttIncomingQos2Publish {
+    /**
+     * Starts draining this broker node. Repeated calls return the current operation without restarting it.
+     */
+    NodeDrainStatus startDrain();
 
-    private final MqttPublishMessage incomingPublish;
+    /**
+     * Cancels the current drain operation and allows new MQTT connections again.
+     */
+    NodeDrainStatus cancelDrain();
 
-    MqttIncomingQos2Publish(MqttPublishMessage incomingPublish) {
-        this.incomingPublish = incomingPublish;
-    }
+    NodeDrainStatus getStatus();
 
-    MqttPublishMessage getIncomingPublish() {
-        return incomingPublish;
-    }
+    boolean isDraining();
+
 }

@@ -85,7 +85,10 @@
     </mat-expansion-panel-header>
     <section>
       <div class="tb-hint pt-0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
-      <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+      <div class="tb-hint tb-hint-joined-lists">
+        <div [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+        <div [innerHtml]="'mqtt-client-credentials.hint-client-id-placeholder' | translate"></div>
+      </div>
     </section>
     <div class="mt-2 flex flex-1 flex-col" formGroupName="authRules">
       <tb-topic-rules-chip-list

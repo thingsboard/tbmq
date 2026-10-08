@@ -28,6 +28,7 @@ public enum SslAuthFailure {
     NO_AUTH_RULES_FOR_CN_IN_CREDS("Cannot find authorization rules for common name [%s] from credentials [%s]"),
     SSL_HANDLER_NOT_CONSTRUCTED("Could not authenticate client using X_509_CERTIFICATE_CHAIN credentials since SSL handler is not constructed!"),
     NO_X_509_CREDS_FOUND("Failed to authenticate client using X_509_CERTIFICATE_CHAIN credentials! No X_509_CERTIFICATE_CHAIN matching credentials were found!"),
+    CLIENT_ID_NOT_ALLOWED_FOR_CN("Client ID [%s] does not match the client ID constraint of X_509_CERTIFICATE_CHAIN credentials for common name [%s]"),
     CAN_NOT_PARSE_SSL_CREDS("Cannot parse SslMqttCredentials");
 
     private final String errorMsg;

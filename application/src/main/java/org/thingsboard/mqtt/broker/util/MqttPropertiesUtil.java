@@ -109,12 +109,20 @@ public class MqttPropertiesUtil {
 
     public static int getConnectSessionExpiryIntervalValue(MqttProperties properties, int maxExpiryInterval) {
         IntegerProperty property = getSessionExpiryIntervalProperty(properties);
-        return property != null ? Math.min(property.value(), maxExpiryInterval) : 0;
+        return property != null ? capSessionExpiryInterval(property.value(), maxExpiryInterval) : 0;
     }
 
-    public static int getDisconnectSessionExpiryIntervalValue(MqttProperties properties) {
-        IntegerProperty sessionExpiryIntervalProperty = getSessionExpiryIntervalProperty(properties);
-        return sessionExpiryIntervalProperty != null ? sessionExpiryIntervalProperty.value() : -1;
+    public static int getDisconnectSessionExpiryIntervalValue(MqttProperties properties, int maxExpiryInterval) {
+        IntegerProperty property = getSessionExpiryIntervalProperty(properties);
+        return property != null ? capSessionExpiryInterval(property.value(), maxExpiryInterval) : -1;
+    }
+
+    /**
+     * The Session Expiry Interval is a Four Byte Integer, i.e. unsigned [MQTT-5 1.5.3]: netty's signed int turns
+     * 0xFFFFFFFF ("never expires") into -1, which means "not set" here, and every value of 2^31 or more into a negative one.
+     */
+    private static int capSessionExpiryInterval(int value, int maxExpiryInterval) {
+        return (int) Math.min(Integer.toUnsignedLong(value), maxExpiryInterval);
     }
 
     public static MqttProperties.IntegerProperty getTopicAliasProperty(MqttProperties properties) {

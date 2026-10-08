@@ -52,6 +52,8 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
         } else if (message.fixedHeader().messageType() == MqttMessageType.PINGRESP) {
             this.handlePingResp(ctx.channel());
         } else {
+            // MqttChannelHandler's deferred handler dispatch depends on this retain: it is the reference that survives
+            // SimpleChannelInboundHandler's auto-release, and invokeHandlerForIncomingPublish releases it
             ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
         }
     }
@@ -79,14 +81,34 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
         channel.writeAndFlush(new MqttMessage(fixedHeader));
 
-        if (this.pingRespTimeout == null) {
+        // While reading is paused - by backpressure, or by a disconnect() draining its deliveries - a PINGRESP waits
+        // unread, so its absence proves nothing: the PINGREQ still keeps the server's keep-alive, and the check resumes
+        // with the first idle event once reading does
+        if (this.pingRespTimeout == null && channel.config().isAutoRead()) {
             log.trace("[{}] Scheduling disconnect due to {}", channel.id(), idleEvent);
             this.pingRespTimeout = channel.eventLoop().schedule(() -> {
+                if (!channel.config().isAutoRead()) {
+                    // paused for good by a disconnect() draining its deliveries, which never resumes reading
+                    this.pingRespTimeout = null;
+                    return;
+                }
                 log.trace("[{}] Sending disconnect due to {}", channel.id(), idleEvent);
                 MqttFixedHeader fixedHeader2 = new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0);
                 channel.writeAndFlush(new MqttMessage(fixedHeader2)).addListener(ChannelFutureListener.CLOSE);
                 //TODO: what do when the connection is closed ?
             }, this.keepaliveSeconds, TimeUnit.SECONDS);
+        }
+    }
+
+    /**
+     * Called on the event loop when backpressure pauses reading: a PINGRESP can no longer be read, so a pending check for
+     * one is dropped. Checking at its deadline whether reading is paused would not do: reading may have resumed by then
+     * with the PINGRESP still unread, behind the PUBLISHes read first.
+     */
+    void onReadingPaused() {
+        if (this.pingRespTimeout != null) {
+            this.pingRespTimeout.cancel(false);
+            this.pingRespTimeout = null;
         }
     }
 

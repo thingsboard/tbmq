@@ -48,6 +48,7 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
     private final AuthorizationPolicyService authorizationPolicyService;
+    private final String clientId;
 
     @Getter
     private String username;
@@ -91,8 +92,8 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
         try {
             var authorizationRules = authorizationPolicyService.resolveRules(
                     credentials.getAuthorizationPolicyId(), scramMqttCredentials.getAuthRules());
-            authRulePatterns = authorizationRuleService.parsePubSubAuthorizationRule(authorizationRules);
-        } catch (RuntimeException e) {
+            authRulePatterns = authorizationRuleService.parseAuthorizationRule(authorizationRules, null, clientId);
+        } catch (Exception e) {
             throw new RuntimeException("Failed to parse authorization rule for SCRAM credentials: " + credentialsId, e);
         }
 

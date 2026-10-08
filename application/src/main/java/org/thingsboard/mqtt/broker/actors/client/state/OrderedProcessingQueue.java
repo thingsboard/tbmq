@@ -21,5 +21,5 @@ public interface OrderedProcessingQueue {
 
     MqttMsgWrapper addMsgId(int msgId);
 
-    List<Integer> ack(MqttMsgWrapper msgWrapper);
+    List<MqttMsgWrapper> ack(MqttMsgWrapper msgWrapper);
 }

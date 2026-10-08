@@ -264,7 +264,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
         if (mqttClientCredentials.getAuthorizationPolicyId() == null) {
-            AuthRulesUtil.validateAndCompileAuthRules(mqttCredentials.getAuthRules());
+            AuthRulesUtil.validateAndCompileBasicAuthRules(mqttCredentials.getAuthRules());
         }
     }
 
@@ -279,6 +279,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 Pattern.compile(certCnPattern);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate common name pattern [" + certCnPattern + "] must be a valid regex");
+            }
+        }
+        if (mqttCredentials.isClientIdIsRegex() && !StringUtils.isEmpty(mqttCredentials.getClientIdPattern())) {
+            String clientIdPattern = mqttCredentials.getClientIdPattern();
+            try {
+                Pattern.compile(clientIdPattern);
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException("Client ID pattern [" + clientIdPattern + "] must be a valid regex");
             }
         }
         if (mqttClientCredentials.getAuthorizationPolicyId() == null && CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {

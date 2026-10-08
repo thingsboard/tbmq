@@ -120,9 +120,10 @@ public class AuthorizationPolicyServiceImpl implements AuthorizationPolicyServic
             if (StringUtils.isEmpty(policy.getName())) {
                 throw new DataValidationException("Authorization policy name should be specified!");
             }
-            // A policy can be shared by Basic, SCRAM, and X.509 credentials, so it must not
-            // contain authentication-method-specific placeholders such as ${cn}.
-            AuthRulesUtil.validateAndCompileAuthRules(policy.getAuthorizationRules());
+            // A policy can be shared by Basic, SCRAM, and X.509 credentials. ${clientId} is
+            // available to every authentication method, while method-specific placeholders
+            // such as ${cn} remain invalid for reusable policies.
+            AuthRulesUtil.validateAndCompileBasicAuthRules(policy.getAuthorizationRules());
         }
     };
 }

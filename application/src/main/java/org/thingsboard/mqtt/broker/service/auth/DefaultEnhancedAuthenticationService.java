@@ -191,7 +191,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     private boolean initiateScramServerWithCallback(String clientId, String authMethod, ClientSessionCtx sessionCtx) {
         var callbackHandler = new ScramAuthCallbackHandler(credentialsService, authorizationRuleService,
-                authorizationPolicyService);
+                authorizationPolicyService, clientId);
         SaslServer saslServer;
         try {
             saslServer = createSaslServer(authMethod, callbackHandler);

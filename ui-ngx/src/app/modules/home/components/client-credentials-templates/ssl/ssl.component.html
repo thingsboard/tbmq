@@ -19,7 +19,7 @@
   <fieldset class="fields-group">
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-ssl' | translate }}"></div>
-    <mat-form-field class="mat-block">
+    <mat-form-field class="mat-block" subscriptSizing="dynamic">
       <mat-label>{{ certificateCnLabel | translate }}</mat-label>
       <input required matInput formControlName="certCnPattern">
       <tb-copy-button matSuffix
@@ -33,10 +33,26 @@
                 class="tb-error">
         warning
       </mat-icon>
+      <mat-icon matSuffix [matTooltip]="certificateCnHint | translate">
+        help
+      </mat-icon>
     </mat-form-field>
-    <div class="tb-hint" [innerHTML]="certificateCnHint | translate"></div>
     <mat-slide-toggle formControlName="certCnIsRegex" style="padding: 8px 0 16px 8px">
       {{ 'mqtt-client-credentials.certificate-common-name-regex' | translate }}
+    </mat-slide-toggle>
+    <mat-form-field class="mat-block" subscriptSizing="dynamic">
+      <mat-label>{{ clientIdLabel | translate }}</mat-label>
+      <input matInput formControlName="clientIdPattern">
+      <tb-copy-button matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup?.get('clientIdPattern').value?.length"
+        [copyText]="credentialsMqttFormGroup?.get('clientIdPattern').value">
+      </tb-copy-button>
+      <mat-icon matSuffix [matTooltip]="clientIdHint | translate">
+        help
+      </mat-icon>
+    </mat-form-field>
+    <mat-slide-toggle formControlName="clientIdIsRegex" style="padding: 8px 0 16px 8px">
+      {{ 'mqtt-client-credentials.client-id-regex' | translate }}
     </mat-slide-toggle>
   </fieldset>
   <tb-auth-rules [entity]="entity()" formControlName="authRulesMapping"></tb-auth-rules>

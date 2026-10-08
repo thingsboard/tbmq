@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.api.util.ExceptionUtil;
 import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -120,6 +121,14 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     @Override
+    public void validateConfigurationOnSave(IntegrationLifecycleMsg lifecycleMsg) throws ThingsboardException {
+        if (lifecycleMsg == null || lifecycleMsg.getConfiguration() == null) {
+            throw new IllegalArgumentException("Integration configuration is empty!");
+        }
+        doValidateConfigurationOnSave(lifecycleMsg.getConfiguration().get("clientConfiguration"));
+    }
+
+    @Override
     public void checkConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
         if (integration == null || integration.getConfiguration() == null) {
             throw new IllegalArgumentException("Integration configuration is empty!");
@@ -148,14 +157,17 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         context.startProcessingIntegrationMessages(integration);
     }
 
+    /**
+     * The consumer is stopped before the client: otherwise it keeps polling while doStopClient() drains or closes,
+     * every message of those packs fails with "not initialized", and SKIP_ALL commits them away.
+     */
     protected void stopProcessingPersistedMessages() {
-        doStopClient();
-
         if (lifecycleMsg == null) {
             log.debug("[{}] Integration was not initialized properly. Skip stopProcessingPersistedMessages", this.getClass());
-            return;
+        } else {
+            context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
         }
-        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
+        doStopClient();
     }
 
     protected void clearIntegrationMessages() {
@@ -171,10 +183,20 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected ObjectNode constructBody(PublishIntegrationMsgProto msg) {
+        return constructBody(msg, true);
+    }
+
+    /**
+     * @param includePayload false builds the metadata-only body, e.g. to resolve key/header templates when only the raw
+     *                       payload is sent, without copying the payload into the JSON tree.
+     */
+    protected ObjectNode constructBody(PublishIntegrationMsgProto msg, boolean includePayload) {
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
 
         ObjectNode request = JacksonUtil.newObjectNode();
-        request.put("payload", publishMsgProto.getPayload().toByteArray());
+        if (includePayload) {
+            request.put("payload", publishMsgProto.getPayload().toByteArray());
+        }
         request.put("topicName", publishMsgProto.getTopicName());
         request.put("clientId", publishMsgProto.getClientId());
         request.put("eventType", "PUBLISH_MSG");
@@ -183,6 +205,9 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.put("tbmqIeNode", context.getServiceId());
         request.put("tbmqNode", msg.getTbmqNode());
         request.put("ts", msg.getTimestamp());
+        if (publishMsgProto.hasUsername()) {
+            putIfNotEmpty(request, "username", publishMsgProto.getUsername());
+        }
         if (publishMsgProto.hasClientCertCn()) {
             request.put("clientCertCn", publishMsgProto.getClientCertCn());
         }
@@ -222,6 +247,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         putIfNotEmpty(body, "ipAddress", msg.getIpAddress());
         body.put("ts", msg.getTs());
         putIfNotEmpty(body, "tbmqNode", msg.getTbmqNode());
+        body.put("tbmqIeNode", context.getServiceId());
         putIfNotEmpty(body, "username", msg.getUsername());
         putIfNotEmpty(body, "clientCertCn", msg.getClientCertCn());
 
@@ -357,6 +383,13 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     /**
+     * Save-time-only checks, see {@link TbPlatformIntegration#validateConfigurationOnSave}.
+     */
+    protected void doValidateConfigurationOnSave(JsonNode clientConfiguration) throws ThingsboardException {
+
+    }
+
+    /**
      * Validates that this integration can deliver lifecycle events with the given client configuration. Called only
      * when the integration is opted in for lifecycle events. Lifecycle events have no originating MQTT message, so a
      * transport with a dynamic (per-message) destination must have a statically configured destination to fall back
@@ -374,17 +407,21 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     }
 
-    protected static boolean isLocalNetworkHost(String host) {
+    public static boolean isLocalNetworkHost(String host) {
         try {
-            InetAddress address = InetAddress.getByName(host);
-            if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress() ||
-                    address.isSiteLocalAddress()) {
-                return true;
-            }
+            return isLocalNetworkAddress(InetAddress.getByName(host));
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Unable to resolve provided hostname: " + host);
         }
-        return false;
+    }
+
+    /**
+     * Also IPv6 unique-local fc00::/7 (the private range most IPv6 and dual-stack networks use):
+     * InetAddress.isSiteLocalAddress() only knows the deprecated fec0::/10.
+     */
+    public static boolean isLocalNetworkAddress(InetAddress address) {
+        return address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress() || (address instanceof Inet6Address && (address.getAddress()[0] & 0xfe) == 0xfc);
     }
 
     protected String toString(Throwable e) {

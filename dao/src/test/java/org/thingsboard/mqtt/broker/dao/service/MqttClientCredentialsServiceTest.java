@@ -196,6 +196,18 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         authorizationPolicyService.savePolicy(policy);
     }
 
+    @Test
+    public void testCreateAuthorizationPolicyWithClientIdPlaceholder() {
+        AuthorizationPolicy policy = new AuthorizationPolicy();
+        policy.setName("client-id-placeholder-policy");
+        policy.setAuthorizationRules(new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/telemetry"), List.of("devices/${clientId}/commands")));
+
+        AuthorizationPolicy saved = authorizationPolicyService.savePolicy(policy);
+
+        Assert.assertEquals(policy.getAuthorizationRules(), saved.getAuthorizationRules());
+    }
+
     @Test(expected = DataValidationException.class)
     public void testDeleteReferencedAuthorizationPolicy() throws JsonProcessingException {
         AuthorizationPolicy policy = authorizationPolicyService.savePolicy(validAuthorizationPolicy("referenced-policy"));

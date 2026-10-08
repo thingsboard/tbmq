@@ -18,10 +18,11 @@ package org.thingsboard.mqtt.broker.service.mqtt.will;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 
 public interface LastWillService {
 
-    void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, String clientCertCn);
+    void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher);
 
     void removeAndExecuteLastWillIfNeeded(MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval);
 

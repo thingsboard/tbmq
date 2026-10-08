@@ -15,30 +15,27 @@
  */
 package org.thingsboard.mqtt;
 
-import java.util.concurrent.Future;
-import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
+import java.util.concurrent.Future;
+
+/**
+ * Invoked for each inbound PUBLISH routed to this handler - the first registered filter that matches it, otherwise the
+ * client's default handler - on the client's handler executor, one message at a time per client and in the order the
+ * messages arrived, whatever the executor's pool size. The call returns before the next one starts; the returned
+ * future may complete later, and the message's ack waits for it.
+ * <p>
+ * The whole message is passed rather than topic and payload alone, so a consumer can forward the QoS the message
+ * actually arrived at, its retain and dup flags, its packet id, and - under MQTT 5 - its properties.
+ * <p>
+ * The payload buffer is released by the client once the returned future completes, whatever the handler did. A
+ * handler that needs the payload beyond that must copy it, or {@code retain()} the message and release that extra
+ * reference itself. The fixed and variable headers are not reference-counted and stay valid.
+ * <p>
+ * The return type is {@link Future} rather than a Guava {@code ListenableFuture} so an implementation may return a
+ * {@link java.util.concurrent.CompletableFuture} instead.
+ */
 public interface MqttHandler {
-    /**
-    * Changing ListenableFuture to Future allows you to choose CompletableFuture,
-    * which gives developers the freedom to choose the orchestration method. 
-    * CompletableFuture is a newer, more evolved version that eliminates callback hell,
-    * is easier to use, and comes with the JDK. jdk 1.8 was previously used with the Before JDK1.8, 
-    * use ListenableFuture, after that, it is recommended to use CompletableFuture.
-    * ListenableFuture It's still written that way.{@link MqttMessageListener#onMessage(topic, payload)}
-    * public ListenableFuture<Void> onMessage(String topic, ByteBuf message) {
-    *        log.info("MQTT message [{}], topic [{}]", message.toString(StandardCharsets.UTF_8), topic);
-    *        events.add(new MqttEvent(topic, message.toString(StandardCharsets.UTF_8)));
-    *       return Futures.immediateVoidFuture();
-    *    }
-    * CompletableFuture It's like this.
-    * public CompletableFuture<Void> onMessage(String topic, ByteBuf message) {
-    *        log.info("MQTT message [{}], topic [{}]", message.toString(StandardCharsets.UTF_8), topic);
-    *       events.add(new MqttEvent(topic, message.toString(StandardCharsets.UTF_8)));
-    *       return CompletableFuture.completedFuture(null);
-    *    }
-    * This change does not affect the system's current use of ListenableFuture so that it is free to choose between ListenableFuture or 
-    * CompletableFuture in new development.
-    */
-    Future<Void> onMessage(String topic, ByteBuf payload);
+
+    Future<Void> onMessage(MqttPublishMessage msg);
 }

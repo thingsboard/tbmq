@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.testing.integration.persistentsession;
 
 import com.google.common.util.concurrent.Futures;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.AllArgsConstructor;
@@ -475,7 +475,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         }
 
         @Override
-        public Future<Void> onMessage(String s, ByteBuf byteBuf) {
+        public Future<Void> onMessage(MqttPublishMessage msg) {
             ai.incrementAndGet();
             latch.countDown();
             return Futures.immediateVoidFuture();

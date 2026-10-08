@@ -57,7 +57,7 @@ public class AuthRulePatternsServiceSuiteTest {
     public void testSuccessfulCredentialsParse_Ssl1() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parent.com", ".*abc-123.*", List.of("test/.*"));
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc", null);
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
@@ -69,7 +69,7 @@ public class AuthRulePatternsServiceSuiteTest {
                 ".*abc-123.*", new PubSubAuthorizationRules(List.of("test1/.*"), List.of("test2/.*"))
         ));
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc", null);
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test1/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test2/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
@@ -81,12 +81,12 @@ public class AuthRulePatternsServiceSuiteTest {
                 ".*", new PubSubAuthorizationRules(List.of("all/.*"), List.of("all/.*"))
         ));
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc", null);
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("all/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("all/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
 
-        List<AuthRulePatterns> authRulePatterns1 = authorizationRuleService.parseSslAuthorizationRule(credentials, "test.test-12345678999.qwerty");
+        List<AuthRulePatterns> authRulePatterns1 = authorizationRuleService.parseSslAuthorizationRule(credentials, "test.test-12345678999.qwerty", null);
         Assert.assertEquals(1, authRulePatterns1.size());
         Assert.assertEquals("all/.*", authRulePatterns1.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("all/.*", authRulePatterns1.get(0).getSubPatterns().get(0).pattern());
@@ -104,7 +104,7 @@ public class AuthRulePatternsServiceSuiteTest {
                 )
         );
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "qwer1234-abc-p01.4321.ab.abc");
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "qwer1234-abc-p01.4321.ab.abc", null);
         Set<String> patterns = authRulePatterns.stream()
                 .map(AuthRulePatterns::getPubPatterns).toList()
                 .stream().flatMap(List::stream)
@@ -118,14 +118,14 @@ public class AuthRulePatternsServiceSuiteTest {
     public void testEmptyRules() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of());
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789");
+        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789", null);
     }
 
     @Test(expected = AuthenticationException.class)
     public void testPatternDontMatch_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parent.com", "key", List.of("test/.*"));
         ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
-        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789");
+        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789", null);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "dev.42";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         // Ensure the compiled pattern has \Q...\E (i.e., CN was quoted)
         String pubPattern = compiled.get(0).getPubPatterns().get(0).pattern();
@@ -158,7 +158,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "dev[abc]";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         String pat = compiled.get(0).getPubPatterns().get(0).pattern();
         Assert.assertEquals("/devices/\\Qdev[abc]\\E/events", pat);
@@ -178,7 +178,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "sensor|admin";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         String pat = compiled.get(0).getPubPatterns().get(0).pattern();
         Assert.assertEquals("/tenants/acme/\\Qsensor|admin\\E/data", pat);
@@ -197,7 +197,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "dev.42";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         // SUB should only allow the literal CN section (with dot quoted)
         Assert.assertTrue(authorizationRuleService.isSubAuthorized("/sub/dev.42/x", compiled));
@@ -211,7 +211,7 @@ public class AuthRulePatternsServiceSuiteTest {
         SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, "any-cn");
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, "any-cn", null);
 
         Assert.assertEquals("all/.*", compiled.get(0).getPubPatterns().get(0).pattern());
         Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "all/foo", compiled));
@@ -225,7 +225,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "a.b[c]|d";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         String p = compiled.get(0).getPubPatterns().get(0).pattern();
         // Each ${cn} occurrence should be quoted separately
@@ -243,7 +243,7 @@ public class AuthRulePatternsServiceSuiteTest {
         ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
 
         String cn = "tenantA.device-123";
-        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn, null);
 
         // Ensure expansion used quoted CN
         String pubPattern = compiled.get(0).getPubPatterns().get(0).pattern();
@@ -252,6 +252,73 @@ public class AuthRulePatternsServiceSuiteTest {
         // Positive/negative checks
         Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "/dev/tenantA.device-123/tx", compiled));
         Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/dev/tenantA_device-123/tx", compiled));
+    }
+
+    @Test
+    public void testSslClientIdPlaceholderInsertedAndQuoted() throws Exception {
+        PubSubAuthorizationRules rules = new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/telemetry"),
+                List.of("devices/${clientId}/commands/.*"));
+        SslMqttCredentials ssl = new SslMqttCredentials("shared-cert", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(ssl);
+
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(
+                credentials, "shared-cert", "device.42");
+
+        Assert.assertEquals("devices/\\Qdevice.42\\E/telemetry",
+                compiled.get(0).getPubPatterns().get(0).pattern());
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(
+                "device.42", "devices/device.42/telemetry", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(
+                "device.42", "devices/deviceX42/telemetry", compiled));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized(
+                "devices/device.42/commands/reboot", compiled));
+    }
+
+    @Test
+    public void testSslClientIdPlaceholderRejectsMqttTopicSyntax() {
+        PubSubAuthorizationRules rules = new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/telemetry"),
+                List.of("devices/${clientId}/commands/.*"));
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(
+                new SslMqttCredentials("shared-cert", Map.of(".*", rules)));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                    () -> authorizationRuleService.parseSslAuthorizationRule(credentials, "shared-cert", clientId));
+            Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                    exception.getMessage());
+        }
+    }
+
+    @Test
+    public void testSslMqttTopicSyntaxAllowedWithoutClientIdPlaceholder() throws AuthenticationException {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("devices/.*"));
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(
+                new SslMqttCredentials("shared-cert", Map.of(".*", rules)));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(
+                    credentials, "shared-cert", clientId);
+            Assert.assertEquals("devices/.*", compiled.get(0).getPubPatterns().get(0).pattern());
+        }
+    }
+
+    @Test
+    public void testSslCredentialsClientIdConstraint() {
+        SslMqttCredentials exact = new SslMqttCredentials(
+                "shared-cert", false, "device-42", false, Collections.emptyMap());
+        Assert.assertTrue(exact.matchesClientId("device-42"));
+        Assert.assertFalse(exact.matchesClientId("device-43"));
+
+        SslMqttCredentials regex = new SslMqttCredentials(
+                "shared-cert", false, "device-[0-9]+", true, Collections.emptyMap());
+        Assert.assertTrue(regex.matchesClientId("device-42"));
+        Assert.assertFalse(regex.matchesClientId("prefix-device-42"));
+        Assert.assertFalse(regex.matchesClientId("device-42-suffix"));
+
+        SslMqttCredentials unrestricted = new SslMqttCredentials("shared-cert", Collections.emptyMap());
+        Assert.assertTrue(unrestricted.matchesClientId("any-client"));
     }
 
     /**
@@ -274,6 +341,77 @@ public class AuthRulePatternsServiceSuiteTest {
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(basicMqttCredentials);
         Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).toList().contains("test1/.*"));
         Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).toList().contains("test2/.*"));
+    }
+
+    @Test
+    public void testBasicClientIdPlaceholderInsertedAndQuoted() throws AuthenticationException {
+        BasicMqttCredentials credentials = new BasicMqttCredentials(null, "shared-user", null,
+                new PubSubAuthorizationRules(
+                        List.of("devices/${clientId}/telemetry"),
+                        List.of("devices/${clientId}/commands/.*")));
+
+        AuthRulePatterns compiled = authorizationRuleService.parseAuthorizationRule(credentials, "device.42");
+
+        Assert.assertEquals("devices/\\Qdevice.42\\E/telemetry", compiled.getPubPatterns().get(0).pattern());
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(
+                "device.42", "devices/device.42/telemetry", List.of(compiled)));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(
+                "device.42", "devices/deviceX42/telemetry", List.of(compiled)));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized(
+                "devices/device.42/commands/reboot", List.of(compiled)));
+    }
+
+    @Test
+    public void testBasicClientIdPlaceholderRejectsMqttTopicSyntax() {
+        BasicMqttCredentials credentials = new BasicMqttCredentials(null, "shared-user", null,
+                new PubSubAuthorizationRules(
+                        List.of("devices/${clientId}/telemetry"),
+                        List.of("devices/${clientId}/commands/.*")));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                    () -> authorizationRuleService.parseAuthorizationRule(credentials, clientId));
+            Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                    exception.getMessage());
+        }
+    }
+
+    @Test
+    public void testBasicMqttTopicSyntaxAllowedWithoutClientIdPlaceholder() throws AuthenticationException {
+        BasicMqttCredentials credentials = BasicMqttCredentials.newInstance(
+                "shared-user", "password", null, List.of("devices/.*"));
+
+        for (String clientId : List.of("+", "#", "victim/commands")) {
+            AuthRulePatterns compiled = authorizationRuleService.parseAuthorizationRule(credentials, clientId);
+            Assert.assertEquals("devices/.*", compiled.getPubPatterns().get(0).pattern());
+        }
+    }
+
+    @Test
+    public void testAuthorizationPolicyUsesClientAndCertificatePlaceholders() throws AuthenticationException {
+        PubSubAuthorizationRules rules = new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/${cn}/telemetry"),
+                List.of("devices/${clientId}/${cn}/commands/.*"));
+
+        AuthRulePatterns compiled = authorizationRuleService.parseAuthorizationRule(
+                rules, "gateway.1", "device.42");
+
+        Assert.assertEquals("devices/\\Qdevice.42\\E/\\Qgateway.1\\E/telemetry",
+                compiled.getPubPatterns().get(0).pattern());
+        Assert.assertEquals("devices/\\Qdevice.42\\E/\\Qgateway.1\\E/commands/.*",
+                compiled.getSubPatterns().get(0).pattern());
+    }
+
+    @Test
+    public void testAuthorizationPolicyRejectsUnsafeClientId() {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(
+                List.of("devices/${clientId}/telemetry"));
+
+        AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                () -> authorizationRuleService.parseAuthorizationRule(rules, null, "victim/commands"));
+
+        Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                exception.getMessage());
     }
 
     @Test

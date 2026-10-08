@@ -20,7 +20,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
-import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
+import { AuthRulePatternsType, AuthRules, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
 import { randomStringFromRegex, getOS } from '@core/utils';
 import { ConnectivitySettings } from '@shared/models/settings.models';
@@ -102,6 +102,8 @@ export class CheckConnectivityDialogComponent extends
   private connectivitySettings = this.settingsService.connectivitySettings;
   private readonly wildcardPattern = '.*';
   private readonly defaultTopic = 'tbmq/demo/topic';
+  private readonly clientIdPlaceholder = '${clientId}';
+  private readonly clientIdMarker = 'TBMQCLIENTIDMARKER';
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -244,16 +246,17 @@ export class CheckConnectivityDialogComponent extends
   private setConfig(credentials: ClientCredentials): MqttCommandConfig {
     const clientType = credentials.clientType;
     const credentialsValue = JSON.parse(credentials.credentialsValue);
+    const clientId = this.setClientId(credentialsValue, clientType);
     const { subTopic, pubTopic } = this.setTopics(
-      credentialsValue.authRules.subAuthRulePatterns,
-      credentialsValue.authRules.pubAuthRulePatterns
+      this.markClientIdPlaceholder(credentialsValue.authRules.subAuthRulePatterns),
+      this.markClientIdPlaceholder(credentialsValue.authRules.pubAuthRulePatterns)
     );
     return {
-      clientId: this.setClientId(credentialsValue, clientType),
+      clientId,
       userName: credentialsValue.userName,
       password: this.setPassword(credentials),
-      subTopic,
-      pubTopic,
+      subTopic: this.insertClientId(subTopic, clientId),
+      pubTopic: this.insertClientId(pubTopic, clientId),
       hostname: this.connectivitySettings.mqtt.host,
       mqttPort: this.connectivitySettings.mqtt.port.toString(),
       cleanSession: clientType === ClientType.APPLICATION,
@@ -267,10 +270,25 @@ export class CheckConnectivityDialogComponent extends
     if (credentialsValue.clientId) {
       return credentialsValue.clientId;
     }
-    if (clientType === ClientType.APPLICATION) {
+    if (clientType === ClientType.APPLICATION || this.hasClientIdPlaceholder(credentialsValue.authRules)) {
       return clientIdRandom();
     }
     return null;
+  }
+
+  private hasClientIdPlaceholder(authRules: AuthRules): boolean {
+    return [...(authRules?.pubAuthRulePatterns ?? []), ...(authRules?.subAuthRulePatterns ?? [])]
+      .some(rule => rule.includes(this.clientIdPlaceholder));
+  }
+
+  // The placeholder is swapped for a literal marker so topic generation keeps it intact,
+  // then the marker is replaced with the client ID the commands connect with.
+  private markClientIdPlaceholder(rules: string[]): string[] {
+    return rules?.map(rule => rule.replaceAll(this.clientIdPlaceholder, this.clientIdMarker));
+  }
+
+  private insertClientId(topic: string, clientId: string): string {
+    return clientId ? topic.replaceAll(this.clientIdMarker, clientId) : topic;
   }
 
   private setPassword(credentials: ClientCredentials): string {

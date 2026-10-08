@@ -74,8 +74,8 @@ public class DeviceBackpressureIntegrationTestCase extends AbstractPubSubIntegra
         subscriberConfig.setClientId(subscriberClientId);
 
         AtomicInteger counter = new AtomicInteger();
-        MqttHandler mqttHandler = (topic, payload) -> {
-            log.debug("[{}] Received msg: {}", topic, counter.incrementAndGet());
+        MqttHandler mqttHandler = msg -> {
+            log.debug("[{}] Received msg: {}", msg.variableHeader().topicName(), counter.incrementAndGet());
             latch.countDown();
             return Futures.immediateVoidFuture();
         };

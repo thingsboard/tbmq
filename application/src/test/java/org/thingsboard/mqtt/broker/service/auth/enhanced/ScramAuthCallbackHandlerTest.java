@@ -51,6 +51,8 @@ import static org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMq
 @RunWith(MockitoJUnitRunner.class)
 public class ScramAuthCallbackHandlerTest {
 
+    private static final String CLIENT_ID = "clientId";
+
     private ScramAuthCallbackHandler callbackHandler;
     private MqttClientCredentialsService credentialsServiceMock;
     private AuthorizationRuleService authorizationRuleServiceMock;
@@ -63,7 +65,7 @@ public class ScramAuthCallbackHandlerTest {
         authorizationPolicyServiceMock = mock(AuthorizationPolicyService.class);
         when(authorizationPolicyServiceMock.resolveRules(any(), any())).thenAnswer(invocation -> invocation.getArgument(1));
         callbackHandler = new ScramAuthCallbackHandler(credentialsServiceMock, authorizationRuleServiceMock,
-                authorizationPolicyServiceMock);
+                authorizationPolicyServiceMock, CLIENT_ID);
     }
 
     @Test
@@ -146,7 +148,7 @@ public class ScramAuthCallbackHandlerTest {
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
 
         when(credentialsServiceMock.findMatchingCredentials(any())).thenReturn(List.of(mqttClientCredentials));
-        when(authorizationRuleServiceMock.parsePubSubAuthorizationRule(any())).thenThrow(IllegalArgumentException.class);
+        when(authorizationRuleServiceMock.parseAuthorizationRule(any(), any(), any())).thenThrow(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> callbackHandler.handle(callbacks))
                 .isInstanceOf(RuntimeException.class)
@@ -171,7 +173,7 @@ public class ScramAuthCallbackHandlerTest {
 
         when(credentialsServiceMock.findMatchingCredentials(any())).thenReturn(List.of(mqttClientCredentials));
         AuthRulePatterns authRulePatternsMock = mock(AuthRulePatterns.class);
-        when(authorizationRuleServiceMock.parsePubSubAuthorizationRule(any())).thenReturn(authRulePatternsMock);
+        when(authorizationRuleServiceMock.parseAuthorizationRule(any(), any(), any())).thenReturn(authRulePatternsMock);
 
         callbackHandler.handle(callbacks);
 

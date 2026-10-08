@@ -245,13 +245,14 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
         return false;
     }
 
-    private void doValidateLocally(ValidationTaskType validationTaskType, Integration configuration, BasicCallback callback) throws Exception {
+    void doValidateLocally(ValidationTaskType validationTaskType, Integration configuration, BasicCallback callback) throws Exception {
         IntegrationContext context = integrationContextProvider.buildIntegrationContext(configuration, callback);
 
         TbPlatformIntegration integration = createPlatformIntegration(context.getLifecycleMsg().getType());
         switch (validationTaskType) {
             case VALIDATE:
                 integration.validateConfiguration(context.getLifecycleMsg(), allowLocalNetworkHosts);
+                integration.validateConfigurationOnSave(context.getLifecycleMsg());
                 callback.onSuccess();
                 break;
             case CHECK_CONNECTION:
@@ -346,7 +347,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
             SettableFuture<Void> future = validationTask.getFuture();
             if (validationResponseMsg.hasError()) {
                 String errorMsg = JavaSerDesUtil.decode(validationResponseMsg.getError().toByteArray());
-                future.setException(new RuntimeException(errorMsg));
+                // the executor rejected the submitted configuration or could not connect with it: a client error (400)
+                future.setException(new DataValidationException(errorMsg));
             } else {
                 future.set(null);
             }

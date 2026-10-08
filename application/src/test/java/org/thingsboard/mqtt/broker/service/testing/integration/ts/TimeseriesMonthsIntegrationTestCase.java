@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +56,6 @@ import java.util.concurrent.TimeUnit;
 public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     private static final long TTL_1_MONTH_SEC = 2628000;
-    private static final long TTL_1_MONTH_MS = TTL_1_MONTH_SEC * 1000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -101,14 +101,16 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
 
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForMonths_thenRemovedPartitionsAndRows() throws Throwable {
+        // anchor data and TTL cutoffs to UTC calendar months so the expected partitions don't depend on the current date
+        LocalDateTime monthStart = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1).atStartOfDay();
         long ts1 = System.currentTimeMillis();
-        long ts2 = System.currentTimeMillis() - TTL_1_MONTH_MS - ONE_HOUR_MS;
-        long ts3 = System.currentTimeMillis() - TTL_1_MONTH_MS * 2 - ONE_HOUR_MS;
-        long ts4 = System.currentTimeMillis() - TTL_1_MONTH_MS * 4;
-        long ts5 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
-        long ts6 = System.currentTimeMillis() - TTL_1_MONTH_MS * 8;
-        long ts7 = System.currentTimeMillis() - TTL_1_MONTH_MS * 10;
-        long ts8 = System.currentTimeMillis() - TTL_1_MONTH_MS * 10;
+        long ts2 = toMillis(monthStart.minusMonths(1).plusDays(1));
+        long ts3 = toMillis(monthStart.minusMonths(2).plusDays(1));
+        long ts4 = toMillis(monthStart.minusMonths(4).plusDays(1));
+        long ts5 = toMillis(monthStart.minusMonths(6).plusDays(1));
+        long ts6 = toMillis(monthStart.minusMonths(8).plusDays(1));
+        long ts7 = toMillis(monthStart.minusMonths(10).plusDays(1));
+        long ts8 = toMillis(monthStart.minusMonths(10).plusDays(2));
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -123,13 +125,21 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH_SEC * 2);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(ttlSecUntil(monthStart.minusMonths(2).plusDays(15)));
         Assert.assertEquals(4, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
 
-        cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH_SEC);
+        cleanUpResult = timeseriesService.cleanUp(ttlSecUntil(monthStart.minusMonths(1).plusDays(15)));
         Assert.assertEquals(1, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
+    }
+
+    private static long ttlSecUntil(LocalDateTime cutoff) {
+        return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - toMillis(cutoff));
+    }
+
+    private static long toMillis(LocalDateTime dateTime) {
+        return dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
     }
 
 }
