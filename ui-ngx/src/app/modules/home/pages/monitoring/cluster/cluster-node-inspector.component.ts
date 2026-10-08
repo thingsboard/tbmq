@@ -30,6 +30,7 @@
 ///
 
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -39,29 +40,26 @@ import {
   ResourceUsageStatus,
   resourceUsageStatusStyle,
   resourceUsageStatusTranslationMap,
-  resourceUsageTooltipTranslationMap
+  resourceUsageTooltipTranslationMap,
+  UsageLevel,
+  usageLevel
 } from '@shared/models/resource-usage.model';
 import { formatLargeNumber } from '@core/utils';
 import { ChartKey } from '@shared/models/chart.model';
 import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { RateChartComponent, RateChartSeries } from '@shared/components/chart/rate-chart.component';
-import { RateSeries } from '@shared/models/live-stats.model';
-import { ResourceUsageThresholds } from '@shared/models/settings.models';
+import { compactBytes, compactNumber, RateSeries } from '@shared/models/live-stats.model';
+import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
 import {
   ChartUnit,
+  ClusterAlertVm,
   ClusterKafkaVm,
   ClusterNodeVm,
   ClusterTotalVm,
-  compactBytes,
-  compactNumber,
-  ClusterRateKey,
-  DEFAULT_THRESHOLDS,
   HISTORY_WINDOW_MS,
   HISTORY_WINDOWS,
   RESOURCE_KEYS,
-  SESSIONS_KEY,
-  UsageLevel,
-  usageLevel
+  SESSIONS_KEY
 } from '@home/pages/monitoring/cluster/cluster.models';
 
 interface MeterVm {
@@ -70,11 +68,27 @@ interface MeterVm {
   level: UsageLevel;
 }
 
+interface HistoryWindowOption {
+  windowMs: number;
+  // Compact button label, e.g. "15m".
+  shortKey: string;
+  // Spoken form for the chart's aria label, e.g. "15 minutes".
+  longKey: string;
+  params: Record<string, number>;
+}
+
+// Alerts are sorted critical first, so the cut drops the least severe ones.
+const MAX_LISTED_ALERTS = 50;
+
+const historyWindowOption = (windowMs: number): HistoryWindowOption => windowMs < HOUR
+  ? {windowMs, shortKey: 'monitoring.cluster.window-minutes', longKey: 'timewindow.minutes', params: {count: windowMs / MINUTE, minutes: windowMs / MINUTE}}
+  : {windowMs, shortKey: 'monitoring.cluster.window-hours', longKey: 'timewindow.hours', params: {count: windowMs / HOUR, hours: windowMs / HOUR}};
+
 @Component({
     selector: 'tb-cluster-node-inspector',
     templateUrl: './cluster-node-inspector.component.html',
     styleUrls: ['./cluster-node-inspector.component.scss'],
-    imports: [TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, RateChartComponent],
+    imports: [NgTemplateOutlet, TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, RateChartComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClusterNodeInspectorComponent {
@@ -83,12 +97,21 @@ export class ClusterNodeInspectorComponent {
   readonly total = input.required<ClusterTotalVm>();
   readonly kafka = input<ClusterKafkaVm | null>(null);
   readonly series = input<RateSeries>({});
+  readonly alerts = input<ClusterAlertVm[]>([]);
 
   readonly historyWindow = input(HISTORY_WINDOW_MS);
-  readonly thresholds = input<ResourceUsageThresholds>(DEFAULT_THRESHOLDS);
+  readonly thresholds = input<ResourceUsageThresholds>(defaultResourceUsageAlertSettings);
 
   readonly cleared = output<void>();
   readonly historyWindowChange = output<number>();
+  readonly alertNodeSelected = output<string>();
+
+  private readonly scopedAlerts = computed(() => {
+    const node = this.node();
+    return node ? this.alerts().filter(alert => alert.nodeKey === node.key) : this.alerts();
+  });
+  readonly visibleAlerts = computed(() => this.scopedAlerts().slice(0, MAX_LISTED_ALERTS));
+  readonly unlistedAlertCount = computed(() => Math.max(0, this.scopedAlerts().length - MAX_LISTED_ALERTS));
 
   readonly statusStyle = computed(() => resourceUsageStatusStyle.get(this.node()?.status));
   readonly statusLabel = computed(() => resourceUsageStatusTranslationMap.get(this.node()?.status));
@@ -115,7 +138,7 @@ export class ClusterNodeInspectorComponent {
     const {rates} = this.node() ?? this.total();
     const series = this.series();
     const perMinute = this.translate.instant('monitoring.cluster.per-min');
-    const asMessages = (value: number) => `${compactNumber(value)} ${this.translate.instant('monitoring.cluster.msg-per-min')}`;
+    const asMessages = (value: number) => `${compactNumber(value)} ${this.translate.instant('rate-chart.msg-per-min')}`;
     const asBytes = (value: number) => `${compactBytes(value)}${perMinute}`;
     const asPercent = (value: number) => `${Math.round(value)}%`;
     const last = (key: string) => series[key]?.[series[key].length - 1]?.value ?? 0;
@@ -144,8 +167,15 @@ export class ClusterNodeInspectorComponent {
     }
   });
 
+  readonly chartAriaLabel = computed(() => {
+    const series = this.chartSeries().map(item => this.translate.instant(item.label)).join(', ');
+    const window = historyWindowOption(this.historyWindow());
+    return this.translate.instant('monitoring.cluster.chart-aria-label',
+      {series, window: this.translate.instant(window.longKey, window.params).trim()});
+  });
+
   readonly formatLargeNumber = formatLargeNumber;
-  readonly historyWindows = HISTORY_WINDOWS;
+  readonly historyWindows = HISTORY_WINDOWS.map(historyWindowOption);
   readonly unitLabels: Record<ChartUnit, string> = {
     messages: 'monitoring.cluster.messages',
     bytes: 'monitoring.cluster.bytes',
@@ -156,10 +186,6 @@ export class ClusterNodeInspectorComponent {
 
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-
-  windowLabel(windowMs: number): string {
-    return windowMs < HOUR ? `${windowMs / MINUTE}m` : `${windowMs / HOUR}h`;
-  }
 
   open(path: string) {
     this.router.navigate([path]);

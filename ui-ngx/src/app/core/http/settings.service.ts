@@ -64,17 +64,15 @@ export class SettingsService {
     return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings, defaultHttpOptionsFromConfig(config));
   }
 
-  // The key does not exist until an admin saves it once, so a missing row means defaults rather than an error.
   public getResourceUsageAlertSettings(): Observable<AdminSettings<ResourceUsageAlertSettings>> {
-    return this.getAdminSettings<ResourceUsageAlertSettings>(resourceUsageAlertSettingsKey).pipe(
-      map(settings => ({...settings, jsonValue: {...defaultResourceUsageAlertSettings, ...settings.jsonValue}})),
-      catchError(() => of({key: resourceUsageAlertSettingsKey, jsonValue: {...defaultResourceUsageAlertSettings}}))
-    );
+    return this.getAdminSettings<ResourceUsageAlertSettings>(resourceUsageAlertSettingsKey);
   }
 
+  // Thresholds only colour usage values, so a failed lookup falls back to the defaults instead of breaking the page.
   public getResourceUsageThresholds(): Observable<ResourceUsageThresholds> {
     return this.getResourceUsageAlertSettings().pipe(
-      map(({jsonValue}) => ({highUsage: jsonValue.highUsage, criticalUsage: jsonValue.criticalUsage}))
+      map(({jsonValue}) => ({highUsage: jsonValue.highUsage, criticalUsage: jsonValue.criticalUsage})),
+      catchError(() => of(defaultResourceUsageAlertSettings))
     );
   }
 

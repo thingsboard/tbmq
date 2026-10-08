@@ -29,11 +29,6 @@
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
 
-// Same hexes as STATUS_COLOR.ACTIVE / PENDING / INACTIVE in entities-table-config.models.ts.
-$tb-ok: #198038;
-$tb-warn: #d47d18;
-$tb-crit: #d12730;
-$tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 
 :host {
   display: flex;
@@ -73,10 +68,21 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   }
 }
 
+.tb-inspector-kind {
+  margin-bottom: -4px;
+  font-family: var(--tb-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.42);
+}
+
 .tb-inspector-id {
-  font-family: $tb-mono;
-  font-size: 14px;
+  font-family: var(--tb-font-mono);
+  font-size: 18px;
   font-weight: 500;
+  line-height: 1.3;
   word-break: break-all;
 }
 
@@ -99,7 +105,7 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
 .tb-status-pill-stale {
-  color: $tb-warn;
+  color: var(--tb-usage-warn);
   background: rgba(212, 125, 24, 0.12);
 }
 
@@ -137,7 +143,7 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
 .tb-stat-value {
-  font-family: $tb-mono;
+  font-family: var(--tb-font-mono);
   font-size: 26px;
   font-weight: 500;
   line-height: 1.15;
@@ -151,7 +157,7 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
 .tb-stat-sub-failed {
-  color: $tb-crit;
+  color: var(--tb-usage-crit);
   font-weight: 500;
 }
 
@@ -181,12 +187,12 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: $tb-mono;
+  font-family: var(--tb-font-mono);
 }
 
 .tb-inspector-list-value {
   flex: 0 0 auto;
-  font-family: $tb-mono;
+  font-family: var(--tb-font-mono);
   font-variant-numeric: tabular-nums;
   color: rgba(0, 0, 0, 0.6);
 }
@@ -233,32 +239,24 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
 .tb-meter-fill {
   height: 100%;
   border-radius: 3px;
-  background: $tb-ok;
+  background: var(--tb-usage-ok);
   transition: width 0.5s ease, background-color 0.3s ease;
 
   &.tb-warn {
-    background: $tb-warn;
+    background: var(--tb-usage-warn);
   }
 
   &.tb-crit {
-    background: $tb-crit;
+    background: var(--tb-usage-crit);
   }
 }
 
 .tb-meter-value {
-  font-family: $tb-mono;
+  font-family: var(--tb-font-mono);
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: rgba(0, 0, 0, 0.6);
-}
-
-.tb-spark-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
 }
 
 .tb-unit-switch {
@@ -310,8 +308,101 @@ $tb-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   }
 }
 
-.tb-spark-unit {
-  font-family: $tb-mono;
+// Five rows, one of them with an error line; the rest scroll.
+.tb-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 184px;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  > li {
+    flex: 0 0 auto;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-500);
+    outline-offset: 2px;
+  }
+}
+
+.tb-alerts-more {
+  margin-top: 4px;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 18px;
+  text-align: left;
+  color: rgba(0, 0, 0, 0.87);
+
+  &.tb-alert-warning {
+    background: rgba(212, 125, 24, 0.1);
+
+    .tb-alert-icon {
+      color: var(--tb-usage-warn);
+    }
+  }
+
+  &.tb-alert-critical {
+    background: rgba(209, 39, 48, 0.08);
+
+    .tb-alert-icon {
+      color: var(--tb-usage-crit);
+    }
+  }
+}
+
+.tb-alert-button {
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(0.96);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-500);
+    outline-offset: 1px;
+  }
+}
+
+.tb-alert-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.tb-alert-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tb-alert-node {
+  margin-right: 4px;
+  font-family: var(--tb-font-mono);
+  font-weight: 500;
+}
+
+.tb-alert-detail {
+  overflow: hidden;
+  font-family: var(--tb-font-mono);
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.54);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

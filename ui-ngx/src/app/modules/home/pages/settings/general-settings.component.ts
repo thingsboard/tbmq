@@ -20,6 +20,7 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import {
   AbstractControl,
+  FormControl,
   FormsModule,
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -47,7 +48,7 @@ import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -61,11 +62,18 @@ const thresholdsOrdered = (group: AbstractControl): ValidationErrors | null => {
   return high !== null && critical !== null && Number(critical) <= Number(high) ? {thresholdsOrder: true} : null;
 };
 
+// Recipients are one string split on commas, semicolons or spaces, the same way the server reads them.
+const emailList = (control: AbstractControl): ValidationErrors | null => {
+  const invalid = String(control.value ?? '').split(/[,;\s]+/)
+    .filter(email => email && Validators.email(new FormControl(email)) !== null);
+  return invalid.length ? {emailList: {invalid}} : null;
+};
+
 @Component({
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatError, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
@@ -204,7 +212,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
       highUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
       criticalUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
       emailEnabled: [false, []],
-      emails: ['', []]
+      emails: ['', [emailList]]
     }, {validators: [thresholdsOrdered]});
   }
 

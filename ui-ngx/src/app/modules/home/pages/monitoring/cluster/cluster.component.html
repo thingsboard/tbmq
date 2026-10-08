@@ -34,12 +34,34 @@
   <div class="tb-cluster-card" tb-fullscreen [fullscreen]="fullscreen()" (fullscreenChanged)="fullscreen.set($event)">
     <div class="tb-cluster-card-head">
       <span class="tb-cluster-title">{{ 'monitoring.cluster.live-map' | translate }}</span>
-      <span class="tb-live-dot" [class.tb-live-dot-stale]="!lastTickOk()"></span>
-      @if (!lastTickOk()) {
-        <span class="tb-live-stale">{{ 'monitoring.cluster.updated-ago' | translate: {seconds: staleSeconds()} }}</span>
+      <span class="tb-live-dot" [class.tb-live-dot-stale]="!servicesOk()"></span>
+      @if (!servicesOk()) {
+        <span class="tb-live-stale">
+          @if (lastUpdated()) {
+            {{ 'monitoring.cluster.updated-ago' | translate: {seconds: staleSeconds()} }}
+          } @else {
+            {{ 'monitoring.cluster.no-data-yet' | translate }}
+          }
+        </span>
+      }
+      @if (alertSummary(); as summary) {
+        <button type="button" [class]="'tb-alert-chip tb-alert-' + summary.level" (click)="clearSelection()"
+                [matTooltip]="'monitoring.cluster.alerts-hint' | translate">
+          <mat-icon>{{ summary.level === 'critical' ? 'error' : 'warning' }}</mat-icon>
+          {{ 'monitoring.cluster.alert-count' | translate: {count: summary.count} }}
+        </button>
+      }
+      @if (hideInactive() && vm().total.hiddenCount) {
+        <span class="tb-hidden-note">{{ 'monitoring.cluster.hidden-count' | translate: {count: vm().total.hiddenCount} }}</span>
       }
       <span class="flex-1"></span>
-      <div tb-help="monitoring"></div>
+      <button mat-icon-button type="button" class="tb-cluster-fullscreen" [attr.aria-pressed]="hideInactive()"
+              [matTooltip]="(hideInactive() ? 'monitoring.cluster.show-inactive' : 'monitoring.cluster.hide-inactive') | translate: {count: vm().total.hiddenCount}"
+              [attr.aria-label]="(hideInactive() ? 'monitoring.cluster.show-inactive' : 'monitoring.cluster.hide-inactive') | translate: {count: vm().total.hiddenCount}"
+              (click)="toggleHideInactive()">
+        <mat-icon>{{ hideInactive() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <div class="tb-help" tb-help="monitoring"></div>
       <button mat-icon-button type="button" class="tb-cluster-fullscreen"
               [matTooltip]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
               [attr.aria-label]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
@@ -48,13 +70,20 @@
       </button>
     </div>
     <div class="tb-cluster-card-body flex lt-lg:flex-col">
-      <div class="tb-cluster-map-wrap min-w-0 flex-1">
+      <div class="tb-cluster-map-wrap min-w-0 flex-1" (dblclick)="onMapDoubleClick($event)">
+        @if (selectedId()) {
+          <button mat-stroked-button type="button" class="tb-map-reset" (click)="clearSelection()"
+                  [matTooltip]="'monitoring.cluster.back-to-total' | translate">
+            <mat-icon>undo</mat-icon>
+            {{ 'monitoring.cluster.cluster-total' | translate }}
+          </button>
+        }
         <tb-cluster-map [vm]="vm()" [selectedId]="selectedId()" [animate]="animate"
                         (nodeSelected)="toggleSelection($event)"></tb-cluster-map>
       </div>
       <tb-cluster-node-inspector class="tb-cluster-inspector" [node]="selectedNode()" [total]="vm().total" [kafka]="selectedKafka()"
-                                 [series]="selectedSeries()" [historyWindow]="historyWindow()" [thresholds]="thresholds()"
-                                 (cleared)="clearSelection()" (historyWindowChange)="setHistoryWindow($event)">
+                                 [series]="selectedSeries()" [alerts]="vm().alerts" [historyWindow]="historyWindow()" [thresholds]="thresholds()"
+                                 (cleared)="clearSelection()" (alertNodeSelected)="toggleSelection($event)" (historyWindowChange)="setHistoryWindow($event)">
       </tb-cluster-node-inspector>
     </div>
   </div>

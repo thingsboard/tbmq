@@ -72,6 +72,11 @@ export class TimeseriesService {
     }));
   }
 
+  public getLatestTimeseriesBatch(entityIds: string[], keys: string[], config?: RequestConfig): Observable<Record<string, TimeseriesData>> {
+    const url = `/api/timeseries/latest/batch?entityIds=${encodeURIComponent(entityIds.join(','))}&keys=${encodeURIComponent(keys.join(','))}`;
+    return this.http.get<Record<string, TimeseriesData>>(url, defaultHttpOptionsFromConfig(config));
+  }
+
   public saveTelemetry(entityId: string, data, config?: RequestConfig): Observable<TimeseriesData> {
     const url = `/api/timeseries/${entityId}/save`;
     return this.http.post<TimeseriesData>(url, data, defaultHttpOptionsFromConfig(config));
@@ -93,6 +98,7 @@ export class TimeseriesService {
   }
 
   public deleteServiceInfo(serviceId: string, serviceType: ServiceType, config?: RequestConfig) {
-    return this.http.delete(`/api/app/service/info?serviceId=${serviceId}&serviceType=${serviceType}`, defaultHttpOptionsFromConfig(config));
+    const url = `/api/app/service/info?serviceId=${encodeURIComponent(serviceId)}&serviceType=${encodeURIComponent(serviceType)}`;
+    return this.http.delete(url, defaultHttpOptionsFromConfig(config));
   }
 }

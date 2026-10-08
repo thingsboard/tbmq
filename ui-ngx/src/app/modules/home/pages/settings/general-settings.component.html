@@ -255,6 +255,11 @@
           <mat-icon matSuffix [matTooltip]="'admin.settings.alert-emails-hint' | translate">
             info
           </mat-icon>
+          @if (resourceUsageAlertsForm.get('emails').hasError('emailList')) {
+            <mat-error>
+              {{ 'admin.settings.alert-emails-invalid' | translate: {emails: resourceUsageAlertsForm.get('emails').getError('emailList').invalid.join(', ')} }}
+            </mat-error>
+          }
         </mat-form-field>
       </div>
       <div class="layout-wrap flex flex-row items-center justify-end gap-2">

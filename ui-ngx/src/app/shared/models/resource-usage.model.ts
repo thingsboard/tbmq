@@ -16,6 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { STATUS_COLOR, StatusColor } from '@home/models/entity/entities-table-config.models';
+import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
 
 export interface ResourceUsage extends BaseData {
   serviceId: string;
@@ -65,9 +66,26 @@ export enum ServiceType {
   TBMQ_INTEGRATION_EXECUTOR = 'TBMQ_INTEGRATION_EXECUTOR',
 }
 
+// Mirrors ServiceInfoIds.timeseriesEntityId on the server: brokers keep the bare id, other services are prefixed by type.
+export function serviceTimeseriesId(serviceType: ServiceType, serviceId: string): string {
+  return serviceType === ServiceType.TBMQ ? serviceId : `${serviceType}:${serviceId}`;
+}
+
 export const serviceTypeMap = new Map<ServiceType, string>(
   [
     [ServiceType.TBMQ, 'TBMQ'],
     [ServiceType.TBMQ_INTEGRATION_EXECUTOR, 'TBMQ Integration Executor'],
   ]
 );
+
+export type UsageLevel = 'ok' | 'warn' | 'crit';
+
+export function usageLevel(percent: number | null, thresholds: ResourceUsageThresholds = defaultResourceUsageAlertSettings): UsageLevel {
+  if (percent === null) {
+    return 'ok';
+  }
+  if (percent > thresholds.criticalUsage) {
+    return 'crit';
+  }
+  return percent > thresholds.highUsage ? 'warn' : 'ok';
+}

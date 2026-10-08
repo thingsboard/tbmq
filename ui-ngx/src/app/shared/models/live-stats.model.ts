@@ -29,19 +29,20 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { TimeseriesData, TsValue } from '@shared/models/chart.model';
-import { HOUR, MINUTE, SECOND } from '@shared/models/time/time.models';
+import type { TimeseriesData, TsValue } from '@shared/models/chart.model';
+import { HOUR, MINUTE } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
+import { formatBytes } from '@home/models/entity/entities-table-config.models';
 
 export type RateSeries = Record<string, TsValue[]>;
 
 export interface LiveStatsOptions {
   windowMs?: number;
-  // Counters are stored per stats-collection interval; per-minute scaling turns them into rates. Gauges (sessions) stay raw.
-  perMinute?: boolean;
+  // Counters are stored per stats-collection interval and are scaled to per-minute rates; gauges (sessions, usage
+  // percents) are shown as stored.
+  gaugeKeys?: readonly string[];
 }
 
-export const LIVE_STATS_REFRESH_MS = 10 * SECOND;
 export const LIVE_STATS_WINDOW_MS = HOUR;
 export const LIVE_STATS_WINDOWS = [15 * MINUTE, HOUR, 6 * HOUR];
 export const LIVE_STATS_MAX_SAMPLES = 720;
@@ -53,17 +54,7 @@ export function compactNumber(value: number | null): string {
 }
 
 export function compactBytes(value: number | null): string {
-  if (!isDefinedAndNotNull(value)) {
-    return '—';
-  }
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let scaled = value;
-  let unit = 0;
-  while (scaled >= 1024 && unit < units.length - 1) {
-    scaled /= 1024;
-    unit++;
-  }
-  return `${unit === 0 ? Math.round(scaled) : scaled.toFixed(scaled >= 10 ? 0 : 1)} ${units[unit]}`;
+  return isDefinedAndNotNull(value) ? formatBytes(value) : '—';
 }
 
 export function emptyRateSeries(keys: readonly string[]): RateSeries {
@@ -74,13 +65,15 @@ export function scaledValue(count: number | undefined, divisor: number): number 
   return (Number(count) || 0) / (divisor > 0 ? divisor : 1);
 }
 
-export function seedRateSeries(keys: readonly string[], history: TimeseriesData, divisor: number, windowMs: number): RateSeries {
+export type KeyDivisor = (key: string) => number;
+
+export function seedRateSeries(keys: readonly string[], history: TimeseriesData, divisor: KeyDivisor, windowMs: number): RateSeries {
   return Object.fromEntries(keys.map(key => [key, trimSamples(
-    (history[key] ?? []).map(sample => ({ts: sample.ts, value: scaledValue(sample.value, divisor)})), windowMs)]));
+    (history[key] ?? []).map(sample => ({ts: sample.ts, value: scaledValue(sample.value, divisor(key))})), windowMs)]));
 }
 
 export function appendLatestToSeries(series: RateSeries, keys: readonly string[], latest: TimeseriesData | null,
-                                     divisor: number, windowMs: number): RateSeries {
+                                     divisor: KeyDivisor, windowMs: number): RateSeries {
   return Object.fromEntries(keys.map(key => {
     const samples = series[key] ?? [];
     const sample = latest?.[key]?.[0];
@@ -88,7 +81,7 @@ export function appendLatestToSeries(series: RateSeries, keys: readonly string[]
     if (!sample || (last && last.ts === sample.ts)) {
       return [key, samples];
     }
-    return [key, trimSamples([...samples, {ts: sample.ts, value: scaledValue(sample.value, divisor)}], windowMs)];
+    return [key, trimSamples([...samples, {ts: sample.ts, value: scaledValue(sample.value, divisor(key))}], windowMs)];
   }));
 }
 
@@ -102,27 +95,55 @@ function trimSamples(samples: TsValue[], windowMs: number): TsValue[] {
   return sorted.filter(sample => sample.ts >= oldest).slice(-LIVE_STATS_MAX_SAMPLES);
 }
 
-export interface InlineSparklineOptions {
-  width?: number;
-  height?: number;
-  // Stroke by direction: first vs last sample. Falls back to a neutral grey when flat.
-  risingColor?: string;
-  fallingColor?: string;
+export interface TrendRange {
+  min: number;
+  max: number;
+  count: number;
+}
+
+// Per-row sample buffers behind the sparkline columns of entity tables.
+export class SnapshotTrend {
+
+  private readonly samples = new Map<string, number[]>();
+
+  constructor(private readonly maxSamples = 60) {
+  }
+
+  append(id: string, value: number) {
+    this.samples.set(id, [...(this.samples.get(id) ?? []), value].slice(-this.maxSamples));
+  }
+
+  replace(entries: ReadonlyArray<readonly [string, number[]]>) {
+    this.samples.clear();
+    for (const [id, values] of entries) {
+      this.samples.set(id, values.slice(-this.maxSamples));
+    }
+  }
+
+  sparkline(id: string): string {
+    return inlineSparkline(this.samples.get(id) ?? []);
+  }
+
+  range(id: string): TrendRange | null {
+    const values = this.samples.get(id) ?? [];
+    return values.length < 2 ? null : {min: Math.min(...values), max: Math.max(...values), count: values.length};
+  }
 }
 
 // Markup-string sparkline for table cells rendered through [innerHTML]; components use tb-rate-chart instead.
-export function inlineSparkline(values: number[], options: InlineSparklineOptions = {}): string {
+// Stroke by direction, first vs last sample: rising red, falling green, flat grey.
+export function inlineSparkline(values: number[]): string {
   if (values.length < 2) {
     return '<span style="color: rgba(0,0,0,.38)">—</span>';
   }
-  const width = options.width ?? 96;
-  const height = options.height ?? 20;
+  const width = 96;
+  const height = 20;
   const max = Math.max(1, ...values);
   const stepX = width / (values.length - 1);
   const points = values.map((value, i) => `${(i * stepX).toFixed(1)},${(height - 2 - value / max * (height - 4)).toFixed(1)}`).join(' ');
   const first = values[0];
   const last = values[values.length - 1];
-  const color = last > first ? (options.risingColor ?? '#d12730') : last < first ? (options.fallingColor ?? '#198038') : 'rgba(0,0,0,.54)';
+  const color = last > first ? 'var(--tb-usage-crit)' : last < first ? 'var(--tb-usage-ok)' : 'rgba(0,0,0,.54)';
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="display:block;overflow:visible">` +
     `<polyline fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="${points}"/>` +
     `</svg>`;

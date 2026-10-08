@@ -30,9 +30,6 @@
  */
 @use 'constants' as *;
 
-// Same hexes as STATUS_COLOR.ACTIVE / PENDING in entities-table-config.models.ts.
-$tb-ok: #198038;
-$tb-warn: #d47d18;
 $tb-line: rgba(0, 0, 0, 0.06);
 
 :host {
@@ -76,11 +73,11 @@ $tb-line: rgba(0, 0, 0, 0.06);
   height: 7px;
   margin-right: 8px;
   border-radius: 50%;
-  background: $tb-ok;
+  background: var(--tb-usage-ok);
   animation: tb-live-ping 2s ease-out infinite;
 
   &.tb-live-dot-stale {
-    background: $tb-warn;
+    background: var(--tb-usage-warn);
     animation: none;
   }
 }
@@ -104,6 +101,49 @@ $tb-line: rgba(0, 0, 0, 0.06);
 }
 
 
+.tb-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  margin-left: 6px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+
+  &.tb-alert-warning {
+    color: var(--tb-usage-warn);
+    background: rgba(212, 125, 24, 0.12);
+  }
+
+  &.tb-alert-critical {
+    color: var(--tb-usage-crit);
+    background: rgba(209, 39, 48, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-500);
+    outline-offset: 1px;
+  }
+}
+
+.tb-hidden-note {
+  margin-left: 4px;
+  font-family: var(--tb-font-mono);
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
 .tb-cluster-fullscreen {
   --mdc-icon-button-state-layer-size: 32px;
 
@@ -113,24 +153,47 @@ $tb-line: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.54);
 }
 
+:host ::ng-deep .tb-help .mat-mdc-icon-button {
+  color: rgba(0, 0, 0, 0.54);
+}
+
 .tb-cluster-card.tb-fullscreen {
   border-radius: 0;
 }
 
 .tb-live-stale {
-  font-family: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--tb-font-mono);
   font-size: 11px;
   letter-spacing: 0.02em;
-  color: $tb-warn;
+  color: var(--tb-usage-warn);
 }
 
 .tb-cluster-map-wrap {
+  position: relative;
   display: flex;
   padding: 6px 4px 10px;
 
   tb-cluster-map {
     flex: 1;
     min-width: 0;
+  }
+}
+
+.tb-map-reset {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 1;
+  height: 30px;
+  padding: 0 12px 0 8px;
+  border-radius: 15px;
+  background: #fff;
+  font-size: 12px;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
   }
 }
 

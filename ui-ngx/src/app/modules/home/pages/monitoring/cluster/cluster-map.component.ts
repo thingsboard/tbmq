@@ -29,20 +29,26 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import {
   ClusterMapVm,
   ClusterNodeVm,
   COLUMN_X,
-  compactNumber,
   CLIENTS_RING_RADIUS,
   hexagonPoints,
   KAFKA_NODE_ID,
   KAFKA_RADIUS,
   ringArcDash
 } from '@home/pages/monitoring/cluster/cluster.models';
+import { compactNumber } from '@shared/models/live-stats.model';
+
+interface ClientTypeVm {
+  key: string;
+  count: number | null;
+  label: string;
+}
 
 @Component({
     selector: 'tb-cluster-map',
@@ -59,6 +65,20 @@ export class ClusterMapComponent {
 
   readonly nodeSelected = output<string>();
 
+  readonly clientTypes = computed<ClientTypeVm[]>(() => {
+    const {clients} = this.vm();
+    const known = clients.hasSessionStats;
+    return [
+      {key: 'device', count: known ? clients.deviceSessions : null, label: 'monitoring.cluster.devices'},
+      {key: 'application', count: known ? clients.applicationSessions : null, label: 'monitoring.cluster.applications'},
+      {key: 'integration', count: known ? clients.integrationSessions : null, label: 'monitoring.cluster.integrations'}
+    ];
+  });
+  readonly kafkaHaloPoints = computed(() => {
+    const {kafka} = this.vm();
+    return hexagonPoints(kafka.x, kafka.y, KAFKA_RADIUS + 7);
+  });
+
   readonly columnX = COLUMN_X;
   readonly kafkaNodeId = KAFKA_NODE_ID;
   readonly clientsRingR = CLIENTS_RING_RADIUS;
@@ -70,22 +90,9 @@ export class ClusterMapComponent {
     this.nodeSelected.emit(node.key);
   }
 
-  clientTypes(map: ClusterMapVm): {key: string; count: number | null; label: string}[] {
-    const known = map.clients.hasSessionStats;
-    return [
-      {key: 'device', count: known ? map.clients.deviceSessions : null, label: 'monitoring.cluster.devices'},
-      {key: 'application', count: known ? map.clients.applicationSessions : null, label: 'monitoring.cluster.applications'},
-      {key: 'integration', count: known ? map.clients.integrationSessions : null, label: 'monitoring.cluster.integrations'}
-    ];
-  }
-
   onSelectKafka(event?: Event) {
     event?.preventDefault();
     this.nodeSelected.emit(KAFKA_NODE_ID);
-  }
-
-  kafkaHaloPoints(map: ClusterMapVm): string {
-    return hexagonPoints(map.kafka.x, map.kafka.y, KAFKA_RADIUS + 7);
   }
 
   particleBegin(slot: number, slots: number, durSec: number): string {

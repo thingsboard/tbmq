@@ -26,7 +26,7 @@ import { Type } from '@angular/core';
 import { EntityAction } from './entity-component.models';
 import { PageLink } from '@shared/models/page/page-link';
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
 import { IEntitiesTableComponent } from './entity-table-component.models';
 import { DAY, historyInterval } from '@shared/models/time/time.models';
@@ -52,7 +52,7 @@ export type HeaderCellStyleFunction<T extends BaseData> = (key: string) => objec
 export type CellStyleFunction<T extends BaseData> = (entity: T, key: string) => object;
 export type CopyCellContent<T extends BaseData> = (entity: T, key: string, length: number) => object;
 
-export enum CellActionDescriptorType { 'DEFAULT', 'COPY_BUTTON'}
+export enum CellActionDescriptorType { 'DEFAULT', 'COPY_BUTTON', 'LINK'}
 
 export interface CellActionDescriptor<T extends BaseData> {
   name: string;
@@ -63,6 +63,8 @@ export interface CellActionDescriptor<T extends BaseData> {
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
   type?: CellActionDescriptorType;
+  // LINK cells render the cell content as a router link to this target; null leaves plain text.
+  link?: (entity: T) => {commands: any[]; queryParams?: Params} | null;
 }
 
 export interface GroupActionDescriptor<T extends BaseData> {

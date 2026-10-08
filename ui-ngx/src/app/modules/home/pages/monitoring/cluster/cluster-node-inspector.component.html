@@ -33,6 +33,7 @@
 @if (node(); as n) {
   <div class="tb-inspector-head">
     <div class="tb-inspector-title">
+      <div class="tb-inspector-kind">{{ (n.kind === 'broker' ? 'monitoring.cluster.kind-broker' : 'monitoring.cluster.kind-executor') | translate }}</div>
       <div class="tb-inspector-id">{{ n.id }}</div>
       <div class="tb-inspector-meta">
         @if (n.stale) {
@@ -50,13 +51,9 @@
         }
       </div>
     </div>
-    <button mat-icon-button type="button" class="tb-inspector-close"
-            [matTooltip]="'monitoring.cluster.reset' | translate"
-            [attr.aria-label]="'monitoring.cluster.reset' | translate"
-            (click)="cleared.emit()">
-      <mat-icon>restart_alt</mat-icon>
-    </button>
+    <ng-container *ngTemplateOutlet="closeButton"/>
   </div>
+  <ng-container *ngTemplateOutlet="alertsList"/>
 
   @if (n.kind === 'broker') {
     <div class="tb-stat">
@@ -104,20 +101,15 @@
 } @else if (kafka(); as k) {
   <div class="tb-inspector-head">
     <div class="tb-inspector-title">
-      <div class="tb-inspector-id">{{ 'monitoring.cluster.kafka' | translate }}</div>
+      <div class="tb-inspector-kind">{{ 'monitoring.cluster.kafka' | translate }}</div>
+      <div class="tb-inspector-id">
+        {{ (k.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: k.brokerCount ?? '—'} }}
+      </div>
       <div class="tb-inspector-meta">
-        <span class="tb-inspector-type">
-          {{ (k.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: k.brokerCount ?? '—'} }}
-          · {{ 'monitoring.cluster.consumer-groups' | translate: {count: k.groupCount ?? '—'} }}
-        </span>
+        <span class="tb-inspector-type">{{ 'monitoring.cluster.consumer-groups' | translate: {count: k.groupCount ?? '—'} }}</span>
       </div>
     </div>
-    <button mat-icon-button type="button" class="tb-inspector-close"
-            [matTooltip]="'monitoring.cluster.reset' | translate"
-            [attr.aria-label]="'monitoring.cluster.reset' | translate"
-            (click)="cleared.emit()">
-      <mat-icon>restart_alt</mat-icon>
-    </button>
+    <ng-container *ngTemplateOutlet="closeButton"/>
   </div>
 
   <div class="tb-stat">
@@ -165,15 +157,17 @@
   @let t = total();
   <div class="tb-inspector-head">
     <div class="tb-inspector-title">
-      <div class="tb-inspector-id">{{ 'monitoring.cluster.cluster-total' | translate }}</div>
+      <div class="tb-inspector-kind">{{ 'monitoring.cluster.cluster' | translate }}</div>
+      <div class="tb-inspector-id">{{ 'monitoring.cluster.all-nodes' | translate }}</div>
       <div class="tb-inspector-meta">
         <span class="tb-inspector-type">
           {{ 'monitoring.cluster.brokers' | translate }}: {{ t.brokerCount }}
-          · {{ 'monitoring.cluster.integrations' | translate }}: {{ t.executorCount }}
+          · {{ 'monitoring.cluster.integration-executors' | translate }}: {{ t.executorCount }}
         </span>
       </div>
     </div>
   </div>
+  <ng-container *ngTemplateOutlet="alertsList"/>
 
   <div class="tb-stat">
     <span class="tb-stat-label">{{ 'monitoring.cluster.sessions-in-cluster' | translate }}</span>
@@ -198,15 +192,62 @@
       </button>
     }
   </div>
-  <tb-rate-chart [series]="chartSeries()" ariaLabel="monitoring.cluster.chart-aria-label"></tb-rate-chart>
+  <tb-rate-chart [series]="chartSeries()" [ariaLabel]="chartAriaLabel()"></tb-rate-chart>
   <div class="tb-spark-foot">
     <span class="tb-unit-switch" role="group" [attr.aria-label]="'monitoring.cluster.history-window' | translate">
-      @for (windowMs of historyWindows; track windowMs) {
-        <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="historyWindow() === windowMs"
-                [attr.aria-pressed]="historyWindow() === windowMs" (click)="historyWindowChange.emit(windowMs)">
-          {{ windowLabel(windowMs) }}
+      @for (option of historyWindows; track option.windowMs) {
+        <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="historyWindow() === option.windowMs"
+                [attr.aria-pressed]="historyWindow() === option.windowMs" (click)="historyWindowChange.emit(option.windowMs)">
+          {{ option.shortKey | translate: option.params }}
         </button>
       }
     </span>
   </div>
 }
+
+<ng-template #closeButton>
+  <button mat-icon-button type="button" class="tb-inspector-close"
+          [matTooltip]="'monitoring.cluster.back-to-total' | translate"
+          [attr.aria-label]="'monitoring.cluster.back-to-total' | translate"
+          (click)="cleared.emit()">
+    <mat-icon>close</mat-icon>
+  </button>
+</ng-template>
+
+<ng-template #alertsList>
+  @if (visibleAlerts().length) {
+    <ul class="tb-alerts" tabindex="0" [attr.aria-label]="'monitoring.cluster.alerts' | translate">
+      @for (alert of visibleAlerts(); track alert.id) {
+        <li>
+          @if (!node() && alert.nodeKey) {
+            <button type="button" [class]="'tb-alert tb-alert-button tb-alert-' + alert.level" (click)="alertNodeSelected.emit(alert.nodeKey)">
+              <ng-container *ngTemplateOutlet="alertContent; context: {$implicit: alert}"/>
+            </button>
+          } @else {
+            <div [class]="'tb-alert tb-alert-' + alert.level">
+              <ng-container *ngTemplateOutlet="alertContent; context: {$implicit: alert}"/>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+    @if (unlistedAlertCount()) {
+      <div class="tb-alerts-more">{{ 'monitoring.cluster.alerts-more' | translate: {count: unlistedAlertCount()} }}</div>
+    }
+  }
+</ng-template>
+
+<ng-template #alertContent let-alert>
+  <mat-icon class="tb-alert-icon">{{ alert.level === 'critical' ? 'error' : 'warning' }}</mat-icon>
+  <span class="tb-alert-body">
+    <span class="tb-alert-message">
+      @if (!node() && alert.nodeId) {
+        <span class="tb-alert-node">{{ alert.nodeId }}</span>
+      }
+      {{ alert.messageKey | translate: alert.params }}
+    </span>
+    @if (alert.detail) {
+      <span class="tb-alert-detail" [matTooltip]="alert.detail">{{ alert.detail }}</span>
+    }
+  </span>
+</ng-template>

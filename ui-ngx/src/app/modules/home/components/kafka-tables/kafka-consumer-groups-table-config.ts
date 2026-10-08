@@ -23,8 +23,7 @@ import {
 import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { TsValue } from '@shared/models/chart.model';
-import { inlineSparkline } from '@shared/models/live-stats.model';
+import { SnapshotTrend } from '@shared/models/live-stats.model';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
@@ -32,11 +31,10 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
 
-const LAG_TREND_SAMPLES = 60;
-
 export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsumerGroup, TimePageLink> {
 
-  private readonly lagHistory = new Map<string, TsValue[]>();
+  // Lag is a snapshot per fetch; keeping the last ones shows whether a group is draining or falling behind.
+  private readonly lagTrend = new SnapshotTrend();
 
   constructor(private kafkaService: KafkaService,
               private translate: TranslateService,
@@ -65,36 +63,19 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
       new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '100px',
           entity => entity.lag),
       new EntityTableColumn<KafkaConsumerGroup>('lagTrend', 'kafka.lag-trend', '120px',
-          entity => this.lagTrendCell(entity), undefined, false, undefined, entity => this.lagTrendTooltip(entity))
+          entity => this.lagTrend.sparkline(entity.groupId), undefined, false, undefined, entity => this.lagTrendTooltip(entity))
     );
   }
 
   private fetchKafkaConsumerGroups(pageLink: TimePageLink): Observable<PageData<KafkaConsumerGroup>> {
     return this.kafkaService.getKafkaConsumerGroups(pageLink).pipe(
-      tap(page => this.recordLag(page.data))
+      tap(page => page.data.forEach(group => this.lagTrend.append(group.groupId, Number(group.lag) || 0)))
     );
   }
 
-  // Lag is a snapshot per fetch; keeping the last samples in memory shows whether a group is draining or falling behind.
-  private recordLag(groups: KafkaConsumerGroup[]) {
-    const ts = Date.now();
-    for (const group of groups) {
-      const samples = this.lagHistory.get(group.groupId) ?? [];
-      this.lagHistory.set(group.groupId, [...samples, {ts, value: Number(group.lag) || 0}].slice(-LAG_TREND_SAMPLES));
-    }
-  }
-
-  private lagTrendCell(group: KafkaConsumerGroup): string {
-    return inlineSparkline((this.lagHistory.get(group.groupId) ?? []).map(sample => sample.value));
-  }
-
   private lagTrendTooltip(group: KafkaConsumerGroup): string {
-    const samples = this.lagHistory.get(group.groupId) ?? [];
-    if (samples.length < 2) {
-      return undefined;
-    }
-    const values = samples.map(sample => sample.value);
-    return this.translate.instant('kafka.lag-trend-tooltip', {min: Math.min(...values), max: Math.max(...values), count: values.length});
+    const range = this.lagTrend.range(group.groupId);
+    return range ? this.translate.instant('kafka.lag-trend-tooltip', range) : undefined;
   }
 
   private configureCellActions(): Array<CellActionDescriptor<KafkaConsumerGroup>> {

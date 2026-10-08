@@ -37,11 +37,11 @@
   <text class="tb-column-caption" [attr.x]="columnX.clients" y="22" text-anchor="middle">{{ 'monitoring.cluster.clients' | translate }}</text>
   <text class="tb-column-caption" [attr.x]="columnX.brokers" y="22" text-anchor="middle">{{ 'monitoring.cluster.brokers' | translate }}</text>
   <text class="tb-column-caption" [attr.x]="columnX.kafka" y="22" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
-  <text class="tb-column-caption" [attr.x]="columnX.executors" y="22" text-anchor="middle">{{ 'monitoring.cluster.integrations' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.executors" y="22" text-anchor="middle">{{ 'monitoring.cluster.integration-executors' | translate }}</text>
 
   <!-- Edges are tracked by id and updated attribute-by-attribute: re-creating a path restarts every particle riding it. -->
   @for (edge of map.edges; track edge.id) {
-    <path class="tb-edge" [attr.id]="edge.id" [attr.d]="edge.path"
+    <path class="tb-edge" [class.tb-edge-offline]="edge.offline" [attr.id]="edge.id" [attr.d]="edge.path"
           [attr.stroke-width]="edge.strokeWidth" [attr.stroke-opacity]="edge.opacity"/>
     @if (edge.rate !== null) {
       <path class="tb-edge-hit" [attr.d]="edge.path">
@@ -70,7 +70,7 @@
     <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 18" text-anchor="middle">
       {{ 'monitoring.cluster.connected-of-sessions' | translate }}
     </text>
-    @for (type of clientTypes(map); track type.key; let i = $index) {
+    @for (type of clientTypes(); track type.key; let i = $index) {
       <text [class]="type.count ? 'tb-node-hint tb-client-type' : 'tb-node-hint tb-client-type tb-client-type-idle'"
             [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 33 + i * 13" text-anchor="middle">
         {{ type.label | translate }} {{ type.count === null ? '—' : compactNumber(type.count) }}
@@ -88,7 +88,7 @@
   <g [class]="selectedId() === kafkaNodeId ? 'tb-kafka tb-node tb-node-selected' : 'tb-kafka tb-node'" role="button" tabindex="0"
      [attr.aria-pressed]="selectedId() === kafkaNodeId" [attr.aria-label]="'monitoring.cluster.kafka' | translate"
      (click)="onSelectKafka()" (keydown.enter)="onSelectKafka($event)" (keydown.space)="onSelectKafka($event)">
-    <polygon class="tb-halo tb-kafka-halo" [attr.points]="kafkaHaloPoints(map)"/>
+    <polygon class="tb-halo tb-kafka-halo" [attr.points]="kafkaHaloPoints()"/>
     <polygon class="tb-kafka-hex" [attr.points]="map.kafka.points"/>
     <text class="tb-node-count" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y - 2" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
     <text class="tb-node-hint" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 13" text-anchor="middle">
@@ -118,6 +118,14 @@
     <svg:circle [class]="'tb-ring-arc tb-' + node.cpuLevel" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"
                 [attr.stroke-dasharray]="ringArcDash(node.ringR, node.cpu)" [attr.transform]="'rotate(-90 ' + node.x + ' ' + node.y + ')'"/>
     <svg:circle [class]="'tb-disc tb-status-' + (node.stale ? 'STALE' : node.status)" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>
+    @if (node.alertLevel) {
+      <svg:g [class]="'tb-alert-badge tb-alert-' + node.alertLevel"
+             [attr.transform]="'translate(' + (node.x + node.ringR * 0.72) + ' ' + (node.y - node.ringR * 0.72) + ')'">
+        <svg:title>{{ 'monitoring.cluster.alert-count' | translate: {count: node.alertCount} }}</svg:title>
+        <svg:circle r="8"/>
+        <svg:text text-anchor="middle" dominant-baseline="central">{{ node.alertCount }}</svg:text>
+      </svg:g>
+    }
     @if (node.countLabel) {
       <svg:text class="tb-node-count" [attr.x]="node.x" [attr.y]="node.y" text-anchor="middle" dominant-baseline="central">{{ node.countLabel }}</svg:text>
     }
@@ -128,7 +136,7 @@
       </svg:text>
     } @else {
       <svg:text [class]="'tb-node-sub tb-' + node.cpuLevel" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
-        {{ node.cpu !== null ? node.cpu + '% CPU' : '—' }}
+        {{ node.cpu !== null ? ('monitoring.cluster.cpu-percent' | translate: {value: node.cpu}) : '—' }}
       </svg:text>
     }
   </svg:g>

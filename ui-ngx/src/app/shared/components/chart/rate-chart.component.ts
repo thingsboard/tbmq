@@ -45,10 +45,8 @@ import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TsValue } from '@shared/models/chart.model';
 
-export type MessageSeriesKey = string;
-
 export interface RateChartSeries {
-  key: MessageSeriesKey;
+  key: string;
   label: string;
   points: TsValue[];
   current: number;
@@ -56,7 +54,7 @@ export interface RateChartSeries {
 }
 
 interface SeriesPath {
-  key: MessageSeriesKey;
+  key: string;
   linePath: string;
   areaPath: string;
   endX: number;
@@ -73,7 +71,7 @@ interface ChartGeometry {
 }
 
 interface HoverRow {
-  key: MessageSeriesKey;
+  key: string;
   label: string;
   value: string;
   y: number;
@@ -172,7 +170,7 @@ export class RateChartComponent {
   readonly height = computed(() => this.size().height);
   readonly plotBottom = computed(() => this.height() - AXIS_BAND);
 
-  private readonly hidden = signal<ReadonlySet<MessageSeriesKey>>(new Set());
+  private readonly hidden = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -235,11 +233,11 @@ export class RateChartComponent {
     return {x: geometry.toX(ts), ts, rows};
   });
 
-  isHidden(key: MessageSeriesKey): boolean {
+  isHidden(key: string): boolean {
     return this.hidden().has(key);
   }
 
-  toggle(key: MessageSeriesKey) {
+  toggle(key: string) {
     this.hidden.update(hidden => {
       const next = new Set(hidden);
       if (!next.delete(key)) {

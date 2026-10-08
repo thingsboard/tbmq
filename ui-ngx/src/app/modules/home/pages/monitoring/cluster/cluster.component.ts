@@ -29,53 +29,55 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { HelpComponent } from '@shared/components/help.component';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatIconButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
-import { combineLatest, forkJoin, Observable, of, Subject, timer } from 'rxjs';
-import { catchError, map, retry, switchMap, takeUntil } from 'rxjs/operators';
+import { forkJoin, Observable, of, timer } from 'rxjs';
+import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { TimeseriesService } from '@core/http/timeseries.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { KafkaService } from '@core/http/kafka.service';
 import { IntegrationService } from '@core/http/integration.service';
 import { ConfigService } from '@core/http/config.service';
+import { TimeService } from '@core/services/time.service';
 import { RequestConfig } from '@core/http/http-utils';
 import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
-import { ChartKey, TimeseriesData, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
+import { TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ServiceType } from '@shared/models/resource-usage.model';
-import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
-import { IntegrationInfo } from '@shared/models/integration.models';
-import { SECOND } from '@shared/models/time/time.models';
+import { MINUTE, SECOND } from '@shared/models/time/time.models';
 import { LiveStatsService } from '@core/services/live-stats.service';
 import { emptyRateSeries } from '@shared/models/live-stats.model';
 import { SettingsService } from '@core/http/settings.service';
+import { defaultResourceUsageAlertSettings } from '@shared/models/settings.models';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
 import { ClusterNodeInspectorComponent } from '@home/pages/monitoring/cluster/cluster-node-inspector.component';
 import {
   assembleClusterVm,
-  ClusterMapVm,
+  ClusterCadence,
   ClusterRawData,
   CLUSTER_RATE_KEYS,
-  DEFAULT_THRESHOLDS,
-  emptyClusterVm,
+  emptyClusterRawData,
+  GAUGE_KEYS,
   HISTORY_WINDOW_MS,
   KAFKA_NODE_ID,
-  RESOURCE_KEYS,
+  NODE_SERIES_KEYS,
   SESSIONS_KEY
 } from '@home/pages/monitoring/cluster/cluster.models';
 
-const REFRESH_INTERVAL = 10 * SECOND;
-// Consumer-group lag is computed through the Kafka admin client, so it is refreshed less often than node stats.
-const KAFKA_REFRESH_EVERY_TICKS = 6;
+// Session counts come straight from the session cache, so they are the one source worth polling this often.
+const SESSIONS_REFRESH_MS = 3 * SECOND;
+// Consumer-group lag goes through the Kafka admin client and integrations rarely change.
+const SLOW_SOURCES_REFRESH_MS = MINUTE;
+const DEFAULT_HEARTBEAT_SEC = 60;
+const MIN_SERVICES_REFRESH_MS = 5 * SECOND;
 const QUIET_REQUEST: RequestConfig = {ignoreLoading: true, ignoreErrors: true};
-const MESSAGE_RATE_KEYS: ChartKey[] = [...CLUSTER_RATE_KEYS];
+const TOTAL_SERIES_KEYS: readonly string[] = [...CLUSTER_RATE_KEYS, SESSIONS_KEY];
 
 const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(catchError(() => of(null)));
 
@@ -83,20 +85,44 @@ const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(ca
     selector: 'tb-cluster',
     templateUrl: './cluster.component.html',
     styleUrls: ['./cluster.component.scss'],
-    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, FullscreenDirective, HelpComponent, ClusterMapComponent,
+    imports: [TranslateModule, MatButton, MatIconButton, MatIcon, MatTooltip, FullscreenDirective, HelpComponent, ClusterMapComponent,
       ClusterNodeInspectorComponent],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {'(keydown.escape)': 'clearSelection()'}
 })
-export class ClusterComponent implements OnInit, OnDestroy {
+export class ClusterComponent implements OnInit {
 
-  readonly vm = signal<ClusterMapVm>(emptyClusterVm());
+  private readonly timeseriesService = inject(TimeseriesService);
+  private readonly clientSessionService = inject(ClientSessionService);
+  private readonly kafkaService = inject(KafkaService);
+  private readonly integrationService = inject(IntegrationService);
+  private readonly configService = inject(ConfigService);
+  private readonly timeService = inject(TimeService);
+  private readonly liveStats = inject(LiveStatsService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly cadence: ClusterCadence = {
+    statsIntervalMinutes: this.configService.brokerConfig?.statsCollectionInterval || 1,
+    heartbeatMs: (this.configService.brokerConfig?.systemInfoPersistFrequencySec || DEFAULT_HEARTBEAT_SEC) * SECOND
+  };
+  private readonly raw = signal<ClusterRawData>(emptyClusterRawData());
+
+  readonly thresholds = toSignal(inject(SettingsService).getResourceUsageThresholds(),
+    {initialValue: defaultResourceUsageAlertSettings});
+  readonly hideInactive = signal(false);
+  readonly vm = computed(() => assembleClusterVm(this.raw(), this.cadence, this.thresholds(), this.hideInactive()));
+  readonly alertSummary = computed(() => {
+    const alerts = this.vm().alerts;
+    return alerts.length ? {count: alerts.length, level: alerts[0].level} : null;
+  });
   readonly selectedId = signal<string | null>(null);
-  readonly lastTickOk = signal(true);
-  private lastUpdated: number | null = null;
+  readonly servicesOk = signal(true);
+  readonly lastUpdated = signal<number | null>(null);
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
   readonly historyWindow = signal(HISTORY_WINDOW_MS);
-  readonly thresholds = toSignal(inject(SettingsService).getResourceUsageThresholds(), {initialValue: DEFAULT_THRESHOLDS});
   readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   readonly selectedNode = computed(() => {
@@ -114,47 +140,30 @@ export class ClusterComponent implements OnInit, OnDestroy {
   readonly selectedSeries = toSignal(toObservable(this.seriesSource).pipe(
     switchMap(({entityId, windowMs}) => {
       if (!entityId) {
-        return of(emptyRateSeries(MESSAGE_RATE_KEYS));
+        return of(emptyRateSeries(CLUSTER_RATE_KEYS));
       }
-      return combineLatest([
-        this.liveStats.watch(entityId, MESSAGE_RATE_KEYS, {windowMs}),
-        this.liveStats.watch(entityId, [SESSIONS_KEY], {windowMs, perMinute: false}),
-        this.liveStats.watch(entityId, RESOURCE_KEYS, {windowMs, perMinute: false})
-      ]).pipe(
-        map(([rates, sessions, resources]) => ({...rates, ...sessions, ...resources}))
-      );
+      // The cluster total has no CPU, memory or disk series.
+      const keys = entityId === TOTAL_ENTITY_ID ? TOTAL_SERIES_KEYS : NODE_SERIES_KEYS;
+      return this.liveStats.watch(entityId, keys, {windowMs, gaugeKeys: GAUGE_KEYS});
     })
-  ), {initialValue: emptyRateSeries(MESSAGE_RATE_KEYS)});
-
-  private readonly timeseriesService = inject(TimeseriesService);
-  private readonly clientSessionService = inject(ClientSessionService);
-  private readonly kafkaService = inject(KafkaService);
-  private readonly integrationService = inject(IntegrationService);
-  private readonly configService = inject(ConfigService);
-  private readonly liveStats = inject(LiveStatsService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-
-  private kafkaBrokers: PageData<KafkaBroker> | null = null;
-  private consumerGroups: PageData<KafkaConsumerGroup> | null = null;
-  private integrations: PageData<IntegrationInfo> | null = null;
-  private readonly destroy$ = new Subject<void>();
+  ), {initialValue: emptyRateSeries(CLUSTER_RATE_KEYS)});
+  private readonly brokerIds = computed(() => (this.raw().services?.data ?? [])
+      .filter(service => service.serviceType === ServiceType.TBMQ)
+      .map(service => service.serviceId)
+      .sort(),
+    {equal: (a, b) => a.join() === b.join()});
+  private readonly brokerIds$ = toObservable(this.brokerIds);
 
   ngOnInit() {
     const nodeId = this.route.snapshot.queryParamMap.get('nodeId');
     if (nodeId) {
       this.selectedId.set(nodeId);
     }
-    timer(0, REFRESH_INTERVAL).pipe(
-      switchMap(tick => this.loadTick(tick)),
-      retry({delay: REFRESH_INTERVAL}),
-      takeUntil(this.destroy$)
-    ).subscribe(raw => this.applyTick(raw));
-  }
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.hideInactive.set(this.route.snapshot.queryParamMap.get('hideInactive') === 'true');
+    this.pollServices();
+    this.pollSessions();
+    this.pollRates();
+    this.pollSlowSources();
   }
 
   toggleSelection(id: string) {
@@ -162,7 +171,24 @@ export class ClusterComponent implements OnInit, OnDestroy {
   }
 
   clearSelection() {
-    this.select(null);
+    if (this.selectedId()) {
+      this.select(null);
+    }
+  }
+
+  // Double-clicking a node is two selection toggles already; only empty map space resets to the total.
+  onMapDoubleClick(event: MouseEvent) {
+    if (!(event.target as Element).closest('.tb-node')) {
+      this.clearSelection();
+    }
+  }
+
+  toggleHideInactive() {
+    this.hideInactive.update(hide => !hide);
+    if (this.selectionHidden()) {
+      this.selectedId.set(null);
+    }
+    this.syncQueryParams();
   }
 
   setHistoryWindow(windowMs: number) {
@@ -171,72 +197,79 @@ export class ClusterComponent implements OnInit, OnDestroy {
 
   private select(id: string | null) {
     this.selectedId.set(id);
-    this.router.navigate([], {relativeTo: this.route, queryParams: {nodeId: id}, queryParamsHandling: 'merge', replaceUrl: true});
+    this.syncQueryParams();
   }
 
-  private loadTick(tick: number): Observable<ClusterRawData> {
-    const refreshKafka = tick % KAFKA_REFRESH_EVERY_TICKS === 0;
-    return forkJoin({
-      services: quiet(this.timeseriesService.getServiceInfos(QUIET_REQUEST)),
-      sessionsByNode: quiet(this.clientSessionService.getClientSessionsStatsByNode(QUIET_REQUEST)),
-      latestTotal: quiet(this.timeseriesService.getLatestTimeseries(TOTAL_ENTITY_ID, MESSAGE_RATE_KEYS)),
-      kafkaBrokers: refreshKafka
-        ? quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST))
-        : of(this.kafkaBrokers),
-      consumerGroups: refreshKafka
-        ? quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST))
-        : of(this.consumerGroups),
-      integrations: refreshKafka
-        ? quiet(this.integrationService.getIntegrationsInfo(new PageLink(1000), QUIET_REQUEST))
-        : of(this.integrations)
+  private syncQueryParams() {
+    this.router.navigate([], {relativeTo: this.route, queryParams: {nodeId: this.selectedId(), hideInactive: this.hideInactive() || null},
+      queryParamsHandling: 'merge', replaceUrl: true});
+  }
+
+  // Nodes persist their system info once per heartbeat; polling twice as often keeps the map at most half a beat behind.
+  private pollServices() {
+    const refreshMs = Math.max(MIN_SERVICES_REFRESH_MS, this.cadence.heartbeatMs / 2);
+    this.poll(refreshMs, () => this.timeseriesService.getServiceInfos(QUIET_REQUEST)).subscribe(services => {
+      if (!services) {
+        const lastUpdated = this.lastUpdated();
+        this.servicesOk.set(false);
+        this.staleSeconds.set(lastUpdated ? Math.round((Date.now() - lastUpdated) / SECOND) : 0);
+        return;
+      }
+      this.patchRaw({services});
+      this.lastUpdated.set(Date.now());
+      this.servicesOk.set(true);
+      this.ensureSelection();
+    });
+  }
+
+  private pollSessions() {
+    this.poll(SESSIONS_REFRESH_MS, () => this.clientSessionService.getClientSessionsStatsByNode(QUIET_REQUEST))
+      .subscribe(sessionsByNode => sessionsByNode && this.patchRaw({sessionsByNode}));
+  }
+
+  // Message rates are persisted at each stats-interval boundary, so they are fetched right after it, in one request for
+  // every broker and the total, and again whenever the set of brokers changes.
+  private pollRates() {
+    this.brokerIds$.pipe(
+      switchMap(brokerIds => this.timeService.getSyncTimer(this.cadence.statsIntervalMinutes * MINUTE).pipe(
+        startWith(0),
+        switchMap(() => quiet(this.timeseriesService.getLatestTimeseriesBatch([TOTAL_ENTITY_ID, ...brokerIds],
+          [...CLUSTER_RATE_KEYS], QUIET_REQUEST)))
+      )),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(latest => latest && this.patchRaw({latest}));
+  }
+
+  private pollSlowSources() {
+    this.poll(SLOW_SOURCES_REFRESH_MS, () => forkJoin({
+      kafkaBrokers: quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST)),
+      consumerGroups: quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST)),
+      integrations: quiet(this.integrationService.getIntegrationsInfo(new PageLink(1000), QUIET_REQUEST))
     }).pipe(
-      switchMap(partial => {
-        const brokerIds = (partial.services?.data ?? [])
-          .filter(service => service.serviceType === ServiceType.TBMQ)
-          .map(service => service.serviceId);
-        return this.loadBrokerRates(brokerIds).pipe(
-          map(latestByBroker => ({...partial, latestByBroker}))
-        );
-      })
+      map(sources => Object.fromEntries(Object.entries(sources).filter(([, value]) => value !== null)))
+    )).subscribe(sources => sources && this.patchRaw(sources));
+  }
+
+  private poll<T>(periodMs: number, request: () => Observable<T>): Observable<T | null> {
+    return timer(0, periodMs).pipe(
+      switchMap(() => quiet(request())),
+      takeUntilDestroyed(this.destroyRef)
     );
   }
 
-  private loadBrokerRates(brokerIds: string[]): Observable<Record<string, TimeseriesData | null>> {
-    if (!brokerIds.length) {
-      return of({});
-    }
-    return forkJoin(brokerIds.map(id =>
-      quiet(this.timeseriesService.getLatestTimeseries(id, MESSAGE_RATE_KEYS)).pipe(map(data => [id, data] as const))
-    )).pipe(
-      map(entries => Object.fromEntries(entries))
-    );
+  private patchRaw(patch: Partial<ClusterRawData>) {
+    this.raw.update(raw => ({...raw, ...patch}));
   }
 
-  private applyTick(raw: ClusterRawData) {
-    if (!raw.services) {
-      this.lastTickOk.set(false);
-      this.staleSeconds.set(this.lastUpdated ? Math.round((Date.now() - this.lastUpdated) / SECOND) : 0);
-      return;
-    }
-    this.kafkaBrokers = raw.kafkaBrokers ?? this.kafkaBrokers;
-    this.consumerGroups = raw.consumerGroups ?? this.consumerGroups;
-    this.integrations = raw.integrations ?? this.integrations;
-
-    const vm = assembleClusterVm(raw, this.vm(), this.statsInterval(), this.thresholds());
-    this.vm.set(vm);
-    this.lastUpdated = Date.now();
-    this.lastTickOk.set(true);
-    this.ensureSelection(vm);
-  }
-
-  private ensureSelection(vm: ClusterMapVm) {
-    const selected = this.selectedId();
-    if (selected && selected !== KAFKA_NODE_ID && !vm.brokers.concat(vm.executors).some(node => node.key === selected)) {
+  private ensureSelection() {
+    if (this.selectionHidden()) {
       this.select(null);
     }
   }
 
-  private statsInterval(): number {
-    return this.configService.brokerConfig?.statsCollectionInterval || 1;
+  private selectionHidden(): boolean {
+    const selected = this.selectedId();
+    const {brokers, executors} = this.vm();
+    return !!selected && selected !== KAFKA_NODE_ID && !brokers.concat(executors).some(node => node.key === selected);
   }
 }
