@@ -43,8 +43,6 @@ import io.swagger.v3.oas.models.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
-import org.springdoc.core.customizers.RouterOperationCustomizer;
-import org.springdoc.core.discoverer.SpringDocParameterNameDiscoverer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
@@ -54,10 +52,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
@@ -67,7 +62,6 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginResponse;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -238,11 +232,10 @@ public class SwaggerConfiguration {
     }
 
     @Bean
-    public GroupedOpenApi groupedApi(SpringDocParameterNameDiscoverer localSpringDocParameterNameDiscoverer) {
+    public GroupedOpenApi groupedApi() {
         return GroupedOpenApi.builder()
                 .group(groupName)
                 .pathsToMatch(apiPath)
-                .addRouterOperationCustomizer(routerOperationCustomizer(localSpringDocParameterNameDiscoverer))
                 .addOperationCustomizer(operationCustomizer())
                 .addOpenApiCustomizer(customOpenApiCustomizer())
                 .build();
@@ -274,44 +267,11 @@ public class SwaggerConfiguration {
     }
 
     private void addDefaultSchemas(OpenAPI openAPI) {
-        var jsonNodeSchema = ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(JsonNode.class)).schema;
-        jsonNodeSchema.setType("any");
-        //noinspection unchecked
-        jsonNodeSchema.setExamples(List.of(JacksonUtil.newObjectNode()));
-        jsonNodeSchema.setDescription("A value representing the any type (object or primitive)");
         openAPI.getComponents()
-                .addSchemas("JsonNode", jsonNodeSchema)
                 .addSchemas("LoginRequest", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(LoginRequest.class)).schema)
                 .addSchemas("LoginResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(LoginResponse.class)).schema)
                 .addSchemas("ThingsboardErrorResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(ThingsboardErrorResponse.class)).schema)
                 .addSchemas("ThingsboardCredentialsExpiredResponse", ModelConverters.getInstance().readAllAsResolvedSchema(new AnnotatedType().type(ThingsboardCredentialsExpiredResponse.class)).schema);
-    }
-
-    private RouterOperationCustomizer routerOperationCustomizer(SpringDocParameterNameDiscoverer localSpringDocParameterNameDiscoverer) {
-        return (routerOperation, handlerMethod) -> {
-            String[] pNames = localSpringDocParameterNameDiscoverer.getParameterNames(handlerMethod.getMethod());
-            String[] reflectionParametersNames = Arrays.stream(handlerMethod.getMethod().getParameters()).map(java.lang.reflect.Parameter::getName).toArray(String[]::new);
-            if (pNames == null || Arrays.stream(pNames).anyMatch(Objects::isNull))
-                pNames = reflectionParametersNames;
-            MethodParameter[] parameters = handlerMethod.getMethodParameters();
-            List<String> requestParams = new ArrayList<>();
-            for (var i = 0; i < parameters.length; i++) {
-                var methodParameter = parameters[i];
-                RequestParam requestParam = methodParameter.getParameterAnnotation(RequestParam.class);
-                if (requestParam != null) {
-                    String pName = StringUtils.isNotBlank(requestParam.value()) ? requestParam.value() :
-                            pNames[i];
-                    if (StringUtils.isNotBlank(pName)) {
-                        requestParams.add(pName);
-                    }
-                }
-            }
-            if (!requestParams.isEmpty()) {
-                var path = routerOperation.getPath() + "{?" + String.join(BrokerConstants.COMMA, requestParams) + "}";
-                routerOperation.setPath(path);
-            }
-            return routerOperation;
-        };
     }
 
     private OperationCustomizer operationCustomizer() {
@@ -350,6 +310,12 @@ public class SwaggerConfiguration {
             });
             sortedPaths.setExtensions(paths.getExtensions());
             openAPI.setPaths(sortedPaths);
+            // Set JsonNode last so model scanning cannot overwrite it; no "type" means any JSON value in OAS 3.1
+            var jsonNodeSchema = new Schema<>();
+            jsonNodeSchema.setDescription("A value representing the any type (object or primitive)");
+            //noinspection unchecked
+            jsonNodeSchema.setExamples(List.of(JacksonUtil.newObjectNode()));
+            openAPI.getComponents().addSchemas("JsonNode", jsonNodeSchema);
             var sortedSchemas = new TreeMap<>(openAPI.getComponents().getSchemas());
             openAPI.getComponents().setSchemas(new LinkedHashMap<>(sortedSchemas));
         };
@@ -460,17 +426,15 @@ public class SwaggerConfiguration {
                 ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
         unauthorizedExamples.put("authentication-failed", errorExample("General authentication error",
                 ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED)));
-        apiResponses.addApiResponse("401", errorResponse("Unauthorized", unauthorizedExamples));
+        unauthorizedExamples.put("credentials-expired", errorExample("Expired credentials",
+                ThingsboardCredentialsExpiredResponse.of("User password expired!", "udgDQOpS1Q4ZFEL8qHF9s8cSKQ7d1h")));
 
-        var credentialsExpiredSchema = new Schema<ThingsboardCredentialsExpiredResponse>();
-        credentialsExpiredSchema.$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse");
-        apiResponses.addApiResponse("401 ", errorResponse("Unauthorized (**Expired credentials**)",
-                Map.of(
-                        "credentials-expired", errorExample("Expired credentials",
-                                ThingsboardCredentialsExpiredResponse.of("User password expired!", "udgDQOpS1Q4ZFEL8qHF9s8cSKQ7d1h"))
-                ),
-                credentialsExpiredSchema
+        Schema<? extends ThingsboardErrorResponse> unauthorizedSchema = new Schema<>();
+        unauthorizedSchema.oneOf(List.of(
+                new Schema<ThingsboardErrorResponse>().$ref("#/components/schemas/ThingsboardErrorResponse"),
+                new Schema<ThingsboardCredentialsExpiredResponse>().$ref("#/components/schemas/ThingsboardCredentialsExpiredResponse")
         ));
+        apiResponses.addApiResponse("401", errorResponse("Unauthorized", unauthorizedExamples, unauthorizedSchema));
         return apiResponses;
     }
 

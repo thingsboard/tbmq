@@ -98,6 +98,181 @@
   ],
   "paths": {
     "/api/admin": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "getAdmins",
+        "operationId": "getAdmins",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
       "post": {
         "tags": [
           "admin-controller"
@@ -1491,183 +1666,6 @@
         ]
       }
     },
-    "/api/admin{?pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "admin-controller"
-        ],
-        "summary": "getAdmins",
-        "operationId": "getAdmins",
-        "parameters": [
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataUser"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
     "/api/app/brokers": {
       "get": {
         "tags": [
@@ -2203,184 +2201,7 @@
         ]
       }
     },
-    "/api/app/consumer-groups/v2{?pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "app-controller"
-        ],
-        "summary": "getKafkaConsumerGroupsV2",
-        "operationId": "getKafkaConsumerGroupsV2",
-        "parameters": [
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataKafkaConsumerGroup"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/app/consumer-groups{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/app/consumer-groups": {
       "get": {
         "tags": [
           "app-controller"
@@ -2557,13 +2378,13 @@
         ]
       }
     },
-    "/api/app/kafka-topics/v2{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/app/consumer-groups/v2": {
       "get": {
         "tags": [
           "app-controller"
         ],
-        "summary": "getKafkaTopicsV2",
-        "operationId": "getKafkaTopicsV2",
+        "summary": "getKafkaConsumerGroupsV2",
+        "operationId": "getKafkaConsumerGroupsV2",
         "parameters": [
           {
             "name": "pageSize",
@@ -2614,7 +2435,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataKafkaTopic"
+                  "$ref": "#/components/schemas/PageDataKafkaConsumerGroup"
                 }
               }
             }
@@ -2734,7 +2555,7 @@
         ]
       }
     },
-    "/api/app/kafka-topics{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/app/kafka-topics": {
       "get": {
         "tags": [
           "app-controller"
@@ -2911,7 +2732,184 @@
         ]
       }
     },
-    "/api/app/listener/port{?listenerName}": {
+    "/api/app/kafka-topics/v2": {
+      "get": {
+        "tags": [
+          "app-controller"
+        ],
+        "summary": "getKafkaTopicsV2",
+        "operationId": "getKafkaTopicsV2",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataKafkaTopic"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/app/listener/port": {
       "get": {
         "tags": [
           "app-controller"
@@ -3312,9 +3310,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/app/service/info{?serviceId}": {
+      },
       "delete": {
         "tags": [
           "app-controller"
@@ -3451,6 +3447,181 @@
       }
     },
     "/api/app/shared/subs": {
+      "get": {
+        "tags": [
+          "app-shared-subscription-controller"
+        ],
+        "summary": "getSharedSubscriptions",
+        "operationId": "getSharedSubscriptions_1",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataApplicationSharedSubscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
       "post": {
         "tags": [
           "app-shared-subscription-controller"
@@ -3593,7 +3764,7 @@
         ]
       }
     },
-    "/api/app/shared/subs/by-topic{?topic}": {
+    "/api/app/shared/subs/by-topic": {
       "get": {
         "tags": [
           "app-shared-subscription-controller"
@@ -4265,183 +4436,6 @@
         ]
       }
     },
-    "/api/app/shared/subs{?pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "app-shared-subscription-controller"
-        ],
-        "summary": "getSharedSubscriptions",
-        "operationId": "getSharedSubscriptions_1",
-        "parameters": [
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataApplicationSharedSubscription"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
     "/api/auth/changePassword": {
       "post": {
         "tags": [
@@ -4719,6 +4713,141 @@
       }
     },
     "/api/noauth/resetPassword": {
+      "get": {
+        "tags": [
+          "auth-controller"
+        ],
+        "summary": "checkResetToken",
+        "operationId": "checkResetToken",
+        "parameters": [
+          {
+            "name": "resetToken",
+            "in": "query",
+            "description": "The reset token string.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "auth-controller"
@@ -4983,143 +5112,6 @@
         }
       }
     },
-    "/api/noauth/resetPassword{?resetToken}": {
-      "get": {
-        "tags": [
-          "auth-controller"
-        ],
-        "summary": "checkResetToken",
-        "operationId": "checkResetToken",
-        "parameters": [
-          {
-            "name": "resetToken",
-            "in": "query",
-            "description": "The reset token string.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/noauth/userPasswordPolicy": {
       "get": {
         "tags": [
@@ -5247,6 +5239,181 @@
       }
     },
     "/api/blockedClient": {
+      "get": {
+        "tags": [
+          "blocked-client-controller"
+        ],
+        "summary": "getBlockedClients",
+        "operationId": "getBlockedClients",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataBlockedClientDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
       "post": {
         "tags": [
           "blocked-client-controller"
@@ -5300,6 +5467,167 @@
                     "value": {
                       "status": 400,
                       "message": "Invalid request body",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "blocked-client-controller"
+        ],
+        "summary": "deleteBlockedClient",
+        "operationId": "deleteBlockedClient",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CLIENT_ID",
+                "USERNAME",
+                "IP_ADDRESS",
+                "REGEX"
+              ]
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "regexMatchTarget",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BY_CLIENT_ID",
+                "BY_USERNAME",
+                "BY_IP_ADDRESS"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
                       "errorCode": 31,
                       "timestamp": "2026-01-01T00:00:00.000+00:00"
                     }
@@ -5536,7 +5864,7 @@
         ]
       }
     },
-    "/api/blockedClient/v2{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime,typeList,value,regexMatchTargetList}": {
+    "/api/blockedClient/v2": {
       "get": {
         "tags": [
           "blocked-client-controller"
@@ -5761,13 +6089,13 @@
         ]
       }
     },
-    "/api/blockedClient{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/client-session": {
       "get": {
         "tags": [
-          "blocked-client-controller"
+          "client-session-controller"
         ],
-        "summary": "getBlockedClients",
-        "operationId": "getBlockedClients",
+        "summary": "getShortClientSessionInfos",
+        "operationId": "getShortClientSessionInfos",
         "parameters": [
           {
             "name": "pageSize",
@@ -5818,7 +6146,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataBlockedClientDto"
+                  "$ref": "#/components/schemas/PageDataShortClientSessionInfoDto"
                 }
               }
             }
@@ -5938,170 +6266,7 @@
         ]
       }
     },
-    "/api/blockedClient{?type,value,regexMatchTarget}": {
-      "delete": {
-        "tags": [
-          "blocked-client-controller"
-        ],
-        "summary": "deleteBlockedClient",
-        "operationId": "deleteBlockedClient",
-        "parameters": [
-          {
-            "name": "type",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "CLIENT_ID",
-                "USERNAME",
-                "IP_ADDRESS",
-                "REGEX"
-              ]
-            }
-          },
-          {
-            "name": "value",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "regexMatchTarget",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "BY_CLIENT_ID",
-                "BY_USERNAME",
-                "BY_IP_ADDRESS"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/client-session/by-client-id{?clientId}": {
+    "/api/client-session/by-client-id": {
       "get": {
         "tags": [
           "client-session-controller"
@@ -6244,7 +6409,7 @@
         ]
       }
     },
-    "/api/client-session/details{?clientId}": {
+    "/api/client-session/details": {
       "get": {
         "tags": [
           "client-session-controller"
@@ -6387,7 +6552,7 @@
         ]
       }
     },
-    "/api/client-session/disconnect{?clientId,sessionId}": {
+    "/api/client-session/disconnect": {
       "delete": {
         "tags": [
           "client-session-controller"
@@ -6664,7 +6829,7 @@
         ]
       }
     },
-    "/api/client-session/remove{?clientId,sessionId}": {
+    "/api/client-session/remove": {
       "delete": {
         "tags": [
           "client-session-controller"
@@ -6808,184 +6973,7 @@
         ]
       }
     },
-    "/api/client-session{?pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "client-session-controller"
-        ],
-        "summary": "getShortClientSessionInfos",
-        "operationId": "getShortClientSessionInfos",
-        "parameters": [
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataShortClientSessionInfoDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/v2/client-session{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime,connectedStatusList,clientTypeList,cleanStartList,nodeIdList,subscriptions,subscriptionOperation,clientIpAddress}": {
+    "/api/v2/client-session": {
       "get": {
         "tags": [
           "client-session-controller"
@@ -7652,7 +7640,230 @@
         ]
       }
     },
-    "/api/events/{entityId}/clear{?startTime,endTime}": {
+    "/api/events/{entityId}": {
+      "post": {
+        "tags": [
+          "event-controller"
+        ],
+        "summary": "getEvents",
+        "operationId": "getEvents",
+        "parameters": [
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ErrorEventFilter"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LifeCycleEventFilter"
+                  },
+                  {
+                    "$ref": "#/components/schemas/StatisticsEventFilter"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataEventInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid request body",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/events/{entityId}/clear": {
       "post": {
         "tags": [
           "event-controller"
@@ -7826,7 +8037,7 @@
         ]
       }
     },
-    "/api/events/{entityId}/{eventType}{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime}": {
+    "/api/events/{entityId}/{eventType}": {
       "get": {
         "tags": [
           "event-controller"
@@ -7935,229 +8146,6 @@
                     "value": {
                       "status": 400,
                       "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/events/{entityId}{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime}": {
-      "post": {
-        "tags": [
-          "event-controller"
-        ],
-        "summary": "getEvents",
-        "operationId": "getEvents",
-        "parameters": [
-          {
-            "name": "entityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "startTime",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "endTime",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/ErrorEventFilter"
-                  },
-                  {
-                    "$ref": "#/components/schemas/LifeCycleEventFilter"
-                  },
-                  {
-                    "$ref": "#/components/schemas/StatisticsEventFilter"
-                  }
-                ]
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataEventInfo"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid request body",
                       "errorCode": 31,
                       "timestamp": "2026-01-01T00:00:00.000+00:00"
                     }
@@ -8950,7 +8938,7 @@
         ]
       }
     },
-    "/api/integrations{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/integrations": {
       "get": {
         "tags": [
           "integration-controller"
@@ -9160,7 +9148,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
+                    }
+                  ]
                 },
                 "examples": {
                   "bad-credentials": {
@@ -9207,19 +9202,7 @@
                       "errorCode": 10,
                       "timestamp": "2026-01-01T00:00:00.000+00:00"
                     }
-                  }
-                }
-              }
-            }
-          },
-          "401 ": {
-            "description": "Unauthorized (**Expired credentials**)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
-                },
-                "examples": {
+                  },
                   "credentials-expired": {
                     "summary": "Expired credentials",
                     "value": {
@@ -9272,7 +9255,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
+                    }
+                  ]
                 },
                 "examples": {
                   "bad-credentials": {
@@ -9319,19 +9309,7 @@
                       "errorCode": 10,
                       "timestamp": "2026-01-01T00:00:00.000+00:00"
                     }
-                  }
-                }
-              }
-            }
-          },
-          "401 ": {
-            "description": "Unauthorized (**Expired credentials**)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardCredentialsExpiredResponse"
-                },
-                "examples": {
+                  },
                   "credentials-expired": {
                     "summary": "Expired credentials",
                     "value": {
@@ -10415,7 +10393,7 @@
         ]
       }
     },
-    "/api/mqtt/auth/providers{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/mqtt/auth/providers": {
       "get": {
         "tags": [
           "mqtt-auth-provider-controller"
@@ -10593,6 +10571,181 @@
       }
     },
     "/api/mqtt/client/credentials": {
+      "get": {
+        "tags": [
+          "mqtt-client-credentials-controller"
+        ],
+        "summary": "getCredentials",
+        "operationId": "getCredentials",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataShortMqttClientCredentials"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
       "post": {
         "tags": [
           "mqtt-client-credentials-controller"
@@ -10878,7 +11031,7 @@
         ]
       }
     },
-    "/api/mqtt/client/credentials/by-name{?name}": {
+    "/api/mqtt/client/credentials/by-name": {
       "get": {
         "tags": [
           "mqtt-client-credentials-controller"
@@ -11582,184 +11735,7 @@
         ]
       }
     },
-    "/api/mqtt/client/credentials{?pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "mqtt-client-credentials-controller"
-        ],
-        "summary": "getCredentials",
-        "operationId": "getCredentials",
-        "parameters": [
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataShortMqttClientCredentials"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/v2/mqtt/client/credentials{?pageSize,page,textSearch,sortProperty,sortOrder,clientTypeList,credentialsTypeList,username,clientId,certificateCn}": {
+    "/api/v2/mqtt/client/credentials": {
       "get": {
         "tags": [
           "mqtt-client-credentials-controller"
@@ -12286,9 +12262,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/node/drain{?expectedServiceId}": {
+      },
       "post": {
         "tags": [
           "node-drain-controller"
@@ -12574,7 +12548,318 @@
         ]
       }
     },
-    "/api/retained-msg/by-topic{?topicName}": {
+    "/api/retained-msg": {
+      "get": {
+        "tags": [
+          "retained-msg-controller"
+        ],
+        "summary": "getRetainedMessages",
+        "operationId": "getRetainedMessages",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataRetainedMsgDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "retained-msg-controller"
+        ],
+        "summary": "deleteRetainedMessage",
+        "operationId": "deleteRetainedMessage",
+        "parameters": [
+          {
+            "name": "topicName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/retained-msg/by-topic": {
       "get": {
         "tags": [
           "retained-msg-controller"
@@ -12843,7 +13128,7 @@
         ]
       }
     },
-    "/api/retained-msg/v2{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime,topicName,qosList,payload}": {
+    "/api/retained-msg/v2": {
       "get": {
         "tags": [
           "retained-msg-controller"
@@ -13065,13 +13350,13 @@
         ]
       }
     },
-    "/api/retained-msg{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/subscription": {
       "get": {
         "tags": [
-          "retained-msg-controller"
+          "subscription-controller"
         ],
-        "summary": "getRetainedMessages",
-        "operationId": "getRetainedMessages",
+        "summary": "getSharedSubscriptions",
+        "operationId": "getSharedSubscriptions",
         "parameters": [
           {
             "name": "pageSize",
@@ -13114,6 +13399,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "shareNameSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientIdSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13122,7 +13423,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataRetainedMsgDto"
+                  "$ref": "#/components/schemas/PageDataSharedSubscriptionDto"
                 }
               }
             }
@@ -13240,145 +13541,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/retained-msg{?topicName}": {
-      "delete": {
-        "tags": [
-          "retained-msg-controller"
-        ],
-        "summary": "deleteRetainedMessage",
-        "operationId": "deleteRetainedMessage",
-        "parameters": [
-          {
-            "name": "topicName",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/subscription": {
+      },
       "post": {
         "tags": [
           "subscription-controller"
@@ -13521,7 +13684,7 @@
         ]
       }
     },
-    "/api/subscription/all{?pageSize,page,textSearch,sortProperty,sortOrder,clientId,topicFilter,qosList,noLocalList,retainAsPublishList,retainHandlingList,subscriptionId}": {
+    "/api/subscription/all": {
       "get": {
         "tags": [
           "subscription-controller"
@@ -13767,7 +13930,7 @@
         ]
       }
     },
-    "/api/subscription/by-client-id{?clientId}": {
+    "/api/subscription/by-client-id": {
       "get": {
         "tags": [
           "subscription-controller"
@@ -13914,7 +14077,7 @@
         ]
       }
     },
-    "/api/subscription/integration{?integrationId}": {
+    "/api/subscription/integration": {
       "get": {
         "tags": [
           "subscription-controller"
@@ -14187,34 +14350,24 @@
         ]
       }
     },
-    "/api/subscription{?pageSize,page,textSearch,sortProperty,sortOrder,shareNameSearch,clientIdSearch}": {
+    "/api/timeseries/latest": {
       "get": {
         "tags": [
-          "subscription-controller"
+          "timeseries-controller"
         ],
-        "summary": "getSharedSubscriptions",
-        "operationId": "getSharedSubscriptions",
+        "summary": "getLatestTimeseries",
+        "operationId": "getLatestTimeseries",
         "parameters": [
           {
-            "name": "pageSize",
+            "name": "entityId",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           },
           {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
+            "name": "keys",
             "in": "query",
             "required": false,
             "schema": {
@@ -14222,35 +14375,12 @@
             }
           },
           {
-            "name": "sortProperty",
+            "name": "useStrictDataTypes",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "shareNameSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientIdSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
+              "type": "boolean",
+              "default": true
             }
           }
         ],
@@ -14260,7 +14390,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataSharedSubscriptionDto"
+                  "type": "string"
                 }
               }
             }
@@ -14378,9 +14508,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/timeseries/latest{?entityId,keys,deleteClientSessionCachedStats}": {
+      },
       "delete": {
         "tags": [
           "timeseries-controller"
@@ -14539,167 +14667,7 @@
         ]
       }
     },
-    "/api/timeseries/latest{?entityId,keys,useStrictDataTypes}": {
-      "get": {
-        "tags": [
-          "timeseries-controller"
-        ],
-        "summary": "getLatestTimeseries",
-        "operationId": "getLatestTimeseries",
-        "parameters": [
-          {
-            "name": "entityId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "keys",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "useStrictDataTypes",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/timeseries/{entityId}/delete{?keys,deleteAllDataForKeys,startTs,endTs}": {
+    "/api/timeseries/{entityId}/delete": {
       "delete": {
         "tags": [
           "timeseries-controller"
@@ -14877,7 +14845,7 @@
         ]
       }
     },
-    "/api/timeseries/{entityId}/values{?keys,startTs,endTs,interval,limit,agg,orderBy,useStrictDataTypes}": {
+    "/api/timeseries/{entityId}/values": {
       "get": {
         "tags": [
           "timeseries-controller"
@@ -15094,6 +15062,181 @@
       }
     },
     "/api/unauthorized/client": {
+      "get": {
+        "tags": [
+          "unauthorized-client-controller"
+        ],
+        "summary": "getUnauthorizedClients",
+        "operationId": "getUnauthorizedClients",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "textSearch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortProperty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDataUnauthorizedClient"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-400": {
+                    "summary": "Bad Request",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid UUID string: 123",
+                      "errorCode": 31,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTP login form": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      },
       "delete": {
         "tags": [
           "unauthorized-client-controller"
@@ -15219,7 +15362,7 @@
         ]
       }
     },
-    "/api/unauthorized/client/by-client-id{?clientId}": {
+    "/api/unauthorized/client/by-client-id": {
       "get": {
         "tags": [
           "unauthorized-client-controller"
@@ -15496,7 +15639,7 @@
         ]
       }
     },
-    "/api/unauthorized/client/v2{?pageSize,page,textSearch,sortProperty,sortOrder,startTime,endTime,clientId,ipAddress,username,reason,passwordProvidedList,tlsUsedList}": {
+    "/api/unauthorized/client/v2": {
       "get": {
         "tags": [
           "unauthorized-client-controller"
@@ -15745,13 +15888,13 @@
         ]
       }
     },
-    "/api/unauthorized/client{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/ws/connection": {
       "get": {
         "tags": [
-          "unauthorized-client-controller"
+          "web-socket-connection-controller"
         ],
-        "summary": "getUnauthorizedClients",
-        "operationId": "getUnauthorizedClients",
+        "summary": "getWebSocketConnections",
+        "operationId": "getWebSocketConnections",
         "parameters": [
           {
             "name": "pageSize",
@@ -15802,7 +15945,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataUnauthorizedClient"
+                  "$ref": "#/components/schemas/PageDataWebSocketConnectionDto"
                 }
               }
             }
@@ -15920,9 +16063,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/ws/connection": {
+      },
       "post": {
         "tags": [
           "web-socket-connection-controller"
@@ -16065,7 +16206,7 @@
         ]
       }
     },
-    "/api/ws/connection/by-name{?name}": {
+    "/api/ws/connection/by-name": {
       "get": {
         "tags": [
           "web-socket-connection-controller"
@@ -16485,14 +16626,22 @@
         ]
       }
     },
-    "/api/ws/connection{?pageSize,page,textSearch,sortProperty,sortOrder}": {
+    "/api/ws/subscription": {
       "get": {
         "tags": [
-          "web-socket-connection-controller"
+          "web-socket-subscription-controller"
         ],
-        "summary": "getWebSocketConnections",
-        "operationId": "getWebSocketConnections",
+        "summary": "getWebSocketSubscriptions",
+        "operationId": "getWebSocketSubscriptions",
         "parameters": [
+          {
+            "name": "webSocketConnectionId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "pageSize",
             "in": "query",
@@ -16542,7 +16691,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDataWebSocketConnectionDto"
+                  "$ref": "#/components/schemas/PageDataWebSocketSubscription"
                 }
               }
             }
@@ -16660,9 +16809,7 @@
             ]
           }
         ]
-      }
-    },
-    "/api/ws/subscription": {
+      },
       "post": {
         "tags": [
           "web-socket-subscription-controller"
@@ -16966,191 +17113,6 @@
         "responses": {
           "200": {
             "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTP login form": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/ws/subscription{?webSocketConnectionId,pageSize,page,textSearch,sortProperty,sortOrder}": {
-      "get": {
-        "tags": [
-          "web-socket-subscription-controller"
-        ],
-        "summary": "getWebSocketSubscriptions",
-        "operationId": "getWebSocketSubscriptions",
-        "parameters": [
-          {
-            "name": "webSocketConnectionId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "textSearch",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortProperty",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortOrder",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageDataWebSocketSubscription"
-                }
-              }
-            }
           },
           "400": {
             "description": "Bad Request",

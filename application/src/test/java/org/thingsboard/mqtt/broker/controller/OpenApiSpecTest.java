@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.nio.charset.StandardCharsets;
@@ -106,6 +108,32 @@ public class OpenApiSpecTest extends AbstractControllerTest {
                 .as("Handlers sharing path + method collapse into one OpenAPI operation. " +
                         "Give the lookup its own /by-<key> path and keep the old mapping as a @Hidden *Legacy method.")
                 .isEmpty();
+    }
+
+    @Test
+    public void givenGeneratedSpec_thenNoGeneratorHostileConstructs() throws Exception {
+        JsonNode spec = JacksonUtil.toJsonNode(fetchSpec());
+        List<String> problems = new ArrayList<>();
+        for (Map.Entry<String, JsonNode> path : spec.get("paths").properties()) {
+            if (path.getKey().contains("{?")) {
+                problems.add("RFC 6570 query template in path key: " + path.getKey());
+            }
+            for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
+                JsonNode responses = operation.getValue().get("responses");
+                if (responses == null) {
+                    continue;
+                }
+                responses.fieldNames().forEachRemaining(code -> {
+                    if (!code.matches("\\d{3}|[1-5]XX|default")) {
+                        problems.add("Invalid response code '" + code + "' in " + operation.getKey() + " " + path.getKey());
+                    }
+                });
+            }
+        }
+        if (spec.findValuesAsText("type").contains("any")) {
+            problems.add("Schema with invalid type 'any'");
+        }
+        assertThat(problems).isEmpty();
     }
 
     private String fetchSpec() throws Exception {
