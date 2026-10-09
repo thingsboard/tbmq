@@ -31,6 +31,7 @@
 package org.thingsboard.mqtt.broker.service.system;
 
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 
 import java.util.Map;
 
@@ -41,7 +42,12 @@ public interface ResourceUsageAlertService {
      * high or critical band records an audit log entry (plus an optional email); dropping back to normal records a
      * recovery entry. Falling from critical to high only updates the tracked band.
      */
-    void evaluate(String serviceId, String serviceType, Map<String, Long> usagePercentByMetric);
+    void evaluate(String serviceId, ServiceType serviceType, Map<String, Long> usagePercentByMetric);
+
+    /**
+     * Forgets the tracked bands of a removed node, so a node that later comes back under the same id alerts afresh.
+     */
+    void onServiceRemoved(String serviceId, ServiceType serviceType);
 
     /**
      * The stored resource usage alert settings, with missing or unreadable values replaced by the defaults.
@@ -49,6 +55,9 @@ public interface ResourceUsageAlertService {
      */
     AdminSettings getAdminSettings();
 
+    /**
+     * Drops this node's cached settings. Saving the settings broadcasts this to every broker.
+     */
     void onSettingsUpdate();
 
 }

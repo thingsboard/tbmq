@@ -30,5 +30,7 @@
  */
 package org.thingsboard.mqtt.broker.service.system;
 
-public record ResourceUsageAlert(String serviceId, String serviceType, String metric, long usage, String level, int threshold) {
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
+
+public record ResourceUsageAlert(String serviceId, ServiceType serviceType, String metric, long usage, UsageLevel level, int threshold) {
 }

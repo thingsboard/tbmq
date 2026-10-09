@@ -21,4 +21,6 @@ public interface SystemSettingsNotificationService {
 
     void onMqttAuthSettingUpdate(MqttAuthSettings mqttAuthSettings);
 
+    void onResourceUsageAlertSettingsUpdate();
+
 }

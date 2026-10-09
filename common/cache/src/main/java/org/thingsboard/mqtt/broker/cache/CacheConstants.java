@@ -44,4 +44,9 @@ public class CacheConstants {
      * Managed by redisTemplate
      */
     public static final String SERVICE_REGISTRY_KEY = "tbmq:service:registry";
+
+    /**
+     * Managed by redisTemplate: the last resource usage band per node and metric
+     */
+    public static final String RESOURCE_USAGE_LEVELS_KEY = "tbmq:resource:usage:levels";
 }

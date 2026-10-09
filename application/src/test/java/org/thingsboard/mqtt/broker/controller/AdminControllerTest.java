@@ -38,13 +38,23 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlertService;
+import org.thingsboard.mqtt.broker.service.system.ResourceUsageLevelStore;
+import org.thingsboard.mqtt.broker.service.system.ResourceUsageLevelStore.LevelKey;
+import org.thingsboard.mqtt.broker.service.system.UsageLevel;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_USAGE;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DISK_USAGE;
 
 @DaoSqlTest
 public class AdminControllerTest extends AbstractControllerTest {
@@ -54,6 +64,10 @@ public class AdminControllerTest extends AbstractControllerTest {
 
     @Autowired
     private AdminSettingsService adminSettingsService;
+    @Autowired
+    private ResourceUsageAlertService resourceUsageAlertService;
+    @Autowired
+    private ResourceUsageLevelStore levelStore;
 
     @Before
     public void beforeTest() throws Exception {
@@ -64,6 +78,8 @@ public class AdminControllerTest extends AbstractControllerTest {
     @After
     public void afterTest() {
         adminSettingsService.deleteAdminSettingsByKey(SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey());
+        // The context is shared: thresholds cached by these tests would otherwise judge real node samples elsewhere.
+        resourceUsageAlertService.onSettingsUpdate();
     }
 
     @Test
@@ -77,7 +93,7 @@ public class AdminControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenValidSettings_whenSaved_thenTheyAreReadBack() throws Exception {
-        ResourceUsageAlertSettings settings = new ResourceUsageAlertSettings(60, 90, true, "ops@example.com; admin@example.com");
+        ResourceUsageAlertSettings settings = new ResourceUsageAlertSettings(60, 90, true, List.of("ops@example.com", "admin@example.com"));
 
         save(settings).andExpect(status().isOk());
 
@@ -85,7 +101,7 @@ public class AdminControllerTest extends AbstractControllerTest {
         assertThat(stored.getId()).isNotNull();
         assertThat(toSettings(stored)).isEqualTo(settings);
 
-        ResourceUsageAlertSettings updated = new ResourceUsageAlertSettings(70, 80, false, "");
+        ResourceUsageAlertSettings updated = new ResourceUsageAlertSettings(70, 80, false, List.of());
         stored.setJsonValue(JacksonUtil.valueToTree(updated));
         doPost(SETTINGS_URL, stored).andExpect(status().isOk());
 
@@ -106,11 +122,60 @@ public class AdminControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenInvalidEmail_whenSaved_thenRejected() throws Exception {
-        save(new ResourceUsageAlertSettings(75, 85, true, "ops@example.com, not-an-email"))
+        save(new ResourceUsageAlertSettings(75, 85, true, List.of("ops@example.com", "not-an-email")))
                 .andExpect(status().isBadRequest())
                 .andExpect(statusReason(containsString("not-an-email")));
 
         assertThat(doGet(RESOURCE_USAGE_ALERTS_URL, AdminSettings.class).getId()).isNull();
+    }
+
+    @Test
+    public void givenMalformedSettings_whenSaved_thenRejected() throws Exception {
+        AdminSettings adminSettings = new AdminSettings();
+        adminSettings.setKey(SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey());
+        adminSettings.setJsonValue(JacksonUtil.toJsonNode("{\"highUsage\":\"abc\"}"));
+
+        doPost(SETTINGS_URL, adminSettings)
+                .andExpect(status().isBadRequest())
+                .andExpect(statusReason(containsString("Invalid resource usage alert settings")));
+    }
+
+    @Test
+    public void givenCachedThresholds_whenLowerThresholdsAreSaved_thenTheNextSampleUsesThem() throws Exception {
+        String serviceId = "admin-controller-test-node";
+        LevelKey levelKey = new LevelKey(ServiceType.TBMQ, serviceId, CPU_USAGE);
+        resourceUsageAlertService.onSettingsUpdate();
+        try {
+            resourceUsageAlertService.evaluate(serviceId, ServiceType.TBMQ, Map.of(CPU_USAGE, 70L));
+            assertThat(levelStore.get(levelKey)).isEqualTo(UsageLevel.NORMAL);
+
+            save(new ResourceUsageAlertSettings(50, 60, false, List.of())).andExpect(status().isOk());
+            resourceUsageAlertService.evaluate(serviceId, ServiceType.TBMQ, Map.of(CPU_USAGE, 70L));
+
+            assertThat(levelStore.get(levelKey)).isEqualTo(UsageLevel.CRITICAL);
+        } finally {
+            levelStore.remove(levelKey);
+        }
+    }
+
+    @Test
+    public void givenLevelsOfSeveralNodes_whenRemoveAll_thenOnlyThatNodeIsCleared() {
+        LevelKey broker = new LevelKey(ServiceType.TBMQ, "n1", CPU_USAGE);
+        LevelKey brokerDisk = new LevelKey(ServiceType.TBMQ, "n1", DISK_USAGE);
+        LevelKey executorSharingTheId = new LevelKey(ServiceType.TBMQ_INTEGRATION_EXECUTOR, "n1", CPU_USAGE);
+        LevelKey brokerWithIdPrefix = new LevelKey(ServiceType.TBMQ, "n10", CPU_USAGE);
+        List<LevelKey> keys = List.of(broker, brokerDisk, executorSharingTheId, brokerWithIdPrefix);
+        keys.forEach(key -> levelStore.put(key, UsageLevel.HIGH));
+        try {
+            levelStore.removeAll(ServiceType.TBMQ, "n1");
+
+            assertThat(levelStore.get(broker)).isEqualTo(UsageLevel.NORMAL);
+            assertThat(levelStore.get(brokerDisk)).isEqualTo(UsageLevel.NORMAL);
+            assertThat(levelStore.get(executorSharingTheId)).isEqualTo(UsageLevel.HIGH);
+            assertThat(levelStore.get(brokerWithIdPrefix)).isEqualTo(UsageLevel.HIGH);
+        } finally {
+            keys.forEach(levelStore::remove);
+        }
     }
 
     private ResultActions save(ResourceUsageAlertSettings settings) throws Exception {

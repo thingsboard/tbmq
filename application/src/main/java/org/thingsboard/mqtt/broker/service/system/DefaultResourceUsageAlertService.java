@@ -33,6 +33,7 @@ package org.thingsboard.mqtt.broker.service.system;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
@@ -44,20 +45,26 @@ import org.thingsboard.mqtt.broker.common.data.audit.AuditLog;
 import org.thingsboard.mqtt.broker.common.data.audit.EntityType;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.audit.AuditLogService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
+import org.thingsboard.mqtt.broker.service.mail.NotificationMailExecutorService;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
+import org.thingsboard.mqtt.broker.service.system.ResourceUsageLevelStore.LevelKey;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -67,45 +74,71 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
     static final String SYSTEM_USER_NAME = "system";
     static final int RECOVERY_MARGIN = 5;
     static final long SETTINGS_CACHE_TTL_MS = TimeUnit.SECONDS.toMillis(30);
+    static final String CLUSTER_NODE_PATH = "/monitoring/cluster?nodeId=";
     private static final int USERS_PAGE_SIZE = 100;
 
     private final AdminSettingsService adminSettingsService;
     private final AuditLogService auditLogService;
     private final MailService mailService;
     private final UserService userService;
+    private final SystemSecurityService systemSecurityService;
+    private final ResourceUsageLevelStore levelStore;
+    private final NotificationMailExecutorService notificationMailExecutor;
 
-    // Last band seen per node and metric, so an alert fires once per crossing instead of on every sample.
-    private final ConcurrentMap<LevelKey, UsageLevel> levels = new ConcurrentHashMap<>();
+    private final AtomicLong settingsVersion = new AtomicLong();
     private volatile CachedSettings cachedSettings;
     long settingsCacheTtlMs = SETTINGS_CACHE_TTL_MS;
 
     @Override
-    public void evaluate(String serviceId, String serviceType, Map<String, Long> usagePercentByMetric) {
+    public void evaluate(String serviceId, ServiceType serviceType, Map<String, Long> usagePercentByMetric) {
         if (usagePercentByMetric == null || usagePercentByMetric.isEmpty()) {
             return;
         }
         ResourceUsageAlertSettings settings = currentSettings();
+        List<ResourceUsageAlert> raised = new ArrayList<>();
+        try {
+            evaluateMetrics(serviceId, serviceType, usagePercentByMetric, settings, raised);
+        } finally {
+            // The bands of alerts already raised are stored, so a later sample would not raise them again.
+            if (settings.isEmailEnabled() && !raised.isEmpty()) {
+                // Recipients may come from the user table: resolve them off the scheduler and uplink consumer threads.
+                notificationMailExecutor.execute(() -> notifyByEmail(raised, settings));
+            }
+        }
+    }
+
+    private void evaluateMetrics(String serviceId, ServiceType serviceType, Map<String, Long> usagePercentByMetric,
+                                 ResourceUsageAlertSettings settings, List<ResourceUsageAlert> raised) {
         usagePercentByMetric.forEach((metric, usage) -> {
+            // The band is tracked so an alert fires once per crossing instead of on every sample.
             LevelKey key = new LevelKey(serviceType, serviceId, metric);
-            UsageLevel previous = levels.getOrDefault(key, UsageLevel.NORMAL);
+            UsageLevel previous = levelStore.get(key);
             UsageLevel level = nextLevel(previous, usage, settings);
             if (level == previous) {
                 return;
             }
             if (level == UsageLevel.NORMAL) {
-                levels.remove(key);
+                levelStore.remove(key);
                 audit(ActionType.RESOURCE_USAGE_RECOVERED, serviceId, serviceType, metric, usage, level, settings);
                 return;
             }
-            levels.put(key, level);
-            if (level.ordinal() < previous.ordinal()) {
+            levelStore.put(key, level);
+            if (level.isLowerThan(previous)) {
                 return;
             }
             audit(ActionType.RESOURCE_USAGE_ALERT, serviceId, serviceType, metric, usage, level, settings);
-            if (settings.isEmailEnabled()) {
-                notifyByEmail(serviceId, serviceType, metric, usage, level, settings);
-            }
+            raised.add(new ResourceUsageAlert(serviceId, serviceType, metric, usage, level, threshold(level, settings)));
         });
+    }
+
+    @Override
+    public void onServiceRemoved(String serviceId, ServiceType serviceType) {
+        // The node is already gone from the registry: a failure here must not fail its removal.
+        try {
+            levelStore.removeAll(serviceType, serviceId);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to clear the resource usage levels of removed {} node", serviceId, serviceType, e);
+        }
     }
 
     @Override
@@ -119,14 +152,16 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
 
     @Override
     public void onSettingsUpdate() {
-        cachedSettings = null;
+        settingsVersion.incrementAndGet();
     }
 
     ResourceUsageAlertSettings currentSettings() {
         CachedSettings cached = cachedSettings;
+        // Read before loading: settings loaded while an update lands are tagged stale and reloaded on the next call.
+        long version = settingsVersion.get();
         long now = System.currentTimeMillis();
-        if (cached == null || now - cached.loadedAt() >= settingsCacheTtlMs) {
-            cached = new CachedSettings(toSettings(findStoredSettings()), now);
+        if (cached == null || cached.version() != version || now - cached.loadedAt() >= settingsCacheTtlMs) {
+            cached = new CachedSettings(toSettings(findStoredSettings()), now, version);
             cachedSettings = cached;
         }
         return cached.settings();
@@ -151,10 +186,12 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
     /**
      * Rising into a band takes usage above its threshold; leaving a band takes usage at or below its threshold minus
      * {@link #RECOVERY_MARGIN}, so a node hovering around a threshold does not flap between bands on every sample.
+     * The critical floor never drops below the high threshold, so thresholds closer than the margin keep the bands
+     * ordered.
      */
     static UsageLevel nextLevel(UsageLevel previous, long usage, ResourceUsageAlertSettings settings) {
-        if (usage > settings.getCriticalUsage()
-                || (previous == UsageLevel.CRITICAL && usage > settings.getCriticalUsage() - RECOVERY_MARGIN)) {
+        int criticalFloor = Math.max(settings.getCriticalUsage() - RECOVERY_MARGIN, settings.getHighUsage());
+        if (usage > settings.getCriticalUsage() || (previous == UsageLevel.CRITICAL && usage > criticalFloor)) {
             return UsageLevel.CRITICAL;
         }
         if (usage > settings.getHighUsage()
@@ -164,19 +201,23 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
         return UsageLevel.NORMAL;
     }
 
-    private void audit(ActionType actionType, String serviceId, String serviceType, String metric, long usage,
+    private static int threshold(UsageLevel level, ResourceUsageAlertSettings settings) {
+        return level == UsageLevel.CRITICAL ? settings.getCriticalUsage() : settings.getHighUsage();
+    }
+
+    private void audit(ActionType actionType, String serviceId, ServiceType serviceType, String metric, long usage,
                        UsageLevel level, ResourceUsageAlertSettings settings) {
         // logEntityAction needs a real user; these entries are written by the system itself.
         AuditLog auditLog = new AuditLog(UUID.randomUUID());
         auditLog.setCreatedTime(System.currentTimeMillis());
-        auditLog.setEntityId(ServiceInfoIds.auditEntityId(serviceId, serviceType));
+        auditLog.setEntityId(ServiceInfoIds.auditEntityId(serviceId, serviceType.name()));
         auditLog.setEntityType(EntityType.SERVICE_INFO);
         auditLog.setEntityName(serviceId);
         auditLog.setUserName(SYSTEM_USER_NAME);
         auditLog.setActionType(actionType);
         ObjectNode actionData = JacksonUtil.newObjectNode();
         actionData.put("serviceId", serviceId);
-        actionData.put("serviceType", serviceType);
+        actionData.put("serviceType", serviceType.name());
         actionData.put("metric", metric);
         actionData.put("usage", usage);
         actionData.put("level", level.name());
@@ -191,21 +232,33 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
         }
     }
 
-    private void notifyByEmail(String serviceId, String serviceType, String metric, long usage, UsageLevel level,
-                               ResourceUsageAlertSettings settings) {
-        List<String> recipients = recipients(settings);
-        if (recipients.isEmpty()) {
-            log.debug("[{}] No recipients for resource usage alert", serviceId);
-            return;
+    void notifyByEmail(List<ResourceUsageAlert> alerts, ResourceUsageAlertSettings settings) {
+        try {
+            List<String> recipients = recipients(settings);
+            if (recipients.isEmpty()) {
+                log.debug("[{}] No recipients for resource usage alert", alerts.get(0).serviceId());
+                return;
+            }
+            String baseUrl = baseUrl();
+            for (ResourceUsageAlert alert : alerts) {
+                String nodeLink = baseUrl == null ? null : baseUrl + CLUSTER_NODE_PATH + URLEncoder.encode(
+                        ServiceInfoIds.timeseriesEntityId(alert.serviceId(), alert.serviceType().name()), StandardCharsets.UTF_8);
+                for (String email : recipients) {
+                    try {
+                        mailService.sendResourceUsageAlertEmail(alert, nodeLink, email);
+                    } catch (Exception e) {
+                        log.warn("[{}] Failed to send resource usage alert to {}", alert.serviceId(), email, e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[{}] Failed to notify about resource usage alerts", alerts.get(0).serviceId(), e);
         }
-        int threshold = level == UsageLevel.CRITICAL ? settings.getCriticalUsage() : settings.getHighUsage();
-        ResourceUsageAlert alert = new ResourceUsageAlert(serviceId, serviceType, metric, usage, level.name(), threshold);
-        mailService.sendResourceUsageAlertEmailAsync(alert, recipients);
     }
 
     private List<String> recipients(ResourceUsageAlertSettings settings) {
-        List<String> emails = settings.emailList();
-        if (!emails.isEmpty()) {
+        List<String> emails = settings.getEmails();
+        if (emails != null && !emails.isEmpty()) {
             return emails;
         }
         List<String> userEmails = new ArrayList<>();
@@ -222,14 +275,20 @@ public class DefaultResourceUsageAlertService implements ResourceUsageAlertServi
         return userEmails;
     }
 
-    enum UsageLevel {
-        NORMAL, HIGH, CRITICAL
+    /**
+     * The configured base URL of the UI, or null when none is set, in which case the email carries no link.
+     */
+    private String baseUrl() {
+        try {
+            String baseUrl = systemSecurityService.getWlBaseUrl(null);
+            return URI.create(baseUrl).getHost() == null ? null : Strings.CS.removeEnd(baseUrl, "/");
+        } catch (Exception e) {
+            log.debug("Failed to resolve the base URL for resource usage alert emails", e);
+            return null;
+        }
     }
 
-    record LevelKey(String serviceType, String serviceId, String metric) {
-    }
-
-    private record CachedSettings(ResourceUsageAlertSettings settings, long loadedAt) {
+    private record CachedSettings(ResourceUsageAlertSettings settings, long loadedAt, long version) {
     }
 
 }

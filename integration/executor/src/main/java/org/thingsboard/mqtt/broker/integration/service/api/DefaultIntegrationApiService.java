@@ -85,8 +85,9 @@ public class DefaultIntegrationApiService implements IntegrationApiService {
         StatsTbQueueCallback wrappedCallback = new StatsTbQueueCallback(null, tbCoreProducerStats);
 
         var msg = UplinkIntegrationMsgProto.newBuilder().setServiceInfoProto(data).build();
-        // Keyed by the service id so every sample of one executor lands on one partition, hence on one broker that
-        // keeps the executor's resource usage alert state.
+        // Keyed by the service id so the samples of one executor are consumed in order, by one broker at a time. The
+        // resource usage alert band lives in Redis, so the broker that takes the partition over after a rebalance
+        // continues from it.
         UUID key = UUID.nameUUIDFromBytes(data.getServiceId().getBytes(StandardCharsets.UTF_8));
         queueProvider.getIeUplinkProducer().send(new TbProtoQueueMsg<>(key, msg), wrappedCallback);
     }

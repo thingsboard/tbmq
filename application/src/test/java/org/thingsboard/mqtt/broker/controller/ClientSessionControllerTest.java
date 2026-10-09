@@ -38,8 +38,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfosImpl;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,15 +60,20 @@ public class ClientSessionControllerTest extends AbstractControllerTest {
     private static final String BY_NODE_URL = "/api/client-session/info/by-node";
     private static final String CONNECTED_CLIENT = "by_node_connected";
     private static final String PERSISTED_CLIENT = "by_node_persisted";
+    private static final String APPLICATION_CLIENT = "by_node_application";
 
     @Autowired
     private ServiceInfoProvider serviceInfoProvider;
+    @Autowired
+    private MqttClientCredentialsService credentialsService;
 
     private final List<MqttClient> clients = new ArrayList<>();
     private String serviceId;
+    private MqttClientCredentials applicationCredentials;
 
+    // Not named beforeTest: that would override the base method that resets the MQTT auth providers.
     @Before
-    public void beforeTest() throws Exception {
+    public void loginAndResolveNode() throws Exception {
         serviceId = serviceInfoProvider.getServiceId();
         loginSysAdmin();
     }
@@ -76,6 +86,10 @@ public class ClientSessionControllerTest extends AbstractControllerTest {
             }
             client.close();
         }
+        if (applicationCredentials != null) {
+            credentialsService.deleteCredentials(applicationCredentials.getId());
+            mqttAuthProviderManagerService.disableAuthProvider(getMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC).getId());
+        }
         MqttClient cleaner = new MqttClient(SERVER_URI + mqttPort, PERSISTED_CLIENT);
         cleaner.connect(options(true, 0L));
         cleaner.disconnect();
@@ -84,7 +98,7 @@ public class ClientSessionControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenConnectedAndPersistedSessions_whenGetStatsByNode_thenThisNodeCountsThem() throws Exception {
-        JsonNode before = nodeStats();
+        JsonNode before = baselineNodeStats();
 
         connect(CONNECTED_CLIENT, options(true, 0L));
         connect(PERSISTED_CLIENT, options(false, 3600L)).disconnect();
@@ -98,6 +112,28 @@ public class ClientSessionControllerTest extends AbstractControllerTest {
             assertThat(delta(before, after, "applicationCount")).isZero();
             assertThat(delta(before, after, "integrationCount")).isZero();
         });
+    }
+
+    @Test
+    public void givenApplicationClient_whenGetStatsByNode_thenItIsCountedAsApplication() throws Exception {
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(APPLICATION_CLIENT, null));
+        enableBasicProvider();
+        JsonNode before = baselineNodeStats();
+
+        connect(APPLICATION_CLIENT, options(true, 0L));
+
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            JsonNode after = nodeStats();
+            assertThat(delta(before, after, "applicationCount")).isEqualTo(1);
+            assertThat(delta(before, after, "deviceCount")).isZero();
+            assertThat(delta(before, after, "connectedCount")).isEqualTo(1);
+        });
+    }
+
+    // The endpoint memoizes its result, so the baseline is read once the memo of an earlier test has expired.
+    private JsonNode baselineNodeStats() throws Exception {
+        Thread.sleep(ClientSessionPageInfosImpl.STATS_BY_NODE_TTL_MS + 100);
+        return nodeStats();
     }
 
     private JsonNode nodeStats() throws Exception {

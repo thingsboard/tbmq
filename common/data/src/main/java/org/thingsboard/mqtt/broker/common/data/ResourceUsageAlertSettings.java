@@ -33,9 +33,8 @@ package org.thingsboard.mqtt.broker.common.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -47,22 +46,14 @@ public class ResourceUsageAlertSettings {
     public static final int DEFAULT_CRITICAL_USAGE = 85;
     public static final int MIN_USAGE = 1;
     public static final int MAX_USAGE = 100;
-    private static final String EMAIL_SEPARATORS = "[,;\\s]+";
 
     private int highUsage = DEFAULT_HIGH_USAGE;
     private int criticalUsage = DEFAULT_CRITICAL_USAGE;
     private boolean emailEnabled;
-    private String emails;
+    private List<String> emails = new ArrayList<>();
 
     public static ResourceUsageAlertSettings defaults() {
         return new ResourceUsageAlertSettings();
-    }
-
-    public List<String> emailList() {
-        if (StringUtils.isBlank(emails)) {
-            return List.of();
-        }
-        return Arrays.stream(emails.split(EMAIL_SEPARATORS)).filter(StringUtils::isNotBlank).toList();
     }
 
     public boolean hasValidThresholds() {

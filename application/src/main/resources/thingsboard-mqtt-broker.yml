@@ -710,6 +710,8 @@ actors:
     mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:4}"
     # Thread pool size for the password reset emails executor service.
     mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:4}"
+    # Thread pool size for the notification emails executor service (resource usage alerts).
+    mail_notification_thread_pool_size: "${ACTORS_RULE_MAIL_NOTIFICATION_THREAD_POOL_SIZE:2}"
 
 # Platform integrations parameters
 integrations:

@@ -30,18 +30,19 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.common.data.audit.ActionStatus;
 import org.thingsboard.mqtt.broker.common.data.audit.ActionType;
+import org.thingsboard.mqtt.broker.common.data.audit.AuditLog;
 import org.thingsboard.mqtt.broker.common.data.audit.EntityType;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.audit.AuditLogService;
@@ -49,13 +50,12 @@ import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.service.system.ServiceInfoIds;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DaoSqlTest
@@ -64,7 +64,7 @@ public class AppControllerTest extends AbstractControllerTest {
     private static final String SERVICE_INFO_URL = "/api/app/service/info";
     private static final String SHARED_ID = "app-controller-test-node";
 
-    @MockitoBean
+    @Autowired
     private AuditLogService auditLogService;
     @Autowired
     private SystemInfoService systemInfoService;
@@ -97,12 +97,18 @@ public class AppControllerTest extends AbstractControllerTest {
         assertThat(registryFields()).contains(SHARED_ID)
                 .doesNotContain(ServiceInfoIds.registryField(SHARED_ID, ServiceType.TBMQ_INTEGRATION_EXECUTOR.name()));
         assertThat(systemInfoService.getTbmqServiceIds()).contains(SHARED_ID);
+        awaitDeletedAuditLog(ServiceType.TBMQ_INTEGRATION_EXECUTOR);
+    }
 
-        ArgumentCaptor<HasId> entity = ArgumentCaptor.forClass(HasId.class);
-        verify(auditLogService).logEntityAction(any(), eq(EntityType.SERVICE_INFO), entity.capture(), eq(SHARED_ID),
-                eq(ActionType.DELETED), isNull());
-        assertThat(entity.getValue().getId())
-                .isEqualTo(ServiceInfoIds.auditEntityId(SHARED_ID, ServiceType.TBMQ_INTEGRATION_EXECUTOR.name()));
+    @Test
+    public void givenBrokerAndExecutorSharingAnId_whenDeleteBroker_thenExecutorStaysRegistered() throws Exception {
+        doDelete(SERVICE_INFO_URL, "serviceId", SHARED_ID, "serviceType", ServiceType.TBMQ.name())
+                .andExpect(status().isOk());
+
+        assertThat(registryFields()).doesNotContain(SHARED_ID)
+                .contains(ServiceInfoIds.registryField(SHARED_ID, ServiceType.TBMQ_INTEGRATION_EXECUTOR.name()));
+        assertThat(systemInfoService.getTbmqServiceIds()).doesNotContain(SHARED_ID);
+        awaitDeletedAuditLog(ServiceType.TBMQ);
     }
 
     @Test
@@ -134,6 +140,18 @@ public class AppControllerTest extends AbstractControllerTest {
                 .setServiceId(SHARED_ID)
                 .setServiceType(serviceType.name())
                 .build());
+    }
+
+    /**
+     * The delete is found under the same entity id the node's resource usage alerts are recorded with.
+     */
+    private void awaitDeletedAuditLog(ServiceType serviceType) {
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            List<AuditLog> logs = auditLogService.findAuditLogsByEntityId(EntityType.SERVICE_INFO,
+                    ServiceInfoIds.auditEntityId(SHARED_ID, serviceType.name()), List.of(ActionType.DELETED), new TimePageLink(10)).getData();
+            assertThat(logs).extracting(AuditLog::getEntityName, AuditLog::getActionStatus)
+                    .contains(tuple(SHARED_ID, ActionStatus.SUCCESS));
+        });
     }
 
     private Set<Object> registryFields() {

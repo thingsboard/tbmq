@@ -40,8 +40,11 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MEMORY_USAGE;
@@ -82,7 +85,7 @@ public class TimeseriesControllerTest extends AbstractControllerTest {
         JsonNode executor = response.get(EXECUTOR_ID);
         assertThat(executor.at("/" + CPU_USAGE + "/0/value").asLong()).isEqualTo(77L);
         assertThat(executor.at("/" + CPU_USAGE + "/0/value").isNumber()).isTrue();
-        assertThat(executor.at("/" + MEMORY_USAGE + "/0/value").isNull()).isTrue();
+        assertThat(executor.has(MEMORY_USAGE)).isFalse();
         assertThat(executor.has(CPU_COUNT)).isFalse();
     }
 
@@ -108,6 +111,24 @@ public class TimeseriesControllerTest extends AbstractControllerTest {
 
         assertThat(response.get("ts-batch-unknown").isEmpty()).isTrue();
         assertThat(response.get(BROKER_ID).has(CPU_USAGE)).isTrue();
+    }
+
+    @Test
+    public void givenBlankAndRepeatedIds_whenGetLatestBatch_thenEachIdIsAnsweredOnce() throws Exception {
+        JsonNode response = doGetAsync(BATCH_URL + "?entityIds={ids}&keys={keys}", JsonNode.class,
+                BROKER_ID + ",," + BROKER_ID, CPU_USAGE);
+
+        assertThat(response.fieldNames()).toIterable().containsExactly(BROKER_ID);
+        assertThat(doGetAsync(BATCH_URL + "?entityIds={ids}", JsonNode.class, ",").isEmpty()).isTrue();
+    }
+
+    @Test
+    public void givenTooManyIds_whenGetLatestBatch_thenRejected() throws Exception {
+        String ids = IntStream.rangeClosed(0, TimeseriesController.MAX_BATCH_ENTITY_IDS)
+                .mapToObj(i -> "ts-batch-" + i)
+                .collect(Collectors.joining(","));
+
+        doGet(BATCH_URL + "?entityIds=" + ids).andExpect(status().isBadRequest());
     }
 
 }

@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
@@ -70,6 +71,8 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_
 @RequiredArgsConstructor
 public class TimeseriesController extends BaseController {
 
+    static final int MAX_BATCH_ENTITY_IDS = 100;
+
     private final TimeseriesService timeseriesService;
     private final TbTimeseriesService tbTimeseriesService;
 
@@ -100,15 +103,15 @@ public class TimeseriesController extends BaseController {
         checkParameter(ENTITY_IDS, entityIdsStr);
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         List<String> entityIds = toKeysList(entityIdsStr).stream().filter(StringUtils::isNotBlank).distinct().toList();
-        List<String> keys = toKeysList(keysStr);
-        List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(entityIds.size());
-        for (String entityId : entityIds) {
-            futures.add(keys == null ? timeseriesService.findAllLatest(entityId) : timeseriesService.findLatest(entityId, keys));
+        if (entityIds.size() > MAX_BATCH_ENTITY_IDS) {
+            throw new ThingsboardException("At most " + MAX_BATCH_ENTITY_IDS + " entity ids can be requested at once!",
+                    ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
-        ListenableFuture<Map<String, Map<String, List<TsData>>>> future = Futures.transform(Futures.allAsList(futures), latestByEntity -> {
+        List<String> keys = toKeysList(keysStr);
+        ListenableFuture<Map<String, Map<String, List<TsData>>>> future = Futures.transform(timeseriesService.findLatestByEntityIds(entityIds, keys), latestByEntity -> {
             Map<String, Map<String, List<TsData>>> response = new LinkedHashMap<>();
-            for (int i = 0; i < entityIds.size(); i++) {
-                response.put(entityIds.get(i), toTsDataMap(latestByEntity.get(i), useStrictDataTypes));
+            for (String entityId : entityIds) {
+                response.put(entityId, toTsDataMap(latestByEntity.get(entityId), useStrictDataTypes));
             }
             return response;
         }, MoreExecutors.directExecutor());

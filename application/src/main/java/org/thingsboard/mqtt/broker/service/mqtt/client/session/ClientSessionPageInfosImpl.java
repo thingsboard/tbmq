@@ -46,8 +46,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
+    public static final long STATS_BY_NODE_TTL_MS = 2_000;
+
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
+
+    private volatile CachedStatsByNode cachedStatsByNode;
+    long statsByNodeTtlMs = STATS_BY_NODE_TTL_MS;
 
     @Override
     public PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink) {
@@ -111,8 +116,31 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         return new ClientSessionStatsInfoDto(connectedCount, disconnectedCount, totalCount);
     }
 
+    /**
+     * The cluster page polls this every few seconds from every open tab, and each call copies and walks the whole
+     * session cache, so the result is shared for {@link #STATS_BY_NODE_TTL_MS}.
+     */
     @Override
     public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode() {
+        CachedStatsByNode cached = cachedStatsByNode;
+        if (isFresh(cached)) {
+            return cached.stats();
+        }
+        synchronized (this) {
+            cached = cachedStatsByNode;
+            if (!isFresh(cached)) {
+                cached = new CachedStatsByNode(countSessionsByNode(), System.currentTimeMillis());
+                cachedStatsByNode = cached;
+            }
+            return cached.stats();
+        }
+    }
+
+    private boolean isFresh(CachedStatsByNode cached) {
+        return cached != null && System.currentTimeMillis() - cached.computedAt() < statsByNodeTtlMs;
+    }
+
+    private Map<String, ClientSessionNodeStatsInfoDto> countSessionsByNode() {
         Map<String, NodeSessionCounter> countersByNode = new HashMap<>();
         for (ClientSessionInfo clientSessionInfo : clientSessionCache.getAllClientSessions().values()) {
             String nodeId = clientSessionInfo.getServiceId();
@@ -122,7 +150,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         }
         Map<String, ClientSessionNodeStatsInfoDto> result = new HashMap<>(countersByNode.size());
         countersByNode.forEach((nodeId, counter) -> result.put(nodeId, counter.toDto()));
-        return result;
+        return Map.copyOf(result);
     }
 
     @Override
@@ -247,5 +275,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                     isInTimeRange(clientSessionInfo.getDisconnectedAt(), startTime, endTime);
         }
         return true;
+    }
+
+    private record CachedStatsByNode(Map<String, ClientSessionNodeStatsInfoDto> stats, long computedAt) {
     }
 }

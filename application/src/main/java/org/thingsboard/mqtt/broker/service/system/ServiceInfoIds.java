@@ -37,10 +37,12 @@ import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ServiceInfoIds {
 
-    static final String SEPARATOR = ":";
+    private static final String SEPARATOR = ":";
 
     /**
      * Brokers are registered under their bare service id, as they always were, so older nodes keep finding them.
@@ -60,12 +62,30 @@ public class ServiceInfoIds {
     }
 
     /**
-     * Stable audit log entity id of a service, so every audit entry of one service can be found by entity id.
-     * Without a type (an operation on every service registered under the id) it is derived from the id alone.
+     * Stable audit log entity id of a service, derived from its registry field, so every audit entry of one service
+     * can be found by one entity id. An operation without a type targets the bare field, which is the broker's.
      */
     public static UUID auditEntityId(String serviceId, String serviceType) {
-        String name = serviceType == null ? serviceId : serviceType + SEPARATOR + serviceId;
+        String name = serviceType == null ? serviceId : registryField(serviceId, serviceType);
         return UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Inverse of {@link #registryField}: a field prefixed by a known service type is typed, anything else is a bare
+     * service id (a broker, or an entry written before typed fields) whose type is the stored value.
+     */
+    static RegistryEntry parseRegistryField(String field, String value) {
+        int separator = field.indexOf(SEPARATOR);
+        if (separator > 0) {
+            String prefix = field.substring(0, separator);
+            if (ServiceType.findByName(prefix).isPresent()) {
+                return new RegistryEntry(field.substring(separator + 1), prefix);
+            }
+        }
+        return new RegistryEntry(field, value == null ? UNKNOWN : value);
+    }
+
+    record RegistryEntry(String serviceId, String serviceType) {
     }
 
 }

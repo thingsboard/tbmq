@@ -134,6 +134,8 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
             throw new DataValidationException(String.format("Resource usage thresholds must satisfy %d <= high usage < critical usage <= %d!",
                     ResourceUsageAlertSettings.MIN_USAGE, ResourceUsageAlertSettings.MAX_USAGE));
         }
-        settings.emailList().forEach(DataValidator::validateEmail);
+        if (settings.getEmails() != null) {
+            settings.getEmails().forEach(DataValidator::validateEmail);
+        }
     }
 }

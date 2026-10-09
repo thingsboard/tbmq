@@ -54,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
@@ -100,40 +102,32 @@ public class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    public void testGetClientSessionStatsInfoByNode() {
-        doReturn(Map.of(
-                "c1", getClientSessionInfo("c1", "tbmq1", true),
-                "c2", getClientSessionInfo("c2", "tbmq1", false),
-                "c3", getClientSessionInfo("c3", "tbmq2", true)
-        )).when(clientSessionCache).getAllClientSessions();
-
-        Map<String, ClientSessionNodeStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
-
-        assertEquals(Set.of("tbmq1", "tbmq2"), statsByNode.keySet());
-        assertEquals(1, statsByNode.get("tbmq1").getConnectedCount());
-        assertEquals(1, statsByNode.get("tbmq1").getDisconnectedCount());
-        assertEquals(2, statsByNode.get("tbmq1").getTotalCount());
-        assertEquals(2, statsByNode.get("tbmq1").getDeviceCount());
-        assertEquals(0, statsByNode.get("tbmq1").getApplicationCount());
-        assertEquals(0, statsByNode.get("tbmq1").getIntegrationCount());
-        assertEquals(1, statsByNode.get("tbmq2").getConnectedCount());
-        assertEquals(0, statsByNode.get("tbmq2").getDisconnectedCount());
-        assertEquals(1, statsByNode.get("tbmq2").getTotalCount());
-    }
-
-    @Test
     public void testGetClientSessionStatsInfoByNodeCountsEveryClientTypeAndSkipsSessionsWithoutNode() {
         long now = System.currentTimeMillis();
         doReturn(Map.of(
                 "device", getClientSessionInfo("device", true, "tbmq1", true, ClientType.DEVICE, now, 0),
                 "application", getClientSessionInfo("application", false, "tbmq1", false, ClientType.APPLICATION, now, now),
                 "integration", getClientSessionInfo("integration", true, "tbmq1", true, ClientType.INTEGRATION, now, 0),
+                "device2", getClientSessionInfo("device2", true, "tbmq2", true, ClientType.DEVICE, now, 0),
                 "orphan", getClientSessionInfo("orphan", true, null, true, ClientType.DEVICE, now, 0)
         )).when(clientSessionCache).getAllClientSessions();
 
         Map<String, ClientSessionNodeStatsInfoDto> statsByNode = clientSessionPageInfos.getClientSessionStatsInfoByNode();
 
-        assertEquals(Map.of("tbmq1", new ClientSessionNodeStatsInfoDto(2, 1, 3, 1, 1, 1)), statsByNode);
+        assertEquals(Map.of(
+                "tbmq1", new ClientSessionNodeStatsInfoDto(2, 1, 3, 1, 1, 1),
+                "tbmq2", new ClientSessionNodeStatsInfoDto(1, 0, 1, 1, 0, 0)), statsByNode);
+    }
+
+    @Test
+    public void testGetClientSessionStatsInfoByNodeSharesOneScanWithinTheTtl() {
+        clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        verify(clientSessionCache, times(1)).getAllClientSessions();
+
+        clientSessionPageInfos.statsByNodeTtlMs = 0;
+        clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        verify(clientSessionCache, times(2)).getAllClientSessions();
     }
 
     @Test

@@ -34,15 +34,12 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlert;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -128,35 +125,25 @@ public class DefaultMailService implements MailService {
     }
 
     @Override
-    public void sendResourceUsageAlertEmail(ResourceUsageAlert alert, String email) throws ThingsboardException {
+    public void sendResourceUsageAlertEmail(ResourceUsageAlert alert, String nodeLink, String email) throws ThingsboardException {
         String metricName = messages.getMessage("resource.usage.metric." + alert.metric(), null, alert.metric(), Locale.US);
-        String level = alert.level().toLowerCase(Locale.ROOT);
+        String level = alert.level().name().toLowerCase(Locale.ROOT);
         String subject = messages.getMessage("resource.usage.alert.subject",
                 new Object[]{metricName, level, alert.serviceId(), alert.usage()}, Locale.US);
 
         Map<String, Object> model = new HashMap<>();
         model.put("serviceId", alert.serviceId());
-        model.put("serviceType", serviceTypeLabel(alert.serviceType()));
+        model.put("serviceType", alert.serviceType().getLabel());
         model.put("metricName", metricName);
         model.put("usage", alert.usage());
         model.put("level", level);
         model.put("threshold", alert.threshold());
+        model.put("nodeLink", nodeLink);
         model.put(TARGET_EMAIL, email);
 
         String message = mergeTemplateIntoString("tbmq.resource.usage.alert.ftl", model);
 
         sendMail(mailSender, mailFrom, email, subject, message, timeout);
-    }
-
-    @Override
-    public void sendResourceUsageAlertEmailAsync(ResourceUsageAlert alert, List<String> emails) {
-        passwordResetExecutorService.execute(() -> emails.forEach(email -> {
-            try {
-                this.sendResourceUsageAlertEmail(alert, email);
-            } catch (ThingsboardException e) {
-                log.warn("[{}] Failed to send resource usage alert to {}", alert.serviceId(), email, e);
-            }
-        }));
     }
 
     @Override
@@ -177,14 +164,6 @@ public class DefaultMailService implements MailService {
         String message = mergeTemplateIntoString("tbmq.test.ftl", model);
 
         sendMail(testMailSender, mailFrom, email, subject, message, timeout);
-    }
-
-    private static String serviceTypeLabel(String serviceType) {
-        return Arrays.stream(ServiceType.values())
-                .filter(type -> type.name().equals(serviceType))
-                .findFirst()
-                .map(ServiceType::getLabel)
-                .orElse(serviceType);
     }
 
     private String mergeTemplateIntoString(String templateLocation,
