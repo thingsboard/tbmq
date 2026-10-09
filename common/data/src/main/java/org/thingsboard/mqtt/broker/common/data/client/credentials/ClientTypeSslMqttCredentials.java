@@ -15,17 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor(force = true)
-@AllArgsConstructor
 public class ClientTypeSslMqttCredentials implements Serializable {
 
     @Serial
@@ -34,5 +33,18 @@ public class ClientTypeSslMqttCredentials implements Serializable {
     private final ClientType type;
     private final SslMqttCredentials sslMqttCredentials;
     private final String name;
+    private final UUID authorizationPolicyId;
+
+    public ClientTypeSslMqttCredentials(ClientType type, SslMqttCredentials sslMqttCredentials, String name) {
+        this(type, sslMqttCredentials, name, null);
+    }
+
+    public ClientTypeSslMqttCredentials(ClientType type, SslMqttCredentials sslMqttCredentials, String name,
+                                        UUID authorizationPolicyId) {
+        this.type = type;
+        this.sslMqttCredentials = sslMqttCredentials;
+        this.name = name;
+        this.authorizationPolicyId = authorizationPolicyId;
+    }
 
 }

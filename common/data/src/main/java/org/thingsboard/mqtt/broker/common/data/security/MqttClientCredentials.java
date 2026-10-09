@@ -42,6 +42,7 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
     private String name;
     private ClientType clientType;
     private ClientCredentialsType credentialsType;
+    private UUID authorizationPolicyId;
     @NoXss
     private String credentialsValue;
 
@@ -58,6 +59,7 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
         this.clientType = mqttClientCredentials.getClientType();
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
+        this.authorizationPolicyId = mqttClientCredentials.getAuthorizationPolicyId();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
     }
 

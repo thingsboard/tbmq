@@ -29,6 +29,8 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
+import java.util.UUID;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -49,6 +51,9 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_TYPE_PROPERTY)
     private ClientCredentialsType credentialsType;
 
+    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_AUTHORIZATION_POLICY_ID_PROPERTY)
+    private UUID authorizationPolicyId;
+
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY)
     private String credentialsValue;
 
@@ -68,6 +73,7 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         this.clientType = mqttClientCredentials.getClientType();
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
+        this.authorizationPolicyId = mqttClientCredentials.getAuthorizationPolicyId();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
         this.additionalInfo = mqttClientCredentials.getAdditionalInfo();
     }
@@ -81,6 +87,7 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         mqttClientCredentials.setName(name);
         mqttClientCredentials.setCredentialsId(credentialsId);
         mqttClientCredentials.setCredentialsType(credentialsType);
+        mqttClientCredentials.setAuthorizationPolicyId(authorizationPolicyId);
         mqttClientCredentials.setCredentialsValue(credentialsValue);
         mqttClientCredentials.setAdditionalInfo(additionalInfo);
         return mqttClientCredentials;

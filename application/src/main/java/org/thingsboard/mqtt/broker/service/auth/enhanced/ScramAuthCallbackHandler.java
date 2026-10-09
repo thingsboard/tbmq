@@ -26,9 +26,9 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
@@ -47,6 +47,8 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
 
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final AuthorizationPolicyService authorizationPolicyService;
+    private final String clientId;
 
     @Getter
     private String username;
@@ -88,8 +90,10 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
         clientType = credentials.getClientType();
         var scramMqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(credentials, ScramMqttCredentials.class);
         try {
-            authRulePatterns = authorizationRuleService.parseAuthorizationRule(scramMqttCredentials);
-        } catch (AuthenticationException e) {
+            var authorizationRules = authorizationPolicyService.resolveRules(
+                    credentials.getAuthorizationPolicyId(), scramMqttCredentials.getAuthRules());
+            authRulePatterns = authorizationRuleService.parseAuthorizationRule(authorizationRules, null, clientId);
+        } catch (Exception e) {
             throw new RuntimeException("Failed to parse authorization rule for SCRAM credentials: " + credentialsId, e);
         }
 
