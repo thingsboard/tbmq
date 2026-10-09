@@ -51,6 +51,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
 
+    // Hand-rolled rather than CachedValue: that helper floors its TTL at 60 s, too stale for a page polling every 3 s.
     private volatile CachedStatsByNode cachedStatsByNode;
     long statsByNodeTtlMs = STATS_BY_NODE_TTL_MS;
 
@@ -155,9 +156,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     @Override
     public long countSessionsOnNode(String serviceId) {
-        return clientSessionCache.getAllClientSessions().values().stream()
-                .filter(clientSessionInfo -> serviceId.equals(clientSessionInfo.getServiceId()))
-                .count();
+        ClientSessionNodeStatsInfoDto stats = getClientSessionStatsInfoByNode().get(serviceId);
+        return stats == null ? 0 : stats.getTotalCount();
     }
 
     private static final class NodeSessionCounter {

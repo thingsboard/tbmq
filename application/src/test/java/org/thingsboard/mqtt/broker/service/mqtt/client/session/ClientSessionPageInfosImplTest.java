@@ -146,6 +146,15 @@ public class ClientSessionPageInfosImplTest {
     }
 
     @Test
+    public void testCountSessionsOnNodeSharesTheScanWithStatsByNode() {
+        clientSessionPageInfos.countSessionsOnNode("tbmq1");
+        clientSessionPageInfos.getClientSessionStatsInfoByNode();
+        clientSessionPageInfos.countSessionsOnNode("tbmq2");
+
+        verify(clientSessionCache, times(1)).getAllClientSessions();
+    }
+
+    @Test
     public void testGetClientSessionStatsInfoByNodeWhenNoSessions() {
         doReturn(Map.of()).when(clientSessionCache).getAllClientSessions();
 
