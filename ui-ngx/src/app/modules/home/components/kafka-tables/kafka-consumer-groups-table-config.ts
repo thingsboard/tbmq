@@ -22,8 +22,6 @@ import {
 } from '@home/models/entity/entities-table-config.models';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { SnapshotTrend } from '@shared/models/live-stats.model';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
@@ -32,9 +30,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
 
 export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsumerGroup, TimePageLink> {
-
-  // Lag is a snapshot per fetch; keeping the last ones shows whether a group is draining or falling behind.
-  private readonly lagTrend = new SnapshotTrend();
 
   constructor(private kafkaService: KafkaService,
               private translate: TranslateService,
@@ -61,21 +56,12 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
       new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '100px',
         entity => entity.members.toString()),
       new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '100px',
-          entity => entity.lag),
-      new EntityTableColumn<KafkaConsumerGroup>('lagTrend', 'kafka.lag-trend', '120px',
-          entity => this.lagTrend.sparkline(entity.groupId), undefined, false, undefined, entity => this.lagTrendTooltip(entity))
+          entity => entity.lag)
     );
   }
 
   private fetchKafkaConsumerGroups(pageLink: TimePageLink): Observable<PageData<KafkaConsumerGroup>> {
-    return this.kafkaService.getKafkaConsumerGroups(pageLink).pipe(
-      tap(page => page.data.forEach(group => this.lagTrend.append(group.groupId, Number(group.lag) || 0)))
-    );
-  }
-
-  private lagTrendTooltip(group: KafkaConsumerGroup): string {
-    const range = this.lagTrend.range(group.groupId);
-    return range ? this.translate.instant('kafka.lag-trend-tooltip', range) : undefined;
+    return this.kafkaService.getKafkaConsumerGroups(pageLink);
   }
 
   private configureCellActions(): Array<CellActionDescriptor<KafkaConsumerGroup>> {

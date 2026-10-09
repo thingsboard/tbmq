@@ -1127,8 +1127,6 @@
         "replicas": "副本",
         "size": "大小",
         "lag": "滞后",
-        "lag-trend": "滞后趋势",
-        "lag-trend-tooltip": "最近 {{count}} 个样本，最小 {{min}}，最大 {{max}}",
         "id": "ID",
         "state": "状态",
         "members": "成员",

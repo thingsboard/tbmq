@@ -1237,8 +1237,6 @@
         "replicas": "Replicas",
         "size": "Size",
         "lag": "Lag",
-        "lag-trend": "Lag trend",
-        "lag-trend-tooltip": "Last {{count}} samples, min {{min}}, max {{max}}",
         "id": "ID",
         "state": "State",
         "members": "Members",

@@ -111,7 +111,6 @@ function trimSamples(samples: TsValue[], windowMs: number): TsValue[] {
 export interface TrendRange {
   min: number;
   max: number;
-  count: number;
 }
 
 // Per-row sample buffers behind the sparkline columns of entity tables.
@@ -119,11 +118,7 @@ export class SnapshotTrend {
 
   private readonly samples = new Map<string, number[]>();
 
-  constructor(private readonly maxSamples = 60) {
-  }
-
-  append(id: string, value: number) {
-    this.samples.set(id, [...(this.samples.get(id) ?? []), value].slice(-this.maxSamples));
+  constructor(private readonly maxSamples: number) {
   }
 
   replace(entries: ReadonlyArray<readonly [string, number[]]>) {
@@ -139,7 +134,7 @@ export class SnapshotTrend {
 
   range(id: string): TrendRange | null {
     const values = this.samples.get(id) ?? [];
-    return values.length < 2 ? null : {min: Math.min(...values), max: Math.max(...values), count: values.length};
+    return values.length < 2 ? null : {min: Math.min(...values), max: Math.max(...values)};
   }
 }
 
