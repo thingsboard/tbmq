@@ -88,7 +88,6 @@
 
 .tb-chart-tick,
 .tb-chart-empty {
-  font-family: var(--tb-font-mono);
   font-size: 9.5px;
   fill: rgba(0, 0, 0, 0.42);
 }
@@ -121,7 +120,7 @@
 }
 
 .tb-chart-tooltip-time {
-  font-family: var(--tb-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 10.5px;
   color: rgba(0, 0, 0, 0.54);
 }
@@ -134,7 +133,7 @@
 }
 
 .tb-chart-tooltip-value {
-  font-family: var(--tb-font-mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.87);
 }
@@ -200,7 +199,6 @@
 }
 
 .tb-legend-value {
-  font-family: var(--tb-font-mono);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: rgba(0, 0, 0, 0.54);

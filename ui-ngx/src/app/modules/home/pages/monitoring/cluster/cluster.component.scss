@@ -139,7 +139,7 @@ $tb-line: rgba(0, 0, 0, 0.06);
 
 .tb-hidden-note {
   margin-left: 4px;
-  font-family: var(--tb-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.54);
 }
@@ -162,7 +162,7 @@ $tb-line: rgba(0, 0, 0, 0.06);
 }
 
 .tb-live-stale {
-  font-family: var(--tb-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.02em;
   color: var(--tb-usage-warn);
