@@ -34,8 +34,11 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
 
     @Override
     public void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg) {
+        clientSubscriptionService.reconcileSubscriptionUpdate(clientId, msg, subscriptions -> applySnapshot(clientId, subscriptions));
+    }
+
+    private void applySnapshot(String clientId, Set<TopicSubscription> newTopicSubscriptions) {
         Set<TopicSubscription> currentTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
-        Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
 
         if (log.isDebugEnabled()) {
             log.debug("[{}] Updating Client's subscriptions, new subscriptions - {}, current subscriptions - {}.",

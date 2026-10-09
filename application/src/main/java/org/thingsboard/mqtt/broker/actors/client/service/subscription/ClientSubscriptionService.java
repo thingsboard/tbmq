@@ -23,6 +23,8 @@ import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import java.util.Set;
 
 public interface ClientSubscriptionService extends ClientSubscriptionCache {
@@ -52,6 +54,8 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
     void clearSubscriptionsAndPersist(String clientId, BasicCallback callback);
 
     void clearSubscriptionsInternally(String clientId);
+
+    void reconcileSubscriptionUpdate(String clientId, SubscriptionChangedEventMsg msg, Consumer<Set<TopicSubscription>> apply);
 
     long getClientSubscriptionsCount();
 }
