@@ -16,5 +16,13 @@
 
 -- UPGRADE FROM VERSION 2.4.0 TO 2.4.1 START
 
+CREATE TABLE IF NOT EXISTS client_trace (
+    id uuid NOT NULL CONSTRAINT client_trace_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    client_id varchar(255) NOT NULL CONSTRAINT client_trace_client_id_key UNIQUE,
+    expires_at timestamp with time zone NOT NULL,
+    trace_level varchar(32) NOT NULL
+);
+
 
 -- UPGRADE FROM VERSION 2.4.0 TO 2.4.1 END

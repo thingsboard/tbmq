@@ -13,20 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.service.trace;
 
-import io.netty.handler.ssl.SslHandler;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-public interface MqttHandlerFactory {
+import java.time.Instant;
+import java.util.UUID;
 
-    MqttSessionHandler create(SslHandler sslHandler, String initializerName);
-
-    TbMessageStatsReportClient getTbMessageStatsReportClient();
-
-    ClientTraceRecorder getClientTraceRecorder();
-
-    MqttClientAuthType getClientAuthType();
+@Data
+public class ClientTraceConfig {
+    private UUID id;
+    @NotBlank
+    private String clientId;
+    @NotNull
+    @Future
+    private Instant expiresAt;
+    @NotNull
+    private ClientTraceLevel level;
+    private long createdTime;
 }
