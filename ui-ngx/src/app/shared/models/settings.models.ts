@@ -30,14 +30,14 @@ export interface ResourceUsageThresholds {
 
 export interface ResourceUsageAlertSettings extends ResourceUsageThresholds {
   emailEnabled: boolean;
-  emails: string;
+  emails: string[];
 }
 
 export const defaultResourceUsageAlertSettings: ResourceUsageAlertSettings = {
   highUsage: 75,
   criticalUsage: 85,
   emailEnabled: false,
-  emails: ''
+  emails: []
 };
 export const DEFAULT_HOST = window.location.hostname;
 

@@ -34,35 +34,6 @@
   flex-direction: column;
 }
 
-// Validated triple (deutan/protan/tritan separation and contrast against the white card).
-.tb-series-incomingMsgs,
-.tb-series-inboundPayloadTraffic {
-  --tb-series: #58519e;
-}
-
-.tb-series-outgoingMsgs,
-.tb-series-outboundPayloadTraffic {
-  --tb-series: #00897b;
-}
-
-.tb-series-droppedMsgs {
-  --tb-series: var(--tb-usage-warn);
-}
-
-// Taken from the echarts palette in chart.model.ts.
-.tb-series-sessions,
-.tb-series-cpuUsage {
-  --tb-series: #58519e;
-}
-
-.tb-series-memoryUsage {
-  --tb-series: #4fa889;
-}
-
-.tb-series-diskUsage {
-  --tb-series: #d1a656;
-}
-
 // The svg is taken out of flow so the chart can follow the box height without feeding its own size back.
 .tb-chart {
   position: relative;

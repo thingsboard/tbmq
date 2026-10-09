@@ -37,7 +37,7 @@
       <div class="tb-inspector-id">{{ n.id }}</div>
       <div class="tb-inspector-meta">
         @if (n.stale) {
-          <span class="tb-status-pill tb-status-pill-stale" [matTooltip]="'monitoring.cluster.stale-hint' | translate: {seconds: staleSeconds()}">
+          <span class="tb-status-pill tb-status-pill-stale" [matTooltip]="'monitoring.cluster.no-heartbeat' | translate: {seconds: staleSeconds()}">
             {{ 'monitoring.cluster.stale' | translate }}
           </span>
         } @else {
@@ -51,7 +51,6 @@
         }
       </div>
     </div>
-    <ng-container *ngTemplateOutlet="closeButton"/>
   </div>
   <ng-container *ngTemplateOutlet="alertsList"/>
 
@@ -63,10 +62,10 @@
         <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(n.sessions.connectedCount)} }}</span>
       }
     </div>
-    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions(n.id)">
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/sessions" [queryParams]="{nodeIdList: n.id}">
       {{ 'monitoring.cluster.open-in-sessions' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-    </button>
+    </a>
   } @else {
     <div class="tb-stat">
       <span class="tb-stat-label">{{ 'monitoring.cluster.integrations-on-executor' | translate }}</span>
@@ -77,10 +76,10 @@
         </span>
       }
     </div>
-    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/integrations')">
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/integrations">
       {{ 'monitoring.cluster.open-integrations' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-    </button>
+    </a>
   }
 
   <div class="tb-divider"></div>
@@ -109,7 +108,6 @@
         <span class="tb-inspector-type">{{ 'monitoring.cluster.consumer-groups' | translate: {count: k.groupCount ?? '—'} }}</span>
       </div>
     </div>
-    <ng-container *ngTemplateOutlet="closeButton"/>
   </div>
 
   <div class="tb-stat">
@@ -135,8 +133,8 @@
     <span class="tb-stat-label">{{ 'monitoring.cluster.top-groups-by-lag' | translate }}</span>
     <ul class="tb-inspector-list">
       @for (group of k.topGroups; track group.groupId) {
-        <li class="tb-inspector-list-row" [matTooltip]="group.groupId">
-          <span class="tb-inspector-list-key">{{ group.groupId }}</span>
+        <li class="tb-inspector-list-row">
+          <span class="tb-inspector-list-key" [tbTruncateWithTooltip]="group.groupId">{{ group.groupId }}</span>
           <span class="tb-inspector-list-value">{{ compactNumber(group.lag) }}</span>
         </li>
       }
@@ -144,14 +142,14 @@
   }
 
   <div class="tb-inspector-links">
-    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/kafka/brokers')">
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/kafka/brokers">
       {{ 'monitoring.cluster.open-kafka-brokers' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-    </button>
-    <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="open('/kafka/consumer-groups')">
+    </a>
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/kafka/consumer-groups">
       {{ 'monitoring.cluster.open-consumer-groups' | translate }}
       <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-    </button>
+    </a>
   </div>
 } @else {
   @let t = total();
@@ -176,43 +174,24 @@
       <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(t.connectedSessions)} }}</span>
     }
   </div>
-  <button mat-stroked-button color="primary" class="tb-inspector-link" (click)="openSessions()">
+  <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/sessions">
     {{ 'monitoring.cluster.open-in-sessions' | translate }}
     <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-  </button>
+  </a>
 }
 
 @if (showChart()) {
   <div class="tb-divider"></div>
-  <div class="tb-unit-switch tb-unit-switch-wide" role="group" [attr.aria-label]="'monitoring.cluster.chart-unit' | translate">
-    @for (option of unitOptions(); track option) {
-      <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="activeUnit() === option"
-              [attr.aria-pressed]="activeUnit() === option" (click)="unit.set(option)">
-        {{ unitLabels[option] | translate }}
-      </button>
-    }
-  </div>
-  <tb-rate-chart [series]="chartSeries()" [ariaLabel]="chartAriaLabel()"></tb-rate-chart>
+  <tb-toggle-select class="tb-unit-select" appearance="fill" disablePagination role="group"
+                    [options]="unitOptions()" [ngModel]="activeUnit()" (ngModelChange)="unit.set($event)"
+                    [attr.aria-label]="'monitoring.cluster.chart-unit' | translate"></tb-toggle-select>
+  <tb-rate-chart [series]="chartSeries()" [windowLabel]="chartWindowLabel()"></tb-rate-chart>
   <div class="tb-spark-foot">
-    <span class="tb-unit-switch" role="group" [attr.aria-label]="'monitoring.cluster.history-window' | translate">
-      @for (option of historyWindows; track option.windowMs) {
-        <button type="button" class="tb-unit-option" [class.tb-unit-option-active]="historyWindow() === option.windowMs"
-                [attr.aria-pressed]="historyWindow() === option.windowMs" (click)="historyWindowChange.emit(option.windowMs)">
-          {{ option.shortKey | translate: option.params }}
-        </button>
-      }
-    </span>
+    <tb-toggle-select appearance="stroked" disablePagination role="group"
+                      [options]="historyWindowOptions()" [ngModel]="historyWindow()" (ngModelChange)="historyWindowChange.emit($event)"
+                      [attr.aria-label]="'monitoring.cluster.history-window' | translate"></tb-toggle-select>
   </div>
 }
-
-<ng-template #closeButton>
-  <button mat-icon-button type="button" class="tb-inspector-close"
-          [matTooltip]="'monitoring.cluster.back-to-total' | translate"
-          [attr.aria-label]="'monitoring.cluster.back-to-total' | translate"
-          (click)="cleared.emit()">
-    <mat-icon>close</mat-icon>
-  </button>
-</ng-template>
 
 <ng-template #alertsList>
   @if (visibleAlerts().length) {
@@ -247,7 +226,7 @@
       {{ alert.messageKey | translate: alert.params }}
     </span>
     @if (alert.detail) {
-      <span class="tb-alert-detail" [matTooltip]="alert.detail">{{ alert.detail }}</span>
+      <span class="tb-alert-detail" [tbTruncateWithTooltip]="alert.detail">{{ alert.detail }}</span>
     }
   </span>
 </ng-template>

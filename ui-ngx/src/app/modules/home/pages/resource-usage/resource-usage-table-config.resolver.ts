@@ -41,10 +41,10 @@ import {
   usageLevel
 } from '@app/shared/models/resource-usage.model';
 import { DialogService } from '@core/services/dialog.service';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { SettingsService } from '@core/http/settings.service';
 import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { SnapshotTrend } from '@shared/models/live-stats.model';
 import { AggregationType, HOUR } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
@@ -59,6 +59,7 @@ export class ResourceUsageTableConfigResolver {
   private readonly config: EntityTableConfig<ResourceUsage> = new EntityTableConfig<ResourceUsage>();
   private readonly cpuTrend = new SnapshotTrend(CPU_TREND_MAX_SAMPLES);
   private thresholds: ResourceUsageThresholds = defaultResourceUsageAlertSettings;
+  private cpuTrendLoad: Subscription | null = null;
 
   constructor(private timeseriesService: TimeseriesService,
               private translate: TranslateService,
@@ -81,7 +82,7 @@ export class ResourceUsageTableConfigResolver {
 
     this.config.cellActionDescriptors = this.configureCellActions();
     this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos().pipe(
-      switchMap(page => this.loadCpuTrend(page))
+      tap(page => this.loadCpuTrend(page))
     );
 
     this.config.columns.push(
@@ -110,6 +111,7 @@ export class ResourceUsageTableConfigResolver {
   }
 
   resolve(): Observable<EntityTableConfig<ResourceUsage>> {
+    this.cpuTrendLoad?.unsubscribe();
     return this.settingsService.getResourceUsageThresholds().pipe(
       map(thresholds => {
         this.thresholds = thresholds;
@@ -151,13 +153,15 @@ export class ResourceUsageTableConfigResolver {
     );
   }
 
-  // CPU usage is stored as history, so the trend covers the last hour no matter how often the table is refreshed.
-  private loadCpuTrend(page: PageData<ResourceUsage>): Observable<PageData<ResourceUsage>> {
+  // CPU usage is stored as history, so the trend covers the last hour no matter how often the table is refreshed. The rows
+  // are shown right away and the sparklines fill in once every history request has answered.
+  private loadCpuTrend(page: PageData<ResourceUsage>) {
+    this.cpuTrendLoad?.unsubscribe();
     if (!page.data.length) {
-      return of(page);
+      return;
     }
     const endTs = Date.now();
-    return forkJoin(page.data.map(usage => {
+    this.cpuTrendLoad = forkJoin(page.data.map(usage => {
       const id = this.trendId(usage);
       return this.timeseriesService.getEntityTimeseries(id, endTs - CPU_TREND_WINDOW_MS, endTs, ['cpuUsage'], CPU_TREND_MAX_SAMPLES,
         AggregationType.NONE, undefined, Direction.ASC).pipe(
@@ -165,12 +169,22 @@ export class ResourceUsageTableConfigResolver {
         catchError(() => of<number[]>([])),
         map(values => [id, values] as const)
       );
-    })).pipe(
-      map(entries => {
-        this.cpuTrend.replace(entries);
-        return page;
-      })
-    );
+    })).subscribe(entries => {
+      this.cpuTrend.replace(entries);
+      this.refreshCpuTrendCells(page.data.length);
+    });
+  }
+
+  private refreshCpuTrendCells(rows: number) {
+    const table = this.config.getTable();
+    const column = this.config.columns.findIndex(column => column.key === 'cpuTrend');
+    if (!table || column < 0) {
+      return;
+    }
+    for (let row = 0; row < rows; row++) {
+      table.clearCellCache(column, row);
+    }
+    table.detectChanges();
   }
 
   private trendId(usage: ResourceUsage): string {

@@ -52,7 +52,7 @@ import { TOTAL_ENTITY_ID } from '@shared/models/chart.model';
 import { ServiceType } from '@shared/models/resource-usage.model';
 import { MINUTE, SECOND } from '@shared/models/time/time.models';
 import { LiveStatsService } from '@core/services/live-stats.service';
-import { emptyRateSeries } from '@shared/models/live-stats.model';
+import { emptyRateSeries, statsIntervalMinutes } from '@shared/models/live-stats.model';
 import { SettingsService } from '@core/http/settings.service';
 import { defaultResourceUsageAlertSettings } from '@shared/models/settings.models';
 import { ClusterMapComponent } from '@home/pages/monitoring/cluster/cluster-map.component';
@@ -63,10 +63,10 @@ import {
   ClusterRawData,
   CLUSTER_RATE_KEYS,
   emptyClusterRawData,
-  GAUGE_KEYS,
   HISTORY_WINDOW_MS,
   KAFKA_NODE_ID,
   NODE_SERIES_KEYS,
+  secondsSince,
   SESSIONS_KEY
 } from '@home/pages/monitoring/cluster/cluster.models';
 
@@ -74,12 +74,21 @@ import {
 const SESSIONS_REFRESH_MS = 3 * SECOND;
 // Consumer-group lag goes through the Kafka admin client and integrations rarely change.
 const SLOW_SOURCES_REFRESH_MS = MINUTE;
+// Staleness and "no heartbeat for N s" follow this clock, independent of which source refreshed last.
+const CLOCK_TICK_MS = 5 * SECOND;
 const DEFAULT_HEARTBEAT_SEC = 60;
 const MIN_SERVICES_REFRESH_MS = 5 * SECOND;
 const QUIET_REQUEST: RequestConfig = {ignoreLoading: true, ignoreErrors: true};
 const TOTAL_SERIES_KEYS: readonly string[] = [...CLUSTER_RATE_KEYS, SESSIONS_KEY];
 
 const quiet = <T>(source: Observable<T>): Observable<T | null> => source.pipe(catchError(() => of(null)));
+
+type SlowSources = Pick<ClusterRawData, 'kafkaBrokers' | 'consumerGroups' | 'integrations'>;
+
+// A source that failed this round keeps its previous value instead of being cleared.
+function withoutNulls<T extends object>(values: T): Partial<T> {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== null)) as Partial<T>;
+}
 
 @Component({
     selector: 'tb-cluster',
@@ -104,15 +113,16 @@ export class ClusterComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly cadence: ClusterCadence = {
-    statsIntervalMinutes: this.configService.brokerConfig?.statsCollectionInterval || 1,
+    statsIntervalMinutes: statsIntervalMinutes(this.configService.brokerConfig),
     heartbeatMs: (this.configService.brokerConfig?.systemInfoPersistFrequencySec || DEFAULT_HEARTBEAT_SEC) * SECOND
   };
   private readonly raw = signal<ClusterRawData>(emptyClusterRawData());
+  readonly now = signal(Date.now());
 
   readonly thresholds = toSignal(inject(SettingsService).getResourceUsageThresholds(),
     {initialValue: defaultResourceUsageAlertSettings});
   readonly hideInactive = signal(false);
-  readonly vm = computed(() => assembleClusterVm(this.raw(), this.cadence, this.thresholds(), this.hideInactive()));
+  readonly vm = computed(() => assembleClusterVm(this.raw(), this.cadence, this.thresholds(), this.hideInactive(), this.now()));
   readonly alertSummary = computed(() => {
     const alerts = this.vm().alerts;
     return alerts.length ? {count: alerts.length, level: alerts[0].level} : null;
@@ -123,7 +133,6 @@ export class ClusterComponent implements OnInit {
   readonly staleSeconds = signal(0);
   readonly fullscreen = signal(false);
   readonly historyWindow = signal(HISTORY_WINDOW_MS);
-  readonly animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   readonly selectedNode = computed(() => {
     const id = this.selectedId();
@@ -144,7 +153,7 @@ export class ClusterComponent implements OnInit {
       }
       // The cluster total has no CPU, memory or disk series.
       const keys = entityId === TOTAL_ENTITY_ID ? TOTAL_SERIES_KEYS : NODE_SERIES_KEYS;
-      return this.liveStats.watch(entityId, keys, {windowMs, gaugeKeys: GAUGE_KEYS});
+      return this.liveStats.watch(entityId, keys, {windowMs});
     })
   ), {initialValue: emptyRateSeries(CLUSTER_RATE_KEYS)});
   private readonly brokerIds = computed(() => (this.raw().services?.data ?? [])
@@ -164,6 +173,7 @@ export class ClusterComponent implements OnInit {
     this.pollSessions();
     this.pollRates();
     this.pollSlowSources();
+    timer(CLOCK_TICK_MS, CLOCK_TICK_MS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.now.set(Date.now()));
   }
 
   toggleSelection(id: string) {
@@ -212,13 +222,13 @@ export class ClusterComponent implements OnInit {
       if (!services) {
         const lastUpdated = this.lastUpdated();
         this.servicesOk.set(false);
-        this.staleSeconds.set(lastUpdated ? Math.round((Date.now() - lastUpdated) / SECOND) : 0);
+        this.staleSeconds.set(secondsSince(lastUpdated, Date.now()));
         return;
       }
       this.patchRaw({services});
       this.lastUpdated.set(Date.now());
       this.servicesOk.set(true);
-      this.ensureSelection();
+      this.dropMissingSelection();
     });
   }
 
@@ -228,12 +238,12 @@ export class ClusterComponent implements OnInit {
   }
 
   // Message rates are persisted at each stats-interval boundary, so they are fetched right after it, in one request for
-  // every broker and the total, and again whenever the set of brokers changes.
+  // every broker, and again whenever the set of brokers changes.
   private pollRates() {
     this.brokerIds$.pipe(
       switchMap(brokerIds => this.timeService.getSyncTimer(this.cadence.statsIntervalMinutes * MINUTE).pipe(
         startWith(0),
-        switchMap(() => quiet(this.timeseriesService.getLatestTimeseriesBatch([TOTAL_ENTITY_ID, ...brokerIds],
+        switchMap(() => quiet(this.timeseriesService.getLatestTimeseriesBatch(brokerIds,
           [...CLUSTER_RATE_KEYS], QUIET_REQUEST)))
       )),
       takeUntilDestroyed(this.destroyRef)
@@ -241,13 +251,14 @@ export class ClusterComponent implements OnInit {
   }
 
   private pollSlowSources() {
-    this.poll(SLOW_SOURCES_REFRESH_MS, () => forkJoin({
-      kafkaBrokers: quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST)),
-      consumerGroups: quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST)),
-      integrations: quiet(this.integrationService.getIntegrationsInfo(new PageLink(1000), QUIET_REQUEST))
-    }).pipe(
-      map(sources => Object.fromEntries(Object.entries(sources).filter(([, value]) => value !== null)))
-    )).subscribe(sources => sources && this.patchRaw(sources));
+    this.poll(SLOW_SOURCES_REFRESH_MS, () => {
+      const sources: {[K in keyof SlowSources]: Observable<SlowSources[K]>} = {
+        kafkaBrokers: quiet(this.kafkaService.getKafkaBrokers(new PageLink(100), QUIET_REQUEST)),
+        consumerGroups: quiet(this.kafkaService.getKafkaConsumerGroups(new PageLink(1000), QUIET_REQUEST)),
+        integrations: quiet(this.integrationService.getIntegrationsInfo(new PageLink(1000), QUIET_REQUEST))
+      };
+      return forkJoin(sources).pipe(map(withoutNulls));
+    }).subscribe(sources => sources && this.patchRaw(sources));
   }
 
   private poll<T>(periodMs: number, request: () => Observable<T>): Observable<T | null> {
@@ -258,10 +269,12 @@ export class ClusterComponent implements OnInit {
   }
 
   private patchRaw(patch: Partial<ClusterRawData>) {
+    this.now.set(Date.now());
     this.raw.update(raw => ({...raw, ...patch}));
   }
 
-  private ensureSelection() {
+  // A node that left the map (removed, or hidden as inactive) cannot stay selected.
+  private dropMissingSelection() {
     if (this.selectionHidden()) {
       this.select(null);
     }
@@ -269,7 +282,6 @@ export class ClusterComponent implements OnInit {
 
   private selectionHidden(): boolean {
     const selected = this.selectedId();
-    const {brokers, executors} = this.vm();
-    return !!selected && selected !== KAFKA_NODE_ID && !brokers.concat(executors).some(node => node.key === selected);
+    return !!selected && selected !== KAFKA_NODE_ID && !this.selectedNode();
   }
 }

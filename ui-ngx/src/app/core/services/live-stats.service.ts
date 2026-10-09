@@ -40,12 +40,12 @@ import { Direction } from '@shared/models/page/sort-order';
 import {
   appendLatestToSeries,
   emptyRateSeries,
-  KeyDivisor,
   LIVE_STATS_MAX_SAMPLES,
   LIVE_STATS_WINDOW_MS,
   LiveStatsOptions,
   RateSeries,
-  seedRateSeries
+  seedRateSeries,
+  statsIntervalMinutes
 } from '@shared/models/live-stats.model';
 
 /**
@@ -65,11 +65,10 @@ export class LiveStatsService {
 
   watch(entityId: string, keys: readonly string[], options: LiveStatsOptions = {}): Observable<RateSeries> {
     const windowMs = options.windowMs ?? LIVE_STATS_WINDOW_MS;
-    const gaugeKeys = options.gaugeKeys ?? [];
-    const cacheKey = `${entityId}|${keys.join(',')}|${windowMs}|${gaugeKeys.join(',')}`;
+    const cacheKey = `${entityId}|${keys.join(',')}|${windowMs}`;
     let stream = this.streams.get(cacheKey);
     if (!stream) {
-      stream = this.buildStream(entityId, keys, windowMs, new Set(gaugeKeys)).pipe(
+      stream = this.buildStream(entityId, keys, windowMs).pipe(
         finalize(() => this.streams.delete(cacheKey)),
         shareReplay({bufferSize: 1, refCount: true})
       );
@@ -78,25 +77,21 @@ export class LiveStatsService {
     return stream;
   }
 
-  private buildStream(entityId: string, keys: readonly string[], windowMs: number, gaugeKeys: Set<string>): Observable<RateSeries> {
-    const divisor: KeyDivisor = key => gaugeKeys.has(key) ? 1 : this.statsIntervalMinutes();
+  private buildStream(entityId: string, keys: readonly string[], windowMs: number): Observable<RateSeries> {
+    const intervalMinutes = statsIntervalMinutes(this.configService.brokerConfig);
     return defer(() => {
       const endTs = Date.now();
       return this.timeseriesService.getEntityTimeseries(entityId, endTs - windowMs, endTs, [...keys], LIVE_STATS_MAX_SAMPLES,
         AggregationType.NONE, undefined, Direction.ASC).pipe(
-        map(history => seedRateSeries(keys, history, divisor, windowMs)),
+        map(history => seedRateSeries(keys, history, intervalMinutes, windowMs)),
         catchError(() => of(emptyRateSeries(keys)))
       );
     }).pipe(
-      switchMap(seed => this.timeService.getSyncTimer(this.statsIntervalMinutes() * MINUTE).pipe(
+      switchMap(seed => this.timeService.getSyncTimer(intervalMinutes * MINUTE).pipe(
         switchMap(() => this.timeseriesService.getLatestTimeseries(entityId, [...keys]).pipe(catchError(() => of(null)))),
-        scan((series, latest) => appendLatestToSeries(series, keys, latest, divisor, windowMs), seed),
+        scan((series, latest) => appendLatestToSeries(series, keys, latest, intervalMinutes, windowMs), seed),
         startWith(seed)
       ))
     );
-  }
-
-  private statsIntervalMinutes(): number {
-    return this.configService.brokerConfig?.statsCollectionInterval || 1;
   }
 }

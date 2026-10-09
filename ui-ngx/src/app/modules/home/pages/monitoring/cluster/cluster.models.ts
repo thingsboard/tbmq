@@ -29,12 +29,20 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ResourceUsage, ResourceUsageStatus, ServiceType, UsageLevel, usageLevel } from '@shared/models/resource-usage.model';
+import {
+  ResourceUsage,
+  ResourceUsageStatus,
+  serviceTimeseriesId,
+  ServiceType,
+  UsageLevel,
+  usageLevel
+} from '@shared/models/resource-usage.model';
 import { ClientSessionNodeStats, ClientSessionNodeStatsInfo, ClientSessionStatsInfo } from '@shared/models/session.model';
 import { KafkaBroker, KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { PageData } from '@shared/models/page/page-data';
 import { IntegrationInfo } from '@shared/models/integration.models';
-import { ChartKey, TimeseriesData, TOTAL_ENTITY_ID } from '@shared/models/chart.model';
+import { ChartKey, TimeseriesData } from '@shared/models/chart.model';
+import { SECOND } from '@shared/models/time/time.models';
 import { isDefinedAndNotNull } from '@core/utils';
 import { compactNumber, LIVE_STATS_WINDOW_MS, LIVE_STATS_WINDOWS, scaledValue } from '@shared/models/live-stats.model';
 import { ResourceUsageThresholds } from '@shared/models/settings.models';
@@ -77,10 +85,6 @@ export const STALE_AFTER_HEARTBEATS = 2;
 export const KAFKA_NODE_ID = 'kafka';
 export const KAFKA_TOP_GROUPS = 5;
 
-export function nodeKey(kind: ClusterNodeKind, serviceId: string): string {
-  return kind === 'broker' ? serviceId : `${kind}:${serviceId}`;
-}
-
 export const CLUSTER_RATE_KEYS = [
   ChartKey.incomingMsgs,
   ChartKey.outgoingMsgs,
@@ -92,18 +96,16 @@ export const CLUSTER_RATE_KEYS = [
 export type ClusterRateKey = typeof CLUSTER_RATE_KEYS[number];
 export const SESSIONS_KEY = ChartKey.sessions;
 export const RESOURCE_KEYS = ['cpuUsage', 'memoryUsage', 'diskUsage'] as const;
-export const GAUGE_KEYS: readonly string[] = [SESSIONS_KEY, ...RESOURCE_KEYS];
 // Everything the inspector charts for a broker or the cluster total; the total simply has no resource series.
-export const NODE_SERIES_KEYS: readonly string[] = [...CLUSTER_RATE_KEYS, ...GAUGE_KEYS];
+export const NODE_SERIES_KEYS: readonly string[] = [...CLUSTER_RATE_KEYS, SESSIONS_KEY, ...RESOURCE_KEYS];
 export type ChartUnit = 'messages' | 'bytes' | 'sessions' | 'resources';
 export type MessageRates = Record<ClusterRateKey, number>;
 
 export interface ClusterNodeVm {
   id: string;
-  // Selection key: a broker and an executor may share a service id.
+  // Selection key and timeseries entity id (serviceTimeseriesId): a broker and an executor may share a service id.
   key: string;
   kind: ClusterNodeKind;
-  serviceType: ServiceType;
   status: ResourceUsageStatus;
   lastUpdateTime: number | null;
   stale: boolean;
@@ -130,7 +132,8 @@ export type ClusterAlertLevel = 'warning' | 'critical';
 export interface ClusterAlertVm {
   id: string;
   level: ClusterAlertLevel;
-  // Selection key of the node the alert belongs to; null when no node on the map owns it.
+  // Selection key of the node the alert belongs to; null when no node on the map owns it (a cluster-wide alert, or
+  // a node left off the map by the "hide inactive" toggle).
   nodeKey: string | null;
   nodeId: string | null;
   messageKey: string;
@@ -190,8 +193,6 @@ export interface ClusterTotalVm {
   hasSessionStats: boolean;
   totalSessions: number;
   connectedSessions: number;
-  rates: MessageRates;
-  hasDrops: boolean;
 }
 
 export interface ClusterMapVm {
@@ -260,26 +261,42 @@ function byRateKey<T>(build: (key: ClusterRateKey) => T): Record<ClusterRateKey,
   return Object.fromEntries(CLUSTER_RATE_KEYS.map(key => [key, build(key)])) as Record<ClusterRateKey, T>;
 }
 
-export function assembleClusterVm(raw: ClusterRawData, cadence: ClusterCadence, thresholds: ResourceUsageThresholds,
-                                  hideInactive = false): ClusterMapVm {
-  const services = raw.services?.data ?? [];
-  const allBrokerInfos = services.filter(s => s.serviceType === ServiceType.TBMQ).sort(byServiceId);
-  const allExecutorInfos = services.filter(s => s.serviceType === ServiceType.TBMQ_INTEGRATION_EXECUTOR).sort(byServiceId);
-  const visible = (info: ResourceUsage) => !hideInactive || !isServiceInactive(info, cadence);
-  const brokerInfos = allBrokerInfos.filter(visible);
-  const executorInfos = allExecutorInfos.filter(visible);
+export function secondsSince(ts: number | null, now: number): number {
+  return ts ? Math.max(0, Math.round((now - ts) / SECOND)) : 0;
+}
 
-  const rows = Math.max(brokerInfos.length, executorInfos.length, 1);
+// `now` is passed in rather than read, so staleness follows the caller's clock instead of whichever poll ran last.
+export function assembleClusterVm(raw: ClusterRawData, cadence: ClusterCadence, thresholds: ResourceUsageThresholds,
+                                  hideInactive: boolean, now: number): ClusterMapVm {
+  const services = raw.services?.data ?? [];
+  const brokerInfos = services.filter(s => s.serviceType === ServiceType.TBMQ).sort(byServiceId);
+  const executorInfos = services.filter(s => s.serviceType === ServiceType.TBMQ_INTEGRATION_EXECUTOR).sort(byServiceId);
+  const activeExecutors = executorInfos.filter(info => info.status === ResourceUsageStatus.ACTIVE).length;
+
+  const allBrokers = brokerInfos.map(info => buildNode(info, 'broker', {
+    sessions: nodeSessions(raw.sessionsByNode, info.serviceId),
+    integrations: null,
+    rates: messageRates(raw.latest?.[info.serviceId], cadence.statsIntervalMinutes)
+  }, cadence, thresholds, now));
+  const allExecutors = executorInfos.map(info => buildNode(info, 'executor', {
+    sessions: null,
+    integrations: executorIntegrations(raw.integrations, info.serviceId, activeExecutors === 1 && info.status === ResourceUsageStatus.ACTIVE),
+    rates: zeroRates()
+  }, cadence, thresholds, now));
+  const shown = (node: ClusterNodeVm) => !hideInactive || !isOffline(node);
+  const shownBrokers = allBrokers.filter(shown);
+  const shownExecutors = allExecutors.filter(shown);
+
+  const rows = Math.max(shownBrokers.length, shownExecutors.length, 1);
   const height = Math.max(BASE_HEIGHT, 2 * PAD_Y + (rows - 1) * ROW_GAP);
   const centerY = height / 2;
 
-  const plainBrokers = buildBrokers(brokerInfos, raw, centerY, cadence, thresholds);
-  const plainExecutors = buildExecutors(executorInfos, raw.integrations, centerY, cadence, thresholds);
-  const alerts = buildAlerts([...plainBrokers, ...plainExecutors], raw.integrations, thresholds);
-  const brokers = plainBrokers.map(node => withAlerts(node, alerts));
-  const executors = plainExecutors.map(node => withAlerts(node, alerts));
+  // Hidden nodes still raise alerts: hiding inactive nodes declutters the map, it must not silence a node that just went down.
+  const shownKeys = new Set([...shownBrokers, ...shownExecutors].map(node => node.key));
+  const alerts = buildAlerts([...allBrokers, ...allExecutors], shownKeys, raw.integrations, thresholds, now);
+  const brokers = placeBrokers(shownBrokers, centerY).map(node => withAlerts(node, alerts));
+  const executors = placeExecutors(shownExecutors, centerY).map(node => withAlerts(node, alerts));
   const clients = buildClients(raw.sessionsByNode, centerY);
-  const totalRates = messageRates(raw.latest?.[TOTAL_ENTITY_ID], cadence.statsIntervalMinutes);
   return {
     width: VIEWBOX_WIDTH,
     height,
@@ -288,14 +305,12 @@ export function assembleClusterVm(raw: ClusterRawData, cadence: ClusterCadence, 
     executors,
     kafka: buildKafka(raw, centerY),
     total: {
-      brokerCount: allBrokerInfos.length,
-      executorCount: allExecutorInfos.length,
-      hiddenCount: allBrokerInfos.length + allExecutorInfos.length - brokers.length - executors.length,
+      brokerCount: allBrokers.length,
+      executorCount: allExecutors.length,
+      hiddenCount: allBrokers.length + allExecutors.length - brokers.length - executors.length,
       hasSessionStats: clients.hasSessionStats,
       totalSessions: clients.totalSessions,
-      connectedSessions: clients.connectedSessions,
-      rates: totalRates,
-      hasDrops: totalRates[ChartKey.droppedMsgs] > 0
+      connectedSessions: clients.connectedSessions
     },
     edges: buildEdges(brokers, executors, centerY),
     alerts
@@ -309,25 +324,34 @@ const USAGE_ALERTS: ReadonlyArray<{metric: 'cpu' | 'ram' | 'disk'; messageKey: s
 ];
 const ALERT_DETAIL_MAX_LENGTH = 200;
 
-function buildAlerts(nodes: ClusterNodeVm[], integrations: PageData<IntegrationInfo> | null,
-                     thresholds: ResourceUsageThresholds): ClusterAlertVm[] {
+function buildAlerts(nodes: ClusterNodeVm[], shownKeys: ReadonlySet<string>, integrations: PageData<IntegrationInfo> | null,
+                     thresholds: ResourceUsageThresholds, now: number): ClusterAlertVm[] {
   const alerts: ClusterAlertVm[] = [];
   const add = (node: ClusterNodeVm | null, level: ClusterAlertLevel, kind: string, messageKey: string,
                params: Record<string, string | number> = {}, detail?: string) =>
-    alerts.push({id: `${node?.key ?? 'cluster'}:${kind}`, level, nodeKey: node?.key ?? null, nodeId: node?.id ?? null, messageKey, params, detail});
+    alerts.push({
+      id: `${node?.key ?? 'cluster'}:${kind}`,
+      level,
+      nodeKey: node && shownKeys.has(node.key) ? node.key : null,
+      nodeId: node?.id ?? null,
+      messageKey,
+      params,
+      detail
+    });
 
   for (const node of nodes) {
     // Outdated services have not reported for over a week: decommissioned, not an incident.
     if (node.status === ResourceUsageStatus.OUTDATED) {
       continue;
     }
+    // A node that went silent within the last hour is an outage. Once it has been gone for over an hour it is far more
+    // likely scaled down on purpose, so it only stays as a reminder to remove it until it turns outdated.
     if (node.status === ResourceUsageStatus.INACTIVE) {
       add(node, 'warning', 'down', 'monitoring.cluster.alert-inactive');
       continue;
     }
     if (node.stale) {
-      add(node, 'critical', 'down', 'monitoring.cluster.alert-no-heartbeat',
-        {seconds: Math.round((Date.now() - (node.lastUpdateTime ?? Date.now())) / 1000)});
+      add(node, 'critical', 'down', 'monitoring.cluster.no-heartbeat', {seconds: secondsSince(node.lastUpdateTime, now)});
       continue;
     }
     for (const {metric, messageKey} of USAGE_ALERTS) {
@@ -370,33 +394,25 @@ function withAlerts(node: ClusterNodeVm, alerts: ClusterAlertVm[]): ClusterNodeV
   return {...node, alertCount: mine.length, alertLevel: mine.some(alert => alert.level === 'critical') ? 'critical' : 'warning'};
 }
 
-function buildBrokers(infos: ResourceUsage[], raw: ClusterRawData, centerY: number, cadence: ClusterCadence,
-                      thresholds: ResourceUsageThresholds): ClusterNodeVm[] {
-  const sessions = infos.map(info => nodeSessions(raw.sessionsByNode, info.serviceId));
-  const maxSessions = Math.max(0, ...sessions.map(s => s?.totalCount ?? 0));
-  return infos.map((info, i) => buildNode(info, 'broker', {
+function placeBrokers(brokers: ClusterNodeVm[], centerY: number): ClusterNodeVm[] {
+  const maxSessions = Math.max(0, ...brokers.map(broker => broker.sessions?.totalCount ?? 0));
+  return brokers.map((broker, i) => ({
+    ...broker,
     x: COLUMN_X.brokers,
-    y: rowY(centerY, i, infos.length),
+    y: rowY(centerY, i, brokers.length),
     ringR: BROKER_RING_RADIUS,
-    discR: discRadius(sessions[i]?.totalCount ?? 0, maxSessions),
-    sessions: sessions[i],
-    integrations: null,
-    rates: messageRates(raw.latest?.[info.serviceId], cadence.statsIntervalMinutes)
-  }, cadence, thresholds));
+    discR: discRadius(broker.sessions?.totalCount ?? 0, maxSessions)
+  }));
 }
 
-function buildExecutors(infos: ResourceUsage[], integrations: PageData<IntegrationInfo> | null, centerY: number,
-                        cadence: ClusterCadence, thresholds: ResourceUsageThresholds): ClusterNodeVm[] {
-  const activeExecutors = infos.filter(info => info.status === ResourceUsageStatus.ACTIVE).length;
-  return infos.map((info, i) => buildNode(info, 'executor', {
+function placeExecutors(executors: ClusterNodeVm[], centerY: number): ClusterNodeVm[] {
+  return executors.map((executor, i) => ({
+    ...executor,
     x: COLUMN_X.executors,
-    y: rowY(centerY, i, infos.length),
+    y: rowY(centerY, i, executors.length),
     ringR: EXECUTOR_RING_RADIUS,
-    discR: EXECUTOR_DISC_RADIUS,
-    sessions: null,
-    integrations: executorIntegrations(integrations, info.serviceId, activeExecutors === 1 && info.status === ResourceUsageStatus.ACTIVE),
-    rates: zeroRates()
-  }, cadence, thresholds));
+    discR: EXECUTOR_DISC_RADIUS
+  }));
 }
 
 function buildClients(sessionsByNode: ClientSessionNodeStatsInfo | null, centerY: number): ClusterClientsVm {
@@ -493,54 +509,49 @@ function percentOrNull(value: number | null | undefined): number | null {
   return isDefinedAndNotNull(value) ? Math.round(value) : null;
 }
 
-function buildNode(info: ResourceUsage, kind: ClusterNodeKind, layout: {
-  x: number;
-  y: number;
-  ringR: number;
-  discR: number;
+interface NodeMetrics {
   sessions: ClientSessionStatsInfo | null;
   integrations: ClusterIntegrationsVm | null;
   rates: MessageRates;
-}, cadence: ClusterCadence, thresholds: ResourceUsageThresholds): ClusterNodeVm {
+}
+
+// Positions are filled in by placeBrokers / placeExecutors, only for the nodes that are drawn.
+function buildNode(info: ResourceUsage, kind: ClusterNodeKind, metrics: NodeMetrics, cadence: ClusterCadence,
+                   thresholds: ResourceUsageThresholds, now: number): ClusterNodeVm {
   const cpu = percentOrNull(info.cpuUsage);
-  const stale = isStale(info, cadence);
   return {
     id: info.serviceId,
-    key: nodeKey(kind, info.serviceId),
+    key: serviceTimeseriesId(info.serviceType, info.serviceId),
     kind,
-    serviceType: info.serviceType,
     status: info.status,
     lastUpdateTime: info.lastUpdateTime || null,
-    stale,
+    stale: isStale(info, cadence, now),
     cpu,
     ram: percentOrNull(info.memoryUsage),
     disk: percentOrNull(info.diskUsage),
     cpuLevel: usageLevel(cpu, thresholds),
-    sessions: layout.sessions,
-    integrations: layout.integrations,
-    rates: layout.rates,
-    hasDrops: layout.rates[ChartKey.droppedMsgs] > 0,
+    sessions: metrics.sessions,
+    integrations: metrics.integrations,
+    rates: metrics.rates,
+    hasDrops: metrics.rates[ChartKey.droppedMsgs] > 0,
     alertLevel: null,
     alertCount: 0,
-    x: layout.x,
-    y: layout.y,
-    ringR: layout.ringR,
-    discR: layout.discR,
-    countLabel: kind === 'broker' ? compactNumber(layout.sessions?.totalCount ?? null) : ''
+    x: 0,
+    y: 0,
+    ringR: 0,
+    discR: 0,
+    countLabel: kind === 'broker' ? compactNumber(metrics.sessions?.totalCount ?? null) : ''
   };
 }
 
+// "Down" on the map: not reporting as active, or silent for longer than its status shows yet.
 function isOffline(node: ClusterNodeVm): boolean {
   return node.status !== ResourceUsageStatus.ACTIVE || node.stale;
 }
 
-function isStale(info: ResourceUsage, cadence: ClusterCadence): boolean {
+function isStale(info: ResourceUsage, cadence: ClusterCadence, now: number): boolean {
   return info.status === ResourceUsageStatus.ACTIVE && !!info.lastUpdateTime
-    && Date.now() - info.lastUpdateTime > STALE_AFTER_HEARTBEATS * cadence.heartbeatMs;
-}
-
-function isServiceInactive(info: ResourceUsage, cadence: ClusterCadence): boolean {
-  return info.status !== ResourceUsageStatus.ACTIVE || isStale(info, cadence);
+    && now - info.lastUpdateTime > STALE_AFTER_HEARTBEATS * cadence.heartbeatMs;
 }
 
 function buildEdge(id: string, x1: number, y1: number, x2: number, y2: number, relative: number, rate: number | null,

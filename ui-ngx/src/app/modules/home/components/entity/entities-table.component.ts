@@ -27,7 +27,8 @@ import {
   SimpleChanges,
   model,
   viewChild,
-  ViewChild
+  ViewChild,
+  ViewRef
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -302,6 +303,13 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   clearSelection() {
     this.dataSource.selection.clear();
     this.cd.detectChanges();
+  }
+
+  detectChanges() {
+    // Table configs outlive the page, so a late callback may land after the table is gone.
+    if (!(this.cd as ViewRef).destroyed) {
+      this.cd.detectChanges();
+    }
   }
 
   updateData(closeDetails: boolean = true, reloadEntity: boolean = true) {

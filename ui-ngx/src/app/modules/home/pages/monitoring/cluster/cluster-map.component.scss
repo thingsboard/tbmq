@@ -45,10 +45,8 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
 }
 
 .tb-column-caption {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
   fill: rgba(0, 0, 0, 0.42);
 }
 
@@ -138,8 +136,8 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
 
   // Node is dropping messages right now (STATUS_COLOR.INACTIVE red at low alpha, under the CPU arc).
   &.tb-ring-track-drops {
-    fill: rgba(209, 39, 48, 0.06);
-    stroke: rgba(209, 39, 48, 0.4);
+    fill: var(--tb-usage-crit-tint);
+    stroke: color-mix(in srgb, var(--tb-usage-crit) 40%, transparent);
   }
 }
 
@@ -180,7 +178,7 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
   }
 
   &.tb-status-STALE {
-    fill: rgba(212, 125, 24, 0.08);
+    fill: var(--tb-usage-warn-tint);
     stroke: var(--tb-usage-warn);
     stroke-dasharray: 3 2;
   }
@@ -199,14 +197,14 @@ $tb-neutral: rgba(0, 0, 0, 0.54);
 }
 
 .tb-node-sub {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  fill: rgba(0, 0, 0, 0.6);
+
   &.tb-stale {
     fill: var(--tb-usage-warn);
     font-weight: 700;
   }
-
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  fill: rgba(0, 0, 0, 0.6);
 
   &.tb-ok {
     fill: var(--tb-usage-ok);

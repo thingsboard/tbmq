@@ -29,9 +29,9 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   ClusterMapVm,
   ClusterNodeVm,
@@ -61,7 +61,6 @@ export class ClusterMapComponent {
 
   readonly vm = input.required<ClusterMapVm>();
   readonly selectedId = input<string | null>(null);
-  readonly animate = input(true);
 
   readonly nodeSelected = output<string>();
 
@@ -84,6 +83,25 @@ export class ClusterMapComponent {
   readonly clientsRingR = CLIENTS_RING_RADIUS;
   readonly compactNumber = compactNumber;
   readonly ringArcDash = ringArcDash;
+
+  private readonly translate = inject(TranslateService);
+
+  // Says what the glyph shows: sessions only for brokers, CPU only once reported, and the alert badge.
+  nodeAriaLabel(node: ClusterNodeVm): string {
+    const parts = [node.id, this.translate.instant(node.kind === 'broker' ? 'monitoring.cluster.kind-broker' : 'monitoring.cluster.kind-executor')];
+    if (node.kind === 'broker' && node.sessions) {
+      parts.push(this.translate.instant('monitoring.cluster.node-sessions', {count: node.sessions.totalCount}));
+    }
+    if (node.stale) {
+      parts.push(this.translate.instant('monitoring.cluster.stale'));
+    } else if (node.cpu !== null) {
+      parts.push(this.translate.instant('monitoring.cluster.cpu-percent', {value: node.cpu}));
+    }
+    if (node.alertCount) {
+      parts.push(this.translate.instant('monitoring.cluster.alert-count', {count: node.alertCount}));
+    }
+    return parts.join(', ');
+  }
 
   onSelect(node: ClusterNodeVm, event?: Event) {
     event?.preventDefault();

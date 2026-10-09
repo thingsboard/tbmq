@@ -16,7 +16,7 @@
 
 import {
   CellActionDescriptor,
-  CellActionDescriptorType,
+  cellLink,
   checkBoxCell,
   cellWithIcon,
   cellStatus,
@@ -112,13 +112,8 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '150px', undefined, undefined, true,
-        undefined, undefined, false, {
-          name: this.translate.instant('monitoring.cluster.show-on-cluster-map'),
-          type: CellActionDescriptorType.LINK,
-          isEnabled: (entity) => !!entity.nodeId,
-          link: (entity) => entity.nodeId ? {commands: ['/monitoring/cluster'], queryParams: {nodeId: entity.nodeId}} : null,
-          onAction: () => {}
-        }),
+        undefined, undefined, false, cellLink(this.translate.instant('monitoring.cluster.show-on-cluster-map'),
+          entity => entity.nodeId ? {commands: ['/monitoring/cluster'], queryParams: {nodeId: entity.nodeId}} : null)),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

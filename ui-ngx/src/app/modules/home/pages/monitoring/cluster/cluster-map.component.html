@@ -45,18 +45,17 @@
           [attr.stroke-width]="edge.strokeWidth" [attr.stroke-opacity]="edge.opacity"/>
     @if (edge.rate !== null) {
       <path class="tb-edge-hit" [attr.d]="edge.path">
-        <title>{{ 'monitoring.cluster.edge-tooltip' | translate: {rate: compactNumber(edge.rate)} }}</title>
+        <title>{{ compactNumber(edge.rate) }} {{ 'rate-chart.msg-per-min' | translate }}</title>
       </path>
     }
-    @if (animate()) {
-      @for (slot of edge.particleSlots; track slot) {
-        <circle class="tb-particle" r="3">
-          <animateMotion [attr.dur]="edge.durSec + 's'" repeatCount="indefinite"
-                         [attr.begin]="particleBegin(slot, edge.particleSlots.length, edge.durSec)">
-            <mpath [attr.href]="'#' + edge.id"/>
-          </animateMotion>
-        </circle>
-      }
+    <!-- Hidden by the stylesheet under prefers-reduced-motion, which also follows a change of the OS setting. -->
+    @for (slot of edge.particleSlots; track slot) {
+      <circle class="tb-particle" r="3">
+        <animateMotion [attr.dur]="edge.durSec + 's'" repeatCount="indefinite"
+                       [attr.begin]="particleBegin(slot, edge.particleSlots.length, edge.durSec)">
+          <mpath [attr.href]="'#' + edge.id"/>
+        </animateMotion>
+      </circle>
     }
   }
 
@@ -110,7 +109,7 @@
 <ng-template #nodeGlyph let-node="node">
   <svg:g [class]="node.key === selectedId() ? 'tb-node tb-node-selected' : 'tb-node'" role="button" tabindex="0"
          [attr.aria-pressed]="node.key === selectedId()"
-         [attr.aria-label]="'monitoring.cluster.node-aria-label' | translate: {id: node.id, sessions: node.sessions?.totalCount ?? 0, cpu: node.cpu ?? 0}"
+         [attr.aria-label]="nodeAriaLabel(node)"
          (click)="onSelect(node)" (keydown.enter)="onSelect(node, $event)" (keydown.space)="onSelect(node, $event)">
     <svg:circle class="tb-halo" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR + 7"/>
     <svg:circle [class]="node.hasDrops ? 'tb-ring-track tb-ring-track-drops' : 'tb-ring-track'"

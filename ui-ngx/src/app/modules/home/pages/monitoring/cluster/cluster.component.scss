@@ -84,7 +84,7 @@ $tb-line: rgba(0, 0, 0, 0.06);
 
 @keyframes tb-live-ping {
   0% {
-    box-shadow: 0 0 0 0 rgba(25, 128, 56, 0.55);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tb-usage-ok) 55%, transparent);
   }
   70% {
     box-shadow: 0 0 0 7px transparent;
@@ -123,12 +123,12 @@ $tb-line: rgba(0, 0, 0, 0.06);
 
   &.tb-alert-warning {
     color: var(--tb-usage-warn);
-    background: rgba(212, 125, 24, 0.12);
+    background: var(--tb-usage-warn-tint);
   }
 
   &.tb-alert-critical {
     color: var(--tb-usage-crit);
-    background: rgba(209, 39, 48, 0.1);
+    background: var(--tb-usage-crit-tint);
   }
 
   &:focus-visible {
@@ -144,7 +144,7 @@ $tb-line: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.54);
 }
 
-.tb-cluster-fullscreen {
+.tb-cluster-head-button {
   --mdc-icon-button-state-layer-size: 32px;
 
   width: 32px;
@@ -176,24 +176,6 @@ $tb-line: rgba(0, 0, 0, 0.06);
   tb-cluster-map {
     flex: 1;
     min-width: 0;
-  }
-}
-
-.tb-map-reset {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  z-index: 1;
-  height: 30px;
-  padding: 0 12px 0 8px;
-  border-radius: 15px;
-  background: #fff;
-  font-size: 12px;
-
-  mat-icon {
-    width: 18px;
-    height: 18px;
-    font-size: 18px;
   }
 }
 

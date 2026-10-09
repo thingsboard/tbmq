@@ -212,7 +212,7 @@
                           [style]="cellStyle(entity, column, row)">
                   <div [class]="{ 'flex': !!column.actionCell, 'items-center': !!column.actionCell }">
                     @if (column.actionCell?.type === cellActionType.LINK && column.actionCell.link(entity); as link) {
-                      <a class="tb-cell-link min-w-0 truncate" [routerLink]="link.commands" [queryParams]="link.queryParams"
+                      <a class="min-w-0 truncate" [routerLink]="link.commands" [queryParams]="link.queryParams"
                          [matTooltip]="column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name"
                          matTooltipPosition="above" (click)="$event.stopPropagation()" [innerHTML]="cellContent(entity, column, row)"></a>
                     } @else {

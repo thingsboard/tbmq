@@ -63,8 +63,19 @@ export interface CellActionDescriptor<T extends BaseData> {
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
   type?: CellActionDescriptorType;
-  // LINK cells render the cell content as a router link to this target; null leaves plain text.
-  link?: (entity: T) => {commands: any[]; queryParams?: Params} | null;
+  // LINK cells render the cell content as a router link to this target; null leaves plain text. Only
+  // tb-entities-table renders LINK cells; build them with cellLink().
+  link?: (entity: T) => CellLinkTarget | null;
+}
+
+export interface CellLinkTarget {
+  commands: any[];
+  queryParams?: Params;
+}
+
+// A LINK cell has no button, so the button callbacks of the descriptor are never called.
+export function cellLink<T extends BaseData>(name: string, link: (entity: T) => CellLinkTarget | null): CellActionDescriptor<T> {
+  return {name, type: CellActionDescriptorType.LINK, link, isEnabled: () => true, onAction: () => {}};
 }
 
 export interface GroupActionDescriptor<T extends BaseData> {
@@ -293,16 +304,7 @@ export const cellWithBackground = (value: string | number, background: string = 
 export const cellStatus = (content: string, color: string, background: string): string =>
   `${createHtmlElement('span', {color, background, 'border-radius': '16px', padding: '8px', 'font-size': '13px'}, content)}`;
 
-export function formatBytes(bytes, decimals = 1) {
-  if (!+bytes) {
-    return '0 B';
-  }
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
+export { formatBytes } from '@core/utils';
 
 export const arrowIcon = (messageReceived: boolean, iconColor: string = 'rgba(0, 0, 0, 0.38)'): string =>
   messageReceived ? arrowDown(iconColor) : arrowUp(iconColor);

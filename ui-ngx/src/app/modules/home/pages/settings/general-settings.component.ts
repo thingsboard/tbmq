@@ -62,10 +62,11 @@ const thresholdsOrdered = (group: AbstractControl): ValidationErrors | null => {
   return high !== null && critical !== null && Number(critical) <= Number(high) ? {thresholdsOrder: true} : null;
 };
 
-// Recipients are one string split on commas, semicolons or spaces, the same way the server reads them.
+// Recipients are typed as one line separated by commas, semicolons or spaces and stored as a list.
+const splitEmails = (value: string | null): string[] => String(value ?? '').split(/[,;\s]+/).filter(email => email);
+
 const emailList = (control: AbstractControl): ValidationErrors | null => {
-  const invalid = String(control.value ?? '').split(/[,;\s]+/)
-    .filter(email => email && Validators.email(new FormControl(email)) !== null);
+  const invalid = splitEmails(control.value).filter(email => Validators.email(new FormControl(email)) !== null);
   return invalid.length ? {emailList: {invalid}} : null;
 };
 
@@ -147,13 +148,14 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   saveResourceUsageAlertSettings() {
     const settings: AdminSettings<ResourceUsageAlertSettings> = JSON.parse(JSON.stringify(this.resourceUsageAlertSettings));
-    settings.jsonValue = {...settings.jsonValue, ...this.resourceUsageAlertsForm.value};
+    const {emails, ...form} = this.resourceUsageAlertsForm.value;
+    settings.jsonValue = {...settings.jsonValue, ...form, emails: splitEmails(emails)};
     this.settingsService.saveAdminSettings(settings)
       .subscribe(saved => this.processResourceUsageAlertSettings(saved));
   }
 
   discardResourceUsageAlertSettings(): void {
-    this.resourceUsageAlertsForm.reset(this.resourceUsageAlertSettings.jsonValue);
+    this.resetResourceUsageAlertsForm();
   }
 
   discardGeneralSettings(): void {
@@ -273,7 +275,12 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   private processResourceUsageAlertSettings(settings: AdminSettings<ResourceUsageAlertSettings>): void {
     this.resourceUsageAlertSettings = settings;
-    this.resourceUsageAlertsForm.reset(settings.jsonValue);
+    this.resetResourceUsageAlertsForm();
+  }
+
+  private resetResourceUsageAlertsForm() {
+    const {emails, ...settings} = this.resourceUsageAlertSettings.jsonValue;
+    this.resourceUsageAlertsForm.reset({...settings, emails: (emails ?? []).join(', ')});
   }
 
   private processConnectivitySettings(settings: AdminSettings<ConnectivitySettings>): void {

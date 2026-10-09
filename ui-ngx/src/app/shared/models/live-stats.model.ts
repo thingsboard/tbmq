@@ -29,19 +29,23 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import type { TimeseriesData, TsValue } from '@shared/models/chart.model';
+import type { ChartKey, TimeseriesData, TsValue } from '@shared/models/chart.model';
+import type { BrokerConfig } from '@shared/models/config.model';
 import { HOUR, MINUTE } from '@shared/models/time/time.models';
-import { isDefinedAndNotNull } from '@core/utils';
-import { formatBytes } from '@home/models/entity/entities-table-config.models';
+import { formatBytes, isDefinedAndNotNull } from '@core/utils';
 
 export type RateSeries = Record<string, TsValue[]>;
 
 export interface LiveStatsOptions {
   windowMs?: number;
-  // Counters are stored per stats-collection interval and are scaled to per-minute rates; gauges (sessions, usage
-  // percents) are shown as stored.
-  gaugeKeys?: readonly string[];
 }
+
+// Message and traffic counters are stored per stats-collection interval and are scaled to per-minute rates; every
+// other key (sessions, subscriptions, usage percents) is a gauge and is shown as stored.
+// Typed by the key values: chart.model imports this file, so ChartKey can't be used as a value here.
+export const COUNTER_KEYS: ReadonlySet<string> = new Set<`${ChartKey}`>([
+  'incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'inboundPayloadTraffic', 'outboundPayloadTraffic'
+]);
 
 export const LIVE_STATS_WINDOW_MS = HOUR;
 export const LIVE_STATS_WINDOWS = [15 * MINUTE, HOUR, 6 * HOUR];
@@ -61,19 +65,27 @@ export function emptyRateSeries(keys: readonly string[]): RateSeries {
   return Object.fromEntries(keys.map(key => [key, []]));
 }
 
+export function statsIntervalMinutes(brokerConfig: BrokerConfig | undefined): number {
+  return brokerConfig?.statsCollectionInterval || 1;
+}
+
+// What a stored sample of the key is divided by to read per minute.
+export function perMinuteDivisor(key: string, intervalMinutes: number): number {
+  return COUNTER_KEYS.has(key) ? intervalMinutes : 1;
+}
+
 export function scaledValue(count: number | undefined, divisor: number): number {
   return (Number(count) || 0) / (divisor > 0 ? divisor : 1);
 }
 
-export type KeyDivisor = (key: string) => number;
-
-export function seedRateSeries(keys: readonly string[], history: TimeseriesData, divisor: KeyDivisor, windowMs: number): RateSeries {
-  return Object.fromEntries(keys.map(key => [key, trimSamples(
-    (history[key] ?? []).map(sample => ({ts: sample.ts, value: scaledValue(sample.value, divisor(key))})), windowMs)]));
+export function seedRateSeries(keys: readonly string[], history: TimeseriesData, intervalMinutes: number,
+                               windowMs: number): RateSeries {
+  return Object.fromEntries(keys.map(key => [key, trimSamples((history[key] ?? []).map(sample =>
+    ({ts: sample.ts, value: scaledValue(sample.value, perMinuteDivisor(key, intervalMinutes))})), windowMs)]));
 }
 
 export function appendLatestToSeries(series: RateSeries, keys: readonly string[], latest: TimeseriesData | null,
-                                     divisor: KeyDivisor, windowMs: number): RateSeries {
+                                     intervalMinutes: number, windowMs: number): RateSeries {
   return Object.fromEntries(keys.map(key => {
     const samples = series[key] ?? [];
     const sample = latest?.[key]?.[0];
@@ -81,7 +93,8 @@ export function appendLatestToSeries(series: RateSeries, keys: readonly string[]
     if (!sample || (last && last.ts === sample.ts)) {
       return [key, samples];
     }
-    return [key, trimSamples([...samples, {ts: sample.ts, value: scaledValue(sample.value, divisor(key))}], windowMs)];
+    const value = scaledValue(sample.value, perMinuteDivisor(key, intervalMinutes));
+    return [key, trimSamples([...samples, {ts: sample.ts, value}], windowMs)];
   }));
 }
 

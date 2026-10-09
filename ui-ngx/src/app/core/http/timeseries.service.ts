@@ -16,7 +16,8 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
 import { AggregationType, Interval } from '@shared/models/time/time.models';
@@ -24,6 +25,9 @@ import { Direction } from '@shared/models/page/sort-order';
 import { CHARTS_HOME, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
 import { PageData } from '@shared/models/page/page-data';
 import { ResourceUsage, ServiceType } from '@shared/models/resource-usage.model';
+
+// Mirrors TimeseriesController.MAX_BATCH_ENTITY_IDS.
+const LATEST_BATCH_MAX_ENTITY_IDS = 100;
 
 @Injectable({
   providedIn: 'root'
@@ -73,8 +77,16 @@ export class TimeseriesService {
   }
 
   public getLatestTimeseriesBatch(entityIds: string[], keys: string[], config?: RequestConfig): Observable<Record<string, TimeseriesData>> {
-    const url = `/api/timeseries/latest/batch?entityIds=${encodeURIComponent(entityIds.join(','))}&keys=${encodeURIComponent(keys.join(','))}`;
-    return this.http.get<Record<string, TimeseriesData>>(url, defaultHttpOptionsFromConfig(config));
+    if (!entityIds.length) {
+      return of({});
+    }
+    const requests: Observable<Record<string, TimeseriesData>>[] = [];
+    for (let start = 0; start < entityIds.length; start += LATEST_BATCH_MAX_ENTITY_IDS) {
+      const ids = entityIds.slice(start, start + LATEST_BATCH_MAX_ENTITY_IDS);
+      const url = `/api/timeseries/latest/batch?entityIds=${encodeURIComponent(ids.join(','))}&keys=${encodeURIComponent(keys.join(','))}`;
+      requests.push(this.http.get<Record<string, TimeseriesData>>(url, defaultHttpOptionsFromConfig(config)));
+    }
+    return forkJoin(requests).pipe(map(chunks => Object.assign({}, ...chunks)));
   }
 
   public saveTelemetry(entityId: string, data, config?: RequestConfig): Observable<TimeseriesData> {
