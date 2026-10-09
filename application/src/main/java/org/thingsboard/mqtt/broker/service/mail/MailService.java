@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.mail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlert;
 
 public interface MailService {
 
@@ -32,9 +31,4 @@ public interface MailService {
     void sendResetPasswordEmailAsync(String passwordResetLink, String email);
 
     void sendPasswordWasResetEmail(String loginLink, String email) throws ThingsboardException;
-
-    /**
-     * @param nodeLink link to the node on the cluster map, or null to leave the button out
-     */
-    void sendResourceUsageAlertEmail(ResourceUsageAlert alert, String nodeLink, String email) throws ThingsboardException;
 }

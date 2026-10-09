@@ -46,7 +46,6 @@ import org.thingsboard.mqtt.broker.service.system.ServiceInfoIds.RegistryEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +81,6 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final TimeseriesService timeseriesService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final CacheProperties cacheProperties;
-    private final ResourceUsageAlertService resourceUsageAlertService;
 
     private static final Set<String> USAGE_PERCENT_KEYS = Set.of(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
 
@@ -162,7 +160,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     /**
-     * Stores one sample of a node's system info and checks its usage percents against the alert thresholds.
+     * Stores one sample of a node's system info.
      */
     private void processServiceInfoSample(String serviceId, String serviceType, List<TsKvEntry> tsList) {
         if (tsList.isEmpty()) {
@@ -181,23 +179,6 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (!usageEntries.isEmpty()) {
             withCallback(timeseriesService.save(entityId, usageEntries), __ -> {
             }, throwable -> log.warn("[{}] Failed to save service usage {}", entityId, usageEntries, throwable));
-            evaluateAlerts(serviceId, serviceType, usageEntries);
-        }
-    }
-
-    private void evaluateAlerts(String serviceId, String serviceType, List<TsKvEntry> usageEntries) {
-        Map<String, Long> usagePercents = new HashMap<>();
-        usageEntries.forEach(entry -> entry.getLongValue().ifPresent(value -> usagePercents.put(entry.getKey(), value)));
-        ServiceType type = ServiceType.findByName(serviceType).orElse(null);
-        if (type == null) {
-            log.debug("[{}] Skipping resource usage alerts of unknown service type {}", serviceId, serviceType);
-            return;
-        }
-        // Runs on the persist scheduler: an exception escaping here would cancel every later run of scheduleAtFixedRate.
-        try {
-            resourceUsageAlertService.evaluate(serviceId, type, usagePercents);
-        } catch (Exception e) {
-            log.warn("[{}] Failed to evaluate resource usage alerts", serviceId, e);
         }
     }
 
@@ -250,8 +231,6 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (delete == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
-        List<ServiceType> removedTypes = serviceType == null ? List.of(ServiceType.values()) : List.of(serviceType);
-        removedTypes.forEach(type -> resourceUsageAlertService.onServiceRemoved(serviceId, type));
     }
 
     private Object[] registryFieldsFor(String serviceId, ServiceType serviceType) {

@@ -20,7 +20,6 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import {
   AbstractControl,
-  FormControl,
   FormsModule,
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -36,7 +35,7 @@ import {
   connectivitySettingsKey,
   generalSettingsKey,
   GeneralSettings,
-  ResourceUsageAlertSettings,
+  ResourceUsageThresholds,
   WebSocketSettings,
 } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
@@ -48,7 +47,7 @@ import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -62,19 +61,11 @@ const thresholdsOrdered = (group: AbstractControl): ValidationErrors | null => {
   return high !== null && critical !== null && Number(critical) <= Number(high) ? {thresholdsOrder: true} : null;
 };
 
-// Recipients are typed as one line separated by commas, semicolons or spaces and stored as a list.
-const splitEmails = (value: string | null): string[] => String(value ?? '').split(/[,;\s]+/).filter(email => email);
-
-const emailList = (control: AbstractControl): ValidationErrors | null => {
-  const invalid = splitEmails(control.value).filter(email => Validators.email(new FormControl(email)) !== null);
-  return invalid.length ? {emailList: {invalid}} : null;
-};
-
 @Component({
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatError, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
@@ -89,7 +80,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private generalSettings: AdminSettings<GeneralSettings>;
   private webSocketSettings: AdminSettings<WebSocketSettings>;
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
-  private resourceUsageAlertSettings: AdminSettings<ResourceUsageAlertSettings>;
+  private resourceUsageAlertSettings: AdminSettings<ResourceUsageThresholds>;
 
   private destroy$ = new Subject<void>();
 
@@ -147,9 +138,8 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   saveResourceUsageAlertSettings() {
-    const settings: AdminSettings<ResourceUsageAlertSettings> = JSON.parse(JSON.stringify(this.resourceUsageAlertSettings));
-    const {emails, ...form} = this.resourceUsageAlertsForm.value;
-    settings.jsonValue = {...settings.jsonValue, ...form, emails: splitEmails(emails)};
+    const settings: AdminSettings<ResourceUsageThresholds> = JSON.parse(JSON.stringify(this.resourceUsageAlertSettings));
+    settings.jsonValue = {...settings.jsonValue, ...this.resourceUsageAlertsForm.value};
     this.settingsService.saveAdminSettings(settings)
       .subscribe(saved => this.processResourceUsageAlertSettings(saved));
   }
@@ -212,9 +202,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private buildResourceUsageAlertsForm() {
     this.resourceUsageAlertsForm = this.fb.group({
       highUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
-      criticalUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]],
-      emailEnabled: [false, []],
-      emails: ['', [emailList]]
+      criticalUsage: [null, [Validators.required, Validators.min(1), Validators.max(100)]]
     }, {validators: [thresholdsOrdered]});
   }
 
@@ -273,14 +261,13 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.webSocketSettingsForm.reset(this.webSocketSettings.jsonValue);
   }
 
-  private processResourceUsageAlertSettings(settings: AdminSettings<ResourceUsageAlertSettings>): void {
+  private processResourceUsageAlertSettings(settings: AdminSettings<ResourceUsageThresholds>): void {
     this.resourceUsageAlertSettings = settings;
     this.resetResourceUsageAlertsForm();
   }
 
   private resetResourceUsageAlertsForm() {
-    const {emails, ...settings} = this.resourceUsageAlertSettings.jsonValue;
-    this.resourceUsageAlertsForm.reset({...settings, emails: (emails ?? []).join(', ')});
+    this.resourceUsageAlertsForm.reset(this.resourceUsageAlertSettings.jsonValue);
   }
 
   private processConnectivitySettings(settings: AdminSettings<ConnectivitySettings>): void {

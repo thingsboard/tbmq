@@ -30,13 +30,13 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
+// Rows saved by earlier builds also carry the dropped email fields.
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -49,8 +49,6 @@ public class ResourceUsageAlertSettings {
 
     private int highUsage = DEFAULT_HIGH_USAGE;
     private int criticalUsage = DEFAULT_CRITICAL_USAGE;
-    private boolean emailEnabled;
-    private List<String> emails = new ArrayList<>();
 
     public static ResourceUsageAlertSettings defaults() {
         return new ResourceUsageAlertSettings();

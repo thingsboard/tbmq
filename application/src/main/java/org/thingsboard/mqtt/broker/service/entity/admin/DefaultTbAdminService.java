@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.ResourceUsageAlertSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -67,10 +68,6 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
                     var mqttAuthSettings = JacksonUtil.convertValue(saved.getJsonValue(), MqttAuthSettings.class);
                     systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
                 }
-                case RESOURCE_USAGE_ALERTS -> systemSettingsNotificationService.onResourceUsageAlertSettingsUpdate();
-                }
-                case RESOURCE_USAGE_ALERTS -> resourceUsageAlertService.onSettingsUpdate();
-                }
             }
         });
         sanitizeMailPassword(saved);
@@ -78,8 +75,30 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
     }
 
     @Override
+    public AdminSettings getResourceUsageAlertSettings() {
+        String key = SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey();
+        AdminSettings stored = adminSettingsService.findAdminSettingsByKey(key);
+        AdminSettings adminSettings = stored != null ? stored : new AdminSettings();
+        adminSettings.setKey(key);
+        adminSettings.setJsonValue(JacksonUtil.valueToTree(toResourceUsageAlertSettings(stored)));
+        return adminSettings;
+    }
+
+    @Override
     public SecuritySettings saveSecuritySettings(SecuritySettings securitySettings, User currentUser) {
         return systemSecurityService.saveSecuritySettings(securitySettings);
+    }
+
+    private static ResourceUsageAlertSettings toResourceUsageAlertSettings(AdminSettings stored) {
+        if (stored == null || stored.getJsonValue() == null) {
+            return ResourceUsageAlertSettings.defaults();
+        }
+        try {
+            return JacksonUtil.convertValue(stored.getJsonValue(), ResourceUsageAlertSettings.class);
+        } catch (Exception e) {
+            log.warn("Invalid resource usage alert settings {}, using defaults", stored.getJsonValue(), e);
+            return ResourceUsageAlertSettings.defaults();
+        }
     }
 
     private void sanitizeMailPassword(AdminSettings adminSettings) {

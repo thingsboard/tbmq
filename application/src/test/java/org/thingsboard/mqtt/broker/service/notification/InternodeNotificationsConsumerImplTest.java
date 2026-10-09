@@ -26,7 +26,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
-import org.thingsboard.mqtt.broker.gen.queue.ResourceUsageAlertSettingsUpdateProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
@@ -38,7 +37,6 @@ import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
-import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlertService;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -74,9 +72,6 @@ public class InternodeNotificationsConsumerImplTest {
     private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
 
     @Mock
-    private ResourceUsageAlertService resourceUsageAlertService;
-
-    @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
 
     private InternodeNotificationsConsumerImpl notificationsConsumer;
@@ -90,8 +85,7 @@ public class InternodeNotificationsConsumerImplTest {
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
                 authorizationRoutingService,
-                integrationLifecycleEventTypeCache,
-                resourceUsageAlertService);
+                integrationLifecycleEventTypeCache);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
@@ -222,23 +216,6 @@ public class InternodeNotificationsConsumerImplTest {
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
-    }
-
-    @Test
-    public void testStartConsuming_AndProcessesResourceUsageAlertSettingsUpdate() {
-        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
-                .setResourceUsageAlertSettingsUpdateProto(ResourceUsageAlertSettingsUpdateProto.getDefaultInstance())
-                .build();
-        when(consumer.poll(anyLong()))
-                .thenReturn(List.of(new TbProtoQueueMsg<>("nodeB", proto)))
-                .thenReturn(List.of());
-
-        notificationsConsumer.startConsuming();
-
-        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> verify(resourceUsageAlertService).onSettingsUpdate());
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, integrationLifecycleEventTypeCache);
-
-        notificationsConsumer.destroy();
     }
 
     @Test

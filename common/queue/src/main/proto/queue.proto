@@ -191,11 +191,6 @@ message InternodeNotificationProto {
   MqttAuthProviderProto mqttAuthProviderProto = 2;
   ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 3;
   IntegrationLifecycleConfigProto integrationLifecycleConfigProto = 4;
-  ResourceUsageAlertSettingsUpdateProto resourceUsageAlertSettingsUpdateProto = 5;
-}
-
-// Tells every broker to reload the resource usage alert thresholds it caches.
-message ResourceUsageAlertSettingsUpdateProto {
 }
 
 message DevicePublishMsgProto {

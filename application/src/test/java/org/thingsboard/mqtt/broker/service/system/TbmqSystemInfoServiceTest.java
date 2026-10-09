@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -82,8 +80,6 @@ public class TbmqSystemInfoServiceTest {
     private CacheProperties cacheProperties;
     @Mock
     private HashOperations<String, Object, Object> hashOperations;
-    @Mock
-    private ResourceUsageAlertService resourceUsageAlertService;
 
     @InjectMocks
     private TbmqSystemInfoService systemInfoService;
@@ -94,7 +90,7 @@ public class TbmqSystemInfoServiceTest {
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties, resourceUsageAlertService);
+        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties);
         systemInfoService.setServiceRegistryKey(SERVICE_REGISTRY_KEY);
     }
 
@@ -110,21 +106,8 @@ public class TbmqSystemInfoServiceTest {
         when(timeseriesService.saveLatest(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
 
         saveCurrentServiceInfoWith(10, 20, 30, 8192L, 4, 100000L);
-
-        verify(resourceUsageAlertService).evaluate("test-service", TBMQ, Map.of(CPU_USAGE, 10L, MEMORY_USAGE, 20L, DISK_USAGE, 30L));
         assertThat(captureKeys(true, "test-service")).containsExactlyInAnyOrder(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
         assertThat(captureKeys(false, "test-service")).containsExactlyInAnyOrder(TOTAL_MEMORY, CPU_COUNT, TOTAL_DISK_SPACE);
-    }
-
-    @Test
-    public void testSaveCurrentServiceInfoSavesAndDoesNotThrowWhenAlertEvaluationFails() {
-        givenBroker("test-service");
-        when(timeseriesService.save(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
-        doThrow(new IllegalStateException("settings unavailable")).when(resourceUsageAlertService).evaluate(any(), any(), any());
-
-        assertThatCode(() -> saveCurrentServiceInfoWith(10, 20, 30, null, null, null)).doesNotThrowAnyException();
-
-        assertThat(captureKeys(true, "test-service")).containsExactlyInAnyOrder(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
     }
 
     @Test
@@ -133,7 +116,7 @@ public class TbmqSystemInfoServiceTest {
 
         saveCurrentServiceInfoWith(null, null, null, null, null, null);
 
-        verifyNoInteractions(resourceUsageAlertService, timeseriesService);
+        verifyNoInteractions(timeseriesService);
     }
 
     @Test
@@ -171,9 +154,6 @@ public class TbmqSystemInfoServiceTest {
                 .build();
 
         systemInfoService.processIeServiceInfo(serviceInfo);
-
-        verify(resourceUsageAlertService).evaluate("svc2", TBMQ_INTEGRATION_EXECUTOR,
-                Map.of(CPU_USAGE, 10L, MEMORY_USAGE, 200L, DISK_USAGE, 50L));
         assertThat(captureKeys(true, entityId)).containsExactlyInAnyOrder(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
         assertThat(captureKeys(false, entityId)).containsExactlyInAnyOrder(TOTAL_MEMORY, CPU_COUNT, TOTAL_DISK_SPACE);
         verify(timeseriesService, never()).save(eq("svc2"), anyList());
@@ -189,7 +169,7 @@ public class TbmqSystemInfoServiceTest {
 
         systemInfoService.processIeServiceInfo(serviceInfo);
 
-        verifyNoInteractions(resourceUsageAlertService, timeseriesService);
+        verifyNoInteractions(timeseriesService);
     }
 
     @Test
@@ -203,8 +183,6 @@ public class TbmqSystemInfoServiceTest {
                 .build();
 
         systemInfoService.processIeServiceInfo(serviceInfo);
-
-        verifyNoInteractions(resourceUsageAlertService);
         verify(timeseriesService, never()).save(any(), anyList());
         assertThat(captureKeys(false, entityId)).containsExactly(CPU_COUNT);
     }
@@ -219,7 +197,6 @@ public class TbmqSystemInfoServiceTest {
     public void testRemoveServiceInfoNotFound() {
         when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(0L);
         assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4", null));
-        verifyNoInteractions(resourceUsageAlertService);
     }
 
     @Test
@@ -230,8 +207,6 @@ public class TbmqSystemInfoServiceTest {
         assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("ie1", TBMQ_INTEGRATION_EXECUTOR));
 
         verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:ie1", "ie1");
-        verify(resourceUsageAlertService).onServiceRemoved("ie1", TBMQ_INTEGRATION_EXECUTOR);
-        verify(resourceUsageAlertService, never()).onServiceRemoved("ie1", TBMQ);
     }
 
     @Test
@@ -251,8 +226,6 @@ public class TbmqSystemInfoServiceTest {
         when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(2L);
         assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("shared", null));
         verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "shared", "TBMQ_INTEGRATION_EXECUTOR:shared");
-        verify(resourceUsageAlertService).onServiceRemoved("shared", TBMQ);
-        verify(resourceUsageAlertService).onServiceRemoved("shared", TBMQ_INTEGRATION_EXECUTOR);
     }
 
     @Test

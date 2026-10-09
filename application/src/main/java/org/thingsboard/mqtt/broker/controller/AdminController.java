@@ -45,7 +45,6 @@ import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
-import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlertService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +62,6 @@ public class AdminController extends BaseController {
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
     private final WebSocketConnectionService webSocketConnectionService;
-    private final ResourceUsageAlertService resourceUsageAlertService;
 
     @Value("${security.user_token_access_enabled:true}")
     private boolean userTokenAccessEnabled;
@@ -80,7 +78,7 @@ public class AdminController extends BaseController {
     public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         checkParameter("key", key);
         if (SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey().equals(key)) {
-            return resourceUsageAlertService.getAdminSettings();
+            return tbAdminService.getResourceUsageAlertSettings();
         }
         AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
         if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {

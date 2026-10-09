@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
-import org.thingsboard.mqtt.broker.gen.queue.ResourceUsageAlertSettingsUpdateProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
@@ -42,7 +41,6 @@ import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
-import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlertService;
 
 import java.util.List;
 
@@ -82,9 +80,6 @@ public class InternodeNotificationsServiceImplTest {
     private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
 
     @Mock
-    private ResourceUsageAlertService resourceUsageAlertService;
-
-    @Mock
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> producer;
 
     private InternodeNotificationsServiceImpl service;
@@ -101,8 +96,7 @@ public class InternodeNotificationsServiceImplTest {
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
                 authorizationRoutingService,
-                integrationLifecycleEventTypeCache,
-                resourceUsageAlertService
+                integrationLifecycleEventTypeCache
         );
         service.init();
     }
@@ -222,20 +216,6 @@ public class InternodeNotificationsServiceImplTest {
 
         verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, producer);
-    }
-
-    @Test
-    public void testBroadcast_ResourceUsageAlertSettingsUpdate_AppliesLocallyAndReachesOtherNodes() {
-        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
-                .setResourceUsageAlertSettingsUpdateProto(ResourceUsageAlertSettingsUpdateProto.getDefaultInstance())
-                .build();
-        when(helper.getServiceIds()).thenReturn(List.of("nodeA", "nodeB"));
-        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
-
-        service.broadcast(proto);
-
-        verify(resourceUsageAlertService).onSettingsUpdate();
-        verify(producer).send(eq("topicB"), any(), any(), any());
     }
 
     @Test

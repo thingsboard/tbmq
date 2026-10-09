@@ -19,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
-import org.thingsboard.mqtt.broker.gen.queue.ResourceUsageAlertSettingsUpdateProto;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 
@@ -34,13 +32,6 @@ public class SystemSettingsNotificationServiceImpl implements SystemSettingsNoti
     @Override
     public void onMqttAuthSettingUpdate(MqttAuthSettings mqttAuthSettings) {
         internodeNotificationsService.broadcast(ProtoConverter.toMqttAuthSettingUpdateProto(mqttAuthSettings));
-    }
-
-    @Override
-    public void onResourceUsageAlertSettingsUpdate() {
-        internodeNotificationsService.broadcast(InternodeNotificationProto.newBuilder()
-                .setResourceUsageAlertSettingsUpdateProto(ResourceUsageAlertSettingsUpdateProto.getDefaultInstance())
-                .build());
     }
 
 }

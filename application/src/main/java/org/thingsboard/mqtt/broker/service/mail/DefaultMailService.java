@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
-import org.thingsboard.mqtt.broker.service.system.ResourceUsageAlert;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -120,28 +119,6 @@ public class DefaultMailService implements MailService {
         model.put(TARGET_EMAIL, email);
 
         String message = mergeTemplateIntoString("tbmq.password.was.reset.ftl", model);
-
-        sendMail(mailSender, mailFrom, email, subject, message, timeout);
-    }
-
-    @Override
-    public void sendResourceUsageAlertEmail(ResourceUsageAlert alert, String nodeLink, String email) throws ThingsboardException {
-        String metricName = messages.getMessage("resource.usage.metric." + alert.metric(), null, alert.metric(), Locale.US);
-        String level = alert.level().name().toLowerCase(Locale.ROOT);
-        String subject = messages.getMessage("resource.usage.alert.subject",
-                new Object[]{metricName, level, alert.serviceId(), alert.usage()}, Locale.US);
-
-        Map<String, Object> model = new HashMap<>();
-        model.put("serviceId", alert.serviceId());
-        model.put("serviceType", alert.serviceType().getLabel());
-        model.put("metricName", metricName);
-        model.put("usage", alert.usage());
-        model.put("level", level);
-        model.put("threshold", alert.threshold());
-        model.put("nodeLink", nodeLink);
-        model.put(TARGET_EMAIL, email);
-
-        String message = mergeTemplateIntoString("tbmq.resource.usage.alert.ftl", model);
 
         sendMail(mailSender, mailFrom, email, subject, message, timeout);
     }

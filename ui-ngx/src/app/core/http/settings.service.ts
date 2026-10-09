@@ -31,7 +31,6 @@ import {
   webSocketSettingsKey,
   defaultResourceUsageAlertSettings,
   resourceUsageAlertSettingsKey,
-  ResourceUsageAlertSettings,
   ResourceUsageThresholds
 } from '@shared/models/settings.models';
 import { ConfigService } from '@core/http/config.service';
@@ -64,8 +63,8 @@ export class SettingsService {
     return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings, defaultHttpOptionsFromConfig(config));
   }
 
-  public getResourceUsageAlertSettings(): Observable<AdminSettings<ResourceUsageAlertSettings>> {
-    return this.getAdminSettings<ResourceUsageAlertSettings>(resourceUsageAlertSettingsKey);
+  public getResourceUsageAlertSettings(): Observable<AdminSettings<ResourceUsageThresholds>> {
+    return this.getAdminSettings<ResourceUsageThresholds>(resourceUsageAlertSettingsKey);
   }
 
   // Thresholds only colour usage values, so a failed lookup falls back to the defaults instead of breaking the page.
