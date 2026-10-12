@@ -32,6 +32,8 @@ package org.thingsboard.mqtt.broker.service.topictree;
 
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -50,13 +52,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.ToLongFunction;
 
 public final class TopicTreeSnapshot {
 
+    private static final ToLongFunction<TopicTreeNode> NO_DROPS = n -> 0L;
     private static final Comparator<TopicTreeNode> BY_SUBSCRIPTIONS_DESC =
             Comparator.comparingInt(TopicTreeNode::subscriptionsTotal).reversed().thenComparing(TopicTreeNode::segment);
 
-    public record ClientCounts(int total, int online, int offline) {
+    public record ClientCounts(int total, int online, int offline, int applications, int devices) {
     }
 
     @Getter
@@ -121,25 +126,39 @@ public final class TopicTreeSnapshot {
             n.children().forEach(stack::push);
         }
         int online = 0;
+        int applications = 0;
+        int devices = 0;
         for (String c : clients) {
             ClientSessionInfo s = sessions.get(c);
-            if (s != null && s.isConnected()) {
+            if (s == null) {
+                continue;
+            }
+            if (s.isConnected()) {
                 online++;
             }
+            if (s.getType() == ClientType.APPLICATION) {
+                applications++;
+            } else if (s.getType() == ClientType.DEVICE) {
+                devices++;
+            }
         }
-        ClientCounts result = new ClientCounts(clients.size(), online, clients.size() - online);
+        ClientCounts result = new ClientCounts(clients.size(), online, clients.size() - online, applications, devices);
         node.clientCounts = result;
         return result;
     }
 
     public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link) {
+        return children(parent, link, NO_DROPS);
+    }
+
+    public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link, ToLongFunction<TopicTreeNode> dropped) {
         TopicTreeNode[] sorted = parent.sortedChildren;
         if (sorted == null) {
             sorted = parent.children().toArray(new TopicTreeNode[0]);
             Arrays.sort(sorted, BY_SUBSCRIPTIONS_DESC);
             parent.sortedChildren = sorted;
         }
-        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder());
+        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, false);
         List<TopicTreeNode> list = Arrays.asList(sorted);
         if (cmp != null) {
             list = new ArrayList<>(list);
@@ -149,12 +168,90 @@ public final class TopicTreeSnapshot {
     }
 
     public PageData<TopicTreeNode> search(String text, PageLink link) {
-        String needle = text.toLowerCase(Locale.ROOT);
+        return query(TopicTreeQuery.text(text), NO_DROPS, link);
+    }
+
+    public PageData<TopicTreeNode> query(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped, PageLink link) {
         List<TopicTreeNode> hits = new ArrayList<>();
-        forEachMatching(needle, hits::add);
-        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder());
+        Predicate<TopicTreeNode> matches = predicate(q, dropped);
+        Consumer<TopicTreeNode> collect = n -> {
+            if (matches.test(n)) {
+                hits.add(n);
+            }
+        };
+        if (q.text() != null) {
+            forEachMatching(q.text().toLowerCase(Locale.ROOT), collect);
+        } else {
+            for (int i = 1; i < preorder.length; i++) {
+                collect.accept(preorder[i]);
+            }
+        }
+        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, true);
         hits.sort(cmp != null ? cmp : BY_SUBSCRIPTIONS_DESC);
         return page(hits, link);
+    }
+
+    // Cheap structural checks run first, so the subtree walks behind clientCounts only run for the nodes that remain.
+    private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped) {
+        Predicate<TopicTreeNode> p = n -> true;
+        if (q.wildcardOnly()) {
+            p = p.and(TopicTreeNode::isWildcard);
+        }
+        if (q.matchingPaths() != null) {
+            p = p.and(n -> q.matchingPaths().contains(n.path()));
+        }
+        if (q.topic() != null) {
+            String topic = q.topic();
+            p = p.and(q.topicPrefix()
+                    ? n -> isPrefixOf(topic, n.path())
+                    : n -> n.path().toLowerCase(Locale.ROOT).contains(topic.toLowerCase(Locale.ROOT)));
+        }
+        for (TopicTreeQuery.Has has : q.has()) {
+            p = p.and(switch (has) {
+                case SUBSCRIPTIONS -> n -> n.subscriptionsTotal() > 0;
+                case RETAINED -> n -> n.retainedTotal() > 0;
+                case SHARED -> n -> n.sharedGroupsTotal() > 0;
+                case INTEGRATIONS -> n -> n.integrationsTotal() > 0;
+                case DROPPED -> n -> dropped.applyAsLong(n) > 0;
+            });
+        }
+        if (q.subscriptions() != null) {
+            int value = q.subscriptions();
+            SubscriptionOperation op = q.subscriptionOperation() == null ? SubscriptionOperation.EQUAL : q.subscriptionOperation();
+            p = p.and(n -> compare(n.subscriptionsTotal(), op, value));
+        }
+        if (!q.clientStatuses().isEmpty()) {
+            boolean connected = q.clientStatuses().contains(TopicTreeQuery.ClientStatus.CONNECTED);
+            boolean disconnected = q.clientStatuses().contains(TopicTreeQuery.ClientStatus.DISCONNECTED);
+            p = p.and(n -> {
+                ClientCounts cc = clientCounts(n);
+                return (connected && cc.online() > 0) || (disconnected && cc.offline() > 0);
+            });
+        }
+        if (!q.clientTypes().isEmpty()) {
+            boolean applications = q.clientTypes().contains(ClientType.APPLICATION);
+            boolean devices = q.clientTypes().contains(ClientType.DEVICE);
+            p = p.and(n -> {
+                ClientCounts cc = clientCounts(n);
+                return (applications && cc.applications() > 0) || (devices && cc.devices() > 0);
+            });
+        }
+        return p;
+    }
+
+    private static boolean isPrefixOf(String prefix, String path) {
+        return path.equals(prefix) || (path.startsWith(prefix) && path.charAt(prefix.length()) == '/');
+    }
+
+    private static boolean compare(int actual, SubscriptionOperation op, int value) {
+        return switch (op) {
+            case EQUAL -> actual == value;
+            case NOT_EQUAL -> actual != value;
+            case GREATER -> actual > value;
+            case LESS -> actual < value;
+            case GREATER_OR_EQUAL -> actual >= value;
+            case LESS_OR_EQUAL -> actual <= value;
+        };
     }
 
     public PageData<TopicTreeEntityDto> entities(TopicTreeNode node, TopicTreeEntityDto.Kind kind, PageLink link) {
@@ -261,14 +358,19 @@ public final class TopicTreeSnapshot {
         }
     }
 
-    private static Comparator<TopicTreeNode> comparator(SortOrder sortOrder) {
+    // Siblings share their parent's path, so the tree sorts by segment; a flat listing needs the full path.
+    private Comparator<TopicTreeNode> comparator(SortOrder sortOrder, ToLongFunction<TopicTreeNode> dropped, boolean flat) {
         if (sortOrder == null || sortOrder.getProperty() == null) {
             return null;
         }
         Comparator<TopicTreeNode> c = switch (sortOrder.getProperty()) {
-            case "segment" -> Comparator.comparing(TopicTreeNode::segment);
+            case "topic", "segment" -> flat ? Comparator.comparing(TopicTreeNode::path) : Comparator.comparing(TopicTreeNode::segment);
             case "subscriptions" -> Comparator.comparingInt(TopicTreeNode::subscriptionsTotal);
+            case "clients" -> Comparator.comparingInt((TopicTreeNode n) -> clientCounts(n).total());
             case "retained" -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
+            case "shared" -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
+            case "integrations" -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);
+            case "dropped" -> Comparator.comparingLong(dropped);
             default -> null;
         };
         if (c == null) {

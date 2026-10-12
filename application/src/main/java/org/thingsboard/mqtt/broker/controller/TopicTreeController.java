@@ -36,6 +36,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -50,16 +52,21 @@ import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeColumn;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeNode;
+import org.thingsboard.mqtt.broker.service.topictree.TopicTreeQuery;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
 
 @RestController
 @RequiredArgsConstructor
@@ -86,14 +93,37 @@ public class TopicTreeController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/search")
-    public PageData<TopicTreeNodeDto> search(@RequestParam String filter,
+    public PageData<TopicTreeNodeDto> search(@RequestParam(required = false) String filter,
+                                             @RequestParam(required = false) String topic,
+                                             @RequestParam(required = false) String topicMatch,
+                                             @RequestParam(required = false) String matchesTopic,
+                                             @RequestParam(required = false) String has,
+                                             @RequestParam(required = false) String clientStatus,
+                                             @RequestParam(required = false) String clientType,
+                                             @RequestParam(defaultValue = "false") boolean wildcardOnly,
+                                             @RequestParam(required = false) Integer subscriptions,
+                                             @RequestParam(required = false) String subscriptionOperation,
                                              @RequestParam(required = false) String columns,
                                              @RequestParam(defaultValue = "100") int pageSize,
                                              @RequestParam(defaultValue = "0") int page,
                                              @RequestParam(required = false) String sortProperty,
                                              @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
-        return doSearch(filter, columns, pageSize, page, sortProperty, sortOrder);
+        if (filter != null && !filter.isEmpty()) {
+            checkFilter(filter);
+        }
+        TopicTreeQuery query = new TopicTreeQuery(
+                filter == null || filter.isEmpty() ? null : filter,
+                topic,
+                "PREFIX".equalsIgnoreCase(topicMatch),
+                matchesTopic == null || matchesTopic.isEmpty() ? null : matchingPaths(matchesTopic),
+                parseEnums(has, TopicTreeQuery.Has.class),
+                parseEnums(clientStatus, TopicTreeQuery.ClientStatus.class),
+                parseEnums(clientType, ClientType.class),
+                wildcardOnly,
+                subscriptions,
+                subscriptionOperation == null ? null : parseEnum(subscriptionOperation, SubscriptionOperation.class));
+        return doQuery(query, columns, pageSize, page, sortProperty, sortOrder);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -160,7 +190,7 @@ public class TopicTreeController extends BaseController {
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseColumns(columns);
         PageLink link = createPageLink(clamp(pageSize, cols), page, null, sortProperty, sortOrder);
-        PageData<TopicTreeNode> nodes = s.children(node(s, path), link);
+        PageData<TopicTreeNode> nodes = s.children(node(s, path), link, droppedFor("dropped".equals(sortProperty)));
         List<TopicTreeNodeDto> dtos = withDropped(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(), cols);
         return new PageData<>(dtos, nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
     }
@@ -168,12 +198,67 @@ public class TopicTreeController extends BaseController {
     PageData<TopicTreeNodeDto> doSearch(String filter, String columns, int pageSize, int page,
                                         String sortProperty, String sortOrder) throws ThingsboardException {
         checkFilter(filter);
+        return doQuery(TopicTreeQuery.text(filter), columns, pageSize, page, sortProperty, sortOrder);
+    }
+
+    PageData<TopicTreeNodeDto> doQuery(TopicTreeQuery query, String columns, int pageSize, int page,
+                                       String sortProperty, String sortOrder) throws ThingsboardException {
+        if (query.isEmpty()) {
+            throw new ThingsboardException("At least one filter criterion is required", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseColumns(columns);
         PageLink link = createPageLink(clamp(pageSize, cols), page, null, sortProperty, sortOrder);
-        PageData<TopicTreeNode> nodes = s.search(filter, link);
+        boolean needsDropped = query.has().contains(TopicTreeQuery.Has.DROPPED) || "dropped".equals(sortProperty);
+        PageData<TopicTreeNode> nodes = s.query(query, droppedFor(needsDropped), link);
         List<TopicTreeNodeDto> dtos = withDropped(nodes.getData().stream().map(n -> TopicTreeNodeDto.of(n, s, cols)).toList(), cols);
         return new PageData<>(dtos, nodes.getTotalPages(), nodes.getTotalElements(), nodes.hasNext());
+    }
+
+    // Drops are stored per concrete topic, so each one is credited to every topic tree level above it.
+    private ToLongFunction<TopicTreeNode> droppedFor(boolean needed) {
+        if (!needed) {
+            return n -> 0L;
+        }
+        long since = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+        Map<String, Long> byPrefix = new HashMap<>();
+        droppedMsgPageService.sumDroppedByTopicSince(since).forEach((topic, count) -> {
+            for (int i = topic.indexOf('/'); i >= 0; i = topic.indexOf('/', i + 1)) {
+                byPrefix.merge(topic.substring(0, i), count, Long::sum);
+            }
+            byPrefix.merge(topic, count, Long::sum);
+        });
+        return n -> n.path() == null ? 0L : byPrefix.getOrDefault(n.path(), 0L);
+    }
+
+    private Set<String> matchingPaths(String topic) throws ThingsboardException {
+        try {
+            Set<String> paths = new HashSet<>();
+            topicResolveService.resolve(topic).getMatches().forEach(m -> paths.add(m.getTopicFilter()));
+            return paths;
+        } catch (IllegalArgumentException e) {
+            throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+    }
+
+    private static <E extends Enum<E>> Set<E> parseEnums(String csv, Class<E> type) throws ThingsboardException {
+        Set<E> result = EnumSet.noneOf(type);
+        if (csv != null) {
+            for (String value : csv.split(",")) {
+                if (!value.isBlank()) {
+                    result.add(parseEnum(value.trim(), type));
+                }
+            }
+        }
+        return result;
+    }
+
+    private static <E extends Enum<E>> E parseEnum(String value, Class<E> type) throws ThingsboardException {
+        try {
+            return Enum.valueOf(type, value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ThingsboardException("Unknown " + type.getSimpleName() + ": " + value, ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

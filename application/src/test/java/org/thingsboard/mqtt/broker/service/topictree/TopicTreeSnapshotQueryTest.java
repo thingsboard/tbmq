@@ -31,13 +31,19 @@
 package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.junit.jupiter.api.Test;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeSubscriptionDto;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -102,6 +108,78 @@ class TopicTreeSnapshotQueryTest {
                 .extracting(TopicTreeEntityDto::getId).containsExactly("int-1");
         assertThat(s.entities(s.find("sensors"), TopicTreeEntityDto.Kind.SHARED, new PageLink(50, 0)).getData())
                 .extracting(TopicTreeEntityDto::getId).containsExactly("g1");
+    }
+
+    @Test
+    void queryHasRetainedUsesSubtreeTotals() {
+        assertThat(paths(query(Set.of(TopicTreeQuery.Has.RETAINED), Set.of(), false, null)))
+                .contains("other", "sensors", "sensors/room1/temperature").doesNotContain("/leading", "a//b");
+    }
+
+    @Test
+    void queryTopicPrefixMatchesWholeLevelsOnly() {
+        TopicTreeQuery q = new TopicTreeQuery(null, "sensors/room1", true, null, Set.of(), Set.of(), Set.of(), false, null, null);
+        assertThat(paths(s.query(q, n -> 0L, new PageLink(50, 0))))
+                .isNotEmpty().allMatch(p -> p.equals("sensors/room1") || p.startsWith("sensors/room1/"));
+    }
+
+    @Test
+    void queryWildcardOnly() {
+        assertThat(paths(query(Set.of(), Set.of(), true, null)))
+                .containsExactlyInAnyOrder("sensors/+", "sensors/#", "sensors/room1/#");
+    }
+
+    @Test
+    void queryDisconnectedClientsFollowsTheOfflineSubscriber() {
+        assertThat(paths(query(Set.of(), Set.of(TopicTreeQuery.ClientStatus.DISCONNECTED), false, null)))
+                .containsExactlyInAnyOrder("sensors", "sensors/+", "sensors/+/temperature");
+    }
+
+    @Test
+    void querySubscriptionCountComparison() {
+        PageData<TopicTreeNode> p = query(Set.of(), Set.of(), false, 2);
+        assertThat(p.getData()).isNotEmpty().allMatch(n -> n.subscriptionsTotal() > 2);
+        assertThat(paths(p)).contains("sensors", "sensors/+/temperature");
+    }
+
+    @Test
+    void queryHasDroppedAndSortByDroppedUseTheSuppliedCounts() {
+        TopicTreeQuery q = new TopicTreeQuery(null, null, false, null, Set.of(TopicTreeQuery.Has.DROPPED), Set.of(), Set.of(), false, null, null);
+        PageData<TopicTreeNode> p = s.query(q, n -> "other".equals(n.path()) ? 3 : 0, new PageLink(50, 0));
+        assertThat(paths(p)).containsExactly("other");
+        PageData<TopicTreeNode> sorted = s.children(s.getRoot(),
+                new PageLink(50, 0, null, new SortOrder("dropped", SortOrder.Direction.DESC)), n -> "other".equals(n.path()) ? 3 : 0);
+        assertThat(sorted.getData().get(0).path()).isEqualTo("other");
+    }
+
+    @Test
+    void childrenSortByClientsDesc() {
+        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(50, 0, null, new SortOrder("clients", SortOrder.Direction.DESC)));
+        assertThat(p.getData().get(0).path()).isEqualTo("sensors");
+    }
+
+    @Test
+    void queryClientTypes() {
+        Map<String, Set<TopicSubscription>> subs = Map.of(
+                "app", Set.<TopicSubscription>of(TopicTreeSnapshotBuilderTest.sub("a/x", 0)),
+                "dev", Set.<TopicSubscription>of(TopicTreeSnapshotBuilderTest.sub("b/y", 0)));
+        Map<String, ClientSessionInfo> sessions = Map.of(
+                "app", ClientSessionInfo.builder().clientId("app").type(ClientType.APPLICATION).build(),
+                "dev", ClientSessionInfo.builder().clientId("dev").type(ClientType.DEVICE).build());
+        TopicTreeSnapshot typed = TopicTreeSnapshotBuilder.build(subs, List.of(), sessions, 1L);
+        TopicTreeQuery q = new TopicTreeQuery(null, null, false, null, Set.of(), Set.of(), Set.of(ClientType.APPLICATION), false, null, null);
+        assertThat(paths(typed.query(q, n -> 0L, new PageLink(50, 0)))).containsExactlyInAnyOrder("a", "a/x");
+    }
+
+    private PageData<TopicTreeNode> query(Set<TopicTreeQuery.Has> has, Set<TopicTreeQuery.ClientStatus> statuses,
+                                          boolean wildcardOnly, Integer greaterThan) {
+        TopicTreeQuery q = new TopicTreeQuery(null, null, false, null, has, statuses, Set.of(), wildcardOnly, greaterThan,
+                greaterThan == null ? null : SubscriptionOperation.GREATER);
+        return s.query(q, n -> 0L, new PageLink(100, 0));
+    }
+
+    private static List<String> paths(PageData<TopicTreeNode> page) {
+        return page.getData().stream().map(TopicTreeNode::path).toList();
     }
 
     @Test
