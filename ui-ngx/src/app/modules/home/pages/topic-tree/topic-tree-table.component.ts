@@ -57,6 +57,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import { PageData } from '@shared/models/page/page-data';
 import { TopicTreeColumnId, TopicTreeNode, TopicTreeRow, topicTreeColumns } from '@shared/models/topic-tree.models';
+import { ConnectionState, connectionStateColor } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-topic-tree-table',
@@ -76,6 +77,8 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
   @Output() nodeSelected = new EventEmitter<TopicTreeNode>();
   @Output() chipClicked = new EventEmitter<{ node: TopicTreeNode; column: TopicTreeColumnId }>();
 
+  readonly connectedColor = connectionStateColor.get(ConnectionState.CONNECTED);
+  readonly disconnectedColor = connectionStateColor.get(ConnectionState.DISCONNECTED);
   rows: TopicTreeRow[] = [];
   selectedPath: string | null | undefined;
   searchMode = false;
@@ -244,7 +247,7 @@ export class TopicTreeTableComponent implements OnInit, OnChanges {
     if (parentPath !== null && !parentRow) {
       return of(null);
     }
-    return this.service.getNode(path, this.backendColumns()).pipe(
+    return this.service.getNode(path, this.backendColumns(), { ignoreErrors: true }).pipe(
       takeUntilDestroyed(this.destroyRef),
       map(node => token === this.loadToken ? this.insertRow(node, parentRow, parentPath) : null),
       catchError(() => of(null))

@@ -58,6 +58,7 @@ public class TopicTreeNodeDto {
     private Integer clientsOffline;
     private Integer sharedGroupsExact;
     private Integer sharedGroupsTotal;
+    private Integer sharedSubscriptionsTotal;
     private Integer integrationsExact;
     private Integer integrationsTotal;
     private Long dropped24h;

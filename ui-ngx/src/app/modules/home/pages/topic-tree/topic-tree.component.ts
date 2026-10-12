@@ -170,6 +170,11 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
     this.table.reload();
   }
 
+  refreshAfterMissing(): void {
+    this.closeDetails();
+    this.table.reload();
+  }
+
   private loadColumns(): TopicTreeColumnId[] {
     try {
       const stored = JSON.parse(localStorage.getItem(TOPIC_TREE_COLUMNS_STORAGE_KEY) ?? 'null');

@@ -46,6 +46,7 @@ export interface TopicTreeNode {
   clientsOffline?: number;
   sharedGroupsExact?: number;
   sharedGroupsTotal?: number;
+  sharedSubscriptionsTotal?: number;
   integrationsExact?: number;
   integrationsTotal?: number;
   dropped24h?: number;
@@ -53,9 +54,19 @@ export interface TopicTreeNode {
 
 export interface TopicTreeEntity {
   id: string;
+  name?: string;
   subscriptions: number;
   connected?: boolean;
   clientType?: string;
+}
+
+export interface TopicTreeSubscription {
+  clientId: string;
+  topicFilter: string;
+  qos: number;
+  integration: boolean;
+  shareName?: string;
+  integrationName?: string;
 }
 
 export type TopicTreeEntityKind = 'CLIENTS' | 'INTEGRATIONS' | 'SHARED';

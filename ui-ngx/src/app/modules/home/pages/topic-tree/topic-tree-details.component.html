@@ -35,6 +35,12 @@
                   [headerSubtitle]="'topic-tree.topic-details' | translate"
                   [isReadOnly]="true"
                   (closeDetails)="closed.emit()">
+  @if (node.path !== null) {
+    <div class="details-buttons">
+      <tb-copy-button [copyText]="node.path" [tooltipText]="'topic-tree.copy-path' | translate" tooltipPosition="below"
+                      [containerStyle]="{padding: '12px'}" [style]="{color: 'inherit'}"></tb-copy-button>
+    </div>
+  }
   <mat-tab-group class="tb-absolute-fill flex flex-1" mat-stretch-tabs="false" animationDuration="0ms"
                  [selectedIndex]="tabIndex" (selectedIndexChange)="selectTab($event)">
     @for (t of tabs; track t) {
@@ -43,7 +49,7 @@
           @if (t === 'details') {
             <ng-container [ngTemplateOutlet]="details"></ng-container>
           } @else {
-            <ng-container [ngTemplateOutlet]="preview"></ng-container>
+            <tb-entities-table class="tb-topic-tree-tab-table" [entitiesTableConfig]="tableConfig(t)"></tb-entities-table>
           }
         </ng-template>
       </mat-tab>
@@ -53,81 +59,39 @@
 
 <ng-template #details>
   <div class="tb-topic-tree-overview flex flex-col gap-4">
-    <div class="path-row flex flex-row items-center gap-2">
-      <span class="path flex-1">{{ node.path ?? ('topic-tree.root' | translate) }}</span>
-      @if (node.path !== null) {
-        <tb-copy-button [copyText]="node.path" [tooltipText]="'topic-tree.copy-path' | translate" tooltipPosition="above"
-                        icon="content_copy"></tb-copy-button>
-      }
-    </div>
-    <div class="tiles">
-      <button type="button" class="tile" (click)="openTab('subscriptions')"
-              [matTooltip]="'topic-tree.exact-total' | translate: { exact: node.subscriptionsExact, total: node.subscriptionsTotal }">
-        <span class="value">{{ node.subscriptionsTotal | number }}</span>
-        <span class="label">{{ 'topic-tree.column.subscriptions' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('clients')">
-        <span class="value">{{ full ? (full.clientsTotal | number) : '–' }}</span>
-        <span class="label">{{ 'topic-tree.column.clients' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('clients')">
-        <span class="value">{{ full ? (full.clientsOnline | number) + ' / ' + (full.clientsOffline | number) : '–' }}</span>
-        <span class="label">{{ 'topic-tree.column.online' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('retained')">
-        <span class="value">{{ node.retainedTotal | number }}</span>
-        <span class="label">{{ 'topic-tree.column.retained' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('shared')">
-        <span class="value">{{ full ? (full.sharedGroupsTotal | number) : '–' }}</span>
-        <span class="label">{{ 'topic-tree.column.shared' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('integrations')">
-        <span class="value">{{ full ? (full.integrationsTotal | number) : '–' }}</span>
-        <span class="label">{{ 'topic-tree.column.integrations' | translate }}</span>
-      </button>
-      <button type="button" class="tile" (click)="openTab('dropped')" [matTooltip]="'topic-tree.column.dropped-hint' | translate">
-        <span class="value">{{ full ? (full.dropped24h | number) : '–' }}</span>
-        <span class="label">{{ 'topic-tree.column.dropped' | translate }}</span>
-      </button>
-      <div class="tile static">
-        <span class="value">{{ node.childrenCount | number }}</span>
-        <span class="label">{{ 'topic-tree.subtopics' | translate }}</span>
-      </div>
-    </div>
-  </div>
-</ng-template>
-
-<ng-template #preview>
-  <div class="tb-topic-tree-preview flex flex-col">
-    @if (loading) {
-      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    }
-    <div class="table-container flex-1">
-      <table mat-table [dataSource]="rows">
-        @for (column of previewColumns; track column.key) {
-          <ng-container [matColumnDef]="column.key">
-            <th mat-header-cell *matHeaderCellDef [class.mat-number-cell]="column.number">{{ column.titleKey | translate }}</th>
-            <td mat-cell *matCellDef="let row" [class.mat-number-cell]="column.number">
-              <span class="cell-text" [matTooltip]="column.translate ? '' : row[column.key]" matTooltipPosition="above"
-                    [matTooltipDisabled]="column.number">
-                {{ column.translate ? (row[column.key] ? (row[column.key] | translate) : '') : row[column.key] }}
-              </span>
-            </td>
-          </ng-container>
-        }
-        <tr mat-header-row *matHeaderRowDef="previewColumnKeys; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: previewColumnKeys"></tr>
-      </table>
-      @if (!loading && !rows.length) {
-        <span class="no-data-found flex flex-row items-center justify-center">{{ 'topic-tree.no-data' | translate }}</span>
-      }
-    </div>
-    @if (!loading) {
-      <div class="preview-footer flex flex-row items-center gap-2">
-        <span class="flex-1">{{ 'topic-tree.shown-of-total' | translate: { shown: (rows.length | number), total: (total | number) } }}</span>
-        <button mat-button color="primary" type="button" (click)="openIn()">{{ openInKeys[previewTab] | translate }}</button>
+    @if (missing) {
+      <div class="missing flex flex-row flex-wrap items-center gap-3">
+        <span class="flex-1">{{ 'topic-tree.topic-gone' | translate }}</span>
+        <button mat-stroked-button color="primary" type="button" (click)="refreshTree.emit()">{{ 'topic-tree.refresh-tree' | translate }}</button>
       </div>
     }
+    <div class="nav-list">
+      @for (row of rows; track row.tab) {
+        <button type="button" class="nav-row" [class.zero]="!row.count" (click)="openTab(row.tab)">
+          <span class="nav-icon"><tb-icon>{{ row.icon }}</tb-icon></span>
+          <span class="nav-text">
+            <span class="nav-name">{{ row.label | translate }}</span>
+            <span class="nav-sub">
+              @if (row.tab === 'clients' && full?.clientsTotal) {
+                <span class="split" [style.background]="disconnectedColor.content">
+                  <span [style.width.%]="full.clientsOnline * 100 / full.clientsTotal" [style.background]="connectedColor.content"></span>
+                </span>
+                <span [style.color]="connectedColor.content">{{ 'topic-tree.row.connected' | translate: { count: full.clientsOnline } }}</span>
+                <span>·</span>
+                <span [style.color]="disconnectedColor.content">{{ 'topic-tree.row.disconnected' | translate: { count: full.clientsOffline } }}</span>
+              } @else {
+                {{ row.sub }}
+              }
+            </span>
+          </span>
+          <span class="nav-count">{{ row.count === null ? '–' : (row.count | number) }}</span>
+          <tb-icon class="nav-chevron">chevron_right</tb-icon>
+        </button>
+      }
+    </div>
+    <span class="caption">
+      {{ 'topic-tree.subtopics-count' | translate: { count: node.childrenCount } }}
+      @if (node.wildcard) { · {{ 'topic-tree.wildcard' | translate }} }
+    </span>
   </div>
 </ng-template>

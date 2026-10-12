@@ -38,7 +38,8 @@ import {
   TopicResolve,
   TopicTreeEntity,
   TopicTreeEntityKind,
-  TopicTreeNode
+  TopicTreeNode,
+  TopicTreeSubscription
 } from '@shared/models/topic-tree.models';
 
 @Injectable({
@@ -70,6 +71,12 @@ export class TopicTreeService {
                      config?: RequestConfig): Observable<PageData<TopicTreeEntity>> {
     const queryParams: QueryParams = { kind, page: `${page}`, pageSize: `${pageSize}` };
     return this.http.get<PageData<TopicTreeEntity>>(this.url('/api/topic-tree/entities', path), this.options(queryParams, config));
+  }
+
+  public getSubscriptions(path: string | null, page: number, pageSize: number,
+                          config?: RequestConfig): Observable<PageData<TopicTreeSubscription>> {
+    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
+    return this.http.get<PageData<TopicTreeSubscription>>(this.url('/api/topic-tree/subscriptions', path), this.options(queryParams, config));
   }
 
   public resolve(topic: string, config?: RequestConfig): Observable<TopicResolve> {

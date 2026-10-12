@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -44,6 +45,7 @@ import org.thingsboard.mqtt.broker.common.data.permission.Operation;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
+import org.thingsboard.mqtt.broker.dto.TopicTreeSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeColumn;
@@ -56,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -100,8 +103,12 @@ public class TopicTreeController extends BaseController {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseColumns(columns);
-        List<TopicTreeNodeDto> dtos = withDropped(List.of(TopicTreeNodeDto.of(node(s, path), s, cols)), cols);
-        return dtos.get(0);
+        TopicTreeNode node = node(s, path);
+        TopicTreeNodeDto dto = withDropped(List.of(TopicTreeNodeDto.of(node, s, cols)), cols).get(0);
+        if (cols.contains(TopicTreeColumn.SHARED)) {
+            dto.setSharedSubscriptionsTotal(s.sharedSubscriptions(node));
+        }
+        return dto;
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -118,7 +125,34 @@ public class TopicTreeController extends BaseController {
         } catch (IllegalArgumentException e) {
             throw new ThingsboardException("Unknown kind: " + kind, ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
-        return s.entities(node(s, path), k, new PageLink(clamp(pageSize), page));
+        PageData<TopicTreeEntityDto> entities = s.entities(node(s, path), k, new PageLink(clamp(pageSize), page));
+        if (k == TopicTreeEntityDto.Kind.INTEGRATIONS) {
+            entities.getData().forEach(e -> e.setName(integrationName(e.getId())));
+        }
+        return entities;
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping("/subscriptions")
+    public PageData<TopicTreeSubscriptionDto> getSubscriptions(@RequestParam(required = false) String path,
+                                                              @RequestParam(defaultValue = "20") int pageSize,
+                                                              @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        TopicTreeSnapshot s = snapshot();
+        PageData<TopicTreeSubscriptionDto> subscriptions = s.subscriptions(node(s, path), new PageLink(clamp(pageSize), page));
+        subscriptions.getData().stream().filter(TopicTreeSubscriptionDto::isIntegration)
+                .forEach(sub -> sub.setIntegrationName(integrationName(sub.getClientId())));
+        return subscriptions;
+    }
+
+    // Integration subscriptions are keyed by the integration id; stale ones may outlive the integration itself.
+    private String integrationName(String id) {
+        try {
+            Integration integration = integrationService.findIntegrationById(UUID.fromString(id));
+            return integration == null ? null : integration.getName();
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     PageData<TopicTreeNodeDto> doChildren(String path, String columns, int pageSize, int page,

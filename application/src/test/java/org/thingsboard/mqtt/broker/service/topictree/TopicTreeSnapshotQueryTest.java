@@ -35,10 +35,12 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
+import org.thingsboard.mqtt.broker.dto.TopicTreeSubscriptionDto;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class TopicTreeSnapshotQueryTest {
 
@@ -75,6 +77,23 @@ class TopicTreeSnapshotQueryTest {
     void entitiesClientsAreDistinctAcrossSubtree() {
         PageData<TopicTreeEntityDto> p = s.entities(s.find("sensors"), TopicTreeEntityDto.Kind.CLIENTS, new PageLink(50, 0));
         assertThat(p.getData()).extracting(TopicTreeEntityDto::getId).containsExactlyInAnyOrder("c1", "c2", "c3");
+    }
+
+    @Test
+    void subscriptionsListSubtreeWithSharePrefixAndIntegrations() {
+        PageData<TopicTreeSubscriptionDto> p = s.subscriptions(s.find("sensors"), new PageLink(50, 0));
+        assertThat(p.getTotalElements()).isEqualTo(s.find("sensors").subscriptionsTotal());
+        assertThat(p.getData()).extracting(TopicTreeSubscriptionDto::getClientId, TopicTreeSubscriptionDto::getTopicFilter)
+                .containsExactly(
+                        tuple("c1", "sensors/+/temperature"),
+                        tuple("c1", "sensors/room1/#"),
+                        tuple("c2", "$share/g1/sensors/+/temperature"),
+                        tuple("c3", "$share/g1/sensors/+/temperature"),
+                        tuple("int-1", "sensors/#"));
+        assertThat(p.getData().get(4).isIntegration()).isTrue();
+        assertThat(p.getData().get(2).getShareName()).isEqualTo("g1");
+        assertThat(s.sharedSubscriptions(s.find("sensors"))).isEqualTo(2);
+        assertThat(s.sharedSubscriptions(s.find("sensors/room1/#"))).isZero();
     }
 
     @Test

@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
+import org.thingsboard.mqtt.broker.dto.TopicTreeSubscriptionDto;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -177,11 +178,48 @@ public final class TopicTreeSnapshot {
         List<TopicTreeEntityDto> rows = new ArrayList<>(counts.size());
         counts.forEach((id, c) -> {
             ClientSessionInfo si = kind == TopicTreeEntityDto.Kind.CLIENTS ? sessions.get(id) : null;
-            rows.add(new TopicTreeEntityDto(id, c[0],
+            rows.add(new TopicTreeEntityDto(id, null, c[0],
                     si == null ? null : si.isConnected(),
                     si == null || si.getType() == null ? null : si.getType().name()));
         });
         rows.sort(Comparator.comparingInt(TopicTreeEntityDto::getSubscriptions).reversed().thenComparing(TopicTreeEntityDto::getId));
+        return page(rows, link);
+    }
+
+    public int sharedSubscriptions(TopicTreeNode node) {
+        int count = 0;
+        Deque<TopicTreeNode> stack = new ArrayDeque<>();
+        stack.push(node);
+        while (!stack.isEmpty()) {
+            TopicTreeNode n = stack.pop();
+            for (SubRef r : n.refs()) {
+                if (r.shareName() != null) {
+                    count++;
+                }
+            }
+            n.children().forEach(stack::push);
+        }
+        return count;
+    }
+
+    // Shared subscriptions are stored under their base filter, so the original "$share/<group>/<filter>" is rebuilt here.
+    public PageData<TopicTreeSubscriptionDto> subscriptions(TopicTreeNode node, PageLink link) {
+        List<TopicTreeSubscriptionDto> rows = new ArrayList<>();
+        Deque<TopicTreeNode> stack = new ArrayDeque<>();
+        stack.push(node);
+        while (!stack.isEmpty()) {
+            TopicTreeNode n = stack.pop();
+            List<SubRef> refs = n.refs();
+            if (!refs.isEmpty()) {
+                String path = n.path();
+                for (SubRef r : refs) {
+                    String filter = r.shareName() == null ? path : "$share/" + r.shareName() + "/" + path;
+                    rows.add(new TopicTreeSubscriptionDto(r.clientId(), filter, r.qos(), r.integration(), r.shareName(), null));
+                }
+            }
+            n.children().forEach(stack::push);
+        }
+        rows.sort(Comparator.comparing(TopicTreeSubscriptionDto::getClientId).thenComparing(TopicTreeSubscriptionDto::getTopicFilter));
         return page(rows, link);
     }
 
