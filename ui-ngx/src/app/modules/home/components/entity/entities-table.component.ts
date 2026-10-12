@@ -42,7 +42,7 @@ import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { forkJoin, merge, Observable, of, Subject, Subscription } from 'rxjs';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
-import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
+import { ActivatedRoute, QueryParamsHandling, Router, RouterLink } from '@angular/router';
 import {
   CellActionDescriptor,
   CellActionDescriptorType, ChipsTableColumn,
@@ -85,7 +85,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './entities-table.component.html',
     styleUrls: ['./entities-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatDrawerContainer, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, MatToolbar, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, CopyButtonComponent, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule, MatButton, NgIf]
+    imports: [MatDrawerContainer, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, MatToolbar, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, CopyButtonComponent, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule, MatButton, NgIf, RouterLink]
 })
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
