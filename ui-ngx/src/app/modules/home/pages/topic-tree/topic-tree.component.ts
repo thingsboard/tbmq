@@ -29,57 +29,48 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { AfterViewInit, Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
+import { MatButton } from '@angular/material/button';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatDivider } from '@angular/material/divider';
 import { MatDrawer, MatDrawerContainer, MatDrawerContent } from '@angular/material/sidenav';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { TopicTreeService } from '@core/http/topic-tree.service';
 import {
-  TOPIC_TREE_COLUMNS_STORAGE_KEY, TopicTreeColumnId, TopicTreeNode, topicTreeColumns
+  TOPIC_TREE_COLUMNS_STORAGE_KEY, TopicTreeColumnId, TopicTreeNode, TopicTreeRow, topicTreeColumns
 } from '@shared/models/topic-tree.models';
-import { TopicTreeTableComponent } from './topic-tree-table.component';
-import { TopicTreeColumnsMenuComponent } from './topic-tree-columns-menu.component';
-import { TopicTreeResolveComponent } from './topic-tree-resolve.component';
 import { TopicTreeDetailsComponent, TopicTreeTab } from './topic-tree-details.component';
-
-const FILTER_MIN_LENGTH = 2;
-
-type ToolbarMode = 'default' | 'search' | 'subscribers';
+import { TopicTreeTableConfig } from './topic-tree-table-config';
+import { TopicTreeTableHeaderComponent } from './topic-tree-table-header.component';
 
 @Component({
   selector: 'tb-topic-tree',
   templateUrl: './topic-tree.component.html',
   styleUrls: ['./topic-tree.component.scss'],
-  imports: [ReactiveFormsModule, MatToolbar, MatIconButton, MatIcon, MatTooltip, MatFormField, MatLabel, MatSuffix, MatInput, MatDrawer,
-    MatDrawerContainer, MatDrawerContent, TranslateModule, TopicTreeTableComponent, TopicTreeColumnsMenuComponent, TopicTreeDetailsComponent,
-    TopicTreeResolveComponent]
+  imports: [MatButton, MatCheckbox, MatDivider, MatDrawer, MatDrawerContainer, MatDrawerContent, TranslateModule,
+    EntitiesTableComponent, TopicTreeDetailsComponent]
 })
-export class TopicTreeComponent implements OnInit, AfterViewInit {
+export class TopicTreeComponent implements OnInit, OnDestroy {
 
-  @ViewChild('table') table: TopicTreeTableComponent;
-  @ViewChild('resolve') resolve: TopicTreeResolveComponent;
-  @ViewChild('searchInput') searchInput: ElementRef<HTMLInputElement>;
+  @ViewChild('columnsPanel') columnsPanel: TemplateRef<unknown>;
 
-  readonly filterMinLength = FILTER_MIN_LENGTH;
-  readonly filterControl = new FormControl<string>('');
+  readonly allColumns = topicTreeColumns;
   columns: TopicTreeColumnId[] = this.loadColumns();
-  filter = '';
+  tableConfig: TopicTreeTableConfig;
   selectedNode: TopicTreeNode | null = null;
   selectedTab: TopicTreeTab = 'details';
-  toolbarMode: ToolbarMode = 'default';
-  private initialPath: string | null = null;
 
+  private columnsOverlay: OverlayRef;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly service = inject(TopicTreeService);
+  private readonly translate = inject(TranslateService);
+  private readonly overlay = inject(Overlay);
+  private readonly viewContainerRef = inject(ViewContainerRef);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -90,89 +81,91 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
         this.columns = valid;
       }
     }
-    this.initialPath = params.get('path');
-    const filter = params.get('filter') ?? '';
-    this.filterControl.setValue(filter, { emitEvent: false });
-    this.filter = filter;
-    if (filter) {
-      this.toolbarMode = 'search';
-    }
-    this.filterControl.valueChanges.pipe(
-      debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)
-    ).subscribe(value => {
-      this.filter = (value ?? '').trim();
-      this.syncUrl();
-    });
-  }
-
-  ngAfterViewInit(): void {
-    if (this.initialPath !== null) {
-      setTimeout(() => this.table.reveal(this.initialPath));
+    this.tableConfig = this.createConfig();
+    const path = params.get('path');
+    if (path !== null) {
+      this.tableConfig.reveal(path);
     }
   }
 
-  onColumnsChange(columns: TopicTreeColumnId[]): void {
-    this.columns = columns;
-    try {
-      localStorage.setItem(TOPIC_TREE_COLUMNS_STORAGE_KEY, JSON.stringify(columns));
-    } catch { /* storage unavailable */ }
-    this.syncUrl();
+  ngOnDestroy(): void {
+    this.columnsOverlay?.dispose();
   }
 
-  onNodeSelected(node: TopicTreeNode): void {
-    this.selectedTab = 'details';
-    this.selectedNode = node;
-    this.syncUrl();
+  toggleColumn(id: TopicTreeColumnId): void {
+    const next = this.columns.includes(id) ? this.columns.filter(c => c !== id) : [...this.columns, id];
+    this.applyColumns(topicTreeColumns.map(c => c.id).filter(c => next.includes(c)));
   }
 
-  onChipClicked(event: { node: TopicTreeNode; column: TopicTreeColumnId }): void {
-    const tabByColumn: Partial<Record<TopicTreeColumnId, TopicTreeTab>> = {
-      subscriptions: 'subscriptions', clients: 'clients', online: 'clients', shared: 'shared',
-      integrations: 'integrations', retained: 'retained', dropped: 'dropped'
-    };
-    this.selectedTab = tabByColumn[event.column] ?? 'subscriptions';
-    this.selectedNode = event.node;
-    this.syncUrl();
+  resetColumns(): void {
+    this.applyColumns(topicTreeColumns.filter(c => c.default).map(c => c.id));
   }
 
   closeDetails(): void {
     this.selectedNode = null;
+    this.setCurrentRow(null);
     this.syncUrl();
-  }
-
-  enterMode(mode: ToolbarMode): void {
-    this.toolbarMode = mode;
-    if (mode === 'search') {
-      setTimeout(() => this.searchInput.nativeElement.focus());
-    } else if (mode === 'subscribers') {
-      this.resolve.focus();
-    }
-  }
-
-  exitSearch(): void {
-    this.toolbarMode = 'default';
-    this.filterControl.setValue('');
-  }
-
-  revealPath(path: string): void {
-    this.filterControl.setValue('');
-    this.filter = '';
-    this.selectedNode = null;
-    // the table must see the cleared filter input before it reloads the tree
-    setTimeout(() => this.table.reveal(path));
-  }
-
-  openSubscriptions(filter: string): void {
-    this.router.navigate(['/subscriptions'], { queryParams: { topicFilter: filter, topicMatch: 'EXACT' } });
-  }
-
-  refresh(): void {
-    this.table.reload();
   }
 
   refreshAfterMissing(): void {
     this.closeDetails();
-    this.table.reload();
+    this.tableConfig.getTable().updateData();
+  }
+
+  private createConfig(): TopicTreeTableConfig {
+    const config = new TopicTreeTableConfig(this.service, this.translate, this.columns, {
+      nodeClicked: row => this.onNodeClicked(row),
+      nodeRevealed: row => this.openDetails(row),
+      openColumns: event => this.openColumns(event)
+    }, TopicTreeTableHeaderComponent);
+    config.query = this.tableConfig?.query ?? {};
+    return config;
+  }
+
+  private applyColumns(columns: TopicTreeColumnId[]): void {
+    this.columns = columns;
+    try {
+      localStorage.setItem(TOPIC_TREE_COLUMNS_STORAGE_KEY, JSON.stringify(columns));
+    } catch { /* storage unavailable */ }
+    this.tableConfig = this.createConfig();
+    this.syncUrl();
+  }
+
+  // Same as the other entity tables: clicking the open row closes its details.
+  private onNodeClicked(row: TopicTreeRow): void {
+    if (this.selectedNode?.path === row.node.path) {
+      this.closeDetails();
+    } else {
+      this.openDetails(row);
+    }
+  }
+
+  private openDetails(row: TopicTreeRow): void {
+    this.selectedTab = 'details';
+    this.selectedNode = row.node;
+    this.setCurrentRow(row);
+    this.syncUrl();
+  }
+
+  private setCurrentRow(row: TopicTreeRow | null): void {
+    const table = this.tableConfig.getTable();
+    if (table) {
+      table.dataSource.currentEntity = row;
+    }
+  }
+
+  private openColumns(event: MouseEvent): void {
+    this.columnsOverlay?.dispose();
+    const anchor = (event.currentTarget ?? event.target) as HTMLElement;
+    this.columnsOverlay = this.overlay.create({
+      hasBackdrop: true,
+      backdropClass: 'cdk-overlay-transparent-backdrop',
+      positionStrategy: this.overlay.position().flexibleConnectedTo(anchor).withPositions([
+        { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' }
+      ])
+    });
+    this.columnsOverlay.backdropClick().subscribe(() => this.columnsOverlay.dispose());
+    this.columnsOverlay.attach(new TemplatePortal(this.columnsPanel, this.viewContainerRef));
   }
 
   private loadColumns(): TopicTreeColumnId[] {
@@ -194,10 +187,8 @@ export class TopicTreeComponent implements OnInit, AfterViewInit {
       replaceUrl: true,
       queryParams: {
         path: this.selectedNode?.path ?? null,
-        filter: this.filter || null,
         columns: this.columns.join(',')
       }
     });
   }
 }
-

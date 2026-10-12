@@ -29,38 +29,31 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { MatCheckbox } from '@angular/material/checkbox';
-import { MatDivider } from '@angular/material/divider';
-import { TranslateModule } from '@ngx-translate/core';
-import { TopicTreeColumnId, topicTreeColumns } from '@shared/models/topic-tree.models';
+import { Component } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
+import { TopicTreeFilter, TopicTreeRow } from '@shared/models/topic-tree.models';
+import { TopicTreeTableConfig } from './topic-tree-table-config';
+import { TopicTreeFilterComponent } from './topic-tree-filter.component';
 
 @Component({
-  selector: 'tb-topic-tree-columns-menu',
-  templateUrl: './topic-tree-columns-menu.component.html',
-  styleUrls: ['./topic-tree-columns-menu.component.scss'],
-  imports: [MatIconButton, MatIcon, MatTooltip, MatMenu, MatMenuItem, MatMenuTrigger, MatCheckbox, MatDivider, TranslateModule]
+  selector: 'tb-topic-tree-table-header',
+  template: '<tb-topic-tree-filter [filter]="topicTreeTableConfig.query" (filterChange)="filterChanged($event)"></tb-topic-tree-filter>',
+  imports: [TopicTreeFilterComponent]
 })
-export class TopicTreeColumnsMenuComponent {
-  @Input() selected: TopicTreeColumnId[] = [];
-  @Output() selectedChange = new EventEmitter<TopicTreeColumnId[]>();
+export class TopicTreeTableHeaderComponent extends EntityTableHeaderComponent<TopicTreeRow> {
 
-  readonly allColumns = topicTreeColumns;
-
-  isSelected(id: TopicTreeColumnId): boolean {
-    return this.selected.includes(id);
+  get topicTreeTableConfig(): TopicTreeTableConfig {
+    return this.entitiesTableConfig as TopicTreeTableConfig;
   }
 
-  toggle(id: TopicTreeColumnId): void {
-    const next = this.isSelected(id) ? this.selected.filter(c => c !== id) : [...this.selected, id];
-    this.selectedChange.emit(this.allColumns.map(c => c.id).filter(c => next.includes(c)));
+  constructor(protected store: Store<AppState>) {
+    super(store);
   }
 
-  reset(): void {
-    this.selectedChange.emit(this.allColumns.filter(c => c.default).map(c => c.id));
+  filterChanged(filter: TopicTreeFilter): void {
+    this.topicTreeTableConfig.query = filter;
+    this.topicTreeTableConfig.getTable().resetSortAndFilter(true, true);
   }
 }

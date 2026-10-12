@@ -35,12 +35,9 @@
                   [headerSubtitle]="'topic-tree.topic-details' | translate"
                   [isReadOnly]="true"
                   (closeDetails)="closed.emit()">
-  @if (node.path !== null) {
-    <div class="details-buttons">
-      <tb-copy-button [copyText]="node.path" [tooltipText]="'topic-tree.copy-path' | translate" tooltipPosition="below"
-                      [containerStyle]="{padding: '12px'}" [style]="{color: 'inherit'}"></tb-copy-button>
-    </div>
-  }
+  <div class="details-buttons">
+    <div [tb-help]="'topicTree'"></div>
+  </div>
   <mat-tab-group class="tb-absolute-fill flex flex-1" mat-stretch-tabs="false" animationDuration="0ms"
                  [selectedIndex]="tabIndex" (selectedIndexChange)="selectTab($event)">
     @for (t of tabs; track t) {
@@ -58,40 +55,56 @@
 </tb-details-panel>
 
 <ng-template #details>
-  <div class="tb-topic-tree-overview flex flex-col gap-4">
-    @if (missing) {
-      <div class="missing flex flex-row flex-wrap items-center gap-3">
-        <span class="flex-1">{{ 'topic-tree.topic-gone' | translate }}</span>
-        <button mat-stroked-button color="primary" type="button" (click)="refreshTree.emit()">{{ 'topic-tree.refresh-tree' | translate }}</button>
+  <div tb-toast toastTarget="topicTreeDetails">
+    @if (node.path !== null) {
+      <div class="tb-details-buttons">
+        <button mat-raised-button type="button" [cdkCopyToClipboard]="node.path" (cdkCopyToClipboardCopied)="onTopicCopied()">
+          <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
+          <span>{{ 'topic-tree.copy-topic' | translate }}</span>
+        </button>
       </div>
     }
-    <div class="nav-list">
-      @for (row of rows; track row.tab) {
-        <button type="button" class="nav-row" [class.zero]="!row.count" (click)="openTab(row.tab)">
-          <span class="nav-icon"><tb-icon>{{ row.icon }}</tb-icon></span>
-          <span class="nav-text">
-            <span class="nav-name">{{ row.label | translate }}</span>
-            <span class="nav-sub">
-              @if (row.tab === 'clients' && full?.clientsTotal) {
-                <span class="split" [style.background]="disconnectedColor.content">
-                  <span [style.width.%]="full.clientsOnline * 100 / full.clientsTotal" [style.background]="connectedColor.content"></span>
-                </span>
-                <span [style.color]="connectedColor.content">{{ 'topic-tree.row.connected' | translate: { count: full.clientsOnline } }}</span>
-                <span>·</span>
-                <span [style.color]="disconnectedColor.content">{{ 'topic-tree.row.disconnected' | translate: { count: full.clientsOffline } }}</span>
-              } @else {
-                {{ row.sub }}
-              }
-            </span>
-          </span>
-          <span class="nav-count">{{ row.count === null ? '–' : (row.count | number) }}</span>
-          <tb-icon class="nav-chevron">chevron_right</tb-icon>
-        </button>
+    <div class="tb-topic-tree-overview flex flex-col gap-4">
+      @if (missing) {
+        <div class="missing flex flex-row flex-wrap items-center gap-3">
+          <span class="flex-1">{{ 'topic-tree.topic-gone' | translate }}</span>
+          <button mat-stroked-button color="primary" type="button" (click)="refreshTree.emit()">{{ 'topic-tree.refresh-tree' | translate }}</button>
+        </div>
       }
+      <div class="nav-list">
+        @for (row of rows; track row.tab) {
+          <button type="button" class="nav-row" [class.zero]="!row.count" (click)="openTab(row.tab)">
+            <span class="nav-icon"><tb-icon>{{ row.icon }}</tb-icon></span>
+            <span class="nav-text">
+              <span class="nav-name">{{ row.label | translate }}</span>
+              <span class="nav-sub">
+                @if (row.tab === 'clients' && full?.clientsTotal) {
+                  <span class="split" [style.background]="disconnectedColor.content">
+                    <span [style.width.%]="full.clientsOnline * 100 / full.clientsTotal" [style.background]="connectedColor.content"></span>
+                  </span>
+                  @if (full.clientsOnline) {
+                    <span [style.color]="connectedColor.content">{{ 'topic-tree.row.connected' | translate: { count: full.clientsOnline } }}</span>
+                  }
+                  @if (full.clientsOnline && full.clientsOffline) {
+                    <span>·</span>
+                  }
+                  @if (full.clientsOffline) {
+                    <span [style.color]="disconnectedColor.content">{{ 'topic-tree.row.disconnected' | translate: { count: full.clientsOffline } }}</span>
+                  }
+                } @else {
+                  {{ row.sub }}
+                }
+              </span>
+            </span>
+            <span class="nav-count">{{ row.count === null ? '–' : (row.count | number) }}</span>
+            <tb-icon class="nav-chevron">chevron_right</tb-icon>
+          </button>
+        }
+      </div>
+      <span class="caption">
+        {{ 'topic-tree.subtopics-count' | translate: { count: node.childrenCount } }}
+        @if (node.wildcard) { · {{ 'topic-tree.wildcard' | translate }} }
+      </span>
     </div>
-    <span class="caption">
-      {{ 'topic-tree.subtopics-count' | translate: { count: node.childrenCount } }}
-      @if (node.wildcard) { · {{ 'topic-tree.wildcard' | translate }} }
-    </span>
   </div>
 </ng-template>

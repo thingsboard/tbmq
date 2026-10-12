@@ -29,6 +29,11 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
+import { BaseData } from '@shared/models/base-data';
+import { ConnectionState } from '@shared/models/session.model';
+import { ClientType } from '@shared/models/client.model';
+import { NumericOperation } from '@shared/models/query/query.models';
+
 export type TopicTreeColumnId = 'subscriptions' | 'clients' | 'retained' | 'online' | 'shared' | 'integrations' | 'dropped';
 
 export interface TopicTreeNode {
@@ -71,20 +76,37 @@ export interface TopicTreeSubscription {
 
 export type TopicTreeEntityKind = 'CLIENTS' | 'INTEGRATIONS' | 'SHARED';
 
-export interface TopicResolveMatch {
-  topicFilter: string;
-  subscriptions: number;
-  clients: number;
-  qos: Record<string, number>;
-  integrations: number;
-  sharedGroups: number;
+export type TopicTreeHas = 'SUBSCRIPTIONS' | 'RETAINED' | 'SHARED' | 'INTEGRATIONS' | 'DROPPED';
+
+export const topicTreeHasValues: TopicTreeHas[] = ['SUBSCRIPTIONS', 'RETAINED', 'SHARED', 'INTEGRATIONS', 'DROPPED'];
+
+export const topicTreeHasTranslations = new Map<TopicTreeHas, string>([
+  ['SUBSCRIPTIONS', 'topic-tree.column.subscriptions'],
+  ['RETAINED', 'topic-tree.column.retained'],
+  ['SHARED', 'topic-tree.column.shared'],
+  ['INTEGRATIONS', 'topic-tree.column.integrations'],
+  ['DROPPED', 'topic-tree.column.dropped']
+]);
+
+export interface TopicTreeFilter {
+  topic?: string;
+  topicPrefix?: boolean;
+  matchesTopic?: string;
+  has?: TopicTreeHas[];
+  clientStatuses?: ConnectionState[];
+  clientTypes?: ClientType[];
+  wildcardOnly?: boolean;
+  subscriptions?: number;
+  subscriptionOperation?: NumericOperation;
 }
 
-export interface TopicResolve {
-  topic: string;
-  subscribersTotal: number;
-  clientsTotal: number;
-  matches: TopicResolveMatch[];
+export const isTopicTreeFilterEmpty = (filter: TopicTreeFilter | null | undefined): boolean =>
+  !filter || (!filter.topic && !filter.matchesTopic && !filter.has?.length && !filter.clientStatuses?.length
+    && !filter.clientTypes?.length && !filter.wildcardOnly && (filter.subscriptions ?? null) === null);
+
+export interface TopicTreeSort {
+  property: string;
+  direction: 'ASC' | 'DESC';
 }
 
 export interface TopicTreeColumnDef {
@@ -106,16 +128,20 @@ export const topicTreeColumns: TopicTreeColumnDef[] = [
 
 export const TOPIC_TREE_COLUMNS_STORAGE_KEY = 'tbmq_topic_tree_columns';
 
-export interface TopicTreeRow {
-  node: TopicTreeNode;
+export interface TopicTreeRow extends BaseData {
+  id: string;
+  kind: 'node' | 'more';
+  node?: TopicTreeNode;
   depth: number;
   expanded: boolean;
-  loading: boolean;
-  kind: 'node' | 'more';
+  flat: boolean;
   parentPath: string | null;
-  nextPage?: number;
   remaining?: number;
 }
 
 export const toTreePath = (filter: string): string =>
   !filter ? '' : filter.startsWith('$share/') ? filter.split('/').slice(2).join('/') : filter;
+
+// Entity table cells are rendered as trusted HTML, and topics, payloads and client ids come from MQTT clients.
+export const escapeHtml = (value: unknown): string => `${value ?? ''}`
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

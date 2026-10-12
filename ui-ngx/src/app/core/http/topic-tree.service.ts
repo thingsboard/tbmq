@@ -35,10 +35,11 @@ import { Observable } from 'rxjs';
 import { createDefaultHttpOptions, QueryParams, RequestConfig } from './http-utils';
 import { PageData } from '@shared/models/page/page-data';
 import {
-  TopicResolve,
   TopicTreeEntity,
   TopicTreeEntityKind,
+  TopicTreeFilter,
   TopicTreeNode,
+  TopicTreeSort,
   TopicTreeSubscription
 } from '@shared/models/topic-tree.models';
 
@@ -50,15 +51,43 @@ export class TopicTreeService {
   constructor(private http: HttpClient) {
   }
 
-  public getChildren(path: string | null, columns: string[], page: number, pageSize: number,
+  public getChildren(path: string | null, columns: string[], page: number, pageSize: number, sort?: TopicTreeSort,
                      config?: RequestConfig): Observable<PageData<TopicTreeNode>> {
-    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(',') };
+    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(','), ...this.sortParams(sort) };
     return this.http.get<PageData<TopicTreeNode>>(this.url('/api/topic-tree/children', path), this.options(queryParams, config));
   }
 
-  public search(filter: string, columns: string[], page: number, pageSize: number,
+  public search(text: string, filter: TopicTreeFilter, columns: string[], page: number, pageSize: number, sort?: TopicTreeSort,
                 config?: RequestConfig): Observable<PageData<TopicTreeNode>> {
-    const queryParams: QueryParams = { filter, page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(',') };
+    const queryParams: QueryParams = {
+      page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(','), ...this.sortParams(sort)
+    };
+    if (text) {
+      queryParams.filter = text;
+    }
+    if (filter?.topic) {
+      queryParams.topic = filter.topic;
+      queryParams.topicMatch = filter.topicPrefix ? 'PREFIX' : 'CONTAINS';
+    }
+    if (filter?.matchesTopic) {
+      queryParams.matchesTopic = filter.matchesTopic;
+    }
+    if (filter?.has?.length) {
+      queryParams.has = filter.has.join(',');
+    }
+    if (filter?.clientStatuses?.length) {
+      queryParams.clientStatus = filter.clientStatuses.join(',');
+    }
+    if (filter?.clientTypes?.length) {
+      queryParams.clientType = filter.clientTypes.join(',');
+    }
+    if (filter?.wildcardOnly) {
+      queryParams.wildcardOnly = 'true';
+    }
+    if ((filter?.subscriptions ?? null) !== null) {
+      queryParams.subscriptions = `${filter.subscriptions}`;
+      queryParams.subscriptionOperation = filter.subscriptionOperation ?? 'EQUAL';
+    }
     return this.http.get<PageData<TopicTreeNode>>('/api/topic-tree/search', this.options(queryParams, config));
   }
 
@@ -79,13 +108,13 @@ export class TopicTreeService {
     return this.http.get<PageData<TopicTreeSubscription>>(this.url('/api/topic-tree/subscriptions', path), this.options(queryParams, config));
   }
 
-  public resolve(topic: string, config?: RequestConfig): Observable<TopicResolve> {
-    return this.http.get<TopicResolve>('/api/topic-tree/resolve', this.options({ topic }, config));
-  }
-
   // cleanQueryParams drops empty strings, but path '' addresses the node with an empty segment (root is null)
   private url(base: string, path: string | null): string {
     return path === null ? base : `${base}?path=${encodeURIComponent(path)}`;
+  }
+
+  private sortParams(sort?: TopicTreeSort): QueryParams {
+    return sort ? { sortProperty: sort.property, sortOrder: sort.direction } : {};
   }
 
   private options(queryParams: QueryParams, config?: RequestConfig) {

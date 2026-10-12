@@ -35,6 +35,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
+  cellLink,
+  CellLinkTarget,
   cellStatus,
   DateEntityTableColumn,
   EntityTableColumn,
@@ -51,7 +53,7 @@ import { DroppedMsgService } from '@core/http/dropped-msg.service';
 import { RetainedMessagesQuery } from '@shared/models/retained-message.model';
 import { DroppedMessagesQuery, droppedMsgReasonTranslationMap, MatchMode } from '@shared/models/dropped-message.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { TopicTreeEntityKind } from '@shared/models/topic-tree.models';
+import { escapeHtml, TopicTreeEntityKind } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor, connectionStateTranslationMap } from '@shared/models/session.model';
 
 export type TopicTreeTableTab = 'subscriptions' | 'clients' | 'shared' | 'integrations' | 'retained' | 'dropped';
@@ -68,6 +70,7 @@ export interface TopicTreeTableServices {
 type TopicTreeTableRow = BaseData & Record<string, any>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
 
 const OPEN_IN_KEYS: Record<TopicTreeTableTab, string> = {
   subscriptions: 'topic-tree.open-in-subscriptions',
@@ -106,15 +109,21 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
 
   private buildColumns(): EntityTableColumn<TopicTreeTableRow>[] {
     const t = (key: string) => key ? this.services.translate.instant(key) : '';
-    const text = (key: string, title: string, width: string, content?: (row: TopicTreeTableRow) => string) =>
-      new EntityTableColumn<TopicTreeTableRow>(key, title, width, content ?? (row => row[key] ?? ''), () => ({}), false);
+    const text = (key: string, title: string, width: string, content?: (row: TopicTreeTableRow) => string,
+                  link?: (row: TopicTreeTableRow) => CellLinkTarget | null, linkName?: (row: TopicTreeTableRow) => string) =>
+      new EntityTableColumn<TopicTreeTableRow>(key, title, width, content ?? (row => escapeHtml(row[key])), () => ({}), false,
+        undefined, undefined, false, link ? { ...cellLink('', link), nameFunction: row => t(linkName(row)) } : undefined);
+    const session = (clientId: string): CellLinkTarget => ({ commands: ['/sessions'], queryParams: { clientId } });
+    const integration = (id: string): CellLinkTarget => ({ commands: ['/integrations', id] });
     const number = (key: string, title: string, width: string) =>
-      new EntityTableColumn<TopicTreeTableRow>(key, title, width, row => `${row[key] ?? ''}`, () => ({}), false,
+      new EntityTableColumn<TopicTreeTableRow>(key, title, width, row => escapeHtml(row[key]), () => ({}), false,
         () => ({}), () => undefined, true);
     switch (this.tab) {
       case 'subscriptions':
         return [
-          text('client', 'topic-tree.entity.client-id', '30%', row => row.integration ? (row.integrationName ?? row.clientId) : row.clientId),
+          text('client', 'topic-tree.entity.client-id', '30%', row => escapeHtml(row.integration ? (row.integrationName ?? row.clientId) : row.clientId),
+            row => row.integration ? (row.integrationName ? integration(row.clientId) : null) : session(row.clientId),
+            row => row.integration ? 'topic-tree.entity.open-integration' : 'topic-tree.entity.open-session'),
           text('type', 'topic-tree.entity.type', '15%', row => t(row.integration ? 'topic-tree.entity.type-integration'
             : row.shareName ? 'topic-tree.entity.type-shared' : 'topic-tree.entity.type-client')),
           text('topicFilter', 'topic-tree.entity.topic-filter', '40%'),
@@ -122,19 +131,21 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
         ];
       case 'clients':
         return [
-          text('id', 'topic-tree.entity.client-id', '40%'),
+          text('id', 'topic-tree.entity.client-id', '40%', undefined, row => session(row.id), () => 'topic-tree.entity.open-session'),
           text('status', 'topic-tree.entity.status', '20%', row => this.connectionStatus(row.connected)),
           text('clientType', 'topic-tree.entity.client-type', '20%', row => t(clientTypeTranslationMap.get(row.clientType as ClientType))),
           number('subscriptions', 'topic-tree.entity.subscriptions', '20%')
         ];
       case 'shared':
         return [
-          text('id', 'topic-tree.entity.group', '70%'),
+          text('id', 'topic-tree.entity.group', '70%', undefined,
+            row => ({ commands: ['/shared-subscriptions/manage'], queryParams: { shareName: row.id } }), () => 'topic-tree.entity.open-group'),
           number('subscriptions', 'topic-tree.entity.subscriptions', '30%')
         ];
       case 'integrations':
         return [
-          text('name', 'topic-tree.entity.name', '40%', row => row.name ?? t('topic-tree.entity.integration-not-found')),
+          text('name', 'topic-tree.entity.name', '40%', row => escapeHtml(row.name) || t('topic-tree.entity.integration-not-found'),
+            row => row.name ? integration(row.id) : null, () => 'topic-tree.entity.open-integration'),
           text('id', 'topic-tree.entity.id', '40%'),
           number('subscriptions', 'topic-tree.entity.subscriptions', '20%')
         ];
@@ -149,8 +160,9 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
           new DateEntityTableColumn<TopicTreeTableRow>('lastEventTime', 'topic-tree.entity.last-event', this.services.datePipe,
             '20%', undefined, undefined, false),
           text('topic', 'topic-tree.entity.topic', '25%'),
-          text('clientId', 'topic-tree.entity.client-id', '20%'),
-          text('reason', 'topic-tree.entity.reason', '25%', row => t(droppedMsgReasonTranslationMap.get(row.reason)) || row.reason),
+          text('clientId', 'topic-tree.entity.client-id', '20%', undefined,
+            row => row.clientId ? session(row.clientId) : null, () => 'topic-tree.entity.open-session'),
+          text('reason', 'topic-tree.entity.reason', '25%', row => t(droppedMsgReasonTranslationMap.get(row.reason)) || escapeHtml(row.reason)),
           number('droppedCount', 'topic-tree.entity.count', '10%')
         ];
     }

@@ -39,7 +39,13 @@ import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { MatIcon } from '@angular/material/icon';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { ToastDirective } from '@shared/components/toast.directive';
+import { HelpComponent } from '@shared/components/help.component';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { DroppedMsgService } from '@core/http/dropped-msg.service';
@@ -65,7 +71,7 @@ export type TopicTreeTab = typeof TOPIC_TREE_TABS[number];
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DatePipe],
   imports: [DecimalPipe, NgTemplateOutlet, MatButton, MatTab, MatTabContent, MatTabGroup, TranslateModule, DetailsPanelComponent,
-    EntitiesTableComponent, CopyButtonComponent, TbIconComponent]
+    EntitiesTableComponent, HelpComponent, TbIconComponent, CdkCopyToClipboard, MatIcon, ToastDirective]
 })
 export class TopicTreeDetailsComponent implements OnChanges {
 
@@ -85,6 +91,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
 
   private readonly topicTree = inject(TopicTreeService);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly store = inject(Store<AppState>);
   private readonly services: TopicTreeTableServices = {
     topicTree: this.topicTree,
     retained: inject(RetainedMsgService),
@@ -115,6 +122,17 @@ export class TopicTreeDetailsComponent implements OnChanges {
 
   openTab(tab: TopicTreeTab): void {
     this.selectTab(this.tabs.indexOf(tab));
+  }
+
+  onTopicCopied(): void {
+    this.store.dispatch(new ActionNotificationShow({
+      message: this.services.translate.instant('topic-tree.topic-copied'),
+      type: 'success',
+      duration: 750,
+      verticalPosition: 'bottom',
+      horizontalPosition: 'right',
+      target: 'topicTreeDetails'
+    }));
   }
 
   tableConfig(tab: TopicTreeTableTab): TopicTreeTabTableConfig {
@@ -157,7 +175,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
       },
       {
         tab: 'shared', icon: 'mediation', label: 'topic-tree.column.shared', count: full ? full.sharedGroupsTotal : null,
-        sub: full ? t('topic-tree.row.shared', { count: full.sharedSubscriptionsTotal ?? 0 }) : ''
+        sub: full?.sharedSubscriptionsTotal == null ? '' : t('topic-tree.row.shared', { count: full.sharedSubscriptionsTotal })
       },
       {
         tab: 'integrations', icon: 'input', label: 'topic-tree.tab.integrations', count: full ? full.integrationsTotal : null,

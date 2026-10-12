@@ -1,0 +1,112 @@
+<!--
+
+    ThingsBoard, Inc. ("COMPANY") CONFIDENTIAL
+
+    Copyright © 2016-2026 ThingsBoard, Inc. All Rights Reserved.
+
+    NOTICE: All information contained herein is, and remains
+    the property of ThingsBoard, Inc. and its suppliers,
+    if any.  The intellectual and technical concepts contained
+    herein are proprietary to ThingsBoard, Inc.
+    and its suppliers and may be covered by U.S. and Foreign Patents,
+    patents in process, and are protected by trade secret or copyright law.
+
+    Dissemination of this information or reproduction of this material is strictly forbidden
+    unless prior written permission is obtained from COMPANY.
+
+    Access to the source code contained herein is hereby forbidden to anyone except current COMPANY employees,
+    managers or contractors who have executed Confidentiality and Non-disclosure agreements
+    explicitly covering such access.
+
+    The copyright notice above does not evidence any actual or intended publication
+    or disclosure  of  this source code, which includes
+    information that is confidential and/or proprietary, and is a trade secret, of  COMPANY.
+    ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC  PERFORMANCE,
+    OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+    THE EXPRESS WRITTEN CONSENT OF COMPANY IS STRICTLY PROHIBITED,
+    AND IN VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.
+    THE RECEIPT OR POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION
+    DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
+    OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+
+-->
+<button mat-stroked-button color="primary" type="button" (click)="open($event)" [matTooltip]="tooltip" matTooltipPosition="above">
+  <mat-icon>filter_list</mat-icon>{{ label }}
+</button>
+<ng-template #panel>
+  <form class="mat-content mat-padding flex flex-col" [formGroup]="form" (ngSubmit)="apply()">
+    <div class="tb-form-panel tb-topic-tree-filter-panel no-padding no-border">
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width">{{ 'topic-tree.filter-panel.topic' | translate }}</div>
+        <div class="flex flex-1 flex-row items-center gap-2">
+          <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
+            <input matInput type="text" formControlName="topic">
+          </mat-form-field>
+          <mat-checkbox formControlName="topicPrefix">{{ 'mqtt-client-session.match-prefix' | translate }}</mat-checkbox>
+        </div>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" [matTooltip]="'topic-tree.filter-panel.matches-topic-hint' | translate">
+          {{ 'topic-tree.filter-panel.matches-topic' | translate }}
+        </div>
+        <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
+          <input matInput type="text" formControlName="matchesTopic" [placeholder]="'topic-tree.filter-panel.matches-topic-placeholder' | translate">
+          @if (form.controls.matchesTopic.invalid) {
+            <mat-error>{{ 'topic-tree.filter-panel.matches-topic-invalid' | translate }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width">{{ 'topic-tree.filter-panel.has' | translate }}</div>
+        <mat-chip-listbox multiple formControlName="has">
+          @for (value of hasValues; track value) {
+            <mat-chip-option [value]="value">{{ hasTranslations.get(value) | translate }}</mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width">{{ 'mqtt-client-session.connected-status' | translate }}</div>
+        <mat-chip-listbox multiple formControlName="clientStatuses">
+          @for (value of connectionStates; track value) {
+            <mat-chip-option [value]="value">{{ connectionStateTranslationMap.get(value) | translate }}</mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width">{{ 'mqtt-client.client-type' | translate }}</div>
+        <mat-chip-listbox multiple formControlName="clientTypes">
+          @for (value of clientTypes; track value) {
+            <mat-chip-option [value]="value">
+              <span class="chip-with-icon">
+                {{ clientTypeTranslationMap.get(value) | translate }}
+                <mat-icon class="material-icons">{{ clientTypeIcon.get(value) }}</mat-icon>
+              </span>
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row column-xs">
+        <div class="fixed-title-width">{{ 'topic-tree.column.subscriptions' | translate }}</div>
+        <mat-form-field appearance="outline" class="flex" subscriptSizing="dynamic">
+          <mat-select formControlName="subscriptionOperation">
+            @for (operation of numericOperations; track operation) {
+              <mat-option [value]="operation">{{ numericOperationTranslations.get(operation) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="flex" subscriptSizing="dynamic">
+          <input matInput type="number" min="0" formControlName="subscriptions">
+        </mat-form-field>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <mat-checkbox formControlName="wildcardOnly">{{ 'topic-tree.filter-panel.wildcards-only' | translate }}</mat-checkbox>
+      </div>
+    </div>
+    <div class="tb-panel-actions flex flex-row items-center justify-end">
+      <button type="button" mat-button color="primary" (click)="reset()">{{ 'action.reset' | translate }}</button>
+      <span class="flex flex-1"></span>
+      <button type="button" mat-button (click)="close()">{{ 'action.cancel' | translate }}</button>
+      <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid || !form.dirty">{{ 'action.update' | translate }}</button>
+    </div>
+  </form>
+</ng-template>

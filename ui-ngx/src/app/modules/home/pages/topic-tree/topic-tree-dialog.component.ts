@@ -36,10 +36,13 @@ import { Store } from '@ngrx/store';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { TranslateModule } from '@ngx-translate/core';
 import { AppState } from '@core/core.state';
 import { DialogComponent } from '@shared/components/dialog.component';
-import { TopicTreeTableComponent } from './topic-tree-table.component';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { TopicTreeService } from '@core/http/topic-tree.service';
+import { topicTreeColumns } from '@shared/models/topic-tree.models';
+import { TopicTreeTableConfig } from './topic-tree-table-config';
 
 export interface TopicTreeDialogData {
   path: string;
@@ -49,15 +52,21 @@ export interface TopicTreeDialogData {
   selector: 'tb-topic-tree-dialog',
   templateUrl: './topic-tree-dialog.component.html',
   styleUrls: ['./topic-tree-dialog.component.scss'],
-  imports: [MatToolbar, MatDialogContent, MatDialogActions, MatButton, MatIconButton, MatIcon, TranslateModule, TopicTreeTableComponent]
+  imports: [MatToolbar, MatDialogContent, MatDialogActions, MatButton, MatIconButton, MatIcon, TranslateModule, EntitiesTableComponent]
 })
 export class TopicTreeDialogComponent extends DialogComponent<TopicTreeDialogComponent> {
+
+  readonly tableConfig: TopicTreeTableConfig;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: TopicTreeDialogData,
-              public dialogRef: MatDialogRef<TopicTreeDialogComponent>) {
+              public dialogRef: MatDialogRef<TopicTreeDialogComponent>,
+              topicTreeService: TopicTreeService,
+              translate: TranslateService) {
     super(store, router, dialogRef);
+    const columns = topicTreeColumns.filter(c => c.default).map(c => c.id);
+    this.tableConfig = new TopicTreeTableConfig(topicTreeService, translate, columns, {}, null, data.path);
   }
 
   openInPage(): void {

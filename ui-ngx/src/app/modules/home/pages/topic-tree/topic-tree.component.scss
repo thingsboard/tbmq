@@ -28,8 +28,6 @@
  * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
-@use 'constants' as *;
-
 :host {
   width: 100%;
   height: 100%;
@@ -38,52 +36,16 @@
   mat-drawer-container {
     overflow: clip;
   }
+}
 
-  .tb-entity-table {
-    .tb-entity-table-content {
-      width: 100%;
-      height: 100%;
-      background: #fff;
-      overflow: hidden;
+.tb-topic-tree-columns-panel {
+  gap: 4px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, .2), 0 8px 10px 1px rgba(0, 0, 0, .14), 0 3px 14px 2px rgba(0, 0, 0, .12);
 
-      &.tb-outlined-border {
-        border: solid 1px #e0e0e0;
-        border-radius: 4px;
-      }
-
-      .mat-toolbar-tools {
-        min-height: auto;
-      }
-
-      .tb-entity-table-title {
-        padding-right: 20px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .filter-hint {
-        padding-right: 8px;
-        font-size: 12px;
-        color: rgba(0, 0, 0, .54);
-        white-space: nowrap;
-      }
-    }
-  }
-
-  @media #{$mat-xs} {
-    .mat-toolbar {
-      height: auto;
-      min-height: 100px;
-
-      .mat-toolbar-tools {
-        height: auto;
-      }
-
-      .tb-entity-table-title {
-        padding-bottom: 5px;
-        width: 100%;
-      }
-    }
+  mat-divider {
+    margin: 4px 0;
   }
 }

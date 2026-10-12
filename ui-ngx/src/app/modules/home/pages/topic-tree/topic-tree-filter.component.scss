@@ -28,7 +28,38 @@
  * DOES NOT CONVEY OR IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS,
  * OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
  */
-// The row button owns the click; a checkbox reacting too would toggle its own state out of sync with the binding.
-.tb-topic-tree-column-item mat-checkbox {
-  pointer-events: none;
+:host {
+  display: flex;
+  max-width: 100%;
+
+  .mdc-button {
+    max-width: 100%;
+  }
+}
+
+:host ::ng-deep .mdc-button {
+  .mat-icon {
+    min-width: 24px;
+  }
+
+  .mdc-button__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+::ng-deep .tb-topic-tree-filter-panel {
+  flex: 1;
+
+  .chip-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    .mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+    }
+  }
 }

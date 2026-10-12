@@ -37,7 +37,7 @@
   <button mat-icon-button type="button" (click)="dialogRef.close()"><mat-icon>close</mat-icon></button>
 </mat-toolbar>
 <div mat-dialog-content class="content">
-  <tb-topic-tree-table [rootPath]="data.path" [compact]="true"></tb-topic-tree-table>
+  <tb-entities-table [entitiesTableConfig]="tableConfig"></tb-entities-table>
 </div>
 <div mat-dialog-actions class="flex flex-row justify-end gap-2">
   <button mat-button type="button" (click)="dialogRef.close()">{{ 'action.close' | translate }}</button>

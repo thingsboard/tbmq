@@ -33,58 +33,20 @@
 <mat-drawer-container hasBackdrop="false" class="tb-absolute-fill">
   <mat-drawer class="tb-details-drawer mat-elevation-z4" mode="over" position="end" [opened]="!!selectedNode">
     @if (selectedNode) {
-      <tb-topic-tree-details [node]="selectedNode" [tab]="selectedTab" (closed)="closeDetails()" (tabChange)="selectedTab = $event" (refreshTree)="refreshAfterMissing()"></tb-topic-tree-details>
+      <tb-topic-tree-details [node]="selectedNode" [tab]="selectedTab" (closed)="closeDetails()" (tabChange)="selectedTab = $event"
+                             (refreshTree)="refreshAfterMissing()"></tb-topic-tree-details>
     }
   </mat-drawer>
   <mat-drawer-content>
-    <div class="mat-padding tb-entity-table tb-absolute-fill">
-      <div class="tb-entity-table-content tb-outlined-border flex flex-col">
-        <mat-toolbar class="mat-mdc-table-toolbar" [class.!hidden]="toolbarMode !== 'default'">
-          <div class="mat-toolbar-tools">
-            <span class="tb-entity-table-title">{{ 'topic-tree.topic-tree' | translate }}</span>
-            <span class="flex flex-1"></span>
-            <button mat-icon-button type="button" (click)="enterMode('subscribers')"
-                    [matTooltip]="'topic-tree.find-subscribers' | translate" matTooltipPosition="above">
-              <mat-icon svgIcon="mdi:account-search"></mat-icon>
-            </button>
-            <tb-topic-tree-columns-menu [selected]="columns" (selectedChange)="onColumnsChange($event)"></tb-topic-tree-columns-menu>
-            <button mat-icon-button type="button" (click)="refresh()" [matTooltip]="'action.refresh' | translate" matTooltipPosition="above">
-              <mat-icon>refresh</mat-icon>
-            </button>
-            <button mat-icon-button type="button" (click)="enterMode('search')" [matTooltip]="'topic-tree.filter' | translate" matTooltipPosition="above">
-              <mat-icon>search</mat-icon>
-            </button>
-          </div>
-        </mat-toolbar>
-        <mat-toolbar class="mat-mdc-table-toolbar" [class.!hidden]="toolbarMode !== 'search'">
-          <div class="mat-toolbar-tools">
-            <button mat-icon-button type="button" [matTooltip]="'topic-tree.filter' | translate" matTooltipPosition="above">
-              <mat-icon>search</mat-icon>
-            </button>
-            <mat-form-field class="flex flex-1" appearance="fill">
-              <mat-label>&nbsp;</mat-label>
-              <input #searchInput matInput [formControl]="filterControl" [placeholder]="'topic-tree.filter' | translate"/>
-              @if (filterControl.value && filterControl.value.trim().length < filterMinLength) {
-                <span matTextSuffix class="filter-hint">{{ 'topic-tree.filter-hint' | translate: { min: filterMinLength } }}</span>
-              }
-            </mat-form-field>
-            <button mat-icon-button type="button" (click)="exitSearch()" [matTooltip]="'action.close' | translate" matTooltipPosition="above">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        </mat-toolbar>
-        <tb-topic-tree-resolve #resolve [class.!hidden]="toolbarMode !== 'subscribers'"
-                               (closed)="toolbarMode = 'default'"
-                               (showInTree)="revealPath($event)"
-                               (openInSubscriptions)="openSubscriptions($event)"></tb-topic-tree-resolve>
-        <tb-topic-tree-table #table class="flex-1"
-                             [columns]="columns"
-                             [filter]="filter"
-                             [filterMinLength]="filterMinLength"
-                             (nodeSelected)="onNodeSelected($event)"
-                             (chipClicked)="onChipClicked($event)">
-        </tb-topic-tree-table>
-      </div>
-    </div>
+    <tb-entities-table [entitiesTableConfig]="tableConfig"></tb-entities-table>
   </mat-drawer-content>
 </mat-drawer-container>
+<ng-template #columnsPanel>
+  <div class="tb-topic-tree-columns-panel flex flex-col">
+    @for (col of allColumns; track col.id) {
+      <mat-checkbox [checked]="columns.includes(col.id)" (change)="toggleColumn(col.id)">{{ col.titleKey | translate }}</mat-checkbox>
+    }
+    <mat-divider></mat-divider>
+    <button mat-button color="primary" type="button" (click)="resetColumns()">{{ 'topic-tree.reset-columns' | translate }}</button>
+  </div>
+</ng-template>
