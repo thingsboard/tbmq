@@ -1453,7 +1453,6 @@
         "filter-hint": "Type at least {{min}} characters",
         "open-in-shared": "Open in Shared subscriptions",
         "open-in-integrations": "Open in Integrations",
-        "open-in-topic-tree": "Open in Topic tree",
         "copy-topic": "Copy topic",
         "topic-copied": "Topic has been copied to clipboard",
         "columns": "Columns",

@@ -89,14 +89,6 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
     this.destroy$.complete();
   }
 
-  openTopicTree(topicFilter: string): void {
-    this.dialog.open<TopicTreeDialogComponent, TopicTreeDialogData>(TopicTreeDialogComponent, {
-      disableClose: false,
-      panelClass: ['tb-dialog'],
-      data: { path: toTreePath(topicFilter) }
-    });
-  }
-
   subscriptionsFormArray(): UntypedFormArray {
     return this.topicListFormGroup.get('subscriptions') as UntypedFormArray;
   }

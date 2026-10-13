@@ -135,9 +135,6 @@ export interface TopicTreeRow extends BaseData {
   remaining?: number;
 }
 
-export const toTreePath = (filter: string): string =>
-  !filter ? '' : filter.startsWith('$share/') ? filter.split('/').slice(2).join('/') : filter;
-
 // Entity table cells are rendered as trusted HTML, and topics, payloads and client ids come from MQTT clients.
 export const escapeHtml = (value: unknown): string => `${value ?? ''}`
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

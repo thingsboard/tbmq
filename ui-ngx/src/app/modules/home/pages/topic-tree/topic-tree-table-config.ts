@@ -83,19 +83,17 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
               private translate: TranslateService,
               private columnIds: TopicTreeColumnId[],
               private handlers: TopicTreeTableHandlers,
-              headerComponent: Type<EntityTableHeaderComponent<TopicTreeRow>> | null,
-              private rootPath: string | null = null) {
+              headerComponent: Type<EntityTableHeaderComponent<TopicTreeRow>> | null) {
     super();
-    const tree = rootPath === null;
-    this.tableTitle = tree ? this.translate.instant('topic-tree.topic-tree') : '';
+    this.tableTitle = this.translate.instant('topic-tree.topic-tree');
     this.headerComponent = headerComponent;
     this.pageMode = false;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.searchEnabled = tree;
-    this.displayPagination = tree;
+    this.searchEnabled = true;
+    this.displayPagination = true;
     this.rowPointer = true;
     this.defaultSortOrder = { property: 'subscriptions', direction: Direction.DESC };
     this.entityTranslations = { noEntities: 'topic-tree.no-topics', search: 'topic-tree.filter' };
@@ -110,9 +108,6 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
         isEnabled: () => true,
         onAction: event => handlers.openColumns(event)
       });
-    }
-    if (!tree) {
-      this.expanded.add(key(rootPath));
     }
   }
 
@@ -163,8 +158,7 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
       `color: rgba(0, 0, 0, .54); visibility: ${node.hasChildren ? 'visible' : 'hidden'};">` +
       `${row.expanded ? 'expand_more' : 'chevron_right'}</span>`;
     const segment = node.path === null ? this.translate.instant('topic-tree.root')
-      : this.rootPath !== null && row.depth === 0 ? node.path
-        : node.segment === '' ? '∅' : node.segment;
+      : node.segment === '' ? '∅' : node.segment;
     const segmentStyle = node.wildcard ? 'font-weight: 500; color: var(--tb-primary-500);'
       : node.segment === '' ? 'color: rgba(0, 0, 0, .38);' : '';
     const childrenCount = node.childrenCount
@@ -220,14 +214,12 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     const columns = this.backendColumns();
     const text = (pageLink.textSearch ?? '').trim();
     const searchText = text.length >= TEXT_MIN_LENGTH ? text : null;
-    if (this.rootPath === null && (searchText || !isTopicTreeFilterEmpty(this.query))) {
+    if (searchText || !isTopicTreeFilterEmpty(this.query)) {
       return this.service.search(searchText, this.query, columns, pageLink.page, pageLink.pageSize, sort).pipe(
         map(page => ({ ...page, data: page.data.map(n => this.nodeRow(n, 0, null, true)) })));
     }
-    const top$: Observable<PageData<TopicTreeNode>> = this.rootPath === null
-      ? this.service.getChildren(null, columns, pageLink.page, pageLink.pageSize, sort).pipe(switchMap(page => this.withRevealed(page, columns)))
-      : this.service.getNode(this.rootPath, columns).pipe(map(node => ({ data: [node], totalPages: 1, totalElements: 1, hasNext: false })));
-    return top$.pipe(
+    return this.service.getChildren(null, columns, pageLink.page, pageLink.pageSize, sort).pipe(
+      switchMap(page => this.withRevealed(page, columns)),
       switchMap(page => this.expand(page.data.map(n => this.nodeRow(n, 0, null, false)), columns, sort).pipe(
         map(rows => ({ ...page, data: rows })))),
       tap(page => this.notifyRevealed(page.data))
