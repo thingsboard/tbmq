@@ -64,27 +64,6 @@
           }
         </mat-chip-listbox>
       </div>
-      <div class="tb-form-row space-between column-xs">
-        <div class="fixed-title-width">{{ 'mqtt-client-session.connected-status' | translate }}</div>
-        <mat-chip-listbox multiple formControlName="clientStatuses">
-          @for (value of connectionStates; track value) {
-            <mat-chip-option [value]="value">{{ connectionStateTranslationMap.get(value) | translate }}</mat-chip-option>
-          }
-        </mat-chip-listbox>
-      </div>
-      <div class="tb-form-row space-between column-xs">
-        <div class="fixed-title-width">{{ 'mqtt-client.client-type' | translate }}</div>
-        <mat-chip-listbox multiple formControlName="clientTypes">
-          @for (value of clientTypes; track value) {
-            <mat-chip-option [value]="value">
-              <span class="chip-with-icon">
-                {{ clientTypeTranslationMap.get(value) | translate }}
-                <mat-icon class="material-icons">{{ clientTypeIcon.get(value) }}</mat-icon>
-              </span>
-            </mat-chip-option>
-          }
-        </mat-chip-listbox>
-      </div>
       <div class="tb-form-row column-xs">
         <div class="fixed-title-width">{{ 'topic-tree.column.subscriptions' | translate }}</div>
         <mat-form-field appearance="outline" class="flex" subscriptSizing="dynamic">

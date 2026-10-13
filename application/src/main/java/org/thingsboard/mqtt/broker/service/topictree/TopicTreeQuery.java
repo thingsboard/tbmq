@@ -30,7 +30,6 @@
  */
 package org.thingsboard.mqtt.broker.service.topictree;
 
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 
 import java.util.Set;
@@ -46,22 +45,18 @@ public record TopicTreeQuery(String text,
                              boolean topicPrefix,
                              Set<String> matchingPaths,
                              Set<Has> has,
-                             Set<ClientStatus> clientStatuses,
-                             Set<ClientType> clientTypes,
                              boolean wildcardOnly,
                              Integer subscriptions,
                              SubscriptionOperation subscriptionOperation) {
 
     public enum Has { SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS, DROPPED }
 
-    public enum ClientStatus { CONNECTED, DISCONNECTED }
-
     public static TopicTreeQuery text(String text) {
-        return new TopicTreeQuery(text, null, false, null, Set.of(), Set.of(), Set.of(), false, null, null);
+        return new TopicTreeQuery(text, null, false, null, Set.of(), false, null, null);
     }
 
     public boolean isEmpty() {
-        return text == null && topic == null && matchingPaths == null && has.isEmpty() && clientStatuses.isEmpty()
-                && clientTypes.isEmpty() && !wildcardOnly && subscriptions == null;
+        return text == null && topic == null && matchingPaths == null && has.isEmpty() && !wildcardOnly
+                && subscriptions == null;
     }
 }

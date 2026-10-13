@@ -32,7 +32,6 @@ package org.thingsboard.mqtt.broker.service.topictree;
 
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -61,7 +60,7 @@ public final class TopicTreeSnapshot {
     private static final Comparator<TopicTreeNode> BY_SUBSCRIPTIONS_DESC =
             Comparator.comparingInt(TopicTreeNode::subscriptionsTotal).reversed().thenComparing(TopicTreeNode::segment);
 
-    public record ClientCounts(int total, int online, int offline, int applications, int devices) {
+    public record ClientCounts(int total, int online, int offline) {
     }
 
     @Getter
@@ -126,23 +125,13 @@ public final class TopicTreeSnapshot {
             n.children().forEach(stack::push);
         }
         int online = 0;
-        int applications = 0;
-        int devices = 0;
         for (String c : clients) {
             ClientSessionInfo s = sessions.get(c);
-            if (s == null) {
-                continue;
-            }
-            if (s.isConnected()) {
+            if (s != null && s.isConnected()) {
                 online++;
             }
-            if (s.getType() == ClientType.APPLICATION) {
-                applications++;
-            } else if (s.getType() == ClientType.DEVICE) {
-                devices++;
-            }
         }
-        ClientCounts result = new ClientCounts(clients.size(), online, clients.size() - online, applications, devices);
+        ClientCounts result = new ClientCounts(clients.size(), online, clients.size() - online);
         node.clientCounts = result;
         return result;
     }
@@ -191,7 +180,6 @@ public final class TopicTreeSnapshot {
         return page(hits, link);
     }
 
-    // Cheap structural checks run first, so the subtree walks behind clientCounts only run for the nodes that remain.
     private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped) {
         Predicate<TopicTreeNode> p = n -> true;
         if (q.wildcardOnly()) {
@@ -219,22 +207,6 @@ public final class TopicTreeSnapshot {
             int value = q.subscriptions();
             SubscriptionOperation op = q.subscriptionOperation() == null ? SubscriptionOperation.EQUAL : q.subscriptionOperation();
             p = p.and(n -> compare(n.subscriptionsTotal(), op, value));
-        }
-        if (!q.clientStatuses().isEmpty()) {
-            boolean connected = q.clientStatuses().contains(TopicTreeQuery.ClientStatus.CONNECTED);
-            boolean disconnected = q.clientStatuses().contains(TopicTreeQuery.ClientStatus.DISCONNECTED);
-            p = p.and(n -> {
-                ClientCounts cc = clientCounts(n);
-                return (connected && cc.online() > 0) || (disconnected && cc.offline() > 0);
-            });
-        }
-        if (!q.clientTypes().isEmpty()) {
-            boolean applications = q.clientTypes().contains(ClientType.APPLICATION);
-            boolean devices = q.clientTypes().contains(ClientType.DEVICE);
-            p = p.and(n -> {
-                ClientCounts cc = clientCounts(n);
-                return (applications && cc.applications() > 0) || (devices && cc.devices() > 0);
-            });
         }
         return p;
     }
@@ -366,7 +338,6 @@ public final class TopicTreeSnapshot {
         Comparator<TopicTreeNode> c = switch (sortOrder.getProperty()) {
             case "topic", "segment" -> flat ? Comparator.comparing(TopicTreeNode::path) : Comparator.comparing(TopicTreeNode::segment);
             case "subscriptions" -> Comparator.comparingInt(TopicTreeNode::subscriptionsTotal);
-            case "clients" -> Comparator.comparingInt((TopicTreeNode n) -> clientCounts(n).total());
             case "retained" -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
             case "shared" -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
             case "integrations" -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);

@@ -77,12 +77,6 @@ export class TopicTreeService {
     if (filter?.has?.length) {
       queryParams.has = filter.has.join(',');
     }
-    if (filter?.clientStatuses?.length) {
-      queryParams.clientStatus = filter.clientStatuses.join(',');
-    }
-    if (filter?.clientTypes?.length) {
-      queryParams.clientType = filter.clientTypes.join(',');
-    }
     if (filter?.wildcardOnly) {
       queryParams.wildcardOnly = 'true';
     }

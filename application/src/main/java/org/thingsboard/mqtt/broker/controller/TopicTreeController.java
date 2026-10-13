@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
@@ -100,8 +99,6 @@ public class TopicTreeController extends BaseController {
                                              @RequestParam(required = false) String topicMatch,
                                              @RequestParam(required = false) String matchesTopic,
                                              @RequestParam(required = false) String has,
-                                             @RequestParam(required = false) String clientStatus,
-                                             @RequestParam(required = false) String clientType,
                                              @RequestParam(defaultValue = "false") boolean wildcardOnly,
                                              @RequestParam(required = false) Integer subscriptions,
                                              @RequestParam(required = false) String subscriptionOperation,
@@ -120,8 +117,6 @@ public class TopicTreeController extends BaseController {
                 "PREFIX".equalsIgnoreCase(topicMatch),
                 matchesTopic == null || matchesTopic.isEmpty() ? null : matchingPaths(matchesTopic),
                 parseEnums(has, TopicTreeQuery.Has.class),
-                parseEnums(clientStatus, TopicTreeQuery.ClientStatus.class),
-                parseEnums(clientType, ClientType.class),
                 wildcardOnly,
                 subscriptions,
                 subscriptionOperation == null ? null : parseEnum(subscriptionOperation, SubscriptionOperation.class));

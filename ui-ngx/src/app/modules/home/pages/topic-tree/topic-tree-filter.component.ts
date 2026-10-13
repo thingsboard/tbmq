@@ -45,8 +45,6 @@ import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
-import { ConnectionState, connectionStateTranslationMap } from '@shared/models/session.model';
-import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { NumericOperation, numericOperationTranslationMap } from '@shared/models/query/query.models';
 import {
   isTopicTreeFilterEmpty,
@@ -75,11 +73,6 @@ export class TopicTreeFilterComponent implements OnDestroy {
 
   readonly hasValues = topicTreeHasValues;
   readonly hasTranslations = topicTreeHasTranslations;
-  readonly connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
-  readonly connectionStateTranslationMap = connectionStateTranslationMap;
-  readonly clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
-  readonly clientTypeTranslationMap = clientTypeTranslationMap;
-  readonly clientTypeIcon = clientTypeIcon;
   readonly numericOperations = Object.values(NumericOperation);
   readonly numericOperationTranslations = numericOperationTranslationMap;
 
@@ -92,8 +85,6 @@ export class TopicTreeFilterComponent implements OnDestroy {
     topicPrefix: [false],
     matchesTopic: ['', Validators.pattern(CONCRETE_TOPIC)],
     has: [[] as string[]],
-    clientStatuses: [[] as string[]],
-    clientTypes: [[] as string[]],
     wildcardOnly: [false],
     subscriptionOperation: [NumericOperation.EQUAL as string],
     subscriptions: [null as number | null, Validators.min(0)]
@@ -154,8 +145,6 @@ export class TopicTreeFilterComponent implements OnDestroy {
       topicPrefix: !!filter.topicPrefix,
       matchesTopic: filter.matchesTopic ?? '',
       has: filter.has ?? [],
-      clientStatuses: filter.clientStatuses ?? [],
-      clientTypes: filter.clientTypes ?? [],
       wildcardOnly: !!filter.wildcardOnly,
       subscriptionOperation: filter.subscriptionOperation ?? NumericOperation.EQUAL,
       subscriptions: filter.subscriptions ?? null
@@ -169,8 +158,6 @@ export class TopicTreeFilterComponent implements OnDestroy {
       topicPrefix: !!v.topicPrefix,
       matchesTopic: v.matchesTopic?.trim() || undefined,
       has: v.has as TopicTreeFilter['has'],
-      clientStatuses: v.clientStatuses as ConnectionState[],
-      clientTypes: v.clientTypes as ClientType[],
       wildcardOnly: !!v.wildcardOnly,
       subscriptions: v.subscriptions ?? undefined,
       subscriptionOperation: v.subscriptionOperation as NumericOperation
@@ -189,8 +176,6 @@ export class TopicTreeFilterComponent implements OnDestroy {
       parts.push(`→ ${f.matchesTopic}`);
     }
     f.has?.forEach(h => parts.push(t(topicTreeHasTranslations.get(h))));
-    f.clientStatuses?.forEach(s => parts.push(t(connectionStateTranslationMap.get(s))));
-    f.clientTypes?.forEach(c => parts.push(t(clientTypeTranslationMap.get(c))));
     if (f.wildcardOnly) {
       parts.push(t('topic-tree.filter-panel.wildcards'));
     }

@@ -135,7 +135,7 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     for (const id of this.columnIds) {
       switch (id) {
         case 'subscriptions': columns.push(count(id, n => n.subscriptionsTotal)); break;
-        case 'clients': columns.push(count(id, n => n.clientsTotal)); break;
+        case 'clients': columns.push(count(id, n => n.clientsTotal, false)); break;
         case 'retained': columns.push(count(id, n => n.retainedTotal)); break;
         case 'shared': columns.push(count(id, n => n.sharedGroupsTotal)); break;
         case 'integrations': columns.push(count(id, n => n.integrationsTotal)); break;

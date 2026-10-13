@@ -30,8 +30,6 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { ConnectionState } from '@shared/models/session.model';
-import { ClientType } from '@shared/models/client.model';
 import { NumericOperation } from '@shared/models/query/query.models';
 
 export type TopicTreeColumnId = 'subscriptions' | 'clients' | 'retained' | 'online' | 'shared' | 'integrations' | 'dropped';
@@ -93,16 +91,14 @@ export interface TopicTreeFilter {
   topicPrefix?: boolean;
   matchesTopic?: string;
   has?: TopicTreeHas[];
-  clientStatuses?: ConnectionState[];
-  clientTypes?: ClientType[];
   wildcardOnly?: boolean;
   subscriptions?: number;
   subscriptionOperation?: NumericOperation;
 }
 
 export const isTopicTreeFilterEmpty = (filter: TopicTreeFilter | null | undefined): boolean =>
-  !filter || (!filter.topic && !filter.matchesTopic && !filter.has?.length && !filter.clientStatuses?.length
-    && !filter.clientTypes?.length && !filter.wildcardOnly && (filter.subscriptions ?? null) === null);
+  !filter || (!filter.topic && !filter.matchesTopic && !filter.has?.length && !filter.wildcardOnly
+    && (filter.subscriptions ?? null) === null);
 
 export interface TopicTreeSort {
   property: string;
