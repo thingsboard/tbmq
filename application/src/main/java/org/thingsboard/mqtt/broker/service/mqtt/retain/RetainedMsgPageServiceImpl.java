@@ -24,7 +24,6 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
-import org.thingsboard.mqtt.broker.common.data.util.TopicMatchUtil;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
 import java.util.Comparator;
@@ -65,7 +64,7 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
 
         List<RetainedMsgDto> filteredRetainedMessages = retainedMessages.parallelStream()
                 .filter(retainedMsg -> filterByTopic(pageLink, retainedMsg))
-                .filter(retainedMsg -> TopicMatchUtil.matches(query.getTopicMatch(), retainedMsg.getTopic(), topicName))
+                .filter(retainedMsg -> filterByTopic(topicName, retainedMsg))
                 .filter(retainedMsg -> filterByQos(qosSet, retainedMsg))
                 .filter(retainedMsg -> filterByTimeRange(startTime, endTime, retainedMsg))
                 .map(this::toRetainedMsgDto)
@@ -101,6 +100,10 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
 
     private boolean filterByTopic(PageLink pageLink, RetainedMsg retainedMsg) {
         return doFilterByTopic(pageLink.getTextSearch(), retainedMsg);
+    }
+
+    private boolean filterByTopic(String topicName, RetainedMsg retainedMsg) {
+        return doFilterByTopic(topicName, retainedMsg);
     }
 
     private boolean doFilterByTopic(String topicName, RetainedMsg retainedMsg) {

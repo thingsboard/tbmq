@@ -70,15 +70,6 @@
         </mat-form-field>
       </div>
       <div class="tb-form-row space-between column-xs">
-        <div class="fixed-title-width" translate>mqtt-client-session.topic-filter</div>
-        <div class="flex flex-1 flex-row items-center gap-2">
-          <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
-            <input matInput type="text" formControlName="topicFilter">
-          </mat-form-field>
-          <mat-checkbox formControlName="topicMatchPrefix">{{ 'mqtt-client-session.match-prefix' | translate }}</mat-checkbox>
-        </div>
-      </div>
-      <div class="tb-form-row space-between column-xs">
         <div class="fixed-title-width" translate>mqtt-client-session.client-ip</div>
         <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
           <input matInput type="text" formControlName="clientIpAddress">
@@ -180,15 +171,6 @@
       <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
         <input matInput type="text" formControlName="clientId">
       </mat-form-field>
-    </div>
-    <div class="tb-form-row space-between column-xs">
-      <div class="fixed-title-width" translate>mqtt-client-session.topic-filter</div>
-      <div class="flex flex-1 flex-row items-center gap-2">
-        <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
-          <input matInput type="text" formControlName="topicFilter">
-        </mat-form-field>
-        <mat-checkbox formControlName="topicMatchPrefix">{{ 'mqtt-client-session.match-prefix' | translate }}</mat-checkbox>
-      </div>
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.client-ip</div>

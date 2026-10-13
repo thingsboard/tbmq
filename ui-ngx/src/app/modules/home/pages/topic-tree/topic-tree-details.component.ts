@@ -47,8 +47,6 @@ import { ActionNotificationShow } from '@core/notification/notification.actions'
 import { ToastDirective } from '@shared/components/toast.directive';
 import { HelpComponent } from '@shared/components/help.component';
 import { TopicTreeService } from '@core/http/topic-tree.service';
-import { RetainedMsgService } from '@core/http/retained-msg.service';
-import { DroppedMsgService } from '@core/http/dropped-msg.service';
 import { TopicTreeNode } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor } from '@shared/models/session.model';
 import { TopicTreeTableServices, TopicTreeTableTab, TopicTreeTabTableConfig } from './topic-tree-tab-table-config';
@@ -94,8 +92,6 @@ export class TopicTreeDetailsComponent implements OnChanges {
   private readonly store = inject(Store<AppState>);
   private readonly services: TopicTreeTableServices = {
     topicTree: this.topicTree,
-    retained: inject(RetainedMsgService),
-    dropped: inject(DroppedMsgService),
     translate: inject(TranslateService),
     datePipe: inject(DatePipe),
     router: inject(Router)

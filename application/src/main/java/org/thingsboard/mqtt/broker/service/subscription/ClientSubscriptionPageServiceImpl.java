@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQu
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
-import org.thingsboard.mqtt.broker.common.data.util.TopicMatchUtil;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 
@@ -112,7 +111,10 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
     }
 
     private boolean filterClientSubscriptionByTopicFilter(ClientSubscriptionQuery query, ClientSubscriptionInfoDto subscriptionInfoDto) {
-        return TopicMatchUtil.matches(query.getTopicMatch(), subscriptionInfoDto.getSubscription().getTopicFilter(), query.getTopicFilter());
+        if (query.getTopicFilter() != null) {
+            return subscriptionInfoDto.getSubscription().getTopicFilter().toLowerCase().contains(query.getTopicFilter().toLowerCase());
+        }
+        return true;
     }
 
     private boolean filterClientSubscriptionByQos(Set<Integer> qosSet, ClientSubscriptionInfoDto subscriptionInfoDto) {

@@ -32,22 +32,26 @@ package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -170,5 +174,19 @@ class TopicTreeServiceImplTest {
         TopicTreeSnapshot rebuilt = service.getSnapshot();
         assertThat(rebuilt).isNotSameAs(first);
         assertThat(rebuilt.getBuiltAt()).isEqualTo(now.get());
+    }
+
+    @Test
+    void retainedMessagesAreFilteredToTheSubtreeSortedAndPaged() {
+        byte[] payload = "1".getBytes(StandardCharsets.UTF_8);
+        when(retained.getRetainedMessages()).thenReturn(List.of(
+                new RetainedMsg("a/c", payload, 0), new RetainedMsg("ab/x", payload, 0),
+                new RetainedMsg("a", payload, 1), new RetainedMsg("a/b", payload, 0)));
+
+        PageData<RetainedMsgDto> first = service.getRetainedMessages("a", new PageLink(2, 0));
+        assertThat(first.getData()).extracting(RetainedMsgDto::getTopic).containsExactly("a", "a/b");
+        assertThat(first.getTotalElements()).isEqualTo(3);
+        assertThat(first.hasNext()).isTrue();
+        assertThat(service.getRetainedMessages(null, new PageLink(10, 0)).getTotalElements()).isEqualTo(4);
     }
 }

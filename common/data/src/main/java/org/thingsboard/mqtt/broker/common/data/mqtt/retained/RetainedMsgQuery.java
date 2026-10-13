@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.common.data.mqtt.retained;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
 import java.util.Set;
@@ -32,6 +31,5 @@ public class RetainedMsgQuery {
     private String topicName;
     private Set<Integer> qosSet;
     private String payload;
-    private MatchMode topicMatch;
 
 }

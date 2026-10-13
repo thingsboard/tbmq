@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
@@ -109,8 +108,7 @@ public class SubscriptionController extends BaseController {
                                                                          @RequestParam(required = false) String[] noLocalList,
                                                                          @RequestParam(required = false) String[] retainAsPublishList,
                                                                          @RequestParam(required = false) String[] retainHandlingList,
-                                                                         @RequestParam(required = false) Integer subscriptionId,
-                                                                         @RequestParam(required = false) MatchMode topicMatch) throws ThingsboardException {
+                                                                         @RequestParam(required = false) Integer subscriptionId) throws ThingsboardException {
         Set<Integer> allQos = collectIntegerQueryParams(qosList);
         List<Boolean> allNoLocal = collectBooleanQueryParams(noLocalList);
         List<Boolean> allRetainAsPublish = collectBooleanQueryParams(retainAsPublishList);
@@ -119,7 +117,7 @@ public class SubscriptionController extends BaseController {
         PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
 
         return checkNotNull(clientSubscriptionPageService.getClientSubscriptions(
-                new ClientSubscriptionQuery(pageLink, clientId, topicFilter, allQos, allNoLocal, allRetainAsPublish, allRetainHandling, subscriptionId, topicMatch)
+                new ClientSubscriptionQuery(pageLink, clientId, topicFilter, allQos, allNoLocal, allRetainAsPublish, allRetainHandling, subscriptionId)
         ));
     }
 

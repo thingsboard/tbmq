@@ -45,13 +45,9 @@ import {
 import { EntityTypeResource } from '@shared/models/entity-type.models';
 import { BaseData } from '@shared/models/base-data';
 import { PageData } from '@shared/models/page/page-data';
-import { PageLink, TimePageLink } from '@shared/models/page/page-link';
-import { Direction } from '@shared/models/page/sort-order';
+import { PageLink } from '@shared/models/page/page-link';
 import { TopicTreeService } from '@core/http/topic-tree.service';
-import { RetainedMsgService } from '@core/http/retained-msg.service';
-import { DroppedMsgService } from '@core/http/dropped-msg.service';
-import { RetainedMessagesQuery } from '@shared/models/retained-message.model';
-import { DroppedMessagesQuery, droppedMsgReasonTranslationMap, MatchMode } from '@shared/models/dropped-message.model';
+import { droppedMsgReasonTranslationMap } from '@shared/models/dropped-message.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { escapeHtml, TopicTreeEntityKind } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor, connectionStateTranslationMap } from '@shared/models/session.model';
@@ -60,8 +56,6 @@ export type TopicTreeTableTab = 'subscriptions' | 'clients' | 'shared' | 'integr
 
 export interface TopicTreeTableServices {
   topicTree: TopicTreeService;
-  retained: RetainedMsgService;
-  dropped: DroppedMsgService;
   translate: TranslateService;
   datePipe: DatePipe;
   router: Router;
@@ -69,16 +63,9 @@ export interface TopicTreeTableServices {
 
 type TopicTreeTableRow = BaseData & Record<string, any>;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-
-const OPEN_IN_KEYS: Record<TopicTreeTableTab, string> = {
-  subscriptions: 'topic-tree.open-in-subscriptions',
-  clients: 'topic-tree.open-in-sessions',
+const OPEN_IN_KEYS: Partial<Record<TopicTreeTableTab, string>> = {
   shared: 'topic-tree.open-in-shared',
-  integrations: 'topic-tree.open-in-integrations',
-  retained: 'topic-tree.open-in-retained',
-  dropped: 'topic-tree.open-in-dropped'
+  integrations: 'topic-tree.open-in-integrations'
 };
 
 export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow> {
@@ -99,12 +86,14 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
     this.entityResources = {} as EntityTypeResource<TopicTreeTableRow>;
     this.columns = this.buildColumns();
     this.entitiesFetchFunction = pageLink => this.fetch(pageLink);
-    this.headerActionDescriptors.push({
-      name: this.services.translate.instant(OPEN_IN_KEYS[tab]),
-      icon: 'open_in_new',
-      isEnabled: () => true,
-      onAction: () => this.openIn()
-    });
+    if (OPEN_IN_KEYS[tab]) {
+      this.headerActionDescriptors.push({
+        name: this.services.translate.instant(OPEN_IN_KEYS[tab]),
+        icon: 'open_in_new',
+        isEnabled: () => true,
+        onAction: () => this.openIn()
+      });
+    }
   }
 
   private buildColumns(): EntityTableColumn<TopicTreeTableRow>[] {
@@ -179,7 +168,7 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
 
   private fetch(pageLink: PageLink): Observable<PageData<TopicTreeTableRow>> {
     const { page, pageSize } = pageLink;
-    const { topicTree, retained, dropped } = this.services;
+    const { topicTree } = this.services;
     switch (this.tab) {
       case 'subscriptions':
         return topicTree.getSubscriptions(this.path, page, pageSize).pipe(
@@ -189,17 +178,10 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
       case 'integrations':
         return topicTree.getEntities(this.path, this.tab.toUpperCase() as TopicTreeEntityKind, page, pageSize).pipe(
           map(p => this.rows(p, e => ({ ...e }))));
-      case 'retained': {
-        const query = new RetainedMessagesQuery(new TimePageLink(pageSize, page), { topicName: this.path, topicMatch: 'PREFIX' });
-        return retained.getRetainedMessagesV2(query).pipe(map(p => this.rows(p, m => ({ ...m, id: m.topic }))));
-      }
-      case 'dropped': {
-        const now = Date.now();
-        const timePageLink = new TimePageLink(pageSize, page, null, { property: 'lastEventTime', direction: Direction.DESC },
-          now - DAY_MS, now);
-        const query = new DroppedMessagesQuery(timePageLink, { topicName: this.path, topicMatch: MatchMode.PREFIX });
-        return dropped.getDroppedMessages(query).pipe(map(p => this.rows(p, m => ({ ...m }))));
-      }
+      case 'retained':
+        return topicTree.getRetained(this.path, page, pageSize).pipe(map(p => this.rows(p, m => ({ ...m, id: m.topic }))));
+      case 'dropped':
+        return topicTree.getDropped(this.path, page, pageSize).pipe(map(p => this.rows(p, m => ({ ...m }))));
     }
   }
 
@@ -210,18 +192,6 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
   private openIn(): void {
     const { router } = this.services;
     switch (this.tab) {
-      case 'subscriptions':
-        router.navigate(['/subscriptions'], { queryParams: { topicFilter: this.path, topicMatch: 'PREFIX' } });
-        break;
-      case 'clients':
-        router.navigate(['/sessions'], { queryParams: { topicFilter: this.path, topicMatch: 'PREFIX' } });
-        break;
-      case 'retained':
-        router.navigate(['/retained-messages'], { queryParams: { topicName: this.path, topicMatch: 'PREFIX' } });
-        break;
-      case 'dropped':
-        router.navigate(['/dropped-messages'], { queryParams: { topicName: this.path, topicMatch: 'PREFIX' } });
-        break;
       case 'shared':
         router.navigate(['/shared-subscriptions/manage']);
         break;

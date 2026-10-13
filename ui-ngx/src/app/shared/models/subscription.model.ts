@@ -36,12 +36,9 @@ export interface ClientSubscriptions {
   subscriptions: TopicSubscription[];
 }
 
-export type TopicMatch = 'CONTAINS' | 'EXACT' | 'PREFIX';
-
 export interface ClientSubscriptionFilterConfig {
   clientId?: string;
   topicFilter?: string;
-  topicMatch?: TopicMatch;
   qosList?: string[];
   noLocalList?: string[];
   retainAsPublishList?: string[];
@@ -53,7 +50,6 @@ export class ClientSubscriptionsQuery {
   pageLink: PageLink;
   clientId: string;
   topicFilter: string;
-  topicMatch: TopicMatch;
   qosList: string[];
   noLocalList: string[];
   retainAsPublishList: string[];
@@ -64,7 +60,6 @@ export class ClientSubscriptionsQuery {
     this.pageLink = pageLink;
     this.clientId = filter?.clientId;
     this.topicFilter = filter?.topicFilter;
-    this.topicMatch = filter?.topicMatch;
     this.qosList = filter?.qosList;
     this.noLocalList = filter?.noLocalList;
     this.retainAsPublishList = filter?.retainAsPublishList;
@@ -80,11 +75,8 @@ export class ClientSubscriptionsQuery {
     if (this.clientId?.length) {
       query += `&clientId=${encodeURIComponent(this.clientId)}`;
     }
-    if (this.topicFilter?.length || (this.topicFilter != null && this.topicMatch)) {
+    if (this.topicFilter?.length) {
       query += `&topicFilter=${encodeURIComponent(this.topicFilter)}`;
-    }
-    if (this.topicMatch) {
-      query += `&topicMatch=${this.topicMatch}`;
     }
     if (this.subscriptionId) {
       query += `&subscriptionId=${this.subscriptionId}`;

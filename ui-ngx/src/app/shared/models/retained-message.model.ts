@@ -15,7 +15,6 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { TopicMatch } from '@shared/models/subscription.model';
 import { TimePageLink } from '@shared/models/page/page-link';
 import {
   isArraysEqualIgnoreUndefined,
@@ -39,7 +38,6 @@ export interface UserProperties {
 
 export interface RetainedMessagesFilterConfig {
   topicName?: string;
-  topicMatch?: TopicMatch;
   payload?: string;
   qosList?: string[];
 }
@@ -47,26 +45,20 @@ export interface RetainedMessagesFilterConfig {
 export class RetainedMessagesQuery {
   pageLink: TimePageLink;
   topicName: string;
-  topicMatch: TopicMatch;
   payload: string;
   qosList: string[];
 
   constructor(pageLink: TimePageLink, filter: RetainedMessagesFilterConfig) {
     this.pageLink = pageLink;
-    this.topicMatch = filter?.topicMatch;
     this.payload = filter?.payload;
     this.qosList = filter?.qosList;
-    this.topicName = filter?.topicName;
-    if (!this.topicMatch && isNotEmptyStr(filter?.topicName)) {
+    if (isNotEmptyStr(filter?.topicName)) {
       this.pageLink.textSearch = filter.topicName;
     }
   }
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.topicMatch) {
-      query += `&topicMatch=${this.topicMatch}&topicName=${encodeURIComponent(this.topicName ?? '')}`;
-    }
     if (this.payload?.length) {
       query += `&payload=${encodeURIComponent(this.payload)}`;
     }
@@ -85,9 +77,6 @@ export const retainedMessagesFilterConfigEquals = (filter1?: RetainedMessagesFil
     return true;
   } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
     if (!isEqualIgnoreUndefined(filter1.topicName, filter2.topicName)) {
-      return false;
-    }
-    if (!isEqualIgnoreUndefined(filter1.topicMatch, filter2.topicMatch)) {
       return false;
     }
     if (!isEqualIgnoreUndefined(filter1.payload, filter2.payload)) {

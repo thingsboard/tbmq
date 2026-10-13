@@ -34,6 +34,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { createDefaultHttpOptions, QueryParams, RequestConfig } from './http-utils';
 import { PageData } from '@shared/models/page/page-data';
+import { RetainedMessage } from '@shared/models/retained-message.model';
+import { DroppedMessage } from '@shared/models/dropped-message.model';
 import {
   TopicTreeEntity,
   TopicTreeEntityKind,
@@ -106,6 +108,18 @@ export class TopicTreeService {
                           config?: RequestConfig): Observable<PageData<TopicTreeSubscription>> {
     const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
     return this.http.get<PageData<TopicTreeSubscription>>(this.url('/api/topic-tree/subscriptions', path), this.options(queryParams, config));
+  }
+
+  public getRetained(path: string | null, page: number, pageSize: number,
+                     config?: RequestConfig): Observable<PageData<RetainedMessage>> {
+    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
+    return this.http.get<PageData<RetainedMessage>>(this.url('/api/topic-tree/retained', path), this.options(queryParams, config));
+  }
+
+  public getDropped(path: string | null, page: number, pageSize: number,
+                    config?: RequestConfig): Observable<PageData<DroppedMessage>> {
+    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
+    return this.http.get<PageData<DroppedMessage>>(this.url('/api/topic-tree/dropped', path), this.options(queryParams, config));
   }
 
   // cleanQueryParams drops empty strings, but path '' addresses the node with an empty segment (root is null)

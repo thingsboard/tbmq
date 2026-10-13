@@ -34,12 +34,16 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
@@ -164,6 +168,21 @@ public class TopicTreeServiceImpl implements TopicTreeService {
                 clientSessionCache.getAllClientSessions(), clock.getAsLong());
         log.debug("Built topic tree snapshot with {} nodes in {} ms", result.nodesCount(), (System.nanoTime() - start) / 1_000_000);
         return result;
+    }
+
+    // Read from the live retained-message map rather than the snapshot, which keeps only topics.
+    @Override
+    public PageData<RetainedMsgDto> getRetainedMessages(String path, PageLink pageLink) {
+        String below = path == null ? null : path + "/";
+        List<RetainedMsg> matching = retainedMsgListenerService.getRetainedMessages().stream()
+                .filter(m -> path == null || m.getTopic().equals(path) || m.getTopic().startsWith(below))
+                .sorted(Comparator.comparing(RetainedMsg::getTopic))
+                .toList();
+        int pageSize = pageLink.getPageSize();
+        int from = (int) Math.min((long) pageLink.getPage() * pageSize, matching.size());
+        int to = (int) Math.min((long) from + pageSize, matching.size());
+        List<RetainedMsgDto> data = matching.subList(from, to).stream().map(RetainedMsgDto::newInstance).toList();
+        return new PageData<>(data, (matching.size() + pageSize - 1) / pageSize, matching.size(), to < matching.size());
     }
 
     @Override

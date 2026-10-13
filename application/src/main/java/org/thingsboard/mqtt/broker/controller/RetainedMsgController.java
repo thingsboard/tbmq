@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
-import org.thingsboard.mqtt.broker.common.data.mqtt.dropped.MatchMode;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
@@ -92,14 +91,13 @@ public class RetainedMsgController extends BaseController {
                                                           @RequestParam(required = false) Long endTime,
                                                           @RequestParam(required = false) String topicName,
                                                           @RequestParam(required = false) String[] qosList,
-                                                          @RequestParam(required = false) String payload,
-                                                          @RequestParam(required = false) MatchMode topicMatch) throws ThingsboardException {
+                                                          @RequestParam(required = false) String payload) throws ThingsboardException {
         Set<Integer> allQos = collectIntegerQueryParams(qosList);
 
         TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
 
         return checkNotNull(retainedMsgPageService.getRetainedMessages(
-                new RetainedMsgQuery(pageLink, topicName, allQos, payload, topicMatch)
+                new RetainedMsgQuery(pageLink, topicName, allQos, payload)
         ));
     }
 }

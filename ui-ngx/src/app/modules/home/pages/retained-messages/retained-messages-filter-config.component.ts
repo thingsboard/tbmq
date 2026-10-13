@@ -47,7 +47,6 @@ import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatFormField } from '@angular/material/form-field';
-import { MatCheckbox } from '@angular/material/checkbox';
 import { MatInput } from '@angular/material/input';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { QosTranslation, QosTypes } from '@shared/models/session.model';
@@ -73,7 +72,7 @@ export interface RetainedMessagesFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatCheckbox]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption]
 })
 export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
@@ -122,7 +121,6 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
     }
     this.retainedMessagesFilterConfigForm = this.fb.group({
       topicName: [null, []],
-      topicMatchPrefix: [false, []],
       payload: [null, []],
       qosList: [null, []],
     });
@@ -244,7 +242,6 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
   private updateRetainedMessagesConfigForm(retainedMessagesFilterConfig?: RetainedMessagesFilterConfig) {
     this.retainedMessagesFilterConfigForm.patchValue({
       topicName: retainedMessagesFilterConfig?.topicName,
-      topicMatchPrefix: retainedMessagesFilterConfig?.topicMatch === 'PREFIX',
       payload: retainedMessagesFilterConfig?.payload,
       qosList: retainedMessagesFilterConfig?.qosList,
     }, {emitEvent: false});
@@ -258,8 +255,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
 
   private retainedMessagesFilterConfigFromFormValue(formValue: any): RetainedMessagesFilterConfig {
     return {
-      topicName: formValue.topicMatchPrefix ? (formValue.topicName ?? '') : formValue.topicName,
-      topicMatch: formValue.topicMatchPrefix ? 'PREFIX' : undefined,
+      topicName: formValue.topicName,
       payload: formValue.payload,
       qosList: formValue.qosList,
     };
@@ -269,12 +265,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
     if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
-      if (this.retainedMessagesFilterConfig?.topicMatch === 'PREFIX') {
-        const topicName = `${this.retainedMessagesFilterConfig.topicName ?? ''}/#`;
-        filterTextParts.push(topicName);
-        filterTooltipParts.push(`${this.translate.instant('retained-message.topic')}: ${topicName} ` +
-          `(${this.translate.instant('retained-message.match-prefix')})`);
-      } else if (this.retainedMessagesFilterConfig?.topicName?.length) {
+      if (this.retainedMessagesFilterConfig?.topicName?.length) {
         const topicName = this.retainedMessagesFilterConfig.topicName;
         filterTextParts.push(topicName);
         filterTooltipParts.push(`${this.translate.instant('retained-message.topic')}: ${topicName}`);

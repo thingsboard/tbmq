@@ -44,6 +44,8 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.permission.Operation;
+import org.thingsboard.mqtt.broker.dto.DroppedMsgDto;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
@@ -175,6 +177,26 @@ public class TopicTreeController extends BaseController {
         return subscriptions;
     }
 
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping("/retained")
+    public PageData<RetainedMsgDto> getRetained(@RequestParam(required = false) String path,
+                                                @RequestParam(defaultValue = "20") int pageSize,
+                                                @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        snapshotEnabledCheck();
+        return topicTreeService.getRetainedMessages(path, new PageLink(clamp(pageSize), page));
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping("/dropped")
+    public PageData<DroppedMsgDto> getDropped(@RequestParam(required = false) String path,
+                                              @RequestParam(defaultValue = "20") int pageSize,
+                                              @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
+        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        snapshotEnabledCheck();
+        return droppedMsgPageService.getTopicSubtreeSince(path, droppedSince(), new PageLink(clamp(pageSize), page));
+    }
+
     // Integration subscriptions are keyed by the integration id; stale ones may outlive the integration itself.
     private String integrationName(String id) {
         try {
@@ -220,7 +242,7 @@ public class TopicTreeController extends BaseController {
         if (!needed) {
             return n -> 0L;
         }
-        long since = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+        long since = droppedSince();
         Map<String, Long> byPrefix = new HashMap<>();
         droppedMsgPageService.sumDroppedByTopicSince(since).forEach((topic, count) -> {
             for (int i = topic.indexOf('/'); i >= 0; i = topic.indexOf('/', i + 1)) {
@@ -229,6 +251,10 @@ public class TopicTreeController extends BaseController {
             byPrefix.merge(topic, count, Long::sum);
         });
         return n -> n.path() == null ? 0L : byPrefix.getOrDefault(n.path(), 0L);
+    }
+
+    private static long droppedSince() {
+        return System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
     }
 
     private Set<String> matchingPaths(String topic) throws ThingsboardException {
@@ -319,7 +345,7 @@ public class TopicTreeController extends BaseController {
     private List<TopicTreeNodeDto> withDropped(List<TopicTreeNodeDto> dtos, Set<TopicTreeColumn> cols) {
         List<TopicTreeNodeDto> result = new ArrayList<>(dtos);
         if (cols.contains(TopicTreeColumn.DROPPED)) {
-            long since = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+            long since = droppedSince();
             List<String> paths = result.stream().map(TopicTreeNodeDto::getPath).filter(Objects::nonNull).toList();
             Map<String, Long> dropped = droppedMsgPageService.sumDroppedByTopicPrefixesSince(paths, since);
             result.forEach(dto -> dto.setDropped24h(dto.getPath() == null ? null : dropped.getOrDefault(dto.getPath(), 0L)));
