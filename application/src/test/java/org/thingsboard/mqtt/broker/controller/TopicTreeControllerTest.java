@@ -84,6 +84,13 @@ class TopicTreeControllerTest {
     }
 
     @Test
+    void listEndpointsRequirePath() throws Exception {
+        assertThatThrownBy(() -> TopicTreeController.requirePath(null)).isInstanceOf(ThingsboardException.class);
+        TopicTreeController.requirePath("");
+        TopicTreeController.requirePath("sensors");
+    }
+
+    @Test
     void disabledIs404() {
         when(service.isEnabled()).thenReturn(false);
         assertThatThrownBy(() -> controller.doChildren(null, "", 10, 0, null, null)).isInstanceOf(ThingsboardException.class);

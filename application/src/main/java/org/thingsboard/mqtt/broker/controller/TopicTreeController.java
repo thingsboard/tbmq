@@ -145,6 +145,7 @@ public class TopicTreeController extends BaseController {
                                                     @RequestParam(defaultValue = "20") int pageSize,
                                                     @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        requirePath(path);
         TopicTreeSnapshot s = snapshot();
         TopicTreeEntityDto.Kind k;
         try {
@@ -165,6 +166,7 @@ public class TopicTreeController extends BaseController {
                                                               @RequestParam(defaultValue = "20") int pageSize,
                                                               @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        requirePath(path);
         TopicTreeSnapshot s = snapshot();
         PageData<TopicTreeSubscriptionDto> subscriptions = s.subscriptions(node(s, path), new PageLink(clamp(pageSize), page));
         subscriptions.getData().stream().filter(TopicTreeSubscriptionDto::isIntegration)
@@ -178,6 +180,7 @@ public class TopicTreeController extends BaseController {
                                                 @RequestParam(defaultValue = "20") int pageSize,
                                                 @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        requirePath(path);
         snapshotEnabledCheck();
         return topicTreeService.getRetainedMessages(path, new PageLink(clamp(pageSize), page));
     }
@@ -188,6 +191,7 @@ public class TopicTreeController extends BaseController {
                                               @RequestParam(defaultValue = "20") int pageSize,
                                               @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
         accessControlService.checkPermission(getCurrentUser(), Operation.READ);
+        requirePath(path);
         snapshotEnabledCheck();
         return droppedMsgPageService.getTopicSubtreeSince(path, droppedSince(), new PageLink(clamp(pageSize), page));
     }
@@ -311,6 +315,13 @@ public class TopicTreeController extends BaseController {
             throw new ThingsboardException("Topic path not found: " + path, ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         return n;
+    }
+
+    // Listing the whole tree would materialise every subscription/client on each page request; the UI never asks for it.
+    static void requirePath(String path) throws ThingsboardException {
+        if (path == null) {
+            throw new ThingsboardException("Topic path is required", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
     }
 
     private void checkFilter(String filter) throws ThingsboardException {
