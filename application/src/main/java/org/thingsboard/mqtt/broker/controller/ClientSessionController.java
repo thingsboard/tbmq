@@ -146,7 +146,6 @@ public class ClientSessionController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/client-session/info/by-node")
     public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionsStatsInfoByNode() throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfoByNode());
     }
 

@@ -101,7 +101,6 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         checkParameter(ENTITY_IDS, entityIdsStr);
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         List<String> entityIds = toKeysList(entityIdsStr).stream().filter(StringUtils::isNotBlank).distinct().toList();
         if (entityIds.size() > MAX_BATCH_ENTITY_IDS) {
             throw new ThingsboardException("At most " + MAX_BATCH_ENTITY_IDS + " entity ids can be requested at once!",
