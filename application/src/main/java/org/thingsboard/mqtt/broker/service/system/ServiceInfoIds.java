@@ -34,9 +34,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -59,15 +56,6 @@ public class ServiceInfoIds {
      */
     public static String timeseriesEntityId(String serviceId, String serviceType) {
         return registryField(serviceId, serviceType);
-    }
-
-    /**
-     * Stable audit log entity id of a service, derived from its registry field, so every audit entry of one service
-     * can be found by one entity id. An operation without a type targets the bare field, which is the broker's.
-     */
-    public static UUID auditEntityId(String serviceId, String serviceType) {
-        String name = serviceType == null ? serviceId : registryField(serviceId, serviceType);
-        return UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

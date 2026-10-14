@@ -33,11 +33,7 @@ package org.thingsboard.mqtt.broker.service.system;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.service.system.ServiceInfoIds.RegistryEntry;
 
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INTEGRATION_EXECUTOR;
@@ -57,18 +53,6 @@ class ServiceInfoIdsTest {
     }
 
     @Test
-    void givenServiceTypes_whenAuditEntityId_thenItIsDerivedFromTheRegistryField() {
-        assertEquals(uuid("node1"), ServiceInfoIds.auditEntityId("node1", TBMQ.name()));
-        assertEquals(uuid("TBMQ_INTEGRATION_EXECUTOR:node1"), ServiceInfoIds.auditEntityId("node1", TBMQ_INTEGRATION_EXECUTOR.name()));
-        assertNotEquals(ServiceInfoIds.auditEntityId("node1", TBMQ.name()), ServiceInfoIds.auditEntityId("node1", TBMQ_INTEGRATION_EXECUTOR.name()));
-    }
-
-    @Test
-    void givenNoServiceType_whenAuditEntityId_thenItMatchesTheBroker() {
-        assertEquals(ServiceInfoIds.auditEntityId("node1", TBMQ.name()), ServiceInfoIds.auditEntityId("node1", null));
-    }
-
-    @Test
     void givenRegistryFields_whenParsed_thenTypedAndBareFieldsAreUnderstood() {
         assertEquals(new RegistryEntry("node1", TBMQ.name()), ServiceInfoIds.parseRegistryField("node1", TBMQ.name()));
         assertEquals(new RegistryEntry("node1", TBMQ_INTEGRATION_EXECUTOR.name()),
@@ -83,9 +67,4 @@ class ServiceInfoIdsTest {
             assertEquals(new RegistryEntry("a:b", type), ServiceInfoIds.parseRegistryField(ServiceInfoIds.registryField("a:b", type), type));
         }
     }
-
-    private static UUID uuid(String name) {
-        return UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
-    }
-
 }
