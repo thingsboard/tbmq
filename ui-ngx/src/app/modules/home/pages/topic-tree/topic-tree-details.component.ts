@@ -32,7 +32,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTab, MatTabContent, MatTabGroup } from '@angular/material/tabs';
 import { TbIconComponent } from '@shared/components/icon.component';
@@ -72,7 +72,6 @@ export type TopicTreeTab = typeof TOPIC_TREE_TABS[number];
   templateUrl: './topic-tree-details.component.html',
   styleUrls: ['./topic-tree-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [DatePipe],
   imports: [DecimalPipe, NgTemplateOutlet, MatButton, MatTab, MatTabContent, MatTabGroup, TranslateModule, DetailsPanelComponent,
     EntitiesTableComponent, HelpComponent, TbIconComponent, CdkCopyToClipboard, MatIcon, ToastDirective]
 })
@@ -98,7 +97,6 @@ export class TopicTreeDetailsComponent implements OnChanges {
   private readonly services: TopicTreeTableServices = {
     topicTree: this.topicTree,
     translate: inject(TranslateService),
-    datePipe: inject(DatePipe),
     router: inject(Router)
   };
 
@@ -186,10 +184,6 @@ export class TopicTreeDetailsComponent implements OnChanges {
       {
         tab: 'retained', icon: 'mdi:archive', label: 'topic-tree.column.retained', count: node.retainedTotal,
         sub: t('topic-tree.row.retained')
-      },
-      {
-        tab: 'dropped', icon: 'mdi:filter-remove-outline', label: 'topic-tree.column.dropped', count: full ? full.dropped24h : null,
-        sub: t('topic-tree.column.dropped-hint')
       }
     ];
   }

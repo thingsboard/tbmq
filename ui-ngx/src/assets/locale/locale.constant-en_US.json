@@ -9,6 +9,7 @@
         "account": "Account"
     },
     "action": {
+        "search": "Search",
         "save": "Save",
         "skip": "Skip",
         "cancel": "Cancel",
@@ -1492,17 +1493,14 @@
             "retained": "Retained",
             "online": "Online / offline",
             "shared": "Shared groups",
-            "integrations": "Integrations",
-            "dropped": "Dropped 24h",
-            "dropped-hint": "Total drops of topics that had drops in the last 24 h"
+            "integrations": "Integrations"
         },
         "tab": {
             "subscriptions": "Subscriptions",
             "clients": "Clients",
             "shared": "Shared",
             "integrations": "Integrations",
-            "retained": "Retained",
-            "dropped": "Dropped 24h"
+            "retained": "Retained"
         },
         "entity": {
             "client-id": "Client ID",
@@ -1514,8 +1512,6 @@
             "subscriptions": "Subscriptions",
             "group": "Group",
             "payload": "Payload",
-            "reason": "Reason",
-            "count": "Count",
             "type": "Type",
             "type-client": "Client",
             "type-shared": "Shared",
@@ -1525,8 +1521,7 @@
             "integration-not-found": "Integration not found",
             "open-session": "Open session",
             "open-group": "Show in shared subscriptions",
-            "open-integration": "Open integration",
-            "last-event": "Last event"
+            "open-integration": "Open integration"
         }
     },
     "unauthorized-client": {

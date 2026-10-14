@@ -45,7 +45,7 @@ public record TopicTreeQuery(String text,
                              Integer subscriptions,
                              SubscriptionOperation subscriptionOperation) {
 
-    public enum Has { SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS, DROPPED }
+    public enum Has { SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS }
 
     // CONTAINS is a case-insensitive substring of the full path, like text; PREFIX is the exact topic and its subtree.
     public enum TopicMatch { CONTAINS, PREFIX }

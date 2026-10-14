@@ -9,6 +9,7 @@
         "account": "Cuenta"
     },
     "action": {
+        "search": "Buscar",
         "save": "Guardar",
         "skip": "Omitir",
         "cancel": "Cancelar",
@@ -1431,17 +1432,14 @@
             "retained": "Retenidos",
             "online": "En línea / sin conexión",
             "shared": "Grupos compartidos",
-            "integrations": "Integraciones",
-            "dropped": "Descartados 24h",
-            "dropped-hint": "Total de descartes de los topics que tuvieron descartes en las últimas 24 h"
+            "integrations": "Integraciones"
         },
         "tab": {
             "subscriptions": "Suscripciones",
             "clients": "Clientes",
             "shared": "Compartidas",
             "integrations": "Integraciones",
-            "retained": "Retenidos",
-            "dropped": "Descartados 24h"
+            "retained": "Retenidos"
         },
         "entity": {
             "client-id": "ID de cliente",
@@ -1453,8 +1451,6 @@
             "subscriptions": "Suscripciones",
             "group": "Grupo",
             "payload": "Payload",
-            "reason": "Motivo",
-            "count": "Cantidad",
             "type": "Tipo",
             "type-client": "Cliente",
             "type-shared": "Compartida",
@@ -1464,8 +1460,7 @@
             "integration-not-found": "Integración no encontrada",
             "open-session": "Abrir sesión",
             "open-group": "Mostrar en suscripciones compartidas",
-            "open-integration": "Abrir integración",
-            "last-event": "Último evento"
+            "open-integration": "Abrir integración"
         }
     },
     "unauthorized-client": {

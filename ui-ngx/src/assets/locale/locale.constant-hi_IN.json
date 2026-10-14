@@ -9,6 +9,7 @@
         "account": "खाता"
     },
     "action": {
+        "search": "खोजें",
         "save": "सहेजें",
         "skip": "छोड़ें",
         "cancel": "रद्द करें",
@@ -1431,17 +1432,14 @@
             "retained": "Retained",
             "online": "ऑनलाइन / ऑफ़लाइन",
             "shared": "Shared समूह",
-            "integrations": "एकीकरण",
-            "dropped": "छोड़े गए 24h",
-            "dropped-hint": "उन topic के कुल छोड़े गए संदेश जिनमें पिछले 24 घंटे में संदेश छोड़े गए"
+            "integrations": "एकीकरण"
         },
         "tab": {
             "subscriptions": "सदस्यताएँ",
             "clients": "क्लाइंट",
             "shared": "Shared",
             "integrations": "एकीकरण",
-            "retained": "Retained",
-            "dropped": "छोड़े गए 24h"
+            "retained": "Retained"
         },
         "entity": {
             "client-id": "क्लाइंट ID",
@@ -1453,8 +1451,6 @@
             "subscriptions": "सदस्यताएँ",
             "group": "समूह",
             "payload": "Payload",
-            "reason": "कारण",
-            "count": "संख्या",
             "type": "प्रकार",
             "type-client": "क्लाइंट",
             "type-shared": "Shared",
@@ -1464,8 +1460,7 @@
             "integration-not-found": "एकीकरण नहीं मिला",
             "open-session": "सत्र खोलें",
             "open-group": "Shared subscriptions में दिखाएँ",
-            "open-integration": "एकीकरण खोलें",
-            "last-event": "अंतिम घटना"
+            "open-integration": "एकीकरण खोलें"
         }
     },
     "unauthorized-client": {

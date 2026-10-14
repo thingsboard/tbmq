@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot.NO_DROPS;
 
 /**
  * Wall-clock and heap budgets on synthetic trees. Excluded from the default build by the {@code performance} tag
@@ -63,13 +62,12 @@ class TopicTreePerformanceTest {
         TopicTreeSnapshot s = holder[0];
         long subs = s.getRoot().subscriptionsTotal();
         PageLink defaultSort = new PageLink(100, 0, null, new SortOrder("subscriptions", SortOrder.Direction.DESC));
-        long cold = ms(() -> s.children(s.getRoot(), new PageLink(100, 0), NO_DROPS).getData().forEach(s::clientCounts));
-        long warm = ms(() -> s.children(s.getRoot(), new PageLink(100, 0), NO_DROPS).getData().forEach(s::clientCounts));
-        long devices = ms(() -> s.children(s.find("devices"), new PageLink(100, 0), NO_DROPS));
-        long devicesSorted = ms(() -> s.children(s.find("devices"), defaultSort, NO_DROPS));
-        long search = ms(() -> s.query(TopicTreeQuery.text("telemetry1"), NO_DROPS, new PageLink(100, 0)));
-        long prefix = ms(() -> s.query(TopicTreeQuery.builder().topic("fleet/eu").topicMatch(TopicTreeQuery.TopicMatch.PREFIX).build(),
-                NO_DROPS, new PageLink(100, 0)));
+        long cold = ms(() -> s.children(s.getRoot(), new PageLink(100, 0)).getData().forEach(s::clientCounts));
+        long warm = ms(() -> s.children(s.getRoot(), new PageLink(100, 0)).getData().forEach(s::clientCounts));
+        long devices = ms(() -> s.children(s.find("devices"), new PageLink(100, 0)));
+        long devicesSorted = ms(() -> s.children(s.find("devices"), defaultSort));
+        long search = ms(() -> s.query(TopicTreeQuery.text("telemetry1"), new PageLink(100, 0)));
+        long prefix = ms(() -> s.query(TopicTreeQuery.builder().topic("fleet/eu").topicMatch(TopicTreeQuery.TopicMatch.PREFIX).build(), new PageLink(100, 0)));
         long subscriptions = ms(() -> s.subscriptions(s.find("devices"), new PageLink(20, 5)));
         log.info("subs={} nodes={} build={}ms cold={}ms warm={}ms devicesLevel={}ms devicesLevelSorted={}ms search={}ms prefix={}ms subscriptionsPage={}ms",
                 subs, s.nodesCount(), build, cold, warm, devices, devicesSorted, search, prefix, subscriptions);

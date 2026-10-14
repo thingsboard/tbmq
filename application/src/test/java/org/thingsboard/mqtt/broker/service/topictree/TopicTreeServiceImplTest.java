@@ -38,7 +38,6 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
-import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
@@ -55,10 +54,8 @@ import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.ToLongFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -68,13 +65,10 @@ import static org.mockito.Mockito.when;
 
 class TopicTreeServiceImplTest {
 
-    static final long DAY_MS = 24 * 60 * 60 * 1000L;
-
     ClientSubscriptionCache subs = mock(ClientSubscriptionCache.class);
     RetainedMsgListenerService retained = mock(RetainedMsgListenerService.class);
     RetainedMsgService retainedMsgService = mock(RetainedMsgService.class);
     ClientSessionCache sessions = mock(ClientSessionCache.class);
-    DroppedMsgPageService droppedMsgPageService = mock(DroppedMsgPageService.class);
     AtomicLong now = new AtomicLong(1000);
     List<Runnable> queued = new ArrayList<>();
     TopicTreeServiceImpl service;
@@ -88,7 +82,7 @@ class TopicTreeServiceImplTest {
     }
 
     private TopicTreeServiceImpl newService(boolean enabled) {
-        TopicTreeServiceImpl s = new TopicTreeServiceImpl(subs, retained, retainedMsgService, sessions, droppedMsgPageService,
+        TopicTreeServiceImpl s = new TopicTreeServiceImpl(subs, retained, retainedMsgService, sessions,
                 enabled, 5000, 600_000);
         s.clock = now::get;
         s.executor = queued::add;
@@ -193,70 +187,6 @@ class TopicTreeServiceImplTest {
     }
 
     @Test
-    void droppedCountsCreditEveryLevelAboveTheTopic() {
-        when(droppedMsgPageService.sumDroppedByTopicSince(1000 - DAY_MS)).thenReturn(Map.of("t/a", 5L, "t/a/deep", 4L, "other", 1L));
-        TopicTreeSnapshot s = TopicTreeSnapshotBuilder.build(Map.of("c", Set.of(new ClientTopicSubscription("t/a/deep/x", 0),
-                new ClientTopicSubscription("other", 0), new ClientTopicSubscription("t/b", 0))), List.of(), Map.of(), 0);
-
-        ToLongFunction<TopicTreeNode> dropped = service.droppedCounts();
-
-        assertThat(dropped.applyAsLong(s.find("t"))).isEqualTo(9);
-        assertThat(dropped.applyAsLong(s.find("t/a"))).isEqualTo(9);
-        assertThat(dropped.applyAsLong(s.find("t/a/deep"))).isEqualTo(4);
-        assertThat(dropped.applyAsLong(s.find("t/a/deep/x"))).isZero();
-        assertThat(dropped.applyAsLong(s.find("t/b"))).isZero();
-        assertThat(dropped.applyAsLong(s.find("other"))).isEqualTo(1);
-        assertThat(dropped.applyAsLong(s.getRoot())).isZero();
-    }
-
-    @Test
-    void droppedCountsAreCachedForTheTtlAndReloadedInTheBackground() {
-        when(droppedMsgPageService.sumDroppedByTopicSince(anyLong())).thenReturn(Map.of("t", 1L), Map.of("t", 2L));
-        TopicTreeSnapshot s = TopicTreeSnapshotBuilder.build(Map.of("c", Set.of(new ClientTopicSubscription("t", 0))), List.of(), Map.of(), 0);
-
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(1);
-        now.addAndGet(4999);
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(1);
-        verify(droppedMsgPageService, times(1)).sumDroppedByTopicSince(anyLong());
-        assertThat(queued).isEmpty();
-
-        now.addAndGet(1);
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(1);
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(1);
-        assertThat(queued).hasSize(1);
-        queued.get(0).run();
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(2);
-        verify(droppedMsgPageService, times(2)).sumDroppedByTopicSince(anyLong());
-    }
-
-    @Test
-    void failedDroppedReloadKeepsPreviousCountsAndAllowsRetry() {
-        when(droppedMsgPageService.sumDroppedByTopicSince(anyLong())).thenReturn(Map.of("t", 1L))
-                .thenThrow(new RuntimeException("db down")).thenReturn(Map.of("t", 3L));
-        TopicTreeSnapshot s = TopicTreeSnapshotBuilder.build(Map.of("c", Set.of(new ClientTopicSubscription("t", 0))), List.of(), Map.of(), 0);
-        service.droppedCounts();
-        now.addAndGet(6000);
-
-        service.droppedCounts();
-        queued.get(0).run();
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(1);
-        assertThat(queued).hasSize(2);
-        queued.get(1).run();
-        assertThat(service.droppedCounts().applyAsLong(s.find("t"))).isEqualTo(3);
-    }
-
-    @Test
-    void idleEvictionDropsTheDroppedCountsToo() {
-        when(droppedMsgPageService.sumDroppedByTopicSince(anyLong())).thenReturn(Map.of());
-        service.getSnapshot();
-        service.droppedCounts();
-        now.addAndGet(600_000);
-        service.evictIfIdle();
-        service.droppedCounts();
-        verify(droppedMsgPageService, times(2)).sumDroppedByTopicSince(anyLong());
-    }
-
-    @Test
     void retainedMessagesComeFromTheTrieSubtreeSortedAndPaged() {
         byte[] payload = "1".getBytes(StandardCharsets.UTF_8);
         when(retainedMsgService.getRetainedMessages("a/#")).thenReturn(List.of(
@@ -274,12 +204,5 @@ class TopicTreeServiceImplTest {
         assertThat(service.getRetainedMessages("a/+", new PageLink(10, 0)).getTotalElements()).isZero();
         assertThat(service.getRetainedMessages("a/#", new PageLink(10, 0)).getData()).isEmpty();
         verify(retainedMsgService, never()).getRetainedMessages(anyString());
-    }
-
-    @Test
-    void droppedMessagesUseTheLast24Hours() {
-        PageLink link = new PageLink(10, 0);
-        service.getDroppedMessages("t/a", link);
-        verify(droppedMsgPageService).getTopicSubtreeSince("t/a", 1000 - DAY_MS, link);
     }
 }

@@ -48,16 +48,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.ToLongFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot.NO_DROPS;
 
 class TopicTreeSnapshotQueryTest {
-
-    static final ToLongFunction<TopicTreeNode> OTHER_DROPPED = n -> "other".equals(n.path()) ? 3 : 0;
 
     TopicTreeSnapshot s = TopicTreeFixtures.fixture();
 
@@ -67,87 +63,87 @@ class TopicTreeSnapshotQueryTest {
 
     @Test
     void rootChildrenSortedBySubscriptionsDesc() {
-        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(10, 0), NO_DROPS);
+        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(10, 0));
         assertThat(p.getData().get(0).segment()).isEqualTo("sensors");
         assertThat(p.getTotalElements()).isEqualTo(s.getRoot().childrenCount());
     }
 
     @Test
     void childrenPaging() {
-        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(1, 1), NO_DROPS);
+        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(1, 1));
         assertThat(p.getData()).hasSize(1);
         assertThat(p.hasNext()).isTrue();
     }
 
     @Test
     void childrenSortByTopicUsesSegment() {
-        PageData<TopicTreeNode> p = s.children(s.getRoot(), sorted("topic", SortOrder.Direction.ASC), NO_DROPS);
+        PageData<TopicTreeNode> p = s.children(s.getRoot(), sorted("topic", SortOrder.Direction.ASC));
         assertThat(p.getData().get(0).segment()).isEmpty();
     }
 
     @Test
     void childrenExplicitSubscriptionsDescEqualsDefaultOrder() {
-        List<TopicTreeNode> unsorted = s.children(s.getRoot(), new PageLink(10, 0), NO_DROPS).getData();
-        List<TopicTreeNode> explicit = s.children(s.getRoot(), sorted("subscriptions", SortOrder.Direction.DESC), NO_DROPS).getData();
+        List<TopicTreeNode> unsorted = s.children(s.getRoot(), new PageLink(10, 0)).getData();
+        List<TopicTreeNode> explicit = s.children(s.getRoot(), sorted("subscriptions", SortOrder.Direction.DESC)).getData();
         assertThat(explicit).containsExactlyElementsOf(unsorted);
-        assertThat(s.children(s.getRoot(), sorted("subscriptions", SortOrder.Direction.ASC), NO_DROPS).getData())
+        assertThat(s.children(s.getRoot(), sorted("subscriptions", SortOrder.Direction.ASC)).getData())
                 .extracting(TopicTreeNode::subscriptionsTotal).isSorted();
     }
 
     @Test
     void childrenUnknownSortPropertyIsRejected() {
-        assertThatThrownBy(() -> s.children(s.getRoot(), sorted("clients", SortOrder.Direction.ASC), NO_DROPS))
+        assertThatThrownBy(() -> s.children(s.getRoot(), sorted("clients", SortOrder.Direction.ASC)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void textIsCaseInsensitiveSubstringOverPath() {
-        assertThat(paths(s.query(TopicTreeQuery.text("TEMP"), NO_DROPS, new PageLink(50, 0))))
+        assertThat(paths(s.query(TopicTreeQuery.text("TEMP"), new PageLink(50, 0))))
                 .contains("sensors/+/temperature", "sensors/room1/temperature");
     }
 
     @Test
     void textMatchesAcrossLevelsAndInheritsToDescendants() {
-        List<String> paths = paths(s.query(TopicTreeQuery.text("RS/RO"), NO_DROPS, new PageLink(100, 0)));
+        List<String> paths = paths(s.query(TopicTreeQuery.text("RS/RO"), new PageLink(100, 0)));
         assertThat(paths).contains("sensors/room1", "sensors/room1/#", "sensors/room2/temperature").doesNotContain("sensors");
     }
 
     @Test
     void topicContainsBehavesLikeText() {
         TopicTreeQuery q = TopicTreeQuery.builder().topic("RS/RO").topicMatch(TopicMatch.CONTAINS).build();
-        assertThat(paths(s.query(q, NO_DROPS, new PageLink(100, 0))))
-                .containsExactlyInAnyOrderElementsOf(paths(s.query(TopicTreeQuery.text("RS/RO"), NO_DROPS, new PageLink(100, 0))));
+        assertThat(paths(s.query(q, new PageLink(100, 0))))
+                .containsExactlyInAnyOrderElementsOf(paths(s.query(TopicTreeQuery.text("RS/RO"), new PageLink(100, 0))));
     }
 
     @Test
     void topicPrefixMatchesWholeLevelsOnlyAndIsCaseSensitive() {
         TopicTreeQuery q = TopicTreeQuery.builder().topic("sensors/room1").topicMatch(TopicMatch.PREFIX).build();
-        assertThat(paths(s.query(q, NO_DROPS, new PageLink(50, 0))))
+        assertThat(paths(s.query(q, new PageLink(50, 0))))
                 .containsExactlyInAnyOrder("sensors/room1", "sensors/room1/#", "sensors/room1/temperature");
         TopicTreeQuery upper = TopicTreeQuery.builder().topic("SENSORS/room1").topicMatch(TopicMatch.PREFIX).build();
-        assertThat(s.query(upper, NO_DROPS, new PageLink(50, 0)).getData()).isEmpty();
+        assertThat(s.query(upper, new PageLink(50, 0)).getData()).isEmpty();
         TopicTreeQuery missing = TopicTreeQuery.builder().topic("nope").topicMatch(TopicMatch.PREFIX).build();
-        assertThat(s.query(missing, NO_DROPS, new PageLink(50, 0)).getTotalElements()).isZero();
+        assertThat(s.query(missing, new PageLink(50, 0)).getTotalElements()).isZero();
     }
 
     @Test
     void textAndPrefixCombine() {
         TopicTreeQuery q = TopicTreeQuery.builder().text("temp").topic("sensors/room1").topicMatch(TopicMatch.PREFIX).build();
-        assertThat(paths(s.query(q, NO_DROPS, new PageLink(50, 0)))).containsExactly("sensors/room1/temperature");
+        assertThat(paths(s.query(q, new PageLink(50, 0)))).containsExactly("sensors/room1/temperature");
         TopicTreeQuery both = TopicTreeQuery.builder().text("temp").topic("ROOM").topicMatch(TopicMatch.CONTAINS).build();
-        assertThat(paths(s.query(both, NO_DROPS, new PageLink(50, 0))))
+        assertThat(paths(s.query(both, new PageLink(50, 0))))
                 .containsExactlyInAnyOrder("sensors/room1/temperature", "sensors/room2/temperature");
     }
 
     @Test
     void matchingPathsSelectsExactlyThoseFiltersAndCombinesWithOtherCriteria() {
         TopicTreeQuery q = TopicTreeQuery.builder().matchingPaths(Set.of("sensors/+/temperature", "sensors/#", "no/such")).build();
-        assertThat(paths(s.query(q, NO_DROPS, new PageLink(50, 0)))).containsExactlyInAnyOrder("sensors/+/temperature", "sensors/#");
+        assertThat(paths(s.query(q, new PageLink(50, 0)))).containsExactlyInAnyOrder("sensors/+/temperature", "sensors/#");
         TopicTreeQuery withText = TopicTreeQuery.builder().matchingPaths(Set.of("sensors/+/temperature", "sensors/#")).text("temp").build();
-        assertThat(paths(s.query(withText, NO_DROPS, new PageLink(50, 0)))).containsExactly("sensors/+/temperature");
+        assertThat(paths(s.query(withText, new PageLink(50, 0)))).containsExactly("sensors/+/temperature");
         TopicTreeQuery withPrefix = TopicTreeQuery.builder().matchingPaths(Set.of("sensors/+/temperature", "sensors/#"))
                 .topic("sensors/#").topicMatch(TopicMatch.PREFIX).build();
-        assertThat(paths(s.query(withPrefix, NO_DROPS, new PageLink(50, 0)))).containsExactly("sensors/#");
+        assertThat(paths(s.query(withPrefix, new PageLink(50, 0)))).containsExactly("sensors/#");
     }
 
     @Test
@@ -157,14 +153,12 @@ class TopicTreeSnapshotQueryTest {
     }
 
     @Test
-    void hasSubscriptionsSharedIntegrationsAndDropped() {
+    void hasSubscriptionsSharedAndIntegrations() {
         assertThat(paths(query(Set.of(Has.SUBSCRIPTIONS), false, null, null)))
                 .contains("sensors", "sensors/+/temperature", "/leading", "a//b").doesNotContain("other", "sensors/room1/temperature");
         assertThat(paths(query(Set.of(Has.SHARED), false, null, null))).containsExactlyInAnyOrder("sensors", "sensors/+", "sensors/+/temperature");
         assertThat(paths(query(Set.of(Has.INTEGRATIONS), false, null, null))).containsExactlyInAnyOrder("sensors", "sensors/#");
         assertThat(paths(query(Set.of(Has.SUBSCRIPTIONS, Has.RETAINED), false, null, null))).containsExactlyInAnyOrder("sensors", "sensors/room1");
-        TopicTreeQuery dropped = TopicTreeQuery.builder().has(Set.of(Has.DROPPED)).build();
-        assertThat(paths(s.query(dropped, OTHER_DROPPED, new PageLink(50, 0)))).containsExactly("other");
     }
 
     @Test
@@ -190,14 +184,14 @@ class TopicTreeSnapshotQueryTest {
     void subscriptionOperationDefaultsToEqual() {
         TopicTreeQuery q = TopicTreeQuery.builder().subscriptions(3).build();
         assertThat(q.subscriptionOperation()).isEqualTo(SubscriptionOperation.EQUAL);
-        assertThat(paths(s.query(q, NO_DROPS, new PageLink(50, 0)))).containsExactlyInAnyOrder("sensors/+", "sensors/+/temperature");
+        assertThat(paths(s.query(q, new PageLink(50, 0)))).containsExactlyInAnyOrder("sensors/+", "sensors/+/temperature");
     }
 
     @ParameterizedTest
     @EnumSource(value = TopicTreeSortProperty.class, names = {"TOPIC", "SUBSCRIPTIONS", "RETAINED", "SHARED", "INTEGRATIONS"})
     void flatSortsAscAndDesc(TopicTreeSortProperty property) {
-        List<TopicTreeNode> asc = s.query(allNodes(), NO_DROPS, sorted(property.name().toLowerCase(), SortOrder.Direction.ASC)).getData();
-        List<TopicTreeNode> desc = s.query(allNodes(), NO_DROPS, sorted(property.name().toLowerCase(), SortOrder.Direction.DESC)).getData();
+        List<TopicTreeNode> asc = s.query(allNodes(), sorted(property.name().toLowerCase(), SortOrder.Direction.ASC)).getData();
+        List<TopicTreeNode> desc = s.query(allNodes(), sorted(property.name().toLowerCase(), SortOrder.Direction.DESC)).getData();
         assertThat(asc).hasSize(s.nodesCount() - 1);
         assertThat(asc).isSortedAccordingTo(comparator(property));
         assertThat(desc).isSortedAccordingTo(comparator(property).reversed());
@@ -205,19 +199,11 @@ class TopicTreeSnapshotQueryTest {
 
     @Test
     void flatTopicSortUsesFullPathAndUnknownPropertyIsRejected() {
-        List<String> byPath = paths(s.query(allNodes(), NO_DROPS, sorted("topic", SortOrder.Direction.ASC)));
+        List<String> byPath = paths(s.query(allNodes(), sorted("topic", SortOrder.Direction.ASC)));
         assertThat(byPath).isSorted();
         assertThat(byPath.get(0)).isEmpty();
-        assertThatThrownBy(() -> s.query(allNodes(), NO_DROPS, sorted("segment", SortOrder.Direction.ASC)))
+        assertThatThrownBy(() -> s.query(allNodes(), sorted("segment", SortOrder.Direction.ASC)))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void sortByDroppedUsesTheSuppliedCounts() {
-        PageData<TopicTreeNode> sorted = s.children(s.getRoot(), sorted("dropped", SortOrder.Direction.DESC), OTHER_DROPPED);
-        assertThat(sorted.getData().get(0).path()).isEqualTo("other");
-        PageData<TopicTreeNode> flat = s.query(allNodes(), OTHER_DROPPED, sorted("dropped", SortOrder.Direction.DESC));
-        assertThat(flat.getData().get(0).path()).isEqualTo("other");
     }
 
     @Test
@@ -274,23 +260,20 @@ class TopicTreeSnapshotQueryTest {
     @Test
     void toDtoIncludesOnlyRequestedColumns() {
         TopicTreeNode sensors = s.find("sensors");
-        TopicTreeNodeDto bare = s.toDto(sensors, Set.of(), OTHER_DROPPED);
+        TopicTreeNodeDto bare = s.toDto(sensors, Set.of());
         assertThat(bare.getClientsTotal()).isNull();
         assertThat(bare.getSharedGroupsTotal()).isNull();
-        assertThat(bare.getDropped24h()).isNull();
-        TopicTreeNodeDto full = s.toDto(s.find("other"), Set.of(TopicTreeColumn.values()), OTHER_DROPPED);
+        TopicTreeNodeDto full = s.toDto(s.find("other"), Set.of(TopicTreeColumn.values()));
         assertThat(full.getClientsTotal()).isZero();
         assertThat(full.getClientsOnline()).isZero();
-        assertThat(full.getDropped24h()).isEqualTo(3L);
-        TopicTreeNodeDto shared = s.toDto(sensors, Set.of(TopicTreeColumn.SHARED, TopicTreeColumn.ONLINE), NO_DROPS);
+        TopicTreeNodeDto shared = s.toDto(sensors, Set.of(TopicTreeColumn.SHARED, TopicTreeColumn.ONLINE));
         assertThat(shared.getSharedSubscriptionsTotal()).isEqualTo(2);
         assertThat(shared.getClientsOnline()).isEqualTo(2);
-        assertThat(s.toDto(s.getRoot(), Set.of(TopicTreeColumn.DROPPED), OTHER_DROPPED).getDropped24h()).isNull();
     }
 
     @Test
     void pageBeyondIntRangeIsEmptyInsteadOfFailing() {
-        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(Integer.MAX_VALUE, Integer.MAX_VALUE), NO_DROPS);
+        PageData<TopicTreeNode> p = s.children(s.getRoot(), new PageLink(Integer.MAX_VALUE, Integer.MAX_VALUE));
         assertThat(p.getData()).isEmpty();
         assertThat(p.getTotalElements()).isEqualTo(s.getRoot().childrenCount());
     }
@@ -298,7 +281,7 @@ class TopicTreeSnapshotQueryTest {
     private PageData<TopicTreeNode> query(Set<Has> has, boolean wildcardOnly, Integer subscriptions, SubscriptionOperation op) {
         TopicTreeQuery q = TopicTreeQuery.builder().has(has).wildcardOnly(wildcardOnly).subscriptions(subscriptions)
                 .subscriptionOperation(op).build();
-        return s.query(q, NO_DROPS, new PageLink(100, 0));
+        return s.query(q, new PageLink(100, 0));
     }
 
     private static TopicTreeQuery allNodes() {
@@ -312,7 +295,6 @@ class TopicTreeSnapshotQueryTest {
             case RETAINED -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
             case SHARED -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
             case INTEGRATIONS -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);
-            case DROPPED -> Comparator.comparingLong(NO_DROPS);
         };
     }
 

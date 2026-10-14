@@ -29,7 +29,6 @@
 /// OR TO MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
 ///
 
-import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { escape as escapeHtml } from 'lodash';
@@ -39,7 +38,6 @@ import {
   cellLink,
   CellLinkTarget,
   cellStatus,
-  DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
@@ -48,18 +46,16 @@ import { BaseData } from '@shared/models/base-data';
 import { PageData } from '@shared/models/page/page-data';
 import { PageLink } from '@shared/models/page/page-link';
 import { TopicTreeService } from '@core/http/topic-tree.service';
-import { droppedMsgReasonTranslationMap } from '@shared/models/dropped-message.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { TopicTreeEntityKind } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor, connectionStateTranslationMap } from '@shared/models/session.model';
 
-export const TOPIC_TREE_TABLE_TABS = ['subscriptions', 'clients', 'shared', 'integrations', 'retained', 'dropped'] as const;
+export const TOPIC_TREE_TABLE_TABS = ['subscriptions', 'clients', 'shared', 'integrations', 'retained'] as const;
 export type TopicTreeTableTab = typeof TOPIC_TREE_TABLE_TABS[number];
 
 export interface TopicTreeTableServices {
   topicTree: TopicTreeService;
   translate: TranslateService;
-  datePipe: DatePipe;
   router: Router;
 }
 
@@ -146,16 +142,6 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
           text('payload', 'topic-tree.entity.payload', '45%'),
           number('qos', 'topic-tree.entity.qos', '15%')
         ];
-      case 'dropped':
-        return [
-          new DateEntityTableColumn<TopicTreeTableRow>('lastEventTime', 'topic-tree.entity.last-event', this.services.datePipe,
-            '20%', undefined, undefined, false),
-          text('topic', 'topic-tree.entity.topic', '25%'),
-          text('clientId', 'topic-tree.entity.client-id', '20%', undefined,
-            row => row.clientId ? session(row.clientId) : null, () => 'topic-tree.entity.open-session'),
-          text('reason', 'topic-tree.entity.reason', '25%', row => t(droppedMsgReasonTranslationMap.get(row.reason)) || escapeHtml(row.reason)),
-          number('droppedCount', 'topic-tree.entity.count', '10%')
-        ];
     }
   }
 
@@ -181,8 +167,6 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
           map(p => this.rows(p, e => ({ ...e }))));
       case 'retained':
         return topicTree.getRetained(this.path, pageLink).pipe(map(p => this.rows(p, m => ({ ...m, id: m.topic }))));
-      case 'dropped':
-        return topicTree.getDropped(this.path, pageLink).pipe(map(p => this.rows(p, m => ({ ...m }))));
     }
   }
 

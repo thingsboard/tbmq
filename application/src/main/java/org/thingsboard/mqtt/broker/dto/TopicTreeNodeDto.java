@@ -56,5 +56,4 @@ public class TopicTreeNodeDto {
     private Integer sharedSubscriptionsTotal;
     private Integer integrationsExact;
     private Integer integrationsTotal;
-    private Long dropped24h;
 }

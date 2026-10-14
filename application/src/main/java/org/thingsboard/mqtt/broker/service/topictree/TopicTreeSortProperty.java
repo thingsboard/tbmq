@@ -33,7 +33,7 @@ package org.thingsboard.mqtt.broker.service.topictree;
 import java.util.Locale;
 
 public enum TopicTreeSortProperty {
-    TOPIC, SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS, DROPPED;
+    TOPIC, SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS;
 
     public static TopicTreeSortProperty parse(String property) {
         return valueOf(property.toUpperCase(Locale.ROOT));

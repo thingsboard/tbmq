@@ -36,7 +36,6 @@ import { createDefaultHttpOptions, QueryParams, RequestConfig } from './http-uti
 import { PageData } from '@shared/models/page/page-data';
 import { PageLink } from '@shared/models/page/page-link';
 import { RetainedMessage } from '@shared/models/retained-message.model';
-import { DroppedMessage } from '@shared/models/dropped-message.model';
 import {
   TopicTreeEntity,
   TopicTreeEntityKind,
@@ -105,12 +104,6 @@ export class TopicTreeService {
   public getRetained(path: string | null, pageLink: PageLink,
                      config?: RequestConfig): Observable<PageData<RetainedMessage>> {
     return this.http.get<PageData<RetainedMessage>>(this.url('/api/topic-tree/retained', path),
-      this.options(this.pageParams(pageLink), config));
-  }
-
-  public getDropped(path: string | null, pageLink: PageLink,
-                    config?: RequestConfig): Observable<PageData<DroppedMessage>> {
-    return this.http.get<PageData<DroppedMessage>>(this.url('/api/topic-tree/dropped', path),
       this.options(this.pageParams(pageLink), config));
   }
 

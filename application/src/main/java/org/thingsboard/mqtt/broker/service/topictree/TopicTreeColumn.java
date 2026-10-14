@@ -31,5 +31,5 @@
 package org.thingsboard.mqtt.broker.service.topictree;
 
 public enum TopicTreeColumn {
-    CLIENTS, ONLINE, SHARED, INTEGRATIONS, DROPPED
+    CLIENTS, ONLINE, SHARED, INTEGRATIONS
 }

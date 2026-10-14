@@ -43,7 +43,6 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
-import org.thingsboard.mqtt.broker.dto.DroppedMsgDto;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
@@ -64,7 +63,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 @RestController
@@ -88,8 +86,7 @@ public class TopicTreeController extends BaseController {
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseEnums("columns", columns, TopicTreeColumn.class);
         PageLink link = pageLink(pageSize, page, sortProperty, sortOrder);
-        ToLongFunction<TopicTreeNode> dropped = dropped(cols, link, Set.of());
-        return s.children(node(s, path), link, dropped).mapData(n -> s.toDto(n, cols, dropped));
+        return s.children(node(s, path), link).mapData(n -> s.toDto(n, cols));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -126,8 +123,7 @@ public class TopicTreeController extends BaseController {
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseEnums("columns", columns, TopicTreeColumn.class);
         PageLink link = pageLink(pageSize, page, sortProperty, sortOrder);
-        ToLongFunction<TopicTreeNode> dropped = dropped(cols, link, query.has());
-        return s.query(query, dropped, link).mapData(n -> s.toDto(n, cols, dropped));
+        return s.query(query, link).mapData(n -> s.toDto(n, cols));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -136,8 +132,7 @@ public class TopicTreeController extends BaseController {
                                     @RequestParam(required = false) String[] columns) throws ThingsboardException {
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseEnums("columns", columns, TopicTreeColumn.class);
-        ToLongFunction<TopicTreeNode> dropped = cols.contains(TopicTreeColumn.DROPPED) ? topicTreeService.droppedCounts() : TopicTreeSnapshot.NO_DROPS;
-        return s.toDto(node(s, path), cols, dropped);
+        return s.toDto(node(s, path), cols);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -183,16 +178,6 @@ public class TopicTreeController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping("/dropped")
-    public PageData<DroppedMsgDto> getDropped(@RequestParam(required = false) String path,
-                                              @RequestParam(defaultValue = "20") int pageSize,
-                                              @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
-        requirePath(path);
-        snapshotEnabledCheck();
-        return topicTreeService.getDroppedMessages(path, new PageLink(clamp(pageSize), page));
-    }
-
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/resolve")
     public TopicResolveDto resolve(@RequestParam String topic) throws ThingsboardException {
         snapshotEnabledCheck();
@@ -220,12 +205,6 @@ public class TopicTreeController extends BaseController {
         Set<String> paths = new HashSet<>();
         topicResolveService.resolve(topic).getMatches().forEach(m -> paths.add(m.getTopicFilter()));
         return paths;
-    }
-
-    private ToLongFunction<TopicTreeNode> dropped(Set<TopicTreeColumn> cols, PageLink link, Set<TopicTreeQuery.Has> has) {
-        boolean needed = cols.contains(TopicTreeColumn.DROPPED) || has.contains(TopicTreeQuery.Has.DROPPED)
-                || (link.getSortOrder() != null && TopicTreeSortProperty.parse(link.getSortOrder().getProperty()) == TopicTreeSortProperty.DROPPED);
-        return needed ? topicTreeService.droppedCounts() : TopicTreeSnapshot.NO_DROPS;
     }
 
     private <E extends Enum<E>> Set<E> parseEnums(String name, String[] values, Class<E> type) throws ThingsboardException {

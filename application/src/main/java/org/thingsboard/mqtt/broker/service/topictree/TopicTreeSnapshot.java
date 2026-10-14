@@ -54,11 +54,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.ToLongFunction;
 
 public final class TopicTreeSnapshot {
 
-    public static final ToLongFunction<TopicTreeNode> NO_DROPS = n -> 0L;
     private static final Comparator<TopicTreeNode> BY_SUBSCRIPTIONS_DESC =
             Comparator.comparingInt(TopicTreeNode::subscriptionsTotal).reversed().thenComparing(TopicTreeNode::segment);
 
@@ -112,7 +110,7 @@ public final class TopicTreeSnapshot {
         return null;
     }
 
-    public TopicTreeNodeDto toDto(TopicTreeNode n, Set<TopicTreeColumn> cols, ToLongFunction<TopicTreeNode> dropped) {
+    public TopicTreeNodeDto toDto(TopicTreeNode n, Set<TopicTreeColumn> cols) {
         TopicTreeNodeDto.TopicTreeNodeDtoBuilder b = TopicTreeNodeDto.builder()
                 .path(n.path()).segment(n.segment()).wildcard(n.isWildcard())
                 .hasChildren(n.childrenCount() > 0).childrenCount(n.childrenCount())
@@ -131,9 +129,6 @@ public final class TopicTreeSnapshot {
         }
         if (cols.contains(TopicTreeColumn.INTEGRATIONS)) {
             b.integrationsExact(n.integrationsExact()).integrationsTotal(n.integrationsTotal());
-        }
-        if (cols.contains(TopicTreeColumn.DROPPED) && n != root) {
-            b.dropped24h(dropped.applyAsLong(n));
         }
         return b.build();
     }
@@ -163,7 +158,7 @@ public final class TopicTreeSnapshot {
         return result;
     }
 
-    public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link, ToLongFunction<TopicTreeNode> dropped) {
+    public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link) {
         TopicTreeNode[] sorted = parent.sortedChildren;
         if (sorted == null) {
             sorted = parent.children().toArray(new TopicTreeNode[0]);
@@ -171,7 +166,7 @@ public final class TopicTreeSnapshot {
             parent.sortedChildren = sorted;
         }
         List<TopicTreeNode> list = Arrays.asList(sorted);
-        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, false);
+        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), false);
         if (cmp != null && !isCachedOrder(link.getSortOrder())) {
             list = new ArrayList<>(list);
             list.sort(cmp);
@@ -185,16 +180,16 @@ public final class TopicTreeSnapshot {
                 && sortOrder.getDirection() == SortOrder.Direction.DESC;
     }
 
-    public PageData<TopicTreeNode> query(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped, PageLink link) {
+    public PageData<TopicTreeNode> query(TopicTreeQuery q, PageLink link) {
         List<TopicTreeNode> hits = new ArrayList<>();
         Driver driver = driver(q);
-        Predicate<TopicTreeNode> matches = predicate(q, driver, dropped);
+        Predicate<TopicTreeNode> matches = predicate(q, driver);
         forEachCandidate(q, driver, n -> {
             if (matches.test(n)) {
                 hits.add(n);
             }
         });
-        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, true);
+        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), true);
         hits.sort(cmp != null ? cmp : BY_SUBSCRIPTIONS_DESC);
         return page(hits, link);
     }
@@ -240,7 +235,7 @@ public final class TopicTreeSnapshot {
         }
     }
 
-    private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, Driver driver, ToLongFunction<TopicTreeNode> dropped) {
+    private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, Driver driver) {
         Predicate<TopicTreeNode> p = n -> true;
         if (q.wildcardOnly()) {
             p = p.and(TopicTreeNode::isWildcard);
@@ -258,7 +253,6 @@ public final class TopicTreeSnapshot {
                 case RETAINED -> n -> n.retainedTotal() > 0;
                 case SHARED -> n -> n.sharedGroupsTotal() > 0;
                 case INTEGRATIONS -> n -> n.integrationsTotal() > 0;
-                case DROPPED -> n -> dropped.applyAsLong(n) > 0;
             });
         }
         if (q.subscriptions() != null) {
@@ -395,7 +389,7 @@ public final class TopicTreeSnapshot {
     }
 
     // Siblings share their parent's path, so the tree sorts by segment; a flat listing needs the full path.
-    private Comparator<TopicTreeNode> comparator(SortOrder sortOrder, ToLongFunction<TopicTreeNode> dropped, boolean flat) {
+    private Comparator<TopicTreeNode> comparator(SortOrder sortOrder, boolean flat) {
         if (sortOrder == null || sortOrder.getProperty() == null) {
             return null;
         }
@@ -405,7 +399,6 @@ public final class TopicTreeSnapshot {
             case RETAINED -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
             case SHARED -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
             case INTEGRATIONS -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);
-            case DROPPED -> Comparator.comparingLong(dropped);
         };
         return sortOrder.getDirection() == SortOrder.Direction.DESC ? c.reversed() : c;
     }

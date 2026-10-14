@@ -9,6 +9,7 @@
         "account": "账户"
     },
     "action": {
+        "search": "搜索",
         "save": "保存",
         "skip": "跳过",
         "cancel": "取消",
@@ -1368,17 +1369,14 @@
             "retained": "保留消息",
             "online": "在线 / 离线",
             "shared": "共享组",
-            "integrations": "集成",
-            "dropped": "24 小时丢弃",
-            "dropped-hint": "过去 24 小时内发生过丢弃的主题的丢弃总数"
+            "integrations": "集成"
         },
         "tab": {
             "subscriptions": "订阅",
             "clients": "客户端",
             "shared": "共享",
             "integrations": "集成",
-            "retained": "保留消息",
-            "dropped": "24 小时丢弃"
+            "retained": "保留消息"
         },
         "entity": {
             "client-id": "客户端 ID",
@@ -1390,8 +1388,6 @@
             "subscriptions": "订阅",
             "group": "组",
             "payload": "负载",
-            "reason": "原因",
-            "count": "数量",
             "type": "类型",
             "type-client": "客户端",
             "type-shared": "共享",
@@ -1401,8 +1397,7 @@
             "integration-not-found": "未找到集成",
             "open-session": "打开会话",
             "open-group": "在共享订阅中显示",
-            "open-integration": "打开集成",
-            "last-event": "最近事件"
+            "open-integration": "打开集成"
         }
     },
     "unauthorized-client": {

@@ -32,7 +32,7 @@
 import { BaseData } from '@shared/models/base-data';
 import { NumericOperation } from '@shared/models/query/query.models';
 
-export type TopicTreeColumnId = 'subscriptions' | 'clients' | 'retained' | 'online' | 'shared' | 'integrations' | 'dropped';
+export type TopicTreeColumnId = 'subscriptions' | 'clients' | 'retained' | 'online' | 'shared' | 'integrations';
 
 export interface TopicTreeNode {
   path: string | null;
@@ -52,7 +52,6 @@ export interface TopicTreeNode {
   sharedSubscriptionsTotal?: number;
   integrationsExact?: number;
   integrationsTotal?: number;
-  dropped24h?: number;
 }
 
 export interface TopicTreeEntity {
@@ -74,16 +73,15 @@ export interface TopicTreeSubscription {
 
 export type TopicTreeEntityKind = 'CLIENTS' | 'INTEGRATIONS' | 'SHARED';
 
-export type TopicTreeHas = 'SUBSCRIPTIONS' | 'RETAINED' | 'SHARED' | 'INTEGRATIONS' | 'DROPPED';
+export type TopicTreeHas = 'SUBSCRIPTIONS' | 'RETAINED' | 'SHARED' | 'INTEGRATIONS';
 
-export const topicTreeHasValues: TopicTreeHas[] = ['SUBSCRIPTIONS', 'RETAINED', 'SHARED', 'INTEGRATIONS', 'DROPPED'];
+export const topicTreeHasValues: TopicTreeHas[] = ['SUBSCRIPTIONS', 'RETAINED', 'SHARED', 'INTEGRATIONS'];
 
 export const topicTreeHasTranslations = new Map<TopicTreeHas, string>([
   ['SUBSCRIPTIONS', 'topic-tree.column.subscriptions'],
   ['RETAINED', 'topic-tree.column.retained'],
   ['SHARED', 'topic-tree.column.shared'],
-  ['INTEGRATIONS', 'topic-tree.column.integrations'],
-  ['DROPPED', 'topic-tree.column.dropped']
+  ['INTEGRATIONS', 'topic-tree.column.integrations']
 ]);
 
 export interface TopicTreeFilter {
@@ -115,7 +113,6 @@ export const topicTreeColumns: TopicTreeColumnDef[] = [
   { id: 'online', titleKey: 'topic-tree.column.online', default: false, backend: true },
   { id: 'shared', titleKey: 'topic-tree.column.shared', default: false, backend: true },
   { id: 'integrations', titleKey: 'topic-tree.column.integrations', default: false, backend: true },
-  { id: 'dropped', titleKey: 'topic-tree.column.dropped', default: false, backend: true },
 ];
 
 export const defaultTopicTreeColumns = (): TopicTreeColumnId[] => topicTreeColumns.filter(c => c.default).map(c => c.id);

@@ -38,10 +38,8 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.dto.DroppedMsgDto;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
-import org.thingsboard.mqtt.broker.service.mqtt.dropped.DroppedMsgPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
@@ -49,8 +47,6 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -58,42 +54,31 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
-import java.util.function.ToLongFunction;
 
 @Slf4j
 @Service
 public class TopicTreeServiceImpl implements TopicTreeService {
 
-    private static final long DROPPED_WINDOW_MS = TimeUnit.HOURS.toMillis(24);
-
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final RetainedMsgListenerService retainedMsgListenerService;
     private final RetainedMsgService retainedMsgService;
     private final ClientSessionCache clientSessionCache;
-    private final DroppedMsgPageService droppedMsgPageService;
     private final boolean enabled;
     private final long ttlMs;
     private final long idleEvictMs;
     private final ScheduledExecutorService ownExecutor;
     private final AtomicBoolean rebuilding = new AtomicBoolean();
-    private final AtomicBoolean droppedRebuilding = new AtomicBoolean();
-    private final Object droppedLock = new Object();
 
     LongSupplier clock = System::currentTimeMillis;
     Executor executor;
 
     private volatile TopicTreeSnapshot snapshot;
-    private volatile DroppedByPrefix dropped;
     private volatile long lastAccess;
-
-    private record DroppedByPrefix(Map<String, Long> byPrefix, long builtAt) {
-    }
 
     public TopicTreeServiceImpl(ClientSubscriptionCache clientSubscriptionCache,
                                 RetainedMsgListenerService retainedMsgListenerService,
                                 RetainedMsgService retainedMsgService,
                                 ClientSessionCache clientSessionCache,
-                                DroppedMsgPageService droppedMsgPageService,
                                 @Value("${mqtt.topic-tree.enabled:true}") boolean enabled,
                                 @Value("${mqtt.topic-tree.snapshot-ttl-ms:5000}") long ttlMs,
                                 @Value("${mqtt.topic-tree.idle-evict-ms:600000}") long idleEvictMs) {
@@ -101,7 +86,6 @@ public class TopicTreeServiceImpl implements TopicTreeService {
         this.retainedMsgListenerService = retainedMsgListenerService;
         this.retainedMsgService = retainedMsgService;
         this.clientSessionCache = clientSessionCache;
-        this.droppedMsgPageService = droppedMsgPageService;
         this.enabled = enabled;
         this.ttlMs = ttlMs;
         this.idleEvictMs = idleEvictMs;
@@ -118,7 +102,6 @@ public class TopicTreeServiceImpl implements TopicTreeService {
     void evictIfIdle() {
         if (snapshot != null && clock.getAsLong() - lastAccess >= idleEvictMs) {
             snapshot = null;
-            dropped = null;
             log.debug("Evicted idle topic tree snapshot");
         }
     }
@@ -190,59 +173,6 @@ public class TopicTreeServiceImpl implements TopicTreeService {
         return result;
     }
 
-    // Same refresh-ahead scheme as the snapshot: the first request loads synchronously, later ones are served the
-    // cached rollup while a stale one is reloaded in the background.
-    @Override
-    public ToLongFunction<TopicTreeNode> droppedCounts() {
-        DroppedByPrefix current = dropped;
-        if (current == null) {
-            synchronized (droppedLock) {
-                if (dropped == null) {
-                    dropped = loadDropped();
-                }
-                current = dropped;
-            }
-        } else if (isStale(current.builtAt()) && droppedRebuilding.compareAndSet(false, true)) {
-            try {
-                executor.execute(this::reloadDropped);
-            } catch (RuntimeException e) {
-                droppedRebuilding.set(false);
-                log.warn("Failed to schedule dropped counts reload, keeping the previous ones", e);
-            }
-        }
-        Map<String, Long> byPrefix = current.byPrefix();
-        // A node's path is derived on each call, so the lookup is memoised for the request: a sort by dropped
-        // count would otherwise rebuild it on every comparison.
-        Map<TopicTreeNode, Long> memo = new IdentityHashMap<>();
-        return n -> memo.computeIfAbsent(n, node -> {
-            String path = node.path();
-            return path == null ? 0L : byPrefix.getOrDefault(path, 0L);
-        });
-    }
-
-    private void reloadDropped() {
-        try {
-            dropped = loadDropped();
-        } catch (RuntimeException e) {
-            log.warn("Failed to reload dropped counts, keeping the previous ones", e);
-        } finally {
-            droppedRebuilding.set(false);
-        }
-    }
-
-    // Drops are stored per concrete topic, so each one is credited to every topic tree level above it.
-    private DroppedByPrefix loadDropped() {
-        long now = clock.getAsLong();
-        Map<String, Long> byPrefix = new HashMap<>();
-        droppedMsgPageService.sumDroppedByTopicSince(now - DROPPED_WINDOW_MS).forEach((topic, count) -> {
-            for (int i = topic.indexOf('/'); i >= 0; i = topic.indexOf('/', i + 1)) {
-                byPrefix.merge(topic.substring(0, i), count, Long::sum);
-            }
-            byPrefix.merge(topic, count, Long::sum);
-        });
-        return new DroppedByPrefix(byPrefix, now);
-    }
-
     // Read from the retained-message trie rather than the snapshot, which keeps only topics. Retained messages
     // live on concrete topics, so a path with a wildcard segment has none below it; asking the trie for it would
     // expand the wildcards instead.
@@ -258,14 +188,7 @@ public class TopicTreeServiceImpl implements TopicTreeService {
     }
 
     @Override
-    public PageData<DroppedMsgDto> getDroppedMessages(String path, PageLink pageLink) {
-        return droppedMsgPageService.getTopicSubtreeSince(path, clock.getAsLong() - DROPPED_WINDOW_MS, pageLink);
-    }
-
-    @Override
     public boolean isEnabled() { return enabled; }
-
-
 
     @PreDestroy
     public void destroy() {

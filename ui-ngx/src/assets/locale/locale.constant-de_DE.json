@@ -9,6 +9,7 @@
         "account": "Konto"
     },
     "action": {
+        "search": "Suchen",
         "save": "Speichern",
         "cancel": "Abbrechen",
         "ok": "OK",
@@ -1431,17 +1432,14 @@
             "retained": "Retained",
             "online": "Online / offline",
             "shared": "Shared-Gruppen",
-            "integrations": "Integrationen",
-            "dropped": "Verworfen 24h",
-            "dropped-hint": "Gesamtzahl verworfener Nachrichten von Topics mit Verwerfungen in den letzten 24 h"
+            "integrations": "Integrationen"
         },
         "tab": {
             "subscriptions": "Subscriptions",
             "clients": "Clients",
             "shared": "Shared",
             "integrations": "Integrationen",
-            "retained": "Retained",
-            "dropped": "Verworfen 24h"
+            "retained": "Retained"
         },
         "entity": {
             "client-id": "Client-ID",
@@ -1453,8 +1451,6 @@
             "subscriptions": "Subscriptions",
             "group": "Gruppe",
             "payload": "Payload",
-            "reason": "Grund",
-            "count": "Anzahl",
             "type": "Typ",
             "type-client": "Client",
             "type-shared": "Shared",
@@ -1464,8 +1460,7 @@
             "integration-not-found": "Integration nicht gefunden",
             "open-session": "Session öffnen",
             "open-group": "In Shared subscriptions anzeigen",
-            "open-integration": "Integration öffnen",
-            "last-event": "Letztes Ereignis"
+            "open-integration": "Integration öffnen"
         }
     },
     "unauthorized-client": {

@@ -62,7 +62,6 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeFixtures;
-import org.thingsboard.mqtt.broker.service.topictree.TopicTreeNode;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshotBuilder;
 
@@ -71,7 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.ToLongFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,8 +87,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockitoSettings(strictness = Strictness.LENIENT)
 class TopicTreeControllerTest {
 
-    static final ToLongFunction<TopicTreeNode> OTHER_DROPPED = n -> "other".equals(n.path()) ? 3 : 0;
-
     @Mock
     TopicTreeService topicTreeService;
     @Mock
@@ -104,7 +100,6 @@ class TopicTreeControllerTest {
     void setUp() {
         when(topicTreeService.isEnabled()).thenReturn(true);
         when(topicTreeService.getSnapshot()).thenReturn(TopicTreeFixtures.fixture());
-        when(topicTreeService.droppedCounts()).thenReturn(OTHER_DROPPED);
         TopicTreeController controller = new TopicTreeController(topicTreeService, topicResolveService);
         ReflectionTestUtils.setField(controller, "integrationService", integrationService);
         ReflectionTestUtils.setField(controller, "errorResponseHandler", new ThingsboardErrorResponseHandler());
@@ -128,8 +123,6 @@ class TopicTreeControllerTest {
         assertThat(page.get("hasNext").asBoolean()).isFalse();
         assertThat(page.get("data").get(0).get("path").asText()).isEqualTo("sensors");
         assertThat(page.get("data").get(0).has("clientsTotal")).isFalse();
-        assertThat(page.get("data").get(0).has("dropped24h")).isFalse();
-        verify(topicTreeService, never()).droppedCounts();
 
         mockMvc.perform(get("/api/topic-tree/children").param("columns", "clients,online").param("pageSize", "0"))
                 .andExpect(status().isOk())
@@ -149,7 +142,7 @@ class TopicTreeControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"/children", "/search?textSearch=temp", "/node", "/entities?path=a&kind=CLIENTS",
-            "/subscriptions?path=a", "/retained?path=a", "/dropped?path=a", "/resolve?topic=a"})
+            "/subscriptions?path=a", "/retained?path=a", "/resolve?topic=a"})
     void disabledIs404(String uri) throws Exception {
         when(topicTreeService.isEnabled()).thenReturn(false);
         mockMvc.perform(get("/api/topic-tree" + uri)).andExpect(status().isNotFound())
@@ -198,7 +191,6 @@ class TopicTreeControllerTest {
                 .containsExactlyInAnyOrder("sensors", "sensors/room1");
         assertThat(paths(get("/api/topic-tree/search").param("wildcardOnly", "true").param("subscriptions", "1")))
                 .containsExactlyInAnyOrder("sensors/#", "sensors/room1/#");
-        assertThat(paths(get("/api/topic-tree/search").param("has", "DROPPED"))).containsExactly("other");
     }
 
     @Test
@@ -215,21 +207,6 @@ class TopicTreeControllerTest {
                 .containsExactly("sensors/#");
         mockMvc.perform(get("/api/topic-tree/search").param("matchesTopic", "a/#")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Topic name cannot contain wildcard characters!"));
-    }
-
-    @Test
-    void droppedColumnAndSortUseTheServiceCounts() throws Exception {
-        JsonNode page = json(mockMvc.perform(get("/api/topic-tree/children").param("columns", "dropped")
-                .param("sortProperty", "dropped").param("sortOrder", "DESC")).andExpect(status().isOk()));
-        assertThat(page.get("data").get(0).get("path").asText()).isEqualTo("other");
-        assertThat(page.get("data").get(0).get("dropped24h").asLong()).isEqualTo(3);
-        assertThat(page.get("data").get(1).get("dropped24h").asLong()).isZero();
-        verify(topicTreeService, times(1)).droppedCounts();
-
-        mockMvc.perform(get("/api/topic-tree/node").param("path", "other").param("columns", "dropped"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.dropped24h").value(3));
-        mockMvc.perform(get("/api/topic-tree/node").param("columns", "dropped"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.dropped24h").doesNotExist());
     }
 
     @Test
@@ -250,7 +227,7 @@ class TopicTreeControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/entities?kind=CLIENTS", "/subscriptions", "/retained", "/dropped"})
+    @ValueSource(strings = {"/entities?kind=CLIENTS", "/subscriptions", "/retained"})
     void listEndpointsRequireAPath(String uri) throws Exception {
         mockMvc.perform(get("/api/topic-tree" + uri)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Topic path is required"));
@@ -304,21 +281,15 @@ class TopicTreeControllerTest {
     }
 
     @Test
-    void retainedAndDroppedDelegateWithClampedPaging() throws Exception {
+    void retainedDelegatesWithClampedPaging() throws Exception {
         when(topicTreeService.getRetainedMessages(eq("a"), any())).thenReturn(new PageData<>());
-        when(topicTreeService.getDroppedMessages(eq("a"), any())).thenReturn(new PageData<>());
 
         mockMvc.perform(get("/api/topic-tree/retained").param("path", "a").param("pageSize", "1000").param("page", "1")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/topic-tree/dropped").param("path", "a")).andExpect(status().isOk());
 
         ArgumentCaptor<PageLink> retained = ArgumentCaptor.forClass(PageLink.class);
         verify(topicTreeService).getRetainedMessages(eq("a"), retained.capture());
         assertThat(retained.getValue().getPageSize()).isEqualTo(TopicTreeController.MAX_PAGE_SIZE);
         assertThat(retained.getValue().getPage()).isEqualTo(1);
-        ArgumentCaptor<PageLink> dropped = ArgumentCaptor.forClass(PageLink.class);
-        verify(topicTreeService).getDroppedMessages(eq("a"), dropped.capture());
-        assertThat(dropped.getValue().getPageSize()).isEqualTo(20);
-        assertThat(dropped.getValue().getPage()).isZero();
         verify(topicTreeService, never()).getSnapshot();
     }
 

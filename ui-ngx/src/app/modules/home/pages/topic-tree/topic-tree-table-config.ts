@@ -146,7 +146,6 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
         case 'retained': columns.push(count(id, n => n.retainedTotal)); break;
         case 'shared': columns.push(count(id, n => n.sharedGroupsTotal)); break;
         case 'integrations': columns.push(count(id, n => n.integrationsTotal)); break;
-        case 'dropped': columns.push(count(id, n => n.dropped24h)); break;
         case 'online':
           columns.push(new EntityTableColumn<TopicTreeRow>(id, 'topic-tree.column.online', '0px', row => this.onlineCell(row),
             () => ({}), false, () => ({}), () => undefined, true));
