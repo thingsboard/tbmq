@@ -16,12 +16,13 @@
 package org.thingsboard.mqtt.broker.service.system;
 
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.SettableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -31,22 +32,30 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.util.SystemUtil;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.gen.queue.SystemInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.SERVICE_REGISTRY_KEY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
@@ -55,6 +64,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DISK_USAGE
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MEMORY_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_DISK_SPACE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_MEMORY;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INTEGRATION_EXECUTOR;
 
@@ -90,14 +100,23 @@ public class TbmqSystemInfoServiceTest {
     }
 
     @Test
-    public void testSaveCurrentServiceInfo() {
-        ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("test-service").build();
-        when(serviceInfoProvider.getServiceInfo()).thenReturn(serviceInfo);
+    public void testSaveCurrentServiceInfoKeepsUsageAsHistoryAndCapacityAsLatest() {
+        givenBroker("test-service");
+        when(timeseriesService.save(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
         when(timeseriesService.saveLatest(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
 
-        systemInfoService.saveCurrentServiceInfo();
+        saveCurrentServiceInfoWith(10, 20, 30, 8192L, 4, 100000L);
+        assertThat(captureKeys(true, "test-service")).containsExactlyInAnyOrder(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
+        assertThat(captureKeys(false, "test-service")).containsExactlyInAnyOrder(TOTAL_MEMORY, CPU_COUNT, TOTAL_DISK_SPACE);
+    }
 
-        verify(timeseriesService).saveLatest(eq("test-service"), anyList());
+    @Test
+    public void testSaveCurrentServiceInfoWithoutMetricsSavesNothing() {
+        givenBroker("test-service");
+
+        saveCurrentServiceInfoWith(null, null, null, null, null, null);
+
+        verifyNoInteractions(timeseriesService);
     }
 
     @Test
@@ -110,17 +129,19 @@ public class TbmqSystemInfoServiceTest {
 
         systemInfoService.processIeServiceInfo(serviceInfo);
 
-        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "svc1", "type1");
+        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "type1:svc1", "type1");
     }
 
     @Test
-    public void testProcessIeServiceInfoWithSystemInfo() {
-        when(timeseriesService.saveLatest(eq("svc2"), anyList())).thenReturn(Futures.immediateFuture(null));
+    public void testProcessIeServiceInfoWithSystemInfoStoresUnderTypedEntityId() {
+        String entityId = "TBMQ_INTEGRATION_EXECUTOR:svc2";
+        when(timeseriesService.save(eq(entityId), anyList())).thenReturn(Futures.immediateFuture(null));
+        when(timeseriesService.saveLatest(eq(entityId), anyList())).thenReturn(Futures.immediateFuture(null));
 
         ServiceInfo serviceInfo = ServiceInfo
                 .newBuilder()
                 .setServiceId("svc2")
-                .setServiceType("type1")
+                .setServiceType(TBMQ_INTEGRATION_EXECUTOR.name())
                 .setSystemInfo(SystemInfoProto
                         .newBuilder()
                         .setCpuCount(4)
@@ -133,20 +154,134 @@ public class TbmqSystemInfoServiceTest {
                 .build();
 
         systemInfoService.processIeServiceInfo(serviceInfo);
+        assertThat(captureKeys(true, entityId)).containsExactlyInAnyOrder(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
+        assertThat(captureKeys(false, entityId)).containsExactlyInAnyOrder(TOTAL_MEMORY, CPU_COUNT, TOTAL_DISK_SPACE);
+        verify(timeseriesService, never()).save(eq("svc2"), anyList());
+    }
 
-        verify(timeseriesService).saveLatest(eq("svc2"), anyList());
+    @Test
+    public void testProcessIeServiceInfoWithEmptySystemInfoSavesNothing() {
+        ServiceInfo serviceInfo = ServiceInfo.newBuilder()
+                .setServiceId("svc2")
+                .setServiceType(TBMQ_INTEGRATION_EXECUTOR.name())
+                .setSystemInfo(SystemInfoProto.getDefaultInstance())
+                .build();
+
+        systemInfoService.processIeServiceInfo(serviceInfo);
+
+        verifyNoInteractions(timeseriesService);
+    }
+
+    @Test
+    public void testProcessIeServiceInfoWithOnlyCapacitySkipsHistory() {
+        String entityId = "TBMQ_INTEGRATION_EXECUTOR:svc2";
+        when(timeseriesService.saveLatest(eq(entityId), anyList())).thenReturn(Futures.immediateFuture(null));
+        ServiceInfo serviceInfo = ServiceInfo.newBuilder()
+                .setServiceId("svc2")
+                .setServiceType(TBMQ_INTEGRATION_EXECUTOR.name())
+                .setSystemInfo(SystemInfoProto.newBuilder().setCpuCount(4).build())
+                .build();
+
+        systemInfoService.processIeServiceInfo(serviceInfo);
+        verify(timeseriesService, never()).save(any(), anyList());
+        assertThat(captureKeys(false, entityId)).containsExactly(CPU_COUNT);
     }
 
     @Test
     public void testRemoveServiceInfoExists() {
         when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc3")).thenReturn(1L);
-        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("svc3"));
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("svc3", TBMQ));
     }
 
     @Test
     public void testRemoveServiceInfoNotFound() {
-        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc4")).thenReturn(0L);
-        assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4"));
+        when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(0L);
+        assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4", null));
+    }
+
+    @Test
+    public void testRemoveExecutorServiceInfoDeletesTypedAndLegacyFields() {
+        when(hashOperations.get(SERVICE_REGISTRY_KEY, "ie1")).thenReturn(TBMQ_INTEGRATION_EXECUTOR.name());
+        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:ie1", "ie1")).thenReturn(2L);
+
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("ie1", TBMQ_INTEGRATION_EXECUTOR));
+
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:ie1", "ie1");
+    }
+
+    @Test
+    public void testRemoveExecutorServiceInfoKeepsBrokerSharingTheId() {
+        when(hashOperations.get(SERVICE_REGISTRY_KEY, "shared")).thenReturn(TBMQ.name());
+        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:shared")).thenReturn(1L);
+
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("shared", TBMQ_INTEGRATION_EXECUTOR));
+
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:shared");
+        verify(hashOperations, never()).delete(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:shared", "shared");
+        verify(hashOperations, never()).delete(SERVICE_REGISTRY_KEY, "shared");
+    }
+
+    @Test
+    public void testRemoveServiceInfoWithoutTypeDeletesEveryVariant() {
+        when(hashOperations.delete(eq(SERVICE_REGISTRY_KEY), any(Object[].class))).thenReturn(2L);
+        assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("shared", null));
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "shared", "TBMQ_INTEGRATION_EXECUTOR:shared");
+    }
+
+    @Test
+    public void testGetServiceInfosMergesLegacyAndTypedFieldsOfOneExecutorDuringUpgrade() throws Exception {
+        Map<Object, Object> registry = new HashMap<>();
+        registry.put("ie1", TBMQ_INTEGRATION_EXECUTOR.name());
+        registry.put("TBMQ_INTEGRATION_EXECUTOR:ie1", TBMQ_INTEGRATION_EXECUTOR.name());
+        registry.put("orphan", null);
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(registry);
+        when(timeseriesService.findLatestByEntityIds(anyList(), anyList())).thenReturn(Futures.immediateFuture(Map.of()));
+
+        PageData<ServiceInfoDto> result = systemInfoService.getServiceInfos().get();
+
+        assertThat(result.getData()).extracting(ServiceInfoDto::getServiceId, ServiceInfoDto::getServiceType)
+                .containsExactlyInAnyOrder(tuple("ie1", TBMQ_INTEGRATION_EXECUTOR.name()), tuple("orphan", UNKNOWN));
+        assertThat(result.getData()).extracting(ServiceInfoDto::getLastUpdateTime, ServiceInfoDto::getStatus)
+                .containsOnly(tuple(0L, ServiceStatus.OUTDATED));
+    }
+
+    @Test
+    public void testGetServiceInfosListsBrokerAndExecutorSharingAnId() throws Exception {
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
+                Map.of("shared", TBMQ.name(), "TBMQ_INTEGRATION_EXECUTOR:shared", TBMQ_INTEGRATION_EXECUTOR.name()));
+        long ts = System.currentTimeMillis();
+        when(timeseriesService.findLatestByEntityIds(anyList(), anyList())).thenReturn(Futures.immediateFuture(Map.of(
+                "shared", List.of(new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, 11L))),
+                "TBMQ_INTEGRATION_EXECUTOR:shared", List.of(new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, 77L))))));
+
+        PageData<ServiceInfoDto> result = systemInfoService.getServiceInfos().get();
+
+        assertEquals(2, result.getData().size());
+        assertThat(result.getData()).extracting(ServiceInfoDto::getServiceId).containsOnly("shared");
+        assertThat(result.getData()).extracting(ServiceInfoDto::getServiceType, ServiceInfoDto::getCpuUsage)
+                .containsExactlyInAnyOrder(tuple(TBMQ.name(), 11L), tuple(TBMQ_INTEGRATION_EXECUTOR.name(), 77L));
+    }
+
+    @Test
+    public void testProcessIeServiceInfoRegistersUnderTypedFieldAndDropsLegacyOne() {
+        ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("ie1").setServiceType(TBMQ_INTEGRATION_EXECUTOR.name()).build();
+        when(hashOperations.get(SERVICE_REGISTRY_KEY, "ie1")).thenReturn(TBMQ_INTEGRATION_EXECUTOR.name());
+
+        systemInfoService.processIeServiceInfo(serviceInfo);
+
+        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:ie1", TBMQ_INTEGRATION_EXECUTOR.name());
+        verify(hashOperations).delete(SERVICE_REGISTRY_KEY, "ie1");
+    }
+
+    @Test
+    public void testProcessIeServiceInfoKeepsBareFieldOfBrokerSharingTheId() {
+        ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("shared").setServiceType(TBMQ_INTEGRATION_EXECUTOR.name()).build();
+        when(hashOperations.get(SERVICE_REGISTRY_KEY, "shared")).thenReturn(TBMQ.name());
+
+        systemInfoService.processIeServiceInfo(serviceInfo);
+
+        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "TBMQ_INTEGRATION_EXECUTOR:shared", TBMQ_INTEGRATION_EXECUTOR.name());
+        verify(hashOperations, never()).delete(SERVICE_REGISTRY_KEY, "shared");
     }
 
     @Test
@@ -164,8 +299,8 @@ public class TbmqSystemInfoServiceTest {
         when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of(serviceId, serviceType));
 
         long ts = System.currentTimeMillis();
-        SettableFuture<List<TsKvEntry>> future = getListSettableFuture(ts);
-        when(timeseriesService.findLatest(eq(serviceId), anyList())).thenReturn(future);
+        when(timeseriesService.findLatestByEntityIds(eq(List.of(serviceId)), anyList()))
+                .thenReturn(Futures.immediateFuture(Map.of(serviceId, getKvEntries(ts))));
 
         var resultFuture = systemInfoService.getServiceInfos();
         PageData<ServiceInfoDto> result = resultFuture.get();
@@ -191,8 +326,8 @@ public class TbmqSystemInfoServiceTest {
 
         when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of(serviceId, serviceType));
 
-        SettableFuture<List<TsKvEntry>> future = getNullListSettableFuture(System.currentTimeMillis());
-        when(timeseriesService.findLatest(eq(serviceId), anyList())).thenReturn(future);
+        when(timeseriesService.findLatestByEntityIds(eq(List.of(serviceId)), anyList()))
+                .thenReturn(Futures.immediateFuture(Map.of(serviceId, getNullKvEntries(System.currentTimeMillis()))));
 
         var resultFuture = systemInfoService.getServiceInfos();
         PageData<ServiceInfoDto> result = resultFuture.get();
@@ -212,10 +347,24 @@ public class TbmqSystemInfoServiceTest {
     }
 
     @Test
+    public void testGetServiceInfosTakesTheNewestRowAsLastUpdateTime() throws Exception {
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of("tbmq", TBMQ.name()));
+        long ts = System.currentTimeMillis();
+        when(timeseriesService.findLatestByEntityIds(eq(List.of("tbmq")), anyList())).thenReturn(Futures.immediateFuture(Map.of("tbmq", List.of(
+                new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, 10L)),
+                new BasicTsKvEntry(ts - 3_600_000, new LongDataEntry(TOTAL_DISK_SPACE, 100000L))))));
+
+        ServiceInfoDto dto = systemInfoService.getServiceInfos().get().getData().get(0);
+
+        assertEquals(ts, dto.getLastUpdateTime());
+        assertEquals(ServiceStatus.ACTIVE, dto.getStatus());
+    }
+
+    @Test
     public void testGetTbmqServiceIds() {
         when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
                 Map.of("tbmq1", TBMQ.name(), "tbmq-ie1", TBMQ_INTEGRATION_EXECUTOR.name(),
-                        "tbmq2", TBMQ.name(), "tbmq-ie2", TBMQ_INTEGRATION_EXECUTOR.name())
+                        "tbmq2", TBMQ.name(), "TBMQ_INTEGRATION_EXECUTOR:tbmq2", TBMQ_INTEGRATION_EXECUTOR.name())
         );
 
         List<String> tbmqServiceIds = systemInfoService.getTbmqServiceIds();
@@ -223,8 +372,36 @@ public class TbmqSystemInfoServiceTest {
         assertThat(tbmqServiceIds).containsAll(List.of("tbmq1", "tbmq2"));
     }
 
-    private SettableFuture<List<TsKvEntry>> getListSettableFuture(long ts) {
-        List<TsKvEntry> kvEntries = List.of(
+    private void givenBroker(String serviceId) {
+        when(serviceInfoProvider.getServiceInfo()).thenReturn(ServiceInfo.newBuilder().setServiceId(serviceId).setServiceType(TBMQ.name()).build());
+    }
+
+    private void saveCurrentServiceInfoWith(Integer cpu, Integer memory, Integer disk, Long totalMemory, Integer cpuCount, Long totalDisk) {
+        try (MockedStatic<SystemUtil> systemUtil = mockStatic(SystemUtil.class)) {
+            systemUtil.when(SystemUtil::getCpuUsage).thenReturn(Optional.ofNullable(cpu));
+            systemUtil.when(SystemUtil::getMemoryUsage).thenReturn(Optional.ofNullable(memory));
+            systemUtil.when(SystemUtil::getDiskSpaceUsage).thenReturn(Optional.ofNullable(disk));
+            systemUtil.when(SystemUtil::getTotalMemory).thenReturn(Optional.ofNullable(totalMemory));
+            systemUtil.when(SystemUtil::getCpuCount).thenReturn(Optional.ofNullable(cpuCount));
+            systemUtil.when(SystemUtil::getTotalDiskSpace).thenReturn(Optional.ofNullable(totalDisk));
+
+            systemInfoService.saveCurrentServiceInfo();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> captureKeys(boolean history, String entityId) {
+        ArgumentCaptor<List<TsKvEntry>> captor = ArgumentCaptor.forClass(List.class);
+        if (history) {
+            verify(timeseriesService).save(eq(entityId), captor.capture());
+        } else {
+            verify(timeseriesService).saveLatest(eq(entityId), captor.capture());
+        }
+        return captor.getValue().stream().map(TsKvEntry::getKey).toList();
+    }
+
+    private List<TsKvEntry> getKvEntries(long ts) {
+        return List.of(
                 new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, 10L)),
                 new BasicTsKvEntry(ts, new LongDataEntry(MEMORY_USAGE, 1000L)),
                 new BasicTsKvEntry(ts, new LongDataEntry(DISK_USAGE, 500L)),
@@ -232,14 +409,10 @@ public class TbmqSystemInfoServiceTest {
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, 8192L)),
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, 100000L))
         );
-
-        SettableFuture<List<TsKvEntry>> future = SettableFuture.create();
-        future.set(kvEntries);
-        return future;
     }
 
-    private SettableFuture<List<TsKvEntry>> getNullListSettableFuture(long ts) {
-        List<TsKvEntry> kvEntries = List.of(
+    private List<TsKvEntry> getNullKvEntries(long ts) {
+        return List.of(
                 new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, null)),
                 new BasicTsKvEntry(ts, new LongDataEntry(MEMORY_USAGE, null)),
                 new BasicTsKvEntry(ts, new LongDataEntry(DISK_USAGE, null)),
@@ -247,9 +420,5 @@ public class TbmqSystemInfoServiceTest {
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, null)),
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, null))
         );
-
-        SettableFuture<List<TsKvEntry>> future = SettableFuture.create();
-        future.set(kvEntries);
-        return future;
     }
 }

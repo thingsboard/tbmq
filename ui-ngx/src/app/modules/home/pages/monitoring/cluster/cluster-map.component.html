@@ -1,0 +1,127 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+@let map = vm();
+<svg class="tb-cluster-svg" [attr.viewBox]="'0 0 ' + map.width + ' ' + map.height" role="group"
+     [attr.aria-label]="'monitoring.cluster.map-aria-label' | translate">
+
+  <text class="tb-column-caption" [attr.x]="columnX.clients" y="22" text-anchor="middle">{{ 'monitoring.cluster.clients' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.brokers" y="22" text-anchor="middle">{{ 'monitoring.cluster.brokers' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.kafka" y="22" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
+  <text class="tb-column-caption" [attr.x]="columnX.executors" y="22" text-anchor="middle">{{ 'monitoring.cluster.integration-executors' | translate }}</text>
+
+  <!-- Edges are tracked by id and updated attribute-by-attribute: re-creating a path restarts every particle riding it. -->
+  @for (edge of map.edges; track edge.id) {
+    <path class="tb-edge" [class.tb-edge-offline]="edge.offline" [attr.id]="edge.id" [attr.d]="edge.path"
+          [attr.stroke-width]="edge.strokeWidth" [attr.stroke-opacity]="edge.opacity"/>
+    @if (edge.rate !== null) {
+      <path class="tb-edge-hit" [attr.d]="edge.path">
+        <title>{{ compactNumber(edge.rate) }} {{ 'rate-chart.msg-per-min' | translate }}</title>
+      </path>
+    }
+    <!-- Hidden by the stylesheet under prefers-reduced-motion, which also follows a change of the OS setting. -->
+    @for (slot of edge.particleSlots; track slot) {
+      <circle class="tb-particle" r="3">
+        <animateMotion [attr.dur]="edge.durSec + 's'" repeatCount="indefinite"
+                       [attr.begin]="particleBegin(slot, edge.particleSlots.length, edge.durSec)">
+          <mpath [attr.href]="'#' + edge.id"/>
+        </animateMotion>
+      </circle>
+    }
+  }
+
+  <g class="tb-clients">
+    <title>{{ 'monitoring.cluster.clients-title' | translate: {connected: map.clients.connectedSessions, total: map.clients.totalSessions} }}</title>
+    <circle class="tb-ring-track" [attr.cx]="map.clients.x" [attr.cy]="map.clients.y" [attr.r]="clientsRingR"/>
+    <circle class="tb-disc tb-disc-clients" [attr.cx]="map.clients.x" [attr.cy]="map.clients.y" [attr.r]="clientsRingR - 10"/>
+    <text class="tb-node-count" [attr.x]="map.clients.x" [attr.y]="map.clients.y" text-anchor="middle" dominant-baseline="central">
+      {{ map.clients.hasSessionStats ? compactNumber(map.clients.connectedSessions) + '/' + compactNumber(map.clients.totalSessions) : '—' }}
+    </text>
+    <text class="tb-node-id" [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 18" text-anchor="middle">
+      {{ 'monitoring.cluster.connected-of-sessions' | translate }}
+    </text>
+    @for (type of clientTypes(); track type.key; let i = $index) {
+      <text [class]="type.count ? 'tb-node-hint tb-client-type' : 'tb-node-hint tb-client-type tb-client-type-idle'"
+            [attr.x]="map.clients.x" [attr.y]="map.clients.y + clientsRingR + 33 + i * 13" text-anchor="middle">
+        {{ type.label | translate }} {{ type.count === null ? '—' : compactNumber(type.count) }}
+      </text>
+    }
+  </g>
+
+  @if (!map.brokers.length) {
+    <text class="tb-node-hint" [attr.x]="columnX.brokers" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-brokers' | translate }}</text>
+  }
+  @for (node of map.brokers; track node.key) {
+    <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
+  }
+
+  <g [class]="selectedId() === kafkaNodeId ? 'tb-kafka tb-node tb-node-selected' : 'tb-kafka tb-node'" role="button" tabindex="0"
+     [attr.aria-pressed]="selectedId() === kafkaNodeId" [attr.aria-label]="'monitoring.cluster.kafka' | translate"
+     (click)="onSelectKafka()" (keydown.enter)="onSelectKafka($event)" (keydown.space)="onSelectKafka($event)">
+    <polygon class="tb-halo tb-kafka-halo" [attr.points]="kafkaHaloPoints()"/>
+    <polygon class="tb-kafka-hex" [attr.points]="map.kafka.points"/>
+    <text class="tb-node-count" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y - 2" text-anchor="middle">{{ 'monitoring.cluster.kafka' | translate }}</text>
+    <text class="tb-node-hint" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 13" text-anchor="middle">
+      {{ (map.kafka.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: map.kafka.brokerCount ?? '—'} }}
+    </text>
+    <text class="tb-node-sub" [attr.x]="map.kafka.x" [attr.y]="map.kafka.y + 68" text-anchor="middle">
+      {{ 'monitoring.cluster.consumer-lag' | translate }} {{ map.kafka.totalLag !== null ? compactNumber(map.kafka.totalLag) : '—' }}
+    </text>
+  </g>
+
+  @if (!map.executors.length) {
+    <text class="tb-node-hint" [attr.x]="columnX.executors" [attr.y]="map.height / 2" text-anchor="middle" dominant-baseline="central">{{ 'monitoring.cluster.no-executors' | translate }}</text>
+  }
+  @for (node of map.executors; track node.key) {
+    <ng-container *ngTemplateOutlet="nodeGlyph; context: {node: node}"/>
+  }
+</svg>
+
+<ng-template #nodeGlyph let-node="node">
+  <svg:g [class]="node.key === selectedId() ? 'tb-node tb-node-selected' : 'tb-node'" role="button" tabindex="0"
+         [attr.aria-pressed]="node.key === selectedId()"
+         [attr.aria-label]="nodeAriaLabel(node)"
+         (click)="onSelect(node)" (keydown.enter)="onSelect(node, $event)" (keydown.space)="onSelect(node, $event)">
+    <svg:circle class="tb-halo" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR + 7"/>
+    <svg:circle [class]="node.hasDrops ? 'tb-ring-track tb-ring-track-drops' : 'tb-ring-track'"
+                [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"/>
+    <svg:circle [class]="'tb-ring-arc tb-' + node.cpuLevel" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.ringR"
+                [attr.stroke-dasharray]="ringArcDash(node.ringR, node.cpu)" [attr.transform]="'rotate(-90 ' + node.x + ' ' + node.y + ')'"/>
+    <svg:circle [class]="'tb-disc tb-status-' + (node.stale ? 'STALE' : node.status)" [attr.cx]="node.x" [attr.cy]="node.y" [attr.r]="node.discR"/>
+    @if (node.alertLevel) {
+      <svg:g [class]="'tb-alert-badge tb-alert-' + node.alertLevel"
+             [attr.transform]="'translate(' + (node.x + node.ringR * 0.72) + ' ' + (node.y - node.ringR * 0.72) + ')'">
+        <svg:title>{{ 'monitoring.cluster.alert-count' | translate: {count: node.alertCount} }}</svg:title>
+        <svg:circle r="8"/>
+        <svg:text text-anchor="middle" dominant-baseline="central">{{ node.alertCount }}</svg:text>
+      </svg:g>
+    }
+    @if (node.countLabel) {
+      <svg:text class="tb-node-count" [attr.x]="node.x" [attr.y]="node.y" text-anchor="middle" dominant-baseline="central">{{ node.countLabel }}</svg:text>
+    }
+    <svg:text class="tb-node-id" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 18" text-anchor="middle">{{ node.id }}</svg:text>
+    @if (node.stale) {
+      <svg:text class="tb-node-sub tb-stale" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
+        {{ 'monitoring.cluster.stale' | translate }}
+      </svg:text>
+    } @else {
+      <svg:text [class]="'tb-node-sub tb-' + node.cpuLevel" [attr.x]="node.x" [attr.y]="node.y + node.ringR + 31" text-anchor="middle">
+        {{ node.cpu !== null ? ('monitoring.cluster.cpu-percent' | translate: {value: node.cpu}) : '—' }}
+      </svg:text>
+    }
+  </svg:g>
+</ng-template>

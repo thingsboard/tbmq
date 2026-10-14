@@ -48,6 +48,7 @@ export enum MenuId {
   monitoring_broker_state_health = 'monitoring_broker_state_health',
   monitoring_broker_traffic_performance = 'monitoring_broker_traffic_performance',
   monitoring_resource_usage = 'monitoring_resource_usage',
+  monitoring_cluster = 'monitoring_cluster',
   integrations = 'integrations',
   users = 'users',
   mail_server = 'mail_server',

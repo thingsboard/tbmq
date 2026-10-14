@@ -1,0 +1,183 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@use 'constants' as *;
+
+$tb-line: rgba(0, 0, 0, 0.06);
+
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.tb-cluster-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tb-cluster-card-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.tb-cluster-card-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px 8px 18px;
+  border-bottom: 1px solid $tb-line;
+}
+
+.tb-cluster-title {
+  margin-right: 10px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.tb-live-dot {
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--tb-usage-ok);
+  animation: tb-live-ping 2s ease-out infinite;
+
+  &.tb-live-dot-stale {
+    background: var(--tb-usage-warn);
+    animation: none;
+  }
+}
+
+@keyframes tb-live-ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tb-usage-ok) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-live-dot {
+    animation: none;
+  }
+}
+
+
+.tb-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  margin-left: 6px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+
+  &.tb-alert-warning {
+    color: var(--tb-usage-warn);
+    background: var(--tb-usage-warn-tint);
+  }
+
+  &.tb-alert-critical {
+    color: var(--tb-usage-crit);
+    background: var(--tb-usage-crit-tint);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-500);
+    outline-offset: 1px;
+  }
+}
+
+.tb-hidden-note {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-cluster-head-button {
+  --mdc-icon-button-state-layer-size: 32px;
+
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+:host ::ng-deep .tb-help .mat-mdc-icon-button {
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-cluster-card.tb-fullscreen {
+  border-radius: 0;
+}
+
+.tb-live-stale {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--tb-usage-warn);
+}
+
+.tb-cluster-map-wrap {
+  position: relative;
+  display: flex;
+  padding: 6px 4px 10px;
+
+  tb-cluster-map {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.tb-cluster-inspector {
+  flex: 0 0 453px;
+  width: 453px;
+  min-width: 0;
+  padding: 16px 18px 18px;
+  border-left: 1px solid $tb-line;
+  overflow: auto;
+}
+
+@media #{$mat-lt-lg} {
+  .tb-cluster-inspector {
+    flex: 1 1 auto;
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid $tb-line;
+  }
+}

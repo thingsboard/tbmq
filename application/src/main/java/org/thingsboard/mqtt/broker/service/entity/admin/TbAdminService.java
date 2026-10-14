@@ -29,6 +29,12 @@ public interface TbAdminService {
 
     AdminSettings saveAdminSettings(AdminSettings adminSettings, User currentUser) throws ThingsboardException;
 
+    /**
+     * The stored resource usage thresholds, with missing or unreadable values replaced by the defaults.
+     * Never null: when nothing was saved yet, the result carries the defaults and no id.
+     */
+    AdminSettings getResourceUsageAlertSettings();
+
     SecuritySettings saveSecuritySettings(SecuritySettings securitySettings, User currentUser);
 
 }

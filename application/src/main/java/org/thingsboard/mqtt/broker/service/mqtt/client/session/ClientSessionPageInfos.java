@@ -18,8 +18,11 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+
+import java.util.Map;
 
 public interface ClientSessionPageInfos {
 
@@ -28,5 +31,9 @@ public interface ClientSessionPageInfos {
     PageData<ShortClientSessionInfoDto> getClientSessionInfos(ClientSessionQuery query);
 
     ClientSessionStatsInfoDto getClientSessionStatsInfo();
+
+    Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode();
+
+    long countSessionsOnNode(String serviceId);
 
 }

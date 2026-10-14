@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -83,6 +84,18 @@ public class BaseTimeseriesService implements TimeseriesService {
     public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
         validate(entityId);
         return timeseriesLatestDao.findAllLatest(entityId);
+    }
+
+    @Override
+    public ListenableFuture<Map<String, List<TsKvEntry>>> findLatestByEntityIds(Collection<String> entityIds, Collection<String> keys) {
+        if (CollectionUtils.isEmpty(entityIds) || (keys != null && keys.isEmpty())) {
+            return Futures.immediateFuture(Map.of());
+        }
+        entityIds.forEach(BaseTimeseriesService::validate);
+        if (keys != null) {
+            keys.forEach(key -> Validator.validateString(key, "Incorrect key " + key));
+        }
+        return timeseriesLatestDao.findLatestByEntityIds(entityIds, keys);
     }
 
     @Override

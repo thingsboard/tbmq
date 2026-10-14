@@ -1,0 +1,71 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="mat-padding flex flex-1 flex-col">
+  <div class="tb-cluster-card" tb-fullscreen [fullscreen]="fullscreen()" (fullscreenChanged)="fullscreen.set($event)">
+    <div class="tb-cluster-card-head">
+      <span class="tb-cluster-title">{{ 'monitoring.cluster.live-map' | translate }}</span>
+      <span class="tb-live-dot" [class.tb-live-dot-stale]="!servicesOk()"></span>
+      @if (!servicesOk()) {
+        <span class="tb-live-stale">
+          @if (lastUpdated()) {
+            {{ 'monitoring.cluster.updated-ago' | translate: {seconds: staleSeconds()} }}
+          } @else {
+            {{ 'monitoring.cluster.no-data-yet' | translate }}
+          }
+        </span>
+      }
+      @if (alertSummary(); as summary) {
+        <button type="button" [class]="'tb-alert-chip tb-alert-' + summary.level" (click)="clearSelection()"
+                [matTooltip]="'monitoring.cluster.alerts-hint' | translate">
+          <mat-icon>{{ summary.level === 'critical' ? 'error' : 'warning' }}</mat-icon>
+          {{ 'monitoring.cluster.alert-count' | translate: {count: summary.count} }}
+        </button>
+      }
+      @if (hideInactive() && vm().total.hiddenCount) {
+        <span class="tb-hidden-note">{{ 'monitoring.cluster.hidden-count' | translate: {count: vm().total.hiddenCount} }}</span>
+      }
+      <span class="flex-1"></span>
+      <button mat-raised-button color="primary" type="button" [disabled]="!selectedId()" (click)="clearSelection()"
+              [matTooltip]="'monitoring.cluster.back-to-total' | translate">
+        {{ 'monitoring.cluster.all-nodes' | translate }}
+      </button>
+      <button mat-icon-button type="button" class="tb-cluster-head-button" [attr.aria-pressed]="hideInactive()"
+              [matTooltip]="(hideInactive() ? 'monitoring.cluster.show-inactive' : 'monitoring.cluster.hide-inactive') | translate: {count: vm().total.hiddenCount}"
+              [attr.aria-label]="(hideInactive() ? 'monitoring.cluster.show-inactive' : 'monitoring.cluster.hide-inactive') | translate: {count: vm().total.hiddenCount}"
+              (click)="toggleHideInactive()">
+        <mat-icon>{{ hideInactive() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <div class="tb-help" tb-help="monitoring"></div>
+      <button mat-icon-button type="button" class="tb-cluster-head-button"
+              [matTooltip]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
+              [attr.aria-label]="(fullscreen() ? 'fullscreen.exit' : 'fullscreen.expand') | translate"
+              (click)="fullscreen.set(!fullscreen())">
+        <mat-icon>{{ fullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
+    </div>
+    <div class="tb-cluster-card-body flex lt-lg:flex-col">
+      <div class="tb-cluster-map-wrap min-w-0 flex-1" (dblclick)="onMapDoubleClick($event)">
+        <tb-cluster-map [vm]="vm()" [selectedId]="selectedId()" (nodeSelected)="toggleSelection($event)"></tb-cluster-map>
+      </div>
+      <tb-cluster-node-inspector class="tb-cluster-inspector" [node]="selectedNode()" [total]="vm().total" [kafka]="selectedKafka()"
+                                 [series]="selectedSeries()" [alerts]="vm().alerts" [now]="now()" [historyWindow]="historyWindow()" [thresholds]="thresholds()"
+                                 (alertNodeSelected)="toggleSelection($event)" (historyWindowChange)="setHistoryWindow($event)">
+      </tb-cluster-node-inspector>
+    </div>
+  </div>
+</div>

@@ -59,6 +59,29 @@ $tb-mat-indigo: (
 $tb-primary: mat.m2-define-palette($tb-mat-indigo);
 $tb-accent: mat.m2-define-palette(mat.$m2-deep-orange-palette);
 
+:root {
+  --tb-primary-50: #{map.get($tb-mat-indigo, 50)};
+  --tb-primary-100: #{map.get($tb-mat-indigo, 100)};
+  --tb-primary-200: #{map.get($tb-mat-indigo, 200)};
+  --tb-primary-300: #{map.get($tb-mat-indigo, 300)};
+  --tb-primary-400: #{map.get($tb-mat-indigo, 400)};
+  --tb-primary-500: #{map.get($tb-mat-indigo, 500)};
+  --tb-primary-600: #{map.get($tb-mat-indigo, 600)};
+  --tb-primary-700: #{map.get($tb-mat-indigo, 700)};
+  --tb-primary-800: #{map.get($tb-mat-indigo, 800)};
+  --tb-primary-900: #{map.get($tb-mat-indigo, 900)};
+  --tb-primary-A100: #{map.get($tb-mat-indigo, A100)};
+  --tb-primary-A200: #{map.get($tb-mat-indigo, A200)};
+  --tb-primary-A400: #{map.get($tb-mat-indigo, A400)};
+  --tb-primary-A700: #{map.get($tb-mat-indigo, A700)};
+  // Usage bands, matching STATUS_COLOR in entities-table-config.models.ts.
+  --tb-usage-ok: #198038;
+  --tb-usage-warn: #d47d18;
+  --tb-usage-crit: #d12730;
+  --tb-usage-warn-tint: color-mix(in srgb, var(--tb-usage-warn) 10%, transparent);
+  --tb-usage-crit-tint: color-mix(in srgb, var(--tb-usage-crit) 10%, transparent);
+}
+
 $background: (background: map.get(mat.$m2-grey-palette, 200));
 
 $tb-theme-background: map.merge(mat.$m2-light-theme-background-palette, $background);
