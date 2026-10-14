@@ -18,8 +18,9 @@ package org.thingsboard.mqtt.broker.service.topictree;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.util.TopicValidator;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.data.EntitySubscriptionType;
@@ -38,10 +39,14 @@ import java.util.TreeMap;
 public class TopicResolveServiceImpl implements TopicResolveService {
 
     private final SubscriptionService subscriptionService;
+    private final TopicValidationService topicValidationService;
 
     @Override
     public TopicResolveDto resolve(String topic) {
-        TopicValidator.validatePublishTopic(topic);
+        if (topic == null) {
+            throw new DataValidationException("Topic Names and Topic Filters must be at least one character long.");
+        }
+        topicValidationService.validateTopic(topic);
         List<ValueWithTopicFilter<EntitySubscription>> found = subscriptionService.getSubscriptions(topic);
         Map<String, List<EntitySubscription>> byFilter = new LinkedHashMap<>();
         for (ValueWithTopicFilter<EntitySubscription> v : found) {

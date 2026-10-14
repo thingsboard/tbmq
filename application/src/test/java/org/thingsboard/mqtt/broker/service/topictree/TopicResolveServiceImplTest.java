@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.dao.service.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
@@ -50,7 +51,7 @@ class TopicResolveServiceImplTest {
                 new ValueWithTopicFilter<>(es("i1", 0, EntitySubscriptionType.INTEGRATION, null), "s/#"),
                 new ValueWithTopicFilter<>(es("c1", 0, EntitySubscriptionType.DEFAULT, null), "#"));
         when(ss.getSubscriptions("s/r1/t")).thenReturn(found);
-        TopicResolveDto r = new TopicResolveServiceImpl(ss).resolve("s/r1/t");
+        TopicResolveDto r = new TopicResolveServiceImpl(ss, new DefaultTopicValidationService()).resolve("s/r1/t");
         assertThat(r.getSubscribersTotal()).isEqualTo(4);
         assertThat(r.getClientsTotal()).isEqualTo(2);
         assertThat(r.getMatches().get(0).getTopicFilter()).isEqualTo("s/+/t");
@@ -62,7 +63,7 @@ class TopicResolveServiceImplTest {
 
     @Test
     void rejectsTopicsThatCannotBePublished() {
-        TopicResolveServiceImpl svc = new TopicResolveServiceImpl(mock(SubscriptionService.class));
+        TopicResolveServiceImpl svc = new TopicResolveServiceImpl(mock(SubscriptionService.class), new DefaultTopicValidationService());
         assertThatThrownBy(() -> svc.resolve("a/#")).isInstanceOf(DataValidationException.class);
         assertThatThrownBy(() -> svc.resolve("a/+/b")).isInstanceOf(DataValidationException.class);
         assertThatThrownBy(() -> svc.resolve("")).isInstanceOf(DataValidationException.class);
