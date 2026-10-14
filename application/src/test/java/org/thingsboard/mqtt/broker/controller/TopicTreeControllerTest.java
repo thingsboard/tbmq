@@ -60,7 +60,6 @@ import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
-import org.thingsboard.mqtt.broker.service.security.permission.AccessControlService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicResolveService;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeFixtures;
 import org.thingsboard.mqtt.broker.service.topictree.TopicTreeNode;
@@ -97,8 +96,6 @@ class TopicTreeControllerTest {
     @Mock
     TopicResolveService topicResolveService;
     @Mock
-    AccessControlService accessControlService;
-    @Mock
     IntegrationService integrationService;
 
     MockMvc mockMvc;
@@ -109,7 +106,6 @@ class TopicTreeControllerTest {
         when(topicTreeService.getSnapshot()).thenReturn(TopicTreeFixtures.fixture());
         when(topicTreeService.droppedCounts()).thenReturn(OTHER_DROPPED);
         TopicTreeController controller = new TopicTreeController(topicTreeService, topicResolveService);
-        ReflectionTestUtils.setField(controller, "accessControlService", accessControlService);
         ReflectionTestUtils.setField(controller, "integrationService", integrationService);
         ReflectionTestUtils.setField(controller, "errorResponseHandler", new ThingsboardErrorResponseHandler());
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();

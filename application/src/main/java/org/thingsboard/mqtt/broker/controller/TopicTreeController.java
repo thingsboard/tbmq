@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.permission.Operation;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.DroppedMsgDto;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
@@ -86,7 +85,6 @@ public class TopicTreeController extends BaseController {
                                                   @RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(required = false) String sortProperty,
                                                   @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseEnums("columns", columns, TopicTreeColumn.class);
         PageLink link = pageLink(pageSize, page, sortProperty, sortOrder);
@@ -109,7 +107,6 @@ public class TopicTreeController extends BaseController {
                                              @RequestParam(defaultValue = "0") int page,
                                              @RequestParam(required = false) String sortProperty,
                                              @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         TopicTreeQuery.TopicMatch match = topicMatch == null ? TopicTreeQuery.TopicMatch.CONTAINS
                 : checkEnumParameter("topicMatch", topicMatch, TopicTreeQuery.TopicMatch::valueOf);
         TopicTreeQuery query = TopicTreeQuery.builder()
@@ -137,7 +134,6 @@ public class TopicTreeController extends BaseController {
     @GetMapping("/node")
     public TopicTreeNodeDto getNode(@RequestParam(required = false) String path,
                                     @RequestParam(required = false) String[] columns) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         TopicTreeSnapshot s = snapshot();
         Set<TopicTreeColumn> cols = parseEnums("columns", columns, TopicTreeColumn.class);
         ToLongFunction<TopicTreeNode> dropped = cols.contains(TopicTreeColumn.DROPPED) ? topicTreeService.droppedCounts() : TopicTreeSnapshot.NO_DROPS;
@@ -150,7 +146,6 @@ public class TopicTreeController extends BaseController {
                                                     @RequestParam String kind,
                                                     @RequestParam(defaultValue = "20") int pageSize,
                                                     @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         requirePath(path);
         TopicTreeEntityKind entityKind = checkEnumParameter("kind", kind, TopicTreeEntityKind::valueOf);
         TopicTreeSnapshot s = snapshot();
@@ -167,7 +162,6 @@ public class TopicTreeController extends BaseController {
     public PageData<TopicTreeSubscriptionDto> getSubscriptions(@RequestParam(required = false) String path,
                                                               @RequestParam(defaultValue = "20") int pageSize,
                                                               @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         requirePath(path);
         TopicTreeSnapshot s = snapshot();
         PageData<TopicTreeSubscriptionDto> subscriptions = s.subscriptions(node(s, path), new PageLink(clamp(pageSize), page));
@@ -183,7 +177,6 @@ public class TopicTreeController extends BaseController {
     public PageData<RetainedMsgDto> getRetained(@RequestParam(required = false) String path,
                                                 @RequestParam(defaultValue = "20") int pageSize,
                                                 @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         requirePath(path);
         snapshotEnabledCheck();
         return topicTreeService.getRetainedMessages(path, new PageLink(clamp(pageSize), page));
@@ -194,7 +187,6 @@ public class TopicTreeController extends BaseController {
     public PageData<DroppedMsgDto> getDropped(@RequestParam(required = false) String path,
                                               @RequestParam(defaultValue = "20") int pageSize,
                                               @RequestParam(defaultValue = "0") int page) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         requirePath(path);
         snapshotEnabledCheck();
         return topicTreeService.getDroppedMessages(path, new PageLink(clamp(pageSize), page));
@@ -203,7 +195,6 @@ public class TopicTreeController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/resolve")
     public TopicResolveDto resolve(@RequestParam String topic) throws ThingsboardException {
-        accessControlService.checkPermission(getCurrentUser(), Operation.READ);
         snapshotEnabledCheck();
         return topicResolveService.resolve(topic);
     }
