@@ -33,6 +33,7 @@ package org.thingsboard.mqtt.broker.service.topictree;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.data.EntitySubscriptionType;
@@ -75,10 +76,13 @@ class TopicResolveServiceImplTest {
     }
 
     @Test
-    void rejectsWildcardsAndEmpty() {
+    void rejectsTopicsThatCannotBePublished() {
         TopicResolveServiceImpl svc = new TopicResolveServiceImpl(mock(SubscriptionService.class));
-        assertThatThrownBy(() -> svc.resolve("a/#")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> svc.resolve("a/+/b")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> svc.resolve("")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.resolve("a/#")).isInstanceOf(DataValidationException.class);
+        assertThatThrownBy(() -> svc.resolve("a/+/b")).isInstanceOf(DataValidationException.class);
+        assertThatThrownBy(() -> svc.resolve("")).isInstanceOf(DataValidationException.class);
+        assertThatThrownBy(() -> svc.resolve(null)).isInstanceOf(DataValidationException.class);
+        assertThatThrownBy(() -> svc.resolve("a\u0000b")).isInstanceOf(DataValidationException.class);
+        assertThatThrownBy(() -> svc.resolve("$SYS/a")).isInstanceOf(DataValidationException.class);
     }
 }

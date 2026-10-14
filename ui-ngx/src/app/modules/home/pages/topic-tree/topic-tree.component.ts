@@ -37,11 +37,20 @@ import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatDivider } from '@angular/material/divider';
 import { MatDrawer, MatDrawerContainer, MatDrawerContent } from '@angular/material/sidenav';
+import { Store } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AppState } from '@core/core.state';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import {
-  TOPIC_TREE_COLUMNS_STORAGE_KEY, TopicTreeColumnId, TopicTreeNode, TopicTreeRow, topicTreeColumns
+  defaultTopicTreeColumns,
+  knownTopicTreeColumns,
+  TOPIC_TREE_COLUMNS_STORAGE_KEY,
+  TopicTreeColumnId,
+  TopicTreeNode,
+  TopicTreeRow,
+  topicTreeColumns
 } from '@shared/models/topic-tree.models';
 import { TopicTreeDetailsComponent, TopicTreeTab } from './topic-tree-details.component';
 import { TopicTreeTableConfig } from './topic-tree-table-config';
@@ -67,6 +76,7 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
   private columnsOverlay: OverlayRef;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly store = inject(Store<AppState>);
   private readonly service = inject(TopicTreeService);
   private readonly translate = inject(TranslateService);
   private readonly overlay = inject(Overlay);
@@ -74,14 +84,16 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
-    if (params.get('columns')) {
-      const ids = params.get('columns').split(',') as TopicTreeColumnId[];
-      const valid = topicTreeColumns.map(c => c.id).filter(id => ids.includes(id));
-      if (valid.length) {
-        this.columns = valid;
-      }
+    const fromUrl = knownTopicTreeColumns(params.get('columns')?.split(','));
+    if (fromUrl.length) {
+      this.columns = fromUrl;
     }
-    this.tableConfig = this.createConfig();
+    this.tableConfig = new TopicTreeTableConfig(this.service, this.translate, this.columns, {
+      nodeClicked: row => this.onNodeClicked(row),
+      nodeRevealed: row => this.openDetails(row),
+      revealFailed: path => this.openDetailsByPath(path),
+      openColumns: event => this.openColumns(event)
+    }, TopicTreeTableHeaderComponent);
     const path = params.get('path');
     if (path !== null) {
       this.tableConfig.reveal(path);
@@ -94,11 +106,11 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
 
   toggleColumn(id: TopicTreeColumnId): void {
     const next = this.columns.includes(id) ? this.columns.filter(c => c !== id) : [...this.columns, id];
-    this.applyColumns(topicTreeColumns.map(c => c.id).filter(c => next.includes(c)));
+    this.applyColumns(knownTopicTreeColumns(next));
   }
 
   resetColumns(): void {
-    this.applyColumns(topicTreeColumns.filter(c => c.default).map(c => c.id));
+    this.applyColumns(defaultTopicTreeColumns());
   }
 
   closeDetails(): void {
@@ -112,22 +124,12 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
     this.tableConfig.getTable().updateData();
   }
 
-  private createConfig(): TopicTreeTableConfig {
-    const config = new TopicTreeTableConfig(this.service, this.translate, this.columns, {
-      nodeClicked: row => this.onNodeClicked(row),
-      nodeRevealed: row => this.openDetails(row),
-      openColumns: event => this.openColumns(event)
-    }, TopicTreeTableHeaderComponent);
-    config.query = this.tableConfig?.query ?? {};
-    return config;
-  }
-
   private applyColumns(columns: TopicTreeColumnId[]): void {
     this.columns = columns;
     try {
       localStorage.setItem(TOPIC_TREE_COLUMNS_STORAGE_KEY, JSON.stringify(columns));
     } catch { /* storage unavailable */ }
-    this.tableConfig = this.createConfig();
+    this.tableConfig.setColumns(columns);
     this.syncUrl();
   }
 
@@ -145,6 +147,25 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
     this.selectedNode = row.node;
     this.setCurrentRow(row);
     this.syncUrl();
+  }
+
+  // A deep-linked topic can sit beyond the loaded page of its branch, or be gone by now: it is opened from the server
+  // directly, without a row to highlight, or reported as missing.
+  private openDetailsByPath(path: string): void {
+    this.service.getNode(path, [], { ignoreErrors: true }).subscribe({
+      next: node => {
+        this.selectedTab = 'details';
+        this.selectedNode = node;
+        this.setCurrentRow(null);
+      },
+      error: () => {
+        this.store.dispatch(new ActionNotificationShow({
+          message: this.translate.instant('topic-tree.topic-not-found', { path }),
+          type: 'error'
+        }));
+        this.syncUrl();
+      }
+    });
   }
 
   private setCurrentRow(row: TopicTreeRow | null): void {
@@ -170,15 +191,12 @@ export class TopicTreeComponent implements OnInit, OnDestroy {
 
   private loadColumns(): TopicTreeColumnId[] {
     try {
-      const stored = JSON.parse(localStorage.getItem(TOPIC_TREE_COLUMNS_STORAGE_KEY) ?? 'null');
-      if (Array.isArray(stored)) {
-        const valid = topicTreeColumns.map(c => c.id).filter(id => stored.includes(id));
-        if (valid.length) {
-          return valid;
-        }
+      const stored = knownTopicTreeColumns(JSON.parse(localStorage.getItem(TOPIC_TREE_COLUMNS_STORAGE_KEY) ?? 'null'));
+      if (stored.length) {
+        return stored;
       }
     } catch { /* ignore */ }
-    return topicTreeColumns.filter(c => c.default).map(c => c.id);
+    return defaultTopicTreeColumns();
   }
 
   private syncUrl(): void {

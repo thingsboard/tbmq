@@ -31,46 +31,15 @@
 package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.junit.jupiter.api.Test;
-import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TopicTreeSnapshotBuilderTest {
+class TopicTreeSnapshotBuilderTest {
 
-    static ClientTopicSubscription sub(String filter, int qos) {
-        return new ClientTopicSubscription(filter, qos);
-    }
-
-    static ClientTopicSubscription shared(String filter, String group) {
-        return new ClientTopicSubscription(filter, 1, group);
-    }
-
-    static ClientSessionInfo session(String clientId, boolean connected) {
-        return ClientSessionInfo.builder().clientId(clientId).connected(connected).build();
-    }
-
-    public TopicTreeSnapshot fixture() {
-        Map<String, Set<TopicSubscription>> subs = new HashMap<>();
-        subs.put("c1", Set.of(sub("sensors/+/temperature", 1), sub("sensors/room1/#", 0)));
-        subs.put("c2", Set.of(shared("sensors/+/temperature", "g1")));
-        subs.put("c3", Set.of(shared("sensors/+/temperature", "g1"), sub("/leading", 0), sub("a//b", 0)));
-        subs.put("int-1", Set.of(new IntegrationTopicSubscription("sensors/#")));
-        Map<String, ClientSessionInfo> sessions = Map.of(
-                "c1", session("c1", true), "c2", session("c2", false), "c3", session("c3", true));
-        return TopicTreeSnapshotBuilder.build(subs, List.of("sensors/room1/temperature", "sensors/room2/temperature", "other"), sessions, 1L);
-    }
+    TopicTreeSnapshot s = TopicTreeFixtures.fixture();
 
     @Test
     void countsExactAndTotal() {
-        TopicTreeSnapshot s = fixture();
         TopicTreeNode temp = s.find("sensors/+/temperature");
         assertThat(temp.subscriptionsExact()).isEqualTo(3);
         assertThat(temp.subscriptionsTotal()).isEqualTo(3);
@@ -81,15 +50,17 @@ public class TopicTreeSnapshotBuilderTest {
     }
 
     @Test
-    void sharedGroupCountedOncePerFilter() {
-        TopicTreeSnapshot s = fixture();
+    void sharedGroupCountedOncePerFilterAndSharedSubscriptionsRolledUp() {
         assertThat(s.find("sensors/+/temperature").sharedGroupsExact()).isEqualTo(1);
         assertThat(s.find("sensors").sharedGroupsTotal()).isEqualTo(1);
+        assertThat(s.find("sensors/+/temperature").sharedSubscriptionsTotal()).isEqualTo(2);
+        assertThat(s.find("sensors").sharedSubscriptionsTotal()).isEqualTo(2);
+        assertThat(s.find("sensors/room1/#").sharedSubscriptionsTotal()).isZero();
+        assertThat(s.getRoot().sharedSubscriptionsTotal()).isEqualTo(2);
     }
 
     @Test
     void integrationsAreSeparateFromClients() {
-        TopicTreeSnapshot s = fixture();
         TopicTreeNode hash = s.find("sensors/#");
         assertThat(hash.integrationsExact()).isEqualTo(1);
         assertThat(hash.isWildcard()).isTrue();
@@ -99,7 +70,6 @@ public class TopicTreeSnapshotBuilderTest {
 
     @Test
     void distinctClientsWithOnlineSplit() {
-        TopicTreeSnapshot s = fixture();
         TopicTreeSnapshot.ClientCounts cc = s.clientCounts(s.find("sensors/+/temperature"));
         assertThat(cc.total()).isEqualTo(3);
         assertThat(cc.online()).isEqualTo(2);
@@ -109,7 +79,6 @@ public class TopicTreeSnapshotBuilderTest {
 
     @Test
     void retainedCountedOnConcreteTopics() {
-        TopicTreeSnapshot s = fixture();
         assertThat(s.find("sensors/room1/temperature").retainedExact()).isEqualTo(1);
         assertThat(s.find("sensors").retainedTotal()).isEqualTo(2);
         assertThat(s.find("other").subscriptionsTotal()).isZero();
@@ -117,7 +86,6 @@ public class TopicTreeSnapshotBuilderTest {
 
     @Test
     void emptySegmentsAreAddressable() {
-        TopicTreeSnapshot s = fixture();
         TopicTreeNode empty = s.find("");
         assertThat(empty).isNotNull();
         assertThat(empty.segment()).isEmpty();
@@ -129,6 +97,6 @@ public class TopicTreeSnapshotBuilderTest {
 
     @Test
     void missingPathReturnsNull() {
-        assertThat(fixture().find("nope/x")).isNull();
+        assertThat(s.find("nope/x")).isNull();
     }
 }

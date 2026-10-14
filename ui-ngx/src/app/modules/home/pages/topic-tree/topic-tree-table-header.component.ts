@@ -52,8 +52,14 @@ export class TopicTreeTableHeaderComponent extends EntityTableHeaderComponent<To
     super(store);
   }
 
+  // Not resetSortAndFilter(): that drops the search text, which combines with the filter, and reads the default
+  // sort column, which the column picker may have hidden.
   filterChanged(filter: TopicTreeFilter): void {
     this.topicTreeTableConfig.query = filter;
-    this.topicTreeTableConfig.getTable().resetSortAndFilter(true, true);
+    const table = this.topicTreeTableConfig.getTable();
+    if (table.displayPagination) {
+      table.paginator.pageIndex = 0;
+    }
+    table.updateData();
   }
 }

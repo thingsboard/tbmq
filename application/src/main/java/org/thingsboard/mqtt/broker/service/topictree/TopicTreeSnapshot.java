@@ -31,12 +31,14 @@
 package org.thingsboard.mqtt.broker.service.topictree;
 
 import lombok.Getter;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.TopicTreeEntityDto;
+import org.thingsboard.mqtt.broker.dto.TopicTreeNodeDto;
 import org.thingsboard.mqtt.broker.dto.TopicTreeSubscriptionDto;
 
 import java.util.ArrayDeque;
@@ -56,12 +58,15 @@ import java.util.function.ToLongFunction;
 
 public final class TopicTreeSnapshot {
 
-    private static final ToLongFunction<TopicTreeNode> NO_DROPS = n -> 0L;
+    public static final ToLongFunction<TopicTreeNode> NO_DROPS = n -> 0L;
     private static final Comparator<TopicTreeNode> BY_SUBSCRIPTIONS_DESC =
             Comparator.comparingInt(TopicTreeNode::subscriptionsTotal).reversed().thenComparing(TopicTreeNode::segment);
 
     public record ClientCounts(int total, int online, int offline) {
     }
+
+    // The criterion that drives a query scan; the others are checked only on its candidates.
+    private enum Driver { PATHS, PREFIX, TEXT, TOPIC, ALL }
 
     @Getter
     private final TopicTreeNode root;
@@ -107,23 +112,45 @@ public final class TopicTreeSnapshot {
         return null;
     }
 
+    public TopicTreeNodeDto toDto(TopicTreeNode n, Set<TopicTreeColumn> cols, ToLongFunction<TopicTreeNode> dropped) {
+        TopicTreeNodeDto.TopicTreeNodeDtoBuilder b = TopicTreeNodeDto.builder()
+                .path(n.path()).segment(n.segment()).wildcard(n.isWildcard())
+                .hasChildren(n.childrenCount() > 0).childrenCount(n.childrenCount())
+                .subscriptionsExact(n.subscriptionsExact()).subscriptionsTotal(n.subscriptionsTotal())
+                .retainedExact(n.retainedExact()).retainedTotal(n.retainedTotal());
+        if (cols.contains(TopicTreeColumn.CLIENTS) || cols.contains(TopicTreeColumn.ONLINE)) {
+            ClientCounts cc = clientCounts(n);
+            b.clientsTotal(cc.total());
+            if (cols.contains(TopicTreeColumn.ONLINE)) {
+                b.clientsOnline(cc.online()).clientsOffline(cc.offline());
+            }
+        }
+        if (cols.contains(TopicTreeColumn.SHARED)) {
+            b.sharedGroupsExact(n.sharedGroupsExact()).sharedGroupsTotal(n.sharedGroupsTotal())
+                    .sharedSubscriptionsTotal(n.sharedSubscriptionsTotal());
+        }
+        if (cols.contains(TopicTreeColumn.INTEGRATIONS)) {
+            b.integrationsExact(n.integrationsExact()).integrationsTotal(n.integrationsTotal());
+        }
+        if (cols.contains(TopicTreeColumn.DROPPED) && n != root) {
+            b.dropped24h(dropped.applyAsLong(n));
+        }
+        return b.build();
+    }
+
     public ClientCounts clientCounts(TopicTreeNode node) {
         ClientCounts cached = node.clientCounts;
         if (cached != null) {
             return cached;
         }
         Set<String> clients = new HashSet<>(Math.max(16, (int) (node.subscriptionsTotal / 0.75f) + 1));
-        Deque<TopicTreeNode> stack = new ArrayDeque<>();
-        stack.push(node);
-        while (!stack.isEmpty()) {
-            TopicTreeNode n = stack.pop();
+        forEachInSubtree(node, n -> {
             for (SubRef r : n.refs()) {
                 if (!r.integration()) {
                     clients.add(r.clientId());
                 }
             }
-            n.children().forEach(stack::push);
-        }
+        });
         int online = 0;
         for (String c : clients) {
             ClientSessionInfo s = sessions.get(c);
@@ -136,10 +163,6 @@ public final class TopicTreeSnapshot {
         return result;
     }
 
-    public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link) {
-        return children(parent, link, NO_DROPS);
-    }
-
     public PageData<TopicTreeNode> children(TopicTreeNode parent, PageLink link, ToLongFunction<TopicTreeNode> dropped) {
         TopicTreeNode[] sorted = parent.sortedChildren;
         if (sorted == null) {
@@ -147,52 +170,87 @@ public final class TopicTreeSnapshot {
             Arrays.sort(sorted, BY_SUBSCRIPTIONS_DESC);
             parent.sortedChildren = sorted;
         }
-        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, false);
         List<TopicTreeNode> list = Arrays.asList(sorted);
-        if (cmp != null) {
+        Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, false);
+        if (cmp != null && !isCachedOrder(link.getSortOrder())) {
             list = new ArrayList<>(list);
             list.sort(cmp);
         }
         return page(list, link);
     }
 
-    public PageData<TopicTreeNode> search(String text, PageLink link) {
-        return query(TopicTreeQuery.text(text), NO_DROPS, link);
+    // The cached array is already in subscriptions DESC order, which is also what the UI asks for by default.
+    private static boolean isCachedOrder(SortOrder sortOrder) {
+        return TopicTreeSortProperty.parse(sortOrder.getProperty()) == TopicTreeSortProperty.SUBSCRIPTIONS
+                && sortOrder.getDirection() == SortOrder.Direction.DESC;
     }
 
     public PageData<TopicTreeNode> query(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped, PageLink link) {
         List<TopicTreeNode> hits = new ArrayList<>();
-        Predicate<TopicTreeNode> matches = predicate(q, dropped);
-        Consumer<TopicTreeNode> collect = n -> {
+        Driver driver = driver(q);
+        Predicate<TopicTreeNode> matches = predicate(q, driver, dropped);
+        forEachCandidate(q, driver, n -> {
             if (matches.test(n)) {
                 hits.add(n);
             }
-        };
-        if (q.text() != null) {
-            forEachMatching(q.text().toLowerCase(Locale.ROOT), collect);
-        } else {
-            for (int i = 1; i < preorder.length; i++) {
-                collect.accept(preorder[i]);
-            }
-        }
+        });
         Comparator<TopicTreeNode> cmp = comparator(link.getSortOrder(), dropped, true);
         hits.sort(cmp != null ? cmp : BY_SUBSCRIPTIONS_DESC);
         return page(hits, link);
     }
 
-    private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, ToLongFunction<TopicTreeNode> dropped) {
+    private static Driver driver(TopicTreeQuery q) {
+        if (q.matchingPaths() != null) {
+            return Driver.PATHS;
+        }
+        if (q.topic() != null && q.topicMatch() == TopicTreeQuery.TopicMatch.PREFIX) {
+            return Driver.PREFIX;
+        }
+        if (q.text() != null) {
+            return Driver.TEXT;
+        }
+        return q.topic() != null ? Driver.TOPIC : Driver.ALL;
+    }
+
+    // Resolved paths and prefixes are looked up directly, substrings use the segment scan; only a query without
+    // any of them visits every node.
+    private void forEachCandidate(TopicTreeQuery q, Driver driver, Consumer<TopicTreeNode> action) {
+        switch (driver) {
+            case PATHS -> {
+                for (String path : q.matchingPaths()) {
+                    TopicTreeNode n = find(path);
+                    if (n != null && n != root) {
+                        action.accept(n);
+                    }
+                }
+            }
+            case PREFIX -> {
+                TopicTreeNode start = find(q.topic());
+                if (start != null && start != root) {
+                    forEachInSubtree(start, action);
+                }
+            }
+            case TEXT -> forEachMatching(q.text().toLowerCase(Locale.ROOT), action);
+            case TOPIC -> forEachMatching(q.topic().toLowerCase(Locale.ROOT), action);
+            case ALL -> {
+                for (int i = 1; i < preorder.length; i++) {
+                    action.accept(preorder[i]);
+                }
+            }
+        }
+    }
+
+    private Predicate<TopicTreeNode> predicate(TopicTreeQuery q, Driver driver, ToLongFunction<TopicTreeNode> dropped) {
         Predicate<TopicTreeNode> p = n -> true;
         if (q.wildcardOnly()) {
             p = p.and(TopicTreeNode::isWildcard);
         }
-        if (q.matchingPaths() != null) {
-            p = p.and(n -> q.matchingPaths().contains(n.path()));
+        if (q.text() != null && driver != Driver.TEXT) {
+            p = p.and(pathContains(q.text()));
         }
-        if (q.topic() != null) {
+        if (q.topic() != null && driver != Driver.PREFIX && driver != Driver.TOPIC) {
             String topic = q.topic();
-            p = p.and(q.topicPrefix()
-                    ? n -> isPrefixOf(topic, n.path())
-                    : n -> n.path().toLowerCase(Locale.ROOT).contains(topic.toLowerCase(Locale.ROOT)));
+            p = p.and(q.topicMatch() == TopicTreeQuery.TopicMatch.PREFIX ? n -> isPrefixOf(topic, n.path()) : pathContains(topic));
         }
         for (TopicTreeQuery.Has has : q.has()) {
             p = p.and(switch (has) {
@@ -205,10 +263,15 @@ public final class TopicTreeSnapshot {
         }
         if (q.subscriptions() != null) {
             int value = q.subscriptions();
-            SubscriptionOperation op = q.subscriptionOperation() == null ? SubscriptionOperation.EQUAL : q.subscriptionOperation();
+            SubscriptionOperation op = q.subscriptionOperation();
             p = p.and(n -> compare(n.subscriptionsTotal(), op, value));
         }
         return p;
+    }
+
+    private static Predicate<TopicTreeNode> pathContains(String text) {
+        String needle = text.toLowerCase(Locale.ROOT);
+        return n -> n.path().toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private static boolean isPrefixOf(String prefix, String path) {
@@ -226,12 +289,9 @@ public final class TopicTreeSnapshot {
         };
     }
 
-    public PageData<TopicTreeEntityDto> entities(TopicTreeNode node, TopicTreeEntityDto.Kind kind, PageLink link) {
+    public PageData<TopicTreeEntityDto> entities(TopicTreeNode node, TopicTreeEntityKind kind, PageLink link) {
         Map<String, int[]> counts = new HashMap<>();
-        Deque<TopicTreeNode> stack = new ArrayDeque<>();
-        stack.push(node);
-        while (!stack.isEmpty()) {
-            TopicTreeNode n = stack.pop();
+        forEachInSubtree(node, n -> {
             for (SubRef r : n.refs()) {
                 String key = switch (kind) {
                     case CLIENTS -> r.integration() ? null : r.clientId();
@@ -242,11 +302,10 @@ public final class TopicTreeSnapshot {
                     counts.computeIfAbsent(key, k -> new int[1])[0]++;
                 }
             }
-            n.children().forEach(stack::push);
-        }
+        });
         List<TopicTreeEntityDto> rows = new ArrayList<>(counts.size());
         counts.forEach((id, c) -> {
-            ClientSessionInfo si = kind == TopicTreeEntityDto.Kind.CLIENTS ? sessions.get(id) : null;
+            ClientSessionInfo si = kind == TopicTreeEntityKind.CLIENTS ? sessions.get(id) : null;
             rows.add(new TopicTreeEntityDto(id, null, c[0],
                     si == null ? null : si.isConnected(),
                     si == null || si.getType() == null ? null : si.getType().name()));
@@ -255,41 +314,46 @@ public final class TopicTreeSnapshot {
         return page(rows, link);
     }
 
-    public int sharedSubscriptions(TopicTreeNode node) {
-        int count = 0;
-        Deque<TopicTreeNode> stack = new ArrayDeque<>();
-        stack.push(node);
-        while (!stack.isEmpty()) {
-            TopicTreeNode n = stack.pop();
-            for (SubRef r : n.refs()) {
-                if (r.shareName() != null) {
-                    count++;
-                }
-            }
-            n.children().forEach(stack::push);
-        }
-        return count;
-    }
-
-    // Shared subscriptions are stored under their base filter, so the original "$share/<group>/<filter>" is rebuilt here.
+    // Rows come in tree order: a topic's own subscriptions, then those of its subtopics. The total is known from the
+    // counts and whole subtrees before the page are skipped by count, so only the requested page is materialised.
+    // Shared subscriptions are stored under their base filter, so the original "$share/<group>/<filter>" is rebuilt.
     public PageData<TopicTreeSubscriptionDto> subscriptions(TopicTreeNode node, PageLink link) {
-        List<TopicTreeSubscriptionDto> rows = new ArrayList<>();
+        int total = node.subscriptionsTotal();
+        int size = link.getPageSize();
+        long skip = Math.min((long) link.getPage() * size, total);
+        List<TopicTreeSubscriptionDto> rows = new ArrayList<>((int) Math.min(size, total - skip));
         Deque<TopicTreeNode> stack = new ArrayDeque<>();
         stack.push(node);
-        while (!stack.isEmpty()) {
+        while (!stack.isEmpty() && rows.size() < size) {
             TopicTreeNode n = stack.pop();
+            if (skip >= n.subscriptionsTotal()) {
+                skip -= n.subscriptionsTotal();
+                continue;
+            }
             List<SubRef> refs = n.refs();
-            if (!refs.isEmpty()) {
+            int start = (int) Math.min(skip, refs.size());
+            skip -= start;
+            if (start < refs.size()) {
                 String path = n.path();
-                for (SubRef r : refs) {
-                    String filter = r.shareName() == null ? path : "$share/" + r.shareName() + "/" + path;
+                for (int i = start; i < refs.size() && rows.size() < size; i++) {
+                    SubRef r = refs.get(i);
+                    String filter = r.shareName() == null ? path : BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + r.shareName() + "/" + path;
                     rows.add(new TopicTreeSubscriptionDto(r.clientId(), filter, r.qos(), r.integration(), r.shareName(), null));
                 }
             }
             n.children().forEach(stack::push);
         }
-        rows.sort(Comparator.comparing(TopicTreeSubscriptionDto::getClientId).thenComparing(TopicTreeSubscriptionDto::getTopicFilter));
-        return page(rows, link);
+        return PageData.of(rows, total, link);
+    }
+
+    private static void forEachInSubtree(TopicTreeNode node, Consumer<TopicTreeNode> action) {
+        Deque<TopicTreeNode> stack = new ArrayDeque<>();
+        stack.push(node);
+        while (!stack.isEmpty()) {
+            TopicTreeNode n = stack.pop();
+            action.accept(n);
+            n.children().forEach(stack::push);
+        }
     }
 
     // A node matches when its parent did, or when the needle ends inside its own segment. In preorder the shared
@@ -335,25 +399,20 @@ public final class TopicTreeSnapshot {
         if (sortOrder == null || sortOrder.getProperty() == null) {
             return null;
         }
-        Comparator<TopicTreeNode> c = switch (sortOrder.getProperty()) {
-            case "topic", "segment" -> flat ? Comparator.comparing(TopicTreeNode::path) : Comparator.comparing(TopicTreeNode::segment);
-            case "subscriptions" -> Comparator.comparingInt(TopicTreeNode::subscriptionsTotal);
-            case "retained" -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
-            case "shared" -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
-            case "integrations" -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);
-            case "dropped" -> Comparator.comparingLong(dropped);
-            default -> null;
+        Comparator<TopicTreeNode> c = switch (TopicTreeSortProperty.parse(sortOrder.getProperty())) {
+            case TOPIC -> flat ? Comparator.comparing(TopicTreeNode::path) : Comparator.comparing(TopicTreeNode::segment);
+            case SUBSCRIPTIONS -> Comparator.comparingInt(TopicTreeNode::subscriptionsTotal);
+            case RETAINED -> Comparator.comparingInt(TopicTreeNode::retainedTotal);
+            case SHARED -> Comparator.comparingInt(TopicTreeNode::sharedGroupsTotal);
+            case INTEGRATIONS -> Comparator.comparingInt(TopicTreeNode::integrationsTotal);
+            case DROPPED -> Comparator.comparingLong(dropped);
         };
-        if (c == null) {
-            return null;
-        }
         return sortOrder.getDirection() == SortOrder.Direction.DESC ? c.reversed() : c;
     }
 
-    private static <T> PageData<T> page(List<T> all, PageLink link) {
+    static <T> PageData<T> page(List<T> all, PageLink link) {
         int from = (int) Math.min((long) link.getPage() * link.getPageSize(), all.size());
         int to = (int) Math.min((long) from + link.getPageSize(), all.size());
-        int totalPages = link.getPageSize() == 0 ? 0 : (all.size() + link.getPageSize() - 1) / link.getPageSize();
-        return new PageData<>(new ArrayList<>(all.subList(from, to)), totalPages, all.size(), to < all.size());
+        return PageData.of(new ArrayList<>(all.subList(from, to)), all.size(), link);
     }
 }

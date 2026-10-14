@@ -47,19 +47,3 @@
     text-overflow: ellipsis;
   }
 }
-
-::ng-deep .tb-topic-tree-filter-panel {
-  flex: 1;
-
-  .chip-with-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-
-    .mat-icon {
-      width: 20px;
-      height: 20px;
-      font-size: 20px;
-    }
-  }
-}

@@ -47,9 +47,14 @@ import { ActionNotificationShow } from '@core/notification/notification.actions'
 import { ToastDirective } from '@shared/components/toast.directive';
 import { HelpComponent } from '@shared/components/help.component';
 import { TopicTreeService } from '@core/http/topic-tree.service';
-import { TopicTreeNode } from '@shared/models/topic-tree.models';
+import { topicTreeBackendColumns, TopicTreeNode } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor } from '@shared/models/session.model';
-import { TopicTreeTableServices, TopicTreeTableTab, TopicTreeTabTableConfig } from './topic-tree-tab-table-config';
+import {
+  TOPIC_TREE_TABLE_TABS,
+  TopicTreeTableServices,
+  TopicTreeTableTab,
+  TopicTreeTabTableConfig
+} from './topic-tree-tab-table-config';
 
 interface DetailsRow {
   tab: TopicTreeTab;
@@ -59,7 +64,7 @@ interface DetailsRow {
   sub: string;
 }
 
-export const TOPIC_TREE_TABS = ['details', 'subscriptions', 'clients', 'shared', 'integrations', 'retained', 'dropped'] as const;
+export const TOPIC_TREE_TABS = ['details', ...TOPIC_TREE_TABLE_TABS] as const;
 export type TopicTreeTab = typeof TOPIC_TREE_TABS[number];
 
 @Component({
@@ -138,7 +143,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
   private loadFull(): void {
     const node = this.node;
     // The tree on screen can be older than the server snapshot, so a 404 means the topic is gone rather than an error.
-    this.topicTree.getNode(node.path, ['clients', 'online', 'shared', 'integrations', 'dropped'], { ignoreErrors: true }).subscribe({
+    this.topicTree.getNode(node.path, topicTreeBackendColumns(), { ignoreErrors: true }).subscribe({
       next: full => {
         if (node !== this.node) {
           return;
@@ -156,6 +161,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
     });
   }
 
+  // The rows that depend on the full node show no text until it has loaded.
   private buildRows(): void {
     const t = (key: string, params?: object) => this.services.translate.instant(key, params);
     const node = this.node;
@@ -167,7 +173,7 @@ export class TopicTreeDetailsComponent implements OnChanges {
       },
       {
         tab: 'clients', icon: 'mdi:book-multiple', label: 'topic-tree.tab.clients', count: full ? full.clientsTotal : null,
-        sub: t('topic-tree.row.clients')
+        sub: full && !full.clientsTotal ? t('topic-tree.row.clients') : ''
       },
       {
         tab: 'shared', icon: 'mediation', label: 'topic-tree.column.shared', count: full ? full.sharedGroupsTotal : null,

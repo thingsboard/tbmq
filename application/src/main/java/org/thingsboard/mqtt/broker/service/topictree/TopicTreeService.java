@@ -32,17 +32,26 @@ package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.DroppedMsgDto;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
+
+import java.util.function.ToLongFunction;
 
 public interface TopicTreeService {
 
     TopicTreeSnapshot getSnapshot();
 
+    /**
+     * Messages dropped in the last 24 hours, credited to every topic tree level above their topic. Cached with the
+     * same TTL as the snapshot; the returned function is for a single request.
+     */
+    ToLongFunction<TopicTreeNode> droppedCounts();
+
     PageData<RetainedMsgDto> getRetainedMessages(String path, PageLink pageLink);
+
+    PageData<DroppedMsgDto> getDroppedMessages(String path, PageLink pageLink);
 
     boolean isEnabled();
 
-    int getMaxPageSize();
 
-    int getFilterMinLength();
 }

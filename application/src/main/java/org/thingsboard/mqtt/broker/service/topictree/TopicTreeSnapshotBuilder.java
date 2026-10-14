@@ -99,11 +99,13 @@ public final class TopicTreeSnapshotBuilder {
             n.integrationsTotal += n.integrationsExact;
             n.sharedGroupsTotal += n.sharedGroupsExact;
             n.retainedTotal += n.retainedExact;
+            n.sharedSubscriptionsTotal += countShared(n.refs());
             for (TopicTreeNode c : n.children()) {
                 n.subscriptionsTotal += c.subscriptionsTotal;
                 n.integrationsTotal += c.integrationsTotal;
                 n.sharedGroupsTotal += c.sharedGroupsTotal;
                 n.retainedTotal += c.retainedTotal;
+                n.sharedSubscriptionsTotal += c.sharedSubscriptionsTotal;
             }
         }
         return new TopicTreeSnapshot(root, all.toArray(new TopicTreeNode[0]), Arrays.copyOf(parents, all.size()), sessions, builtAt);
@@ -120,6 +122,16 @@ public final class TopicTreeSnapshotBuilder {
             node = node.child(filter.substring(start, slash));
             start = slash + 1;
         }
+    }
+
+    private static int countShared(List<SubRef> refs) {
+        int count = 0;
+        for (SubRef r : refs) {
+            if (r.shareName() != null) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static int countGroups(List<SubRef> refs) {

@@ -34,6 +34,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { createDefaultHttpOptions, QueryParams, RequestConfig } from './http-utils';
 import { PageData } from '@shared/models/page/page-data';
+import { PageLink } from '@shared/models/page/page-link';
 import { RetainedMessage } from '@shared/models/retained-message.model';
 import { DroppedMessage } from '@shared/models/dropped-message.model';
 import {
@@ -41,7 +42,6 @@ import {
   TopicTreeEntityKind,
   TopicTreeFilter,
   TopicTreeNode,
-  TopicTreeSort,
   TopicTreeSubscription
 } from '@shared/models/topic-tree.models';
 
@@ -53,19 +53,17 @@ export class TopicTreeService {
   constructor(private http: HttpClient) {
   }
 
-  public getChildren(path: string | null, columns: string[], page: number, pageSize: number, sort?: TopicTreeSort,
+  public getChildren(path: string | null, columns: string[], pageLink: PageLink,
                      config?: RequestConfig): Observable<PageData<TopicTreeNode>> {
-    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(','), ...this.sortParams(sort) };
+    const queryParams: QueryParams = { ...this.pageParams(pageLink), columns: columns.join(',') };
     return this.http.get<PageData<TopicTreeNode>>(this.url('/api/topic-tree/children', path), this.options(queryParams, config));
   }
 
-  public search(text: string, filter: TopicTreeFilter, columns: string[], page: number, pageSize: number, sort?: TopicTreeSort,
+  public search(textSearch: string | null, filter: TopicTreeFilter, columns: string[], pageLink: PageLink,
                 config?: RequestConfig): Observable<PageData<TopicTreeNode>> {
-    const queryParams: QueryParams = {
-      page: `${page}`, pageSize: `${pageSize}`, columns: columns.join(','), ...this.sortParams(sort)
-    };
-    if (text) {
-      queryParams.filter = text;
+    const queryParams: QueryParams = { ...this.pageParams(pageLink), columns: columns.join(',') };
+    if (textSearch) {
+      queryParams.textSearch = textSearch;
     }
     if (filter?.topic) {
       queryParams.topic = filter.topic;
@@ -92,28 +90,28 @@ export class TopicTreeService {
     return this.http.get<TopicTreeNode>(this.url('/api/topic-tree/node', path), this.options(queryParams, config));
   }
 
-  public getEntities(path: string | null, kind: TopicTreeEntityKind, page: number, pageSize: number,
+  public getEntities(path: string | null, kind: TopicTreeEntityKind, pageLink: PageLink,
                      config?: RequestConfig): Observable<PageData<TopicTreeEntity>> {
-    const queryParams: QueryParams = { kind, page: `${page}`, pageSize: `${pageSize}` };
+    const queryParams: QueryParams = { kind, ...this.pageParams(pageLink) };
     return this.http.get<PageData<TopicTreeEntity>>(this.url('/api/topic-tree/entities', path), this.options(queryParams, config));
   }
 
-  public getSubscriptions(path: string | null, page: number, pageSize: number,
+  public getSubscriptions(path: string | null, pageLink: PageLink,
                           config?: RequestConfig): Observable<PageData<TopicTreeSubscription>> {
-    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
-    return this.http.get<PageData<TopicTreeSubscription>>(this.url('/api/topic-tree/subscriptions', path), this.options(queryParams, config));
+    return this.http.get<PageData<TopicTreeSubscription>>(this.url('/api/topic-tree/subscriptions', path),
+      this.options(this.pageParams(pageLink), config));
   }
 
-  public getRetained(path: string | null, page: number, pageSize: number,
+  public getRetained(path: string | null, pageLink: PageLink,
                      config?: RequestConfig): Observable<PageData<RetainedMessage>> {
-    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
-    return this.http.get<PageData<RetainedMessage>>(this.url('/api/topic-tree/retained', path), this.options(queryParams, config));
+    return this.http.get<PageData<RetainedMessage>>(this.url('/api/topic-tree/retained', path),
+      this.options(this.pageParams(pageLink), config));
   }
 
-  public getDropped(path: string | null, page: number, pageSize: number,
+  public getDropped(path: string | null, pageLink: PageLink,
                     config?: RequestConfig): Observable<PageData<DroppedMessage>> {
-    const queryParams: QueryParams = { page: `${page}`, pageSize: `${pageSize}` };
-    return this.http.get<PageData<DroppedMessage>>(this.url('/api/topic-tree/dropped', path), this.options(queryParams, config));
+    return this.http.get<PageData<DroppedMessage>>(this.url('/api/topic-tree/dropped', path),
+      this.options(this.pageParams(pageLink), config));
   }
 
   // cleanQueryParams drops empty strings, but path '' addresses the node with an empty segment (root is null)
@@ -121,8 +119,13 @@ export class TopicTreeService {
     return path === null ? base : `${base}?path=${encodeURIComponent(path)}`;
   }
 
-  private sortParams(sort?: TopicTreeSort): QueryParams {
-    return sort ? { sortProperty: sort.property, sortOrder: sort.direction } : {};
+  private pageParams(pageLink: PageLink): QueryParams {
+    const params: QueryParams = { page: `${pageLink.page}`, pageSize: `${pageLink.pageSize}` };
+    if (pageLink.sortOrder?.property) {
+      params.sortProperty = pageLink.sortOrder.property;
+      params.sortOrder = pageLink.sortOrder.direction;
+    }
+    return params;
   }
 
   private options(queryParams: QueryParams, config?: RequestConfig) {

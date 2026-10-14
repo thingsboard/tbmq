@@ -49,3 +49,43 @@
     margin: 4px 0;
   }
 }
+
+$muted: rgba(0, 0, 0, .38);
+
+:host ::ng-deep {
+  .tb-tree-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tb-tree-toggle {
+    width: 24px;
+    font-size: 20px;
+    color: rgba(0, 0, 0, .54);
+    cursor: pointer;
+
+    &.tb-tree-toggle-hidden {
+      visibility: hidden;
+    }
+  }
+
+  .tb-tree-wildcard {
+    font-weight: 500;
+    color: var(--tb-primary-500);
+  }
+
+  .tb-tree-empty {
+    color: $muted;
+  }
+
+  .tb-tree-children {
+    font-size: 12px;
+    color: $muted;
+  }
+
+  .tb-tree-more {
+    font-weight: 500;
+    color: var(--tb-primary-500);
+  }
+}

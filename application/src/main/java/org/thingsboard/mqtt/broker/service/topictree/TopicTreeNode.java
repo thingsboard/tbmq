@@ -30,6 +30,8 @@
  */
 package org.thingsboard.mqtt.broker.service.topictree;
 
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,6 +61,7 @@ public final class TopicTreeNode {
     int sharedGroupsTotal;
     int retainedExact;
     int retainedTotal;
+    int sharedSubscriptionsTotal;
 
     volatile TopicTreeSnapshot.ClientCounts clientCounts;
     volatile TopicTreeNode[] sortedChildren;
@@ -121,7 +124,7 @@ public final class TopicTreeNode {
     public Collection<TopicTreeNode> children() { return childMap != null ? childMap.values() : Arrays.asList(childArray); }
     public int childrenCount() { return childMap != null ? childMap.size() : childArray.length; }
     public List<SubRef> refs() { return Arrays.asList(refs).subList(0, refsCount); }
-    public boolean isWildcard() { return "+".equals(segment) || "#".equals(segment); }
+    public boolean isWildcard() { return BrokerConstants.SINGLE_LEVEL_WILDCARD.equals(segment) || BrokerConstants.MULTI_LEVEL_WILDCARD.equals(segment); }
     public int subscriptionsExact() { return subscriptionsExact; }
     public int subscriptionsTotal() { return subscriptionsTotal; }
     public int integrationsExact() { return integrationsExact; }
@@ -130,6 +133,7 @@ public final class TopicTreeNode {
     public int sharedGroupsTotal() { return sharedGroupsTotal; }
     public int retainedExact() { return retainedExact; }
     public int retainedTotal() { return retainedTotal; }
+    public int sharedSubscriptionsTotal() { return sharedSubscriptionsTotal; }
 
     // Derived rather than stored: a full path per node dominated the snapshot heap.
     public String path() {

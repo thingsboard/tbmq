@@ -39,8 +39,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TopicTreeEntityDto {
 
-    public enum Kind { CLIENTS, INTEGRATIONS, SHARED }
-
     private String id;
     private String name;
     private int subscriptions;

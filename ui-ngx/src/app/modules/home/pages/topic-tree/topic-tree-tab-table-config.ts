@@ -32,6 +32,7 @@
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { escape as escapeHtml } from 'lodash';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -49,10 +50,11 @@ import { PageLink } from '@shared/models/page/page-link';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import { droppedMsgReasonTranslationMap } from '@shared/models/dropped-message.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { escapeHtml, TopicTreeEntityKind } from '@shared/models/topic-tree.models';
+import { TopicTreeEntityKind } from '@shared/models/topic-tree.models';
 import { ConnectionState, connectionStateColor, connectionStateTranslationMap } from '@shared/models/session.model';
 
-export type TopicTreeTableTab = 'subscriptions' | 'clients' | 'shared' | 'integrations' | 'retained' | 'dropped';
+export const TOPIC_TREE_TABLE_TABS = ['subscriptions', 'clients', 'shared', 'integrations', 'retained', 'dropped'] as const;
+export type TopicTreeTableTab = typeof TOPIC_TREE_TABLE_TABS[number];
 
 export interface TopicTreeTableServices {
   topicTree: TopicTreeService;
@@ -167,21 +169,20 @@ export class TopicTreeTabTableConfig extends EntityTableConfig<TopicTreeTableRow
   }
 
   private fetch(pageLink: PageLink): Observable<PageData<TopicTreeTableRow>> {
-    const { page, pageSize } = pageLink;
     const { topicTree } = this.services;
     switch (this.tab) {
       case 'subscriptions':
-        return topicTree.getSubscriptions(this.path, page, pageSize).pipe(
+        return topicTree.getSubscriptions(this.path, pageLink).pipe(
           map(p => this.rows(p, s => ({ ...s, id: `${s.clientId}|${s.topicFilter}` }))));
       case 'clients':
       case 'shared':
       case 'integrations':
-        return topicTree.getEntities(this.path, this.tab.toUpperCase() as TopicTreeEntityKind, page, pageSize).pipe(
+        return topicTree.getEntities(this.path, this.tab.toUpperCase() as TopicTreeEntityKind, pageLink).pipe(
           map(p => this.rows(p, e => ({ ...e }))));
       case 'retained':
-        return topicTree.getRetained(this.path, page, pageSize).pipe(map(p => this.rows(p, m => ({ ...m, id: m.topic }))));
+        return topicTree.getRetained(this.path, pageLink).pipe(map(p => this.rows(p, m => ({ ...m, id: m.topic }))));
       case 'dropped':
-        return topicTree.getDropped(this.path, page, pageSize).pipe(map(p => this.rows(p, m => ({ ...m }))));
+        return topicTree.getDropped(this.path, pageLink).pipe(map(p => this.rows(p, m => ({ ...m }))));
     }
   }
 

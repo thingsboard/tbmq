@@ -100,27 +100,32 @@ export const isTopicTreeFilterEmpty = (filter: TopicTreeFilter | null | undefine
   !filter || (!filter.topic && !filter.matchesTopic && !filter.has?.length && !filter.wildcardOnly
     && (filter.subscriptions ?? null) === null);
 
-export interface TopicTreeSort {
-  property: string;
-  direction: 'ASC' | 'DESC';
-}
-
 export interface TopicTreeColumnDef {
   id: TopicTreeColumnId;
   titleKey: string;
   default: boolean;
-  backend?: string;
+  // Computed by the server only when asked for; the other counts come with every node.
+  backend: boolean;
 }
 
 export const topicTreeColumns: TopicTreeColumnDef[] = [
-  { id: 'subscriptions', titleKey: 'topic-tree.column.subscriptions', default: true },
-  { id: 'clients', titleKey: 'topic-tree.column.clients', default: true, backend: 'clients' },
-  { id: 'retained', titleKey: 'topic-tree.column.retained', default: true },
-  { id: 'online', titleKey: 'topic-tree.column.online', default: false, backend: 'online' },
-  { id: 'shared', titleKey: 'topic-tree.column.shared', default: false, backend: 'shared' },
-  { id: 'integrations', titleKey: 'topic-tree.column.integrations', default: false, backend: 'integrations' },
-  { id: 'dropped', titleKey: 'topic-tree.column.dropped', default: false, backend: 'dropped' },
+  { id: 'subscriptions', titleKey: 'topic-tree.column.subscriptions', default: true, backend: false },
+  { id: 'clients', titleKey: 'topic-tree.column.clients', default: true, backend: true },
+  { id: 'retained', titleKey: 'topic-tree.column.retained', default: true, backend: false },
+  { id: 'online', titleKey: 'topic-tree.column.online', default: false, backend: true },
+  { id: 'shared', titleKey: 'topic-tree.column.shared', default: false, backend: true },
+  { id: 'integrations', titleKey: 'topic-tree.column.integrations', default: false, backend: true },
+  { id: 'dropped', titleKey: 'topic-tree.column.dropped', default: false, backend: true },
 ];
+
+export const defaultTopicTreeColumns = (): TopicTreeColumnId[] => topicTreeColumns.filter(c => c.default).map(c => c.id);
+
+// The known ids among the given ones, in the canonical column order.
+export const knownTopicTreeColumns = (ids: unknown): TopicTreeColumnId[] =>
+  Array.isArray(ids) ? topicTreeColumns.map(c => c.id).filter(id => ids.includes(id)) : [];
+
+export const topicTreeBackendColumns = (ids: TopicTreeColumnId[] = topicTreeColumns.map(c => c.id)): string[] =>
+  topicTreeColumns.filter(c => c.backend && ids.includes(c.id)).map(c => c.id);
 
 export const TOPIC_TREE_COLUMNS_STORAGE_KEY = 'tbmq_topic_tree_columns';
 
@@ -134,7 +139,3 @@ export interface TopicTreeRow extends BaseData {
   parentPath: string | null;
   remaining?: number;
 }
-
-// Entity table cells are rendered as trusted HTML, and topics, payloads and client ids come from MQTT clients.
-export const escapeHtml = (value: unknown): string => `${value ?? ''}`
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

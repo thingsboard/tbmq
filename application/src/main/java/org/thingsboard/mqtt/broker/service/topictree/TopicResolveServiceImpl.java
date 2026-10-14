@@ -33,6 +33,7 @@ package org.thingsboard.mqtt.broker.service.topictree;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.util.TopicValidator;
 import org.thingsboard.mqtt.broker.dto.TopicResolveDto;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
@@ -55,9 +56,7 @@ public class TopicResolveServiceImpl implements TopicResolveService {
 
     @Override
     public TopicResolveDto resolve(String topic) {
-        if (topic == null || topic.isEmpty() || topic.indexOf('+') >= 0 || topic.indexOf('#') >= 0) {
-            throw new IllegalArgumentException("Topic must be a non-empty concrete topic without wildcards");
-        }
+        TopicValidator.validatePublishTopic(topic);
         List<ValueWithTopicFilter<EntitySubscription>> found = subscriptionService.getSubscriptions(topic);
         Map<String, List<EntitySubscription>> byFilter = new LinkedHashMap<>();
         for (ValueWithTopicFilter<EntitySubscription> v : found) {

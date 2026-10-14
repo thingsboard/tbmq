@@ -30,21 +30,6 @@
  */
 package org.thingsboard.mqtt.broker.service.topictree;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Locale;
-import java.util.Set;
-
 public enum TopicTreeColumn {
-    CLIENTS, ONLINE, SHARED, INTEGRATIONS, DROPPED;
-
-    public static Set<TopicTreeColumn> parse(String csv) {
-        EnumSet<TopicTreeColumn> result = EnumSet.noneOf(TopicTreeColumn.class);
-        if (csv == null || csv.isBlank()) {
-            return result;
-        }
-        Arrays.stream(csv.split(",")).map(String::trim).filter(s -> !s.isEmpty())
-                .forEach(s -> result.add(TopicTreeColumn.valueOf(s.toUpperCase(Locale.ROOT))));
-        return result;
-    }
+    CLIENTS, ONLINE, SHARED, INTEGRATIONS, DROPPED
 }

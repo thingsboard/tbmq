@@ -30,19 +30,15 @@
  */
 package org.thingsboard.mqtt.broker.service.topictree;
 
+import lombok.Builder;
 import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 
 import java.util.Set;
 
-/**
- * Criteria for a flat topic tree listing. Every non-null criterion must hold; counts are subtree totals, the same
- * numbers the tree columns show.
- *
- * @param matchingPaths paths of the subscription filters that match a published topic, or null when not filtering by it
- */
+@Builder
 public record TopicTreeQuery(String text,
                              String topic,
-                             boolean topicPrefix,
+                             TopicMatch topicMatch,
                              Set<String> matchingPaths,
                              Set<Has> has,
                              boolean wildcardOnly,
@@ -51,8 +47,17 @@ public record TopicTreeQuery(String text,
 
     public enum Has { SUBSCRIPTIONS, RETAINED, SHARED, INTEGRATIONS, DROPPED }
 
+    // CONTAINS is a case-insensitive substring of the full path, like text; PREFIX is the exact topic and its subtree.
+    public enum TopicMatch { CONTAINS, PREFIX }
+
+    public TopicTreeQuery {
+        topicMatch = topicMatch == null ? TopicMatch.CONTAINS : topicMatch;
+        has = has == null ? Set.of() : has;
+        subscriptionOperation = subscriptionOperation == null ? SubscriptionOperation.EQUAL : subscriptionOperation;
+    }
+
     public static TopicTreeQuery text(String text) {
-        return new TopicTreeQuery(text, null, false, null, Set.of(), false, null, null);
+        return builder().text(text).build();
     }
 
     public boolean isEmpty() {

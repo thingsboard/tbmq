@@ -31,6 +31,7 @@
 package org.thingsboard.mqtt.broker.service.topictree;
 
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
@@ -49,6 +50,34 @@ public final class TopicTreeFixtures {
     }
 
     private TopicTreeFixtures() {
+    }
+
+    static ClientTopicSubscription sub(String filter, int qos) {
+        return new ClientTopicSubscription(filter, qos);
+    }
+
+    static ClientTopicSubscription shared(String filter, String group) {
+        return new ClientTopicSubscription(filter, 1, group);
+    }
+
+    static ClientSessionInfo session(String clientId, boolean connected, ClientType type) {
+        return ClientSessionInfo.builder().clientId(clientId).connected(connected).type(type).build();
+    }
+
+    // A small hand-made tree shared by the unit tests: c1 (online, device) and the shared group g1 (c2 offline, c3
+    // online) under sensors, an integration on sensors/#, edge-case filters with empty segments, and retained
+    // messages on two sensor topics plus the subscription-less "other".
+    public static TopicTreeSnapshot fixture() {
+        Map<String, Set<TopicSubscription>> subs = new HashMap<>();
+        subs.put("c1", Set.of(sub("sensors/+/temperature", 1), sub("sensors/room1/#", 0)));
+        subs.put("c2", Set.of(shared("sensors/+/temperature", "g1")));
+        subs.put("c3", Set.of(shared("sensors/+/temperature", "g1"), sub("/leading", 0), sub("a//b", 0)));
+        subs.put("int-1", Set.of(new IntegrationTopicSubscription("sensors/#")));
+        Map<String, ClientSessionInfo> sessions = Map.of(
+                "c1", session("c1", true, ClientType.DEVICE),
+                "c2", session("c2", false, ClientType.APPLICATION),
+                "c3", session("c3", true, null));
+        return TopicTreeSnapshotBuilder.build(subs, List.of("sensors/room1/temperature", "sensors/room2/temperature", "other"), sessions, 1L);
     }
 
     public static Data synthetic(int devices, int fleetFilters, int retained) {

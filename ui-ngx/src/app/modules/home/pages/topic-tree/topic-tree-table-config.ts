@@ -31,6 +31,7 @@
 
 import { Type } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { escape as escapeHtml } from 'lodash';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { EntityTableColumn, EntityTableConfig } from '@home/models/entity/entities-table-config.models';
@@ -38,28 +39,27 @@ import { EntityTableHeaderComponent } from '@home/components/entity/entity-table
 import { EntityTypeResource } from '@shared/models/entity-type.models';
 import { PageData } from '@shared/models/page/page-data';
 import { PageLink } from '@shared/models/page/page-link';
-import { Direction } from '@shared/models/page/sort-order';
+import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { TopicTreeService } from '@core/http/topic-tree.service';
 import { ConnectionState, connectionStateColor } from '@shared/models/session.model';
 import {
-  escapeHtml,
   isTopicTreeFilterEmpty,
+  topicTreeBackendColumns,
   TopicTreeColumnId,
   TopicTreeFilter,
   TopicTreeNode,
   TopicTreeRow,
-  TopicTreeSort,
   topicTreeColumns
 } from '@shared/models/topic-tree.models';
 
 export interface TopicTreeTableHandlers {
   nodeClicked?: (row: TopicTreeRow) => void;
   nodeRevealed?: (row: TopicTreeRow) => void;
+  revealFailed?: (path: string) => void;
   openColumns?: (event: MouseEvent) => void;
 }
 
 const CHILD_PAGE_SIZE = 100;
-const TEXT_MIN_LENGTH = 2;
 const MUTED = { color: 'rgba(0, 0, 0, .38)' };
 const ROOT_KEY = '\u0000root';
 
@@ -119,6 +119,18 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     this.revealPath = path;
   }
 
+  // Changes the visible columns in place: the expanded branches, the search text and the open details stay, only the
+  // rows are refetched with the new column set.
+  setColumns(columnIds: TopicTreeColumnId[]): void {
+    this.columnIds = columnIds;
+    this.columns = this.buildColumns();
+    const table = this.getTable();
+    if (table) {
+      table.columnsUpdated();
+      table.updateData(false);
+    }
+  }
+
   private buildColumns(): EntityTableColumn<TopicTreeRow>[] {
     const columns: EntityTableColumn<TopicTreeRow>[] = [
       new EntityTableColumn<TopicTreeRow>('topic', 'topic-tree.column.topic', '40%', row => this.topicCell(row), () => ({}), true)
@@ -148,23 +160,20 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     const indent = row.depth * 24;
     if (row.kind === 'more') {
       const text = escapeHtml(this.translate.instant('topic-tree.show-more', { count: row.remaining }));
-      return `<span class="tb-tree-more" style="padding-left: ${indent + 32}px; color: var(--tb-primary-500); font-weight: 500;">${text}</span>`;
+      return `<span class="tb-tree-more" style="padding-left: ${indent + 32}px;">${text}</span>`;
     }
     const node = row.node;
     if (row.flat) {
       return `<span>${escapeHtml(node.path ?? this.translate.instant('topic-tree.root'))}</span>`;
     }
-    const toggle = `<span class="tb-tree-toggle material-icons" style="font-size: 20px; width: 24px; cursor: pointer; ` +
-      `color: rgba(0, 0, 0, .54); visibility: ${node.hasChildren ? 'visible' : 'hidden'};">` +
+    const toggle = `<span class="tb-tree-toggle material-icons${node.hasChildren ? '' : ' tb-tree-toggle-hidden'}">` +
       `${row.expanded ? 'expand_more' : 'chevron_right'}</span>`;
     const segment = node.path === null ? this.translate.instant('topic-tree.root')
       : node.segment === '' ? '∅' : node.segment;
-    const segmentStyle = node.wildcard ? 'font-weight: 500; color: var(--tb-primary-500);'
-      : node.segment === '' ? 'color: rgba(0, 0, 0, .38);' : '';
-    const childrenCount = node.childrenCount
-      ? ` <span style="font-size: 12px; color: rgba(0, 0, 0, .38);">${node.childrenCount}</span>` : '';
-    return `<span style="display: inline-flex; align-items: center; gap: 4px; padding-left: ${indent}px;">${toggle}` +
-      `<span style="${segmentStyle}">${escapeHtml(segment)}</span>${childrenCount}</span>`;
+    const segmentClass = node.wildcard ? ' tb-tree-wildcard' : node.segment === '' ? ' tb-tree-empty' : '';
+    const childrenCount = node.childrenCount ? `<span class="tb-tree-children">${node.childrenCount}</span>` : '';
+    return `<span class="tb-tree-node" style="padding-left: ${indent}px;">${toggle}` +
+      `<span class="tb-tree-segment${segmentClass}">${escapeHtml(segment)}</span>${childrenCount}</span>`;
   }
 
   private onlineCell(row: TopicTreeRow): string {
@@ -208,19 +217,16 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     if (!reuse) {
       this.childCache.clear();
     }
-    const sort: TopicTreeSort | undefined = pageLink.sortOrder?.property
-      ? { property: pageLink.sortOrder.property, direction: pageLink.sortOrder.direction === Direction.ASC ? 'ASC' : 'DESC' }
-      : undefined;
-    const columns = this.backendColumns();
+    const columns = topicTreeBackendColumns(this.columnIds);
     const text = (pageLink.textSearch ?? '').trim();
-    const searchText = text.length >= TEXT_MIN_LENGTH ? text : null;
+    const searchText = text || null;
     if (searchText || !isTopicTreeFilterEmpty(this.query)) {
-      return this.service.search(searchText, this.query, columns, pageLink.page, pageLink.pageSize, sort).pipe(
+      return this.service.search(searchText, this.query, columns, pageLink).pipe(
         map(page => ({ ...page, data: page.data.map(n => this.nodeRow(n, 0, null, true)) })));
     }
-    return this.service.getChildren(null, columns, pageLink.page, pageLink.pageSize, sort).pipe(
+    return this.service.getChildren(null, columns, pageLink).pipe(
       switchMap(page => this.withRevealed(page, columns)),
-      switchMap(page => this.expand(page.data.map(n => this.nodeRow(n, 0, null, false)), columns, sort).pipe(
+      switchMap(page => this.expand(page.data.map(n => this.nodeRow(n, 0, null, false)), columns, pageLink.sortOrder).pipe(
         map(rows => ({ ...page, data: rows })))),
       tap(page => this.notifyRevealed(page.data))
     );
@@ -241,17 +247,20 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
   }
 
   private notifyRevealed(rows: TopicTreeRow[]): void {
-    if (this.revealPath === null) {
+    const path = this.revealPath;
+    if (path === null) {
       return;
     }
-    const row = rows.find(r => r.kind === 'node' && r.node.path === this.revealPath);
     this.revealPath = null;
+    const row = rows.find(r => r.kind === 'node' && r.node.path === path);
     if (row) {
       this.handlers.nodeRevealed?.(row);
+    } else {
+      this.handlers.revealFailed?.(path);
     }
   }
 
-  private expand(rows: TopicTreeRow[], columns: string[], sort?: TopicTreeSort): Observable<TopicTreeRow[]> {
+  private expand(rows: TopicTreeRow[], columns: string[], sort: SortOrder | null): Observable<TopicTreeRow[]> {
     if (!rows.length) {
       return of([]);
     }
@@ -265,34 +274,34 @@ export class TopicTreeTableConfig extends EntityTableConfig<TopicTreeRow> {
     })).pipe(map(groups => groups.flat()));
   }
 
-  private children(parent: TopicTreeRow, columns: string[], sort?: TopicTreeSort): Observable<TopicTreeRow[]> {
+  // "Show more" only requests the pages that are not loaded yet and appends them to the rows already on screen.
+  private children(parent: TopicTreeRow, columns: string[], sort: SortOrder | null): Observable<TopicTreeRow[]> {
     const path = parent.node.path;
-    const pages = this.childPages.get(key(path)) ?? 1;
-    const cached = this.childCache.get(key(path));
+    const cacheKey = key(path);
+    const pages = this.childPages.get(cacheKey) ?? 1;
+    const cached = this.childCache.get(cacheKey);
     if (cached && cached.pages === pages) {
       return of(cached.rows);
     }
-    return forkJoin(Array.from({ length: pages }, (_, page) =>
-      this.service.getChildren(path, columns, page, CHILD_PAGE_SIZE, sort))).pipe(
+    const loaded = cached && cached.pages < pages ? cached.pages : 0;
+    const known = loaded ? cached.rows.filter(r => r.kind === 'node') : [];
+    return forkJoin(Array.from({ length: pages - loaded }, (_, i) =>
+      this.service.getChildren(path, columns, new PageLink(CHILD_PAGE_SIZE, loaded + i, null, sort)))).pipe(
       map(results => {
         const last = results[results.length - 1];
-        const rows = results.flatMap(r => r.data).map(n => this.nodeRow(n, parent.depth + 1, path, false));
+        const rows = [...known, ...results.flatMap(r => r.data).map(n => this.nodeRow(n, parent.depth + 1, path, false))];
         if (last.hasNext) {
           rows.push({
-            id: `more:${key(path)}`, kind: 'more', depth: parent.depth + 1, expanded: false, flat: false, parentPath: path,
-            remaining: last.totalElements - pages * CHILD_PAGE_SIZE
+            id: `more:${cacheKey}`, kind: 'more', depth: parent.depth + 1, expanded: false, flat: false, parentPath: path,
+            remaining: last.totalElements - rows.length
           });
         }
-        this.childCache.set(key(path), { pages, rows });
+        this.childCache.set(cacheKey, { pages, rows });
         return rows;
       }));
   }
 
   private nodeRow(node: TopicTreeNode, depth: number, parentPath: string | null, flat: boolean): TopicTreeRow {
     return { id: key(node.path), kind: 'node', node, depth, expanded: false, flat, parentPath };
-  }
-
-  private backendColumns(): string[] {
-    return topicTreeColumns.filter(c => this.columnIds.includes(c.id) && c.backend).map(c => c.backend);
   }
 }

@@ -33,11 +33,6 @@ package org.thingsboard.mqtt.broker.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.service.topictree.TopicTreeColumn;
-import org.thingsboard.mqtt.broker.service.topictree.TopicTreeNode;
-import org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot;
-
-import java.util.Set;
 
 @Data
 @Builder
@@ -62,27 +57,4 @@ public class TopicTreeNodeDto {
     private Integer integrationsExact;
     private Integer integrationsTotal;
     private Long dropped24h;
-    private Object metrics;
-
-    public static TopicTreeNodeDto of(TopicTreeNode n, TopicTreeSnapshot s, Set<TopicTreeColumn> cols) {
-        TopicTreeNodeDtoBuilder b = TopicTreeNodeDto.builder()
-                .path(n.path()).segment(n.segment()).wildcard(n.isWildcard())
-                .hasChildren(n.childrenCount() > 0).childrenCount(n.childrenCount())
-                .subscriptionsExact(n.subscriptionsExact()).subscriptionsTotal(n.subscriptionsTotal())
-                .retainedExact(n.retainedExact()).retainedTotal(n.retainedTotal());
-        if (cols.contains(TopicTreeColumn.CLIENTS) || cols.contains(TopicTreeColumn.ONLINE)) {
-            TopicTreeSnapshot.ClientCounts cc = s.clientCounts(n);
-            b.clientsTotal(cc.total());
-            if (cols.contains(TopicTreeColumn.ONLINE)) {
-                b.clientsOnline(cc.online()).clientsOffline(cc.offline());
-            }
-        }
-        if (cols.contains(TopicTreeColumn.SHARED)) {
-            b.sharedGroupsExact(n.sharedGroupsExact()).sharedGroupsTotal(n.sharedGroupsTotal());
-        }
-        if (cols.contains(TopicTreeColumn.INTEGRATIONS)) {
-            b.integrationsExact(n.integrationsExact()).integrationsTotal(n.integrationsTotal());
-        }
-        return b.build();
-    }
 }

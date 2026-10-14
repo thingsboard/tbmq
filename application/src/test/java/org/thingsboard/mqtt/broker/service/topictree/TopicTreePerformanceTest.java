@@ -34,9 +34,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.thingsboard.mqtt.broker.service.topictree.TopicTreeSnapshot.NO_DROPS;
 
+/**
+ * Wall-clock and heap budgets on synthetic trees. Excluded from the default build by the {@code performance} tag
+ * (see {@code test.excluded.groups} in application/pom.xml); run it on demand with
+ * <pre>mvn -pl application test -Dtest=TopicTreePerformanceTest -Dtest.excluded.groups=none</pre>
+ */
 @Slf4j
 @Tag("performance")
 class TopicTreePerformanceTest {
@@ -55,17 +62,25 @@ class TopicTreePerformanceTest {
         long build = ms(() -> holder[0] = TopicTreeSnapshotBuilder.build(d.subs(), d.retained(), d.sessions(), 0));
         TopicTreeSnapshot s = holder[0];
         long subs = s.getRoot().subscriptionsTotal();
-        long cold = ms(() -> s.children(s.getRoot(), new PageLink(100, 0)).getData().forEach(s::clientCounts));
-        long warm = ms(() -> s.children(s.getRoot(), new PageLink(100, 0)).getData().forEach(s::clientCounts));
-        long devices = ms(() -> s.children(s.find("devices"), new PageLink(100, 0)));
-        long search = ms(() -> s.search("telemetry1", new PageLink(100, 0)));
-        log.info("subs={} nodes={} build={}ms cold={}ms warm={}ms devicesLevel={}ms search={}ms",
-                subs, s.nodesCount(), build, cold, warm, devices, search);
+        PageLink defaultSort = new PageLink(100, 0, null, new SortOrder("subscriptions", SortOrder.Direction.DESC));
+        long cold = ms(() -> s.children(s.getRoot(), new PageLink(100, 0), NO_DROPS).getData().forEach(s::clientCounts));
+        long warm = ms(() -> s.children(s.getRoot(), new PageLink(100, 0), NO_DROPS).getData().forEach(s::clientCounts));
+        long devices = ms(() -> s.children(s.find("devices"), new PageLink(100, 0), NO_DROPS));
+        long devicesSorted = ms(() -> s.children(s.find("devices"), defaultSort, NO_DROPS));
+        long search = ms(() -> s.query(TopicTreeQuery.text("telemetry1"), NO_DROPS, new PageLink(100, 0)));
+        long prefix = ms(() -> s.query(TopicTreeQuery.builder().topic("fleet/eu").topicMatch(TopicTreeQuery.TopicMatch.PREFIX).build(),
+                NO_DROPS, new PageLink(100, 0)));
+        long subscriptions = ms(() -> s.subscriptions(s.find("devices"), new PageLink(20, 5)));
+        log.info("subs={} nodes={} build={}ms cold={}ms warm={}ms devicesLevel={}ms devicesLevelSorted={}ms search={}ms prefix={}ms subscriptionsPage={}ms",
+                subs, s.nodesCount(), build, cold, warm, devices, devicesSorted, search, prefix, subscriptions);
         assertThat(subs).isGreaterThan(900_000);
         assertThat(build).isLessThan(2_000);
         assertThat(cold).isLessThan(1_500);
         assertThat(warm).isLessThan(20);
+        assertThat(devicesSorted).isLessThan(50);
         assertThat(search).isLessThan(100);
+        assertThat(prefix).isLessThan(100);
+        assertThat(subscriptions).isLessThan(50);
     }
 
     @Test
