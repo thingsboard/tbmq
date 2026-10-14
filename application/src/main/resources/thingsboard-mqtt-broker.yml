@@ -965,7 +965,7 @@ mqtt:
     # Processing period for clearing retained messages by the MQTT expiry feature (in ms).
     expiry-processing-period-ms: "${MQTT_RETAIN_MSG_EXPIRY_PROCESSING_PERIOD_MS:60000}"
   topic-tree:
-    # Enables the Topic tree page API (PE). Snapshots are built from in-memory subscription, retained message and session replicas.
+    # Enables the Topic tree page API. Snapshots are built from in-memory subscription, retained message and session replicas.
     enabled: "${MQTT_TOPIC_TREE_ENABLED:true}"
     # How long a built snapshot is served before a background rebuild is triggered (in ms).
     snapshot-ttl-ms: "${MQTT_TOPIC_TREE_SNAPSHOT_TTL_MS:5000}"
