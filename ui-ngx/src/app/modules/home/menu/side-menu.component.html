@@ -16,14 +16,14 @@
 
 -->
 <ul class="tb-side-menu flex flex-1 flex-col items-stretch">
-  @for (section of menuSections$ | async; track trackByMenuSection($index, section)) {
+  @for (section of menuSections$ | async; track section.id) {
     <li>
-      @switch (section.type === 'link') {
-        @case (true) {
-          <tb-menu-link [section]="section"></tb-menu-link>
+      @switch (section.type) {
+        @case ('link') {
+          <tb-menu-link [section]="section" [collapsed]="collapsed()"></tb-menu-link>
         }
-        @case (false) {
-          <tb-menu-toggle [section]="section"></tb-menu-toggle>
+        @case ('toggle') {
+          <tb-menu-toggle [section]="section" [collapsed]="collapsed()"></tb-menu-toggle>
         }
       }
     </li>

@@ -1,0 +1,90 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<mat-toolbar (click)="$event?.stopPropagation();" color="primary" class="tb-goto-menu-bar">
+  @if (collapsed()) {
+    <button mat-button
+            class="tb-goto-menu-search-button"
+            (click)="searchBtnClick()"
+            matTooltip="{{ 'home.go-to' | translate }}"
+            matTooltipPosition="right">
+      <tb-icon matButtonIcon>search</tb-icon>
+    </button>
+  } @else {
+    <mat-form-field appearance="fill" class="tb-appearance-transparent tb-goto-menu-field" subscriptSizing="dynamic">
+      <input matInput type="text"
+             placeholder="{{ 'home.go-to' | translate }}"
+             #searchLinkInput
+             [(ngModel)]="searchText"
+             [matAutocomplete]="searchLinkAutocomplete"
+             (input)="onSearchInput()"
+             (focus)="onSearchInput()">
+      <button
+        type="button"
+        matPrefix mat-icon-button aria-label="Search">
+        <tb-icon>search</tb-icon>
+      </button>
+      @if (searchText) {
+        <button
+          type="button"
+          matSuffix mat-icon-button aria-label="Clear"
+          (click)="clear()">
+          <tb-icon>close</tb-icon>
+        </button>
+      }
+    </mat-form-field>
+    <mat-autocomplete
+      class="tb-goto-menu-links"
+      #searchLinkAutocomplete="matAutocomplete"
+      [autoActiveFirstOption]="true"
+      [displayWith]="searchDisplayFn">
+      @if (searchText?.trim().length && gotoMenuResult) {
+        @if (gotoMenuResult.hasMatches) {
+          @for (link of gotoMenuResult.nameMatches; track link) {
+            <mat-option class="tb-goto-menu-link" [value]="null" (onSelectionChange)="gotoLink(link)">
+              <ng-container *ngTemplateOutlet="linkOption; context:{link: link}"></ng-container>
+            </mat-option>
+          }
+          @if (gotoMenuResult.nameMatches.length && gotoMenuResult.crumbMatches.length) {
+            <mat-divider></mat-divider>
+          }
+          @for (link of gotoMenuResult.crumbMatches; track link) {
+            <mat-option class="tb-goto-menu-link" [value]="null" (onSelectionChange)="gotoLink(link)">
+              <ng-container *ngTemplateOutlet="linkOption; context:{link: link}"></ng-container>
+            </mat-option>
+          }
+          @if (gotoMenuResult.crumbMore) {
+            <div class="tb-search-more">{{ 'home.crumbs-more' | translate: {more: gotoMenuResult.crumbMore} }}</div>
+          }
+        } @else {
+          <mat-option class="tb-search-empty" [disabled]="true">
+            {{ 'home.no-matches' | translate }}
+          </mat-option>
+        }
+      }
+    </mat-autocomplete>
+  }
+</mat-toolbar>
+<ng-template #linkOption let-link="link">
+  <tb-icon>{{ link.icon }}</tb-icon>
+  <span class="tb-search-result-text">
+    <span class="tb-search-result-title" [innerHTML]="link.name | highlight:searchText:true"></span>
+    @if (link.breadcrumb) {
+      <span class="tb-search-result-context" [innerHTML]="link.breadcrumb | highlight:searchText:true"></span>
+    }
+  </span>
+</ng-template>

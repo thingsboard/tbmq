@@ -14,7 +14,16 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import { User } from '@shared/models/user.model';
 import { Authority } from '@shared/models/authority.enum';
 import { select, Store } from '@ngrx/store';
@@ -25,20 +34,27 @@ import { Router } from '@angular/router';
 import { AuthService } from '@core/http/auth.service';
 import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
-import { MatIconButton } from '@angular/material/button';
-import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatButton } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
+import { TbPopoverDirective } from '@shared/components/popover.component';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { TruncateWithTooltipDirective } from '@shared/directives/truncate-with-tooltip.directive';
 
 @Component({
     selector: 'tb-user-menu',
     templateUrl: './user-menu.component.html',
     styleUrls: ['./user-menu.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TranslateModule, AsyncPipe]
+    encapsulation: ViewEncapsulation.None,
+    imports: [MatIcon, MatButton, TranslateModule, AsyncPipe, TbPopoverDirective, TbIconComponent, TruncateWithTooltipDirective]
 })
 export class UserMenuComponent {
 
-  readonly displayUserInfo = input<boolean>();
+  readonly collapsed = input(false, { transform: booleanAttribute });
+
+  readonly menuClicked = output<void>();
+
+  readonly menuButtonElement = viewChild('menuButton', { read: ElementRef<HTMLElement> });
 
   authority$ = this.store.pipe(
     select(selectAuthUser),
@@ -53,6 +69,21 @@ export class UserMenuComponent {
   userDisplayName$ = this.store.pipe(
     select(selectUserDetails),
     map((user) => this.getUserDisplayName(user))
+  );
+
+  userFullName$ = this.store.pipe(
+    select(selectUserDetails),
+    map((user) => this.getUserFullName(user))
+  );
+
+  userInitials$ = this.store.pipe(
+    select(selectUserDetails),
+    map((user) => this.getUserInitials(user))
+  );
+
+  userEmail$ = this.store.pipe(
+    select(selectUserDetails),
+    map((user) => user?.email)
   );
 
   constructor(private store: Store<AppState>,
@@ -74,31 +105,45 @@ export class UserMenuComponent {
   }
 
   getUserDisplayName(user: User): string {
-    let name = '';
     if (user) {
-      if ((user.firstName && user.firstName.length > 0) ||
-        (user.lastName && user.lastName.length > 0)) {
-        if (user.firstName) {
-          name += user.firstName;
-        }
-        if (user.lastName) {
-          if (name.length > 0) {
-            name += ' ';
-          }
-          name += user.lastName;
-        }
-      } else {
-        name = user.email;
-      }
+      return this.getUserFullName(user) || user.email;
+    } else {
+      return '';
     }
-    return name;
+  }
+
+  getUserFullName(user: User): string {
+    if (user) {
+      return [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    } else {
+      return '';
+    }
+  }
+
+  getUserInitials(user: User): string {
+    if (user) {
+      const first = (user.firstName || '').trim()[0] || '';
+      const last = (user.lastName || '').trim()[0] || '';
+      const nameInitials = (first + last).toUpperCase();
+      if (nameInitials) {
+        return nameInitials;
+      }
+      const [local, domain] = (user.email || '').split('@');
+      const localInitial = (local || '')[0] || '';
+      const domainInitial = (domain || '')[0] || '';
+      return (localInitial + domainInitial).toUpperCase() || '?';
+    } else {
+      return '?';
+    }
   }
 
   openAccount(): void {
+    this.menuClicked.emit();
     this.router.navigate(['account']);
   }
 
   logout(): void {
+    this.menuClicked.emit();
     this.authService.logout();
   }
 

@@ -13,35 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'constants' as *;
+
 :host ::ng-deep {
   .tb-button-toggle {
     .tb-toggle-icon {
       display: inline-block;
-      width: 15px;
-      min-width: 15px;
+      width: 12px;
+      min-width: 12px;
+      font-size: 12px;
       margin: auto 0 auto auto;
       background-size: 100% auto;
       transition: transform .3s ease-in-out;
       &.tb-toggled {
         transform: rotateZ(180deg);
+        opacity: 0.5;
       }
     }
   }
-
   .tb-menu-toggle-list {
     position: relative;
     z-index: 1;
     overflow: hidden;
-
     transition: .45s cubic-bezier(.35, 0, .25, 1);
-
     transition-property: height;
-
     a.mat-mdc-button {
-      padding: 0 16px 0 32px;
-      font-weight: 500;
-      text-transform: none !important;
-      text-rendering: optimizeLegibility;
+      padding-left: 32px;
+      &:not(.tb-active) {
+        .mat-icon {
+          opacity: .8;
+        }
+      }
+    }
+  }
+}
+
+.tb-toggle-menu-items {
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  .tb-menu-toggle-header {
+    display: flex;
+    align-items: center;
+    cursor: default;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    height: 40px;
+    padding: 8px 16px;
+  }
+  a.mat-mdc-button {
+    border-bottom: none;
+    .mat-icon {
+      color: rgba(0, 0, 0, 0.6);
+    }
+    &:hover {
+      background-color: rgba(0, 0, 0, .04);
+      border-bottom: none;
+    }
+    &:focus {
+      border-bottom: none;
+    }
+    &.tb-active {
+      background-color: rgba($tb-primary-color, .12);
+      color: $tb-primary-color;
+      .mat-icon {
+        color: $tb-primary-color;
+      }
     }
   }
 }

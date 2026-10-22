@@ -15,7 +15,8 @@
     limitations under the License.
 
 -->
-<button mat-raised-button color="primary" (click)="navigate()">
+<button mat-icon-button (click)="navigate()"
+        [matTooltip]="'getting-started.getting-started' | translate"
+        matTooltipPosition="below">
   <mat-icon>school</mat-icon>
-  {{'getting-started.getting-started' | translate}}
 </button>

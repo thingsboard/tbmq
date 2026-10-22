@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'constants' as *;
+
 :host {
   display: flex;
   width: 100%;
@@ -20,6 +22,31 @@
 
   mat-sidenav-container {
     flex: 1;
+    &.tb-desktop {
+      mat-sidenav.tb-site-sidenav {
+        width: 250px;
+        transition: width $sidenav-anim-timing;
+        .tb-logo-title {
+          opacity: 1;
+          transition: opacity $sidenav-anim-timing;
+        }
+      }
+      mat-sidenav-content.tb-site-content {
+        margin-left: 250px !important;
+        transition: margin-left $sidenav-anim-timing;
+      }
+      &.tb-collapsed {
+        mat-sidenav.tb-site-sidenav {
+          width: 50px;
+          .tb-nav-header .tb-nav-header-toolbar .tb-logo-title {
+            opacity: 0;
+          }
+        }
+        mat-sidenav-content.tb-site-content {
+          margin-left: 50px !important;
+        }
+      }
+    }
   }
   mat-sidenav.tb-site-sidenav {
     width: 250px;
@@ -30,30 +57,51 @@
       z-index: 2;
       flex-shrink: 0;
       white-space: nowrap;
+      &.tb-scrolled {
+        box-shadow: 0 6px 12px -8px rgba(0, 0, 0, .3);
+      }
       .tb-nav-header-toolbar {
+        position: relative;
         min-height: 64px;
         height: inherit;
-        padding: 0;
+        padding: 8px 12px 8px 16px;
         z-index: 2;
         flex-shrink: 0;
         white-space: nowrap;
         border-bottom: 1px solid rgba(0, 0, 0, .12);
-        & > div {
-          height: 64px;
-          .tb-logo-title {
-            width: auto;
-            max-width: 100%;
-            height: 36px;
-            max-height: 100%;
-            margin: auto;
+        .tb-logo-title {
+          display: flex;
+          width: auto;
+          max-width: 100%;
+          height: 36px;
+          max-height: 100%;
+          margin: auto 40px auto 0;
+          ::ng-deep img {
+            object-fit: contain;
+            object-position: center left;
+            max-width: 170px;
           }
+        }
+        .tb-sidenav-toggle {
+          margin: 0;
+          position: absolute;
+          right: 5px;
+          top: 12px;
         }
       }
     }
     .tb-side-menu-toolbar {
-      overflow-y: auto;
+      overflow: hidden;
       height: inherit;
       padding: 0;
+      align-items: initial;
+      .tb-sidebar-bottom {
+        border-top: 1px solid transparent;
+        &.tb-scrolled {
+          border-top-color: rgba(0, 0, 0, .12);
+          box-shadow: 0 -6px 12px -8px rgba(0, 0, 0, .3);
+        }
+      }
     }
   }
   .tb-primary-toolbar {

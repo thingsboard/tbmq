@@ -364,6 +364,9 @@
     "home": {
         "home": "Home",
         "logout": "Logout",
+        "go-to": "Go to...",
+        "no-matches": "No matches",
+        "crumbs-more": "+{{more}} more under matching sections",
         "config": "Broker settings",
         "quick-links": "Quick links",
         "rest-api": "REST API",

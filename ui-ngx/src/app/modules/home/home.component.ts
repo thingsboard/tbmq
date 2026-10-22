@@ -14,7 +14,17 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  signal,
+  viewChild
+} from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
@@ -40,32 +50,45 @@ import { RouterOutlet } from '@angular/router';
 import { GithubBadgeComponent } from '@home/components/github-badge/github-badge.component';
 import { LogoComponent } from '@shared/components/logo.component';
 import { DialogService } from '@core/services/dialog.service';
+import { GotoMenuComponent } from './menu/goto-menu.component';
+import { TbIconComponent } from '@shared/components/icon.component';
+
+const MENU_COLLAPSED_STORAGE_KEY = 'menuCollapsed';
 
 @Component({
     selector: 'tb-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, GithubBadgeComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe, LogoComponent]
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, GithubBadgeComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe, LogoComponent, GotoMenuComponent, TbIconComponent]
 })
-export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
+export class HomeComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   activeComponent: any;
 
   sidenavMode: 'over' | 'push' | 'side' = 'side';
   sidenavOpened = true;
 
-  logo = 'assets/mqtt_logo_white.svg';
+  sidenavDesktop = signal(true);
+  sidenavCollapsed = signal(localStorage.getItem(MENU_COLLAPSED_STORAGE_KEY) === 'true');
+  menuCollapsed = computed(() => this.sidenavDesktop() && this.sidenavCollapsed());
 
   readonly sidenav = viewChild<MatSidenav>('sidenav');
-  readonly searchInputField = viewChild<ElementRef>('searchInput');
+  readonly navHeader = viewChild.required<ElementRef<HTMLElement>>('navHeader');
+  readonly sidebarScroll = viewChild.required<ElementRef<HTMLElement>>('sidebarScroll');
+  readonly sideMenu = viewChild.required('sideMenu', { read: ElementRef<HTMLElement> });
+  readonly sidebarBottom = viewChild.required<ElementRef<HTMLElement>>('sidebarBottom');
 
   fullscreenEnabled = screenfull.isEnabled;
+
+  private scrollShadowWatcher: ResizeObserver;
+  private sidebarScrollUnlisten: () => void;
 
   private destroy$ = new Subject<void>();
 
   constructor(
     protected store: Store<AppState>,
     private activeComponentService: ActiveComponentService,
+    private renderer: Renderer2,
     public breakpointObserver: BreakpointObserver,
     private dialogService: DialogService,
   ) {
@@ -76,7 +99,7 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
     const isGtSm = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']);
     this.sidenavMode = isGtSm ? 'side' : 'over';
     this.sidenavOpened = isGtSm;
-
+    this.sidenavDesktop.set(isGtSm);
     this.breakpointObserver
       .observe(MediaBreakpoints['gt-sm'])
       .pipe(takeUntil(this.destroy$))
@@ -84,9 +107,11 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
           if (state.matches) {
             this.sidenavMode = 'side';
             this.sidenavOpened = true;
+            this.sidenavDesktop.set(true);
           } else {
             this.sidenavMode = 'over';
             this.sidenavOpened = false;
+            this.sidenavDesktop.set(false);
           }
         }
       );
@@ -94,7 +119,16 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
     this.dialogService.gettingStarted();
   }
 
+  ngAfterViewInit() {
+    this.scrollShadowWatcher = new ResizeObserver(() => this.updateScrollShadows());
+    this.scrollShadowWatcher.observe(this.sideMenu().nativeElement);
+    this.scrollShadowWatcher.observe(this.sidebarScroll().nativeElement);
+    this.sidebarScrollUnlisten = this.renderer.listen(this.sidebarScroll().nativeElement, 'scroll', () => this.updateScrollShadows());
+  }
+
   ngOnDestroy() {
+    this.scrollShadowWatcher?.disconnect();
+    this.sidebarScrollUnlisten?.();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -103,6 +137,11 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
     if (this.sidenavMode === 'over') {
       this.sidenav().toggle();
     }
+  }
+
+  toggleSidenav() {
+    this.sidenavCollapsed.update(collapsed => !collapsed);
+    localStorage.setItem(MENU_COLLAPSED_STORAGE_KEY, String(this.sidenavCollapsed()));
   }
 
   toggleFullscreen() {
@@ -134,6 +173,21 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
           this.toggleFullscreen();
         }
       });
+  }
+
+  private updateScrollShadows() {
+    const sidebarScrollElm = this.sidebarScroll().nativeElement;
+    if (sidebarScrollElm.scrollTop > 0) {
+      this.renderer.addClass(this.navHeader().nativeElement, 'tb-scrolled');
+    } else {
+      this.renderer.removeClass(this.navHeader().nativeElement, 'tb-scrolled');
+    }
+    const moreBelow = sidebarScrollElm.scrollTop + sidebarScrollElm.clientHeight < sidebarScrollElm.scrollHeight - 1;
+    if (moreBelow) {
+      this.renderer.addClass(this.sidebarBottom().nativeElement, 'tb-scrolled');
+    } else {
+      this.renderer.removeClass(this.sidebarBottom().nativeElement, 'tb-scrolled');
+    }
   }
 
   private updateActiveComponent(activeComponent: any) {

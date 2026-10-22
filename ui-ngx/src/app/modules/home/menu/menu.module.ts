@@ -18,6 +18,7 @@ import { NgModule } from '@angular/core';
 import { MenuLinkComponent } from '@modules/home/menu/menu-link.component';
 import { MenuToggleComponent } from '@modules/home/menu/menu-toggle.component';
 import { SideMenuComponent } from '@modules/home/menu/side-menu.component';
+import { GotoMenuComponent } from '@modules/home/menu/goto-menu.component';
 import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/getting-started-menu-link.component';
 
 @NgModule({
@@ -25,6 +26,7 @@ import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/get
     MenuLinkComponent,
     MenuToggleComponent,
     SideMenuComponent,
+    GotoMenuComponent,
     GettingStartedMenuLinkComponent,
   ]
 })
