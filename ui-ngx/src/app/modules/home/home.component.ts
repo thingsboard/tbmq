@@ -19,6 +19,7 @@ import {
   Component,
   computed,
   ElementRef,
+  NgZone,
   OnDestroy,
   OnInit,
   Renderer2,
@@ -52,8 +53,9 @@ import { LogoComponent } from '@shared/components/logo.component';
 import { DialogService } from '@core/services/dialog.service';
 import { GotoMenuComponent } from './menu/goto-menu.component';
 import { TbIconComponent } from '@shared/components/icon.component';
+import { LocalStorageService } from '@core/local-storage/local-storage.service';
 
-const MENU_COLLAPSED_STORAGE_KEY = 'menuCollapsed';
+const MENU_COLLAPSED_KEY = 'MENU_COLLAPSED';
 
 @Component({
     selector: 'tb-home',
@@ -65,11 +67,10 @@ export class HomeComponent extends PageComponent implements OnInit, AfterViewIni
 
   activeComponent: any;
 
-  sidenavMode: 'over' | 'push' | 'side' = 'side';
-  sidenavOpened = true;
-
   sidenavDesktop = signal(true);
-  sidenavCollapsed = signal(localStorage.getItem(MENU_COLLAPSED_STORAGE_KEY) === 'true');
+  sidenavMode = computed<'over' | 'side'>(() => this.sidenavDesktop() ? 'side' : 'over');
+  sidenavOpened = computed(() => this.sidenavDesktop());
+  sidenavCollapsed = signal(this.localStorageService.getItem(MENU_COLLAPSED_KEY) === true);
   menuCollapsed = computed(() => this.sidenavDesktop() && this.sidenavCollapsed());
 
   readonly sidenav = viewChild<MatSidenav>('sidenav');
@@ -89,6 +90,8 @@ export class HomeComponent extends PageComponent implements OnInit, AfterViewIni
     protected store: Store<AppState>,
     private activeComponentService: ActiveComponentService,
     private renderer: Renderer2,
+    private ngZone: NgZone,
+    private localStorageService: LocalStorageService,
     public breakpointObserver: BreakpointObserver,
     private dialogService: DialogService,
   ) {
@@ -96,34 +99,22 @@ export class HomeComponent extends PageComponent implements OnInit, AfterViewIni
   }
 
   ngOnInit() {
-    const isGtSm = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']);
-    this.sidenavMode = isGtSm ? 'side' : 'over';
-    this.sidenavOpened = isGtSm;
-    this.sidenavDesktop.set(isGtSm);
+    this.sidenavDesktop.set(this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']));
     this.breakpointObserver
       .observe(MediaBreakpoints['gt-sm'])
       .pipe(takeUntil(this.destroy$))
-      .subscribe((state: BreakpointState) => {
-          if (state.matches) {
-            this.sidenavMode = 'side';
-            this.sidenavOpened = true;
-            this.sidenavDesktop.set(true);
-          } else {
-            this.sidenavMode = 'over';
-            this.sidenavOpened = false;
-            this.sidenavDesktop.set(false);
-          }
-        }
-      );
+      .subscribe((state: BreakpointState) => this.sidenavDesktop.set(state.matches));
     this.toggleFullscreenOnF11();
     this.dialogService.gettingStarted();
   }
 
   ngAfterViewInit() {
-    this.scrollShadowWatcher = new ResizeObserver(() => this.updateScrollShadows());
-    this.scrollShadowWatcher.observe(this.sideMenu().nativeElement);
-    this.scrollShadowWatcher.observe(this.sidebarScroll().nativeElement);
-    this.sidebarScrollUnlisten = this.renderer.listen(this.sidebarScroll().nativeElement, 'scroll', () => this.updateScrollShadows());
+    this.ngZone.runOutsideAngular(() => {
+      this.scrollShadowWatcher = new ResizeObserver(() => this.updateScrollShadows());
+      this.scrollShadowWatcher.observe(this.sideMenu().nativeElement);
+      this.scrollShadowWatcher.observe(this.sidebarScroll().nativeElement);
+      this.sidebarScrollUnlisten = this.renderer.listen(this.sidebarScroll().nativeElement, 'scroll', () => this.updateScrollShadows());
+    });
   }
 
   ngOnDestroy() {
@@ -134,14 +125,14 @@ export class HomeComponent extends PageComponent implements OnInit, AfterViewIni
   }
 
   sidenavClicked() {
-    if (this.sidenavMode === 'over') {
+    if (this.sidenavMode() === 'over') {
       this.sidenav().toggle();
     }
   }
 
   toggleSidenav() {
     this.sidenavCollapsed.update(collapsed => !collapsed);
-    localStorage.setItem(MENU_COLLAPSED_STORAGE_KEY, String(this.sidenavCollapsed()));
+    this.localStorageService.setItem(MENU_COLLAPSED_KEY, this.sidenavCollapsed());
   }
 
   toggleFullscreen() {

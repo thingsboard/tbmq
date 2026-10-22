@@ -21,6 +21,7 @@ import {
   ElementRef,
   input,
   output,
+  signal,
   viewChild,
   ViewEncapsulation
 } from '@angular/core';
@@ -55,6 +56,8 @@ export class UserMenuComponent {
   readonly menuClicked = output<void>();
 
   readonly menuButtonElement = viewChild('menuButton', { read: ElementRef<HTMLElement> });
+
+  readonly menuWidth = signal<number>(null);
 
   authority$ = this.store.pipe(
     select(selectAuthUser),
@@ -105,36 +108,42 @@ export class UserMenuComponent {
   }
 
   getUserDisplayName(user: User): string {
-    if (user) {
-      return this.getUserFullName(user) || user.email;
-    } else {
+    if (!user) {
       return '';
     }
+    return this.getUserFullName(user) || user.email;
   }
 
   getUserFullName(user: User): string {
-    if (user) {
-      return [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-    } else {
+    if (!user) {
       return '';
     }
+    return [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
   }
 
   getUserInitials(user: User): string {
-    if (user) {
-      const first = (user.firstName || '').trim()[0] || '';
-      const last = (user.lastName || '').trim()[0] || '';
-      const nameInitials = (first + last).toUpperCase();
-      if (nameInitials) {
-        return nameInitials;
-      }
-      const [local, domain] = (user.email || '').split('@');
-      const localInitial = (local || '')[0] || '';
-      const domainInitial = (domain || '')[0] || '';
-      return (localInitial + domainInitial).toUpperCase() || '?';
-    } else {
+    if (!user) {
       return '?';
     }
+    return this.nameInitials(user) || this.emailInitials(user) || '?';
+  }
+
+  private nameInitials(user: User): string {
+    const first = (user.firstName || '').trim()[0] || '';
+    const last = (user.lastName || '').trim()[0] || '';
+    return (first + last).toUpperCase();
+  }
+
+  private emailInitials(user: User): string {
+    const [local, domain] = (user.email || '').split('@');
+    const localInitial = (local || '')[0] || '';
+    const domainInitial = (domain || '')[0] || '';
+    return (localInitial + domainInitial).toUpperCase();
+  }
+
+  onMenuButtonClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.menuWidth.set(this.menuButtonElement()?.nativeElement.offsetWidth ?? null);
   }
 
   openAccount(): void {

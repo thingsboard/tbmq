@@ -67,13 +67,6 @@
   --mat-form-field-filled-input-text-color: #fff;
   --mat-form-field-filled-input-text-placeholder-color: rgba(255, 255, 255, .7);
   --mat-form-field-filled-caret-color: #fff;
-  --mdc-filled-text-field-container-color: transparent;
-  --mdc-filled-text-field-input-text-color: #fff;
-  --mdc-filled-text-field-input-text-placeholder-color: rgba(255, 255, 255, .7);
-  --mdc-filled-text-field-caret-color: #fff;
-  --mdc-filled-text-field-active-indicator-color: rgba(255, 255, 255, .3);
-  --mdc-filled-text-field-focus-active-indicator-color: #fff;
-  --mdc-filled-text-field-hover-active-indicator-color: rgba(255, 255, 255, .6);
   .mat-mdc-text-field-wrapper {
     .mat-mdc-form-field-flex {
       padding: 0 8px;
@@ -116,7 +109,7 @@ div.mat-mdc-autocomplete-panel.tb-goto-menu-links {
   top: 6px;
   padding: 4px 0;
   left: -8px;
-  min-width: 250px;
+  min-width: $sidenav-width;
   @media #{$mat-lt-md} {
     min-width: calc(100% + 16px);
   }

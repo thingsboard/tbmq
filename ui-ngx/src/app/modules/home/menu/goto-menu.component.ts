@@ -25,11 +25,11 @@ import {
   viewChild,
   ViewEncapsulation
 } from '@angular/core';
-import { Observable, ReplaySubject, Subject, Subscription } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { MenuSection } from '@core/services/menu.models';
 import { MenuService } from '@core/services/menu.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { distinctUntilChanged, map, share, switchMap } from 'rxjs/operators';
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -79,7 +79,9 @@ export class GotoMenuComponent implements OnInit, OnDestroy {
 
   gotoMenuResult: GotoMenuResult;
 
-  private allLinksObservable$: Observable<Array<GotoMenuLink>> = null;
+  private readonly allLinks$ = this.menuService.menuSections().pipe(
+    map(sections => this.toGotoMenus(sections))
+  );
 
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription;
@@ -130,33 +132,17 @@ export class GotoMenuComponent implements OnInit, OnDestroy {
     this.searchText = '';
     this.searchSubject.next('');
     this.linkClicked.emit();
-    this.router.navigate([link.path]).then();
+    this.router.navigate([link.path]);
   }
 
-  private fetchLinks(searchText?: string): Observable<GotoMenuResult> {
-    this.searchText = searchText;
-    return this.allLinks().pipe(
-      map((links) => this.filterLinks(links))
+  private fetchLinks(searchText: string): Observable<GotoMenuResult> {
+    return this.allLinks$.pipe(
+      map(links => this.filterLinks(links, searchText))
     );
   }
 
-  private allLinks(): Observable<Array<GotoMenuLink>> {
-    if (this.allLinksObservable$ === null) {
-      this.allLinksObservable$ = this.menuService.menuSections().pipe(
-        map((links) => this.toGotoMenus(links)),
-        share({
-          connector: () => new ReplaySubject(1),
-          resetOnError: false,
-          resetOnComplete: false,
-          resetOnRefCountZero: false
-        })
-      );
-    }
-    return this.allLinksObservable$;
-  }
-
-  private filterLinks(links: GotoMenuLink[]): GotoMenuResult {
-    const query = this.searchText.trim().toLowerCase();
+  private filterLinks(links: GotoMenuLink[], searchText: string): GotoMenuResult {
+    const query = searchText.trim().toLowerCase();
     const nameMatches: GotoMenuLink[] = [];
     let crumbMatches: GotoMenuLink[] = [];
     for (const link of links) {

@@ -24,7 +24,7 @@
     flex: 1;
     &.tb-desktop {
       mat-sidenav.tb-site-sidenav {
-        width: 250px;
+        width: $sidenav-width;
         transition: width $sidenav-anim-timing;
         .tb-logo-title {
           opacity: 1;
@@ -32,24 +32,24 @@
         }
       }
       mat-sidenav-content.tb-site-content {
-        margin-left: 250px !important;
+        margin-left: $sidenav-width !important;
         transition: margin-left $sidenav-anim-timing;
       }
       &.tb-collapsed {
         mat-sidenav.tb-site-sidenav {
-          width: 50px;
+          width: $sidenav-collapsed-width;
           .tb-nav-header .tb-nav-header-toolbar .tb-logo-title {
             opacity: 0;
           }
         }
         mat-sidenav-content.tb-site-content {
-          margin-left: 50px !important;
+          margin-left: $sidenav-collapsed-width !important;
         }
       }
     }
   }
   mat-sidenav.tb-site-sidenav {
-    width: 250px;
+    width: $sidenav-width;
     @media (max-width:456px) {
       width: calc(100% - 56px);
     }

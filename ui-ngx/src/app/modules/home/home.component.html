@@ -19,10 +19,10 @@
                        [class.tb-collapsed]="sidenavCollapsed()">
   <mat-sidenav #sidenav class="tb-site-sidenav mat-elevation-z2"
     [class.tb-collapsed]="menuCollapsed()"
-    [disableClose]="sidenavOpened"
+    [disableClose]="sidenavOpened()"
     (click)="sidenavClicked()"
-    [mode]="sidenavMode"
-    [opened]="sidenavOpened">
+    [mode]="sidenavMode()"
+    [opened]="sidenavOpened()">
     <header #navHeader class="tb-nav-header">
       <mat-toolbar color="primary" class="tb-nav-header-toolbar">
         <tb-logo class="tb-logo-title"></tb-logo>

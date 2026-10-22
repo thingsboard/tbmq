@@ -49,9 +49,6 @@
 }
 
 .tb-toggle-menu-items {
-  min-width: 250px;
-  display: flex;
-  flex-direction: column;
   .tb-menu-toggle-header {
     display: flex;
     align-items: center;
@@ -68,7 +65,6 @@
       color: rgba(0, 0, 0, 0.6);
     }
     &:hover {
-      background-color: rgba(0, 0, 0, .04);
       border-bottom: none;
     }
     &:focus {

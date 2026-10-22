@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { booleanAttribute, ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MenuSection } from '@core/services/menu.models';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -38,6 +38,8 @@ export class MenuToggleComponent {
   readonly section = input<MenuSection>();
 
   readonly collapsed = input(false, { transform: booleanAttribute });
+
+  readonly popoverVisible = signal(false);
 
   private readonly router = inject(Router);
 

@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<mat-toolbar (click)="$event?.stopPropagation();" color="primary" class="tb-goto-menu-bar">
+<mat-toolbar (click)="$event.stopPropagation()" color="primary" class="tb-goto-menu-bar">
   @if (collapsed()) {
     <button mat-button
             class="tb-goto-menu-search-button"

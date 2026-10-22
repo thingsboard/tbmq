@@ -19,7 +19,6 @@ import { MenuLinkComponent } from '@modules/home/menu/menu-link.component';
 import { MenuToggleComponent } from '@modules/home/menu/menu-toggle.component';
 import { SideMenuComponent } from '@modules/home/menu/side-menu.component';
 import { GotoMenuComponent } from '@modules/home/menu/goto-menu.component';
-import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/getting-started-menu-link.component';
 
 @NgModule({
   imports: [
@@ -27,7 +26,6 @@ import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/get
     MenuToggleComponent,
     SideMenuComponent,
     GotoMenuComponent,
-    GettingStartedMenuLinkComponent,
   ]
 })
 export class MenuModule { }

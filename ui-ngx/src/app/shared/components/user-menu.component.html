@@ -16,7 +16,7 @@
 
 -->
 <button #menuButton #menuPopover="tbPopover" mat-button class="tb-user-menu"
-        (click)="$event.stopPropagation();"
+        (click)="onMenuButtonClick($event)"
         tb-popover
         [tbPopoverTrigger]="collapsed() ? 'hover' : 'click'"
         [tbPopoverMouseLeaveDelay]="0.05"
@@ -36,7 +36,7 @@
 </button>
 <ng-template #userMenuTpl>
   @if (authority$ | async; as authority) {
-    <div class="tb-menu-content tb-user-menu-items" [style.width.px]="collapsed() ? null : menuButtonElement()?.nativeElement.offsetWidth">
+    <div class="tb-menu-content tb-user-menu-items" [style.width.px]="collapsed() ? null : menuWidth()">
       <div class="tb-user-menu-header">
         @if (collapsed()) {
           @let fullName = userFullName$ | async;

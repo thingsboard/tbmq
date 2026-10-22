@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'constants' as *;
 @use 'mixins' as *;
 
 $popover-arrow-width: 6;
@@ -227,6 +228,9 @@ $box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0,
     padding: 0;
   }
   .tb-menu-content {
+    min-width: $sidenav-width;
+    display: flex;
+    flex-direction: column;
     --mat-button-text-label-text-size: 14px;
     --mat-button-text-label-text-weight: 400;
     --mat-button-text-container-height: 40px;
@@ -235,6 +239,9 @@ $box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0,
     --mat-button-text-with-icon-horizontal-padding: 16px;
     .mat-mdc-button:not(.mat-mdc-icon-button) {
       justify-content: start;
+      &:hover {
+        background-color: rgba(0, 0, 0, .04);
+      }
       & > .mat-icon {
         width: 18px;
         height: 18px;

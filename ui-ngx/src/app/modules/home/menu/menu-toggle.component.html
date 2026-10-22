@@ -17,7 +17,7 @@
 -->
 <a mat-button class="tb-button-toggle"
    [class.tb-toggled]="isOpened()"
-   [class.tb-hovered]="collapsed() && menuPopover?.component?.tbVisible"
+   [class.tb-hovered]="collapsed() && popoverVisible()"
    [class.tb-active]="active()"
    (click)="toggleSection($event)"
    tb-popover
@@ -27,6 +27,7 @@
    [tbPopoverMenu]="true"
    [tbPopoverContent]="menuToggleMenuTpl"
    [tbPopoverPlacement]="'rightTop'"
+   (tbPopoverVisibleChange)="popoverVisible.set($event)"
    [class.is-new]="section().isNew">
   @if (section().icon !== null) {
     <tb-icon matButtonIcon>{{section().icon}}</tb-icon>
