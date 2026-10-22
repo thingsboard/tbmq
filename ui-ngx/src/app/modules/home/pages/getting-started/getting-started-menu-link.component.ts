@@ -16,16 +16,16 @@
 
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-getting-started-link',
     templateUrl: './getting-started-menu-link.component.html',
-    styleUrls: ['./getting-started-menu-link.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatButton, MatIcon, TranslateModule]
+    imports: [MatIconButton, MatIcon, TranslateModule, MatTooltip]
 })
 export class GettingStartedMenuLinkComponent {
 
