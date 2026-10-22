@@ -123,6 +123,28 @@ public class TopicAliasCtxTest {
     }
 
     @Test
+    public void givenSameTopicAliasReceivedRepeatedly_whenGetNextTopicAlias_thenReturnNewAlias() {
+        topicAliasCtx = new TopicAliasCtx(true, 2);
+
+        for (String topicName : List.of("topic/qwerty", "topic/qwerty", "topic/asdfgh")) {
+            MqttProperties properties = new MqttProperties();
+            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID, 1));
+            PublishMsg publishMsg = PublishMsg
+                    .builder()
+                    .topicName(topicName)
+                    .properties(properties)
+                    .build();
+            Assert.assertEquals(topicName, topicAliasCtx.getTopicNameByAlias(publishMsg));
+        }
+
+        Assert.assertEquals(1, topicAliasCtx.getClientMappings().size());
+        Assert.assertEquals(1, topicAliasCtx.getClientMappingsCount().get());
+
+        int topicAlias = topicAliasCtx.getNextTopicAlias("test/topic/1");
+        Assert.assertEquals(1, topicAlias);
+    }
+
+    @Test
     public void givenPubMsgWithSmallTopic_whenCreatePublishMsgUsingTopicAlias_thenReturnSamePubMsg() {
         topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(Map.of(1, "topic123")), null);
 
