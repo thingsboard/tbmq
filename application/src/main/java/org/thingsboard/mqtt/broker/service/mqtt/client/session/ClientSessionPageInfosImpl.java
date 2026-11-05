@@ -29,11 +29,13 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,8 +46,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
+    public static final long STATS_BY_NODE_TTL_MS = 2_000;
+
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
+
+    // Hand-rolled rather than CachedValue: that helper floors its TTL at 60 s, too stale for a page polling every 3 s.
+    private volatile CachedStatsByNode cachedStatsByNode;
+    long statsByNodeTtlMs = STATS_BY_NODE_TTL_MS;
 
     @Override
     public PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink) {
@@ -107,6 +115,77 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         long connectedCount = allClientSessions.values().stream().filter(ClientSessionInfo::isConnected).count();
         long disconnectedCount = totalCount - connectedCount;
         return new ClientSessionStatsInfoDto(connectedCount, disconnectedCount, totalCount);
+    }
+
+    /**
+     * The cluster page polls this every few seconds from every open tab, and each call copies and walks the whole
+     * session cache, so the result is shared for {@link #STATS_BY_NODE_TTL_MS}.
+     */
+    @Override
+    public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionStatsInfoByNode() {
+        CachedStatsByNode cached = cachedStatsByNode;
+        if (isFresh(cached)) {
+            return cached.stats();
+        }
+        synchronized (this) {
+            cached = cachedStatsByNode;
+            if (!isFresh(cached)) {
+                cached = new CachedStatsByNode(countSessionsByNode(), System.currentTimeMillis());
+                cachedStatsByNode = cached;
+            }
+            return cached.stats();
+        }
+    }
+
+    private boolean isFresh(CachedStatsByNode cached) {
+        return cached != null && System.currentTimeMillis() - cached.computedAt() < statsByNodeTtlMs;
+    }
+
+    private Map<String, ClientSessionNodeStatsInfoDto> countSessionsByNode() {
+        Map<String, NodeSessionCounter> countersByNode = new HashMap<>();
+        for (ClientSessionInfo clientSessionInfo : clientSessionCache.getAllClientSessions().values()) {
+            String nodeId = clientSessionInfo.getServiceId();
+            if (nodeId != null) {
+                countersByNode.computeIfAbsent(nodeId, id -> new NodeSessionCounter()).add(clientSessionInfo);
+            }
+        }
+        Map<String, ClientSessionNodeStatsInfoDto> result = new HashMap<>(countersByNode.size());
+        countersByNode.forEach((nodeId, counter) -> result.put(nodeId, counter.toDto()));
+        return Map.copyOf(result);
+    }
+
+    @Override
+    public long countSessionsOnNode(String serviceId) {
+        ClientSessionNodeStatsInfoDto stats = getClientSessionStatsInfoByNode().get(serviceId);
+        return stats == null ? 0 : stats.getTotalCount();
+    }
+
+    private static final class NodeSessionCounter {
+
+        private long connected;
+        private long total;
+        private long devices;
+        private long applications;
+        private long integrations;
+
+        void add(ClientSessionInfo clientSessionInfo) {
+            total++;
+            if (clientSessionInfo.isConnected()) {
+                connected++;
+            }
+            if (clientSessionInfo.getType() != null) {
+                switch (clientSessionInfo.getType()) {
+                    case DEVICE -> devices++;
+                    case APPLICATION -> applications++;
+                    case INTEGRATION -> integrations++;
+                }
+            }
+        }
+
+        ClientSessionNodeStatsInfoDto toDto() {
+            return new ClientSessionNodeStatsInfoDto(connected, total - connected, total, devices, applications, integrations);
+        }
+
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {
@@ -196,5 +275,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                     isInTimeRange(clientSessionInfo.getDisconnectedAt(), startTime, endTime);
         }
         return true;
+    }
+
+    private record CachedStatsByNode(Map<String, ClientSessionNodeStatsInfoDto> stats, long computedAt) {
     }
 }

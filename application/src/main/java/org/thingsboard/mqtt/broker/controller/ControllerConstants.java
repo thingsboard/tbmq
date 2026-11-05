@@ -19,6 +19,7 @@ public class ControllerConstants {
 
     public static final String USER_ID = "userId";
     public static final String ENTITY_ID = "entityId";
+    public static final String ENTITY_IDS = "entityIds";
     public static final String INTEGRATION_ID = "integrationId";
 
     public static final String YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION = "You don't have permission to perform this operation!";

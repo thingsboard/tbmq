@@ -72,6 +72,9 @@ public class BrokerHomePageConfig {
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableKafkaTopicDeletion;
 
+    @Value("${stats.system-info.persist-frequency:60}")
+    private int systemInfoPersistFrequencySec;
+
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final AdminSettingsService adminSettingsService;
     private final MqttAuthProviderService mqttAuthProviderService;
@@ -103,6 +106,7 @@ public class BrokerHomePageConfig {
                 .existsScramCredentials(existsScramCredentials())
                 .allowKafkaTopicDeletion(enableKafkaTopicDeletion)
                 .statsCollectionInterval(historicalDataReportProperties.getInterval())
+                .systemInfoPersistFrequencySec(systemInfoPersistFrequencySec)
                 .build();
     }
 
