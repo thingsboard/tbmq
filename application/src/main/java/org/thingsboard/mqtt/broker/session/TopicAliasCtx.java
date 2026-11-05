@@ -152,8 +152,10 @@ public class TopicAliasCtx {
     }
 
     private void saveMapping(int topicAlias, String topicName) {
-        clientMappings.put(topicAlias, topicName);
-        clientMappingsCount.incrementAndGet();
+        // A client may resend or remap an alias it already defined, so count only newly defined aliases.
+        if (clientMappings.put(topicAlias, topicName) == null) {
+            clientMappingsCount.incrementAndGet();
+        }
     }
 
     int getNextTopicAlias(String topicName) {
