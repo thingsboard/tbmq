@@ -19,6 +19,7 @@ import { AuthenticationRoutingModule } from '@home/pages/authentication/authenti
 import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
 import { SessionsRoutingModule } from '@home/pages/sessions/sessions-routing.module';
 import { SubscriptionsRoutingModule } from '@home/pages/subscriptions/subscriptions-routing.module';
+import { TopicTreeRoutingModule } from '@home/pages/topic-tree/topic-tree-routing.module';
 import { RetainedMessagesRoutingModule } from '@home/pages/retained-messages/retained-messages-routing.module';
 import { SharedSubscriptionsRoutingModule } from '@home/pages/shared-subscription-applications/shared-subscriptions-routing.module';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
@@ -39,6 +40,7 @@ import { IntegrationRoutingModule } from '@home/pages/integration/integration-ro
     UsersRoutingModule,
     SessionsRoutingModule,
     SubscriptionsRoutingModule,
+    TopicTreeRoutingModule,
     RetainedMessagesRoutingModule,
     SharedSubscriptionsRoutingModule,
     WsClientRoutingModule,

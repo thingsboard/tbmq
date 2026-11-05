@@ -9,6 +9,7 @@
         "account": "खाता"
     },
     "action": {
+        "search": "खोजें",
         "save": "सहेजें",
         "skip": "छोड़ें",
         "cancel": "रद्द करें",
@@ -1383,6 +1384,84 @@
         "topic-filter": "Topic Filter",
         "topic-filter-duplicate": "Topic filter यूनिक होना चाहिए",
         "topic-filter-required": "Topic filter आवश्यक है।"
+    },
+    "topic-tree": {
+        "topic-tree": "Topic ट्री",
+        "topic-details": "Topic विवरण",
+        "filter": "Topic फ़िल्टर करें",
+        "open-in-shared": "Shared subscriptions में खोलें",
+        "open-in-integrations": "एकीकरण में खोलें",
+        "copy-topic": "Topic कॉपी करें",
+        "topic-copied": "Topic क्लिपबोर्ड पर कॉपी कर दिया गया",
+        "columns": "कॉलम",
+        "reset-columns": "डिफ़ॉल्ट पर रीसेट करें",
+        "show-more": "{{count}} और दिखाएँ",
+        "root": "सभी topic",
+        "no-topics": "अभी कोई सदस्यता नहीं",
+        "no-data": "दिखाने के लिए कुछ नहीं",
+        "wildcard": "वाइल्डकार्ड",
+        "filter-panel": {
+            "title": "फ़िल्टर",
+            "topic": "Topic",
+            "prefix": "उपसर्ग",
+            "matches-topic": "Topic प्राप्त करता है",
+            "matches-topic-hint": "वे सदस्यता फ़िल्टर दिखाएँ जो इस topic पर प्रकाशित संदेश प्राप्त करेंगे",
+            "matches-topic-placeholder": "जैसे sensors/room1/temperature",
+            "matches-topic-invalid": "+ या # के बिना topic नाम दर्ज करें",
+            "has": "है",
+            "wildcards": "वाइल्डकार्ड",
+            "wildcards-only": "केवल वाइल्डकार्ड फ़िल्टर (+ और #)"
+        },
+        "topic-gone": "इस topic पर अब कोई सदस्यता या retained संदेश नहीं है। ट्री लोड होने के बाद इसे हटा दिया गया।",
+        "topic-not-found": "Topic {{path}} नहीं मिला",
+        "refresh-tree": "ट्री ताज़ा करें",
+        "subtopics-count": "{ count, plural, =0 {कोई उप-topic नहीं} =1 {1 उप-topic} other {# उप-topic} }",
+        "row": {
+            "subscriptions": "इस topic पर {{exact}}, उप-topic में {{nested}}",
+            "clients": "कोई क्लाइंट सदस्य नहीं",
+            "connected": "{{count}} कनेक्टेड",
+            "disconnected": "{{count}} डिस्कनेक्टेड",
+            "shared": "{ count, plural, =0 {कोई shared subscription नहीं} =1 {1 shared subscription} other {# shared subscriptions} }",
+            "integrations": "इस topic या इसके उप-topic की सदस्यता लेने वाले एकीकरण",
+            "retained": "नए सदस्यों के लिए रखे गए संदेश"
+        },
+        "column": {
+            "topic": "Topic",
+            "subscriptions": "सदस्यताएँ",
+            "clients": "क्लाइंट",
+            "retained": "Retained",
+            "online": "ऑनलाइन / ऑफ़लाइन",
+            "shared": "Shared समूह",
+            "integrations": "एकीकरण"
+        },
+        "tab": {
+            "subscriptions": "सदस्यताएँ",
+            "clients": "क्लाइंट",
+            "shared": "Shared",
+            "integrations": "एकीकरण",
+            "retained": "Retained"
+        },
+        "entity": {
+            "client-id": "क्लाइंट ID",
+            "topic-filter": "Topic Filter",
+            "topic": "Topic",
+            "qos": "QoS",
+            "status": "स्थिति",
+            "client-type": "क्लाइंट प्रकार",
+            "subscriptions": "सदस्यताएँ",
+            "group": "समूह",
+            "payload": "Payload",
+            "type": "प्रकार",
+            "type-client": "क्लाइंट",
+            "type-shared": "Shared",
+            "type-integration": "एकीकरण",
+            "name": "नाम",
+            "id": "ID",
+            "integration-not-found": "एकीकरण नहीं मिला",
+            "open-session": "सत्र खोलें",
+            "open-group": "Shared subscriptions में दिखाएँ",
+            "open-integration": "एकीकरण खोलें"
+        }
     },
     "unauthorized-client": {
         "details": "अनधिकृत क्लाइंट विवरण",

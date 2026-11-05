@@ -18,10 +18,36 @@ import { InterceptorHttpParams } from '../interceptors/interceptor-http-params';
 import { HttpHeaders } from '@angular/common/http';
 import { InterceptorConfig } from '../interceptors/interceptor-config';
 
+export type QueryParams = { [param: string]: string | string[] };
+
 export interface RequestConfig {
   ignoreLoading?: boolean;
   ignoreErrors?: boolean;
   resendRequest?: boolean;
+  queryParams?: QueryParams;
+}
+
+export function cleanQueryParams(params: QueryParams): { [param: string]: string | string[] } {
+  const cleaned: { [param: string]: string | string[] } = {};
+  for (const key of Object.keys(params)) {
+    const value = params[key];
+    if (value !== null && value !== undefined) {
+      if (Array.isArray(value) && value.length > 0) {
+        cleaned[key] = value;
+      } else if (!Array.isArray(value) && value !== '') {
+        cleaned[key] = value;
+      }
+    }
+  }
+  return cleaned;
+}
+
+export function createDefaultHttpOptions(config?: RequestConfig) {
+  if (!config) {
+    config = {};
+  }
+  const queryParams = config.queryParams ? cleanQueryParams(config.queryParams) : undefined;
+  return defaultHttpOptions(config.ignoreLoading, config.ignoreErrors, config.resendRequest, queryParams);
 }
 
 export function defaultHttpOptionsFromConfig(config?: RequestConfig) {
@@ -33,10 +59,11 @@ export function defaultHttpOptionsFromConfig(config?: RequestConfig) {
 
 export function defaultHttpOptions(ignoreLoading: boolean = false,
                                    ignoreErrors: boolean = false,
-                                   resendRequest: boolean = false) {
+                                   resendRequest: boolean = false,
+                                   queryParams?: { [param: string]: string | string[] }) {
   return {
     headers: new HttpHeaders({'Content-Type': 'application/json'}),
-    params: new InterceptorHttpParams(new InterceptorConfig(ignoreLoading, ignoreErrors, resendRequest))
+    params: new InterceptorHttpParams(new InterceptorConfig(ignoreLoading, ignoreErrors, resendRequest), queryParams)
   };
 }
 

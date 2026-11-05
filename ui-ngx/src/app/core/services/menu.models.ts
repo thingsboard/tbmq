@@ -33,6 +33,7 @@ export enum MenuId {
   home = 'home',
   sessions = 'sessions',
   subscriptions = 'subscriptions',
+  topic_tree = 'topic_tree',
   client_credentials = 'client_credentials',
   unauthorized_clients = 'unauthorized_clients',
   web_socket_client = 'web_socket_client',

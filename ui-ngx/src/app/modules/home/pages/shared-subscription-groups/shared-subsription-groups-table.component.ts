@@ -23,6 +23,7 @@ import {
 } from '@home/pages/shared-subscription-groups/shared-subscription-groups-table-config';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
     selector: 'tb-shared-subsriptions-groups-table',
@@ -67,7 +68,8 @@ export class SharedSubsriptionGroupsTableComponent implements OnInit {
   constructor(private sharedSubscriptionService: SharedSubscriptionService,
               private translate: TranslateService,
               private dialog: MatDialog,
-              private clientSessionService: ClientSessionService) {
+              private clientSessionService: ClientSessionService,
+              private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
@@ -79,5 +81,9 @@ export class SharedSubsriptionGroupsTableComponent implements OnInit {
       this.clientSessionService,
       this.entityIdValue
     );
+    const shareName = this.route.snapshot.queryParams.shareName;
+    if (shareName) {
+      this.sharedSubscriptionsTableConfig.sharedSubscriptionFilterConfig = {shareNameSearch: shareName};
+    }
   }
 }

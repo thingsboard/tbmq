@@ -9,6 +9,7 @@
         "account": "Konto"
     },
     "action": {
+        "search": "Suchen",
         "save": "Speichern",
         "cancel": "Abbrechen",
         "ok": "OK",
@@ -1383,6 +1384,84 @@
         "topic-filter": "Topic-Filter",
         "topic-filter-duplicate": "Topic-Filter muss eindeutig sein",
         "topic-filter-required": "Topic-Filter ist erforderlich."
+    },
+    "topic-tree": {
+        "topic-tree": "Topic-Baum",
+        "topic-details": "Topic-Details",
+        "filter": "Topics filtern",
+        "open-in-shared": "In Shared subscriptions öffnen",
+        "open-in-integrations": "In Integrationen öffnen",
+        "copy-topic": "Topic kopieren",
+        "topic-copied": "Topic wurde in die Zwischenablage kopiert",
+        "columns": "Spalten",
+        "reset-columns": "Auf Standard zurücksetzen",
+        "show-more": "{{count}} weitere anzeigen",
+        "root": "Alle Topics",
+        "no-topics": "Noch keine Subscriptions",
+        "no-data": "Nichts anzuzeigen",
+        "wildcard": "Wildcard",
+        "filter-panel": {
+            "title": "Filter",
+            "topic": "Topic",
+            "prefix": "Präfix",
+            "matches-topic": "Empfängt Topic",
+            "matches-topic-hint": "Zeigt die Subscription-Filter, die eine an dieses Topic veröffentlichte Nachricht empfangen würden",
+            "matches-topic-placeholder": "z. B. sensors/room1/temperature",
+            "matches-topic-invalid": "Topic-Namen ohne + oder # eingeben",
+            "has": "Hat",
+            "wildcards": "Wildcards",
+            "wildcards-only": "Nur Wildcard-Filter (+ und #)"
+        },
+        "topic-gone": "Dieses Topic hat keine Subscriptions oder Retained messages mehr. Es wurde entfernt, nachdem der Baum geladen wurde.",
+        "topic-not-found": "Topic {{path}} wurde nicht gefunden",
+        "refresh-tree": "Baum aktualisieren",
+        "subtopics-count": "{ count, plural, =0 {Keine Subtopics} =1 {1 Subtopic} other {# Subtopics} }",
+        "row": {
+            "subscriptions": "{{exact}} auf diesem Topic, {{nested}} in Subtopics",
+            "clients": "Keine Clients abonniert",
+            "connected": "{{count}} verbunden",
+            "disconnected": "{{count}} getrennt",
+            "shared": "{ count, plural, =0 {Keine Shared subscriptions} =1 {1 Shared subscription} other {# Shared subscriptions} }",
+            "integrations": "Integrationen, die dieses Topic oder seine Subtopics abonniert haben",
+            "retained": "Für neue Subscriber aufbewahrte Nachrichten"
+        },
+        "column": {
+            "topic": "Topic",
+            "subscriptions": "Subscriptions",
+            "clients": "Clients",
+            "retained": "Retained",
+            "online": "Online / offline",
+            "shared": "Shared-Gruppen",
+            "integrations": "Integrationen"
+        },
+        "tab": {
+            "subscriptions": "Subscriptions",
+            "clients": "Clients",
+            "shared": "Shared",
+            "integrations": "Integrationen",
+            "retained": "Retained"
+        },
+        "entity": {
+            "client-id": "Client-ID",
+            "topic-filter": "Topic Filter",
+            "topic": "Topic",
+            "qos": "QoS",
+            "status": "Status",
+            "client-type": "Client-Typ",
+            "subscriptions": "Subscriptions",
+            "group": "Gruppe",
+            "payload": "Payload",
+            "type": "Typ",
+            "type-client": "Client",
+            "type-shared": "Shared",
+            "type-integration": "Integration",
+            "name": "Name",
+            "id": "ID",
+            "integration-not-found": "Integration nicht gefunden",
+            "open-session": "Session öffnen",
+            "open-group": "In Shared subscriptions anzeigen",
+            "open-integration": "Integration öffnen"
+        }
     },
     "unauthorized-client": {
         "details": "Details des nicht autorisierten Clients",
