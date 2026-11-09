@@ -45,7 +45,6 @@ public class KafkaIntegrationConfig {
     private String acks;
     private String compression;
     private String keySerializer;
-    private String valueSerializer;
     private Map<String, String> otherProperties;
     private Map<String, String> kafkaHeaders;
     private String kafkaHeadersCharset;
@@ -65,10 +64,6 @@ public class KafkaIntegrationConfig {
 
     public String getKeySerializer() {
         return StringUtils.isEmpty(keySerializer) ? StringSerializer.class.getName() : keySerializer;
-    }
-
-    public String getValueSerializer() {
-        return StringUtils.isEmpty(valueSerializer) ? StringSerializer.class.getName() : valueSerializer;
     }
 
     public Map<String, String> getOtherProperties() {
