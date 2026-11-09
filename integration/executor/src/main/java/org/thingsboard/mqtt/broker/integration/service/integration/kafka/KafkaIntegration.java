@@ -44,7 +44,6 @@ import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallba
 import org.thingsboard.mqtt.broker.integration.api.template.IntegrationTemplate;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -197,7 +196,7 @@ public class KafkaIntegration extends AbstractIntegration {
     private void publish(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
         try {
             ObjectNode body = config.isSendOnlyMsgPayload() ? (templated ? constructBody(msg, false) : null) : constructBody(msg);
-            byte[] value = config.isSendOnlyMsgPayload() ? msg.getPublishMsgProto().getPayload().toByteArray() : toBytes(body);
+            byte[] value = config.isSendOnlyMsgPayload() ? msg.getPublishMsgProto().getPayload().toByteArray() : JacksonUtil.writeValueAsBytes(body);
             Headers headers = buildHeaders(body);
             if (config.isForwardUserProperties()) {
                 for (UserPropertyProto property : msg.getPublishMsgProto().getUserPropertiesList()) {
@@ -218,7 +217,7 @@ public class KafkaIntegration extends AbstractIntegration {
 
     @Override
     protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
-        byte[] value = toBytes(body);
+        byte[] value = JacksonUtil.writeValueAsBytes(body);
         context.getExternalCallExecutor().executeAsync(() -> {
             publishBody(body, value, callback);
             return null;
@@ -263,10 +262,6 @@ public class KafkaIntegration extends AbstractIntegration {
                     headers.add(new RecordHeader(header.name(), value.getBytes(headersCharset))));
         }
         return headers;
-    }
-
-    private static byte[] toBytes(ObjectNode body) {
-        return JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8);
     }
 
     private record HeaderTemplate(String name, IntegrationTemplate value) {
