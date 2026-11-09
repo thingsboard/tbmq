@@ -154,6 +154,9 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         String authMethod = MqttPropertiesUtil.getAuthenticationMethodValue(msg.getProperties());
         if (authMethod != null) {
             MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
+            if (msg.getConnAckAuthData() != null) {
+                MqttPropertiesUtil.addAuthDataToProps(properties, msg.getConnAckAuthData());
+            }
         }
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
                 new MqttConnAckVariableHeader(CONNECTION_ACCEPTED, sessionPresent, properties);

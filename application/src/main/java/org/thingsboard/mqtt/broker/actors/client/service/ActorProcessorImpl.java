@@ -221,8 +221,10 @@ public class ActorProcessorImpl implements ActorProcessor {
         unauthorizedClientManager.removeClientUnauthorized(state);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
         updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
+        // Carry the SCRAM server-final message to the CONNACK so the client can verify the server signature (RFC 5802).
         clientMqttActorManager.connect(state.getClientId(),
-                NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
+                NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth(),
+                        authResponse.response()));
         sessionCtx.clearScramServer();
         sessionCtx.clearConnectMsg();
         sessionCtx.setAuthDetails(SCRAM.name());

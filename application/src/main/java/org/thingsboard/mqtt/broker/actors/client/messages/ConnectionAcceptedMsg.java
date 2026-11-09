@@ -30,13 +30,23 @@ public class ConnectionAcceptedMsg extends SessionDependentMsg {
     private final boolean sessionPresent;
     private final PublishMsg lastWillMsg;
     private final MqttProperties properties;
+    /**
+     * Authentication Data to send in the CONNACK, e.g. the SCRAM server-final message. {@code null} when there is none.
+     */
+    private final byte[] connAckAuthData;
 
     public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent,
-                                 PublishMsg lastWillMsg, MqttProperties properties) {
+                                 PublishMsg lastWillMsg, MqttProperties properties, byte[] connAckAuthData) {
         super(sessionId);
         this.sessionPresent = sessionPresent;
         this.lastWillMsg = lastWillMsg;
         this.properties = properties;
+        this.connAckAuthData = connAckAuthData;
+    }
+
+    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent,
+                                 PublishMsg lastWillMsg, MqttProperties properties) {
+        this(sessionId, sessionPresent, lastWillMsg, properties, null);
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
+import com.google.common.util.concurrent.Futures;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -22,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -43,6 +45,7 @@ import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEvent
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
@@ -59,6 +62,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID;
@@ -74,6 +78,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -199,6 +204,26 @@ public class ConnectServiceImplTest {
         verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_USE_ANOTHER_SERVER"));
         verify(clientSessionEventService, never()).requestConnection(any(), any());
         verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
+    public void givenConnectMsgWithConnAckAuthData_whenConnectionAccepted_thenAuthDataPassedToConnectionAcceptedMsg() {
+        UUID sessionId = UUID.randomUUID();
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(clientSessionEventService.requestConnection(any(), any()))
+                .thenReturn(Futures.immediateFuture(new ConnectionResponse(true, false, null)));
+
+        byte[] serverFinalMessage = "v=serverSignature".getBytes(StandardCharsets.UTF_8);
+        MqttConnectMsg connectMsg = new MqttConnectMsg(sessionId, "testClient", false, 1000, null,
+                MqttProperties.NO_PROPERTIES, serverFinalMessage);
+        connectService.startConnection(actorState, connectMsg, false);
+
+        var connectionAcceptedMsgCaptor = ArgumentCaptor.forClass(ConnectionAcceptedMsg.class);
+        verify(clientMqttActorManager, timeout(5000)).notifyConnectionAccepted(eq("testClient"), connectionAcceptedMsgCaptor.capture());
+        Assert.assertArrayEquals(serverFinalMessage, connectionAcceptedMsgCaptor.getValue().getConnAckAuthData());
     }
 
     @Test

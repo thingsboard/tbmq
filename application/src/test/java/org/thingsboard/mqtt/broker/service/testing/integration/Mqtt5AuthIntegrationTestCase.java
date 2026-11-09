@@ -25,6 +25,7 @@ import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5DisconnectException;
 import com.hivemq.client.mqtt.mqtt5.message.auth.Mqtt5Auth;
 import com.hivemq.client.mqtt.mqtt5.message.auth.Mqtt5AuthBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.auth.Mqtt5AuthReasonCode;
+import com.hivemq.client.mqtt.mqtt5.message.auth.Mqtt5EnhancedAuth;
 import com.hivemq.client.mqtt.mqtt5.message.auth.Mqtt5EnhancedAuthBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.connect.Mqtt5Connect;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
@@ -67,8 +68,10 @@ import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -111,7 +114,6 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
     @Test
     public void testConnectWithAuthenticationMethodAndDataProvided() throws Throwable {
         var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var connectedLatch = new CountDownLatch(1);
         var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient);
 
         Mqtt5AsyncClient client = Mqtt5Client.builder()
@@ -119,15 +121,10 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 .serverAddress(new InetSocketAddress(LOCALHOST, mqttPort))
                 .enhancedAuth(authCallback).build().toAsync();
 
-        client.connect().whenComplete((mqtt5ConnAck, throwable) -> {
-            if (throwable != null) {
-                log.error("Failed to connect client due to: ", throwable);
-            } else {
-                log.warn("Client connected!");
-            }
-            connectedLatch.countDown();
-        });
-        connectedLatch.await();
+        // The auth mechanism verifies the SCRAM server-final message carried in the CONNACK Authentication Data,
+        // so a CONNACK without it (or with a wrong server signature) fails the connect.
+        client.connect().get(30, TimeUnit.SECONDS);
+        assertThat(saslClient.isComplete()).isTrue();
 
         String updatedUsername = TEST_CLIENT_USERNAME + "updated";
         String updatedPassword = TEST_CLIENT_PASSWORD + "updated";
@@ -136,17 +133,9 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
         saslClient = createScramSaslClient(updatedUsername, updatedPassword);
         authCallback.setSaslClient(saslClient);
 
-        var reAuthLatch = new CountDownLatch(1);
-
-        client.reauth().whenComplete((__, throwable) -> {
-            if (throwable != null) {
-                log.error("Failed to re-auth client due to: ", throwable);
-            } else {
-                log.warn("Client re-authenticated!");
-            }
-            reAuthLatch.countDown();
-        });
-        reAuthLatch.await();
+        // Same for re-authentication: the server-final message must arrive in the AUTH (Success) packet.
+        client.reauth().get(30, TimeUnit.SECONDS);
+        assertThat(saslClient.isComplete()).isTrue();
 
         client.disconnect();
     }
@@ -527,12 +516,28 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
         @Override
         public @NotNull CompletableFuture<Boolean> onAuthSuccess(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {
-            return CompletableFuture.completedFuture(true);
+            return CompletableFuture.completedFuture(verifyServerFinalMessage(mqtt5ConnAck.getEnhancedAuth().flatMap(Mqtt5EnhancedAuth::getData)));
         }
 
         @Override
         public @NotNull CompletableFuture<Boolean> onReAuthSuccess(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Auth mqtt5Auth) {
-            return CompletableFuture.completedFuture(true);
+            return CompletableFuture.completedFuture(verifyServerFinalMessage(mqtt5Auth.getData()));
+        }
+
+        // Completes SCRAM mutual authentication (RFC 5802): the client accepts the server only if the
+        // server-final message is present and its server signature verifies against the client's password.
+        private boolean verifyServerFinalMessage(Optional<ByteBuffer> serverFinalMessage) {
+            if (serverFinalMessage.isEmpty()) {
+                log.error("Server-final message is missing from the successful authentication response");
+                return false;
+            }
+            try {
+                saslClient.evaluateChallenge(getBytes(serverFinalMessage.get()));
+                return saslClient.isComplete();
+            } catch (SaslException e) {
+                log.error("Failed to verify server-final message", e);
+                return false;
+            }
         }
 
         @Override

@@ -34,6 +34,9 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
@@ -87,6 +90,40 @@ public class DefaultMqttMessageCreatorTest {
         MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
 
         Assert.assertNull(msg.variableHeader().properties().getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));
+    }
+
+    @Test
+    public void givenEnhancedAuthCompleted_whenCreateConnAck_thenConnAckContainsAuthMethodAndServerFinalAuthData() {
+        ClientActorStateInfo clientActorState = mockAcceptedActorState();
+        MqttProperties connectProperties = new MqttProperties();
+        MqttPropertiesUtil.addAuthMethodToProps(connectProperties, "SCRAM-SHA-256");
+        byte[] serverFinalMessage = "v=serverSignature".getBytes(StandardCharsets.UTF_8);
+
+        ConnectionAcceptedMsg connectionAcceptedMsg =
+                new ConnectionAcceptedMsg(UUID.randomUUID(), false, null, connectProperties, serverFinalMessage);
+        MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
+
+        MqttProperties connAckProperties = msg.variableHeader().properties();
+        Assert.assertEquals("SCRAM-SHA-256", connAckProperties.getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID).value());
+        Assert.assertArrayEquals(serverFinalMessage,
+                (byte[]) connAckProperties.getProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID).value());
+    }
+
+    @Test
+    public void givenNoServerFinalAuthData_whenCreateConnAck_thenConnAckDoesNotContainAuthData() {
+        ClientActorStateInfo clientActorState = mockAcceptedActorState();
+        MqttProperties connectProperties = new MqttProperties();
+        MqttPropertiesUtil.addAuthMethodToProps(connectProperties, "SCRAM-SHA-256");
+        // The client's own CONNECT Authentication Data (client-first message) must never be echoed back.
+        MqttPropertiesUtil.addAuthDataToProps(connectProperties, "n,,n=user,r=nonce".getBytes(StandardCharsets.UTF_8));
+
+        ConnectionAcceptedMsg connectionAcceptedMsg =
+                new ConnectionAcceptedMsg(UUID.randomUUID(), false, null, connectProperties);
+        MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
+
+        MqttProperties connAckProperties = msg.variableHeader().properties();
+        Assert.assertNotNull(connAckProperties.getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));
+        Assert.assertNull(connAckProperties.getProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID));
     }
 
     @Test

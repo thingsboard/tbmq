@@ -59,13 +59,18 @@ import static org.thingsboard.mqtt.broker.util.MqttPropertiesUtil.getDisconnectS
 public class NettyMqttConverter {
 
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
+        return createMqttConnectMsg(sessionId, nettyConnectMsg, null);
+    }
+
+    public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg, byte[] connAckAuthData) {
         return new MqttConnectMsg(
                 sessionId,
                 nettyConnectMsg.payload().clientIdentifier(),
                 nettyConnectMsg.variableHeader().isCleanSession(),
                 nettyConnectMsg.variableHeader().keepAliveTimeSeconds(),
                 nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null,
-                nettyConnectMsg.variableHeader().properties());
+                nettyConnectMsg.variableHeader().properties(),
+                connAckAuthData);
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
