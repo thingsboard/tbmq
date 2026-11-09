@@ -33,15 +33,26 @@ public class MqttConnectMsg extends SessionDependentMsg {
     private final int keepAliveTimeSeconds;
     private final PublishMsg lastWillMsg;
     private final MqttProperties properties;
+    /**
+     * Authentication Data the server must return in the CONNACK, e.g. the SCRAM server-final message
+     * produced when enhanced authentication completes. {@code null} when there is none.
+     */
+    private final byte[] connAckAuthData;
 
     public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanStart, int keepAliveTimeSeconds,
-                          PublishMsg lastWillMsg, MqttProperties properties) {
+                          PublishMsg lastWillMsg, MqttProperties properties, byte[] connAckAuthData) {
         super(sessionId);
         this.clientIdentifier = clientIdentifier;
         this.cleanStart = cleanStart;
         this.keepAliveTimeSeconds = keepAliveTimeSeconds;
         this.lastWillMsg = lastWillMsg;
         this.properties = properties;
+        this.connAckAuthData = connAckAuthData;
+    }
+
+    public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanStart, int keepAliveTimeSeconds,
+                          PublishMsg lastWillMsg, MqttProperties properties) {
+        this(sessionId, clientIdentifier, cleanStart, keepAliveTimeSeconds, lastWillMsg, properties, null);
     }
 
     public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanStart, int keepAliveTimeSeconds,

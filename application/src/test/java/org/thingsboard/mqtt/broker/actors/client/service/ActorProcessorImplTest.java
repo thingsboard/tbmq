@@ -399,7 +399,8 @@ public class ActorProcessorImplTest {
         when(authResponse.authRulePatterns()).thenReturn(authorizationRules);
         when(authResponse.clientType()).thenReturn(ClientType.DEVICE);
         when(authResponse.success()).thenReturn(true);
-
+        byte[] serverFinalMessage = "v=serverSignature".getBytes(StandardCharsets.UTF_8);
+        when(authResponse.response()).thenReturn(serverFinalMessage);
 
         doNothing().when(clientMqttActorManager).connect(any(), any(MqttConnectMsg.class));
 
@@ -418,10 +419,13 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).setAuthDetails(MqttAuthProviderType.SCRAM.name());
         verifyNoMoreInteractions(sessionCtxMock);
 
-        verify(clientMqttActorManager).connect(eq(CLIENT_ID), any(MqttConnectMsg.class));
+        var mqttConnectMsgCaptor = ArgumentCaptor.forClass(MqttConnectMsg.class);
+        verify(clientMqttActorManager).connect(eq(CLIENT_ID), mqttConnectMsgCaptor.capture());
         verifyNoMoreInteractions(clientMqttActorManager);
         verify(unauthorizedClientManager).removeClientUnauthorized(clientActorState);
 
+        // The SCRAM server-final message must reach the CONNACK so the client can verify the server signature.
+        assertThat(mqttConnectMsgCaptor.getValue().getConnAckAuthData()).isEqualTo(serverFinalMessage);
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.INITIALIZED);
     }
 
