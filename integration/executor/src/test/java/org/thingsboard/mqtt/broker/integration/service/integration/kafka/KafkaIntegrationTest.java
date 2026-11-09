@@ -22,8 +22,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,13 +58,14 @@ import static org.mockito.Mockito.when;
 
 class KafkaIntegrationTest {
 
-    private MockProducer<String, String> producer;
+    private MockProducer<String, byte[]> producer;
+    private Properties producerProperties;
     private IntegrationContext context;
     private IntegrationMsgCallback callback;
 
     @BeforeEach
     void setUp() {
-        producer = new MockProducer<>(true, new StringSerializer(), new StringSerializer());
+        producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
         context = mock(IntegrationContext.class);
         when(context.getExternalCallExecutor()).thenReturn(new DirectExecutor());
         when(context.getServiceId()).thenReturn("ie-1");
@@ -78,8 +81,8 @@ class KafkaIntegrationTest {
 
         start(config).process(message(), callback);
 
-        ProducerRecord<String, String> record = single();
-        assertThat(record.value()).isEqualTo("hello");
+        ProducerRecord<String, byte[]> record = single();
+        assertThat(record.value()).isEqualTo(utf8("hello"));
         assertThat(record.key()).isEqualTo("c1");
         assertThat(headerValues(record, "mqtt-topic")).containsExactly("sensors/1");
         assertThat(headerValues(record, "username")).containsExactly("alice");
@@ -90,9 +93,9 @@ class KafkaIntegrationTest {
     void givenTemplatedKey_whenJsonMode_thenKeyResolvedAndBodyHasUsernameAndPayload() throws Exception {
         start(baseConfig().put("key", "dev-${username}")).process(message(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(record.key()).isEqualTo("dev-alice");
-        JsonNode value = JacksonUtil.toJsonNode(record.value());
+        JsonNode value = JacksonUtil.fromBytes(record.value());
         assertThat(value.get("username").asText()).isEqualTo("alice");
         assertThat(value.has("payload")).isTrue();
     }
@@ -131,7 +134,7 @@ class KafkaIntegrationTest {
     void givenForwardUserProperties_whenProcess_thenPropertiesInOrderWithDuplicates() throws Exception {
         start(baseConfig().put("forwardUserProperties", true)).process(message(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(headerNames(record)).containsExactly("site", "tag", "tag");
         assertThat(headerValues(record, "tag")).containsExactly("x", "y");
         assertThat(headerValues(record, "site")).containsExactly("A");
@@ -144,7 +147,7 @@ class KafkaIntegrationTest {
 
         start(config).process(message(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(headerNames(record)).containsExactly("tag", "site");
         assertThat(headerValues(record, "tag")).containsExactly("configured");
     }
@@ -176,9 +179,9 @@ class KafkaIntegrationTest {
 
         start(config).process(message(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(record.key()).isEqualTo("static-key");
-        assertThat(record.value()).isEqualTo("hello");
+        assertThat(record.value()).isEqualTo(utf8("hello"));
         assertThat(headerValues(record, "source")).containsExactly("tbmq");
     }
 
@@ -202,17 +205,51 @@ class KafkaIntegrationTest {
     }
 
     @Test
-    void givenBinaryPayloadAndTemplatedKey_whenPayloadOnly_thenBase64ValueAndResolvedKey() throws Exception {
-        PublishIntegrationMsgProto msg = message().toBuilder()
-                .setPublishMsgProto(message().getPublishMsgProto().toBuilder()
-                        .setPayload(ByteString.copyFrom(new byte[]{(byte) 0xFF, 0x00})))
-                .build();
+    void givenBinaryPayloadAndTemplatedKey_whenPayloadOnly_thenRawBytesAndResolvedKey() throws Exception {
+        byte[] binary = {(byte) 0xFF, 0x00, (byte) 0xC3, 0x28};
+        PublishIntegrationMsgProto msg = withPayload(ByteString.copyFrom(binary));
 
         start(baseConfig().put("sendOnlyMsgPayload", true).put("key", "${clientId}")).process(msg, callback);
 
-        ProducerRecord<String, String> record = single();
-        assertThat(record.value()).isEqualTo("/wA=");
+        ProducerRecord<String, byte[]> record = single();
+        assertThat(record.value()).isEqualTo(binary);
         assertThat(record.key()).isEqualTo("c1");
+        verify(callback).onSuccess();
+    }
+
+    @Test
+    void givenTextPayloadThatLooksLikeBase64_whenPayloadOnly_thenSentUnchanged() throws Exception {
+        start(baseConfig().put("sendOnlyMsgPayload", true)).process(withPayload(ByteString.copyFromUtf8("/wA=")), callback);
+
+        assertThat(single().value()).isEqualTo(utf8("/wA="));
+    }
+
+    @Test
+    void givenNonAsciiTextPayload_whenPayloadOnly_thenSameBytesSent() throws Exception {
+        byte[] text = utf8("température 25°C ✓");
+
+        start(baseConfig().put("sendOnlyMsgPayload", true)).process(withPayload(ByteString.copyFrom(text)), callback);
+
+        assertThat(single().value()).isEqualTo(text);
+    }
+
+    @Test
+    void givenBinaryPayload_whenJsonMode_thenPayloadFieldIsBase64() throws Exception {
+        start(baseConfig()).process(withPayload(ByteString.copyFrom(new byte[]{(byte) 0xFF, 0x00})), callback);
+
+        assertThat(JacksonUtil.fromBytes(single().value()).get("payload").asText()).isEqualTo("/wA=");
+    }
+
+    @Test
+    void givenValueSerializerOverride_whenInit_thenByteArraySerializerKept() throws Exception {
+        ObjectNode config = baseConfig().put("sendOnlyMsgPayload", true)
+                .put("valueSerializer", StringSerializer.class.getName());
+        config.putObject("otherProperties").put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        start(config).process(message(), callback);
+
+        assertThat(producerProperties.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG)).isEqualTo(ByteArraySerializer.class.getName());
+        assertThat(single().value()).isEqualTo(utf8("hello"));
     }
 
     // ── validation ───────────────────────────────────────────────────────────
@@ -243,11 +280,11 @@ class KafkaIntegrationTest {
 
         start(config).processLifecycleEvent(event(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(record.key()).isEqualTo("c1");
         assertThat(headerNames(record)).containsExactly("user");
         assertThat(headerValues(record, "user")).containsExactly("alice");
-        assertThat(JacksonUtil.toJsonNode(record.value()).get("eventType").asText()).isEqualTo("CLIENT_CONNECTED");
+        assertThat(JacksonUtil.fromBytes(record.value()).get("eventType").asText()).isEqualTo("CLIENT_CONNECTED");
         verify(callback).onSuccess();
     }
 
@@ -266,7 +303,7 @@ class KafkaIntegrationTest {
         start(baseConfig().put("key", "${props.site}").put("forwardUserProperties", true))
                 .processLifecycleEvent(event(), callback);
 
-        ProducerRecord<String, String> record = single();
+        ProducerRecord<String, byte[]> record = single();
         assertThat(record.key()).isNull();
         assertThat(headerNames(record)).isEmpty();
         verify(callback).onSuccess();
@@ -298,7 +335,8 @@ class KafkaIntegrationTest {
         when(context.getLifecycleMsg()).thenReturn(lifecycleMsg);
         KafkaIntegration integration = new KafkaIntegration() {
             @Override
-            Producer<String, String> getKafkaProducer(Properties properties) {
+            Producer<String, byte[]> getKafkaProducer(Properties properties) {
+                producerProperties = properties;
                 return producer;
             }
         };
@@ -322,6 +360,16 @@ class KafkaIntegrationTest {
                 .build();
     }
 
+    private static PublishIntegrationMsgProto withPayload(ByteString payload) {
+        return message().toBuilder()
+                .setPublishMsgProto(message().getPublishMsgProto().toBuilder().setPayload(payload))
+                .build();
+    }
+
+    private static byte[] utf8(String text) {
+        return text.getBytes(StandardCharsets.UTF_8);
+    }
+
     private static UserPropertyProto property(String key, String value) {
         return UserPropertyProto.newBuilder().setKey(key).setValue(value).build();
     }
@@ -335,16 +383,16 @@ class KafkaIntegrationTest {
                 .build();
     }
 
-    private ProducerRecord<String, String> single() {
+    private ProducerRecord<String, byte[]> single() {
         assertThat(producer.history()).hasSize(1);
         return producer.history().get(0);
     }
 
-    private static List<String> headerNames(ProducerRecord<String, String> record) {
+    private static List<String> headerNames(ProducerRecord<String, byte[]> record) {
         return Arrays.stream(record.headers().toArray()).map(Header::key).toList();
     }
 
-    private static List<String> headerValues(ProducerRecord<String, String> record, String name) {
+    private static List<String> headerValues(ProducerRecord<String, byte[]> record, String name) {
         return StreamSupport.stream(record.headers().headers(name).spliterator(), false)
                 .map(header -> new String(header.value(), StandardCharsets.UTF_8))
                 .toList();

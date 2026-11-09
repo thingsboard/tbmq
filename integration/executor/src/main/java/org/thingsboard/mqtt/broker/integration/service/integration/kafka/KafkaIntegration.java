@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -30,6 +29,7 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
@@ -44,7 +44,7 @@ import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallba
 import org.thingsboard.mqtt.broker.integration.api.template.IntegrationTemplate;
 
 import java.nio.charset.Charset;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -56,7 +56,7 @@ public class KafkaIntegration extends AbstractIntegration {
 
     private KafkaIntegrationConfig config;
     private Charset headersCharset;
-    private Producer<String, String> producer;
+    private Producer<String, byte[]> producer;
     private IntegrationTemplate keyTemplate;
     private List<HeaderTemplate> headerTemplates;
     private Set<String> configuredHeaderNames;
@@ -128,7 +128,6 @@ public class KafkaIntegration extends AbstractIntegration {
         properties.put(ProducerConfig.ACKS_CONFIG, config.getAcks());
         properties.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, config.getCompression());
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, config.getKeySerializer());
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, config.getValueSerializer());
         config.getOtherProperties().forEach((k, v) -> {
             if (SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG.equals(k)
                     || SslConfigs.SSL_KEYSTORE_KEY_CONFIG.equals(k)
@@ -137,6 +136,12 @@ public class KafkaIntegration extends AbstractIntegration {
             }
             properties.put(k, v);
         });
+        // Record values are bytes so a payload-only record carries the MQTT payload unchanged; no other serializer fits
+        Object valueSerializer = properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        if (valueSerializer != null && !ByteArraySerializer.class.getName().equals(valueSerializer)) {
+            log.warn("[{}][{}] Ignoring {}={}: record values are always sent as bytes", getId(), getName(),
+                    ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
+        }
         this.producer = getKafkaProducer(properties);
         startProcessingIntegrationMessages(this);
     }
@@ -166,7 +171,7 @@ public class KafkaIntegration extends AbstractIntegration {
         return config.getClientIdPrefix() + "-" + context.getLifecycleMsg().getIntegrationId() + "-" + context.getServiceId();
     }
 
-    Producer<String, String> getKafkaProducer(Properties properties) {
+    Producer<String, byte[]> getKafkaProducer(Properties properties) {
         return new KafkaProducer<>(properties);
     }
 
@@ -192,7 +197,7 @@ public class KafkaIntegration extends AbstractIntegration {
     private void publish(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
         try {
             ObjectNode body = config.isSendOnlyMsgPayload() ? (templated ? constructBody(msg, false) : null) : constructBody(msg);
-            String value = config.isSendOnlyMsgPayload() ? getPayloadValue(msg) : JacksonUtil.toString(body);
+            byte[] value = config.isSendOnlyMsgPayload() ? msg.getPublishMsgProto().getPayload().toByteArray() : toBytes(body);
             Headers headers = buildHeaders(body);
             if (config.isForwardUserProperties()) {
                 for (UserPropertyProto property : msg.getPublishMsgProto().getUserPropertiesList()) {
@@ -213,14 +218,14 @@ public class KafkaIntegration extends AbstractIntegration {
 
     @Override
     protected void doProcessLifecycleEvent(ObjectNode body, IntegrationMsgCallback callback) {
-        String value = JacksonUtil.toString(body);
+        byte[] value = toBytes(body);
         context.getExternalCallExecutor().executeAsync(() -> {
             publishBody(body, value, callback);
             return null;
         });
     }
 
-    private void publishBody(ObjectNode body, String value, IntegrationMsgCallback callback) {
+    private void publishBody(ObjectNode body, byte[] value, IntegrationMsgCallback callback) {
         try {
             send(new ProducerRecord<>(config.getTopic(), null, resolveKey(body), value, buildHeaders(body)), callback);
         } catch (Exception e) {
@@ -230,7 +235,7 @@ public class KafkaIntegration extends AbstractIntegration {
         }
     }
 
-    private void send(ProducerRecord<String, String> record, IntegrationMsgCallback callback) {
+    private void send(ProducerRecord<String, byte[]> record, IntegrationMsgCallback callback) {
         producer.send(record, (metadata, e) -> {
             if (e == null) {
                 log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
@@ -260,9 +265,8 @@ public class KafkaIntegration extends AbstractIntegration {
         return headers;
     }
 
-    private String getPayloadValue(PublishIntegrationMsgProto msg) {
-        ByteString payload = msg.getPublishMsgProto().getPayload();
-        return payload.isValidUtf8() ? payload.toStringUtf8() : Base64.getEncoder().encodeToString(payload.toByteArray());
+    private static byte[] toBytes(ObjectNode body) {
+        return JacksonUtil.toString(body).getBytes(StandardCharsets.UTF_8);
     }
 
     private record HeaderTemplate(String name, IntegrationTemplate value) {
