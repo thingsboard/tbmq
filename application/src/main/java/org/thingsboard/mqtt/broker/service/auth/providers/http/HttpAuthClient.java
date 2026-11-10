@@ -50,6 +50,7 @@ import reactor.netty.resources.ConnectionProvider;
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -76,10 +77,49 @@ public class HttpAuthClient {
     private final WebClient webClient;
 
     private EventLoopGroup eventLoopGroup;
+    private ConnectionProvider connectionProvider;
     private Semaphore semaphore;
     private URI uri;
 
     HttpAuthClient(HttpMqttAuthProviderConfiguration configuration) {
+        this(configuration, PoolSettings.fromEnvironment());
+    }
+
+    /**
+     * Pooled connection lifetime. Without a bound, a keep-alive connection idle for hours is
+     * reused after the path has silently dropped it (kube-proxy conntrack forgets idle flows after
+     * 24 h): the next CONNECT fails with "Connection reset" and the provider fails closed. Evict
+     * idle connections well before any path or server idle timeout (auth endpoints commonly close
+     * idle keep-alive connections after about 60 s) and recycle long-lived ones.
+     *
+     * @param maxIdleTime        close a pooled connection idle this long; null = never (previous behaviour)
+     * @param maxLifeTime        close a pooled connection this old; null = never (previous behaviour)
+     * @param evictionInterval   background eviction period; null = only on acquire
+     */
+    record PoolSettings(Duration maxIdleTime, Duration maxLifeTime, Duration evictionInterval) {
+        static final Duration DEFAULT_MAX_IDLE_TIME = Duration.ofSeconds(30);
+        static final Duration DEFAULT_MAX_LIFE_TIME = Duration.ofMinutes(5);
+        static final Duration DEFAULT_EVICTION_INTERVAL = Duration.ofSeconds(15);
+
+        static PoolSettings fromEnvironment() {
+            return new PoolSettings(
+                    millis("TB_HTTP_AUTH_CLIENT_POOL_MAX_IDLE_TIME_MS", DEFAULT_MAX_IDLE_TIME),
+                    millis("TB_HTTP_AUTH_CLIENT_POOL_MAX_LIFE_TIME_MS", DEFAULT_MAX_LIFE_TIME),
+                    millis("TB_HTTP_AUTH_CLIENT_POOL_EVICTION_INTERVAL_MS", DEFAULT_EVICTION_INTERVAL));
+        }
+
+        /** Unset uses the default; 0 or negative disables that bound. */
+        private static Duration millis(String variable, Duration defaultValue) {
+            String value = System.getenv(variable);
+            if (value == null || value.isBlank()) {
+                return defaultValue;
+            }
+            long ms = Long.parseLong(value.trim());
+            return ms > 0 ? Duration.ofMillis(ms) : null;
+        }
+    }
+
+    HttpAuthClient(HttpMqttAuthProviderConfiguration configuration, PoolSettings pool) {
         try {
             config = configuration;
             if (config.getMaxParallelRequestsCount() > 0) {
@@ -87,10 +127,20 @@ public class HttpAuthClient {
             }
             uri = UrlUtils.buildEncodedUri(config.getRestEndpointUrl());
 
-            ConnectionProvider connectionProvider = ConnectionProvider
+            ConnectionProvider.Builder poolBuilder = ConnectionProvider
                     .builder("http-auth-provider-client")
-                    .maxConnections(getPoolMaxConnections())
-                    .build();
+                    .maxConnections(getPoolMaxConnections());
+            if (pool.maxIdleTime() != null) {
+                poolBuilder.maxIdleTime(pool.maxIdleTime());
+            }
+            if (pool.maxLifeTime() != null) {
+                poolBuilder.maxLifeTime(pool.maxLifeTime());
+            }
+            if (pool.evictionInterval() != null) {
+                poolBuilder.evictInBackground(pool.evictionInterval());
+            }
+            ConnectionProvider connectionProvider = poolBuilder.build();
+            this.connectionProvider = connectionProvider;
 
             eventLoopGroup = new NioEventLoopGroup();
             HttpClient httpClient = HttpClient.create(connectionProvider)
@@ -114,6 +164,9 @@ public class HttpAuthClient {
     }
 
     void destroy() {
+        if (connectionProvider != null) {
+            connectionProvider.dispose();
+        }
         if (eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
         }
