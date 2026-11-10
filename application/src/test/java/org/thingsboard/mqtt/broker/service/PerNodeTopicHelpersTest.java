@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.ClassPathResource;
 import org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalHelperImpl;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandHelperImpl;
@@ -37,6 +39,9 @@ import static org.mockito.Mockito.mock;
  * Resolves the helpers' {@code @Value} keys against the shipped {@code thingsboard-mqtt-broker.yml}, so each
  * assertion pins a property key to the topic name on the wire. Integration tests cannot catch two swapped keys,
  * because producers and consumers take the topic from the same helper.
+ * <p>
+ * The environment holds only that file and the test's own overrides: JVM system properties and OS variables
+ * (such as {@code TB_KAFKA_PREFIX}) on the build machine must not change the expected names.
  */
 class PerNodeTopicHelpersTest {
 
@@ -44,7 +49,12 @@ class PerNodeTopicHelpersTest {
     private static final String SERVICE_ID = "node-1";
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withInitializer(context -> loadBrokerConfig().forEach(context.getEnvironment().getPropertySources()::addLast))
+            .withInitializer(context -> {
+                MutablePropertySources sources = context.getEnvironment().getPropertySources();
+                sources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME);
+                sources.remove(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
+                loadBrokerConfig().forEach(sources::addLast);
+            })
             .withBean(SystemInfoService.class, () -> mock(SystemInfoService.class))
             .withBean(DisconnectClientCommandHelperImpl.class)
             .withBean(DownLinkPublisherHelperImpl.class)
