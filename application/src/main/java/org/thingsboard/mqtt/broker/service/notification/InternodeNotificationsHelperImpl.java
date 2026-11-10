@@ -19,7 +19,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.InternodeNotificationsKafkaSettings;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
@@ -30,8 +29,10 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 @RequiredArgsConstructor
 public class InternodeNotificationsHelperImpl implements InternodeNotificationsHelper {
 
-    private final InternodeNotificationsKafkaSettings internodeNotificationsKafkaSettings;
     private final SystemInfoService systemInfoService;
+
+    @Value("${queue.kafka.internode-notifications.topic-prefix}")
+    private String internodeNotificationsTopicPrefix;
 
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
@@ -40,7 +41,7 @@ public class InternodeNotificationsHelperImpl implements InternodeNotificationsH
 
     @PostConstruct
     public void init() {
-        topicPrefix = kafkaPrefix + internodeNotificationsKafkaSettings.getTopicPrefix() + DOT;
+        topicPrefix = kafkaPrefix + internodeNotificationsTopicPrefix + DOT;
     }
 
     @Override
