@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public class RedisServiceRegistryStore implements ServiceRegistryStore {
         }
         Map<String, String> result = new HashMap<>(raw.size());
         raw.forEach((k, v) -> result.put(String.valueOf(k), String.valueOf(v)));
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 
     @Override

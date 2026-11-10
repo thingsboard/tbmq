@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -63,7 +64,10 @@ class RedisServiceRegistryStoreTest {
     void entriesStringifiesKeysAndValues() {
         when(hashOps.entries(KEY)).thenReturn(Map.of("svc1", "TBMQ", 42, 7));
 
-        assertThat(newStore().entries()).containsOnly(entry("svc1", "TBMQ"), entry("42", "7"));
+        Map<String, String> entries = newStore().entries();
+
+        assertThat(entries).containsOnly(entry("svc1", "TBMQ"), entry("42", "7"));
+        assertThatThrownBy(() -> entries.put("x", "y")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
