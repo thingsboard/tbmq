@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import org.apache.kafka.common.TopicPartition;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -33,9 +31,9 @@ public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends T
 
     void seekToTheBeginning();
 
-    void seekToTheBeginning(Collection<TopicPartition> partitions);
+    void seekToTheBeginning(Collection<TbTopicPartition> partitions);
 
-    Map<TopicPartition, Long> getEndOffset(Collection<TopicPartition> partitions);
+    Map<TbTopicPartition, Long> getEndOffset(Collection<TbTopicPartition> partitions);
 
     long getEndOffset(String topic, int partition);
 

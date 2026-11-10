@@ -15,10 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import org.apache.kafka.clients.producer.RecordMetadata;
-
 public interface TbQueueMsgMetadata {
-
-    RecordMetadata getMetadata();
 
 }

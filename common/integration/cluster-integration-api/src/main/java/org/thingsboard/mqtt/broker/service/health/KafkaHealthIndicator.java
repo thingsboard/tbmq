@@ -19,13 +19,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 
 @Component("kafka")
 @RequiredArgsConstructor
 public class KafkaHealthIndicator implements HealthIndicator {
 
-    private final TbQueueAdmin kafkaAdmin;
+    private final TbKafkaAdmin kafkaAdmin;
 
     @Override
     public Health health() {

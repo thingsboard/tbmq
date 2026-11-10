@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
@@ -53,7 +53,7 @@ public class TbKafkaConsumerStatsService {
 
     private final Set<String> monitoredGroups = ConcurrentHashMap.newKeySet();
 
-    private final TbQueueAdmin tbQueueAdmin;
+    private final TbKafkaAdmin kafkaAdmin;
     private final StatsConsumerKafkaSettings statsConsumerSettings;
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaConsumerStatisticConfig statsConfig;
@@ -89,7 +89,7 @@ public class TbKafkaConsumerStatsService {
             }
             for (String groupId : monitoredGroups) {
                 try {
-                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = tbQueueAdmin.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
+                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = kafkaAdmin.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
                             .get(statsConfig.getKafkaResponseTimeoutMs(), TimeUnit.MILLISECONDS);
                     Map<TopicPartition, Long> endOffsets = consumer.endOffsets(groupOffsets.keySet(), timeoutDuration);
 

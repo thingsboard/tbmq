@@ -19,7 +19,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,9 +38,11 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueTopicNotFoundException;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -51,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -122,8 +124,8 @@ class IntegrationCleanupServiceImplTest {
 
     /**
      * IntegrationTopicServiceImpl.deleteTopic deletes the consumer group before the callback-bearing topic delete and
-     * rethrows on anything but GroupIdNotFoundException, so a shared try would let one failure skip the other topic -
-     * and the sweep would never retry, having already detached the integration.
+     * rethrows on anything but TbQueueConsumerGroupNotFoundException, so a shared try would let one failure skip the
+     * other topic - and the sweep would never retry, having already detached the integration.
      */
     @Test
     void givenDataTopicDeletionThrows_whenDeleteIntegrationTopics_thenStillDeletesTheEventTopic() {
@@ -148,21 +150,51 @@ class IntegrationCleanupServiceImplTest {
     }
 
     /**
-     * The exception reaching this callback may be wrapped, either by the Kafka future or by
-     * IntegrationTopicServiceImpl.deleteConsumerGroup's rethrow, so a bare instanceof would log a routine missing
+     * The chain walk (throwableOfType) is defensive: the queue admin now reports a missing topic unwrapped through the
+     * callback (see the callback test below). This guards against a caller that wraps it, such as
+     * IntegrationTopicServiceImpl.deleteConsumerGroup's rethrow, where a bare instanceof would log a routine missing
      * topic as a warning.
      */
     @Test
     void givenTopicMissingExceptionWrappedTwoLevelsDeep_whenDeleteIntegrationTopics_thenLogsAtDebugNotWarn() {
         String integrationId = UUID.randomUUID().toString();
-        doThrow(new RuntimeException(new ExecutionException(new UnknownTopicOrPartitionException("Topic missing"))))
+        doThrow(new RuntimeException(new ExecutionException(new TbQueueTopicNotFoundException("topic", null))))
                 .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+        List<ILoggingEvent> events = deleteIntegrationTopicsCapturingDebugLogs(integrationId);
+
+        assertThat(events)
+                .as("a topic-missing error wrapped inside other exceptions must still be treated as expected")
+                .noneMatch(event -> event.getLevel() == Level.WARN)
+                .anyMatch(event -> event.getLevel() == Level.DEBUG && event.getFormattedMessage().contains("does not exist"));
+    }
+
+    /**
+     * In production TbKafkaAdmin.deleteTopic hands a bare TbQueueTopicNotFoundException to callback.onFailure
+     * asynchronously, rather than throwing it from the call.
+     */
+    @Test
+    void givenTopicNotFoundReportedToCallback_whenDeleteIntegrationTopics_thenLogsAtDebugAndStillDeletesEventTopic() {
+        String integrationId = UUID.randomUUID().toString();
+        doAnswer(invocation -> {
+            invocation.<BasicCallback>getArgument(1).onFailure(new TbQueueTopicNotFoundException("topic", null));
+            return null;
+        }).when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
+
+        List<ILoggingEvent> events = deleteIntegrationTopicsCapturingDebugLogs(integrationId);
+
+        assertThat(events)
+                .noneMatch(event -> event.getLevel() == Level.WARN)
+                .anyMatch(event -> event.getLevel() == Level.DEBUG && event.getFormattedMessage().contains("does not exist"));
+        verify(integrationTopicService).deleteEventTopic(eq(integrationId), any(BasicCallback.class));
+    }
+
+    private List<ILoggingEvent> deleteIntegrationTopicsCapturingDebugLogs(String integrationId) {
         Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
         // The class's effective level is WARN (root), so DEBUG must be raised here to observe the expected message -
-        // otherwise this test could pass vacuously even if the callback were never reached at all.
+        // otherwise a test could pass vacuously even if the callback were never reached at all.
         // Mutating this shared Logback logger's level is safe only because this module has no junit-platform.properties
         // enabling concurrent test execution, unlike common/data and integration/executor - if that ever changes here,
-        // this and the next test need isolating too.
+        // these tests need isolating too.
         Level originalLevel = logger.getLevel();
         logger.setLevel(Level.DEBUG);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
@@ -170,11 +202,7 @@ class IntegrationCleanupServiceImplTest {
         logger.addAppender(appender);
         try {
             service.deleteIntegrationTopics(integrationId);
-
-            assertThat(appender.list)
-                    .as("a topic-missing error wrapped inside other exceptions must still be treated as expected")
-                    .noneMatch(event -> event.getLevel() == Level.WARN)
-                    .anyMatch(event -> event.getLevel() == Level.DEBUG && event.getFormattedMessage().contains("does not exist"));
+            return new ArrayList<>(appender.list);
         } finally {
             logger.detachAppender(appender);
             logger.setLevel(originalLevel);
