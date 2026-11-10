@@ -16,20 +16,18 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.BasicDownLinkPublishMsgKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.PersistentDownLinkPublishMsgKafkaSettings;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 
 @Service
-@RequiredArgsConstructor
 public class DownLinkPublisherHelperImpl implements DownLinkPublisherHelper {
 
-    private final BasicDownLinkPublishMsgKafkaSettings basicDownLinkPublishMsgKafkaSettings;
-    private final PersistentDownLinkPublishMsgKafkaSettings persistentDownLinkPublishMsgKafkaSettings;
+    @Value("${queue.kafka.basic-downlink-msg.topic-prefix}")
+    private String basicDownLinkTopicPrefixProperty;
+    @Value("${queue.kafka.persisted-downlink-msg.topic-prefix}")
+    private String persistentDownLinkTopicPrefixProperty;
 
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
@@ -39,8 +37,8 @@ public class DownLinkPublisherHelperImpl implements DownLinkPublisherHelper {
 
     @PostConstruct
     public void init() {
-        basicDownLinkTopicPrefix = kafkaPrefix + basicDownLinkPublishMsgKafkaSettings.getTopicPrefix() + DOT;
-        persistentDownLinkTopicPrefix = kafkaPrefix + persistentDownLinkPublishMsgKafkaSettings.getTopicPrefix() + DOT;
+        basicDownLinkTopicPrefix = kafkaPrefix + basicDownLinkTopicPrefixProperty + DOT;
+        persistentDownLinkTopicPrefix = kafkaPrefix + persistentDownLinkTopicPrefixProperty + DOT;
     }
 
     @Override

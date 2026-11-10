@@ -936,6 +936,11 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>
+                <artifactId>queue-kafka</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker.common</groupId>
                 <artifactId>data</artifactId>
                 <version>${project.version}</version>
             </dependency>

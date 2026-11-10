@@ -21,7 +21,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.InternodeNotificationsKafkaSettings;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
@@ -33,9 +32,6 @@ import static org.mockito.Mockito.when;
 public class InternodeNotificationsHelperImplTest {
 
     @Mock
-    private InternodeNotificationsKafkaSettings kafkaSettings;
-
-    @Mock
     private SystemInfoService systemInfoService;
 
     private InternodeNotificationsHelperImpl helper;
@@ -43,11 +39,10 @@ public class InternodeNotificationsHelperImplTest {
     @Before
     public void setUp() {
         String kafkaPrefix = "custom-prefix.";
-        when(kafkaSettings.getTopicPrefix()).thenReturn("internode");
-
-        helper = new InternodeNotificationsHelperImpl(kafkaSettings, systemInfoService);
+        helper = new InternodeNotificationsHelperImpl(systemInfoService);
 
         ReflectionTestUtils.setField(helper, "kafkaPrefix", kafkaPrefix);
+        ReflectionTestUtils.setField(helper, "internodeNotificationsTopicPrefix", "internode");
 
         helper.init();
     }

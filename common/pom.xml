@@ -35,6 +35,7 @@
     <modules>
         <module>data</module>
         <module>queue</module>
+        <module>queue-kafka</module>
         <module>dao-api</module>
         <module>util</module>
         <module>stats</module>
