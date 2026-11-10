@@ -153,7 +153,7 @@ public final class TbScramSaslServer implements SaslServer {
         boolean tokenAuth = false;
         for (String extension : matcher.group(4).split(",")) {
             int eq = extension.indexOf('=');
-            if (eq > 0 && extension.substring(0, eq).equalsIgnoreCase("tokenauth") && Boolean.parseBoolean(extension.substring(eq + 1))) {
+            if (eq > 0 && "tokenauth".equals(extension.substring(0, eq)) && Boolean.parseBoolean(extension.substring(eq + 1))) {
                 tokenAuth = true;
             }
         }
@@ -163,7 +163,7 @@ public final class TbScramSaslServer implements SaslServer {
         try {
             callbackHandler.handle(new Callback[]{nameCallback, credentialCallback});
         } catch (Exception e) {
-            throw new SaslException("Authentication failed: credentials could not be obtained", e);
+            throw new SaslException("Authentication failed: Credentials could not be obtained", e);
         }
         // rejected only after the callback, so that the handler has seen the username of a rejected client
         // RFC 5802 section 5.1: both authzid and username are saslnames, compared after unescaping
@@ -177,10 +177,6 @@ public final class TbScramSaslServer implements SaslServer {
         if (credential == null || credential.salt() == null || credential.storedKey() == null
                 || credential.serverKey() == null || credential.iterations() <= 0) {
             throw new SaslException("Authentication failed: invalid user credentials");
-        }
-        if (credential.storedKey().length != algorithm.getHashByteSize()
-                || credential.serverKey().length != algorithm.getHashByteSize()) {
-            throw new SaslException("Authentication failed: credential does not match " + algorithm.getMqttAlgorithmName());
         }
         this.salt = credential.salt().clone();
         this.storedKey = credential.storedKey().clone();
@@ -224,7 +220,7 @@ public final class TbScramSaslServer implements SaslServer {
         }
         byte[] candidateStoredKey = MessageDigest.getInstance(algorithm.getHashAlgorithm()).digest(clientKey);
         if (!MessageDigest.isEqual(candidateStoredKey, storedKey)) {
-            throw new SaslException("Authentication failed: invalid client proof");
+            throw new SaslException("Invalid client credentials");
         }
         byte[] serverSignature = hmac(serverKey, authMessage);
         clearCredentials();

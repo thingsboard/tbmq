@@ -104,26 +104,38 @@ class TbScramSaslServerTest {
 
     @Test
     void authzidDifferentFromUsernameFails() {
-        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,a=other,n=user,r=x"))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,a=other,n=user,r=x"))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Authorization id");
         assertThat(lookedUpName.get()).isEqualTo("user");
     }
 
     @Test
     void channelBindingFlagOtherThanNFails() throws Exception {
-        assertThatThrownBy(() -> server.evaluateResponse(utf8("y,,n=user,r=x"))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> server.evaluateResponse(utf8("y,,n=user,r=x"))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Malformed client-first");
         TbScramSaslServer other = freshServer();
-        assertThatThrownBy(() -> other.evaluateResponse(utf8("p=tls-unique,,n=user,r=x"))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> other.evaluateResponse(utf8("p=tls-unique,,n=user,r=x"))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Malformed client-first");
+        assertThat(lookedUpName.get()).as("handler is never called").isNull();
     }
 
     @Test
     void mandatoryExtensionFails() {
-        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,,m=ext,n=user,r=x"))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,,m=ext,n=user,r=x"))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Malformed client-first");
+        assertThat(lookedUpName.get()).as("handler is never called").isNull();
     }
 
     @Test
     void tokenauthExtensionFails() {
-        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,,n=user,r=x,tokenauth=true"))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> server.evaluateResponse(utf8("n,,n=user,r=x,tokenauth=true"))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Token authentication");
         assertThat(lookedUpName.get()).isEqualTo("user");
+    }
+
+    @Test
+    void extensionKeysAreCaseSensitive() throws Exception {
+        assertCompletes("n,,", "n=user,r=x,TokenAuth=true", "");
     }
 
     @Test
@@ -139,7 +151,8 @@ class TbScramSaslServerTest {
         proof[0] ^= 1;
         String clientFinal = "c=biws,r=" + RFC_COMBINED_NONCE + ",p=" + Base64.getEncoder().encodeToString(proof);
 
-        assertThatThrownBy(() -> server.evaluateResponse(utf8(clientFinal))).isInstanceOf(SaslException.class);
+        assertThatThrownBy(() -> server.evaluateResponse(utf8(clientFinal))).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Invalid client credentials");
         assertThat(server.isComplete()).isFalse();
     }
 
@@ -165,10 +178,17 @@ class TbScramSaslServerTest {
     }
 
     @Test
-    void credentialForOtherAlgorithmFails() throws Exception {
+    void credentialForOtherAlgorithmFailsAtTheProofStep() throws Exception {
         TbScramSaslServer sha256Server = newServer(ScramAlgorithm.SHA_256,
-                credential(ScramAlgorithm.SHA_512, PASSWORD, b64(RFC_SALT)), RFC_SERVER_NONCE);
-        assertThatThrownBy(() -> sha256Server.evaluateResponse(utf8("n,,n=user,r=x"))).isInstanceOf(SaslException.class);
+                credential(ScramAlgorithm.SHA_512, "s3cret", b64(RFC_SALT)), RFC_SERVER_NONCE);
+        SaslClient client = KafkaScramTestClient.create("alice", "s3cret", ScramAlgorithm.SHA_256);
+
+        byte[] serverFirst = sha256Server.evaluateResponse(client.evaluateChallenge(new byte[0]));
+        byte[] clientFinal = client.evaluateChallenge(serverFirst);
+
+        assertThatThrownBy(() -> sha256Server.evaluateResponse(clientFinal)).isInstanceOf(SaslException.class)
+                .hasMessageContaining("Invalid client credentials");
+        assertThat(sha256Server.isComplete()).isFalse();
     }
 
     @Test
@@ -181,6 +201,7 @@ class TbScramSaslServerTest {
 
         assertThatThrownBy(() -> failingServer.evaluateResponse(utf8("n,,n=user,r=x")))
                 .isInstanceOf(SaslException.class)
+                .hasMessageContaining("Authentication failed: Credentials could not be obtained")
                 .hasCause(failure);
     }
 
@@ -216,14 +237,14 @@ class TbScramSaslServerTest {
                 "n,,n=,r=x",               // empty username
         };
         for (String clientFirst : clientFirsts) {
-            assertSaslFailure(freshServer(), clientFirst);
+            assertSaslFailure(freshServer(), clientFirst, "Malformed client-first");
         }
 
-        assertSaslFailure(freshServer(), new byte[]{'n', ',', ',', 'n', '=', (byte) 0xC3, (byte) 0x28, ',', 'r', '=', 'x'}); // invalid UTF-8
+        assertSaslFailure(freshServer(), new byte[]{'n', ',', ',', 'n', '=', (byte) 0xC3, (byte) 0x28, ',', 'r', '=', 'x'}, "not valid UTF-8");
         assertThat(lookedUpName.get()).as("handler is never called for a client-first parse failure").isNull();
 
-        assertSaslFailure(freshServer(), (byte[]) null);
-        assertSaslFailure(freshServer(), new byte[0]);
+        assertSaslFailure(freshServer(), (byte[]) null, "Empty SCRAM message");
+        assertSaslFailure(freshServer(), new byte[0], "Empty SCRAM message");
 
         String valid = "c=biws,r=" + RFC_COMBINED_NONCE;
         String[] clientFinals = {
@@ -232,14 +253,20 @@ class TbScramSaslServerTest {
                 "r=" + RFC_COMBINED_NONCE + ",c=biws,p=" + RFC_PROOF,               // out of order
                 "r=" + RFC_COMBINED_NONCE + ",p=" + RFC_PROOF,                      // no channel binding
                 valid + ",p=!!!not-base64!!!",                                      // proof not base64
-                valid + ",p=" + Base64.getEncoder().encodeToString(new byte[5]),    // proof of a wrong length
-                valid + ",p=",                                                      // empty proof
                 valid + ",p=" + RFC_PROOF.replace("=", ""),                         // proof without padding
         };
         for (String clientFinal : clientFinals) {
             TbScramSaslServer s = freshServer();
             s.evaluateResponse(utf8("n,,n=user,r=" + RFC_CLIENT_NONCE));
-            assertSaslFailure(s, clientFinal);
+            assertSaslFailure(s, clientFinal, "Malformed client-final");
+            assertThat(s.isComplete()).isFalse();
+        }
+
+        // the proof comparison would reject these as well, so the length check is pinned by its message
+        for (String proof : new String[]{Base64.getEncoder().encodeToString(new byte[5]), ""}) {
+            TbScramSaslServer s = freshServer();
+            s.evaluateResponse(utf8("n,,n=user,r=" + RFC_CLIENT_NONCE));
+            assertSaslFailure(s, valid + ",p=" + proof, "Invalid proof length");
             assertThat(s.isComplete()).isFalse();
         }
 
@@ -249,7 +276,7 @@ class TbScramSaslServerTest {
             String bare = "n=user,r=" + RFC_CLIENT_NONCE;
             byte[] serverFirst = s.evaluateResponse(utf8("n,," + bare));
             String clientFinal = clientFinal(bare, new String(serverFirst, UTF_8), "biws", RFC_COMBINED_NONCE, extension);
-            assertSaslFailure(s, clientFinal);
+            assertSaslFailure(s, clientFinal, "Malformed client-final");
             assertThat(s.isComplete()).isFalse();
         }
     }
@@ -334,12 +361,13 @@ class TbScramSaslServerTest {
 
     // ---- helpers ----
 
-    private void assertSaslFailure(TbScramSaslServer s, String message) {
-        assertSaslFailure(s, utf8(message));
+    private void assertSaslFailure(TbScramSaslServer s, String message, String expectedMessage) {
+        assertSaslFailure(s, utf8(message), expectedMessage);
     }
 
-    private void assertSaslFailure(TbScramSaslServer s, byte[] message) {
-        assertThatThrownBy(() -> s.evaluateResponse(message)).isInstanceOf(SaslException.class);
+    private void assertSaslFailure(TbScramSaslServer s, byte[] message, String expectedMessage) {
+        assertThatThrownBy(() -> s.evaluateResponse(message)).isInstanceOf(SaslException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     private TbScramSaslServer freshServer() throws Exception {

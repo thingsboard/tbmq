@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,6 +63,24 @@ class ScramStoredCredentialsCompatibilityTest {
         assertThat(handler.getUsername()).isEqualTo(USERNAME);
     }
 
+    // Frozen TBMQ 2.4.x stored credentials (user tbmq-user, password secret). Never regenerate these.
+    private static final Map<ScramAlgorithm, String> FROZEN_24X_JSON = Map.of(
+            ScramAlgorithm.SHA_256, "{\"userName\":\"tbmq-user\",\"salt\":\"ZMgCoJFCcafNED8L4qzocQ==\",\"serverKey\":\"r9oel49/BIscYBqdi5Z3nAZ1u64BA0Ip2X6A4lBEvPg=\",\"storedKey\":\"yReZlb0Wrt4DxS+cHYg6ITk6Hu4rQhY+qw96u2li0pg=\",\"algorithm\":\"SHA_256\",\"authRules\":{\"pubAuthRulePatterns\":[\".*\"],\"subAuthRulePatterns\":[\".*\"]}}",
+            ScramAlgorithm.SHA_512, "{\"userName\":\"tbmq-user\",\"salt\":\"Z0QompUet8KXUDxL1Fc3iA==\",\"serverKey\":\"cGtQgmpJPkicnEYhs5/b0TbRsADhHzt72HGo6j0yzNYyBegrJX21GkIM7IjLR9tLQPJSEQqc/FMqEHMCgbJFKQ==\",\"storedKey\":\"DAS/kAPU7I9u7F9KVE4I3LzvTuQq0ERDY4zGp3SPBnnd8wYlfR6KXZsS+U/OYPbc11fy1rI727ZP1NRlhTpEbw==\",\"algorithm\":\"SHA_512\",\"authRules\":{\"pubAuthRulePatterns\":[\".*\"],\"subAuthRulePatterns\":[\".*\"]}}");
+
+    @ParameterizedTest
+    @EnumSource(ScramAlgorithm.class)
+    void credentialJsonFrozenFrom24xAuthenticates(ScramAlgorithm alg) throws Exception {
+        ScramAuthCallbackHandler handler = handlerWithCredentialJson(FROZEN_24X_JSON.get(alg));
+        TbScramSaslServer server = TbScramSaslServer.create(alg.getMqttAlgorithmName(), handler).orElseThrow();
+        SaslClient client = KafkaScramTestClient.create(USERNAME, PASSWORD, alg);
+
+        KafkaScramTestClient.exchange(client, server);
+
+        assertThat(server.isComplete()).isTrue();
+        assertThat(handler.getClientType()).isEqualTo(ClientType.DEVICE);
+    }
+
     @ParameterizedTest
     @EnumSource(ScramAlgorithm.class)
     void wrongPasswordIsRejected(ScramAlgorithm alg) throws Exception {
@@ -79,11 +98,15 @@ class ScramStoredCredentialsCompatibilityTest {
 
     private static ScramAuthCallbackHandler handlerWithStoredCredential(ScramAlgorithm alg) throws Exception {
         var stored = ScramMqttCredentials.newInstance(USERNAME, PASSWORD, alg, List.of(".*"));
+        return handlerWithCredentialJson(JacksonUtil.toString(stored));
+    }
+
+    private static ScramAuthCallbackHandler handlerWithCredentialJson(String credentialsJson) throws Exception {
         var credentials = new MqttClientCredentials();
         credentials.setName("scram credentials");
         credentials.setCredentialsType(ClientCredentialsType.SCRAM);
         credentials.setClientType(ClientType.DEVICE);
-        credentials.setCredentialsValue(JacksonUtil.toString(stored));
+        credentials.setCredentialsValue(credentialsJson);
 
         var credentialsService = mock(MqttClientCredentialsService.class);
         when(credentialsService.findMatchingCredentials(List.of("scram|" + USERNAME))).thenReturn(List.of(credentials));

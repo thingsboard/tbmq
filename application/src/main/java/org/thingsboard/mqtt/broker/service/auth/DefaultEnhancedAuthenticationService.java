@@ -57,6 +57,7 @@ import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFail
 @RequiredArgsConstructor
 public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticationService {
 
+    // Not used by the server any more; SCRAM clients built in tests (e.g. Mqtt5AuthIntegrationTestCase, also in PE) use them, do not delete.
     public static final String SCRAM_SASL_PROTOCOL = "mqtt";
     public static final Map<String, String> SCRAM_SASL_PROPS = Map.of(Sasl.QOP, "auth");
 
