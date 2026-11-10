@@ -23,9 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.cache.ServiceRegistryStore;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
@@ -48,7 +46,6 @@ import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.SERVICE_REGISTRY_KEY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DISK_USAGE;
@@ -65,11 +62,7 @@ public class TbmqSystemInfoServiceTest {
     @Mock
     private TimeseriesService timeseriesService;
     @Mock
-    private RedisTemplate<String, Object> redisTemplate;
-    @Mock
-    private CacheProperties cacheProperties;
-    @Mock
-    private HashOperations<String, Object, Object> hashOperations;
+    private ServiceRegistryStore serviceRegistryStore;
 
     @InjectMocks
     private TbmqSystemInfoService systemInfoService;
@@ -79,9 +72,7 @@ public class TbmqSystemInfoServiceTest {
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate, cacheProperties);
-        systemInfoService.setServiceRegistryKey(SERVICE_REGISTRY_KEY);
+        systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, serviceRegistryStore);
     }
 
     @AfterEach
@@ -110,7 +101,7 @@ public class TbmqSystemInfoServiceTest {
 
         systemInfoService.processIeServiceInfo(serviceInfo);
 
-        verify(hashOperations).put(SERVICE_REGISTRY_KEY, "svc1", "type1");
+        verify(serviceRegistryStore).put("svc1", "type1");
     }
 
     @Test
@@ -139,19 +130,19 @@ public class TbmqSystemInfoServiceTest {
 
     @Test
     public void testRemoveServiceInfoExists() {
-        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc3")).thenReturn(1L);
+        when(serviceRegistryStore.delete("svc3")).thenReturn(1L);
         assertDoesNotThrow(() -> systemInfoService.removeServiceInfo("svc3"));
     }
 
     @Test
     public void testRemoveServiceInfoNotFound() {
-        when(hashOperations.delete(SERVICE_REGISTRY_KEY, "svc4")).thenReturn(0L);
+        when(serviceRegistryStore.delete("svc4")).thenReturn(0L);
         assertThrows(ThingsboardException.class, () -> systemInfoService.removeServiceInfo("svc4"));
     }
 
     @Test
     public void testGetServiceInfosWhenEmpty() {
-        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of());
+        when(serviceRegistryStore.entries()).thenReturn(Map.of());
 
         assertThrows(ThingsboardException.class, () -> systemInfoService.getServiceInfos().get());
     }
@@ -161,7 +152,7 @@ public class TbmqSystemInfoServiceTest {
         String serviceId = "tbmq";
         String serviceType = TBMQ.name();
 
-        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of(serviceId, serviceType));
+        when(serviceRegistryStore.entries()).thenReturn(Map.of(serviceId, serviceType));
 
         long ts = System.currentTimeMillis();
         SettableFuture<List<TsKvEntry>> future = getListSettableFuture(ts);
@@ -189,7 +180,7 @@ public class TbmqSystemInfoServiceTest {
         String serviceId = "tbmq";
         String serviceType = TBMQ.name();
 
-        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of(serviceId, serviceType));
+        when(serviceRegistryStore.entries()).thenReturn(Map.of(serviceId, serviceType));
 
         SettableFuture<List<TsKvEntry>> future = getNullListSettableFuture(System.currentTimeMillis());
         when(timeseriesService.findLatest(eq(serviceId), anyList())).thenReturn(future);
@@ -213,7 +204,7 @@ public class TbmqSystemInfoServiceTest {
 
     @Test
     public void testGetTbmqServiceIds() {
-        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
+        when(serviceRegistryStore.entries()).thenReturn(
                 Map.of("tbmq1", TBMQ.name(), "tbmq-ie1", TBMQ_INTEGRATION_EXECUTOR.name(),
                         "tbmq2", TBMQ.name(), "tbmq-ie2", TBMQ_INTEGRATION_EXECUTOR.name())
         );
