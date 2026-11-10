@@ -135,17 +135,15 @@ public final class TbScramSaslServer implements SaslServer {
             throw new SaslException("Missing nonce in client-first message");
         }
         String clientNonce = parts[3].substring(2);
+        boolean tokenAuth = false;
         for (int i = 4; i < parts.length; i++) {
             int eq = parts[i].indexOf('=');
             if (eq <= 0) {
                 throw new SaslException("Malformed extension in client-first message");
             }
             if (parts[i].substring(0, eq).equalsIgnoreCase("tokenauth") && Boolean.parseBoolean(parts[i].substring(eq + 1))) {
-                throw new SaslException("Token authentication is not supported");
+                tokenAuth = true;
             }
-        }
-        if (authzid != null && !authzid.equals(clientUsername)) {
-            throw new SaslException("Authorization id differs from username");
         }
 
         NameCallback nameCallback = new NameCallback("username", clientUsername);
@@ -154,6 +152,13 @@ public final class TbScramSaslServer implements SaslServer {
             callbackHandler.handle(new Callback[]{nameCallback, credentialCallback});
         } catch (Exception e) {
             throw new SaslException("Authentication failed: credentials could not be obtained", e);
+        }
+        // rejected only after the callback, so that the handler has seen the username of a rejected client
+        if (authzid != null && !authzid.equals(clientUsername)) {
+            throw new SaslException("Authorization id differs from username");
+        }
+        if (tokenAuth) {
+            throw new SaslException("Token authentication is not supported");
         }
         ScramCredential credential = credentialCallback.getScramCredential();
         if (credential == null || credential.salt() == null || credential.storedKey() == null

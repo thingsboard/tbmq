@@ -115,6 +115,7 @@ class TbScramSaslServerTest {
     @Test
     void authzidDifferentFromUsernameFails() {
         assertThatThrownBy(() -> server.evaluateResponse(utf8("n,a=other,n=user,r=x"))).isInstanceOf(SaslException.class);
+        assertThat(lookedUpName.get()).isEqualTo("user");
     }
 
     @Test
@@ -132,6 +133,7 @@ class TbScramSaslServerTest {
     @Test
     void tokenauthExtensionFails() {
         assertThatThrownBy(() -> server.evaluateResponse(utf8("n,,n=user,r=x,tokenauth=true"))).isInstanceOf(SaslException.class);
+        assertThat(lookedUpName.get()).isEqualTo("user");
     }
 
     @Test
