@@ -29,6 +29,8 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
+import org.thingsboard.mqtt.broker.queue.TbQueueRebalanceListener;
+import org.thingsboard.mqtt.broker.queue.TbTopicPartition;
 import org.thingsboard.mqtt.broker.queue.common.AbstractTbQueueConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
@@ -39,6 +41,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,8 +120,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    protected void doSubscribe(String topic, ConsumerRebalanceListener listener) {
-        consumer.subscribe(Collections.singletonList(topic), listener);
+    protected void doSubscribe(String topic, TbQueueRebalanceListener listener) {
+        consumer.subscribe(Collections.singletonList(topic), toKafkaListener(listener));
     }
 
     @Override
@@ -187,8 +190,10 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    protected Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions) {
-        return consumer.endOffsets(partitions);
+    protected Map<TbTopicPartition, Long> doGetEndOffset(Collection<TbTopicPartition> partitions) {
+        Map<TbTopicPartition, Long> result = new HashMap<>();
+        consumer.endOffsets(toKafkaPartitions(partitions)).forEach((tp, offset) -> result.put(fromKafkaPartition(tp), offset));
+        return result;
     }
 
     @Override
@@ -219,6 +224,32 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         return new TopicPartition(topic, partition);
     }
 
+    private static List<TopicPartition> toKafkaPartitions(Collection<TbTopicPartition> partitions) {
+        return partitions.stream().map(tp -> new TopicPartition(tp.topic(), tp.partition())).toList();
+    }
+
+    private static List<TbTopicPartition> fromKafkaPartitions(Collection<TopicPartition> partitions) {
+        return partitions.stream().map(TbKafkaConsumerTemplate::fromKafkaPartition).toList();
+    }
+
+    private static TbTopicPartition fromKafkaPartition(TopicPartition tp) {
+        return new TbTopicPartition(tp.topic(), tp.partition());
+    }
+
+    static ConsumerRebalanceListener toKafkaListener(TbQueueRebalanceListener listener) {
+        return new ConsumerRebalanceListener() {
+            @Override
+            public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+                listener.onPartitionsRevoked(fromKafkaPartitions(partitions));
+            }
+
+            @Override
+            public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+                listener.onPartitionsAssigned(fromKafkaPartitions(partitions));
+            }
+        };
+    }
+
 
     @Override
     protected void doSeekToTheBeginning() {
@@ -226,8 +257,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    protected void doSeekToTheBeginning(Collection<TopicPartition> partitions) {
-        consumer.seekToBeginning(partitions);
+    protected void doSeekToTheBeginning(Collection<TbTopicPartition> partitions) {
+        consumer.seekToBeginning(toKafkaPartitions(partitions));
     }
 
     @Override

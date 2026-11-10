@@ -17,11 +17,11 @@ package org.thingsboard.mqtt.broker.queue.common;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
+import org.thingsboard.mqtt.broker.queue.TbQueueRebalanceListener;
+import org.thingsboard.mqtt.broker.queue.TbTopicPartition;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public void subscribe(ConsumerRebalanceListener listener) {
+    public void subscribe(TbQueueRebalanceListener listener) {
         doEnsureTopicExists(topic);
         consumerLock.lock();
         try {
@@ -217,7 +217,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public void seekToTheBeginning(Collection<TopicPartition> partitions) {
+    public void seekToTheBeginning(Collection<TbTopicPartition> partitions) {
         consumerLock.lock();
         try {
             doSeekToTheBeginning(partitions);
@@ -227,7 +227,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public Map<TopicPartition, Long> getEndOffset(Collection<TopicPartition> partitions) {
+    public Map<TbTopicPartition, Long> getEndOffset(Collection<TbTopicPartition> partitions) {
         consumerLock.lock();
         try {
             return doGetEndOffset(partitions);
@@ -275,7 +275,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doSubscribe(String topic);
 
-    abstract protected void doSubscribe(String topic, ConsumerRebalanceListener listener);
+    abstract protected void doSubscribe(String topic, TbQueueRebalanceListener listener);
 
     abstract protected void doAssignPartition(String topic, int partition);
 
@@ -289,9 +289,9 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doSeekToTheBeginning();
 
-    abstract protected void doSeekToTheBeginning(Collection<TopicPartition> partitions);
+    abstract protected void doSeekToTheBeginning(Collection<TbTopicPartition> partitions);
 
-    abstract protected Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions);
+    abstract protected Map<TbTopicPartition, Long> doGetEndOffset(Collection<TbTopicPartition> partitions);
 
     abstract protected long doGetEndOffset(String topic, int partition);
 

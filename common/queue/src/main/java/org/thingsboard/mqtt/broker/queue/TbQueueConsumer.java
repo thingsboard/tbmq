@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 
 import java.util.List;
 
@@ -25,7 +24,7 @@ public interface TbQueueConsumer<T extends TbQueueMsg> {
 
     void subscribe();
 
-    void subscribe(ConsumerRebalanceListener listener);
+    void subscribe(TbQueueRebalanceListener listener);
 
     void unsubscribeAndClose();
 

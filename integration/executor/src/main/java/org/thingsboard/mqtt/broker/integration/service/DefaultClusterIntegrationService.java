@@ -20,8 +20,6 @@ import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
@@ -34,6 +32,8 @@ import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationRequestProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueRebalanceListener;
+import org.thingsboard.mqtt.broker.queue.TbTopicPartition;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationDownlinkQueueProvider;
 import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
@@ -54,8 +54,8 @@ import java.util.concurrent.ExecutorService;
 @Order(value = 1)
 public class DefaultClusterIntegrationService {
 
-    private final ConcurrentMap<TopicPartition, Boolean> partitionRestorationMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<TopicPartition, ConcurrentMap<UUID, IntegrationLifecycleMsg>> integrationStateMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<TbTopicPartition, Boolean> partitionRestorationMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<TbTopicPartition, ConcurrentMap<UUID, IntegrationLifecycleMsg>> integrationStateMap = new ConcurrentHashMap<>();
 
     private final IntegrationDownlinkQueueProvider integrationDownlinkQueueProvider;
     private final IntegrationManagerService integrationManagerService;
@@ -118,7 +118,7 @@ public class DefaultClusterIntegrationService {
                         int partition = msg.getPartition();
                         long offset = msg.getOffset();
 
-                        TopicPartition topicPartition = newTopicPartition(consumer.getTopic(), partition);
+                        TbTopicPartition topicPartition = newTopicPartition(consumer.getTopic(), partition);
                         Boolean isRestorationMode = partitionRestorationMap.get(topicPartition);
                         if (isRestorationMode == null) {
                             log.debug("[{}][{}] Partition was revoked", consumer.getTopic(), topicPartition);
@@ -150,7 +150,7 @@ public class DefaultClusterIntegrationService {
                         for (Map.Entry<Integer, Long> entry : highestOffsets.entrySet()) {
                             int partition = entry.getKey();
                             long offset = entry.getValue();
-                            TopicPartition topicPartition = newTopicPartition(consumer.getTopic(), partition);
+                            TbTopicPartition topicPartition = newTopicPartition(consumer.getTopic(), partition);
 
                             Boolean isRestorationMode = partitionRestorationMap.get(topicPartition);
                             if (Boolean.TRUE.equals(isRestorationMode) && isEndOfPartition(consumer, partition, offset)) {
@@ -182,7 +182,7 @@ public class DefaultClusterIntegrationService {
         });
     }
 
-    private IntegrationLifecycleMsg deserializeAndCacheIntegration(DownlinkIntegrationMsgProto downlinkIntegrationMsg, TopicPartition topicPartition) {
+    private IntegrationLifecycleMsg deserializeAndCacheIntegration(DownlinkIntegrationMsgProto downlinkIntegrationMsg, TbTopicPartition topicPartition) {
         IntegrationLifecycleMsg lifecycleMsg = fromProto(downlinkIntegrationMsg);
 
         Map<UUID, IntegrationLifecycleMsg> integrationsMap = integrationStateMap.computeIfAbsent(topicPartition, __ -> new ConcurrentHashMap<>());
@@ -215,8 +215,8 @@ public class DefaultClusterIntegrationService {
         integrationManagerService.handleValidationRequest(msg, callback);
     }
 
-    private TopicPartition newTopicPartition(String topic, int partition) {
-        return new TopicPartition(topic, partition);
+    private TbTopicPartition newTopicPartition(String topic, int partition) {
+        return new TbTopicPartition(topic, partition);
     }
 
     private IntegrationLifecycleMsg fromProto(DownlinkIntegrationMsgProto downlinkIntegrationMsg) {
@@ -229,13 +229,13 @@ public class DefaultClusterIntegrationService {
 
 
     @Data
-    private class TbConsumerRebalanceListener implements ConsumerRebalanceListener {
+    private class TbConsumerRebalanceListener implements TbQueueRebalanceListener {
 
         private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> consumer;
         private final IntegrationType integrationType;
 
         @Override
-        public void onPartitionsRevoked(Collection<TopicPartition> topicPartitions) {
+        public void onPartitionsRevoked(Collection<TbTopicPartition> topicPartitions) {
             log.info("[{}] Partitions revoked: {}", integrationType, topicPartitions);
             for (var topicPartition : topicPartitions) {
                 partitionRestorationMap.remove(topicPartition);
@@ -247,13 +247,13 @@ public class DefaultClusterIntegrationService {
         }
 
         @Override
-        public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+        public void onPartitionsAssigned(Collection<TbTopicPartition> partitions) {
             log.info("[{}] Partitions assigned: {}", integrationType, partitions);
             consumer.seekToTheBeginning(partitions);
 
-            Map<TopicPartition, Long> endOffsetMap = consumer.getEndOffset(partitions);
+            Map<TbTopicPartition, Long> endOffsetMap = consumer.getEndOffset(partitions);
 
-            for (TopicPartition partition : partitions) {
+            for (TbTopicPartition partition : partitions) {
                 if (endOffsetMap.get(partition) == 0) {
                     log.info("Partition {} is set to real-time processing mode.", partition);
                     partitionRestorationMap.put(partition, false);
@@ -265,7 +265,7 @@ public class DefaultClusterIntegrationService {
         }
     }
 
-    private void removeAndStopIntegrations(TopicPartition topicPartition) {
+    private void removeAndStopIntegrations(TbTopicPartition topicPartition) {
         Map<UUID, IntegrationLifecycleMsg> removed = integrationStateMap.remove(topicPartition);
         if (!CollectionUtils.isEmpty(removed)) {
             removed.values().forEach(DefaultClusterIntegrationService.this::handleIntegrationStopEvent);
