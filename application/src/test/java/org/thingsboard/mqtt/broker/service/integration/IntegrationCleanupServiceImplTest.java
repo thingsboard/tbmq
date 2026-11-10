@@ -19,7 +19,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueTopicNotFoundException;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
@@ -122,7 +122,7 @@ class IntegrationCleanupServiceImplTest {
 
     /**
      * IntegrationTopicServiceImpl.deleteTopic deletes the consumer group before the callback-bearing topic delete and
-     * rethrows on anything but GroupIdNotFoundException, so a shared try would let one failure skip the other topic -
+     * rethrows on anything but TbQueueConsumerGroupNotFoundException, so a shared try would let one failure skip the other topic -
      * and the sweep would never retry, having already detached the integration.
      */
     @Test
@@ -148,14 +148,14 @@ class IntegrationCleanupServiceImplTest {
     }
 
     /**
-     * The exception reaching this callback may be wrapped, either by the Kafka future or by
+     * The exception reaching this callback may be wrapped, either by the queue admin or by
      * IntegrationTopicServiceImpl.deleteConsumerGroup's rethrow, so a bare instanceof would log a routine missing
      * topic as a warning.
      */
     @Test
     void givenTopicMissingExceptionWrappedTwoLevelsDeep_whenDeleteIntegrationTopics_thenLogsAtDebugNotWarn() {
         String integrationId = UUID.randomUUID().toString();
-        doThrow(new RuntimeException(new ExecutionException(new UnknownTopicOrPartitionException("Topic missing"))))
+        doThrow(new RuntimeException(new ExecutionException(new TbQueueTopicNotFoundException("topic", null))))
                 .when(integrationTopicService).deleteTopic(eq(integrationId), any(BasicCallback.class));
         Logger logger = (Logger) LoggerFactory.getLogger(IntegrationCleanupServiceImpl.class);
         // The class's effective level is WARN (root), so DEBUG must be raised here to observe the expected message -

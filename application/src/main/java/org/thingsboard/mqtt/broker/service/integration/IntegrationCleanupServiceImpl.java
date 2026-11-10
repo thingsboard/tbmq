@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -32,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueTopicNotFoundException;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
@@ -155,7 +155,7 @@ public class IntegrationCleanupServiceImpl {
 
     /**
      * Each deletion is isolated from the other. Only the topic delete itself is callback-based: the consumer group is
-     * deleted first and synchronously, and rethrows on anything but GroupIdNotFoundException. Without this a failure
+     * deleted first and synchronously, and rethrows on anything but TbQueueConsumerGroupNotFoundException. Without this a failure
      * on the first topic would skip the second - and neither the sweep, which has already detached the integration
      * and so short-circuits, nor the delete path, where the row is gone, would ever retry.
      */
@@ -173,7 +173,7 @@ public class IntegrationCleanupServiceImpl {
         return CallbackUtil.createCallback(
                 () -> log.debug("[{}] Deleted the {} topic", integrationId, topicKind),
                 t -> {
-                    if (ExceptionUtils.throwableOfType(t, UnknownTopicOrPartitionException.class) != null) {
+                    if (ExceptionUtils.throwableOfType(t, TbQueueTopicNotFoundException.class) != null) {
                         // Expected: an integration that never opted into lifecycle events has no events topic, and a
                         // sweep on another node may have won the race. Deleting unconditionally keeps a topic left
                         // over from a since-removed opt-in reclaimable, so this is not worth gating on the opt-in.

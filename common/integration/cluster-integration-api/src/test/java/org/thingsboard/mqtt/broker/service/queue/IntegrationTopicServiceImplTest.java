@@ -22,13 +22,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumerGroupNotFoundException;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationMsgQueueProvider;
 import org.thingsboard.mqtt.broker.service.util.IntegrationHelperService;
 
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +44,8 @@ class IntegrationTopicServiceImplTest {
     static final String INTEGRATION_ID = "0198e1a0-1111-2222-3333-444455556666";
     static final String EVENT_TOPIC = "tbmq.ie.event." + "0198e1a0111122223333444455556666";
     static final String EVENT_GROUP = "ie-event-consumer-group-" + "0198e1a0111122223333444455556666";
+    static final String DATA_TOPIC = "tbmq.ie." + "0198e1a0111122223333444455556666";
+    static final String DATA_GROUP = "ie-consumer-group-" + "0198e1a0111122223333444455556666";
 
     @Mock
     TbQueueAdmin queueAdmin;
@@ -71,6 +79,44 @@ class IntegrationTopicServiceImplTest {
 
         verify(queueAdmin).deleteConsumerGroup(EVENT_GROUP);
         verify(queueAdmin).deleteTopic(EVENT_TOPIC, cb);
+    }
+
+    @Test
+    void givenMissingConsumerGroup_whenDeleteTopic_thenTopicIsStillDeleted() throws Exception {
+        when(integrationHelperService.getIntegrationConsumerGroup(INTEGRATION_ID)).thenReturn(DATA_GROUP);
+        when(integrationHelperService.getIntegrationTopic(INTEGRATION_ID)).thenReturn(DATA_TOPIC);
+        doThrow(new TbQueueConsumerGroupNotFoundException(DATA_GROUP, null)).when(queueAdmin).deleteConsumerGroup(DATA_GROUP);
+        BasicCallback cb = mock(BasicCallback.class);
+
+        service.deleteTopic(INTEGRATION_ID, cb);
+
+        verify(queueAdmin).deleteTopic(DATA_TOPIC, cb);
+    }
+
+    @Test
+    void givenMissingConsumerGroup_whenDeleteEventTopic_thenTopicIsStillDeleted() throws Exception {
+        when(integrationHelperService.getIntegrationEventConsumerGroup(INTEGRATION_ID)).thenReturn(EVENT_GROUP);
+        when(integrationHelperService.getIntegrationEventTopic(INTEGRATION_ID)).thenReturn(EVENT_TOPIC);
+        doThrow(new TbQueueConsumerGroupNotFoundException(EVENT_GROUP, null)).when(queueAdmin).deleteConsumerGroup(EVENT_GROUP);
+        BasicCallback cb = mock(BasicCallback.class);
+
+        service.deleteEventTopic(INTEGRATION_ID, cb);
+
+        verify(queueAdmin).deleteTopic(EVENT_TOPIC, cb);
+    }
+
+    @Test
+    void givenConsumerGroupDeleteTimeout_whenDeleteTopic_thenRethrowsAndKeepsTopic() throws Exception {
+        when(integrationHelperService.getIntegrationConsumerGroup(INTEGRATION_ID)).thenReturn(DATA_GROUP);
+        TimeoutException timeout = new TimeoutException();
+        doThrow(timeout).when(queueAdmin).deleteConsumerGroup(DATA_GROUP);
+        BasicCallback cb = mock(BasicCallback.class);
+
+        assertThatThrownBy(() -> service.deleteTopic(INTEGRATION_ID, cb))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(timeout);
+
+        verify(queueAdmin, never()).deleteTopic(any(), any());
     }
 
 }

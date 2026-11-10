@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
-import org.apache.kafka.common.Node;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -36,15 +34,22 @@ public interface TbQueueAdmin {
 
     void createTopic(String topic, Map<String, String> topicConfigs);
 
+    /**
+     * Deletes the topic and reports the outcome to the callback. A missing topic is reported to
+     * {@code callback.onFailure} as a {@link TbQueueTopicNotFoundException}.
+     */
     void deleteTopic(String topic, BasicCallback callback);
 
     void deleteConsumerGroups(Collection<String> consumerGroups);
 
+    /**
+     * Deletes the consumer group.
+     *
+     * @throws TbQueueConsumerGroupNotFoundException if the group does not exist
+     */
     void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException, TimeoutException;
 
     int getNumberOfPartitions(String topic);
-
-    Collection<Node> getNodes() throws Exception;
 
     @Deprecated(forRemoval = true, since = "2.3")
     PageData<KafkaBroker> getClusterInfo();
@@ -62,6 +67,4 @@ public interface TbQueueAdmin {
     CompletableFuture<PageData<KafkaConsumerGroup>> getConsumerGroupsAsync(PageLink pageLink);
 
     void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix);
-
-    ListConsumerGroupOffsetsResult listConsumerGroupOffsets(String groupId);
 }

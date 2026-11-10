@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.service.queue;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.errors.GroupIdNotFoundException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumerGroupNotFoundException;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationMsgQueueProvider;
 import org.thingsboard.mqtt.broker.service.util.IntegrationHelperService;
 
@@ -55,7 +55,7 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
         try {
             queueAdmin.deleteConsumerGroup(consumerGroup);
         } catch (Exception e) {
-            if (!(e.getCause() instanceof GroupIdNotFoundException)) {
+            if (!(e instanceof TbQueueConsumerGroupNotFoundException)) {
                 throw new RuntimeException(e);
             }
         }
@@ -92,7 +92,7 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
         try {
             queueAdmin.deleteConsumerGroup(consumerGroup);
         } catch (Exception e) {
-            if (!(e.getCause() instanceof GroupIdNotFoundException)) {
+            if (!(e instanceof TbQueueConsumerGroupNotFoundException)) {
                 throw new RuntimeException(e);
             }
         }

@@ -42,7 +42,9 @@ import org.apache.kafka.common.ConsumerGroupState;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.GroupIdNotFoundException;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
@@ -54,6 +56,8 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.common.util.CachedValue;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumerGroupNotFoundException;
+import org.thingsboard.mqtt.broker.queue.TbQueueTopicNotFoundException;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
@@ -64,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -174,7 +179,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 invalidateTopics();
                 callback.onSuccess();
             } else {
-                callback.onFailure(throwable);
+                callback.onFailure(mapDeleteTopicFailure(topic, throwable));
             }
         });
     }
@@ -192,7 +197,32 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Override
     public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException, TimeoutException {
         log.trace("Executing deleteConsumerGroup {}", groupId);
-        doDeleteConsumerGroups(List.of(groupId));
+        try {
+            doDeleteConsumerGroups(List.of(groupId));
+        } catch (ExecutionException e) {
+            Exception mapped = mapDeleteConsumerGroupFailure(groupId, e);
+            if (mapped instanceof RuntimeException re) {
+                throw re;
+            }
+            throw e;
+        }
+    }
+
+    static Throwable mapDeleteTopicFailure(String topic, Throwable failure) {
+        Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable t = failure; t != null && visited.add(t); t = t.getCause()) {
+            if (t instanceof UnknownTopicOrPartitionException) {
+                return new TbQueueTopicNotFoundException(topic, failure);
+            }
+        }
+        return failure;
+    }
+
+    static Exception mapDeleteConsumerGroupFailure(String groupId, ExecutionException failure) {
+        if (failure.getCause() instanceof GroupIdNotFoundException) {
+            return new TbQueueConsumerGroupNotFoundException(groupId, failure);
+        }
+        return failure;
     }
 
     private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException, TimeoutException {
@@ -213,7 +243,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
-    @Override
     public Collection<Node> getNodes() throws Exception {
         return client.describeCluster().nodes().get(adminSettings.getKafkaAdminCommandTimeout(), TimeUnit.SECONDS);
     }
@@ -720,7 +749,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         });
     }
 
-    @Override
     public ListConsumerGroupOffsetsResult listConsumerGroupOffsets(String groupId) {
         return client.listConsumerGroupOffsets(groupId);
     }
