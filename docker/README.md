@@ -95,9 +95,16 @@ The script upgrades the database, then brings the whole cluster up on the new ve
   integration executors are replaced one at a time. HAProxy sends clients to the node that is still up.
 * `stop` — the TBMQ nodes and integration executors are stopped, the database is upgraded, then the cluster is started.
 
-By default the script uses the mode the target release supports (`ROLLING_UPGRADE_SUPPORTED` in the script), and
-switches to `stop` when the TBMQ nodes are not running. To stop the cluster even when a rolling upgrade is supported,
-run `./scripts/docker-upgrade-tbmq.sh --mode=stop`.
+By default the script uses rolling when the target `TBMQ_VERSION` is listed in `ROLLING_UPGRADE_VERSIONS` at the top
+of the script, and stop otherwise. It also uses stop when no TBMQ node is running. To stop the cluster even when a
+rolling upgrade is supported, run `./scripts/docker-upgrade-tbmq.sh --mode=stop`. A rolling upgrade refuses to start
+when only some TBMQ nodes are running.
+
+A TBMQ node counts as ready when it accepts connections on port 1883 or 8883. If your nodes listen for MQTT on other
+ports, set them in `TBMQ_READY_PORTS`, for example `TBMQ_READY_PORTS=1884 ./scripts/docker-upgrade-tbmq.sh`.
+
+If a node does not become ready, the script stops with the database already upgraded. Fix the cause, then replace the
+remaining nodes with `./scripts/docker-upgrade-tbmq.sh --skip-db-upgrade`.
 
 A rolling upgrade relies on the HAProxy settings `option redispatch` and `fastinter` from `haproxy/config/haproxy.cfg`.
 If your HAProxy configuration predates them, apply it with `./scripts/docker-refresh-config.sh` and reload HAProxy
