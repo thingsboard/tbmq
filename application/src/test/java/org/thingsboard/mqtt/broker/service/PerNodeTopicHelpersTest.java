@@ -16,53 +16,78 @@
 package org.thingsboard.mqtt.broker.service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.ClassPathResource;
 import org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalHelperImpl;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandHelperImpl;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsHelperImpl;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelperImpl;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Resolves the helpers' {@code @Value} keys against the shipped {@code thingsboard-mqtt-broker.yml}, so each
+ * assertion pins a property key to the topic name on the wire. Integration tests cannot catch two swapped keys,
+ * because producers and consumers take the topic from the same helper.
+ */
 class PerNodeTopicHelpersTest {
 
+    private static final String BROKER_CONFIG = "thingsboard-mqtt-broker.yml";
+    private static final String SERVICE_ID = "node-1";
+
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withInitializer(context -> loadBrokerConfig().forEach(context.getEnvironment().getPropertySources()::addLast))
+            .withBean(SystemInfoService.class, () -> mock(SystemInfoService.class))
+            .withBean(DisconnectClientCommandHelperImpl.class)
+            .withBean(DownLinkPublisherHelperImpl.class)
+            .withBean(InternodeNotificationsHelperImpl.class)
+            .withBean(HistoricalStatsTotalHelperImpl.class);
+
     @Test
-    void topicsWithoutKafkaPrefix() {
-        assertTopics("");
+    void defaultConfigGivesTheDefaultTopicNames() {
+        contextRunner.run(context -> {
+            assertThat(context.getBean(DisconnectClientCommandHelperImpl.class).getServiceTopic(SERVICE_ID))
+                    .isEqualTo("tbmq.client.disconnect.node-1");
+            assertThat(context.getBean(DownLinkPublisherHelperImpl.class).getBasicDownLinkServiceTopic(SERVICE_ID))
+                    .isEqualTo("tbmq.msg.downlink.basic.node-1");
+            assertThat(context.getBean(DownLinkPublisherHelperImpl.class).getPersistentDownLinkServiceTopic(SERVICE_ID))
+                    .isEqualTo("tbmq.msg.downlink.persisted.node-1");
+            assertThat(context.getBean(InternodeNotificationsHelperImpl.class).getServiceTopic(SERVICE_ID))
+                    .isEqualTo("tbmq.sys.internode.notifications.node-1");
+            assertThat(context.getBean(HistoricalStatsTotalHelperImpl.class).getTopic())
+                    .isEqualTo("tbmq.sys.historical.data");
+        });
     }
 
     @Test
-    void topicsWithKafkaPrefix() {
-        assertTopics("acme.");
+    void kafkaPrefixIsPrependedToEveryTopicName() {
+        contextRunner.withPropertyValues("queue.kafka.kafka-prefix=acme.").run(context -> {
+            assertThat(context.getBean(DisconnectClientCommandHelperImpl.class).getServiceTopic(SERVICE_ID))
+                    .isEqualTo("acme.tbmq.client.disconnect.node-1");
+            assertThat(context.getBean(DownLinkPublisherHelperImpl.class).getBasicDownLinkServiceTopic(SERVICE_ID))
+                    .isEqualTo("acme.tbmq.msg.downlink.basic.node-1");
+            assertThat(context.getBean(DownLinkPublisherHelperImpl.class).getPersistentDownLinkServiceTopic(SERVICE_ID))
+                    .isEqualTo("acme.tbmq.msg.downlink.persisted.node-1");
+            assertThat(context.getBean(InternodeNotificationsHelperImpl.class).getServiceTopic(SERVICE_ID))
+                    .isEqualTo("acme.tbmq.sys.internode.notifications.node-1");
+            assertThat(context.getBean(HistoricalStatsTotalHelperImpl.class).getTopic())
+                    .isEqualTo("acme.tbmq.sys.historical.data");
+        });
     }
 
-    private void assertTopics(String prefix) {
-        DisconnectClientCommandHelperImpl disconnectHelper = new DisconnectClientCommandHelperImpl();
-        ReflectionTestUtils.setField(disconnectHelper, "kafkaPrefix", prefix);
-        ReflectionTestUtils.setField(disconnectHelper, "disconnectClientCommandTopicPrefix", "tbmq.client.disconnect");
-        disconnectHelper.init();
-
-        DownLinkPublisherHelperImpl downLinkHelper = new DownLinkPublisherHelperImpl();
-        ReflectionTestUtils.setField(downLinkHelper, "kafkaPrefix", prefix);
-        ReflectionTestUtils.setField(downLinkHelper, "basicDownLinkTopicPrefixProperty", "tbmq.msg.downlink.basic");
-        ReflectionTestUtils.setField(downLinkHelper, "persistentDownLinkTopicPrefixProperty", "tbmq.msg.downlink.persisted");
-        downLinkHelper.init();
-
-        InternodeNotificationsHelperImpl internodeHelper = new InternodeNotificationsHelperImpl(mock(SystemInfoService.class));
-        ReflectionTestUtils.setField(internodeHelper, "kafkaPrefix", prefix);
-        ReflectionTestUtils.setField(internodeHelper, "internodeNotificationsTopicPrefix", "tbmq.sys.internode.notifications");
-        internodeHelper.init();
-
-        HistoricalStatsTotalHelperImpl historicalHelper = new HistoricalStatsTotalHelperImpl();
-        ReflectionTestUtils.setField(historicalHelper, "kafkaPrefix", prefix);
-        ReflectionTestUtils.setField(historicalHelper, "historicalDataTotalTopic", "tbmq.sys.historical.data");
-
-        assertThat(disconnectHelper.getServiceTopic("node-1")).isEqualTo(prefix + "tbmq.client.disconnect.node-1");
-        assertThat(downLinkHelper.getBasicDownLinkServiceTopic("node-1")).isEqualTo(prefix + "tbmq.msg.downlink.basic.node-1");
-        assertThat(downLinkHelper.getPersistentDownLinkServiceTopic("node-1")).isEqualTo(prefix + "tbmq.msg.downlink.persisted.node-1");
-        assertThat(internodeHelper.getServiceTopic("node-1")).isEqualTo(prefix + "tbmq.sys.internode.notifications.node-1");
-        assertThat(historicalHelper.getTopic()).isEqualTo(prefix + "tbmq.sys.historical.data");
+    private static List<PropertySource<?>> loadBrokerConfig() {
+        try {
+            return new YamlPropertySourceLoader().load(BROKER_CONFIG, new ClassPathResource(BROKER_CONFIG));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
