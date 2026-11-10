@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;

@@ -53,7 +53,7 @@ public class TbKafkaConsumerStatsService {
 
     private final Set<String> monitoredGroups = ConcurrentHashMap.newKeySet();
 
-    private final TbKafkaAdmin tbQueueAdmin;
+    private final TbKafkaAdmin kafkaAdmin;
     private final StatsConsumerKafkaSettings statsConsumerSettings;
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaConsumerStatisticConfig statsConfig;
@@ -89,7 +89,7 @@ public class TbKafkaConsumerStatsService {
             }
             for (String groupId : monitoredGroups) {
                 try {
-                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = tbQueueAdmin.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
+                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = kafkaAdmin.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
                             .get(statsConfig.getKafkaResponseTimeoutMs(), TimeUnit.MILLISECONDS);
                     Map<TopicPartition, Long> endOffsets = consumer.endOffsets(groupOffsets.keySet(), timeoutDuration);
 

@@ -155,9 +155,9 @@ public class IntegrationCleanupServiceImpl {
 
     /**
      * Each deletion is isolated from the other. Only the topic delete itself is callback-based: the consumer group is
-     * deleted first and synchronously, and rethrows on anything but TbQueueConsumerGroupNotFoundException. Without this a failure
-     * on the first topic would skip the second - and neither the sweep, which has already detached the integration
-     * and so short-circuits, nor the delete path, where the row is gone, would ever retry.
+     * deleted first and synchronously, and rethrows on anything but TbQueueConsumerGroupNotFoundException. Without this
+     * a failure on the first topic would skip the second - and neither the sweep, which has already detached the
+     * integration and so short-circuits, nor the delete path, where the row is gone, would ever retry.
      */
     private void deleteTopicQuietly(String integrationId, String topicKind, BiConsumer<String, BasicCallback> deletion) {
         BasicCallback callback = deleteCallback(integrationId, topicKind);

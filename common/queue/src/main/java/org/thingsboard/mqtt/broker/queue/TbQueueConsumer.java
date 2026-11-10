@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-
 import java.util.List;
 
 public interface TbQueueConsumer<T extends TbQueueMsg> {

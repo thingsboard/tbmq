@@ -191,8 +191,12 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     @Override
     protected Map<TbTopicPartition, Long> doGetEndOffset(Collection<TbTopicPartition> partitions) {
+        return fromKafkaOffsets(consumer.endOffsets(toKafkaPartitions(partitions)));
+    }
+
+    static Map<TbTopicPartition, Long> fromKafkaOffsets(Map<TopicPartition, Long> offsets) {
         Map<TbTopicPartition, Long> result = new HashMap<>();
-        consumer.endOffsets(toKafkaPartitions(partitions)).forEach((tp, offset) -> result.put(fromKafkaPartition(tp), offset));
+        offsets.forEach((tp, offset) -> result.put(fromKafkaPartition(tp), offset));
         return result;
     }
 
@@ -224,7 +228,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         return new TopicPartition(topic, partition);
     }
 
-    private static List<TopicPartition> toKafkaPartitions(Collection<TbTopicPartition> partitions) {
+    static List<TopicPartition> toKafkaPartitions(Collection<TbTopicPartition> partitions) {
         return partitions.stream().map(tp -> new TopicPartition(tp.topic(), tp.partition())).toList();
     }
 

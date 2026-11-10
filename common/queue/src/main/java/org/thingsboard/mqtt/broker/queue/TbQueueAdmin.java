@@ -37,6 +37,7 @@ public interface TbQueueAdmin {
     /**
      * Deletes the topic and reports the outcome to the callback. A missing topic is reported to
      * {@code callback.onFailure} as a {@link TbQueueTopicNotFoundException}.
+     * When topic deletion is disabled the call is a no-op and the callback is not invoked.
      */
     void deleteTopic(String topic, BasicCallback callback);
 
