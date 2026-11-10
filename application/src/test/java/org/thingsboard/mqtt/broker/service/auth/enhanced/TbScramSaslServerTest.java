@@ -245,8 +245,6 @@ class TbScramSaslServerTest {
                 valid + ",p=" + Base64.getEncoder().encodeToString(new byte[5]),    // proof of a wrong length
                 valid + ",p=",                                                      // empty proof
                 valid + ",p=" + RFC_PROOF.replace("=", ""),                         // proof without padding
-                "c=biws,r=" + RFC_COMBINED_NONCE + ",junk,p=" + RFC_PROOF,          // junk element
-                "c=biws,r=" + RFC_COMBINED_NONCE + ",foo=,p=" + RFC_PROOF,          // extension with an empty value
         };
         for (String clientFinal : clientFinals) {
             TbScramSaslServer s = freshServer();
@@ -254,6 +252,45 @@ class TbScramSaslServerTest {
             assertSaslFailure(s, clientFinal);
             assertThat(s.isComplete()).isFalse();
         }
+
+        // a valid proof is computed over each message, so only the grammar can reject it
+        for (String extension : new String[]{",junk", ",foo="}) {
+            TbScramSaslServer s = freshServer();
+            String bare = "n=user,r=" + RFC_CLIENT_NONCE;
+            byte[] serverFirst = s.evaluateResponse(utf8("n,," + bare));
+            String clientFinal = clientFinal(bare, new String(serverFirst, UTF_8), "biws", RFC_COMBINED_NONCE, extension);
+            assertSaslFailure(s, clientFinal);
+            assertThat(s.isComplete()).isFalse();
+        }
+    }
+
+    @Test
+    void extensionValuesMayContainEqualsSigns() throws Exception {
+        for (String extension : new String[]{",foo=a=b", ",foo=YQ=="}) {
+            assertCompletes("n,,", "n=user,r=x" + extension, "");
+            assertCompletes("n,,", "n=user,r=x", extension);
+        }
+    }
+
+    @Test
+    void hugeInputsNeverOverflowTheStack() throws Exception {
+        String longName = "u".repeat(64_000);
+        assertCompletes("n,,", "n=" + longName + ",r=x", "");
+        assertCompletes("n,a=" + longName + ",", "n=" + longName + ",r=x", "");
+        assertCompletes("n,,", "n=user,r=x" + ",ab=1".repeat(16_000), "");
+        assertCompletes("n,,", "n=user,r=x", ",ab=1".repeat(16_000));
+        assertCompletes("n,,", "n=user,r=x,foo=" + "v".repeat(64_000), "");
+        assertCompletes("n,,", "n=user,r=x", ",foo=" + "v".repeat(64_000));
+    }
+
+    /** Runs a whole exchange with a valid proof computed over the given messages and expects it to complete. */
+    private void assertCompletes(String gs2Header, String clientFirstBare, String finalExtensions) throws Exception {
+        TbScramSaslServer s = freshServer();
+        byte[] serverFirst = s.evaluateResponse(utf8(gs2Header + clientFirstBare));
+        String clientFinal = clientFinal(clientFirstBare, new String(serverFirst, UTF_8), b64Str(gs2Header),
+                "x" + RFC_SERVER_NONCE, finalExtensions);
+        s.evaluateResponse(utf8(clientFinal));
+        assertThat(s.isComplete()).isTrue();
     }
 
     @Test
@@ -341,7 +378,12 @@ class TbScramSaslServerTest {
      */
     private static String clientFinal(String clientFirstBare, String serverFirst, String channelBinding, String nonce)
             throws Exception {
-        String withoutProof = "c=" + channelBinding + ",r=" + nonce;
+        return clientFinal(clientFirstBare, serverFirst, channelBinding, nonce, "");
+    }
+
+    private static String clientFinal(String clientFirstBare, String serverFirst, String channelBinding, String nonce,
+                                      String extensions) throws Exception {
+        String withoutProof = "c=" + channelBinding + ",r=" + nonce + extensions;
         String authMessage = clientFirstBare + "," + serverFirst + "," + withoutProof;
         return withoutProof + ",p=" + Base64.getEncoder().encodeToString(
                 clientProof(ScramAlgorithm.SHA_256, PASSWORD, b64(RFC_SALT), authMessage));

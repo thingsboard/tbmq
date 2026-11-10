@@ -48,15 +48,18 @@ import java.util.regex.Pattern;
 public final class TbScramSaslServer implements SaslServer {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    // RFC 5802 section 7; saslname and extension values may hold any UTF-8 except NUL, "," and a bare "="
-    private static final String SASLNAME = "(?:[^,=\\u0000]|=2C|=3D)+";
+    // RFC 5802 section 7. A saslname may hold any UTF-8 except NUL, "," and a bare "="; an extension value any UTF-8
+    // except NUL and ",". Repeated groups are possessive, because the backtracking form recurses once per repetition
+    // and overflows the stack on long input. The lookahead keeps ",p=" out of the client-final extension loop.
+    private static final String SASLNAME = "(?:[^,=\\u0000]|=2C|=3D)++";
     private static final String NONCE = "[\\x21-\\x2B\\x2D-\\x7E]+";
-    private static final String EXTENSIONS = "(?:,[A-Za-z]+=[^,=\\u0000]+)*";
-    private static final String BASE64 = "(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?";
+    private static final String FIRST_EXTENSIONS = "(?:,[A-Za-z]+=[^,\\u0000]+)*+";
+    private static final String FINAL_EXTENSIONS = "(?:,[A-Za-z]+=[^,\\u0000]+(?=,))*+";
+    private static final String BASE64 = "(?:[A-Za-z0-9+/]{4})*+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?";
     private static final Pattern CLIENT_FIRST_MESSAGE = Pattern.compile(
-            "n,(?:a=(" + SASLNAME + "))?,n=(" + SASLNAME + "),r=(" + NONCE + ")(" + EXTENSIONS + ")");
+            "n,(?:a=(" + SASLNAME + "))?,n=(" + SASLNAME + "),r=(" + NONCE + ")(" + FIRST_EXTENSIONS + ")");
     private static final Pattern CLIENT_FINAL_MESSAGE = Pattern.compile(
-            "c=(" + BASE64 + "),r=(" + NONCE + ")" + EXTENSIONS + ",p=(" + BASE64 + ")");
+            "c=(" + BASE64 + "),r=(" + NONCE + ")" + FINAL_EXTENSIONS + ",p=(" + BASE64 + ")");
 
     private enum State {
         RECEIVE_CLIENT_FIRST_MESSAGE,
@@ -102,22 +105,28 @@ public final class TbScramSaslServer implements SaslServer {
 
     @Override
     public byte[] evaluateResponse(byte[] response) throws SaslException {
+        boolean succeeded = false;
         try {
             if (response == null || response.length == 0) {
                 throw new SaslException("Empty SCRAM message");
             }
             String message = decodeUtf8(response);
-            return switch (state) {
+            byte[] result = switch (state) {
                 case RECEIVE_CLIENT_FIRST_MESSAGE -> processClientFirst(message);
                 case RECEIVE_CLIENT_FINAL_MESSAGE -> processClientFinal(message);
                 default -> throw new SaslException("Unexpected SCRAM message in state " + state);
             };
+            succeeded = true;
+            return result;
         } catch (SaslException e) {
-            fail();
             throw e;
         } catch (Exception e) {
-            fail();
             throw new SaslException("SCRAM authentication failed", e);
+        } finally {
+            if (!succeeded) {
+                // fail closed on any abrupt exit, Errors included
+                fail();
+            }
         }
     }
 
