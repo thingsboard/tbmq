@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'constants' as *;
+
 :host {
   width: 100%;
 }
 
 :host ::ng-deep {
-
-  .tb-side-menu,
+  .tb-side-menu {
+    padding: 0 0 24px;
+    margin: 0;
+    list-style: none;
+    --mat-button-text-label-text-weight: 400;
+  }
   .tb-side-menu ul {
     padding: 0;
     margin-top: 0;
     list-style: none;
   }
-
-  .tb-side-menu > li {
-    border-bottom: 1px solid rgba(0, 0, 0, .12);
-  }
-
   a.mat-mdc-button.mat-mdc-button-base {
     display: inline-flex;
+    position: relative;
     width: 100%;
     height: 40px;
     align-items: center;
@@ -39,21 +41,57 @@
     line-height: 40px;
     border-radius: 0;
     padding: 0 16px;
-    &:hover {
+    &:hover, &.tb-hovered {
+      background-color: rgba(255, 255, 255, .08);
       border-bottom: none;
-      background-color: rgba(255,255,255,0.08);
     }
     &:focus {
       border-bottom: none;
     }
-    &.tb-active {
-      background-color: rgba(255, 255, 255, .15);
+    &:not(.tb-button-toggle) {
+      &.tb-active:not(.tb-toggled) {
+        background-color: rgba(255, 255, 255, .15);
+      }
     }
-    .mat-icon {
+    &.tb-active:not(.tb-toggled) {
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #fff;
+      }
+    }
+    &.is-new::after {
+      position: absolute;
+      right: 16px;
+      top: 10px;
+      content: "NEW";
+      background: #fff;
+      color: $tb-primary-color;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .25px;
+      line-height: 16px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      opacity: 1;
+      transition: opacity $sidenav-anim-timing;
+    }
+    .mat-icon, img {
       margin-right: 8px;
       margin-left: 0;
       min-width: 1.125rem;
       min-height: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      font-size: 1.125rem;
+    }
+    img {
+      color: currentColor;
+      fill: currentColor;
     }
     span.mdc-button__label {
       width: 100%;
@@ -61,6 +99,9 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       display: inline-flex;
+      align-items: center;
+      opacity: 1;
+      transition: opacity $sidenav-anim-timing;
       & > span {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -68,6 +109,43 @@
       .tb-toggle-icon {
         padding-top: 12px;
         padding-bottom: 12px;
+      }
+    }
+    &.tb-button-toggle {
+      &.is-new::after {
+        right: 44px;
+      }
+    }
+  }
+}
+
+:host :host-context(.tb-site-sidenav.tb-collapsed) ::ng-deep {
+  .tb-side-menu {
+    padding: 0 0 8px;
+    a.mat-mdc-button.mat-mdc-button-base {
+      padding-right: 0;
+      min-width: 0;
+      span.mdc-button__label {
+        opacity: 0;
+      }
+      &.is-new::after {
+        opacity: 0;
+      }
+    }
+  }
+}
+
+:host :host-context(.tb-site-sidenav:not(.tb-collapsed)) ::ng-deep {
+  .tb-side-menu {
+    a.mat-mdc-button.mat-mdc-button-base {
+      &:not(.tb-button-toggle) {
+        border-bottom: 1px solid rgba(0, 0, 0, .12);
+      }
+    }
+    .tb-menu-toggle-list {
+      border-bottom: 1px solid rgba(0, 0, 0, .12);
+      a.mat-mdc-button.mat-mdc-button-base {
+        border-bottom: none;
       }
     }
   }

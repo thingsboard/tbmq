@@ -15,25 +15,37 @@
     limitations under the License.
 
 -->
-<mat-sidenav-container>
-  <mat-sidenav #sidenav class="tb-site-sidenav grey-background mat-elevation-z2"
-    [disableClose]="sidenavOpened"
+<mat-sidenav-container [class.tb-desktop]="sidenavDesktop()"
+                       [class.tb-collapsed]="sidenavCollapsed()">
+  <mat-sidenav #sidenav class="tb-site-sidenav mat-elevation-z2"
+    [class.tb-collapsed]="menuCollapsed()"
+    [disableClose]="sidenavOpened()"
     (click)="sidenavClicked()"
-    [mode]="sidenavMode"
-    [opened]="sidenavOpened">
-    <header class="tb-nav-header">
+    [mode]="sidenavMode()"
+    [opened]="sidenavOpened()">
+    <header #navHeader class="tb-nav-header">
       <mat-toolbar color="primary" class="tb-nav-header-toolbar">
-        <div class="flex flex-auto">
-          <tb-logo class="tb-logo-title"></tb-logo>
-        </div>
+        <tb-logo class="tb-logo-title"></tb-logo>
+        @if (sidenavDesktop()) {
+          <button mat-icon-button class="tb-sidenav-toggle tb-mat-40" (click)="toggleSidenav()">
+            <tb-icon matButtonIcon>{{ sidenavCollapsed() ? 'mdi:menu-close' : 'mdi:menu-open' }}</tb-icon>
+          </button>
+        }
       </mat-toolbar>
+      <tb-goto-menu [collapsed]="menuCollapsed()"
+                    (searchBtnClicked)="toggleSidenav()"
+                    (linkClicked)="sidenavClicked()"></tb-goto-menu>
     </header>
     <mat-toolbar color="primary" class="tb-side-menu-toolbar flex flex-1 flex-col" role="navigation">
-      <tb-side-menu></tb-side-menu>
+      <div #sidebarScroll class="w-full flex-1 overflow-y-auto overflow-x-hidden">
+        <tb-side-menu #sideMenu [collapsed]="menuCollapsed()"></tb-side-menu>
+      </div>
+      <div #sidebarBottom class="tb-sidebar-bottom flex flex-col">
+        <tb-user-menu [collapsed]="menuCollapsed()" (menuClicked)="sidenavClicked()"></tb-user-menu>
+      </div>
     </mat-toolbar>
-    <tb-getting-started-link></tb-getting-started-link>
   </mat-sidenav>
-  <mat-sidenav-content>
+  <mat-sidenav-content class="tb-site-content">
     <div class="flex flex-col" role="main" style="height: 100%;">
       <mat-toolbar color="primary" class="tb-primary-toolbar flex flex-row">
         <button mat-icon-button id="main" class="gt-sm:!hidden" (click)="sidenav.toggle()">
@@ -47,7 +59,7 @@
             <mat-icon class="material-icons">{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
           </button>
         }
-        <tb-user-menu [displayUserInfo]="true"></tb-user-menu>
+        <tb-getting-started-link></tb-getting-started-link>
       </mat-toolbar>
       @if (isLoading$ | async) {
         <mat-progress-bar color="warn" style="z-index: 10; margin-bottom: -4px; width: 100%;" mode="indeterminate"

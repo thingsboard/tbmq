@@ -30,10 +30,12 @@ import {
   OnInit,
   Optional,
   Renderer2,
+  runInInjectionContext,
   SimpleChanges,
   TemplateRef,
   ViewContainerRef,
   ViewEncapsulation,
+  booleanAttribute,
   input,
   output,
   viewChild
@@ -57,8 +59,8 @@ import { POSITION_MAP } from '@shared/models/overlay.models';
 import { distinctUntilChanged, take, takeUntil } from 'rxjs/operators';
 import { isNotEmptyStr, onParentScrollOrWindowResize } from '@core/utils';
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { TbComponentOutletDirective } from './directives/component-outlet.directive';
+import { TbStringTemplateOutletDirective } from './directives/string-template-outlet.directive';
 
 export type TbPopoverTrigger = 'click' | 'focus' | 'hover' | null;
 
@@ -80,8 +82,7 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
   readonly placement = input<string | string[]>('top', { alias: "tbPopoverPlacement" });
   readonly origin = input<ElementRef<HTMLElement>>(undefined, { alias: "tbPopoverOrigin" });
   readonly visible = input<boolean>(undefined, { alias: "tbPopoverVisible" });
-  @coerceBoolean()
-readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
+  readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton", transform: booleanAttribute });
   readonly mouseEnterDelay = input<number>(undefined, { alias: "tbPopoverMouseEnterDelay" });
   readonly mouseLeaveDelay = input<number>(undefined, { alias: "tbPopoverMouseLeaveDelay" });
   readonly overlayClassName = input<string>(undefined, { alias: "tbPopoverOverlayClassName" });
@@ -89,6 +90,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
     [klass: string]: any;
 }>(undefined, { alias: "tbPopoverOverlayStyle" });
   readonly tbPopoverBackdrop = input(false);
+  readonly tbPopoverMenu = input(false, { transform: booleanAttribute });
 
   // eslint-disable-next-line @angular-eslint/no-output-rename
   readonly visibleChange = output<boolean>({ alias: 'tbPopoverVisibleChange' });
@@ -105,7 +107,8 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
     private elementRef: ElementRef,
     private hostView: ViewContainerRef,
     private resolver: ComponentFactoryResolver,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private injector: Injector
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -157,7 +160,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
       this.renderer.parentNode(this.elementRef.nativeElement),
       componentRef.location.nativeElement
     );
-    this.component.setOverlayOrigin(new CdkOverlayOrigin(this.origin() || this.elementRef));
+    this.component.setOverlayOrigin(this.createOverlayOrigin());
 
     this.initProperties();
 
@@ -167,6 +170,14 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
         this.internalVisible = visible;
         this.visibleChange.emit(visible);
       });
+  }
+
+  private createOverlayOrigin(): CdkOverlayOrigin {
+    const originInjector = Injector.create({
+      providers: [{ provide: ElementRef, useValue: this.origin() || this.elementRef }],
+      parent: this.injector
+    });
+    return runInInjectionContext(originInjector, () => new CdkOverlayOrigin());
   }
 
   private registerTriggers(): void {
@@ -238,7 +249,8 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
       mouseLeaveDelay: ['tbMouseLeaveDelay', () => this.mouseLeaveDelay()],
       overlayClassName: ['tbOverlayClassName', () => this.overlayClassName()],
       overlayStyle: ['tbOverlayStyle', () => this.overlayStyle()],
-      tbPopoverBackdrop: ['tbBackdrop', () => this.tbPopoverBackdrop()]
+      tbPopoverBackdrop: ['tbBackdrop', () => this.tbPopoverBackdrop()],
+      tbPopoverMenu: ['tbMenu', () => this.tbPopoverMenu()]
     };
 
     (keys || Object.keys(mappingProperties).filter(key => !key.startsWith('directive'))).forEach(
@@ -335,7 +347,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
               <span class="tb-popover-arrow-content"></span>
             </div>
             <div class="tb-popover-inner" [style]="tbPopoverInnerStyle" role="tooltip">
-              @if (tbShowCloseButton) {
+              @if (tbShowCloseButton && !tbMenu) {
                 <div class="tb-popover-close-button" (click)="closeButtonClick($event)">×</div>
               }
               <div style="width: 100%; height: 100%;">
@@ -362,7 +374,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
       </div>
     </ng-template>
     `,
-    imports: [CdkConnectedOverlay, TbComponentOutletDirective]
+    imports: [CdkConnectedOverlay, TbComponentOutletDirective, TbStringTemplateOutletDirective]
 })
 export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
 
@@ -384,6 +396,7 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
   tbMouseLeaveDelay?: number;
   tbHideOnClickOutside = true;
   tbShowCloseButton = true;
+  tbMenu = false;
 
   tbAnimationState = 'active';
 
@@ -612,7 +625,8 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
   updateStyles(): void {
     this.classMap = {
       [`tb-popover-placement-${this.preferredPlacement}`]: true,
-      ['tb-popover-hidden']: this.tbHidden || !this.lastIsIntersecting
+      ['tb-popover-hidden']: this.tbHidden || !this.lastIsIntersecting,
+      ['tb-menu']: this.tbMenu
     };
     if (this.tbOverlayClassName) {
       this.classMap[this.tbOverlayClassName] = true;
