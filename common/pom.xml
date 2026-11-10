@@ -41,6 +41,7 @@
         <module>stats</module>
         <module>actor</module>
         <module>cache</module>
+        <module>cache-redis</module>
         <module>integration</module>
     </modules>
 
