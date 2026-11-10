@@ -61,9 +61,9 @@ class RedisServiceRegistryStoreTest {
 
     @Test
     void entriesStringifiesKeysAndValues() {
-        when(hashOps.entries(KEY)).thenReturn(Map.of("svc1", "TBMQ"));
+        when(hashOps.entries(KEY)).thenReturn(Map.of("svc1", "TBMQ", 42, 7));
 
-        assertThat(newStore().entries()).containsExactly(entry("svc1", "TBMQ"));
+        assertThat(newStore().entries()).containsOnly(entry("svc1", "TBMQ"), entry("42", "7"));
     }
 
     @Test
@@ -78,6 +78,13 @@ class RedisServiceRegistryStoreTest {
         when(hashOps.delete(KEY, "svc3")).thenReturn(1L);
 
         assertThat(newStore().delete("svc3")).isEqualTo(1L);
+    }
+
+    @Test
+    void deleteSendsEveryFieldAndReturnsNumberRemoved() {
+        when(hashOps.delete(KEY, "a", "b")).thenReturn(2L);
+
+        assertThat(newStore().delete("a", "b")).isEqualTo(2L);
     }
 
     @Test
@@ -96,9 +103,9 @@ class RedisServiceRegistryStoreTest {
 
     @Test
     void getReturnsStringifiedValue() {
-        when(hashOps.get(KEY, "svc1")).thenReturn("TBMQ");
+        when(hashOps.get(KEY, "svc1")).thenReturn(42);
 
-        assertThat(newStore().get("svc1")).contains("TBMQ");
+        assertThat(newStore().get("svc1")).contains("42");
     }
 
     @Test
