@@ -219,10 +219,18 @@ class TbScramSaslServerTest {
                 "n,,n=user,r=x,junk",      // extension without a value
                 "n,user,n=user,r=x",       // malformed authzid
                 "n",                       // truncated
+                "n,,n=user,r=a b",         // nonce is not printable
+                "n,,n=user,r=x,foo=",      // extension with an empty value
+                "n,,n=us\u0000er,r=x",      // NUL in the saslname
+                "n,a=,n=user,r=x",         // empty authzid
+                "n,,n=,r=x",               // empty username
         };
         for (String clientFirst : clientFirsts) {
             assertSaslFailure(freshServer(), clientFirst);
         }
+
+        assertSaslFailure(freshServer(), new byte[]{'n', ',', ',', 'n', '=', (byte) 0xC3, (byte) 0x28, ',', 'r', '=', 'x'}); // invalid UTF-8
+        assertThat(lookedUpName.get()).as("handler is never called for a client-first parse failure").isNull();
 
         assertSaslFailure(freshServer(), (byte[]) null);
         assertSaslFailure(freshServer(), new byte[0]);
@@ -236,6 +244,9 @@ class TbScramSaslServerTest {
                 valid + ",p=!!!not-base64!!!",                                      // proof not base64
                 valid + ",p=" + Base64.getEncoder().encodeToString(new byte[5]),    // proof of a wrong length
                 valid + ",p=",                                                      // empty proof
+                valid + ",p=" + RFC_PROOF.replace("=", ""),                         // proof without padding
+                "c=biws,r=" + RFC_COMBINED_NONCE + ",junk,p=" + RFC_PROOF,          // junk element
+                "c=biws,r=" + RFC_COMBINED_NONCE + ",foo=,p=" + RFC_PROOF,          // extension with an empty value
         };
         for (String clientFinal : clientFinals) {
             TbScramSaslServer s = freshServer();
@@ -243,6 +254,23 @@ class TbScramSaslServerTest {
             assertSaslFailure(s, clientFinal);
             assertThat(s.isComplete()).isFalse();
         }
+    }
+
+    @Test
+    void escapedAuthzidIsDecodedBeforeComparison() throws Exception {
+        byte[] serverFirst = server.evaluateResponse(utf8("n,a=a=2Cb,n=a=2Cb,r=x"));
+        server.evaluateResponse(utf8(clientFinal("n=a=2Cb,r=x", new String(serverFirst, UTF_8), b64Str("n,a=a=2Cb,"), "x" + RFC_SERVER_NONCE)));
+        assertThat(server.isComplete()).isTrue();
+        assertThat(server.getAuthorizationID()).isEqualTo("a,b");
+
+        TbScramSaslServer other = freshServer();
+        assertThatThrownBy(() -> other.evaluateResponse(utf8("n,a=a=2Cb,n=a=3D2Cb,r=x"))).isInstanceOf(SaslException.class);
+    }
+
+    @Test
+    void utf8UsernameIsDecodedAndPassedToHandler() throws Exception {
+        server.evaluateResponse(utf8("n,,n=\u00FCser,r=x"));
+        assertThat(lookedUpName.get()).isEqualTo("\u00FCser");
     }
 
     @Test

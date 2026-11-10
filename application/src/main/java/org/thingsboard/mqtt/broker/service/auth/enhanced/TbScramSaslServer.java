@@ -25,6 +25,9 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -33,6 +36,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Server side of the SCRAM-SHA-256 and SCRAM-SHA-512 SASL mechanisms (RFC 5802, RFC 7677) without channel binding.
@@ -43,7 +48,15 @@ import java.util.function.Supplier;
 public final class TbScramSaslServer implements SaslServer {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String GS2_NO_CHANNEL_BINDING = "n";
+    // RFC 5802 section 7; saslname and extension values may hold any UTF-8 except NUL, "," and a bare "="
+    private static final String SASLNAME = "(?:[^,=\\u0000]|=2C|=3D)+";
+    private static final String NONCE = "[\\x21-\\x2B\\x2D-\\x7E]+";
+    private static final String EXTENSIONS = "(?:,[A-Za-z]+=[^,=\\u0000]+)*";
+    private static final String BASE64 = "(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?";
+    private static final Pattern CLIENT_FIRST_MESSAGE = Pattern.compile(
+            "n,(?:a=(" + SASLNAME + "))?,n=(" + SASLNAME + "),r=(" + NONCE + ")(" + EXTENSIONS + ")");
+    private static final Pattern CLIENT_FINAL_MESSAGE = Pattern.compile(
+            "c=(" + BASE64 + "),r=(" + NONCE + ")" + EXTENSIONS + ",p=(" + BASE64 + ")");
 
     private enum State {
         RECEIVE_CLIENT_FIRST_MESSAGE,
@@ -93,7 +106,7 @@ public final class TbScramSaslServer implements SaslServer {
             if (response == null || response.length == 0) {
                 throw new SaslException("Empty SCRAM message");
             }
-            String message = new String(response, StandardCharsets.UTF_8);
+            String message = decodeUtf8(response);
             return switch (state) {
                 case RECEIVE_CLIENT_FIRST_MESSAGE -> processClientFirst(message);
                 case RECEIVE_CLIENT_FINAL_MESSAGE -> processClientFinal(message);
@@ -108,40 +121,30 @@ public final class TbScramSaslServer implements SaslServer {
         }
     }
 
+    private static String decodeUtf8(byte[] bytes) throws SaslException {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            throw new SaslException("SCRAM message is not valid UTF-8", e);
+        }
+    }
+
     private byte[] processClientFirst(String message) throws SaslException {
-        // gs2-header "," [reserved-mext ","] username "," nonce ["," extensions]
-        String[] parts = message.split(",", -1);
-        if (parts.length < 4) {
+        Matcher matcher = CLIENT_FIRST_MESSAGE.matcher(message);
+        if (!matcher.matches()) {
             throw new SaslException("Malformed client-first message");
         }
-        if (!GS2_NO_CHANNEL_BINDING.equals(parts[0])) {
-            throw new SaslException("Unsupported channel binding flag in client-first message");
-        }
-        String authzid = null;
-        if (!parts[1].isEmpty()) {
-            if (!parts[1].startsWith("a=")) {
-                throw new SaslException("Malformed authorization id in client-first message");
-            }
-            authzid = unescapeSaslName(parts[1].substring(2));
-        }
-        if (parts[2].startsWith("m=")) {
-            throw new SaslException("Mandatory SCRAM extensions are not supported");
-        }
-        if (!parts[2].startsWith("n=")) {
-            throw new SaslException("Missing username in client-first message");
-        }
-        String clientUsername = unescapeSaslName(parts[2].substring(2));
-        if (!parts[3].startsWith("r=") || parts[3].length() == 2) {
-            throw new SaslException("Missing nonce in client-first message");
-        }
-        String clientNonce = parts[3].substring(2);
+        String authzid = matcher.group(1) == null ? null : unescapeSaslName(matcher.group(1));
+        String clientUsername = unescapeSaslName(matcher.group(2));
+        String clientNonce = matcher.group(3);
         boolean tokenAuth = false;
-        for (int i = 4; i < parts.length; i++) {
-            int eq = parts[i].indexOf('=');
-            if (eq <= 0) {
-                throw new SaslException("Malformed extension in client-first message");
-            }
-            if (parts[i].substring(0, eq).equalsIgnoreCase("tokenauth") && Boolean.parseBoolean(parts[i].substring(eq + 1))) {
+        for (String extension : matcher.group(4).split(",")) {
+            int eq = extension.indexOf('=');
+            if (eq > 0 && extension.substring(0, eq).equalsIgnoreCase("tokenauth") && Boolean.parseBoolean(extension.substring(eq + 1))) {
                 tokenAuth = true;
             }
         }
@@ -154,6 +157,7 @@ public final class TbScramSaslServer implements SaslServer {
             throw new SaslException("Authentication failed: credentials could not be obtained", e);
         }
         // rejected only after the callback, so that the handler has seen the username of a rejected client
+        // RFC 5802 section 5.1: both authzid and username are saslnames, compared after unescaping
         if (authzid != null && !authzid.equals(clientUsername)) {
             throw new SaslException("Authorization id differs from username");
         }
@@ -174,7 +178,7 @@ public final class TbScramSaslServer implements SaslServer {
         this.serverKey = credential.serverKey().clone();
 
         this.username = clientUsername;
-        this.gs2Header = parts[0] + "," + parts[1] + ",";
+        this.gs2Header = message.substring(0, matcher.start(2) - 2);
         this.clientFirstMessageBare = message.substring(gs2Header.length());
         this.combinedNonce = clientNonce + serverNonceSupplier.get();
         this.serverFirstMessage = "r=" + combinedNonce
@@ -185,29 +189,19 @@ public final class TbScramSaslServer implements SaslServer {
     }
 
     private byte[] processClientFinal(String message) throws SaslException, GeneralSecurityException {
-        // channel-binding "," nonce ["," extensions] "," proof
-        int proofIndex = message.lastIndexOf(",p=");
-        if (proofIndex < 0) {
-            throw new SaslException("Missing proof in client-final message");
-        }
-        String withoutProof = message.substring(0, proofIndex);
-        String[] parts = withoutProof.split(",", -1);
-        if (parts.length < 2 || !parts[0].startsWith("c=") || !parts[1].startsWith("r=")) {
+        Matcher matcher = CLIENT_FINAL_MESSAGE.matcher(message);
+        if (!matcher.matches()) {
             throw new SaslException("Malformed client-final message");
         }
+        String withoutProof = message.substring(0, matcher.start(3) - 3);
         String expectedChannelBinding = Base64.getEncoder().encodeToString(gs2Header.getBytes(StandardCharsets.UTF_8));
-        if (!expectedChannelBinding.equals(parts[0].substring(2))) {
+        if (!expectedChannelBinding.equals(matcher.group(1))) {
             throw new SaslException("Invalid channel binding in client-final message");
         }
-        if (!combinedNonce.equals(parts[1].substring(2))) {
+        if (!combinedNonce.equals(matcher.group(2))) {
             throw new SaslException("Invalid nonce in client-final message");
         }
-        byte[] clientProof;
-        try {
-            clientProof = Base64.getDecoder().decode(message.substring(proofIndex + 3));
-        } catch (IllegalArgumentException e) {
-            throw new SaslException("Malformed proof in client-final message", e);
-        }
+        byte[] clientProof = Base64.getDecoder().decode(matcher.group(3));
         if (clientProof.length != algorithm.getHashByteSize()) {
             throw new SaslException("Invalid proof length in client-final message");
         }
