@@ -83,18 +83,24 @@ docker exec -it haproxy-certbot sh -c "kill -HUP 1"
 
 **Note**: Make sure `TBMQ_VERSION` in .env file is set to the target version.
 
-After that execute the following commands:
-
-```
-./scripts/docker-stop-services.sh
-```
+After that execute the upgrade script:
 
 ```
 ./scripts/docker-upgrade-tbmq.sh
 ```
 
-```
-./scripts/docker-start-services.sh
-```
+The script upgrades the database, then brings the whole cluster up on the new version. It runs in one of two modes:
+
+* `rolling` — the database is upgraded while the current nodes keep serving clients, then `tbmq1`, `tbmq2` and the
+  integration executors are replaced one at a time. HAProxy sends clients to the node that is still up.
+* `stop` — the TBMQ nodes and integration executors are stopped, the database is upgraded, then the cluster is started.
+
+By default the script uses the mode the target release supports (`ROLLING_UPGRADE_SUPPORTED` in the script), and
+switches to `stop` when the TBMQ nodes are not running. To stop the cluster even when a rolling upgrade is supported,
+run `./scripts/docker-upgrade-tbmq.sh --mode=stop`.
+
+A rolling upgrade relies on the HAProxy settings `option redispatch` and `fastinter` from `haproxy/config/haproxy.cfg`.
+If your HAProxy configuration predates them, apply it with `./scripts/docker-refresh-config.sh` and reload HAProxy
+before the upgrade.
 
 See [Upgrade Instructions](https://tbmq.io/docs/installation/upgrade-instructions/) for more details.
