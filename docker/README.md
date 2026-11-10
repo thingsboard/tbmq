@@ -89,25 +89,8 @@ After that execute the upgrade script:
 ./scripts/docker-upgrade-tbmq.sh
 ```
 
-The script upgrades the database, then brings the whole cluster up on the new version. It runs in one of two modes:
-
-* `rolling` — the database is upgraded while the current nodes keep serving clients, then `tbmq1`, `tbmq2` and the
-  integration executors are replaced one at a time. HAProxy sends clients to the node that is still up.
-* `stop` — the TBMQ nodes and integration executors are stopped, the database is upgraded, then the cluster is started.
-
-By default the script uses rolling when the target `TBMQ_VERSION` is listed in `ROLLING_UPGRADE_VERSIONS` at the top
-of the script, and stop otherwise. It also uses stop when no TBMQ node is running. To stop the cluster even when a
-rolling upgrade is supported, run `./scripts/docker-upgrade-tbmq.sh --mode=stop`. A rolling upgrade refuses to start
-when only some TBMQ nodes are running.
-
-A TBMQ node counts as ready when it accepts connections on port 1883 or 8883. If your nodes listen for MQTT on other
-ports, set them in `TBMQ_READY_PORTS`, for example `TBMQ_READY_PORTS=1884 ./scripts/docker-upgrade-tbmq.sh`.
-
-If a node does not become ready, the script stops with the database already upgraded. Fix the cause, then replace the
-remaining nodes with `./scripts/docker-upgrade-tbmq.sh --skip-db-upgrade`.
-
-A rolling upgrade relies on the HAProxy settings `option redispatch` and `fastinter` from `haproxy/config/haproxy.cfg`.
-If your HAProxy configuration predates them, apply it with `./scripts/docker-refresh-config.sh` and reload HAProxy
-before the upgrade.
+The script stops the TBMQ nodes and integration executors, upgrades the database, then starts the cluster on the new
+version. Clients are disconnected during the upgrade and reconnect once the nodes are up. If the database upgrade fails,
+the script leaves the nodes stopped and prints how to recover.
 
 See [Upgrade Instructions](https://tbmq.io/docs/installation/upgrade-instructions/) for more details.
