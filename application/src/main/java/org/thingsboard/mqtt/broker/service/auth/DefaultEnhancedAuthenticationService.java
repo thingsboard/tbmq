@@ -18,8 +18,6 @@ package org.thingsboard.mqtt.broker.service.auth;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.security.scram.internals.ScramSaslServer;
-import org.apache.kafka.common.security.scram.internals.ScramSaslServerProvider;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -32,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueRes
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandler;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.TbScramSaslServer;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -70,7 +69,6 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     @PostConstruct
     public void init() {
-        ScramSaslServerProvider.initialize();
         MqttAuthProvider scramAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM)
                 .orElseThrow(() -> new IllegalStateException("Failed to initialize SCRAM MQTT 5 Enhanced authentication provider! Provider is missing in the DB!"));
         enabled = scramAuthProvider.isEnabled();
@@ -198,12 +196,6 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
                 }
                 return false;
             }
-            if (!(saslServer instanceof ScramSaslServer)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] {} SASL server does not supported! Only ScramSaslServer is supported!", clientId, saslServer.getClass().getName());
-                }
-                return false;
-            }
         } catch (SaslException e) {
             log.warn("[{}] Failed to initialize SASL server due to: ", clientId, e);
             return false;
@@ -213,7 +205,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     }
 
     SaslServer createSaslServer(String authMethod, ScramAuthCallbackHandler callbackHandler) throws SaslException {
-        return Sasl.createSaslServer(authMethod, SCRAM_SASL_PROTOCOL, null, SCRAM_SASL_PROPS, callbackHandler);
+        return TbScramSaslServer.create(authMethod, callbackHandler).orElse(null);
     }
 
     private void logFinalResponse(EnhancedAuthContext authContext, EnhancedAuthFinalResponse response, boolean reAuth) {

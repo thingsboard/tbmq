@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
-import org.apache.kafka.common.security.scram.internals.ScramSaslClientProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
@@ -27,9 +26,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import java.security.MessageDigest;
@@ -40,8 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthenticationService.SCRAM_SASL_PROPS;
-import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthenticationService.SCRAM_SASL_PROTOCOL;
 
 class TbScramSaslServerTest {
 
@@ -81,13 +75,9 @@ class TbScramSaslServerTest {
             new SecureRandom().nextBytes(salt);
             TbScramSaslServer scramServer = TbScramSaslServer.create(algorithm.getMqttAlgorithmName(),
                     handlerFor(credential(algorithm, "s3cret", salt))).orElseThrow();
-            SaslClient client = createScramSaslClient("alice", "s3cret", algorithm);
+            SaslClient client = KafkaScramTestClient.create("alice", "s3cret", algorithm);
 
-            byte[] clientFirst = client.evaluateChallenge(new byte[0]);
-            byte[] serverFirst = scramServer.evaluateResponse(clientFirst);
-            byte[] clientFinal = client.evaluateChallenge(serverFirst);
-            byte[] serverFinal = scramServer.evaluateResponse(clientFinal);
-            client.evaluateChallenge(serverFinal);
+            KafkaScramTestClient.exchange(client, scramServer);
 
             assertThat(scramServer.isComplete()).as(algorithm.getMqttAlgorithmName()).isTrue();
             assertThat(client.isComplete()).as(algorithm.getMqttAlgorithmName()).isTrue();
@@ -429,41 +419,6 @@ class TbScramSaslServerTest {
 
     private static String b64Str(String value) {
         return Base64.getEncoder().encodeToString(utf8(value));
-    }
-
-    private static SaslClient createScramSaslClient(String username, String password, ScramAlgorithm algorithm) throws SaslException {
-        ScramSaslClientProvider.initialize();
-        return Sasl.createSaslClient(
-                new String[]{algorithm.getMqttAlgorithmName()},
-                null,
-                SCRAM_SASL_PROTOCOL,
-                null,
-                SCRAM_SASL_PROPS,
-                new ScramClientCallbackHandler(username, password));
-    }
-
-    private static class ScramClientCallbackHandler implements CallbackHandler {
-
-        private final String username;
-        private final char[] password;
-
-        ScramClientCallbackHandler(String username, String password) {
-            this.username = username;
-            this.password = password.toCharArray();
-        }
-
-        @Override
-        public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
-            for (Callback callback : callbacks) {
-                if (callback instanceof NameCallback nameCallback) {
-                    nameCallback.setName(username);
-                } else if (callback instanceof PasswordCallback passwordCallback) {
-                    passwordCallback.setPassword(password);
-                } else {
-                    throw new UnsupportedCallbackException(callback);
-                }
-            }
-        }
     }
 
 }

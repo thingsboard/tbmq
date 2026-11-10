@@ -15,12 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
-import org.apache.kafka.common.security.scram.ScramCredential;
-import org.apache.kafka.common.security.scram.ScramCredentialCallback;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -44,7 +41,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials.ITERATIONS_COUNT;
 
@@ -154,8 +150,8 @@ public class ScramAuthCallbackHandlerTest {
     public void givenScramCredentials_whenHandle_thenSetScramCredentialToCallback() throws Exception {
         String username = "username";
         NameCallback nameCallback = new NameCallback("prompt", username);
-        ScramCredentialCallback scramCredentialCallbackMock = mock(ScramCredentialCallback.class);
-        Callback[] callbacks = new Callback[]{nameCallback, scramCredentialCallbackMock};
+        ScramCredentialCallback scramCredentialCallback = new ScramCredentialCallback();
+        Callback[] callbacks = new Callback[]{nameCallback, scramCredentialCallback};
 
         var scramMqttCredentials = ScramMqttCredentials
                 .newInstance("username", "password", ScramAlgorithm.SHA_256, null);
@@ -171,11 +167,8 @@ public class ScramAuthCallbackHandlerTest {
 
         callbackHandler.handle(callbacks);
 
-        var scramCredentialCaptor = ArgumentCaptor.forClass(ScramCredential.class);
-
-        verify(scramCredentialCallbackMock).scramCredential(scramCredentialCaptor.capture());
-
-        ScramCredential scramCredential = scramCredentialCaptor.getValue();
+        ScramCredential scramCredential = scramCredentialCallback.getScramCredential();
+        assertThat(scramCredential).isNotNull();
 
         assertThat(scramCredential.salt()).isEqualTo(scramMqttCredentials.getSalt());
         assertThat(scramCredential.serverKey()).isEqualTo(scramMqttCredentials.getServerKey());

@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import org.apache.kafka.common.security.scram.internals.ScramSaslServer;
-import org.apache.kafka.common.security.scram.internals.ScramSaslServerProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,16 +32,15 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandler;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.TbScramSaslServer;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.nio.charset.StandardCharsets;
-import java.security.Provider;
-import java.security.Security;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -54,6 +51,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -101,15 +99,13 @@ public class DefaultEnhancedAuthenticationServiceTest {
     }
 
     @Test
-    public void verifyScramSaslServerProviderInitiated() {
+    public void givenScramSha256AuthMethod_whenCreateSaslServer_thenReturnsTbScramSaslServer() throws Exception {
         // GIVEN-WHEN
-        enhancedAuthenticationService.init();
+        SaslServer saslServer = enhancedAuthenticationService.createSaslServer(
+                ScramAlgorithm.SHA_256.getMqttAlgorithmName(), mock(ScramAuthCallbackHandler.class));
 
         // THEN
-        Provider[] providers = Security.getProviders();
-        boolean providerFound = Arrays.stream(providers)
-                .anyMatch(provider -> provider.getClass().equals(ScramSaslServerProvider.class));
-        assertThat(providerFound).isTrue();
+        assertThat(saslServer).isInstanceOf(TbScramSaslServer.class);
     }
 
     @Test
@@ -158,7 +154,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         enhancedAuthenticationService.init();
 
-        var scramSaslServer = mock(ScramSaslServer.class);
+        var scramSaslServer = mock(SaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
@@ -182,7 +178,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         enhancedAuthenticationService.init();
 
-        var scramSaslServer = mock(ScramSaslServer.class);
+        var scramSaslServer = mock(SaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
@@ -219,21 +215,23 @@ public class DefaultEnhancedAuthenticationServiceTest {
     }
 
     @Test
-    public void givenNotScramServer_whenOnClientConnectMsg_thenVerifyScramServerWithCallbackIsNotInitiated() throws Exception {
+    public void givenUnsupportedAuthMethod_whenOnClientConnectMsg_thenFailedToInitScramServer() {
         // GIVEN
-        var enhancedAuthContext = getEnhancedAuthContext();
-        var saslServer = mock(SaslServer.class);
+        var enhancedAuthContext = EnhancedAuthContext.builder()
+                .clientId(CLIENT_ID)
+                .authMethod("SCRAM-SHA-1")
+                .authData("client-first-data".getBytes(StandardCharsets.UTF_8))
+                .build();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
         enhancedAuthenticationService.init();
-
-        doReturn(saslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
         assertThat(enhancedAuthContinueResponse.success()).isFalse();
-        verifyNoInteractions(clientSessionCtxMock);
+        assertThat(enhancedAuthContinueResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.FAILED_TO_INIT_SCRAM_SERVER);
+        verify(clientSessionCtxMock, never()).setScramServerWithCallbackHandler(any());
     }
 
     @Test
@@ -581,7 +579,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void givenSaslExceptionDuringEvaluation_whenOnReAuth_thenReturnFalse() throws SaslException {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
-        var scramSaslServer = mock(ScramSaslServer.class);
+        var scramSaslServer = mock(SaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
@@ -607,7 +605,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void givenSuccessfulReAuth_whenOnReAuth_thenReturnTrue() throws SaslException {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
-        var scramSaslServer = mock(ScramSaslServer.class);
+        var scramSaslServer = mock(SaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 

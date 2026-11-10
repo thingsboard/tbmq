@@ -18,8 +18,6 @@ package org.thingsboard.mqtt.broker.service.auth.enhanced;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.security.scram.ScramCredential;
-import org.apache.kafka.common.security.scram.ScramCredentialCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
@@ -95,7 +93,7 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
 
         var scramCredential = new ScramCredential(scramMqttCredentials.getSalt(),
                 scramMqttCredentials.getStoredKey(), scramMqttCredentials.getServerKey(), ITERATIONS_COUNT);
-        scramCallback.scramCredential(scramCredential);
+        scramCallback.setScramCredential(scramCredential);
     }
 
 }
