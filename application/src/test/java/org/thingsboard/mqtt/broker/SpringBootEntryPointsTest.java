@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.thingsboard.mqtt.broker.dao.JpaDaoConfig;
 
@@ -31,7 +32,7 @@ class SpringBootEntryPointsTest {
     void entryPointEnablesAutoConfigurationWithoutRedis(Class<?> entryPoint) {
         EnableAutoConfiguration ann = AnnotatedElementUtils.findMergedAnnotation(entryPoint, EnableAutoConfiguration.class);
         assertThat(ann).isNotNull();
-        assertThat(ann.excludeName()).contains("org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration");
+        assertThat(ann.excludeName()).contains(RedisAutoConfiguration.class.getName());
     }
 
     @Test
