@@ -156,6 +156,7 @@ public class TbHttpClient {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
                 log.warn("[{}][{}] Timeout during waiting for reply!", getId(), getName());
                 callback.onFailure(new RuntimeException("Timeout during waiting for reply!"));
+                return;
             }
 
             HttpMethod method = HttpMethod.valueOf(config.getRequestMethod());
@@ -171,6 +172,7 @@ public class TbHttpClient {
 
             processRequest(request, callback);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("[{}][{}] Interrupted while trying to acquire the lock", getId(), getName(), e);
             callback.onFailure(e);
         }
@@ -260,6 +262,7 @@ public class TbHttpClient {
 
             processRequest(request, ctx.getCheckConnectionCallback());
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("[{}][{}] Interrupted while trying to acquire the lock on check connection", getId(), getName(), e);
             ctx.getCheckConnectionCallback().onFailure(e);
         }
