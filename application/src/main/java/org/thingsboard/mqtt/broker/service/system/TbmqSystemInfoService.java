@@ -21,13 +21,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.cache.ServiceRegistryStore;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
@@ -51,7 +49,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.SERVICE_REGISTRY_KEY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DISK_USAGE;
@@ -76,19 +73,15 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final CacheProperties cacheProperties;
+    private final ServiceRegistryStore serviceRegistryStore;
 
     private ScheduledExecutorService scheduler;
-    @Setter
-    private String serviceRegistryKey;
 
     @Value("${stats.system-info.persist-frequency:60}")
     private int systemInfoPersistFrequencySec;
 
     @PostConstruct
     public void init() {
-        serviceRegistryKey = cacheProperties.prefixKey(SERVICE_REGISTRY_KEY);
         scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("tbmq-system-info-scheduler"));
         scheduler.scheduleAtFixedRate(this::saveCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
 
@@ -158,7 +151,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
-        Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(serviceRegistryKey);
+        Map<String, String> serviceMap = serviceRegistryStore.entries();
         if (CollectionUtils.isEmpty(serviceMap)) {
             throw new ThingsboardException("Could not find all service ids", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
@@ -166,8 +159,8 @@ public class TbmqSystemInfoService implements SystemInfoService {
         List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(serviceMap.size());
         List<String> serviceIds = new ArrayList<>(serviceMap.size());
 
-        for (Map.Entry<Object, Object> entry : serviceMap.entrySet()) {
-            String serviceId = String.valueOf(entry.getKey());
+        for (Map.Entry<String, String> entry : serviceMap.entrySet()) {
+            String serviceId = entry.getKey();
             serviceIds.add(serviceId);
             futures.add(timeseriesService.findLatest(serviceId, SERVICE_INFO_KEYS));
         }
@@ -181,7 +174,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
                 ServiceInfoDto dto = new ServiceInfoDto();
                 dto.setServiceId(serviceId);
-                dto.setServiceType(Optional.ofNullable(serviceMap.get(serviceId)).map(Object::toString).orElse(UNKNOWN));
+                dto.setServiceType(Optional.ofNullable(serviceMap.get(serviceId)).orElse(UNKNOWN));
                 for (TsKvEntry entry : entries) {
                     switch (entry.getKey()) {
                         case CPU_USAGE -> dto.setCpuUsage(entry.getLongValue().orElse(null));
@@ -203,23 +196,22 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public void removeServiceInfo(String serviceId) throws ThingsboardException {
-        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, serviceId);
-        if (delete == 0) {
+        if (serviceRegistryStore.delete(serviceId) == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
     }
 
     @Override
     public List<String> getTbmqServiceIds() {
-        return redisTemplate.opsForHash().entries(serviceRegistryKey)
+        return serviceRegistryStore.entries()
                 .entrySet().stream()
-                .filter(entry -> ServiceType.TBMQ.equals(ServiceType.valueOf(String.valueOf(entry.getValue()))))
-                .map(entry -> String.valueOf(entry.getKey()))
+                .filter(entry -> ServiceType.TBMQ.equals(ServiceType.valueOf(entry.getValue())))
+                .map(Map.Entry::getKey)
                 .toList();
     }
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {
         log.debug("Updating service registry: {}", serviceInfo);
-        redisTemplate.opsForHash().put(serviceRegistryKey, serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        serviceRegistryStore.put(serviceInfo.getServiceId(), serviceInfo.getServiceType());
     }
 }

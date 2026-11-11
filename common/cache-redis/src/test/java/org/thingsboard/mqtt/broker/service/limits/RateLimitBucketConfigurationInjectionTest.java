@@ -145,11 +145,9 @@ public class RateLimitBucketConfigurationInjectionTest {
         return captor.getValue().get();
     }
 
-    // Deliberately NOT annotated with @Configuration: AbstractPubSubIntegrationTest scans the whole
-    // org.thingsboard.mqtt.broker package, and a stereotyped nested class here would be swept into every integration
-    // test context and override the real beans. Without the stereotype it is only picked up by the explicit
-    // register() call above, in Spring's "lite" @Bean mode. @EnableConfigurationProperties is not a stereotype, and
-    // is what binds mqtt.rate-limits.* onto the two registered configuration classes in a plain context.
+    // Registered explicitly through the register() call above, in Spring's "lite" @Bean mode.
+    // @EnableConfigurationProperties is what binds mqtt.rate-limits.* onto the two registered configuration classes
+    // in a plain context.
     @EnableConfigurationProperties
     static class MockedInfrastructure {
 
