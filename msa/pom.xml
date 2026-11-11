@@ -35,6 +35,7 @@
         <module>tbmq</module>
         <module>mqtt-broker</module>
         <module>integration</module>
+        <module>tbmq-lite</module>
     </modules>
 
     <properties>
