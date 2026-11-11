@@ -33,10 +33,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -60,16 +55,7 @@ public class InternodeNotificationsConsumerImplTest {
     private ServiceInfoProvider serviceInfoProvider;
 
     @Mock
-    private MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
-
-    @Mock
-    private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
-
-    @Mock
-    private AuthorizationRoutingService authorizationRoutingService;
-
-    @Mock
-    private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+    private InternodeNotificationsApplier applier;
 
     @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
@@ -82,10 +68,7 @@ public class InternodeNotificationsConsumerImplTest {
                 queueFactory,
                 helper,
                 serviceInfoProvider,
-                mqttClientAuthProviderManager,
-                clientSessionStatsCleanupProcessor,
-                authorizationRoutingService,
-                integrationLifecycleEventTypeCache);
+                applier);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
@@ -109,9 +92,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto()));
-
-        verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
+                verify(applier).apply("nodeA", proto));
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
@@ -132,9 +113,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(mqttClientAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto()));
-
-        verifyNoInteractions(authorizationRoutingService, clientSessionStatsCleanupProcessor);
+                verify(applier).apply("nodeA", proto));
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
@@ -156,9 +135,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto()));
-
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager);
+                verify(applier).apply("nodeA", proto));
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
@@ -183,9 +160,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto));
-
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
+                verify(applier).apply("nodeA", proto));
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
@@ -210,9 +185,7 @@ public class InternodeNotificationsConsumerImplTest {
         notificationsConsumer.startConsuming();
 
         Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
-                verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto));
-
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
+                verify(applier).apply("nodeA", proto));
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();

@@ -37,10 +37,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
 
@@ -68,16 +64,7 @@ public class InternodeNotificationsServiceImplTest {
     private InternodeNotificationsHelper helper;
 
     @Mock
-    private MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
-
-    @Mock
-    private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
-
-    @Mock
-    private AuthorizationRoutingService authorizationRoutingService;
-
-    @Mock
-    private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+    private InternodeNotificationsApplier applier;
 
     @Mock
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> producer;
@@ -93,10 +80,7 @@ public class InternodeNotificationsServiceImplTest {
                 queueFactory,
                 serviceInfoProvider,
                 helper,
-                mqttClientAuthProviderManager,
-                clientSessionStatsCleanupProcessor,
-                authorizationRoutingService,
-                integrationLifecycleEventTypeCache
+                applier
         );
         service.init();
     }
@@ -148,7 +132,7 @@ public class InternodeNotificationsServiceImplTest {
         service.broadcast(proto);
 
         // Verify that local handler is invoked
-        verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
+        verify(applier).apply("nodeA", proto);
 
         // Verify that messages are sent to other nodes
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -172,8 +156,6 @@ public class InternodeNotificationsServiceImplTest {
                     assertThat(msg.getValue()).isEqualTo(proto);
                     assertThat(List.of("nodeB", "nodeC")).contains(msg.getKey());
                 });
-
-        verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
     }
 
     @Test
@@ -186,8 +168,8 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
-        verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+        verify(applier).apply("nodeA", proto);
+        verifyNoInteractions(producer);
     }
 
     @Test
@@ -200,8 +182,8 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(mqttClientAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
-        verifyNoInteractions(authorizationRoutingService, clientSessionStatsCleanupProcessor, producer);
+        verify(applier).apply("nodeA", proto);
+        verifyNoInteractions(producer);
     }
 
     @Test
@@ -214,8 +196,8 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, producer);
+        verify(applier).apply("nodeA", proto);
+        verifyNoInteractions(producer);
     }
 
     @Test
@@ -232,8 +214,8 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+        verify(applier).apply("nodeA", proto);
+        verifyNoInteractions(producer);
     }
 
     @Test
@@ -250,8 +232,8 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
-        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+        verify(applier).apply("nodeA", proto);
+        verifyNoInteractions(producer);
     }
 
     /**
@@ -294,7 +276,7 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+        verify(applier).apply("nodeA", proto);
     }
 
     /**
@@ -317,7 +299,7 @@ public class InternodeNotificationsServiceImplTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("redis is unavailable");
 
-        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+        verify(applier).apply("nodeA", proto);
     }
 
     /**
@@ -338,7 +320,7 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(integrationLifecycleEventTypeCache).processIntegrationLifecycleConfig(configProto);
+        verify(applier).apply("nodeA", proto);
         verify(producer).send(eq("topicB"), isNull(), any(), any(TbQueueCallback.class));
     }
 
