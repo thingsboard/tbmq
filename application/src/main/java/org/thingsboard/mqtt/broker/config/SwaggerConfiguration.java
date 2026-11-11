@@ -66,7 +66,6 @@ import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -319,12 +318,17 @@ public class SwaggerConfiguration {
         ));
         return openAPI -> {
             var paths = openAPI.getPaths();
+            var tagsByName = new TreeMap<String, Tag>();
+            if (openAPI.getTags() != null) {
+                openAPI.getTags().forEach(tag -> tagsByName.putIfAbsent(tag.getName(), tag));
+            }
             paths.entrySet().stream().peek(entry -> {
                 securityCustomization(loginForm, entry);
                 if (!entry.getKey().equals(LOGIN_ENDPOINT)) {
                     defaultErrorResponsesCustomization(entry.getValue());
                 }
-            }).map(this::tagsCustomization).filter(Objects::nonNull).distinct().sorted(Comparator.comparing(Tag::getName)).forEach(openAPI::addTagsItem);
+            }).map(this::tagsCustomization).filter(Objects::nonNull).forEach(tag -> tagsByName.putIfAbsent(tag.getName(), tag));
+            openAPI.setTags(new ArrayList<>(tagsByName.values()));
 
             var pathItemsByTags = new TreeMap<String, Map<String, PathItem>>();
             paths.forEach((k, v) -> {

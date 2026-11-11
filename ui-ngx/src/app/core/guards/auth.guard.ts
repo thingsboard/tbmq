@@ -27,6 +27,9 @@ import { Authority } from '@shared/models/authority.enum';
 import { DialogService } from '@core/services/dialog.service';
 import { isObject } from '@core/utils';
 import { AuthService } from '@core/http/auth.service';
+import { Capability } from '@shared/models/config.model';
+import { ConfigService } from '@core/http/config.service';
+import { isCapabilityEnabled, requiredCapabilities } from '@core/utils/capability.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +40,7 @@ export class AuthGuard {
               private router: Router,
               private authService: AuthService,
               private dialogService: DialogService,
+              private configService: ConfigService,
               private zone: NgZone) {
   }
 
@@ -57,11 +61,13 @@ export class AuthGuard {
         const url: string = state.url;
         let lastChild = state.root;
         const urlSegments: string[] = [];
+        const routeData = [lastChild.data];
         if (lastChild.url) {
           urlSegments.push(...lastChild.url.map(segment => segment.path));
         }
         while (lastChild.children.length) {
           lastChild = lastChild.children[0];
+          routeData.push(lastChild.data);
           if (lastChild.url) {
             urlSegments.push(...lastChild.url.map(segment => segment.path));
           }
@@ -80,6 +86,8 @@ export class AuthGuard {
           if (data.auth && data.auth.indexOf(authority) === -1) {
             this.dialogService.forbidden();
             return of(false);
+          } else if (this.hasDisabledCapability(routeData)) {
+            return of(this.router.parseUrl('/home'));
           } else if (data.redirectTo) {
             let redirect;
             if (isObject(data.redirectTo)) {
@@ -98,6 +106,11 @@ export class AuthGuard {
         return of(false);
       }))
     );
+  }
+
+  private hasDisabledCapability(routeData: Array<{ capability?: Capability } | undefined>): boolean {
+    const capabilities = this.configService.brokerConfig?.capabilities;
+    return requiredCapabilities(routeData).some(capability => !isCapabilityEnabled(capabilities, capability));
   }
 
   canActivateChild(

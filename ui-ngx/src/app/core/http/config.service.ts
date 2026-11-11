@@ -21,6 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { BrokerConfig, BrokerConfigTableParam, SystemVersionInfo } from '@shared/models/config.model';
 import { PageData } from '@shared/models/page/page-data';
 import { ResourcesService } from '@core/services/resources.service';
+import { configTableEntries } from '@core/utils/capability.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -36,13 +37,7 @@ export class ConfigService {
   }
 
   public getBrokerConfigPageData(): Observable<PageData<BrokerConfigTableParam>> {
-    const data = [];
-    for (const [key, value] of Object.entries(this.brokerConfig)) {
-      data.push({
-        key,
-        value
-      });
-    }
+    const data = configTableEntries(this.brokerConfig).map(([key, value]) => ({key, value} as BrokerConfigTableParam));
     return of({
       data,
       totalPages: 1,

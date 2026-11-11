@@ -24,6 +24,7 @@ const routes: Routes = [
     loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
+      capability: 'kafka',
       breadcrumb: {
         label: 'kafka.management',
         icon: 'apps'

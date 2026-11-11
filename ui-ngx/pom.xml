@@ -89,6 +89,15 @@
                         </configuration>
                         <executions>
                             <execution>
+                                <id>yarn test unit</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>test:unit</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>yarn build</id>
                                 <goals>
                                     <goal>yarn</goal>

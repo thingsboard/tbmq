@@ -63,7 +63,6 @@ import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
@@ -108,8 +107,6 @@ public abstract class BaseController {
     protected MqttAuthProviderService mqttAuthProviderService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
-    @Autowired
-    protected TbQueueAdmin tbQueueAdmin;
     @Autowired
     protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
     @Autowired
