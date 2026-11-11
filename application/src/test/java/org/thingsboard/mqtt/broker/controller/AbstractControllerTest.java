@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.runner.RunWith;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,7 +32,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @ContextConfiguration(classes = AbstractControllerTest.class, loader = SpringBootContextLoader.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Configuration
-@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration")
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 @WebAppConfiguration
 @SpringBootTest()
