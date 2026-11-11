@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
@@ -29,7 +29,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AppControllerSplitTest {
+class AppControllerSplitTest {
 
     private static Set<String> mappings(Class<?> controller) {
         String base = AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping.class).path()[0];
@@ -49,7 +49,7 @@ public class AppControllerSplitTest {
     }
 
     @Test
-    public void givenSplitControllers_whenCollectMappings_thenEveryEndpointIsKeptOnce() {
+    void givenSplitControllers_whenCollectMappings_thenEveryEndpointIsKeptOnce() {
         Set<String> shared = mappings(AppController.class);
         Set<String> cluster = mappings(ClusterAppController.class);
 
@@ -65,7 +65,7 @@ public class AppControllerSplitTest {
     }
 
     @Test
-    public void givenSharedController_whenInspectDependencies_thenNoClusterOnlyDependencies() {
+    void givenSharedController_whenInspectDependencies_thenNoClusterOnlyDependencies() {
         assertThat(Arrays.stream(AppController.class.getDeclaredConstructors())
                 .flatMap(c -> Arrays.stream(c.getParameterTypes())))
                 .doesNotContain(TbQueueAdmin.class, ApplicationRemovedEventProcessor.class);
