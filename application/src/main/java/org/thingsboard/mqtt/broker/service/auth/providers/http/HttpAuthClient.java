@@ -145,6 +145,7 @@ public class HttpAuthClient {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
                 log.warn("[{}] HTTP auth provider timeout during waiting for reply!", clientId);
                 callback.onFailure(new RuntimeException("Timeout during waiting for reply!"));
+                return;
             }
 
             HttpMethod method = HttpMethod.valueOf(config.getRequestMethod());
@@ -162,6 +163,7 @@ public class HttpAuthClient {
 
             processRequest(clientId, request, callback);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("[{}] HTTP auth provider client interrupted while trying to acquire the lock", clientId, e);
             callback.onFailure(e);
         }
@@ -273,6 +275,7 @@ public class HttpAuthClient {
 
             processRequest(TEST_CLIENT_ID, request, callback);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("HTTP auth provider client interrupted while trying to acquire the lock on check connection", e);
             callback.onFailure(e);
         }
