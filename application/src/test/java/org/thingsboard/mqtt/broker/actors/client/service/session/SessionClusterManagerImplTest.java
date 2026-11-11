@@ -41,12 +41,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -54,16 +48,14 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -80,8 +72,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_ID
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = SessionClusterManagerImpl.class)
 @TestPropertySource(properties = {
-        "queue.client-session-event-response.max-request-timeout=100000",
-        "queue.client-session-event-response.response-sender-threads=8"
+        "queue.client-session-event-response.max-request-timeout=100000"
 })
 public class SessionClusterManagerImplTest {
 
@@ -92,9 +83,7 @@ public class SessionClusterManagerImplTest {
     @MockitoBean
     DisconnectClientCommandService disconnectClientCommandService;
     @MockitoBean
-    ClientSessionEventQueueFactory clientSessionEventQueueFactory;
-    @MockitoBean
-    ServiceInfoProvider serviceInfoProvider;
+    ClientSessionEventResponseSender responseSender;
     @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
     @MockitoBean
@@ -111,37 +100,11 @@ public class SessionClusterManagerImplTest {
     @MockitoSpyBean
     SessionClusterManagerImpl sessionClusterManager;
 
-    private final List<ClientSessionEventResponseProto> sentResponses = new CopyOnWriteArrayList<>();
-
     @Before
     public void setUp() {
-        sentResponses.clear();
         doAnswer(this::completeCallback).when(clientSessionService).saveClientSession(any(), any());
         doAnswer(this::completeCallback).when(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any(BasicCallback.class));
-        TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> producer = new TbQueueProducer<>() {
-            @Override
-            public String getDefaultTopic() {
-                return null;
-            }
-
-            @Override
-            public void send(TbProtoQueueMsg<ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
-            }
-
-            @Override
-            public void send(String topic, Integer partition, TbProtoQueueMsg<ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
-                sentResponses.add(msg.getValue());
-            }
-
-            @Override
-            public void stop() {
-            }
-        };
-        doReturn(producer).when(clientSessionEventQueueFactory).createEventResponseProducer(any());
         when(timeseriesService.removeAllLatestForClient(anyString())).thenReturn(Futures.immediateFuture(null));
-        when(serviceInfoProvider.getServiceId()).thenReturn("svc");
-
-        sessionClusterManager.init();
     }
 
     // -------------------------
@@ -284,12 +247,13 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = deviceSession("c3", false);
         ClientSessionInfo previous = disconnectedSession("c3", ClientType.DEVICE, true, 3, TimeUnit.SECONDS.toMillis(16));
 
-        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+        ConnectionRequestInfo requestInfo = req();
+        sessionClusterManager.updateClientSessionOnConnect(incoming, requestInfo, previous);
 
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("c3"), any());
         verify(msgPersistenceManager).clearPersistedMessages(eq("c3"), eq(ClientType.DEVICE));
         verify(clientSessionService).saveClientSession(any(), any());
-        assertConnectResponse(false);
+        assertConnectResponse("c3", requestInfo, false);
     }
 
     @Test
@@ -297,12 +261,13 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = deviceSession("c4", false);
         ClientSessionInfo previous = disconnectedSession("c4", ClientType.DEVICE, true, 30, TimeUnit.SECONDS.toMillis(1));
 
-        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+        ConnectionRequestInfo requestInfo = req();
+        sessionClusterManager.updateClientSessionOnConnect(incoming, requestInfo, previous);
 
         verify(clientSessionService).saveClientSession(any(), any());
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
-        assertConnectResponse(true);
+        assertConnectResponse("c4", requestInfo, true);
     }
 
     @Test
@@ -310,12 +275,13 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = deviceSession("c5", false);
         ClientSessionInfo previous = disconnectedSession("c5", ClientType.DEVICE, false, 0, TimeUnit.DAYS.toMillis(30));
 
-        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+        ConnectionRequestInfo requestInfo = req();
+        sessionClusterManager.updateClientSessionOnConnect(incoming, requestInfo, previous);
 
         verify(clientSessionService).saveClientSession(any(), any());
         verify(clientSubscriptionService, never()).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, never()).clearPersistedMessages(any(), any());
-        assertConnectResponse(true);
+        assertConnectResponse("c5", requestInfo, true);
     }
 
     @Test
@@ -324,12 +290,13 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = persistentAppSession("app1", false);
         ClientSessionInfo previous = disconnectedSession("app1", ClientType.APPLICATION, true, 3, TimeUnit.SECONDS.toMillis(16));
 
-        sessionClusterManager.updateClientSessionOnConnect(incoming, req(), previous);
+        ConnectionRequestInfo requestInfo = req();
+        sessionClusterManager.updateClientSessionOnConnect(incoming, requestInfo, previous);
 
         verify(rateLimitService, never()).decrementApplicationClientsCount();
         verify(clientSubscriptionService).clearSubscriptionsAndPersist(eq("app1"), any());
         verify(msgPersistenceManager).clearPersistedMessages(eq("app1"), eq(ClientType.APPLICATION));
-        assertConnectResponse(false);
+        assertConnectResponse("app1", requestInfo, false);
     }
 
     @Test
@@ -549,11 +516,9 @@ public class SessionClusterManagerImplTest {
         return null;
     }
 
-    private void assertConnectResponse(boolean sessionPresent) {
-        await().atMost(2, TimeUnit.SECONDS).until(() -> !sentResponses.isEmpty());
-        ClientSessionEventResponseProto response = sentResponses.get(0);
-        Assert.assertTrue(response.getSuccess());
-        Assert.assertEquals(sessionPresent, response.getSessionPresent());
+    private void assertConnectResponse(String clientId, ConnectionRequestInfo requestInfo, boolean sessionPresent) {
+        verify(responseSender).send(eq(clientId), eq(requestInfo),
+                argThat(response -> response.getSuccess() && response.getSessionPresent() == sessionPresent));
     }
 
     private SessionInfo persistentAppSession(String clientId, boolean cleanStart) {
