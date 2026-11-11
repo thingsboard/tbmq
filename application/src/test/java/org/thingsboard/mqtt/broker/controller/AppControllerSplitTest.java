@@ -18,7 +18,16 @@ package org.thingsboard.mqtt.broker.controller;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
+import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dto.EditionCapabilitiesDto;
+import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
@@ -28,6 +37,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AppControllerSplitTest {
 
@@ -72,4 +84,20 @@ class AppControllerSplitTest {
         assertThat(AnnotatedElementUtils.hasAnnotation(AppController.class, ClusterComponent.class)).isFalse();
         assertThat(AnnotatedElementUtils.hasAnnotation(ClusterAppController.class, ClusterComponent.class)).isTrue();
     }
+
+    @Test
+    void givenClusterEdition_whenGetBrokerConfig_thenEditionAndCapabilitiesReported() {
+        MqttAuthProviderService authProviderService = mock(MqttAuthProviderService.class);
+        when(authProviderService.getShortAuthProviders(any())).thenReturn(new PageData<>());
+        BrokerHomePageConfig config = new BrokerHomePageConfig(
+                mock(MqttClientCredentialsService.class), mock(AdminSettingsService.class),
+                authProviderService, mock(HistoricalDataReportProperties.class), TbmqEdition.CLUSTER);
+
+        HomePageConfigDto dto = config.getConfig();
+
+        assertThat(dto.getEdition()).isEqualTo("cluster");
+        assertThat(dto.getCapabilities()).isEqualTo(EditionCapabilitiesDto.of(TbmqEdition.CLUSTER));
+        assertThat(dto.getCapabilities().isKafka()).isTrue();
+    }
+
 }

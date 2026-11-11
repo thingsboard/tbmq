@@ -17805,6 +17805,29 @@
           }
         }
       },
+      "EditionCapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "applicationClients": {
+            "type": "boolean"
+          },
+          "kafka": {
+            "type": "boolean"
+          },
+          "cluster": {
+            "type": "boolean"
+          },
+          "integrations": {
+            "type": "boolean"
+          },
+          "nodeDrain": {
+            "type": "boolean"
+          },
+          "bridge": {
+            "type": "boolean"
+          }
+        }
+      },
       "ErrorEventFilter": {
         "allOf": [
           {
@@ -17978,6 +18001,12 @@
           "statsCollectionInterval": {
             "type": "integer",
             "format": "int32"
+          },
+          "edition": {
+            "type": "string"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/EditionCapabilitiesDto"
           }
         }
       },

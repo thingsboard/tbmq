@@ -28,10 +28,12 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dto.EditionCapabilitiesDto;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 
@@ -76,6 +78,7 @@ public class BrokerHomePageConfig {
     private final AdminSettingsService adminSettingsService;
     private final MqttAuthProviderService mqttAuthProviderService;
     private final HistoricalDataReportProperties historicalDataReportProperties;
+    private final TbmqEdition tbmqEdition;
 
     public HomePageConfigDto getConfig() {
         Map<String, ConnectivityInfo> connectivityInfoMap = getConnectivityInfoMap();
@@ -103,6 +106,8 @@ public class BrokerHomePageConfig {
                 .existsScramCredentials(existsScramCredentials())
                 .allowKafkaTopicDeletion(enableKafkaTopicDeletion)
                 .statsCollectionInterval(historicalDataReportProperties.getInterval())
+                .edition(tbmqEdition.getMarkerValue())
+                .capabilities(EditionCapabilitiesDto.of(tbmqEdition))
                 .build();
     }
 

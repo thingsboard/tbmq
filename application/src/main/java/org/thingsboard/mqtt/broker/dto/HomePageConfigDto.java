@@ -44,5 +44,7 @@ public class HomePageConfigDto {
     private boolean existsScramCredentials;
     private boolean allowKafkaTopicDeletion;
     private int statsCollectionInterval;
+    private String edition;
+    private EditionCapabilitiesDto capabilities;
 
 }
