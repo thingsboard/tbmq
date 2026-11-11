@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @SpringBootConfiguration
+@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration")
 @EnableAsync
 @EnableScheduling
 @ComponentScan({"org.thingsboard.mqtt.broker"})

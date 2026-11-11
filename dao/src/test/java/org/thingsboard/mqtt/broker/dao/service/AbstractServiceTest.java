@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.runner.RunWith;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
@@ -37,6 +38,7 @@ import java.util.UUID;
 @ContextConfiguration(classes = AbstractServiceTest.class, loader = AnnotationConfigContextLoader.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Configuration
+@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration")
 @ComponentScan("org.thingsboard.mqtt.broker")
 //@ComponentScan(basePackages = "org.thingsboard.mqtt.broker", excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "org\\.thingsboard\\.mqtt\\.broker\\.queue\\..*"))
 //@Import(DaoGlobalMockConfig.class)
