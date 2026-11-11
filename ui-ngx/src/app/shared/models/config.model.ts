@@ -17,6 +17,19 @@
 import { BaseData } from '@shared/models/base-data';
 import { MqttAuthProviderType } from '@shared/models/mqtt-auth-provider.model';
 
+export type TbmqEdition = 'cluster' | 'lite';
+
+export interface EditionCapabilities {
+  applicationClients: boolean;
+  kafka: boolean;
+  cluster: boolean;
+  integrations: boolean;
+  nodeDrain: boolean;
+  bridge: boolean;
+}
+
+export type Capability = keyof EditionCapabilities;
+
 export interface BrokerConfig {
   tcpPort: number;
   tlsPort: number;
@@ -40,6 +53,8 @@ export interface BrokerConfig {
   existsScramCredentials: boolean;
   allowKafkaTopicDeletion: boolean;
   statsCollectionInterval: number;
+  edition?: TbmqEdition;
+  capabilities?: EditionCapabilities;
 }
 
 export interface BrokerConfigTableParam extends BaseData {

@@ -63,6 +63,7 @@ const routes: Routes = [
         path: 'applications',
         data: {
           auth: [Authority.SYS_ADMIN],
+          capability: 'applicationClients',
           breadcrumb: {
             label: 'shared-subscription.application-shared-subscriptions',
             icon: 'mdi:monitor-share'

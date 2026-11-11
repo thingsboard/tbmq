@@ -9,6 +9,7 @@
     "build:types": "node generate-types.js",
     "build:icon-metadata": "node generate-icon-metadata.js",
     "lint": "ng lint",
+    "test:unit": "vitest run",
     "prepare": "patch-package",
     "bundle-report": "ng build --configuration production --source-map && source-map-explorer target/generated-resources/public/*.js"
   },
@@ -98,7 +99,8 @@
     "autoprefixer": "^10.4.20",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
-    "source-map-explorer": "^2.5.3"
+    "source-map-explorer": "^2.5.3",
+    "vitest": "^3.2.4"
   },
   "resolutions": {
     "ace-builds": "1.36.5",

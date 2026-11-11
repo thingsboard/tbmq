@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import { Capability } from '@shared/models/config.model';
+
 export declare type MenuSectionType = 'link' | 'toggle';
 
 export interface MenuSection {
@@ -27,6 +29,7 @@ export interface MenuSection {
   pages?: Array<MenuSection>;
   isNew?: boolean;
   opened?: boolean;
+  capability?: Capability;
 }
 
 export enum MenuId {

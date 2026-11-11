@@ -30,6 +30,7 @@ const routes: Routes = [
     path: 'integrations',
     data: {
       auth: [Authority.SYS_ADMIN],
+      capability: 'integrations',
       breadcrumb: {
         label: 'integration.integrations',
         icon: 'input'

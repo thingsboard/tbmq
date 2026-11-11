@@ -24,6 +24,8 @@ import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { Authority } from '@shared/models/authority.enum';
 import { AuthState } from '@core/auth/auth.models';
 import { HelpLinks } from '@shared/models/constants';
+import { ConfigService } from '@core/http/config.service';
+import { filterSectionsByCapability } from '@core/utils/capability.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -32,7 +34,8 @@ export class MenuService {
 
   menuSections$: Subject<Array<MenuSection>> = new BehaviorSubject<Array<MenuSection>>([]);
 
-  constructor(private store: Store<AppState>) {
+  constructor(private store: Store<AppState>,
+              private configService: ConfigService) {
     this.store.pipe(select(selectIsAuthenticated)).subscribe(
       (authenticated: boolean) => {
         if (authenticated) {
@@ -87,7 +90,8 @@ export class MenuService {
         name: 'integration.integrations',
         type: 'link',
         path: '/integrations',
-        icon: 'input'
+        icon: 'input',
+        capability: 'integrations'
       },
       {
         id: MenuId.authentication,
@@ -159,7 +163,8 @@ export class MenuService {
             name: 'shared-subscription.application-shared-subscriptions',
             type: 'link',
             path: '/shared-subscriptions/applications',
-            icon: 'mdi:monitor-share'
+            icon: 'mdi:monitor-share',
+            capability: 'applicationClients'
           }
         ]
       },
@@ -169,6 +174,7 @@ export class MenuService {
         type: 'link',
         path: '/kafka',
         icon: 'apps',
+        capability: 'kafka',
         pages: [
           {
             id: MenuId.kafka_topics,
@@ -261,7 +267,7 @@ export class MenuService {
         ]
       }
     );
-    return sections;
+    return filterSectionsByCapability(sections, this.configService.brokerConfig?.capabilities);
   }
 
   public menuSections(): Observable<Array<MenuSection>> {
