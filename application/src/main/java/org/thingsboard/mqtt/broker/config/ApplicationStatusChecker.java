@@ -15,21 +15,36 @@
  */
 package org.thingsboard.mqtt.broker.config;
 
-import com.zaxxer.hikari.HikariDataSource;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Configuration;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 @Configuration
+@RequiredArgsConstructor
 public class ApplicationStatusChecker {
 
-    @Autowired
-    private HikariDataSource hikariDataSource;
+    private static final int CONNECTION_VALIDATION_TIMEOUT_SECONDS = 5;
+
+    private final ObjectProvider<DataSource> dataSource;
 
     @PostConstruct
     public void init() {
-        if (!hikariDataSource.isRunning()) {
-            throw new RuntimeException("Couldn't start database connection.");
+        DataSource ds = dataSource.getIfAvailable();
+        if (ds == null) {
+            // no DataSource bean exists, so there is no database to check
+            return;
+        }
+        try (Connection connection = ds.getConnection()) {
+            if (!connection.isValid(CONNECTION_VALIDATION_TIMEOUT_SECONDS)) {
+                throw new RuntimeException("Couldn't start database connection.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Couldn't start database connection.", e);
         }
     }
 }
