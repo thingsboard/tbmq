@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
  * that each message is pushed out as soon as it's written.
  */
 @Component
+@ClusterComponent
 @ConditionalOnProperty(prefix = "mqtt.persistent-session.app.persisted-messages", name = "write-and-flush", havingValue = "true", matchIfMissing = true)
 @Slf4j
 @RequiredArgsConstructor

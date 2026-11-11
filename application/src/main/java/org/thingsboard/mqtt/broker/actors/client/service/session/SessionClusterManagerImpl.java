@@ -16,8 +16,6 @@
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,26 +29,14 @@ import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconn
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
-import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
@@ -62,8 +48,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -83,8 +67,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
     private final DisconnectClientCommandService disconnectClientCommandService;
-    private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
-    private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientSessionEventResponseSender responseSender;
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationRemovedEventService applicationRemovedEventService;
     private final ApplicationTopicService applicationTopicService;
@@ -92,19 +75,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final TbCacheOps cacheOps;
     private final TimeseriesService timeseriesService;
 
-    private TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseProducer;
-    private ExecutorService eventResponseSenderExecutor;
-
     @Value("${queue.client-session-event-response.max-request-timeout}")
     private long requestTimeout;
-    @Value("${queue.client-session-event-response.response-sender-threads}")
-    private int eventResponseSenderThreads;
-
-    @PostConstruct
-    public void init() {
-        eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
-        eventResponseSenderExecutor = Executors.newFixedThreadPool(eventResponseSenderThreads);
-    }
 
     @Override
     public void processConnectionRequest(ConnectionRequestMsg msg) {
@@ -126,21 +98,21 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (isSameSession(currentSession, sessionId)) {
             log.warn("[{}][{}] Got CONNECT request from already present session.", clientId, sessionId);
             var response = ProtoConverter.toFailedConnectionResponseProto(false, UNSPECIFIED_ERROR);
-            sendConnectResponse(clientId, requestInfo, response);
+            responseSender.send(clientId, requestInfo, response);
             return;
         }
 
         if (shouldRejectDueToSessionQuota(connectInfo, clientId, currentSession)) {
             log.warn("[{}][{}] Sessions limit exceeded", clientId, sessionId);
             var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
-            sendConnectResponse(clientId, requestInfo, response);
+            responseSender.send(clientId, requestInfo, response);
             return;
         }
 
         if (shouldRejectDueToAppQuota(connectInfo, connectingSessionInfo, currentSession)) {
             log.warn("[{}][{}] Application clients limit exceeded", clientId, sessionId);
             var response = ProtoConverter.toFailedConnectionResponseProto(false, QUOTA_EXCEEDED);
-            sendConnectResponse(clientId, requestInfo, response);
+            responseSender.send(clientId, requestInfo, response);
             return;
         }
 
@@ -166,8 +138,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (currentSession == null) {
             ClientSessionInfo newSessionInfo = toClientSessionInfo(connectingSessionInfo);
             clientSessionService.saveClientSession(newSessionInfo, createCallback(
-                    () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
-                    t -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE))
+                    () -> responseSender.send(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
+                    t -> responseSender.send(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE))
             ));
             return;
         }
@@ -187,12 +159,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         TwoPhaseCompletion completion = cleanStart ?
                 TwoPhaseCompletion.forTwoOperations(
-                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
-                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE)))
+                        () -> responseSender.send(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(false)),
+                        () -> responseSender.send(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(false, SERVER_UNAVAILABLE)))
                 :
                 TwoPhaseCompletion.forSingleOperation(
-                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(true)),
-                        () -> sendConnectResponse(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(true, SERVER_UNAVAILABLE)));
+                        () -> responseSender.send(clientId, requestInfo, ProtoConverter.toSuccessConnectionResponseProto(true)),
+                        () -> responseSender.send(clientId, requestInfo, ProtoConverter.toFailedConnectionResponseProto(true, SERVER_UNAVAILABLE)));
 
         if (cleanStart) {
             clearSubscriptionsOnCleanStart(clientId, completion);
@@ -408,33 +380,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return ClientSessionInfoFactory.sessionInfoToClientSessionInfo(sessionInfo);
     }
 
-    private void sendConnectResponse(String clientId, ConnectionRequestInfo requestInfo, ClientSessionEventResponseProto response) {
-        TbQueueMsgHeaders headers = createResponseHeaders(requestInfo.getRequestId());
-
-        eventResponseSenderExecutor.execute(() ->
-                eventResponseProducer.send(
-                        requestInfo.getResponseTopic(),
-                        null,
-                        new TbProtoQueueMsg<>(clientId, response, headers),
-                        new TbQueueCallback() {
-                            @Override
-                            public void onSuccess(TbQueueMsgMetadata metadata) {
-                                log.trace("[{}][{}] Successfully sent response.", clientId, requestInfo.getRequestId());
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
-                                log.warn("[{}][{}] Failed to send response.", clientId, requestInfo.getRequestId(), t);
-                            }
-                        }));
-    }
-
-    private DefaultTbQueueMsgHeaders createResponseHeaders(UUID requestId) {
-        DefaultTbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();
-        headers.put(BrokerConstants.REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
-        return headers;
-    }
-
     boolean isRequestTimedOut(long requestTime) {
         return requestTime + requestTimeout < System.currentTimeMillis();
     }
@@ -512,16 +457,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private void evictFromCache(String clientId) {
         cacheOps.evictIfPresentSafe(CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
         cacheOps.evictIfPresentSafe(CLIENT_MQTT_VERSION_CACHE, clientId);
-    }
-
-    @PreDestroy
-    public void destroy() {
-        if (eventResponseProducer != null) {
-            eventResponseProducer.stop();
-        }
-        if (eventResponseSenderExecutor != null) {
-            ThingsBoardExecutors.shutdownAndAwaitTermination(eventResponseSenderExecutor, "Session cluster manager");
-        }
     }
 
     @RequiredArgsConstructor

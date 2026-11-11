@@ -22,15 +22,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +35,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class InternodeNotificationsConsumerImpl implements InternodeNotificationsConsumer {
 
@@ -45,10 +43,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     private final InternodeNotificationsQueueFactory internodeNotificationsQueueFactory;
     private final InternodeNotificationsHelperImpl helper;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final MqttAuthProviderNotificationManager mqttAuthProviderNotificationManager;
-    private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
-    private final AuthorizationRoutingService authorizationRoutingService;
-    private final IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+    private final InternodeNotificationsApplier applier;
 
     private volatile boolean stopped = false;
 
@@ -91,27 +86,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     }
 
     private void processInternodeNotification(TbProtoQueueMsg<InternodeNotificationProto> msg) {
-        String serviceId = msg.getKey();
-        InternodeNotificationProto notificationProto = msg.getValue();
-        if (notificationProto.hasMqttAuthSettingsProto()) {
-            log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
-            authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
-            return;
-        }
-        if (notificationProto.hasMqttAuthProviderProto()) {
-            log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
-            mqttAuthProviderNotificationManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
-            return;
-        }
-        if (notificationProto.hasClientSessionStatsCleanupProto()) {
-            log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
-            clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
-            return;
-        }
-        if (notificationProto.hasIntegrationLifecycleConfigProto()) {
-            log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
-            integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
-        }
+        applier.apply(msg.getKey(), msg.getValue());
     }
 
     private void initConsumer() {

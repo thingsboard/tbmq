@@ -20,6 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -27,13 +28,10 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
-import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class InternodeNotificationsServiceImpl implements InternodeNotificationsService {
 
@@ -41,10 +39,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     private final ServiceInfoProvider serviceInfoProvider;
     private final InternodeNotificationsHelper helper;
 
-    private final MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
-    private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
-    private final AuthorizationRoutingService authorizationRoutingService;
-    private final IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+    private final InternodeNotificationsApplier applier;
 
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> internodeNotificationsProducer;
 
@@ -61,36 +56,13 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
      */
     @Override
     public void broadcast(InternodeNotificationProto notificationProto) {
-        applyLocally(notificationProto);
+        applier.apply(serviceInfoProvider.getServiceId(), notificationProto);
         for (String serviceId : helper.getServiceIds()) {
             if (isMyNode(serviceId)) {
                 // Already applied in-process; this node only consumes what others send it.
                 continue;
             }
             broadcastToNode(serviceId, notificationProto);
-        }
-    }
-
-    private void applyLocally(InternodeNotificationProto notificationProto) {
-        String serviceId = serviceInfoProvider.getServiceId();
-        if (notificationProto.hasMqttAuthSettingsProto()) {
-            log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
-            authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
-            return;
-        }
-        if (notificationProto.hasMqttAuthProviderProto()) {
-            log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
-            mqttClientAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
-            return;
-        }
-        if (notificationProto.hasClientSessionStatsCleanupProto()) {
-            log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
-            clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
-            return;
-        }
-        if (notificationProto.hasIntegrationLifecycleConfigProto()) {
-            log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
-            integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
         }
     }
 

@@ -18,8 +18,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Component
+@ClusterComponent
 @ConfigurationProperties(prefix = "queue.application-persisted-msg.ack-strategy")
 @Data
 public class ApplicationAckStrategyConfiguration {

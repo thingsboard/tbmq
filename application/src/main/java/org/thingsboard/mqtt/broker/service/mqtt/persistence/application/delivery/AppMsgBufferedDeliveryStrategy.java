@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * after the full batch is processed.
  */
 @Component
+@ClusterComponent
 @ConditionalOnProperty(prefix = "mqtt.persistent-session.app.persisted-messages", name = "write-and-flush", havingValue = "false")
 @Slf4j
 @RequiredArgsConstructor

@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 import java.util.Collections;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationMsgAcknowledgeStrategyFactory {
 

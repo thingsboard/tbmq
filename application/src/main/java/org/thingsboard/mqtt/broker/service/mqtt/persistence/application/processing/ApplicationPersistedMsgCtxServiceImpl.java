@@ -22,6 +22,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 
 import java.util.Collection;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersistedMsgCtxService {
 

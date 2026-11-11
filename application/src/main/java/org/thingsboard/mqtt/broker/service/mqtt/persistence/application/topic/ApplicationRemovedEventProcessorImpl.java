@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.ApplicationRemovedEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -33,6 +34,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedEventProcessor {
 

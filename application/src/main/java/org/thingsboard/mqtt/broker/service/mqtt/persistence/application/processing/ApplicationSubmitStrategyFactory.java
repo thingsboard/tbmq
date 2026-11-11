@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Component
+@ClusterComponent
 @Slf4j
 public class ApplicationSubmitStrategyFactory {
 
