@@ -70,6 +70,7 @@
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <archunit.version>1.4.1</archunit.version>
+        <enforcer-plugin.version>3.5.0</enforcer-plugin.version>
         <jjwt.version>0.12.5</jjwt.version>
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
         <google-crypto-tink.version>1.11.0</google-crypto-tink.version>
@@ -777,6 +778,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${enforcer-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
