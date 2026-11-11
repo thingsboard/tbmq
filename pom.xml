@@ -723,6 +723,7 @@
                             <owner>The Thingsboard Authors</owner>
                         </properties>
                         <excludes>
+                            <exclude>**/META-INF/tbmq-edition</exclude>
                             <exclude>**/.env</exclude>
                             <exclude>**/*.env</exclude>
                             <exclude>**/.eslintrc</exclude>
