@@ -18,6 +18,10 @@ package org.thingsboard.mqtt.broker.common.util.edition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,17 +87,27 @@ class TbmqEditionResolverTest {
     }
 
     @Test
-    void givenFailedResolution_whenResolveAgain_thenThrowsAgain() {
-        ClassLoader classLoader = markers(tmp, null, "cluster", "lite");
-        assertThatThrownBy(() -> TbmqEditionResolver.resolve(classLoader)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> TbmqEditionResolver.resolve(classLoader)).isInstanceOf(IllegalStateException.class);
+    void givenResolvedClassLoader_whenMarkerRemovedAndResolveAgain_thenCachedEditionReturned() throws Exception {
+        URLClassLoader classLoader = (URLClassLoader) markers(tmp, null, "lite");
+        assertThat(TbmqEditionResolver.resolve(classLoader)).isEqualTo(TbmqEdition.LITE);
+
+        Files.delete(Path.of(classLoader.getResource(TbmqEditionResolver.MARKER_RESOURCE).toURI()));
+        assertThat(classLoader.getResource(TbmqEditionResolver.MARKER_RESOURCE)).isNull();
+
+        assertThat(TbmqEditionResolver.resolve(classLoader)).isEqualTo(TbmqEdition.LITE);
     }
 
     @Test
-    void givenSameClassLoader_whenResolveTwice_thenSameResult() {
-        ClassLoader classLoader = markers(tmp, null, "lite");
-        assertThat(TbmqEditionResolver.resolve(classLoader)).isEqualTo(TbmqEdition.LITE);
-        assertThat(TbmqEditionResolver.resolve(classLoader)).isEqualTo(TbmqEdition.LITE);
+    void givenFailedResolution_whenMarkerAppearsAndResolveAgain_thenResolvedNotCachedFailure() throws Exception {
+        Path root = Files.createDirectory(tmp.resolve("late-marker"));
+        ClassLoader classLoader = new URLClassLoader(new URL[]{root.toUri().toURL()}, null);
+        assertThatThrownBy(() -> TbmqEditionResolver.resolve(classLoader)).isInstanceOf(IllegalStateException.class);
+
+        Path marker = root.resolve(TbmqEditionResolver.MARKER_RESOURCE);
+        Files.createDirectories(marker.getParent());
+        Files.writeString(marker, "cluster", StandardCharsets.UTF_8);
+
+        assertThat(TbmqEditionResolver.resolve(classLoader)).isEqualTo(TbmqEdition.CLUSTER);
     }
 
     @Test

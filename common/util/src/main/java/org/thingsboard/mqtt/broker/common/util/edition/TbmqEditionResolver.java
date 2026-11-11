@@ -39,7 +39,7 @@ public final class TbmqEditionResolver {
     public static final String MARKER_RESOURCE = "META-INF/tbmq-edition";
 
     private static final Map<ClassLoader, TbmqEdition> CACHE =
-            new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
+            new ConcurrentReferenceHashMap<>(16);
 
     private TbmqEditionResolver() {
     }
