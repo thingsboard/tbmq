@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.After;
 import org.junit.Before;
@@ -22,7 +23,7 @@ import org.junit.Test;
 import org.springframework.http.ResponseEntity;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpAuthCallback;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
-import com.fasterxml.jackson.databind.JsonNode;
+import reactor.netty.resources.ConnectionProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,18 +81,29 @@ public class HttpAuthPoolIdleEvictionTest {
     }
 
     @Test
-    public void defaultsEvictIdleConnectionsBeforeAnyPathOrGateTimeout() {
-        HttpAuthClient.PoolSettings defaults = HttpAuthClient.PoolSettings.fromEnvironment();
-        assertThat(defaults.maxIdleTime()).isEqualTo(Duration.ofSeconds(30));
-        assertThat(defaults.maxLifeTime()).isEqualTo(Duration.ofMinutes(5));
-        assertThat(defaults.evictionInterval()).isEqualTo(Duration.ofSeconds(15));
+    public void positiveBoundsAreAppliedWithBackgroundEviction() {
+        HttpAuthClient.PoolSettings pool = HttpAuthClient.PoolSettings.of(32, 30_000, 300_000);
+        assertThat(pool.maxConnections()).isEqualTo(32);
+        assertThat(pool.maxIdleTime()).isEqualTo(Duration.ofSeconds(30));
+        assertThat(pool.maxLifeTime()).isEqualTo(Duration.ofMinutes(5));
+        assertThat(pool.evictionInterval()).isEqualTo(HttpAuthClient.PoolSettings.EVICTION_INTERVAL);
+    }
+
+    @Test
+    public void nonPositiveValuesFallBackToUnboundedReactorNettyPool() {
+        HttpAuthClient.PoolSettings pool = HttpAuthClient.PoolSettings.of(0, 0, -1);
+        assertThat(pool.maxConnections()).isEqualTo(ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS);
+        assertThat(pool.maxIdleTime()).isNull();
+        assertThat(pool.maxLifeTime()).isNull();
+        assertThat(pool.evictionInterval()).isNull();
     }
 
     @Test
     public void withoutIdleEvictionAConnectionDroppedByThePathFailsTheNextConnect() throws Exception {
-        HttpAuthClient client = client(new HttpAuthClient.PoolSettings(null, null, null));
+        HttpAuthClient client = client(HttpAuthClient.PoolSettings.of(0, 0, 0));
         try {
             assertThat(call(client)).isNull();
+            awaitPoolRelease();
             path.forgetIdleFlows();
             Throwable failure = call(client);
             assertThat(failure).isNotNull();
@@ -105,10 +117,9 @@ public class HttpAuthPoolIdleEvictionTest {
     @Test
     public void idleEvictionReplacesTheConnectionBeforeThePathCanDropIt() throws Exception {
         HttpAuthClient client = client(new HttpAuthClient.PoolSettings(
-                SHORT_IDLE, Duration.ofMinutes(5), Duration.ofMillis(100)));
+                ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS, SHORT_IDLE, Duration.ofMinutes(5), Duration.ofMillis(100)));
         try {
             assertThat(call(client)).isNull();
-            assertThat(call(client)).isNull(); // reused while active
             assertThat(path.accepted()).isEqualTo(1);
             Thread.sleep(SHORT_IDLE.multipliedBy(3).toMillis());
             path.forgetIdleFlows();
@@ -118,6 +129,14 @@ public class HttpAuthPoolIdleEvictionTest {
         } finally {
             client.destroy();
         }
+    }
+
+    /**
+     * {@link #call} returns from the response callback, and the connection goes back to the pool just after it.
+     * Without this pause, the next call can race the release and open a new connection.
+     */
+    private static void awaitPoolRelease() throws InterruptedException {
+        Thread.sleep(200);
     }
 
     private HttpAuthClient client(HttpAuthClient.PoolSettings pool) {

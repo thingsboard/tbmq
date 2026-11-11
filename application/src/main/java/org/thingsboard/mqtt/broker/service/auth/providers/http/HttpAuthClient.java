@@ -81,41 +81,32 @@ public class HttpAuthClient {
     private Semaphore semaphore;
     private URI uri;
 
-    HttpAuthClient(HttpMqttAuthProviderConfiguration configuration) {
-        this(configuration, PoolSettings.fromEnvironment());
-    }
-
     /**
-     * Pooled connection lifetime. Without a bound, a keep-alive connection idle for hours is
-     * reused after the path has silently dropped it (kube-proxy conntrack forgets idle flows after
-     * 24 h): the next CONNECT fails with "Connection reset" and the provider fails closed. Evict
-     * idle connections well before any path or server idle timeout (auth endpoints commonly close
-     * idle keep-alive connections after about 60 s) and recycle long-lived ones.
+     * Connection pool bounds. Without them, a keep-alive connection idle for hours is reused after the network path
+     * has silently dropped it (kube-proxy conntrack forgets idle flows after 24 h, cloud load balancers after
+     * minutes): the request fails with "Connection reset" and the client is not authenticated.
      *
-     * @param maxIdleTime        close a pooled connection idle this long; null = never (previous behaviour)
-     * @param maxLifeTime        close a pooled connection this old; null = never (previous behaviour)
-     * @param evictionInterval   background eviction period; null = only on acquire
+     * @param maxConnections   maximum number of pooled connections
+     * @param maxIdleTime      close a pooled connection idle this long; null = never
+     * @param maxLifeTime      close a pooled connection this old; null = never
+     * @param evictionInterval background eviction period; null = bounds are checked only on acquire
      */
-    record PoolSettings(Duration maxIdleTime, Duration maxLifeTime, Duration evictionInterval) {
-        static final Duration DEFAULT_MAX_IDLE_TIME = Duration.ofSeconds(30);
-        static final Duration DEFAULT_MAX_LIFE_TIME = Duration.ofMinutes(5);
-        static final Duration DEFAULT_EVICTION_INTERVAL = Duration.ofSeconds(15);
+    record PoolSettings(int maxConnections, Duration maxIdleTime, Duration maxLifeTime, Duration evictionInterval) {
 
-        static PoolSettings fromEnvironment() {
+        static final Duration EVICTION_INTERVAL = Duration.ofSeconds(15);
+
+        /**
+         * A non-positive {@code maxConnections} falls back to the Reactor Netty default.
+         * A non-positive {@code maxIdleTimeMs} or {@code maxLifeTimeMs} disables that bound.
+         */
+        static PoolSettings of(int maxConnections, long maxIdleTimeMs, long maxLifeTimeMs) {
+            Duration maxIdleTime = maxIdleTimeMs > 0 ? Duration.ofMillis(maxIdleTimeMs) : null;
+            Duration maxLifeTime = maxLifeTimeMs > 0 ? Duration.ofMillis(maxLifeTimeMs) : null;
             return new PoolSettings(
-                    millis("TB_HTTP_AUTH_CLIENT_POOL_MAX_IDLE_TIME_MS", DEFAULT_MAX_IDLE_TIME),
-                    millis("TB_HTTP_AUTH_CLIENT_POOL_MAX_LIFE_TIME_MS", DEFAULT_MAX_LIFE_TIME),
-                    millis("TB_HTTP_AUTH_CLIENT_POOL_EVICTION_INTERVAL_MS", DEFAULT_EVICTION_INTERVAL));
-        }
-
-        /** Unset uses the default; 0 or negative disables that bound. */
-        private static Duration millis(String variable, Duration defaultValue) {
-            String value = System.getenv(variable);
-            if (value == null || value.isBlank()) {
-                return defaultValue;
-            }
-            long ms = Long.parseLong(value.trim());
-            return ms > 0 ? Duration.ofMillis(ms) : null;
+                    maxConnections > 0 ? maxConnections : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS,
+                    maxIdleTime,
+                    maxLifeTime,
+                    maxIdleTime != null || maxLifeTime != null ? EVICTION_INTERVAL : null);
         }
     }
 
@@ -129,7 +120,7 @@ public class HttpAuthClient {
 
             ConnectionProvider.Builder poolBuilder = ConnectionProvider
                     .builder("http-auth-provider-client")
-                    .maxConnections(getPoolMaxConnections());
+                    .maxConnections(pool.maxConnections());
             if (pool.maxIdleTime() != null) {
                 poolBuilder.maxIdleTime(pool.maxIdleTime());
             }
@@ -139,8 +130,7 @@ public class HttpAuthClient {
             if (pool.evictionInterval() != null) {
                 poolBuilder.evictInBackground(pool.evictionInterval());
             }
-            ConnectionProvider connectionProvider = poolBuilder.build();
-            this.connectionProvider = connectionProvider;
+            connectionProvider = poolBuilder.build();
 
             eventLoopGroup = new NioEventLoopGroup();
             HttpClient httpClient = HttpClient.create(connectionProvider)
@@ -170,11 +160,6 @@ public class HttpAuthClient {
         if (eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
         }
-    }
-
-    private int getPoolMaxConnections() {
-        String poolMaxConnectionsEnv = System.getenv("TB_HTTP_AUTH_CLIENT_POOL_MAX_CONNECTIONS");
-        return poolMaxConnectionsEnv != null ? Integer.parseInt(poolMaxConnectionsEnv) : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
     }
 
     private void validateMaxInMemoryBufferSize(HttpMqttAuthProviderConfiguration config) {
