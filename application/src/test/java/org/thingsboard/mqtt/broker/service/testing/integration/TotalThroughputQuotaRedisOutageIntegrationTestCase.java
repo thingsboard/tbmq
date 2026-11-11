@@ -34,8 +34,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.containers.GenericContainer;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.cluster.ClusterEditionTestInfrastructure;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -142,6 +144,7 @@ public class TotalThroughputQuotaRedisOutageIntegrationTestCase extends Abstract
     }
 
     private void pauseValkey() {
+        GenericContainer<?> valkey = ClusterEditionTestInfrastructure.valkey();
         valkey.getDockerClient().pauseContainerCmd(valkey.getContainerId()).exec();
         valkeyPaused = true;
         log.info("Paused the Valkey container: the shared bucket is now a black hole");
@@ -149,6 +152,7 @@ public class TotalThroughputQuotaRedisOutageIntegrationTestCase extends Abstract
 
     private void unpauseValkey() {
         if (valkeyPaused) {
+            GenericContainer<?> valkey = ClusterEditionTestInfrastructure.valkey();
             valkey.getDockerClient().unpauseContainerCmd(valkey.getContainerId()).exec();
             valkeyPaused = false;
             log.info("Unpaused the Valkey container");
