@@ -64,6 +64,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_MQTT_VERSION_CACHE;
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE;
@@ -131,11 +132,13 @@ public class SessionClusterManagerImplTest {
         SessionInfo incoming = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(existing);
         doReturn(existing).when(clientSessionService).getClientSessionInfo("clientId");
 
-        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        ConnectionRequestInfo requestInfo = req();
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, requestInfo);
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);
 
         verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
         verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(any(), any(), any(), anyBoolean());
+        assertFailedConnectResponse("clientId", requestInfo, "UNSPECIFIED_ERROR");
     }
 
     @Test
@@ -163,11 +166,13 @@ public class SessionClusterManagerImplTest {
 
         when(rateLimitService.checkSessionsLimit(anyString(), any())).thenReturn(false);
 
-        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        ConnectionRequestInfo requestInfo = req();
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, requestInfo);
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);
 
         verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(anyString(), anyString(), any(), anyBoolean());
         verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
+        assertFailedConnectResponse("clientA", requestInfo, "QUOTA_EXCEEDED");
     }
 
     @Test
@@ -178,11 +183,13 @@ public class SessionClusterManagerImplTest {
         when(rateLimitService.checkSessionsLimit(anyString(), any())).thenReturn(true);
         when(rateLimitService.checkApplicationClientsLimit(any(), any())).thenReturn(false);
 
-        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, req());
+        ConnectionRequestInfo requestInfo = req();
+        ConnectionRequestMsg connectionRequestMsg = new ConnectionRequestMsg(noopCallback(), incoming, requestInfo);
         sessionClusterManager.processConnectionRequest(connectionRequestMsg);
 
         verify(disconnectClientCommandService, never()).disconnectOnSessionConflict(anyString(), anyString(), any(), anyBoolean());
         verify(sessionClusterManager, never()).updateClientSessionOnConnect(any(), any(), any());
+        assertFailedConnectResponse("app", requestInfo, "QUOTA_EXCEEDED");
     }
 
     // -------------------------
@@ -519,6 +526,13 @@ public class SessionClusterManagerImplTest {
     private void assertConnectResponse(String clientId, ConnectionRequestInfo requestInfo, boolean sessionPresent) {
         verify(responseSender).send(eq(clientId), eq(requestInfo),
                 argThat(response -> response.getSuccess() && response.getSessionPresent() == sessionPresent));
+    }
+
+    private void assertFailedConnectResponse(String clientId, ConnectionRequestInfo requestInfo, String failureReason) {
+        verify(responseSender, times(1)).send(eq(clientId), eq(requestInfo),
+                argThat(response -> !response.getSuccess() && !response.getSessionPresent()
+                        && failureReason.equals(response.getFailureReason())));
+        verifyNoMoreInteractions(responseSender);
     }
 
     private SessionInfo persistentAppSession(String clientId, boolean cleanStart) {

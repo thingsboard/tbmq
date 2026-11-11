@@ -19,12 +19,12 @@ import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Slf4j
 @Component
