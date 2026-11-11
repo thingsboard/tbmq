@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.entity.app;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -29,12 +30,12 @@ import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 @RequiredArgsConstructor
 public class DefaultTbAppService extends AbstractTbEntityService implements TbAppService {
 
-    private final TbQueueAdmin tbQueueAdmin;
+    private final ObjectProvider<TbQueueAdmin> tbQueueAdmin;
     private final SystemInfoService systemInfoService;
 
     @Override
     public void deleteKafkaConsumerGroup(String groupId, User currentUser) throws Exception {
-        tbQueueAdmin.deleteConsumerGroup(groupId);
+        tbQueueAdmin.getObject().deleteConsumerGroup(groupId);
     }
 
     @Override
