@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 

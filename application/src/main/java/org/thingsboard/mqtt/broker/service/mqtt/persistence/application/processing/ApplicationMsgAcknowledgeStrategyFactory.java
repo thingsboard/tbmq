@@ -24,9 +24,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationMsgAcknowledgeStrategyFactory {
 

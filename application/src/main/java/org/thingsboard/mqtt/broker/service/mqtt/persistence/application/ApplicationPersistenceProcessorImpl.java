@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -84,6 +85,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {

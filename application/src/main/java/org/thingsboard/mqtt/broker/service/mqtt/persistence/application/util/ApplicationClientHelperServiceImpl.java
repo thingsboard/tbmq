@@ -18,9 +18,11 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 @Service
+@ClusterComponent
 @Data
 public class ApplicationClientHelperServiceImpl implements ApplicationClientHelperService {
 

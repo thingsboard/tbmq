@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePublisher {
 
