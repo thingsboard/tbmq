@@ -69,6 +69,7 @@
         <paho-client.version>1.2.5</paho-client.version>
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
+        <archunit.version>1.4.1</archunit.version>
         <jjwt.version>0.12.5</jjwt.version>
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
         <google-crypto-tink.version>1.11.0</google-crypto-tink.version>
@@ -1040,6 +1041,12 @@
                 <groupId>net.jodah</groupId>
                 <artifactId>concurrentunit</artifactId>
                 <version>${concurrentunit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit</artifactId>
+                <version>${archunit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
