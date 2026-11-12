@@ -45,11 +45,15 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * The embedded RocksDB store of the standalone edition: one database under {@code store.path}, one column family
  * per {@link StoreColumnFamily}. Values are opaque bytes. Every {@link RocksDBException} surfaces as a
  * {@link StoreException} that names the failed operation.
+ * <p>
+ * Operations run under a shared lock and {@link #close()} under the exclusive one, so a closing store never frees
+ * native memory an operation is using; an operation on a closed store throws {@link StoreException}.
  */
 @Slf4j
 @Component
@@ -74,10 +78,13 @@ public class RocksDbStore {
     // native objects the database depends on, in creation order; closed in reverse once the database is closed
     private final List<AutoCloseable> nativeResources = new ArrayList<>();
 
+    // everything below is guarded by the lock: written under the write lock, read under the read lock
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private ColumnFamilyHandle defaultHandle;
     private WriteOptions writeOptions;
     private StoreMeta meta;
-    private volatile RocksDB db;
+    private RocksDB db;
+    private boolean open;
 
     public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
         this.properties = properties;
@@ -85,12 +92,21 @@ public class RocksDbStore {
     }
 
     @PostConstruct
-    public synchronized void open() {
+    public void open() {
+        lock.writeLock().lock();
+        try {
+            doOpenLocked();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private void doOpenLocked() {
         String path = properties.getPath();
         if (path == null || path.isBlank()) {
             throw new StoreException("Cannot open the store: store.path is not set");
         }
-        if (db != null) {
+        if (open) {
             throw new StoreException("The store at " + path + " is already open");
         }
         try {
@@ -101,6 +117,8 @@ public class RocksDbStore {
         try {
             RocksDB.loadLibrary();
             doOpen(path);
+            // published last: the store counts as open only once the meta is loaded and checked
+            open = true;
             log.info("Opened the store at {} (block cache {} bytes, write buffer {} bytes, install id {})",
                     path, memoryBudget.blockCacheBytes(), memoryBudget.writeBufferBytes(), meta.installId());
         } catch (RocksDBException e) {
@@ -190,18 +208,25 @@ public class RocksDbStore {
     }
 
     /**
-     * Syncs the WAL and releases every native handle. Safe to call more than once.
+     * Waits for the running operations, syncs the WAL and releases every native handle. Safe to call more than once.
+     * Iterators from {@link #newIterator} must be closed by their owners before this runs.
      */
     @PreDestroy
-    public synchronized void close() {
-        if (db != null) {
-            try {
-                db.syncWal();
-            } catch (RocksDBException e) {
-                log.error("Failed to sync the WAL of the store at {} before closing", properties.getPath(), e);
+    public void close() {
+        lock.writeLock().lock();
+        try {
+            if (open) {
+                try {
+                    db.syncWal();
+                } catch (RocksDBException e) {
+                    log.error("Failed to sync the WAL of the store at {} before closing", properties.getPath(), e);
+                }
             }
+            open = false;
+            releaseNativeResources();
+        } finally {
+            lock.writeLock().unlock();
         }
-        releaseNativeResources();
     }
 
     private void releaseNativeResources() {
@@ -213,10 +238,9 @@ public class RocksDbStore {
             defaultHandle.close();
             defaultHandle = null;
         }
-        RocksDB database = db;
-        db = null;
-        if (database != null) {
-            database.close();
+        if (db != null) {
+            db.close();
+            db = null;
         }
         for (int i = nativeResources.size() - 1; i >= 0; i--) {
             try {
@@ -238,72 +262,76 @@ public class RocksDbStore {
      * Applies the batch atomically. Syncs the WAL only when {@code store.wal-sync} is {@code always}.
      */
     public void write(WriteBatch batch) {
-        try {
-            database().write(writeOptions, batch);
-        } catch (RocksDBException e) {
-            throw failure("write a batch", e);
-        }
+        run("write a batch", database -> {
+            database.write(writeOptions, batch);
+            return null;
+        });
     }
 
     public byte[] get(StoreColumnFamily cf, byte[] key) {
-        try {
-            return database().get(handle(cf), key);
-        } catch (RocksDBException e) {
-            throw failure("get from " + cf.columnFamilyName(), e);
-        }
+        return run("get from " + cf.columnFamilyName(), database -> database.get(handles.get(cf), key));
     }
 
     public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
-        try {
-            database().put(handle(cf), writeOptions, key, value);
-        } catch (RocksDBException e) {
-            throw failure("put to " + cf.columnFamilyName(), e);
-        }
+        run("put to " + cf.columnFamilyName(), database -> {
+            database.put(handles.get(cf), writeOptions, key, value);
+            return null;
+        });
     }
 
     public void delete(StoreColumnFamily cf, byte[] key) {
-        try {
-            database().delete(handle(cf), writeOptions, key);
-        } catch (RocksDBException e) {
-            throw failure("delete from " + cf.columnFamilyName(), e);
-        }
+        run("delete from " + cf.columnFamilyName(), database -> {
+            database.delete(handles.get(cf), writeOptions, key);
+            return null;
+        });
     }
 
     /**
-     * The caller closes the iterator.
+     * The caller closes the iterator, and must do so before the store is closed: closing the store frees the
+     * native memory an open iterator still points to.
      */
     public RocksIterator newIterator(StoreColumnFamily cf) {
-        return database().newIterator(handle(cf));
+        return run("iterate " + cf.columnFamilyName(), database -> database.newIterator(handles.get(cf)));
     }
 
+    /**
+     * The handle is valid until the store is closed.
+     */
     public ColumnFamilyHandle handle(StoreColumnFamily cf) {
-        database();
-        return handles.get(cf);
+        return run("get the handle of " + cf.columnFamilyName(), database -> handles.get(cf));
     }
 
     public void syncWal() {
-        try {
-            database().syncWal();
-        } catch (RocksDBException e) {
-            throw failure("sync the WAL", e);
-        }
+        run("sync the WAL", database -> {
+            database.syncWal();
+            return null;
+        });
     }
 
     public StoreMeta meta() {
-        database();
-        return meta;
+        return run("read the meta", database -> meta);
     }
 
-    private RocksDB database() {
-        RocksDB database = db;
-        if (database == null) {
-            throw new StoreException("The store at " + properties.getPath() + " is not open");
+    private <T> T run(String operation, DbCall<T> call) {
+        lock.readLock().lock();
+        try {
+            if (!open) {
+                throw new StoreException("Cannot " + operation + ": the store at " + properties.getPath() + " is not open");
+            }
+            return call.run(db);
+        } catch (RocksDBException e) {
+            throw new StoreException("Failed to " + operation + " in the store at " + properties.getPath()
+                    + ": " + e.getMessage(), e);
+        } finally {
+            lock.readLock().unlock();
         }
-        return database;
     }
 
-    private StoreException failure(String operation, RocksDBException e) {
-        return new StoreException("Failed to " + operation + " in the store at " + properties.getPath() + ": " + e.getMessage(), e);
+    @FunctionalInterface
+    private interface DbCall<T> {
+
+        T run(RocksDB database) throws RocksDBException;
+
     }
 
 }

@@ -29,6 +29,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -185,6 +191,47 @@ class RocksDbStoreTest {
         assertThatThrownBy(() -> store.get(StoreColumnFamily.META, bytes("k")))
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining(dir.toString());
+    }
+
+    @Test
+    void closingWhileOtherThreadsReadAndWriteOnlyEverSurfacesAStoreException() throws Exception {
+        int threads = 8;
+        for (int round = 0; round < 5; round++) {
+            RocksDbStore store = open(dir.resolve("round-" + round));
+            ExecutorService executor = Executors.newFixedThreadPool(threads);
+            CountDownLatch working = new CountDownLatch(threads);
+            AtomicInteger refused = new AtomicInteger();
+            List<Future<Throwable>> results = new ArrayList<>();
+            for (int t = 0; t < threads; t++) {
+                int id = t;
+                results.add(executor.submit(() -> {
+                    working.countDown();
+                    try {
+                        for (long i = 0; ; i++) {
+                            byte[] key = bytes("k-" + id + "-" + (i % 1000));
+                            store.put(StoreColumnFamily.CLIENT_SESSION, key, bytes("v" + i));
+                            store.get(StoreColumnFamily.CLIENT_SESSION, key);
+                            store.delete(StoreColumnFamily.CLIENT_SESSION, key);
+                        }
+                    } catch (StoreException e) {
+                        refused.incrementAndGet();
+                        return null;
+                    } catch (Throwable e) {
+                        return e;
+                    }
+                }));
+            }
+            assertThat(working.await(10, TimeUnit.SECONDS)).isTrue();
+            TimeUnit.MILLISECONDS.sleep(50);
+
+            store.close();
+
+            for (Future<Throwable> result : results) {
+                assertThat(result.get(10, TimeUnit.SECONDS)).isNull();
+            }
+            assertThat(refused.get()).isEqualTo(threads);
+            executor.shutdown();
+        }
     }
 
     private RocksDbStore open(Path path) {
