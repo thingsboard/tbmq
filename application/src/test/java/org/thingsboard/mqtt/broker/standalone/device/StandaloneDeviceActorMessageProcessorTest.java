@@ -134,7 +134,10 @@ class StandaloneDeviceActorMessageProcessorTest {
             queue.replaceAll(e -> e.packetId() == packetId ? e.asPubRel() : e);
             return true;
         });
-        when(store.info(CLIENT_ID)).thenAnswer(inv -> new DeviceQueueInfo(0, 0, 0, queue.size(), sentUpTo));
+        when(store.info(CLIENT_ID)).thenAnswer(inv -> {
+            long lastSequence = queue.isEmpty() ? 0 : queue.get(queue.size() - 1).sequence();
+            return new DeviceQueueInfo(0, lastSequence, 0, queue.size(), sentUpTo);
+        });
         doAnswer(inv -> {
             queue.clear();
             sentUpTo = 0;
@@ -376,12 +379,47 @@ class StandaloneDeviceActorMessageProcessorTest {
         processor.processDeviceConnect(actorCtx, connected(sessionCtx));
         verify(replayLimiter, never()).release(any());
 
-        IntStream.rangeClosed(1, 44).forEach(id -> processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(id)));
+        IntStream.rangeClosed(1, 43).forEach(id -> processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(id)));
         verify(replayLimiter, never()).release(any());
 
-        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(45));
+        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(44));     // hands over 300, the last entry
         verify(replayLimiter).release(CLIENT_ID);
         verify(delivery, times(300)).sendPublishMsgToClient(any(), any(), anyBoolean());
+    }
+
+    @Test
+    void thePermitCoversTheConnectTimeBacklogOnlyWhileTheQueueKeepsGrowing() {
+        givenQueue(300);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        appendEntries(301, 400);                                                     // ingress during the replay
+
+        IntStream.rangeClosed(1, 43).forEach(id -> processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(id)));
+        verify(replayLimiter, never()).release(any());
+
+        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(44));     // hands over 300: every page so far was full
+        verify(replayLimiter).release(CLIENT_ID);
+
+        appendEntries(401, 410);
+        IntStream.rangeClosed(45, 60).forEach(id -> processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(id)));
+        verify(delivery, times(316)).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(delivery).sendPublishMsgToClient(any(), argThat(m -> m.getPacketId() == 316), eq(false));
+        verify(replayLimiter, times(1)).release(CLIENT_ID);
+    }
+
+    @Test
+    void aReconnectWhileAwaitingAPermitKeepsASingleRetryChain() {
+        givenQueue(5);
+        when(replayLimiter.tryAcquire(CLIENT_ID)).thenReturn(false);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        processor.processDeviceDisconnect(actorCtx);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx2));
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));            // a takeover, no disconnect between
+        verify(systemContext, times(1)).scheduleMsgWithDelay(eq(actorCtx), any(DeliverPersistedMessagesEventMsg.class), eq(100L));
+
+        processor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));   // the one retry, still no permit
+
+        verify(systemContext, times(2)).scheduleMsgWithDelay(eq(actorCtx), any(DeliverPersistedMessagesEventMsg.class), eq(100L));
+        verifyNoInteractions(delivery);
     }
 
     @Test
@@ -529,6 +567,10 @@ class StandaloneDeviceActorMessageProcessorTest {
 
     private void givenQueue(int size) {
         IntStream.rangeClosed(1, size).forEach(i -> queue.add(new Entry(i, i, PersistedPacketType.PUBLISH, NOW_MS, body(null))));
+    }
+
+    private void appendEntries(int fromSequence, int toSequence) {
+        IntStream.rangeClosed(fromSequence, toSequence).forEach(i -> queue.add(new Entry(i, i, PersistedPacketType.PUBLISH, NOW_MS, body(null))));
     }
 
     private void givenQueueWithSentEntries(int sent) {

@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommand
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceQueueInfo;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
@@ -63,7 +64,7 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     private static final long REPLAY_PERMIT_RETRY_MS = 100;
 
     private enum Replay {
-        /** The client replays nothing or its backlog is handed over. */
+        /** The client replays nothing or its connect-time backlog is handed over. */
         NONE,
         /** The client has a backlog and waits for a permit; nothing is handed over meanwhile. */
         AWAITING_PERMIT,
@@ -88,6 +89,10 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     private int outstanding;
     private boolean channelWritable = true;
     private Replay replay = Replay.NONE;
+    // the last sequence of the queue at connect: the backlog a replay permit covers
+    private long replayEnd;
+    // a permit retry is on its way to this actor; one at most, whatever the number of reconnects
+    private boolean replayRetryScheduled;
     private UUID stopActorCommandUUID;
 
     StandaloneDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId, DeviceMsgQueueStore store,
@@ -114,7 +119,9 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         outstanding = 0;
         channelWritable = true;
         handle("start the delivery of persisted messages", () -> {
-            if (store.info(clientId).count() > 0 && !acquireReplayPermit()) {
+            DeviceQueueInfo info = store.info(clientId);
+            replayEnd = info.lastSequence();
+            if (info.count() > 0 && !acquireReplayPermit()) {
                 return;
             }
             pull();
@@ -228,6 +235,7 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
      */
     @Override
     public void processDeliverPersistedMessages(DeliverPersistedMessagesEventMsg msg) {
+        replayRetryScheduled = false;
         handle("deliver persisted messages", () -> {
             if (sessionCtx == null || replay == Replay.AWAITING_PERMIT && !acquireReplayPermit()) {
                 return;
@@ -267,8 +275,8 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
                 outstanding++;
             }
         }
-        if (page.size() < budget) {
-            // the page reached the end of the queue: the backlog is handed over
+        if (cursor >= replayEnd || page.size() < budget) {
+            // the connect-time backlog is handed over, or the page reached the end of the queue
             releaseReplayPermit();
         }
     }
@@ -297,7 +305,7 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     }
 
     /**
-     * @return {@code true} when the client holds a permit; otherwise a retry is scheduled
+     * @return {@code true} when the client holds a permit; otherwise a retry is scheduled unless one is already on its way
      */
     private boolean acquireReplayPermit() {
         if (replayLimiter.tryAcquire(clientId)) {
@@ -306,7 +314,10 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         }
         log.debug("[{}] No replay permit is free, retrying in {} ms", clientId, REPLAY_PERMIT_RETRY_MS);
         replay = Replay.AWAITING_PERMIT;
-        systemContext.scheduleMsgWithDelay(actorCtx, new DeliverPersistedMessagesEventMsg(List.of()), REPLAY_PERMIT_RETRY_MS);
+        if (!replayRetryScheduled) {
+            replayRetryScheduled = true;
+            systemContext.scheduleMsgWithDelay(actorCtx, new DeliverPersistedMessagesEventMsg(List.of()), REPLAY_PERMIT_RETRY_MS);
+        }
         return false;
     }
 
