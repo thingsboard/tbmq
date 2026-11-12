@@ -682,6 +682,11 @@ service:
     # Maximum drain duration before the operation is marked as timed out (in ms).
     timeout-ms: "${NODE_DRAIN_TIMEOUT_MS:300000}"
 
+# Standalone (lite) edition parameters. Ignored by the cluster edition.
+standalone:
+  # Unique ID of the single TBMQ node. Replaces service.id, which is fixed by the standalone edition.
+  service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
+
 # Actor system parameters
 actors:
   system:
