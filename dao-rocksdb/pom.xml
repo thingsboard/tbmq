@@ -82,4 +82,23 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- The root argLine plus the native-access flag, which silences the JDK 25 warning when rocksdbjni
+                         loads its native library. A module-level argLine replaces the root one, so it is repeated. -->
+                    <argLine>
+                        -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=20
+                        -XX:+EnableDynamicAgentLoading
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --enable-native-access=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
