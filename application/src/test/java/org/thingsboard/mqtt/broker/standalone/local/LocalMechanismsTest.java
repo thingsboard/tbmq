@@ -34,7 +34,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -96,6 +99,22 @@ class LocalMechanismsTest {
 
         verify(applier).apply(eq("lite-node"), eq(proto));
         verifyNoMoreInteractions(applier);
+    }
+
+    @Test
+    void broadcastDoesNotRethrowAnApplierFailure() {
+        InternodeNotificationsApplier applier = mock(InternodeNotificationsApplier.class);
+        ServiceInfoProvider serviceInfoProvider = mock(ServiceInfoProvider.class);
+        when(serviceInfoProvider.getServiceId()).thenReturn("lite-node");
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.getDefaultInstance())
+                .build();
+        doThrow(new IllegalStateException("applier failed")).when(applier).apply(any(), any());
+
+        assertThatCode(() -> new LocalInternodeNotificationsService(applier, serviceInfoProvider).broadcast(proto))
+                .doesNotThrowAnyException();
+
+        verify(applier).apply(eq("lite-node"), eq(proto));
     }
 
     @Test

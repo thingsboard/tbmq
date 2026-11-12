@@ -46,13 +46,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RETAINED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SESSIONS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTIONS;
-import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
 
 /**
  * The only node is the whole cluster, so its per-node usage entry is already the total: it is saved under the
@@ -65,6 +65,8 @@ import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalSta
 @StandaloneComponent
 @RequiredArgsConstructor
 public class StandaloneHistoricalStatsTotalService implements HistoricalStatsTotalPublisher {
+
+    private static final long ONE_MINUTE_MS = TimeUnit.MINUTES.toMillis(1);
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;

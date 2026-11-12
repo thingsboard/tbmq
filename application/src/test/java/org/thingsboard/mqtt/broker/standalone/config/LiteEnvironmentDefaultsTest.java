@@ -57,6 +57,45 @@ class LiteEnvironmentDefaultsTest {
     }
 
     @Test
+    void givenLiteEdition_whenStandaloneServiceIdIsMissing_thenServiceIdIsTbmqLite() {
+        var env = new MockEnvironment().withProperty("service.id", "host-42");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("service.id")).isEqualTo("tbmq-lite");
+    }
+
+    @Test
+    void givenLiteEdition_whenStandaloneServiceIdIsEmpty_thenServiceIdIsTbmqLite() {
+        var env = new MockEnvironment()
+                .withProperty("service.id", "")
+                .withProperty("standalone.service-id", "");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("service.id")).isEqualTo("tbmq-lite");
+    }
+
+    @Test
+    void givenLiteEdition_whenStandaloneServiceIdIsWhitespace_thenServiceIdIsTbmqLite() {
+        var env = new MockEnvironment().withProperty("standalone.service-id", "  \t ");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("service.id")).isEqualTo("tbmq-lite");
+    }
+
+    @Test
+    void givenLiteEdition_whenStandaloneServiceIdIsAddedAfterPostProcessing_thenItIsStillResolved() {
+        var env = new MockEnvironment();
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        env.setProperty("standalone.service-id", "late-node");
+
+        assertThat(env.getProperty("service.id")).isEqualTo("late-node");
+    }
+
+    @Test
     void givenLiteEdition_whenPostProcess_thenSourceHasHighestPrecedence() {
         var env = new MockEnvironment();
 

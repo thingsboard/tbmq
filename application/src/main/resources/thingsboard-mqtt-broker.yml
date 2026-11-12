@@ -684,7 +684,9 @@ service:
 
 # Standalone (lite) edition parameters. Ignored by the cluster edition.
 standalone:
-  # Unique ID of the single TBMQ node. Replaces service.id, which is fixed by the standalone edition.
+  # ID of the single TBMQ node, used as service.id (TB_SERVICE_ID is ignored in the standalone edition).
+  # Keep it stable: sessions stored under a different ID are treated as belonging to another node.
+  # Falls back to tbmq-lite if empty.
   service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
 
 # Actor system parameters

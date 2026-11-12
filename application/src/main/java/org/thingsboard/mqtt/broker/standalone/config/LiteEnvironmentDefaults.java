@@ -18,23 +18,33 @@ package org.thingsboard.mqtt.broker.standalone.config;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.Environment;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * Adds the fixed settings of the lite edition as the highest-precedence property source. The values are
- * placeholders, so a setting the user may still choose (for example {@code standalone.service-id}) applies.
+ * Adds the fixed settings of the lite edition as the highest-precedence property source. A value is either a
+ * constant or a {@code Function<Environment, Object>} evaluated on every lookup, so a setting the user may still
+ * choose (for example {@code standalone.service-id}) applies whether it is loaded before or after this source.
  * The cluster edition, and a classpath without an edition marker, are left untouched.
  */
 public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
 
     static final String PROPERTY_SOURCE_NAME = "tbmqLiteDefaults";
 
+    static final String DEFAULT_SERVICE_ID = "tbmq-lite";
+
     static Map<String, Object> defaults() {
-        return Map.of("service.id", "${standalone.service-id:tbmq-lite}");
+        Function<Environment, Object> serviceId = env -> {
+            // a blank value (an empty STANDALONE_SERVICE_ID) must not fall through to the hostname
+            String configured = env.getProperty("standalone.service-id");
+            return configured == null || configured.isBlank() ? DEFAULT_SERVICE_ID : configured;
+        };
+        return Map.of("service.id", serviceId);
     }
 
     @Override
@@ -47,7 +57,29 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
             return;
         }
         if (edition == TbmqEdition.LITE) {
-            environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults()));
+            environment.getPropertySources().addFirst(new LazyDefaultsPropertySource(environment, defaults()));
+        }
+    }
+
+    private static final class LazyDefaultsPropertySource extends EnumerablePropertySource<Environment> {
+
+        private final Map<String, Object> values;
+
+        private LazyDefaultsPropertySource(Environment environment, Map<String, Object> values) {
+            super(PROPERTY_SOURCE_NAME, environment);
+            this.values = values;
+        }
+
+        @Override
+        public String[] getPropertyNames() {
+            return values.keySet().toArray(new String[0]);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object getProperty(String name) {
+            Object value = values.get(name);
+            return value instanceof Function<?, ?> function ? ((Function<Environment, Object>) function).apply(source) : value;
         }
     }
 
