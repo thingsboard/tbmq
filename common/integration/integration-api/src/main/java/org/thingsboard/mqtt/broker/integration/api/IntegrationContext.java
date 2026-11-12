@@ -67,4 +67,7 @@ public interface IntegrationContext {
     ListeningExecutor getExternalCallExecutor();
 
     int getIntegrationConnectTimeoutSec();
+
+    /** Connection pool bounds of the HTTP integration client (integrations.http.pool). */
+    HttpClientPoolSettings getHttpClientPoolSettings();
 }

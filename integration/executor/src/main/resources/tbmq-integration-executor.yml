@@ -242,6 +242,18 @@ integrations:
     # Number of threads in the Netty shared worker group. Defaults to 0, which sets the count to availableProcessors * 2.
     # Used to send messages to external MQTT brokers using MQTT bridge (integration).
     threads-count: "${INTEGRATIONS_NETTY_SHARED_GROUP_THREADS:0}"
+  http:
+    # Connection pool of the HTTP client that each HTTP integration uses to send requests to its endpoint.
+    pool:
+      # Maximum number of connections in the pool. Defaults to 0, which uses the Reactor Netty default:
+      # twice the number of available processors, but at least 16.
+      max-connections: "${TB_IE_HTTP_CLIENT_POOL_MAX_CONNECTIONS:0}"
+      # Maximum time a connection may stay idle in the pool before it is closed (in ms). Keep it below the idle timeout
+      # of the endpoint and of any load balancer or proxy in between. Defaults to 30000 (30 s). 0 disables the limit.
+      max-idle-time-ms: "${TB_IE_HTTP_CLIENT_POOL_MAX_IDLE_TIME_MS:30000}"
+      # Maximum lifetime of a connection in the pool, regardless of activity (in ms). Defaults to 300000 (5 min).
+      # 0 disables the limit.
+      max-life-time-ms: "${TB_IE_HTTP_CLIENT_POOL_MAX_LIFE_TIME_MS:300000}"
 
 # Management parameters
 management:
