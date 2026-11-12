@@ -47,7 +47,7 @@ public class StandaloneBlockedClientProducerService implements BlockedClientProd
         StoreStateSupport.writeThenCallback(
                 () -> write(key, blockedClientProto),
                 callback,
-                e -> log.error("[{}] Failed to store blocked client {}", key, blockedClientProto, e));
+                e -> log.error("[{}] Failed to store blocked client", key, e));
     }
 
     @Override

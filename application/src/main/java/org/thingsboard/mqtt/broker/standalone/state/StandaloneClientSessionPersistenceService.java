@@ -47,19 +47,10 @@ public class StandaloneClientSessionPersistenceService implements ClientSessionP
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client session asynchronously - {}", clientId, clientSessionInfoProto);
         }
-        try {
-            write(clientId, clientSessionInfoProto);
-        } catch (StoreException e) {
-            log.error("[{}] Failed to store client session {}", clientId, clientSessionInfoProto, e);
-            if (callback == null) {
-                throw e;
-            }
-            callback.onFailure(e);
-            return;
-        }
-        if (callback != null) {
-            callback.onSuccess();
-        }
+        StoreStateSupport.writeThenCallback(
+                () -> write(clientId, clientSessionInfoProto),
+                callback,
+                e -> log.error("[{}] Failed to store client session", clientId, e));
     }
 
     @Override

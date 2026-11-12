@@ -34,13 +34,14 @@ public interface KeyValueStore {
     void delete(String key);
 
     /**
-     * Visits every entry in key order. The consumer must not close the store.
+     * Visits every entry, in the store's byte order of the UTF-8 key. The consumer must not close the store.
      */
     void forEach(BiConsumer<String, byte[]> consumer);
 
     /**
-     * Deletes every entry whose key the predicate rejects, in one atomic batch. When the predicate throws, nothing
-     * is deleted.
+     * Deletes every entry whose key the predicate rejects. The keys are judged in a scan and the deletes are then
+     * applied in one atomic batch, so a key written in between can be deleted too: meant for startup and cleanup,
+     * not for a store with concurrent writers. When the predicate throws, nothing is deleted.
      *
      * @return the number of deleted entries
      */

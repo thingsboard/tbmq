@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.standalone.state;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -53,9 +54,10 @@ public class InMemoryKeyValueStore implements KeyValueStore {
 
     @Override
     public synchronized int retainKeys(Predicate<String> keep) {
-        int before = entries.size();
-        entries.keySet().removeIf(key -> !keep.test(key));
-        return before - entries.size();
+        // like the real store: judge every key first, so a throwing predicate deletes nothing
+        List<String> rejected = entries.keySet().stream().filter(key -> !keep.test(key)).toList();
+        rejected.forEach(entries::remove);
+        return rejected.size();
     }
 
     public synchronized int size() {

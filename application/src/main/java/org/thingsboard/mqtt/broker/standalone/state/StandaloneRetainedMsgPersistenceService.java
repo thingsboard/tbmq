@@ -65,7 +65,7 @@ public class StandaloneRetainedMsgPersistenceService implements RetainedMsgPersi
         StoreStateSupport.writeThenCallback(
                 () -> write(topic, retainedMsgProto, messageExpiryInterval),
                 callback,
-                e -> log.error("[{}] Failed to store retained msg {}", topic, retainedMsgProto, e));
+                e -> log.error("[{}] Failed to store retained msg", topic, e));
     }
 
     private void write(String topic, RetainedMsgProto retainedMsgProto, Integer messageExpiryInterval) {

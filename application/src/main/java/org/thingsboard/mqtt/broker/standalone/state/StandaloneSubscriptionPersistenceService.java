@@ -56,7 +56,7 @@ public class StandaloneSubscriptionPersistenceService implements SubscriptionPer
         StoreStateSupport.writeThenCallback(
                 () -> write(clientId, clientSubscriptions),
                 callback,
-                e -> log.error("[{}] Failed to store client subscriptions {}", clientId, clientSubscriptions, e));
+                e -> log.error("[{}] Failed to store client subscriptions", clientId, e));
     }
 
     @Override

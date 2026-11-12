@@ -25,7 +25,9 @@ import java.util.function.Predicate;
 
 /**
  * A {@link KeyValueStore} over one column family of the {@link RocksDbStore}. Keys are stored as UTF-8 bytes.
- * Writes go through {@link RocksDbStore#write} and {@link RocksDbStore#put}, so they follow the WAL-sync mode.
+ * {@link #put} and {@link #delete} go through {@link RocksDbStore#put} and {@link RocksDbStore#delete} with the
+ * store's write options, and the batch of {@link #retainKeys} through {@link RocksDbStore#write}, so all of them
+ * follow the WAL-sync mode.
  */
 class RocksDbKeyValueStore implements KeyValueStore {
 
