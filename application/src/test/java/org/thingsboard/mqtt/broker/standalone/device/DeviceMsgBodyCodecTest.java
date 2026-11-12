@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeviceMsgBodyCodecTest {
 
@@ -119,6 +120,51 @@ class DeviceMsgBodyCodecTest {
 
         assertThat(restored.getSubscriptionIds()).containsExactly(3, 8);
         assertThat(restored.getMsgExpiryInterval()).isEqualTo(60);
+    }
+
+    @Test
+    void theMessageExpiryIntervalRoundTripsWhenAbsentZeroAndSet() {
+        for (Integer interval : new Integer[]{null, 0, 10}) {
+            DevicePublishMsg msg = msg();
+            msg.setMsgExpiryInterval(interval);
+
+            NewDeviceMsg created = DeviceMsgBodyCodec.toNew(msg);
+            DevicePublishMsg restored = DeviceMsgBodyCodec.toMsg("c1", stored(created.body(), 1, PersistedPacketType.PUBLISH));
+
+            assertThat(created.msgExpiryIntervalSec()).isEqualTo(interval);
+            assertThat(restored.getMsgExpiryInterval()).isEqualTo(interval);
+        }
+    }
+
+    @Test
+    void withQosAndSubscriptionIdPreservesTheMessageExpiryInterval() {
+        for (Integer interval : new Integer[]{null, 0, 10}) {
+            DevicePublishMsg msg = msg();
+            msg.setMsgExpiryInterval(interval);
+
+            byte[] body = DeviceMsgBodyCodec.withQosAndSubscriptionId(DeviceMsgBodyCodec.toNew(msg).body(), 0, 5);
+            DevicePublishMsg restored = DeviceMsgBodyCodec.toMsg("c1", stored(body, 1, PersistedPacketType.PUBLISH));
+
+            assertThat(restored.getMsgExpiryInterval()).isEqualTo(interval);
+            assertThat(restored.getQos()).isZero();
+        }
+    }
+
+    @Test
+    void anUnknownFormatByteIsRejected() {
+        byte[] body = DeviceMsgBodyCodec.toNew(msg()).body();
+        body[0] = 2;
+
+        assertThatThrownBy(() -> DeviceMsgBodyCodec.toMsg("c1", stored(body, 1, PersistedPacketType.PUBLISH)))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("unknown format 2");
+        assertThatThrownBy(() -> DeviceMsgBodyCodec.withQosAndSubscriptionId(body, 1, 0))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("unknown format 2");
+    }
+
+    @Test
+    void aBodyShorterThanTheFrameHeaderIsRejected() {
+        assertThatThrownBy(() -> DeviceMsgBodyCodec.toMsg("c1", stored(new byte[]{1, 0, 0}, 1, PersistedPacketType.PUBLISH)))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("shorter than");
     }
 
     private static DevicePublishMsg msg() {
