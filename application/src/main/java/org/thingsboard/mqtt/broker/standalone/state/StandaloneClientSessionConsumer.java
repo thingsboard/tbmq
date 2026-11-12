@@ -47,13 +47,22 @@ public class StandaloneClientSessionConsumer implements ClientSessionConsumer {
     @Override
     public Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException {
         log.debug("Starting client sessions initLoad");
+        long loadTs = System.currentTimeMillis();
         Map<String, ClientSessionInfo> sessions = StoreStateSupport.loadAll(store, "client sessions", bytes -> {
             ClientSessionInfo session = ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(bytes));
-            // no connection survives a restart of the only node
-            return session.toBuilder().connected(false).build();
+            return session.isConnected() ? disconnectedByRestart(session, loadTs) : session;
         });
         log.debug("Finished client sessions initLoad, loaded {} sessions", sessions.size());
         return sessions;
+    }
+
+    /**
+     * No connection survives a restart of the only node. The session was last seen connected, so its Session Expiry
+     * Interval starts counting at the load; without a disconnect time a persistent MQTT 5 session would read as
+     * expired right away.
+     */
+    private static ClientSessionInfo disconnectedByRestart(ClientSessionInfo session, long loadTs) {
+        return session.toBuilder().connected(false).disconnectedAt(loadTs).build();
     }
 
     @Override

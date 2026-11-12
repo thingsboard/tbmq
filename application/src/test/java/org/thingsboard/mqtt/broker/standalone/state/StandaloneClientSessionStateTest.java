@@ -139,15 +139,52 @@ class StandaloneClientSessionStateTest {
     }
 
     @Test
-    void initLoadReturnsStoredSessionsAsDisconnected() throws Exception {
-        persistence.persistClientSessionInfoAsync("c1", proto(persistentSession("c1").toBuilder().connected(true).build()), null);
+    void initLoadReturnsStoredSessionsAsDisconnectedWithTheDisconnectTimeSetOnlyWhereItWasMissing() throws Exception {
+        long disconnectedAt = 12345L;
+        persistence.persistClientSessionInfoAsync("c1", proto(persistentSession("c1").toBuilder().connected(true).disconnectedAt(0).build()), null);
+        persistence.persistClientSessionInfoAsync("c2", proto(persistentSession("c2").toBuilder().connected(false).disconnectedAt(disconnectedAt).build()), null);
+        long before = System.currentTimeMillis();
 
         Map<String, ClientSessionInfo> loaded = consumer.initLoad();
 
-        assertThat(loaded).containsOnlyKeys("c1").allSatisfy((id, s) -> {
-            assertThat(s.isConnected()).isFalse();
-            assertThat(s.getClientId()).isEqualTo("c1");
-        });
+        long after = System.currentTimeMillis();
+        assertThat(loaded).containsOnlyKeys("c1", "c2");
+        assertThat(loaded.get("c1").isConnected()).isFalse();
+        assertThat(loaded.get("c1").getClientId()).isEqualTo("c1");
+        assertThat(loaded.get("c1").getDisconnectedAt()).isBetween(before, after);
+        assertThat(loaded.get("c2").isConnected()).isFalse();
+        assertThat(loaded.get("c2").getDisconnectedAt()).isEqualTo(disconnectedAt);
+    }
+
+    @Test
+    void allSessionsStoredConnectedGetTheSameLoadTime() throws Exception {
+        persistence.persistClientSessionInfoAsync("c1", proto(persistentSession("c1").toBuilder().connected(true).build()), null);
+        persistence.persistClientSessionInfoAsync("c2", proto(persistentSession("c2").toBuilder().connected(true).build()), null);
+
+        Map<String, ClientSessionInfo> loaded = consumer.initLoad();
+
+        assertThat(loaded.get("c1").getDisconnectedAt()).isEqualTo(loaded.get("c2").getDisconnectedAt());
+    }
+
+    @Test
+    void sessionExpiryIntervalStartsAtLoadForASessionStoredConnected_MQTT_3_1_2_23() throws Exception {
+        ClientSessionInfo storedConnected = persistentSession("c1").toBuilder()
+                .connected(true).disconnectedAt(0).cleanStart(true).sessionExpiryInterval(3600).build();
+        persistence.persistClientSessionInfoAsync("c1", proto(storedConnected), null);
+
+        ClientSessionInfo loaded = consumer.initLoad().get("c1");
+
+        assertThat(loaded.isExpired(System.currentTimeMillis(), ClientSessionInfo.NO_TTL)).isFalse();
+    }
+
+    @Test
+    void anMqtt5SessionWithCleanStartAndAnExpiryIntervalIsPersistentAndStored_MQTT_3_1_2_23() {
+        ClientSessionInfo session = persistentSession("c1").toBuilder().cleanStart(true).sessionExpiryInterval(3600).build();
+
+        persistence.persistClientSessionInfoAsync("c1", proto(session), callback);
+
+        assertThat(store.get("c1")).isNotNull();
+        verify(callback).onSuccess();
     }
 
     @Test
