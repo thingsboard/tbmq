@@ -130,8 +130,9 @@ class RocksDbDeviceMsgMoveQueueTest {
                 .containsExactlyElementsOf(IntStream.range(0, 5_000).mapToObj(i -> "g" + i).toList());
         assertThat(bodies).filteredOn(body -> body.startsWith("a"))
                 .containsExactlyElementsOf(IntStream.range(0, 5_000).mapToObj(i -> "a" + i).toList());
-        assertThat(bodies.get(0)).startsWith("a");                                           // the move ran between the appends
-        assertThat(bodies.get(bodies.size() - 1)).startsWith("a");
+        int firstGroupBody = bodies.indexOf("g0");                                           // the move is atomic: one contiguous run
+        assertThat(bodies.subList(firstGroupBody, firstGroupBody + 5_000))
+                .containsExactlyElementsOf(IntStream.range(0, 5_000).mapToObj(i -> "g" + i).toList());
         assertThat(wide.info("ss_g_t").count()).isZero();
     }
 

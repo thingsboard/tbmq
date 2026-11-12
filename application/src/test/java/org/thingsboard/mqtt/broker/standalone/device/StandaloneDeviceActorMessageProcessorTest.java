@@ -63,6 +63,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -557,6 +558,33 @@ class StandaloneDeviceActorMessageProcessorTest {
         processor.processActorStop(actorCtx, stop.getValue());
 
         verify(actorCtx, never()).stop(any());
+    }
+
+    @Test
+    void aReadPageSizeBelowOneIsRejected() {
+        assertThatThrownBy(() -> new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("store.device-msg.read-page-size");
+    }
+
+    @Test
+    void aTakeoverWhileAwaitingAPermitOntoAnEmptyQueueDeliversWakeUpsWithoutAPermit() {
+        givenQueue(5);
+        when(replayLimiter.tryAcquire(CLIENT_ID)).thenReturn(false);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));              // AWAITING_PERMIT
+        queue.clear();                                                                 // the backlog is gone before the takeover
+
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx2));            // a takeover, no disconnect between
+        appendEntries(6, 6);
+        processor.processIncomingMsg(new IncomingPublishMsg(msgWithPacketId(6)));
+
+        verify(delivery).sendPublishMsgToClient(eq(sessionCtx2), argThat(m -> m.getPacketId() == 6), eq(false));
+        verify(replayLimiter, times(1)).tryAcquire(CLIENT_ID);                        // the takeover asked for no permit
+        verify(systemContext, times(1)).scheduleMsgWithDelay(eq(actorCtx), any(DeliverPersistedMessagesEventMsg.class), eq(100L));
+
+        processor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));   // the stale retry
+        verify(delivery, times(1)).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(replayLimiter, times(1)).tryAcquire(CLIENT_ID);
     }
 
     @Test

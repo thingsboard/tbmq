@@ -31,6 +31,11 @@ public interface DeviceMsgQueueStore {
 
     List<StoredDeviceMsg> read(String queueKey, long afterSequence, int limit);
 
+    /**
+     * Raises the sent mark of the queue to {@code upToSequence}, at most to its last sequence; never lowers it.
+     * A caller marks entries sent before it hands them to the channel; otherwise a sweep or a trim may delete a
+     * handed-over entry as expired, which breaks [MQTT-4.3.3-7] and [MQTT-4.4.0-1].
+     */
     void markSent(String queueKey, long upToSequence);
 
     /**
@@ -46,7 +51,7 @@ public interface DeviceMsgQueueStore {
     void removeQueue(String queueKey);
 
     /**
-     * @return the number of entries moved
+     * @return the number of entries moved; it includes the entries the limit of the target queue then trims
      */
     int moveQueue(String fromQueueKey, String toQueueKey, UnaryOperator<byte[]> bodyMapper);
 

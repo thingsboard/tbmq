@@ -87,6 +87,9 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     public RocksDbDeviceMsgQueueStore(RocksDbStore store, int limit, int ttlSeconds, Clock clock) {
+        if (limit < 0) {
+            throw new IllegalArgumentException("Persisted messages limit can't be negative!");
+        }
         if (limit > MAX_PACKET_ID) {
             throw new IllegalArgumentException("Persisted messages limit can't be greater than 65535!");
         }

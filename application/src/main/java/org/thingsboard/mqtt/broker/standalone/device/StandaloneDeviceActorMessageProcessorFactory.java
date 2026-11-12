@@ -35,6 +35,9 @@ public class StandaloneDeviceActorMessageProcessorFactory implements DeviceActor
 
     public StandaloneDeviceActorMessageProcessorFactory(DeviceMsgQueueStore store, ReplayLimiter replayLimiter,
                                                         @Value("${store.device-msg.read-page-size:256}") int readPageSize) {
+        if (readPageSize < 1) {
+            throw new IllegalArgumentException("store.device-msg.read-page-size must be at least 1, but was " + readPageSize);
+        }
         this.store = store;
         this.replayLimiter = replayLimiter;
         this.readPageSize = readPageSize;

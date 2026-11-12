@@ -344,6 +344,11 @@ class RocksDbDeviceMsgQueueStoreTest {
         assertThatThrownBy(() -> storeWithLimit(65_536)).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void aNegativeLimitIsRejected() {
+        assertThatThrownBy(() -> storeWithLimit(-1)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     private RocksDbDeviceMsgQueueStore storeWithLimit(int limit) {
         return new RocksDbDeviceMsgQueueStore(rocksDb, limit, TTL_SECONDS, CLOCK);
     }

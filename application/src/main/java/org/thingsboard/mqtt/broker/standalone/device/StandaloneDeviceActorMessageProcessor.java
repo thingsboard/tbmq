@@ -113,6 +113,9 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         log.trace("[{}] Start processing Device connect", clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Processing device connect");
         this.actorCtx = actorCtx;
+        // a connect without a disconnect (takeover) must not inherit a permit or a wait for one; a retry already on
+        // its way stays the only chain (replayRetryScheduled) and finds the reset state harmless
+        releaseReplayPermit();
         sessionCtx = msg.getSessionCtx();
         stopActorCommandUUID = null;
         cursor = 0;
