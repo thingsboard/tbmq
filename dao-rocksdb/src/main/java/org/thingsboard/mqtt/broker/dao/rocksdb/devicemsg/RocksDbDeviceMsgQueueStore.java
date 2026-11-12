@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 
 /**
  * The DEVICE queues of the standalone edition in the {@code device_msg} and {@code device_msg_meta} column families.
@@ -181,6 +182,8 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
 
     /**
      * Raises the sent mark of the queue to {@code upToSequence}, at most to its last sequence; never lowers it.
+     * A caller marks entries sent before it hands them to the channel; otherwise a sweep or a trim may delete an entry
+     * already handed over as expired.
      */
     @Override
     public void markSent(String queueKey, long upToSequence) {
@@ -259,9 +262,66 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         }
     }
 
+    /**
+     * Appends every live entry of {@code fromQueueKey}, in order, to {@code toQueueKey} as an unsent PUBLISH with the
+     * next sequence and packet id of {@code toQueueKey}, its body passed through {@code bodyMapper} and its created and
+     * expiry times kept; the limit trim of {@code toQueueKey} applies. An entry whose message expiry or TTL has passed
+     * is dropped and counted as expired, even one already sent from {@code fromQueueKey}: it would reach the member as
+     * a new message ([MQTT-3.3.2-5]). {@code fromQueueKey} is left empty and keeps its last sequence and packet id.
+     *
+     * @return the number of entries appended to {@code toQueueKey}
+     */
     @Override
     public int moveQueue(String fromQueueKey, String toQueueKey, UnaryOperator<byte[]> bodyMapper) {
-        throw new UnsupportedOperationException("moveQueue is not supported yet");
+        if (fromQueueKey.equals(toQueueKey)) {
+            throw new IllegalArgumentException("The device queue " + fromQueueKey + " can't be moved into itself");
+        }
+        int[] stripes = IntStream.of(stripe(fromQueueKey), stripe(toQueueKey)).distinct().sorted().toArray();
+        lockAll(stripes);
+        try {
+            DeviceQueueMeta from = loadMeta(fromQueueKey);
+            if (from.count() == 0) {
+                return 0;
+            }
+            long now = clock.millis();
+            List<byte[]> values = scan(ENTRIES, DeviceMsgKeys.entryKey(fromQueueKey, from.firstSequence()),
+                    DeviceMsgKeys.entryKey(fromQueueKey, from.lastSequence() + 1), iterator -> {
+                        List<byte[]> all = new ArrayList<>(from.count());
+                        while (iterator.isValid()) {
+                            all.add(iterator.value());
+                            iterator.next();
+                        }
+                        return all;
+                    });
+            PendingAppend to = new PendingAppend(toQueueKey, loadMeta(toQueueKey));
+            int expired = 0;
+            for (byte[] value : values) {
+                DeviceMsgEntryCodec.Header header = DeviceMsgEntryCodec.header(value);
+                if (ttlPassed(header, now) || msgExpiryPassed(header, now)) {
+                    expired++;
+                } else {
+                    to.add(header.createdTimeMs(), header.msgExpiresAtMs(), header.ttlExpiresAtMs(),
+                            bodyMapper.apply(DeviceMsgEntryCodec.body(value)));
+                }
+            }
+            if (to.hasEntries()) {
+                to.planTrim(now);
+            }
+            DeviceQueueMeta emptied = new DeviceQueueMeta(from.lastSequence() + 1, from.lastSequence(),
+                    from.lastPacketId(), 0, from.sentUpTo(), 0);
+            store.write(batch -> {
+                batch.deleteRange(ENTRIES, DeviceMsgKeys.queuePrefix(fromQueueKey),
+                        DeviceMsgKeys.queueEnd(fromQueueKey));
+                batch.put(METAS, DeviceMsgKeys.metaKey(fromQueueKey), emptied.toBytes());
+                if (to.hasEntries()) {
+                    to.writeTo(batch);
+                }
+            });
+            expiredEntries.addAndGet(expired + to.expired);
+            return to.entries.size();
+        } finally {
+            unlockAll(stripes);
+        }
     }
 
     @Override
@@ -444,8 +504,11 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     private static boolean isExpired(long sequence, DeviceMsgEntryCodec.Header header, long sentUpTo, long now) {
-        return ttlPassed(header, now) || !isSent(sequence, header, sentUpTo)
-                && header.msgExpiresAtMs() != 0 && header.msgExpiresAtMs() <= now;
+        return ttlPassed(header, now) || !isSent(sequence, header, sentUpTo) && msgExpiryPassed(header, now);
+    }
+
+    private static boolean msgExpiryPassed(DeviceMsgEntryCodec.Header header, long now) {
+        return header.msgExpiresAtMs() != 0 && header.msgExpiresAtMs() <= now;
     }
 
     private static boolean ttlPassed(DeviceMsgEntryCodec.Header header, long now) {
@@ -511,8 +574,9 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     /**
-     * The messages one {@link #append} call adds to one queue, and the trim that keeps the queue within the limit.
-     * The new entries are not in the store until the batch is written, so the trim drops them by position.
+     * The messages one {@link #append} or {@link #moveQueue} call adds to one queue, and the trim that keeps the queue
+     * within the limit. The new entries are not in the store until the batch is written, so the trim drops them by
+     * position.
      */
     private final class PendingAppend {
 
@@ -540,14 +604,20 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         AppendResult add(List<NewDeviceMsg> messages, long now) {
             AppendResult result = new AppendResult(queueKey, lastPacketId, lastSequence + 1, messages.size());
             for (NewDeviceMsg msg : messages) {
-                lastSequence++;
-                lastPacketId = nextPacketId(lastPacketId);
-                long msgExpiresAtMs = msgExpiresAtMs(msg);
-                newEarliestMsgExpiryMs = earlier(newEarliestMsgExpiryMs, msgExpiresAtMs);
-                entries.add(DeviceMsgEntryCodec.encode(lastPacketId, PersistedPacketType.PUBLISH, msg.createdTimeMs(),
-                        msgExpiresAtMs, now + ttlMs, msg.body()));
+                add(msg.createdTimeMs(), msgExpiresAtMs(msg), now + ttlMs, msg.body());
             }
             return result;
+        }
+
+        /**
+         * Adds one unsent PUBLISH entry with the next sequence and packet id of the queue.
+         */
+        void add(long createdTimeMs, long msgExpiresAtMs, long ttlExpiresAtMs, byte[] body) {
+            lastSequence++;
+            lastPacketId = nextPacketId(lastPacketId);
+            newEarliestMsgExpiryMs = earlier(newEarliestMsgExpiryMs, msgExpiresAtMs);
+            entries.add(DeviceMsgEntryCodec.encode(lastPacketId, PersistedPacketType.PUBLISH, createdTimeMs,
+                    msgExpiresAtMs, ttlExpiresAtMs, body));
         }
 
         boolean hasEntries() {

@@ -344,11 +344,6 @@ class RocksDbDeviceMsgQueueStoreTest {
         assertThatThrownBy(() -> storeWithLimit(65_536)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test
-    void queueMovesAreNotSupportedYet() {
-        assertThatThrownBy(() -> store.moveQueue("c1", "c2", b -> b)).isInstanceOf(UnsupportedOperationException.class);
-    }
-
     private RocksDbDeviceMsgQueueStore storeWithLimit(int limit) {
         return new RocksDbDeviceMsgQueueStore(rocksDb, limit, TTL_SECONDS, CLOCK);
     }

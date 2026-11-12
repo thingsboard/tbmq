@@ -35,10 +35,6 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -325,44 +321,6 @@ class RocksDbDeviceMsgExpiryTest {
 
     private static byte[] bytes(String s) {
         return s.getBytes(StandardCharsets.UTF_8);
-    }
-
-    private static final class MutableClock extends Clock {
-
-        private long millis;
-
-        MutableClock(long millis) {
-            this.millis = millis;
-        }
-
-        void advanceSeconds(long seconds) {
-            millis += seconds * 1000;
-        }
-
-        void advanceMillis(long ms) {
-            millis += ms;
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Instant instant() {
-            return Instant.ofEpochMilli(millis);
-        }
-
-        @Override
-        public long millis() {
-            return millis;
-        }
-
     }
 
 }
