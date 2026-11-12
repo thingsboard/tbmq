@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Getter
-class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProcessor {
+class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProcessor implements DeviceActorMessageProcessor {
 
     private final String clientId;
     private final DeviceMsgService deviceMsgService;
@@ -97,6 +97,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
     }
 
+    @Override
     public void processDeviceConnect(TbActorCtx actorCtx, DeviceConnectedEventMsg msg) {
         log.trace("[{}] Start processing Device connect", clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Processing device connect");
@@ -105,6 +106,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         findAndDeliverPersistedMessages(actorCtx);
     }
 
+    @Override
     public void processDeviceDisconnect(TbActorCtx actorCtx) {
         log.trace("[{}] Start processing Device disconnect", clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Processing device disconnect");
@@ -117,6 +119,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     // TODO: refactor to not use .toCompletableFuture().get(); for deviceMsgService APIs
     @SneakyThrows
+    @Override
     public void processSharedSubscriptions(TbActorCtx actorCtx, SharedSubscriptionEventMsg msg) {
         log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
         if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
@@ -164,6 +167,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         return packetIdDto.getCurrentPacketId();
     }
 
+    @Override
     public void processIncomingMsg(IncomingPublishMsg msg) {
         if (sessionCtx == null) {
             log.trace("[{}] Processing incoming msg when disconnected {}", clientId, msg);
@@ -199,6 +203,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
     }
 
+    @Override
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
@@ -213,6 +218,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 });
     }
 
+    @Override
     public void processPacketReceived(PacketReceivedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
@@ -228,6 +234,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         });
     }
 
+    @Override
     public void processPacketReceivedNoDelivery(PacketReceivedNoDeliveryEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
@@ -242,6 +249,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 });
     }
 
+    @Override
     public void processPacketComplete(PacketCompletedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
@@ -276,6 +284,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         return new SharedSubscriptionPublishPacket(key, packetId);
     }
 
+    @Override
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {
         if (msg.getCommandUUID().equals(stopActorCommandUUID)) {
             log.debug("[{}] Stopping DEVICE actor", clientId);
@@ -285,6 +294,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
     }
 
+    @Override
     public void processRemovePersistedMessages() {
         deviceMsgService.removePersistedMessages(clientId).whenComplete((status, throwable) -> {
             if (throwable != null) {
@@ -295,6 +305,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         });
     }
 
+    @Override
     public void processChannelWritable(TbActorCtx actorCtx) {
         int count = unacknowledgedMsgCounter.get();
         log.trace("[{}] Handle channel writable, unacknowledged msg count: {}", clientId, count);
@@ -307,11 +318,13 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         findAndDeliverPersistedMessages(actorCtx);
     }
 
+    @Override
     public void processChannelNonWritable() {
         log.trace("[{}] Channel is not writable", clientId);
         channelWritable = false;
     }
 
+    @Override
     public void processDeliverPersistedMessages(DeliverPersistedMessagesEventMsg msg) {
         log.trace("[{}] Handle process delivery of persisted messages {}", clientId, msg.getPersistedMessages().size());
 

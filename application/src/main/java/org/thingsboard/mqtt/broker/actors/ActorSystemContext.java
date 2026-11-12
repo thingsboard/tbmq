@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.device.DeviceActorMessageProcessorFactory;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMsgDeliveryService;
@@ -47,6 +48,8 @@ public class ActorSystemContext {
 
     private final DeviceActorConfiguration deviceActorConfiguration;
     private final ClientActorConfiguration clientActorConfiguration;
+
+    private final DeviceActorMessageProcessorFactory deviceActorMessageProcessorFactory;
 
     public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
         log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);

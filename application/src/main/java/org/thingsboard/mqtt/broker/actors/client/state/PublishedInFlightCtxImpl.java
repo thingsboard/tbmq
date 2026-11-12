@@ -243,6 +243,19 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
     }
 
     @Override
+    public int freeSlots() {
+        lock.lock();
+        try {
+            if (!delayedMsgQueue.isEmpty()) {
+                return 0;
+            }
+            return Math.max(0, clientReceiveMax - inFlightPacketIds.size());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
     public void release() {
         List<MqttPublishMessage> toRelease;
         int inFlightSize;

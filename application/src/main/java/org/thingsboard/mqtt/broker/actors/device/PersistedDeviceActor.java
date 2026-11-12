@@ -34,14 +34,14 @@ import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 @Slf4j
 public class PersistedDeviceActor extends ContextAwareActor {
 
-    private final PersistedDeviceActorMessageProcessor processor;
+    private final DeviceActorMessageProcessor processor;
     private final ClientLogger clientLogger;
     private final String clientId;
 
     PersistedDeviceActor(ActorSystemContext systemContext, String clientId) {
         super(systemContext, systemContext.getClientActorContext().getStatsManager().getPersistedDeviceActorStats());
         this.clientId = clientId;
-        this.processor = new PersistedDeviceActorMessageProcessor(systemContext, clientId);
+        this.processor = systemContext.getDeviceActorMessageProcessorFactory().create(systemContext, clientId);
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
     }
 
