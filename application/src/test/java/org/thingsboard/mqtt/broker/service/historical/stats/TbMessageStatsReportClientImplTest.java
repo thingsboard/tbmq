@@ -30,10 +30,7 @@ import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.DefaultDroppedMsgStats;
 import org.thingsboard.mqtt.broker.service.stats.DroppedMsgStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -64,17 +61,13 @@ import static org.mockito.Mockito.when;
 public class TbMessageStatsReportClientImplTest {
 
     @Mock
-    private HistoricalDataQueueFactory historicalDataQueueFactory;
-    @Mock
     private ServiceInfoProvider serviceInfoProvider;
     @Mock
     private TimeseriesService timeseriesService;
     @Mock
-    private HistoricalStatsTotalHelper helper;
+    private HistoricalStatsTotalPublisher publisher;
     @Mock
     private HistoricalDataReportProperties historicalDataReportProperties;
-    @Mock
-    private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
     @Mock
     private StatsManager statsManager;
 
@@ -93,16 +86,14 @@ public class TbMessageStatsReportClientImplTest {
         when(statsManager.getDroppedMsgStats()).thenReturn(droppedMsgStats);
 
         tbMessageStatsReportClient = new TbMessageStatsReportClientImpl(
-                historicalDataQueueFactory,
                 serviceInfoProvider,
                 timeseriesService,
-                helper,
+                publisher,
                 historicalDataReportProperties,
                 statsManager
         );
 
         when(serviceInfoProvider.getServiceId()).thenReturn("service-1");
-        when(historicalDataQueueFactory.createProducer(any())).thenReturn(historicalStatsProducer);
 
         when(historicalDataReportProperties.isEnabled()).thenReturn(true);
         when(historicalDataReportProperties.getInterval()).thenReturn(1);
@@ -120,7 +111,6 @@ public class TbMessageStatsReportClientImplTest {
         assertNotNull(tbMessageStatsReportClient.getStats());
         assertNotNull(tbMessageStatsReportClient.getClientSessionsStats());
         assertEquals("service-1", tbMessageStatsReportClient.getServiceId());
-        verify(historicalDataQueueFactory, times(1)).createProducer("service-1");
     }
 
     @Test
@@ -130,7 +120,6 @@ public class TbMessageStatsReportClientImplTest {
 
         assertNull(tbMessageStatsReportClient.getStats());
         assertNull(tbMessageStatsReportClient.getClientSessionsStats());
-        verify(historicalDataQueueFactory, never()).createProducer(any());
     }
 
     @Test
@@ -392,18 +381,57 @@ public class TbMessageStatsReportClientImplTest {
         // Mock futures for saveLatest and queue send
         ListenableFuture<Void> mockFuture = Futures.immediateFuture(null);
         when(timeseriesService.save(anyString(), any(BasicTsKvEntry.class))).thenReturn(mockFuture);
-        when(helper.getTopic()).thenReturn("topic");
 
         // When
         tbMessageStatsReportClient.reportAndPersistStats(timestamp, null);
 
         // Then: one save + one send per persisted historical key (processedBytes was removed as a dead key).
         verify(timeseriesService, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).save(anyString(), any(BasicTsKvEntry.class));
-        verify(historicalStatsProducer, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).send(eq("topic"), eq(null), any(TbProtoQueueMsg.class), any(TbQueueCallback.class));
+        verify(publisher, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).publish(any(ToUsageStatsMsgProto.class), any(TbQueueCallback.class));
 
         // Assert that stats are reset to 0
         assertEquals(0, tbMessageStatsReportClient.getStats().get(BrokerConstants.INCOMING_MSGS).get());
         assertEquals(0, tbMessageStatsReportClient.getStats().get(BrokerConstants.OUTGOING_MSGS).get());
+    }
+
+    @Test
+    public void testReportAndPersistStats_publishesEveryKeyWithServiceIdAndTsAndSavesPerNodeEntry() {
+        tbMessageStatsReportClient.init();
+        tbMessageStatsReportClient.getStats().get(BrokerConstants.INCOMING_MSGS).set(100);
+        when(timeseriesService.save(anyString(), any(BasicTsKvEntry.class))).thenReturn(Futures.immediateFuture(null));
+
+        tbMessageStatsReportClient.reportAndPersistStats(42_000L, null);
+
+        org.mockito.ArgumentCaptor<ToUsageStatsMsgProto> captor = org.mockito.ArgumentCaptor.forClass(ToUsageStatsMsgProto.class);
+        verify(publisher, times(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT)).publish(captor.capture(), any(TbQueueCallback.class));
+        ToUsageStatsMsgProto incoming = captor.getAllValues().stream()
+                .filter(m -> BrokerConstants.INCOMING_MSGS.equals(m.getUsageStats().getKey())).findFirst().orElseThrow();
+        assertEquals("service-1", incoming.getServiceId());
+        assertEquals(42_000L, incoming.getTs());
+        assertEquals(100L, incoming.getUsageStats().getValue());
+        verify(timeseriesService).save(eq("service-1"), org.mockito.ArgumentMatchers.argThat(
+                (BasicTsKvEntry e) -> BrokerConstants.INCOMING_MSGS.equals(e.getKey()) && e.getTs() == 42_000L && e.getLongValue().orElse(-1L) == 100L));
+    }
+
+    @Test
+    public void testReportAndPersistStats_callbackCountsDownTheLatchOnSuccessAndOnFailure() {
+        tbMessageStatsReportClient.init();
+        when(timeseriesService.save(anyString(), any(BasicTsKvEntry.class))).thenReturn(Futures.immediateFuture(null));
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        org.mockito.Mockito.doAnswer(inv -> {
+            TbQueueCallback cb = inv.getArgument(1);
+            if (calls.getAndIncrement() % 2 == 0) {
+                cb.onSuccess(null);
+            } else {
+                cb.onFailure(new RuntimeException("boom"));
+            }
+            return null;
+        }).when(publisher).publish(any(ToUsageStatsMsgProto.class), any(TbQueueCallback.class));
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT);
+
+        tbMessageStatsReportClient.reportAndPersistStats(1L, latch);
+
+        assertEquals(0L, latch.getCount());
     }
 
 }

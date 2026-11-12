@@ -71,11 +71,10 @@ class EditionArchitectureTest {
 
     /**
      * Not Kafka-backed: DefaultTbAppService takes an optional ObjectProvider of the admin, IntegrationManagerServiceImpl
-     * takes a lazy provider used only by cluster beans. The two stats beans stay until their Kafka factory is removed.
+     * takes a lazy provider used only by cluster beans.
      */
     private static final Set<String> KAFKA_BACKED_BEAN_EXCEPTIONS = Set.of(
-            "DefaultTbAppService", "IntegrationManagerServiceImpl",
-            "TbMessageStatsReportClientImpl", "HistoricalStatsTotalConsumer");
+            "DefaultTbAppService", "IntegrationManagerServiceImpl");
 
     private static final DescribedPredicate<JavaClass> DEPENDS_ON_KAFKA_BACKED_TYPE = new DescribedPredicate<>(
             "are not a named exception and depend on a TbQueueAdmin, or on a queue factory or provider") {

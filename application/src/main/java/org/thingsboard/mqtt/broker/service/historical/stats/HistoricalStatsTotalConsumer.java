@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
@@ -62,6 +63,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTI
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class HistoricalStatsTotalConsumer {
 
