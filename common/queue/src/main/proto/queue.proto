@@ -205,6 +205,7 @@ message DevicePublishMsgProto {
   repeated UserPropertyProto userProperties = 9;
   bool retain = 10;
   optional MqttPropertiesProto mqttProperties = 11;
+  optional int32 msgExpiryInterval = 12;
 }
 
 message ClientPublishMsgProto {

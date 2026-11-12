@@ -48,6 +48,11 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     }
 
     @Test
+    public void contract() {
+        new DeviceMsgServiceContract(deviceMsgService, 10).runAll();   // 10 = mqtt.persistent-session.device.persisted-messages.limit in application-test.properties
+    }
+
+    @Test
     public void testCRUDLastPacketId() throws InterruptedException {
         var saveLatch = new CountDownLatch(1);
         deviceMsgService.saveLastPacketId(TEST_CLIENT_ID, 5).whenComplete((status, throwable) -> {
