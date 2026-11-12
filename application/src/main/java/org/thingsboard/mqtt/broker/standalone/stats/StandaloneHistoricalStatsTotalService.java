@@ -41,7 +41,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerServic
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,11 +52,13 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ENTITY_ID_
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RETAINED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SESSIONS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTIONS;
+import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
 
 /**
  * The only node is the whole cluster, so its per-node usage entry is already the total: it is saved under the
- * total entity directly instead of through a topic. Also writes the session, subscription and retained message
- * counts on the same cron as the cluster total consumer. Does nothing when historical data reporting is disabled.
+ * total entity directly instead of through a topic, accumulating the entries of one interval the way the cluster
+ * total consumer does. Also writes the session, subscription and retained message counts on the same cron.
+ * Does nothing when historical data reporting is disabled.
  */
 @Slf4j
 @Component
@@ -68,6 +72,7 @@ public class StandaloneHistoricalStatsTotalService implements HistoricalStatsTot
     private final TimeseriesService timeseriesService;
     private final HistoricalDataReportProperties historicalDataReportProperties;
 
+    private final Map<String, TsMsgTotal> totalStatsMap = new HashMap<>();
     private ExecutorService countsProcessingExecutor;
 
     @PostConstruct
@@ -83,14 +88,20 @@ public class StandaloneHistoricalStatsTotalService implements HistoricalStatsTot
         if (historicalDataReportProperties.isDisabled()) {
             return;
         }
-        TsKvEntry entry = new BasicTsKvEntry(msg.getTs(),
-                new LongDataEntry(msg.getUsageStats().getKey(), msg.getUsageStats().getValue()));
+        TsKvEntry entry;
         ListenableFuture<Void> saved;
-        try {
-            saved = timeseriesService.save(ENTITY_ID_TOTAL, entry);
-        } catch (Exception e) {
-            callback.onFailure(e);
-            return;
+        // Serialized: called from the stats client's reporting thread and from its shutdown flush.
+        synchronized (totalStatsMap) {
+            try {
+                entry = new BasicTsKvEntry(msg.getTs(), new LongDataEntry(msg.getUsageStats().getKey(), totalFor(msg)));
+                saved = timeseriesService.save(ENTITY_ID_TOTAL, entry);
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                callback.onFailure(e);
+                return;
+            }
         }
         DonAsynchron.withCallback(saved,
                 unused -> {
@@ -98,6 +109,45 @@ public class StandaloneHistoricalStatsTotalService implements HistoricalStatsTot
                     callback.onSuccess(null);
                 },
                 callback::onFailure);
+    }
+
+    /**
+     * Same accumulation as the cluster total consumer: the held (ts, value) of a key is seeded from the stored latest
+     * total, and a message of the same interval adds to it, so a partial interval flushed on shutdown is not replaced
+     * by the first report after a restart (the store upserts on the same ts). A newer message replaces the held pair;
+     * an older one is saved as it is and leaves the held pair untouched.
+     */
+    private long totalFor(ToUsageStatsMsgProto msg) throws Exception {
+        String key = msg.getUsageStats().getKey();
+        long msgTs = msg.getTs();
+        long msgValue = msg.getUsageStats().getValue();
+        TsMsgTotal held = totalStatsMap.get(key);
+        if (held == null) {
+            held = seedFromStoredTotal(key, msgTs);
+            totalStatsMap.put(key, held);
+        }
+        if (held.ts < msgTs) {
+            held.ts = msgTs;
+            held.value = msgValue;
+            return msgValue;
+        }
+        if (held.ts == msgTs) {
+            held.value += msgValue;
+            return held.value;
+        }
+        return msgValue;
+    }
+
+    private TsMsgTotal seedFromStoredTotal(String key, long msgTs) throws Exception {
+        long intervalMs = ONE_MINUTE_MS * historicalDataReportProperties.getInterval();
+        List<TsKvEntry> latestTs = timeseriesService.findLatest(ENTITY_ID_TOTAL, List.of(key)).get();
+        if (!latestTs.isEmpty()) {
+            TsKvEntry latest = latestTs.get(0);
+            if (latest != null && msgTs <= latest.getTs() + intervalMs) {
+                return new TsMsgTotal(latest.getTs(), latest.getLongValue().orElse(0L));
+            }
+        }
+        return new TsMsgTotal(msgTs, 0L);
     }
 
     @Scheduled(cron = "#{@historicalDataReportProperties.cron}", zone = "#{@historicalDataReportProperties.zone}")
@@ -141,6 +191,17 @@ public class StandaloneHistoricalStatsTotalService implements HistoricalStatsTot
     void destroy() {
         if (countsProcessingExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(countsProcessingExecutor, "Historical session stats");
+        }
+    }
+
+    private static final class TsMsgTotal {
+
+        private long ts;
+        private long value;
+
+        private TsMsgTotal(long ts, long value) {
+            this.ts = ts;
+            this.value = value;
         }
     }
 

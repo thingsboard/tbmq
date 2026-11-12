@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -87,6 +89,7 @@ class StandaloneHistoricalStatsTotalServiceTest {
         when(historicalDataReportProperties.isDisabled()).thenReturn(false);
         when(timeseriesService.save(eq(BrokerConstants.ENTITY_ID_TOTAL), any(TsKvEntry.class)))
                 .thenReturn(Futures.immediateFuture(null));
+        nothingStored();
         service.init();
 
         service.publish(usageMsg("incomingMsgs", 7L, 1000L), callback);
@@ -107,6 +110,7 @@ class StandaloneHistoricalStatsTotalServiceTest {
         RuntimeException cause = new RuntimeException("store down");
         when(timeseriesService.save(eq(BrokerConstants.ENTITY_ID_TOTAL), any(TsKvEntry.class)))
                 .thenReturn(Futures.immediateFailedFuture(cause));
+        nothingStored();
         service.init();
 
         service.publish(usageMsg("incomingMsgs", 7L, 1000L), callback);
@@ -163,6 +167,110 @@ class StandaloneHistoricalStatsTotalServiceTest {
 
         verify(timeseriesService, after(300).never()).save(anyString(), anyList());
         verify(clientSessionService, never()).getClientSessionsCount();
+    }
+
+    @Test
+    void givenStoredLatestTotalAtTheSameTs_whenFirstPublish_thenTheSavedValueIsTheSum() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        when(historicalDataReportProperties.getInterval()).thenReturn(1);
+        stored("incomingMsgs", 60_000L, 10L);
+        savesSucceed();
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 5L, 60_000L), callback);
+
+        assertThat(savedValues()).containsExactly(15L);
+        verify(callback).onSuccess(isNull());
+    }
+
+    @Test
+    void givenStoredLatestTotalAtAnOlderIntervalStart_whenFirstPublish_thenTheSavedValueIsTheMsgValue() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        when(historicalDataReportProperties.getInterval()).thenReturn(1);
+        stored("incomingMsgs", 60_000L, 10L);
+        savesSucceed();
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 5L, 120_000L), callback);
+
+        assertThat(savedValues()).containsExactly(5L);
+    }
+
+    @Test
+    void givenStoredLatestTotalOlderThanOneInterval_whenFirstPublish_thenTheStoredValueIsIgnored() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        when(historicalDataReportProperties.getInterval()).thenReturn(1);
+        stored("incomingMsgs", 60_000L, 10L);
+        savesSucceed();
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 5L, 600_000L), callback);
+
+        assertThat(savedValues()).containsExactly(5L);
+    }
+
+    @Test
+    void givenTwoPublishesWithTheSameTsAndKey_whenPublish_thenTheValuesAreAccumulated() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        nothingStored();
+        savesSucceed();
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 4L, 60_000L), callback);
+        service.publish(usageMsg("incomingMsgs", 6L, 60_000L), callback);
+        service.publish(usageMsg("outgoingMsgs", 1L, 60_000L), callback);
+        service.publish(usageMsg("incomingMsgs", 2L, 120_000L), callback);
+
+        assertThat(savedValues()).containsExactly(4L, 10L, 1L, 2L);
+    }
+
+    @Test
+    void givenAnOlderTsThanTheHeldOne_whenPublish_thenItIsSavedAsItIsAndTheHeldTotalIsKept() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        nothingStored();
+        savesSucceed();
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 4L, 120_000L), callback);
+        service.publish(usageMsg("incomingMsgs", 9L, 60_000L), callback);
+        service.publish(usageMsg("incomingMsgs", 1L, 120_000L), callback);
+
+        assertThat(savedValues()).containsExactly(4L, 9L, 5L);
+    }
+
+    @Test
+    void givenStoredTotalLookupFails_whenPublish_thenOnFailureIsCalledAndNothingIsSaved() {
+        when(historicalDataReportProperties.isDisabled()).thenReturn(false);
+        RuntimeException cause = new RuntimeException("store down");
+        when(timeseriesService.findLatest(eq(BrokerConstants.ENTITY_ID_TOTAL), anyList()))
+                .thenReturn(Futures.immediateFailedFuture(cause));
+        service.init();
+
+        service.publish(usageMsg("incomingMsgs", 4L, 60_000L), callback);
+
+        verify(callback).onFailure(any());
+        verify(timeseriesService, never()).save(anyString(), any(TsKvEntry.class));
+    }
+
+    private void nothingStored() {
+        when(timeseriesService.findLatest(eq(BrokerConstants.ENTITY_ID_TOTAL), anyList()))
+                .thenReturn(Futures.immediateFuture(List.of()));
+    }
+
+    private void stored(String key, long ts, long value) {
+        when(timeseriesService.findLatest(eq(BrokerConstants.ENTITY_ID_TOTAL), anyList()))
+                .thenReturn(Futures.immediateFuture(List.of(new BasicTsKvEntry(ts, new LongDataEntry(key, value)))));
+    }
+
+    private void savesSucceed() {
+        when(timeseriesService.save(eq(BrokerConstants.ENTITY_ID_TOTAL), any(TsKvEntry.class)))
+                .thenReturn(Futures.immediateFuture(null));
+    }
+
+    private List<Long> savedValues() {
+        ArgumentCaptor<TsKvEntry> captor = ArgumentCaptor.forClass(TsKvEntry.class);
+        verify(timeseriesService, atLeastOnce()).save(eq(BrokerConstants.ENTITY_ID_TOTAL), captor.capture());
+        return captor.getAllValues().stream().map(e -> e.getLongValue().orElseThrow()).toList();
     }
 
     private static ToUsageStatsMsgProto usageMsg(String key, long value, long ts) {
