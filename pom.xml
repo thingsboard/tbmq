@@ -70,6 +70,7 @@
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <archunit.version>1.4.1</archunit.version>
+        <rocksdbjni.version>9.10.0</rocksdbjni.version>
         <enforcer-plugin.version>3.5.0</enforcer-plugin.version>
         <jjwt.version>0.12.5</jjwt.version>
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
@@ -90,6 +91,7 @@
         <module>common</module>
         <module>netty-mqtt</module>
         <module>dao</module>
+        <module>dao-rocksdb</module>
         <module>integration</module>
         <module>msa</module>
         <module>ui-ngx</module>
@@ -941,6 +943,16 @@
                 <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>dao</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-rocksdb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdbjni.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>
