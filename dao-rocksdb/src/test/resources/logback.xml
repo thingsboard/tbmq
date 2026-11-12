@@ -9,9 +9,6 @@
 
     <logger name="org.thingsboard.mqtt.broker.dao.rocksdb" level="INFO"/>
 
-    <!-- WalSyncerTest makes the sync fail on purpose and logs at ERROR; the test checks the counter instead -->
-    <logger name="org.thingsboard.mqtt.broker.dao.rocksdb.WalSyncer" level="OFF"/>
-
     <root level="INFO">
         <appender-ref ref="console"/>
     </root>

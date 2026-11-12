@@ -15,11 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,9 +45,17 @@ class WalSyncerTest {
     private RocksDbStore store;
     private StoreProperties properties;
     private WalSyncer syncer;
+    private Logger syncerLogger;
+    private ListAppender<ILoggingEvent> logged;
 
     @BeforeEach
     void setUp() {
+        // capture the syncer's log; it does not propagate to the console while a test makes syncs fail on purpose
+        syncerLogger = (Logger) LoggerFactory.getLogger(WalSyncer.class);
+        logged = new ListAppender<>();
+        logged.start();
+        syncerLogger.addAppender(logged);
+        syncerLogger.setAdditive(false);
         store = mock(RocksDbStore.class);
         properties = new StoreProperties();
         syncer = new WalSyncer(store, properties);
@@ -50,6 +64,8 @@ class WalSyncerTest {
     @AfterEach
     void tearDown() {
         syncer.stop();
+        syncerLogger.detachAppender(logged);
+        syncerLogger.setAdditive(true);
     }
 
     @Test
@@ -93,6 +109,8 @@ class WalSyncerTest {
 
         verify(store, timeout(1000).atLeast(3)).syncWal();
         assertThat(syncer.getFailedSyncCount()).isEqualTo(1);
+        assertThat(errors()).hasSize(1);
+        assertThat(errors().get(0).getFormattedMessage()).contains("Failed to sync the WAL");
     }
 
     @Test
@@ -163,6 +181,11 @@ class WalSyncerTest {
         syncer.stop();
 
         assertThat(syncer.getFailedSyncCount()).isZero();
+        assertThat(errors()).isEmpty();
+    }
+
+    private List<ILoggingEvent> errors() {
+        return logged.list.stream().filter(event -> event.getLevel() == Level.ERROR).toList();
     }
 
 }
