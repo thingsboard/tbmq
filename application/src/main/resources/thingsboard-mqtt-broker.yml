@@ -1217,6 +1217,13 @@ store:
     # Interval (in ms) between sweeps that delete the expired messages of persisted DEVICE client queues. Defaults to 10 minutes.
     sweep-interval-ms: "${STORE_DEVICE_MSG_SWEEP_INTERVAL_MS:600000}"
 
+# Standalone runtime parameters (standalone edition only)
+standalone:
+  persist:
+    # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
+    # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.
+    max-concurrent-replays: "${STANDALONE_PERSIST_MAX_CONCURRENT_REPLAYS:16}"
+
 # Statistics parameters
 stats:
   # Enables or disables stats printing to the logs.
