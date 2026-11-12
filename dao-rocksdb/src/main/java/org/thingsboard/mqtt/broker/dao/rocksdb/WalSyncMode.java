@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * The accepted values of {@code store.wal-sync}, parsed in one place for the store and the WAL syncer.
@@ -36,14 +37,14 @@ enum WalSyncMode {
     }
 
     /**
-     * @throws IllegalStateException when the value is neither {@code periodic} nor {@code always}
+     * @throws IllegalStateException when the value is not one of the modes; the message lists them all
      */
     static WalSyncMode parse(String value) {
         return Arrays.stream(values())
                 .filter(mode -> mode.value.equals(value))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Unknown store.wal-sync value '" + value + "', expected '"
-                        + PERIODIC.value + "' or '" + ALWAYS.value + "'"));
+                .orElseThrow(() -> new IllegalStateException("Unknown store.wal-sync value '" + value + "', expected one of "
+                        + Arrays.stream(values()).map(mode -> "'" + mode.value + "'").collect(Collectors.joining(", "))));
     }
 
 }

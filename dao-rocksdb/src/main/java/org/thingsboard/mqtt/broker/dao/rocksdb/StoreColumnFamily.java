@@ -16,23 +16,27 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 
 /**
- * The column families of the store. The lower-case {@link #name()} is the RocksDB column family name.
+ * The column families of the store. Each constant carries its RocksDB column family name explicitly: the name is
+ * part of the on-disk schema, so renaming a constant must not rename the family.
  */
 public enum StoreColumnFamily {
 
-    META,
-    CLIENT_SESSION,
-    CLIENT_SUBSCRIPTIONS,
-    RETAINED_MSG,
-    BLOCKED_CLIENT,
-    CLIENT_SESSION_ATTR,
-    DEVICE_MSG,
-    DEVICE_MSG_META;
+    META("meta"),
+    CLIENT_SESSION("client_session"),
+    CLIENT_SUBSCRIPTIONS("client_subscriptions"),
+    RETAINED_MSG("retained_msg"),
+    BLOCKED_CLIENT("blocked_client"),
+    CLIENT_SESSION_ATTR("client_session_attr"),
+    DEVICE_MSG("device_msg"),
+    DEVICE_MSG_META("device_msg_meta");
 
-    private final String columnFamilyName = name().toLowerCase(Locale.ROOT);
+    private final String columnFamilyName;
+
+    StoreColumnFamily(String columnFamilyName) {
+        this.columnFamilyName = columnFamilyName;
+    }
 
     public String columnFamilyName() {
         return columnFamilyName;
