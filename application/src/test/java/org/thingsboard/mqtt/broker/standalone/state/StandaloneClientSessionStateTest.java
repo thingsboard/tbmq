@@ -166,6 +166,17 @@ class StandaloneClientSessionStateTest {
     }
 
     @Test
+    void initLoadFailsOnAnUnreadableEntryAndNamesTheStoreAndTheKey() {
+        persistence.persistClientSessionInfoAsync("c1", proto(persistentSession("c1")), null);
+        store.put("broken-client", new byte[]{(byte) 0xFF, 0x01, 0x02});
+
+        assertThatThrownBy(() -> consumer.initLoad())
+                .isInstanceOf(QueuePersistenceException.class)
+                .hasMessageContaining("client sessions")
+                .hasMessageContaining("broken-client");
+    }
+
+    @Test
     void listenBeforeOrAfterInitLoadDoesNothing() throws Exception {
         ClientSessionChangesCallback changes = mock(ClientSessionChangesCallback.class);
 

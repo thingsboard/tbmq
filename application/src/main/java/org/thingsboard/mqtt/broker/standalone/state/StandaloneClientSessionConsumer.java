@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.standalone.state;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
@@ -23,13 +22,11 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
-import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionChangesCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -50,19 +47,11 @@ public class StandaloneClientSessionConsumer implements ClientSessionConsumer {
     @Override
     public Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException {
         log.debug("Starting client sessions initLoad");
-        Map<String, ClientSessionInfo> sessions = new HashMap<>();
-        try {
-            store.forEach((clientId, bytes) -> {
-                ClientSessionInfo session = parse(clientId, bytes);
-                if (session != null) {
-                    // no connection survives a restart of the only node
-                    sessions.put(clientId, session.toBuilder().connected(false).build());
-                }
-            });
-        } catch (StoreException e) {
-            log.error("Failed to load client sessions.", e);
-            throw new QueuePersistenceException("Failed to load client sessions", e);
-        }
+        Map<String, ClientSessionInfo> sessions = StoreStateSupport.loadAll(store, "client sessions", bytes -> {
+            ClientSessionInfo session = ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(bytes));
+            // no connection survives a restart of the only node
+            return session.toBuilder().connected(false).build();
+        });
         log.debug("Finished client sessions initLoad, loaded {} sessions", sessions.size());
         return sessions;
     }
@@ -70,15 +59,6 @@ public class StandaloneClientSessionConsumer implements ClientSessionConsumer {
     @Override
     public void listen(ClientSessionChangesCallback callback) {
         // single node: no other writer, nothing to listen to
-    }
-
-    private ClientSessionInfo parse(String clientId, byte[] bytes) {
-        try {
-            return ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(bytes));
-        } catch (InvalidProtocolBufferException | RuntimeException e) {
-            log.warn("[{}] Skipping a stored client session that cannot be read.", clientId, e);
-            return null;
-        }
     }
 
 }
