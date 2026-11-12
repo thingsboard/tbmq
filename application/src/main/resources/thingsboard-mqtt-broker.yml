@@ -1211,6 +1211,9 @@ store:
     block-cache-bytes: "${STORE_MEMORY_BLOCK_CACHE_BYTES:0}"
     # Memory budget of the memtables (in bytes). Defaults to 0, which derives it as 25% of the block cache.
     write-buffer-bytes: "${STORE_MEMORY_WRITE_BUFFER_BYTES:0}"
+  device-msg:
+    # Maximum number of messages read from a persisted DEVICE client queue in one page.
+    read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"
 
 # Statistics parameters
 stats:
