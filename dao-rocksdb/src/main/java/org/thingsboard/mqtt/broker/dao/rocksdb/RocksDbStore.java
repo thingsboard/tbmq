@@ -27,9 +27,12 @@ import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.LRUCache;
+import org.rocksdb.Options;
+import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.Slice;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteBufferManager;
 import org.rocksdb.WriteOptions;
@@ -41,19 +44,25 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * The embedded RocksDB store of the standalone edition: one database under {@code store.path}, one column family
  * per {@link StoreColumnFamily}. Values are opaque bytes. Every {@link RocksDBException} surfaces as a
  * {@link StoreException} that names the failed operation.
  * <p>
- * Operations run under a shared lock and {@link #close()} under the exclusive one, so a closing store never frees
- * native memory an operation is using; an operation on a closed store throws {@link StoreException}.
+ * No native handle leaves this class. Every operation, including the whole body of {@link #write} and the reader of
+ * {@link #scan}, runs under a shared lock, and {@link #close()} takes the exclusive one: a closing store never frees
+ * native memory an operation is using, and an operation on a closed store throws {@link StoreException}.
  */
 @Slf4j
 @Component
@@ -66,22 +75,29 @@ public class RocksDbStore {
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
 
-    static final String WAL_SYNC_PERIODIC = "periodic";
-    static final String WAL_SYNC_ALWAYS = "always";
     private static final int MAX_OPEN_FILES = 256;
     private static final int DEVICE_MSG_KEY_PREFIX_LENGTH = 8;
     private static final double BLOOM_BITS_PER_KEY = 10;
+
+    private static final String OP_GET = "get from";
+    private static final String OP_PUT = "put to";
+    private static final String OP_DELETE = "delete from";
+    private static final String OP_SCAN = "scan";
+    private static final String OP_WRITE = "write a batch";
+    private static final String OP_SYNC_WAL = "sync the WAL";
+    private static final String OP_META = "read the meta";
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
 
     private final Map<StoreColumnFamily, ColumnFamilyHandle> handles = new EnumMap<>(StoreColumnFamily.class);
+    // the default family and any family this build does not know (a later schema): opened so the meta check can refuse
+    private final List<ColumnFamilyHandle> otherHandles = new ArrayList<>();
     // native objects the database depends on, in creation order; closed in reverse once the database is closed
     private final List<AutoCloseable> nativeResources = new ArrayList<>();
 
     // everything below is guarded by the lock: written under the write lock, read under the read lock
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private ColumnFamilyHandle defaultHandle;
     private WriteOptions writeOptions;
     private StoreMeta meta;
     private RocksDB db;
@@ -110,6 +126,7 @@ public class RocksDbStore {
         if (open) {
             throw new StoreException("The store at " + path + " is already open");
         }
+        WalSyncMode walSyncMode = WalSyncMode.parse(properties.getWalSync());
         try {
             Files.createDirectories(Path.of(path));
         } catch (IOException e) {
@@ -117,7 +134,7 @@ public class RocksDbStore {
         }
         try {
             RocksDB.loadLibrary();
-            doOpen(path);
+            doOpen(path, walSyncMode);
             // published last: the store counts as open only once the meta is loaded and checked
             open = true;
             log.info("Opened the store at {} (block cache {} bytes, write buffer {} bytes, install id {})",
@@ -131,7 +148,7 @@ public class RocksDbStore {
         }
     }
 
-    private void doOpen(String path) throws RocksDBException {
+    private void doOpen(String path, WalSyncMode walSyncMode) throws RocksDBException {
         Cache blockCache = register(new LRUCache(memoryBudget.blockCacheBytes()));
         WriteBufferManager writeBufferManager = register(new WriteBufferManager(memoryBudget.writeBufferBytes(), blockCache));
         DBOptions dbOptions = register(new DBOptions()
@@ -140,7 +157,7 @@ public class RocksDbStore {
                 .setMaxOpenFiles(MAX_OPEN_FILES)
                 .setWriteBufferManager(writeBufferManager));
         BloomFilter deviceMsgFilter = register(new BloomFilter(BLOOM_BITS_PER_KEY));
-        writeOptions = register(new WriteOptions().setSync(WAL_SYNC_ALWAYS.equals(properties.getWalSync())));
+        writeOptions = register(new WriteOptions().setSync(walSyncMode == WalSyncMode.ALWAYS));
 
         List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
         descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY,
@@ -156,14 +173,42 @@ public class RocksDbStore {
             }
             descriptors.add(new ColumnFamilyDescriptor(cf.columnFamilyNameBytes(), options));
         }
+        int known = descriptors.size();
+        for (byte[] unknown : unknownColumnFamilies(path)) {
+            descriptors.add(new ColumnFamilyDescriptor(unknown, register(new ColumnFamilyOptions())));
+        }
 
         List<ColumnFamilyHandle> opened = new ArrayList<>();
         db = RocksDB.open(dbOptions, path, descriptors, opened);
-        defaultHandle = opened.get(0);
+        otherHandles.add(opened.get(0));
         for (StoreColumnFamily cf : StoreColumnFamily.values()) {
             handles.put(cf, opened.get(cf.ordinal() + 1));
         }
+        otherHandles.addAll(opened.subList(known, opened.size()));
         meta = loadOrInitMeta(path);
+    }
+
+    /**
+     * Families of an existing database that this build does not know. A store written by a later schema has them, and
+     * RocksDB refuses to open a database without all its families, which would hide the readable schema refusal.
+     */
+    private List<byte[]> unknownColumnFamilies(String path) throws RocksDBException {
+        if (!Files.exists(Path.of(path, "CURRENT"))) {
+            return List.of();
+        }
+        Set<String> known = new HashSet<>(List.of("default"));
+        for (StoreColumnFamily cf : StoreColumnFamily.values()) {
+            known.add(cf.columnFamilyName());
+        }
+        List<byte[]> unknown = new ArrayList<>();
+        try (Options options = new Options()) {
+            for (byte[] name : RocksDB.listColumnFamilies(options, path)) {
+                if (!known.contains(new String(name, StandardCharsets.UTF_8))) {
+                    unknown.add(name);
+                }
+            }
+        }
+        return unknown;
     }
 
     private static BlockBasedTableConfig tableConfig(Cache blockCache) {
@@ -210,7 +255,6 @@ public class RocksDbStore {
 
     /**
      * Waits for the running operations, syncs the WAL and releases every native handle. Safe to call more than once.
-     * Iterators from {@link #newIterator} must be closed by their owners before this runs.
      */
     @PreDestroy
     public void close() {
@@ -231,14 +275,10 @@ public class RocksDbStore {
     }
 
     private void releaseNativeResources() {
-        for (ColumnFamilyHandle handle : handles.values()) {
-            handle.close();
-        }
+        handles.values().forEach(ColumnFamilyHandle::close);
         handles.clear();
-        if (defaultHandle != null) {
-            defaultHandle.close();
-            defaultHandle = null;
-        }
+        otherHandles.forEach(ColumnFamilyHandle::close);
+        otherHandles.clear();
         if (db != null) {
             db.close();
             db = null;
@@ -260,79 +300,168 @@ public class RocksDbStore {
     }
 
     /**
-     * Applies the batch atomically. Syncs the WAL only when {@code store.wal-sync} is {@code always}.
+     * Collects the writes of {@code body} into one batch and applies it atomically. The whole call runs under the
+     * store's shared lock; the batch is closed afterwards and the {@link StoreBatch} stops working. When the body
+     * throws, the exception propagates and nothing is written. Syncs the WAL only when {@code store.wal-sync} is
+     * {@code always}. The body must not call {@link #close()}.
      */
-    public void write(WriteBatch batch) {
-        run("write a batch", database -> {
-            database.write(writeOptions, batch);
-            return null;
-        });
-    }
-
-    public byte[] get(StoreColumnFamily cf, byte[] key) {
-        return run("get from " + cf.columnFamilyName(), database -> database.get(handles.get(cf), key));
-    }
-
-    public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
-        run("put to " + cf.columnFamilyName(), database -> {
-            database.put(handles.get(cf), writeOptions, key, value);
-            return null;
-        });
-    }
-
-    public void delete(StoreColumnFamily cf, byte[] key) {
-        run("delete from " + cf.columnFamilyName(), database -> {
-            database.delete(handles.get(cf), writeOptions, key);
-            return null;
-        });
-    }
-
-    /**
-     * The caller closes the iterator, and must do so before the store is closed: closing the store frees the
-     * native memory an open iterator still points to.
-     */
-    public RocksIterator newIterator(StoreColumnFamily cf) {
-        return run("iterate " + cf.columnFamilyName(), database -> database.newIterator(handles.get(cf)));
-    }
-
-    /**
-     * The handle is valid until the store is closed.
-     */
-    public ColumnFamilyHandle handle(StoreColumnFamily cf) {
-        return run("get the handle of " + cf.columnFamilyName(), database -> handles.get(cf));
-    }
-
-    public void syncWal() {
-        run("sync the WAL", database -> {
-            database.syncWal();
-            return null;
-        });
-    }
-
-    public StoreMeta meta() {
-        return run("read the meta", database -> meta);
-    }
-
-    private <T> T run(String operation, DbCall<T> call) {
-        lock.readLock().lock();
-        try {
-            if (!open) {
-                throw new StoreException("Cannot " + operation + ": the store at " + properties.getPath() + " is not open");
+    public void write(Consumer<StoreBatch> body) {
+        RocksDB database = acquire(OP_WRITE, null);
+        try (WriteBatch writeBatch = new WriteBatch()) {
+            StoreBatch batch = new StoreBatch(writeBatch, handles);
+            try {
+                body.accept(batch);
+            } finally {
+                batch.deactivate();
             }
-            return call.run(db);
+            if (batch.count() > 0) {
+                database.write(writeOptions, writeBatch);
+            }
         } catch (RocksDBException e) {
-            throw new StoreException("Failed to " + operation + " in the store at " + properties.getPath()
-                    + ": " + e.getMessage(), e);
+            throw failure(OP_WRITE, null, e);
         } finally {
-            lock.readLock().unlock();
+            release();
         }
     }
 
-    @FunctionalInterface
-    private interface DbCall<T> {
+    public byte[] get(StoreColumnFamily cf, byte[] key) {
+        RocksDB database = acquire(OP_GET, cf);
+        try {
+            return database.get(handles.get(cf), key);
+        } catch (RocksDBException e) {
+            throw failure(OP_GET, cf, e);
+        } finally {
+            release();
+        }
+    }
 
-        T run(RocksDB database) throws RocksDBException;
+    public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+        RocksDB database = acquire(OP_PUT, cf);
+        try {
+            database.put(handles.get(cf), writeOptions, key, value);
+        } catch (RocksDBException e) {
+            throw failure(OP_PUT, cf, e);
+        } finally {
+            release();
+        }
+    }
 
+    public void delete(StoreColumnFamily cf, byte[] key) {
+        RocksDB database = acquire(OP_DELETE, cf);
+        try {
+            database.delete(handles.get(cf), writeOptions, key);
+        } catch (RocksDBException e) {
+            throw failure(OP_DELETE, cf, e);
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Reads the keys in {@code [lowerInclusive, upperExclusive)} in order. A {@code null} bound is open. The iterator
+     * is positioned on the first key of the range and is valid only inside {@code reader}: it must not escape, and
+     * the reader must copy what it keeps. The whole call runs under the store's shared lock, so the store cannot
+     * close while it reads.
+     * <p>
+     * In {@code device_msg}, whose keys start with an 8-byte queue prefix, the scan uses the prefix Bloom filter when
+     * both bounds share one 8-byte prefix and a total-order scan otherwise, so a range that crosses prefixes is read
+     * completely.
+     */
+    public <T> T scan(StoreColumnFamily cf, byte[] lowerInclusive, byte[] upperExclusive, Function<RocksIterator, T> reader) {
+        RocksDB database = acquire(OP_SCAN, cf);
+        try (Slice lower = lowerInclusive == null ? null : new Slice(lowerInclusive);
+             Slice upper = upperExclusive == null ? null : new Slice(upperExclusive);
+             ReadOptions readOptions = scanOptions(cf, lower, upper, lowerInclusive, upperExclusive);
+             RocksIterator iterator = database.newIterator(handles.get(cf), readOptions)) {
+            if (lowerInclusive == null) {
+                iterator.seekToFirst();
+            } else {
+                iterator.seek(lowerInclusive);
+            }
+            return reader.apply(iterator);
+        } finally {
+            release();
+        }
+    }
+
+    private static ReadOptions scanOptions(StoreColumnFamily cf, Slice lower, Slice upper,
+                                           byte[] lowerBound, byte[] upperBound) {
+        ReadOptions options = new ReadOptions();
+        if (lower != null) {
+            options.setIterateLowerBound(lower);
+        }
+        if (upper != null) {
+            options.setIterateUpperBound(upper);
+        }
+        if (cf == StoreColumnFamily.DEVICE_MSG && !shareKeyPrefix(lowerBound, upperBound)) {
+            options.setTotalOrderSeek(true);
+        }
+        return options;
+    }
+
+    private static boolean shareKeyPrefix(byte[] a, byte[] b) {
+        return a != null && b != null
+                && a.length >= DEVICE_MSG_KEY_PREFIX_LENGTH && b.length >= DEVICE_MSG_KEY_PREFIX_LENGTH
+                && Arrays.equals(a, 0, DEVICE_MSG_KEY_PREFIX_LENGTH, b, 0, DEVICE_MSG_KEY_PREFIX_LENGTH);
+    }
+
+    public void syncWal() {
+        RocksDB database = acquire(OP_SYNC_WAL, null);
+        try {
+            database.syncWal();
+        } catch (RocksDBException e) {
+            throw failure(OP_SYNC_WAL, null, e);
+        } finally {
+            release();
+        }
+    }
+
+    public StoreMeta meta() {
+        acquire(OP_META, null);
+        try {
+            return meta;
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Whether every write syncs the WAL ({@code store.wal-sync=always}).
+     */
+    boolean syncsEveryWrite() {
+        acquire(OP_META, null);
+        try {
+            return writeOptions.sync();
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Takes the shared lock, which the caller releases with {@link #release()} in a {@code finally}. When the store
+     * is not open the lock is released here and the operation fails.
+     */
+    private RocksDB acquire(String operation, StoreColumnFamily cf) {
+        lock.readLock().lock();
+        if (!open) {
+            lock.readLock().unlock();
+            throw new StoreException("Cannot " + describe(operation, cf) + ": the store at " + properties.getPath()
+                    + " is not open");
+        }
+        return db;
+    }
+
+    private void release() {
+        lock.readLock().unlock();
+    }
+
+    private StoreException failure(String operation, StoreColumnFamily cf, RocksDBException e) {
+        return new StoreException("Failed to " + describe(operation, cf) + " in the store at " + properties.getPath()
+                + ": " + e.getMessage(), e);
+    }
+
+    private static String describe(String operation, StoreColumnFamily cf) {
+        return cf == null ? operation : operation + " " + cf.columnFamilyName();
     }
 
 }

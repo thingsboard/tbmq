@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Validates {@code store.wal-sync} and, in {@code periodic} mode, syncs the WAL of the store every
  * {@code store.wal-sync-interval-ms} on a daemon thread. In {@code always} mode the store syncs on every write and
- * no thread is started. The mode is matched exactly (lower case), the same way {@link RocksDbStore} matches it.
+ * no thread is started. The mode is parsed by {@link WalSyncMode}, which {@link RocksDbStore} uses too.
  * <p>
  * Depends on the store, so Spring destroys it first: {@link #stop()} ends the thread before the store closes.
  */
@@ -53,14 +53,10 @@ public class WalSyncer {
 
     @PostConstruct
     public synchronized void start() {
-        String mode = properties.getWalSync();
-        if (RocksDbStore.WAL_SYNC_ALWAYS.equals(mode)) {
-            log.info("store.wal-sync is '{}': the WAL is synced on every write", mode);
+        WalSyncMode mode = WalSyncMode.parse(properties.getWalSync());
+        if (mode == WalSyncMode.ALWAYS) {
+            log.info("store.wal-sync is '{}': the WAL is synced on every write", mode.value());
             return;
-        }
-        if (!RocksDbStore.WAL_SYNC_PERIODIC.equals(mode)) {
-            throw new IllegalStateException("Unknown store.wal-sync value '" + mode + "', expected '"
-                    + RocksDbStore.WAL_SYNC_PERIODIC + "' or '" + RocksDbStore.WAL_SYNC_ALWAYS + "'");
         }
         long intervalMs = properties.getWalSyncIntervalMs();
         if (intervalMs <= 0) {
@@ -76,7 +72,7 @@ public class WalSyncer {
             return thread;
         });
         executor.scheduleWithFixedDelay(this::syncOnce, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
-        log.info("store.wal-sync is '{}': the WAL is synced every {} ms", mode, intervalMs);
+        log.info("store.wal-sync is '{}': the WAL is synced every {} ms", mode.value(), intervalMs);
     }
 
     private void syncOnce() {
