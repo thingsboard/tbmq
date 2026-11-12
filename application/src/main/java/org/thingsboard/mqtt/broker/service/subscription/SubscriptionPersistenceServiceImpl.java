@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
+@ClusterComponent
 public class SubscriptionPersistenceServiceImpl implements SubscriptionPersistenceService {
 
     private final TbQueueProducer<TbProtoQueueMsg<ClientSubscriptionsProto>> clientSubscriptionsProducer;

@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 @Component
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class IntegrationCleanupServiceImpl {

@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
@@ -56,6 +57,7 @@ import static org.thingsboard.mqtt.broker.common.util.DonAsynchron.withCallback;
 
 @Slf4j
 @Service
+@ClusterComponent
 @Data
 public class DefaultPlatformIntegrationService implements PlatformIntegrationService {
 

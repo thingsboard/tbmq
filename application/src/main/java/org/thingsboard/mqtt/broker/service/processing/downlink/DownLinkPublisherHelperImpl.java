@@ -18,10 +18,12 @@ package org.thingsboard.mqtt.broker.service.processing.downlink;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 
 @Service
+@ClusterComponent
 public class DownLinkPublisherHelperImpl implements DownLinkPublisherHelper {
 
     @Value("${queue.kafka.basic-downlink-msg.topic-prefix}")

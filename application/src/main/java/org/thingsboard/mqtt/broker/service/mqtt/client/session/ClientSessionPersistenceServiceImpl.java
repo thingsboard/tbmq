@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
+@ClusterComponent
 public class ClientSessionPersistenceServiceImpl implements ClientSessionPersistenceService {
 
     private final TbQueueProducer<TbProtoQueueMsg<ClientSessionInfoProto>> clientSessionProducer;

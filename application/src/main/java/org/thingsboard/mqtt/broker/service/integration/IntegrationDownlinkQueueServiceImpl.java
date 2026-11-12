@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationDownlin
 import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class IntegrationDownlinkQueueServiceImpl implements IntegrationDownlinkQueueService {

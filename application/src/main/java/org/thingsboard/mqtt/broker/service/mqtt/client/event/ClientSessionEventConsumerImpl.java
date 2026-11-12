@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -44,6 +45,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.HYPHEN;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class ClientSessionEventConsumerImpl implements ClientSessionEventConsumer {
 

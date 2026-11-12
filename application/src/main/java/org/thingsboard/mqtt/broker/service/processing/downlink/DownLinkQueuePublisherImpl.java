@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.ClientPublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
@@ -42,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
 

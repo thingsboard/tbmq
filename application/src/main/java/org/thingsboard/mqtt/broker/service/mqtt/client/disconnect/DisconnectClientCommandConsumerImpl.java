@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -39,6 +40,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class DisconnectClientCommandConsumerImpl implements DisconnectClientCommandConsumer {
 

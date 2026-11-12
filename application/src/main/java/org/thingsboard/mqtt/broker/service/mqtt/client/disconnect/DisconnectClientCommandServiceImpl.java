@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -37,6 +38,7 @@ import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_CLUSTE
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DisconnectClientCommandServiceImpl implements DisconnectClientCommandService {
 

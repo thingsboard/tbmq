@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
 

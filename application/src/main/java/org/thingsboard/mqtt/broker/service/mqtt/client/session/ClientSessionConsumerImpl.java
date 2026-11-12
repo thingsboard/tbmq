@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -49,6 +50,7 @@ import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClien
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 

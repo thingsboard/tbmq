@@ -20,6 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -28,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
 
