@@ -60,8 +60,9 @@ import java.util.function.Function;
  * per {@link StoreColumnFamily}. Values are opaque bytes. Every {@link RocksDBException} surfaces as a
  * {@link StoreException} that names the failed operation.
  * <p>
- * No native handle leaves this class. Every operation, including the whole body of {@link #write} and the reader of
- * {@link #scan}, runs under a shared lock, and {@link #close()} takes the exclusive one: a closing store never frees
+ * Column family handles and native batches never leave this class; the only native object a caller sees is the
+ * iterator lent to the reader of {@link #scan}, which must not escape it. Every operation, including the whole body
+ * of {@link #write} and the reader of {@link #scan}, runs under a shared lock, and {@link #close()} takes the exclusive one: a closing store never frees
  * native memory an operation is using, and an operation on a closed store throws {@link StoreException}.
  */
 @Slf4j
@@ -360,8 +361,9 @@ public class RocksDbStore {
     /**
      * Reads the keys in {@code [lowerInclusive, upperExclusive)} in order. A {@code null} bound is open. The iterator
      * is positioned on the first key of the range and is valid only inside {@code reader}: it must not escape, and
-     * the reader must copy what it keeps. The whole call runs under the store's shared lock, so the store cannot
-     * close while it reads.
+     * the reader must copy what it keeps, and it must not call {@link #close()} (the shared lock cannot be upgraded).
+     * The whole call runs under the store's shared lock, so the store cannot close while it reads. A read error
+     * anywhere in the range fails the scan with {@link StoreException}, after the reader returns.
      * <p>
      * In {@code device_msg}, whose keys start with an 8-byte queue prefix, the scan uses the prefix Bloom filter when
      * both bounds share one 8-byte prefix and a total-order scan otherwise, so a range that crosses prefixes is read
@@ -378,7 +380,12 @@ public class RocksDbStore {
             } else {
                 iterator.seek(lowerInclusive);
             }
-            return reader.apply(iterator);
+            T result = reader.apply(iterator);
+            // an iterator that hits a read error just becomes invalid, which looks like the end of the range
+            iterator.status();
+            return result;
+        } catch (RocksDBException e) {
+            throw failure(OP_SCAN, cf, e);
         } finally {
             release();
         }

@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import java.util.Map;
 
 /**
- * The writes of one atomic batch, see {@link RocksDbStore#write}. Valid only inside the body that received it:
- * using it afterwards fails with {@link IllegalStateException}.
+ * The writes of one atomic batch, see {@link RocksDbStore#write}. Valid only inside the body that received it and
+ * only on the thread running that body: using it afterwards fails with {@link IllegalStateException}.
  */
 public final class StoreBatch {
 

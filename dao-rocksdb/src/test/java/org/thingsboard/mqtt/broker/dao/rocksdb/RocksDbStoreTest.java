@@ -22,16 +22,24 @@ import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
+import org.rocksdb.FlushOptions;
+import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -76,6 +84,20 @@ class RocksDbStoreTest {
             store.put(cf, key, bytes("value-" + cf.name()));
             assertThat(store.get(cf, key)).isEqualTo(bytes("value-" + cf.name()));
         }
+    }
+
+    @Test
+    void theOnDiskColumnFamilyNamesArePinned() throws RocksDBException {
+        open(dir).close();
+
+        List<String> names;
+        try (Options options = new Options()) {
+            names = RocksDB.listColumnFamilies(options, dir.toString()).stream()
+                    .map(name -> new String(name, StandardCharsets.UTF_8)).toList();
+        }
+        // these names are the on-disk schema: changing one orphans its data
+        assertThat(names).containsExactlyInAnyOrder("default", "meta", "client_session", "client_subscriptions",
+                "retained_msg", "blocked_client", "client_session_attr", "device_msg", "device_msg_meta");
     }
 
     @Test
@@ -253,7 +275,39 @@ class RocksDbStoreTest {
         assertThatThrownBy(() -> open(dir, "sometimes"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("periodic")
-                .hasMessageContaining("always");
+                .hasMessageContaining("always")
+                .satisfies(e -> {
+                    for (WalSyncMode mode : WalSyncMode.values()) {
+                        assertThat(e).hasMessageContaining("'" + mode.value() + "'");
+                    }
+                });
+    }
+
+    @Test
+    void aScanThatHitsACorruptBlockFailsInsteadOfEndingEarly() throws Exception {
+        RocksDbStore store = open(dir);
+        Random random = new Random(42);
+        for (int i = 0; i < 1000; i++) {
+            byte[] value = new byte[1024];
+            random.nextBytes(value);
+            store.put(StoreColumnFamily.CLIENT_SESSION, bytes(String.format("key-%04d", i)), value);
+        }
+        store.close();
+        flushAll(dir);
+        Path sst;
+        try (var files = Files.list(dir)) {
+            sst = files.filter(f -> f.toString().endsWith(".sst")).max(Comparator.comparingLong(RocksDbStoreTest::size))
+                    .orElseThrow();
+        }
+        try (FileChannel channel = FileChannel.open(sst, StandardOpenOption.WRITE)) {
+            channel.write(ByteBuffer.wrap(new byte[64]), 128); // inside the first data block
+        }
+
+        RocksDbStore reopened = open(dir);
+
+        assertThatThrownBy(() -> keys(reopened, StoreColumnFamily.CLIENT_SESSION, null, null))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("scan client_session");
     }
 
     @Test
@@ -378,6 +432,33 @@ class RocksDbStoreTest {
      */
     private static byte[] deviceKey(long prefix, int seq) {
         return ByteBuffer.allocate(12).putLong(prefix).putInt(seq).array();
+    }
+
+    private static long size(Path file) {
+        try {
+            return Files.size(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Writes every memtable of the store at {@code path} to SST files, through a raw RocksDB handle.
+     */
+    private static void flushAll(Path path) throws RocksDBException {
+        try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions();
+             FlushOptions flushOptions = new FlushOptions().setWaitForFlush(true)) {
+            List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
+            descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
+            for (StoreColumnFamily cf : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(cf.columnFamilyName()), options));
+            }
+            List<ColumnFamilyHandle> handles = new ArrayList<>();
+            try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors, handles)) {
+                raw.flush(flushOptions, handles);
+                handles.forEach(ColumnFamilyHandle::close);
+            }
+        }
     }
 
     private static void addColumnFamily(Path path, String name) throws RocksDBException {
