@@ -112,10 +112,10 @@ public class StandaloneClientSessionEventService implements ClientSessionEventSe
 
         log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventProto.getEventType(), requestId);
         try {
-            SessionClusterManagementMsg msg = callbackMsgFactory.createSessionClusterManagementMsg(eventRequest, callback);
+            SessionClusterManagementMsg msg = callbackMsgFactory.createSessionClusterManagementMsg(eventRequest, new LoggingClientCallback(clientId, eventProto.getEventType(), callback));
             actorManager.sendSessionClusterManagementMsg(clientId, msg);
         } catch (Exception e) {
-            log.debug("[{}][{}][{}] Failed to send request.", clientId, eventProto.getEventType(), requestId, e);
+            log.warn("[{}] Failed to send {} msg to actor.", clientId, eventProto.getEventType(), e);
             callback.onFailure(e);
         }
     }
@@ -136,6 +136,26 @@ public class StandaloneClientSessionEventService implements ClientSessionEventSe
                 }
             }
         };
+    }
+
+    @RequiredArgsConstructor
+    private static class LoggingClientCallback implements ClientCallback {
+
+        private final String clientId;
+        private final String eventType;
+        private final ClientCallback delegate;
+
+        @Override
+        public void onSuccess() {
+            log.debug("[{}] Successfully processed {} msg", clientId, eventType);
+            delegate.onSuccess();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.warn("[{}] Failed to process {} msg", clientId, eventType, t);
+            delegate.onFailure(t);
+        }
     }
 
 }

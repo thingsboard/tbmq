@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -183,10 +184,41 @@ class StandaloneClientSessionEventServiceTest {
     }
 
     @Test
-    void aCleanupRequestSendsAClearSessionMsg() {
-        var sessionInfo = ClientSessionInfo.builder()
+    void aFailedCleanupWithoutACallbackDoesNotEscape() {
+        var sessionInfo = clientSessionInfo();
+
+        service.requestClientSessionCleanup(sessionInfo, ClientCleanupInfo.GRACEFUL);
+
+        var msg = (ClearSessionMsg) sentMsg("c1");
+        assertThatCode(() -> msg.getCallback().onFailure(new IllegalStateException("boom"))).doesNotThrowAnyException();
+        assertThatCode(() -> msg.getCallback().onSuccess()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aFailedDisconnectWithoutACallbackDoesNotEscape() {
+        service.notifyClientDisconnected(PendingConnectionRequestsTest.sessionInfo("c1"), DisconnectReasonType.ON_ERROR, null);
+
+        var msg = (SessionDisconnectedMsg) sentMsg("c1");
+        assertThatCode(() -> msg.getCallback().onFailure(new IllegalStateException("boom"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aCleanupTheActorCannotTakeDoesNotEscape() {
+        doThrow(new IllegalStateException("no actor")).when(actorManager).sendSessionClusterManagementMsg(eq("c1"), any());
+
+        assertThatCode(() -> service.requestClientSessionCleanup(clientSessionInfo(), ClientCleanupInfo.GRACEFUL))
+                .doesNotThrowAnyException();
+    }
+
+    private ClientSessionInfo clientSessionInfo() {
+        return ClientSessionInfo.builder()
                 .serviceId("lite").sessionId(UUID.randomUUID()).clientId("c1").type(ClientType.DEVICE)
                 .clientIpAdr(new byte[]{127, 0, 0, 1}).build();
+    }
+
+    @Test
+    void aCleanupRequestSendsAClearSessionMsg() {
+        var sessionInfo = clientSessionInfo();
 
         service.requestClientSessionCleanup(sessionInfo, ClientCleanupInfo.FORCEFUL);
 
