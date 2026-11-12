@@ -88,6 +88,7 @@
 
     <modules>
         <module>application</module>
+        <module>lite-tests</module>
         <module>common</module>
         <module>netty-mqtt</module>
         <module>dao</module>
