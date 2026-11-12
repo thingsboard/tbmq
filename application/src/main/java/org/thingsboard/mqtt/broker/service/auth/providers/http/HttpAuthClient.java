@@ -50,6 +50,7 @@ import reactor.netty.resources.ConnectionProvider;
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -76,10 +77,40 @@ public class HttpAuthClient {
     private final WebClient webClient;
 
     private EventLoopGroup eventLoopGroup;
+    private ConnectionProvider connectionProvider;
     private Semaphore semaphore;
     private URI uri;
 
-    HttpAuthClient(HttpMqttAuthProviderConfiguration configuration) {
+    /**
+     * Connection pool bounds. Without them, a keep-alive connection idle for hours is reused after the network path
+     * has silently dropped it (kube-proxy conntrack forgets idle flows after 24 h, cloud load balancers after
+     * minutes): the request fails with "Connection reset" and the client is not authenticated.
+     *
+     * @param maxConnections   maximum number of pooled connections
+     * @param maxIdleTime      close a pooled connection idle this long; null = never
+     * @param maxLifeTime      close a pooled connection this old; null = never
+     * @param evictionInterval background eviction period; null = bounds are checked only on acquire
+     */
+    record PoolSettings(int maxConnections, Duration maxIdleTime, Duration maxLifeTime, Duration evictionInterval) {
+
+        static final Duration EVICTION_INTERVAL = Duration.ofSeconds(15);
+
+        /**
+         * A non-positive {@code maxConnections} falls back to the Reactor Netty default.
+         * A non-positive {@code maxIdleTimeMs} or {@code maxLifeTimeMs} disables that bound.
+         */
+        static PoolSettings of(int maxConnections, long maxIdleTimeMs, long maxLifeTimeMs) {
+            Duration maxIdleTime = maxIdleTimeMs > 0 ? Duration.ofMillis(maxIdleTimeMs) : null;
+            Duration maxLifeTime = maxLifeTimeMs > 0 ? Duration.ofMillis(maxLifeTimeMs) : null;
+            return new PoolSettings(
+                    maxConnections > 0 ? maxConnections : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS,
+                    maxIdleTime,
+                    maxLifeTime,
+                    maxIdleTime != null || maxLifeTime != null ? EVICTION_INTERVAL : null);
+        }
+    }
+
+    HttpAuthClient(HttpMqttAuthProviderConfiguration configuration, PoolSettings pool) {
         try {
             config = configuration;
             if (config.getMaxParallelRequestsCount() > 0) {
@@ -87,10 +118,19 @@ public class HttpAuthClient {
             }
             uri = UrlUtils.buildEncodedUri(config.getRestEndpointUrl());
 
-            ConnectionProvider connectionProvider = ConnectionProvider
+            ConnectionProvider.Builder poolBuilder = ConnectionProvider
                     .builder("http-auth-provider-client")
-                    .maxConnections(getPoolMaxConnections())
-                    .build();
+                    .maxConnections(pool.maxConnections());
+            if (pool.maxIdleTime() != null) {
+                poolBuilder.maxIdleTime(pool.maxIdleTime());
+            }
+            if (pool.maxLifeTime() != null) {
+                poolBuilder.maxLifeTime(pool.maxLifeTime());
+            }
+            if (pool.evictionInterval() != null) {
+                poolBuilder.evictInBackground(pool.evictionInterval());
+            }
+            connectionProvider = poolBuilder.build();
 
             eventLoopGroup = new NioEventLoopGroup();
             HttpClient httpClient = HttpClient.create(connectionProvider)
@@ -114,14 +154,12 @@ public class HttpAuthClient {
     }
 
     void destroy() {
+        if (connectionProvider != null) {
+            connectionProvider.dispose();
+        }
         if (eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
         }
-    }
-
-    private int getPoolMaxConnections() {
-        String poolMaxConnectionsEnv = System.getenv("TB_HTTP_AUTH_CLIENT_POOL_MAX_CONNECTIONS");
-        return poolMaxConnectionsEnv != null ? Integer.parseInt(poolMaxConnectionsEnv) : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
     }
 
     private void validateMaxInMemoryBufferSize(HttpMqttAuthProviderConfiguration config) {
