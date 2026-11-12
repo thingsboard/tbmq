@@ -57,7 +57,7 @@ public class HttpAuthClientAdmissionTest {
         config.setRestEndpointUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/auth");
         config.setMaxParallelRequestsCount(1);
         config.setReadTimeoutMs(2000);
-        client = new HttpAuthClient(config);
+        client = new HttpAuthClient(config, HttpAuthClient.PoolSettings.of(0, 30_000, 300_000));
         // Establish a working real HTTP connection before any negative control.
         var warmup = new Result();
         client.processMessage("warmup", "{}", warmup);
