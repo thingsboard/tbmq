@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventTypeUtil;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.queue.IntegrationLifecycleConfigProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsSe
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DefaultTbIntegrationService extends AbstractTbEntityService implements TbIntegrationService {
 

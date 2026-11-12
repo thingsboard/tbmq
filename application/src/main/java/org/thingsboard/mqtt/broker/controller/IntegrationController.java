@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.entity.integration.TbIntegrationService;
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeoutException;
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.INTEGRATION_ID;
 
 @RestController
+@ClusterComponent
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class IntegrationController extends BaseController {

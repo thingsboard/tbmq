@@ -19,6 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.List;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class InternodeNotificationsHelperImpl implements InternodeNotificationsHelper {
 

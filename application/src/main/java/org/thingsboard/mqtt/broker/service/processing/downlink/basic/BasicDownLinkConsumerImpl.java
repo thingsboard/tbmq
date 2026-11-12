@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.ClientPublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
 

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
@@ -27,6 +28,7 @@ import java.util.concurrent.CompletionStage;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
 

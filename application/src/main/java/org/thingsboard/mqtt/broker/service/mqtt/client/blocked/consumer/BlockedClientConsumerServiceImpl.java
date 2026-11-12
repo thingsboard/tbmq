@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -49,6 +50,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerService {
 

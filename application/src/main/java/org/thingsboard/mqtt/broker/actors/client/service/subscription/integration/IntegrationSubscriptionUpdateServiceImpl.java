@@ -21,12 +21,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
 import java.util.Set;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class IntegrationSubscriptionUpdateServiceImpl implements IntegrationSubscriptionUpdateService {
 

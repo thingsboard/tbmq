@@ -19,11 +19,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.callback.TbCallback;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class TbmqIntegrationApiServiceImpl implements TbmqIntegrationApiService {
 

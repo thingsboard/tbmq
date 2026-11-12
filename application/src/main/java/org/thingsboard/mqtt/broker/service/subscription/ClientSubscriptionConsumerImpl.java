@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -52,6 +53,7 @@ import static org.thingsboard.mqtt.broker.common.data.util.BytesUtil.bytesToStri
 
 @Slf4j
 @Component
+@ClusterComponent
 public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsumer {
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-subscriptions-listener"));

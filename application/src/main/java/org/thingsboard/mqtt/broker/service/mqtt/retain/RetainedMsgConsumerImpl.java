@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -48,6 +49,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ClusterComponent
 public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private static final String DUMMY_TOPIC_PREFIX = "dummy/topic/";

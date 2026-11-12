@@ -35,8 +35,8 @@
     <!--
         Phase 1 skeleton: this module holds no code yet. It only proves, through the Enforcer
         rule below, that the application can be assembled without the cluster infrastructure.
-        dao-rocksdb joins the dependencies in Phase 2 and the image in Phase 4.
-        org.hibernate.orm:hibernate-core and org.postgresql:postgresql join the ban list in Phase 3.
+        The image is added in Phase 4.
+        lite-tests takes its classpath from this module, so its dependencies are declared only here.
     -->
 
     <properties>
@@ -59,6 +59,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>dao-rocksdb</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -68,26 +73,9 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- the ban list is defined once, in the root pom's pluginManagement -->
                         <id>ban-cluster-infrastructure</id>
                         <phase>validate</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>org.apache.kafka:kafka-clients</exclude>
-                                        <exclude>redis.clients:jedis</exclude>
-                                        <exclude>io.lettuce:lettuce-core</exclude>
-                                        <exclude>org.springframework.data:spring-data-redis</exclude>
-                                        <exclude>com.bucket4j:bucket4j_jdk17-jedis</exclude>
-                                        <exclude>com.bucket4j:bucket4j_jdk17-redis-common</exclude>
-                                    </excludes>
-                                    <message>tbmq-lite must not pull in the cluster infrastructure (Kafka, Redis)</message>
-                                </bannedDependencies>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

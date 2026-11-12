@@ -1195,6 +1195,23 @@ redis:
     # Enables or disables blocking when a thread requests a connection from an exhausted pool.
     blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
 
+# Embedded store parameters (standalone edition only)
+store:
+  # Directory of the embedded RocksDB store. Defaults to the `db` folder inside DATA_FOLDER (`/data` unless set).
+  path: "${STORE_PATH:${DATA_FOLDER:/data}/db}"
+  # How the write-ahead log (WAL) reaches the disk. Accepted values:
+  #   periodic - the WAL is synced every STORE_WAL_SYNC_INTERVAL_MS. A power cut can lose up to that interval.
+  #   always - the WAL is synced on every write.
+  wal-sync: "${STORE_WAL_SYNC:periodic}"
+  # Interval between WAL syncs (in ms). Applies only when the WAL sync is periodic.
+  wal-sync-interval-ms: "${STORE_WAL_SYNC_INTERVAL_MS:1000}"
+  memory:
+    # Size of the block cache (in bytes). Defaults to 0, which derives it from the container memory:
+    # 10% of it, at least 16 MB and at most 512 MB.
+    block-cache-bytes: "${STORE_MEMORY_BLOCK_CACHE_BYTES:0}"
+    # Memory budget of the memtables (in bytes). Defaults to 0, which derives it as 25% of the block cache.
+    write-buffer-bytes: "${STORE_MEMORY_WRITE_BUFFER_BYTES:0}"
+
 # Statistics parameters
 stats:
   # Enables or disables stats printing to the logs.

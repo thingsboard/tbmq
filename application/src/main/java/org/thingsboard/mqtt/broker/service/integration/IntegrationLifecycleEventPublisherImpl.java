@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.integration.ClientLifecycleEventType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.integration.ClientLifecycleEventMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -42,6 +43,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class IntegrationLifecycleEventPublisherImpl implements IntegrationLifecycleEventPublisher {
 

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumerGroupNotFoundException;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationMsgQueueProvider;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.service.util.IntegrationHelperService;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class IntegrationTopicServiceImpl implements IntegrationTopicService {
 

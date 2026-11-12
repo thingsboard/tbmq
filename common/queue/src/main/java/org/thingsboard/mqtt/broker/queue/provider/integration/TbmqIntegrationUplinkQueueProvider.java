@@ -20,6 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationNotificationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.queue.integration.IntegrationUplinkNotificati
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.TBMQ_NOT_IMPLEMENTED;
 
 @Component
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 @TbmqComponent

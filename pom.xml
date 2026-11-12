@@ -70,6 +70,7 @@
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <archunit.version>1.4.1</archunit.version>
+        <rocksdbjni.version>9.10.0</rocksdbjni.version>
         <enforcer-plugin.version>3.5.0</enforcer-plugin.version>
         <jjwt.version>0.12.5</jjwt.version>
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
@@ -87,9 +88,11 @@
 
     <modules>
         <module>application</module>
+        <module>lite-tests</module>
         <module>common</module>
         <module>netty-mqtt</module>
         <module>dao</module>
+        <module>dao-rocksdb</module>
         <module>integration</module>
         <module>msa</module>
         <module>ui-ngx</module>
@@ -783,6 +786,36 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>${enforcer-plugin.version}</version>
+                    <executions>
+                        <!--
+                            The cluster infrastructure banned from the standalone classpath. Not bound here: the
+                            standalone modules (msa/tbmq-lite, lite-tests) bind it at validate by its id, so they share
+                            this one list. org.hibernate.orm:hibernate-core and org.postgresql:postgresql join it once
+                            the management data leaves PostgreSQL.
+                        -->
+                        <execution>
+                            <id>ban-cluster-infrastructure</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <excludes>
+                                            <exclude>org.apache.kafka:kafka-clients</exclude>
+                                            <exclude>redis.clients:jedis</exclude>
+                                            <exclude>io.lettuce:lettuce-core</exclude>
+                                            <exclude>org.springframework.data:spring-data-redis</exclude>
+                                            <exclude>com.bucket4j:bucket4j_jdk17-jedis</exclude>
+                                            <exclude>com.bucket4j:bucket4j_jdk17-redis-common</exclude>
+                                        </excludes>
+                                        <message>the standalone classpath must not pull in the cluster infrastructure (Kafka, Redis)</message>
+                                    </bannedDependencies>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -941,6 +974,16 @@
                 <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>dao</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-rocksdb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdbjni.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>

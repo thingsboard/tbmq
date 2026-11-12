@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.callback.TbCallback;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationResponseProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationNotificationMsgProto;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class IntegrationUplinkConsumer {

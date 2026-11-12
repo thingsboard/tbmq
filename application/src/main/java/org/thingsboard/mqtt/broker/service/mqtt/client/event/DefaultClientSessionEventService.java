@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -62,6 +63,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RESPONSE_T
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DefaultClientSessionEventService implements ClientSessionEventService {
 
