@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
 import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.integration.api.HttpClientPoolSettings;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import reactor.netty.http.client.HttpClient;
@@ -46,6 +47,7 @@ import reactor.netty.resources.ConnectionProvider;
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -69,12 +71,15 @@ public class TbHttpClient {
 
     private static final String MAX_IN_MEMORY_BUFFER_SIZE_IN_KB = "tb.ie.http.maxInMemoryBufferSizeInKb";
 
+    static final Duration POOL_EVICTION_INTERVAL = Duration.ofSeconds(15);
+
     private final HttpIntegrationConfig config;
     private final IntegrationContext ctx;
     private final UplinkMetaData ieMetaData;
     private final WebClient webClient;
 
     private EventLoopGroup eventLoopGroup;
+    private ConnectionProvider connectionProvider;
     private Semaphore semaphore;
     private URI uri;
 
@@ -88,10 +93,7 @@ public class TbHttpClient {
             }
             uri = UrlUtils.buildEncodedUri(config.getRestEndpointUrl());
 
-            ConnectionProvider connectionProvider = ConnectionProvider
-                    .builder("ie-http-client")
-                    .maxConnections(getPoolMaxConnections())
-                    .build();
+            connectionProvider = buildConnectionProvider(ctx.getHttpClientPoolSettings());
 
             HttpClient httpClient = HttpClient.create(connectionProvider)
                     .runOn(getSharedOrCreateEventLoopGroup(ctx.getSharedEventLoop()))
@@ -113,16 +115,27 @@ public class TbHttpClient {
         }
     }
 
-    private int getPoolMaxConnections() {
-        String poolMaxConnectionsEnv = System.getenv("TB_IE_HTTP_CLIENT_POOL_MAX_CONNECTIONS");
-
-        int poolMaxConnections;
-        if (poolMaxConnectionsEnv != null) {
-            poolMaxConnections = Integer.parseInt(poolMaxConnectionsEnv);
-        } else {
-            poolMaxConnections = ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
+    /**
+     * Without idle and lifetime bounds, a keep-alive connection idle for hours is reused after the network path has
+     * silently dropped it (conntrack, cloud load balancers), and the next request fails with "Connection reset".
+     */
+    static ConnectionProvider buildConnectionProvider(HttpClientPoolSettings pool) {
+        ConnectionProvider.Builder builder = ConnectionProvider
+                .builder("ie-http-client")
+                .maxConnections(pool.maxConnections() > 0 ? pool.maxConnections() : ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS);
+        boolean bounded = false;
+        if (pool.maxIdleTimeMs() > 0) {
+            builder.maxIdleTime(Duration.ofMillis(pool.maxIdleTimeMs()));
+            bounded = true;
         }
-        return poolMaxConnections;
+        if (pool.maxLifeTimeMs() > 0) {
+            builder.maxLifeTime(Duration.ofMillis(pool.maxLifeTimeMs()));
+            bounded = true;
+        }
+        if (bounded) {
+            builder.evictInBackground(POOL_EVICTION_INTERVAL);
+        }
+        return builder.build();
     }
 
     private void validateMaxInMemoryBufferSize(HttpIntegrationConfig config) {
@@ -146,6 +159,10 @@ public class TbHttpClient {
     }
 
     void destroy() {
+        // With the shared event loop nothing else closes the pooled connections.
+        if (connectionProvider != null) {
+            connectionProvider.dispose();
+        }
         if (this.eventLoopGroup != null) {
             this.eventLoopGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
         }

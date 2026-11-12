@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.integration.api.HttpClientPoolSettings;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.util.LogSettingsComponent;
@@ -51,6 +52,12 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     private int integrationConnectTimeoutSec;
     @Value("${integrations.allow-local-network-hosts:true}")
     private boolean allowLocalNetworkHosts;
+    @Value("${integrations.http.pool.max-connections:0}")
+    private int httpClientPoolMaxConnections;
+    @Value("${integrations.http.pool.max-idle-time-ms:30000}")
+    private long httpClientPoolMaxIdleTimeMs;
+    @Value("${integrations.http.pool.max-life-time-ms:300000}")
+    private long httpClientPoolMaxLifeTimeMs;
 
     @Override
     public IntegrationContext buildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg) {
@@ -65,7 +72,8 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     private IntegrationContext doBuildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg, BasicCallback callback) {
         return new IntegrationExecutorContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(), allowLocalNetworkHosts,
                 logSettingsComponent, sharedEventLoopGroupService, eventStorageService, rateLimitService,
-                serviceInfoProvider.getServiceId(), callback, externalCallExecutorService, integrationConnectTimeoutSec);
+                serviceInfoProvider.getServiceId(), callback, externalCallExecutorService, integrationConnectTimeoutSec,
+                new HttpClientPoolSettings(httpClientPoolMaxConnections, httpClientPoolMaxIdleTimeMs, httpClientPoolMaxLifeTimeMs));
     }
 
     private IntegrationStatisticsService getStatisticsService() {

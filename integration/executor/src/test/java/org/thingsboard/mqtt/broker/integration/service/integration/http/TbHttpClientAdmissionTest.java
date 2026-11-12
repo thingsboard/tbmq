@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.integration.api.HttpClientPoolSettings;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 
 import java.net.InetSocketAddress;
@@ -67,6 +68,7 @@ public class TbHttpClientAdmissionTest {
         when(ctx.getLifecycleMsg()).thenReturn(IntegrationLifecycleMsg.builder()
                 .integrationId(UUID.randomUUID()).name("admission-test").build());
         when(ctx.getCheckConnectionCallback()).thenReturn(checkConnectionResult);
+        when(ctx.getHttpClientPoolSettings()).thenReturn(new HttpClientPoolSettings(0, 30_000, 300_000));
 
         client = new TbHttpClient(config, ctx, null);
         // Establish a working real HTTP connection before any negative control.
