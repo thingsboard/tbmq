@@ -29,8 +29,8 @@
     <name>TBMQ Lite Tests</name>
 
     <!--
-        Runs tests on a Lite classpath: the application and dao-rocksdb, without queue-kafka and cache-redis.
-        It holds no main code and is never installed or deployed.
+        Runs tests on a Lite classpath, taken from msa/tbmq-lite: the application and dao-rocksdb, without
+        queue-kafka and cache-redis. It holds no main code and is never installed or deployed.
     -->
 
     <properties>
@@ -42,23 +42,11 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.thingsboard.mqtt-broker</groupId>
-            <artifactId>application</artifactId>
+            <!-- the classpath the standalone image ships: application without queue-kafka and cache-redis, plus dao-rocksdb -->
+            <groupId>org.thingsboard.mqtt-broker.msa</groupId>
+            <artifactId>tbmq-lite</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.thingsboard.mqtt-broker.common</groupId>
-                    <artifactId>queue-kafka</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.thingsboard.mqtt-broker.common</groupId>
-                    <artifactId>cache-redis</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.thingsboard.mqtt-broker</groupId>
-            <artifactId>dao-rocksdb</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -98,26 +86,9 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- the ban list is defined once, in the root pom's pluginManagement -->
                         <id>ban-cluster-infrastructure</id>
                         <phase>validate</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>org.apache.kafka:kafka-clients</exclude>
-                                        <exclude>redis.clients:jedis</exclude>
-                                        <exclude>io.lettuce:lettuce-core</exclude>
-                                        <exclude>org.springframework.data:spring-data-redis</exclude>
-                                        <exclude>com.bucket4j:bucket4j_jdk17-jedis</exclude>
-                                        <exclude>com.bucket4j:bucket4j_jdk17-redis-common</exclude>
-                                    </excludes>
-                                    <message>lite-tests must not pull in the cluster infrastructure (Kafka, Redis)</message>
-                                </bannedDependencies>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

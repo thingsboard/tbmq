@@ -786,6 +786,36 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>${enforcer-plugin.version}</version>
+                    <executions>
+                        <!--
+                            The cluster infrastructure banned from the standalone classpath. Not bound here: the
+                            standalone modules (msa/tbmq-lite, lite-tests) bind it at validate by its id, so they share
+                            this one list. org.hibernate.orm:hibernate-core and org.postgresql:postgresql join it once
+                            the management data leaves PostgreSQL.
+                        -->
+                        <execution>
+                            <id>ban-cluster-infrastructure</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <excludes>
+                                            <exclude>org.apache.kafka:kafka-clients</exclude>
+                                            <exclude>redis.clients:jedis</exclude>
+                                            <exclude>io.lettuce:lettuce-core</exclude>
+                                            <exclude>org.springframework.data:spring-data-redis</exclude>
+                                            <exclude>com.bucket4j:bucket4j_jdk17-jedis</exclude>
+                                            <exclude>com.bucket4j:bucket4j_jdk17-redis-common</exclude>
+                                        </excludes>
+                                        <message>the standalone classpath must not pull in the cluster infrastructure (Kafka, Redis)</message>
+                                    </bannedDependencies>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
