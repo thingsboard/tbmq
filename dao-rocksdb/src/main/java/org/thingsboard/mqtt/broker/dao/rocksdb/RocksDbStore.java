@@ -66,7 +66,8 @@ public class RocksDbStore {
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
 
-    private static final String WAL_SYNC_ALWAYS = "always";
+    static final String WAL_SYNC_PERIODIC = "periodic";
+    static final String WAL_SYNC_ALWAYS = "always";
     private static final int MAX_OPEN_FILES = 256;
     private static final int DEVICE_MSG_KEY_PREFIX_LENGTH = 8;
     private static final double BLOOM_BITS_PER_KEY = 10;
