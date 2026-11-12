@@ -345,10 +345,8 @@ class RocksDbDeviceMsgQueueStoreTest {
     }
 
     @Test
-    void sentMarksExpiryAndQueueMovesAreNotSupportedYet() {
-        assertThatThrownBy(() -> store.markSent("c1", 1)).isInstanceOf(UnsupportedOperationException.class);
+    void queueMovesAreNotSupportedYet() {
         assertThatThrownBy(() -> store.moveQueue("c1", "c2", b -> b)).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.sweepExpired()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     private RocksDbDeviceMsgQueueStore storeWithLimit(int limit) {

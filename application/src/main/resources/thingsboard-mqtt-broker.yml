@@ -1214,6 +1214,8 @@ store:
   device-msg:
     # Maximum number of messages read from a persisted DEVICE client queue in one page.
     read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"
+    # Interval (in ms) between sweeps that delete the expired messages of persisted DEVICE client queues. Defaults to 10 minutes.
+    sweep-interval-ms: "${STORE_DEVICE_MSG_SWEEP_INTERVAL_MS:600000}"
 
 # Statistics parameters
 stats:
