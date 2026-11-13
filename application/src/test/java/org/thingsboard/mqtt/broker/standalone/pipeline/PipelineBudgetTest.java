@@ -198,6 +198,26 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenListenerThrowingAnError_whenResume_thenOthersStillRunAndTheReleaseReturns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(() -> {
+            throw new StackOverflowError("listener overflow");
+        });
+        budget.onResume(resumed::incrementAndGet);
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+
+        for (int i = 0; i < 8; i++) {
+            budget.release(1);
+        }
+
+        assertThat(resumed).hasValue(1);
+        assertThat(budget.queuedMessages()).isZero();
+    }
+
+    @Test
     void givenNothingAcquired_whenRelease_thenCountersStayAtZero() {
         PipelineBudget budget = new PipelineBudget(10, 100, 80, 50);
 

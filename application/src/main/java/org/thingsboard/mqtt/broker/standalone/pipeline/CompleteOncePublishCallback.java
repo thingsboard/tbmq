@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * The first {@link #onSuccess()} or {@link #onFailure(Throwable)} gives the publish's share back to the budget and
  * completes the publisher's callback; every later call is ignored. That makes one failing copy among many give exactly
  * one negative acknowledgement, although {@code MultiplePublishMsgCallbackWrapper} reports a failure once per copy.
+ * The publisher's callback completes even when the release throws: a publish that is never answered would hold every
+ * later acknowledgement of its client back for good.
  */
 public class CompleteOncePublishCallback implements PublishMsgCallback {
 
@@ -42,24 +44,24 @@ public class CompleteOncePublishCallback implements PublishMsgCallback {
 
     @Override
     public void onSuccess() {
-        if (complete()) {
-            callback.onSuccess(null);
+        if (completed.compareAndSet(false, true)) {
+            try {
+                budget.release(bytes);
+            } finally {
+                callback.onSuccess(null);
+            }
         }
     }
 
     @Override
     public void onFailure(Throwable t) {
-        if (complete()) {
-            callback.onFailure(t);
+        if (completed.compareAndSet(false, true)) {
+            try {
+                budget.release(bytes);
+            } finally {
+                callback.onFailure(t);
+            }
         }
-    }
-
-    private boolean complete() {
-        if (!completed.compareAndSet(false, true)) {
-            return false;
-        }
-        budget.release(bytes);
-        return true;
     }
 
 }

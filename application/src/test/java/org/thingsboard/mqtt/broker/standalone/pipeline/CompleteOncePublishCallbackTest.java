@@ -30,8 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -95,6 +97,42 @@ class CompleteOncePublishCallbackTest {
 
         verify(queueCallback, times(1)).onFailure(failure);
         verify(queueCallback, never()).onSuccess(any());
+        assertThat(budget.queuedMessages()).isEqualTo(1);
+        assertThat(budget.queuedBytes()).isEqualTo(100);
+    }
+
+    @Test
+    void givenAReleaseThatThrowsAnError_whenTheCopiesComplete_thenThePublisherIsStillAnsweredOnce() {
+        PipelineBudget failingBudget = mock(PipelineBudget.class);
+        doThrow(new Error("resume listener")).when(failingBudget).release(100);
+        var succeeding = new CompleteOncePublishCallback(failingBudget, 100, queueCallback);
+        TbQueueCallback failedCallback = mock(TbQueueCallback.class);
+        var failing = new CompleteOncePublishCallback(failingBudget, 100, failedCallback);
+        StoreException failure = new StoreException("disk");
+
+        assertThatThrownBy(succeeding::onSuccess).hasMessage("resume listener");
+        assertThatThrownBy(() -> failing.onFailure(failure)).hasMessage("resume listener");
+        succeeding.onSuccess();
+        failing.onFailure(failure);
+
+        // an unanswered publish would hold every later PUBACK of its client back for good
+        verify(queueCallback, times(1)).onSuccess(null);
+        verify(failedCallback, times(1)).onFailure(failure);
+        verify(failingBudget, times(2)).release(100);
+    }
+
+    @Test
+    void givenAPublisherCallbackThatThrows_whenCompleted_thenTheShareIsStillReleasedOnce() {
+        budget.tryAcquire(100);
+        budget.tryAcquire(100);
+        doThrow(new IllegalStateException("callback")).when(queueCallback).onSuccess(any());
+        var cb = new CompleteOncePublishCallback(budget, 100, queueCallback);
+
+        assertThatThrownBy(cb::onSuccess).hasMessage("callback");
+        cb.onFailure(new StoreException("late"));
+
+        verify(queueCallback, times(1)).onSuccess(null);
+        verify(queueCallback, never()).onFailure(any());
         assertThat(budget.queuedMessages()).isEqualTo(1);
         assertThat(budget.queuedBytes()).isEqualTo(100);
     }

@@ -145,7 +145,7 @@ public class PipelineBudget {
     /**
      * Registers a listener that runs each time the usage falls to or below the resume level after having been at or
      * above the pause level. It runs on the thread that releases, so it must be cheap and must not throw; one that
-     * throws is logged and the others still run.
+     * throws, even an {@link Error}, is logged and the others still run.
      */
     public void onResume(Runnable listener) {
         resumeListeners.add(listener);
@@ -160,8 +160,9 @@ public class PipelineBudget {
         for (Runnable listener : resumeListeners) {
             try {
                 listener.run();
-            } catch (Exception e) {
-                log.error("Pipeline resume listener failed", e);
+            } catch (Throwable t) {
+                // an Error too: the release must return, so that the publish it belongs to is still answered
+                log.error("Pipeline resume listener failed", t);
             }
         }
     }
