@@ -38,7 +38,7 @@ spec:
         - -ec
         - |
           echo "$(date) Backup started!"
-           pg_dump -Fc -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
+          pg_dump -Fc -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
           echo "$(date) Backup completed!"
       env:
         - name: PGPASSWORD
@@ -90,6 +90,9 @@ spec:
 
 The **`postgres-restore`** pod uses the `pg_restore` command to restore the PostgreSQL database from a backup.
 
+> **Warning:** The restore deletes the current database and replaces it with the backup. Any data written after the
+> backup was taken is lost.
+
 #### Pod YAML (`postgres-restore`):
 
 ```yaml
@@ -107,7 +110,9 @@ spec:
         - -ec
         - |
           echo "$(date) Restore started!"
-           pg_restore -c -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump || true
+          dropdb -h tbmq-database -U postgres --force thingsboard_mqtt_broker
+          createdb -h tbmq-database -U postgres thingsboard_mqtt_broker
+          pg_restore -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump
           echo "$(date) Restore completed!"
       env:
         - name: PGPASSWORD
@@ -125,10 +130,11 @@ spec:
 
 #### Explanation:
 
-- **`pg_restore` command**: Restores the PostgreSQL database from the backup file (`/backups/tbmq_backup.dump`).
+- **`dropdb --force` command**: Deletes the current database, closing any remaining connections to it.
+- **`createdb` command**: Creates an empty database with the same name.
+- **`pg_restore` command**: Restores the backup file (`/backups/tbmq_backup.dump`) into the empty database.
 - **Volume Mount (`restore-volume`)**: The pod mounts the PVC where the backup file is stored.
-- **Error Handling**: The `|| true` ensures the pod doesn't exit with an error even if certain constraints or tables
-  can't be dropped (e.g., inherited constraints).
+- **Error Handling**: If any command fails, the pod stops and ends in the `Error` state.
 - **Restart Policy**: The pod will not restart automatically after completing the restore operation.
 
 #### To Run the Restore Pod:
