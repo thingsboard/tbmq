@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+# Stops only the TBMQ nodes and Integration Executors.
+# PostgreSQL, Kafka, the cache and HAProxy keep running.
+
 set -e
 
 source scripts/compose-utils.sh
