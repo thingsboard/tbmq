@@ -20,6 +20,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
+import org.thingsboard.mqtt.broker.dao.service.DeviceMsgServiceContract;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +49,21 @@ class LiteClasspathTest {
             "org.thingsboard.mqtt.broker.cache.TBRedisCacheConfiguration"})
     void noClusterInfrastructureClassCanBeLoaded(String className) {
         assertThatThrownBy(() -> Class.forName(className)).isInstanceOf(ClassNotFoundException.class);
+    }
+
+    /**
+     * lite-tests takes only the contract and the test-database setup from dao's tests; dao's test configuration
+     * would otherwise configure the Lite tests from another module.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"logback.xml", "application-test.properties", "sql-test.properties", "xss-policy.xml"})
+    void noTestConfigurationComesFromDaosTests(String resource) throws IOException {
+        String daoTests = DeviceMsgServiceContract.class.getProtectionDomain().getCodeSource().getLocation().toString();
+
+        assertThat(Collections.list(getClass().getClassLoader().getResources(resource)))
+                .map(URL::toString)
+                .as("%s on the classpath", resource)
+                .noneMatch(url -> url.startsWith(daoTests) || url.startsWith("jar:" + daoTests + "!/"));
     }
 
 }
