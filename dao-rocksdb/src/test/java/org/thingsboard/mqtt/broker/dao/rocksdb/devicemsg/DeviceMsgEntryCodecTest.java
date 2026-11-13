@@ -63,6 +63,33 @@ class DeviceMsgEntryCodecTest {
         assertThat(DeviceMsgEntryCodec.body(v)).isEmpty();
     }
 
+    // the layout is the on-disk format: a change to it or to PersistedPacketType must not pass unnoticed
+    @Test
+    void theEncodedBytesArePinned() {
+        byte[] publish = DeviceMsgEntryCodec.encode(0x0102, PersistedPacketType.PUBLISH, 3L, 4L, 5L, new byte[]{9});
+
+        assertThat(publish).containsExactly(
+                1,                      // format version
+                0,                      // packet type: PUBLISH
+                1, 2,                   // packet id
+                0, 0, 0, 0, 0, 0, 0, 3, // created time
+                0, 0, 0, 0, 0, 0, 0, 4, // message expiry time
+                0, 0, 0, 0, 0, 0, 0, 5, // TTL expiry time
+                9);                     // body
+        assertThat(DeviceMsgEntryCodec.encode(1, PersistedPacketType.PUBREL, 0L, 0L, 0L, new byte[0])[1]).isEqualTo((byte) 1);
+        assertThat(DeviceMsgEntryCodec.withPacketType(publish, PersistedPacketType.PUBREL)[1]).isEqualTo((byte) 1);
+    }
+
+    @Test
+    void anUnknownPacketTypeIsRejected() {
+        byte[] v = DeviceMsgEntryCodec.encode(1, PersistedPacketType.PUBLISH, 0L, 0L, 0L, new byte[0]);
+        v[1] = 2;
+
+        assertThatThrownBy(() -> DeviceMsgEntryCodec.header(v))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("Unknown packet type 2");
+    }
+
     @Test
     void aTruncatedValueIsRejected() {
         assertThatThrownBy(() -> DeviceMsgEntryCodec.header(new byte[5])).isInstanceOf(StoreException.class);
