@@ -51,6 +51,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Delivers a persisted DEVICE client's messages from its store queue. The processor is a cursor over the queue: it
@@ -164,12 +165,28 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
                         || sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, subscription)) {
                     continue;
                 }
-                int moved = store.moveQueue(subscription.getKey(), clientId, body ->
-                        DeviceMsgBodyCodec.withQosAndSubscriptionId(body, subscription.getQos(), subscription.getSubscriptionId()));
+                AtomicInteger undecodable = new AtomicInteger();
+                int moved = store.moveQueue(subscription.getKey(), clientId, body -> toMemberBody(subscription, body, undecodable));
+                // counted once the move is written: a failed move leaves the entries in the group, to be met again
+                undecodableMsgs.add(undecodable.get());
                 log.debug("[{}] Moved {} messages of shared subscription {}", clientId, moved, subscription.getKey());
             }
             pull();
         });
+    }
+
+    /**
+     * @return the group entry's body for this member, or {@code null} when it cannot be decoded: the move then drops
+     * the entry, which would otherwise fail every move and disconnect the member each time
+     */
+    private byte[] toMemberBody(TopicSharedSubscription subscription, byte[] body, AtomicInteger undecodable) {
+        try {
+            return DeviceMsgBodyCodec.withQosAndSubscriptionId(body, subscription.getQos(), subscription.getSubscriptionId());
+        } catch (RuntimeException e) {
+            log.error("[{}] Dropping an undecodable entry of the shared subscription queue {}", clientId, subscription.getKey(), e);
+            undecodable.incrementAndGet();
+            return null;
+        }
     }
 
     /**

@@ -44,7 +44,6 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -58,7 +57,6 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doThrow;
@@ -79,7 +77,6 @@ class StandalonePersistStageTest {
     private final DeviceMsgQueueStore store = mock(DeviceMsgQueueStore.class);
     private final ClientSessionCache clientSessionCache = mock(ClientSessionCache.class);
     private final DeviceActorManager deviceActorManager = mock(DeviceActorManager.class);
-    private final TbMessageStatsReportClient statsClient = mock(TbMessageStatsReportClient.class);
     private final PublishMsgCallback callback = mock(PublishMsgCallback.class);
     private final PublishMsgCallback cb1 = mock(PublishMsgCallback.class);
     private final PublishMsgCallback cb2 = mock(PublishMsgCallback.class);
@@ -162,7 +159,6 @@ class StandalonePersistStageTest {
         verify(callback).onSuccess();
         verify(callback, never()).onFailure(any());
         verifyNoInteractions(deviceActorManager);
-        verify(statsClient, never()).reportDroppedMsgs(anyInt());                       // expired, not dropped
         assertThat(expiredCounter().count()).isEqualTo(1.0);
     }
 
@@ -251,7 +247,6 @@ class StandalonePersistStageTest {
         verify(cb1, never()).onSuccess();
         verify(cb2).onSuccess();
         verify(cb2, never()).onFailure(any());
-        verify(statsClient).reportDroppedMsgs(1);
         // only the stored batch wakes the client up
         verify(deviceActorManager, times(1)).notifyPublishMsg(eq("c1"), any());
         assertThat(consumerLog.list).singleElement().satisfies(event -> {
@@ -274,7 +269,6 @@ class StandalonePersistStageTest {
         verify(cb3).onFailure(isA(StoreException.class));
         verify(cb2).onSuccess();
         verify(cb2, never()).onFailure(any());
-        verify(statsClient).reportDroppedMsgs(2);
         verifyNoInteractions(deviceActorManager);
     }
 
@@ -294,8 +288,39 @@ class StandalonePersistStageTest {
         verify(cb2, never()).onSuccess();
         verify(cb1).onSuccess();
         verify(cb3).onSuccess();
-        verify(statsClient).reportDroppedMsgs(1);
         assertThat(consumerLog.list).singleElement().satisfies(event -> assertThat(event.getLevel()).isEqualTo(Level.ERROR));
+    }
+
+    @Test
+    void aThrowingCallbackOrWakeUpLeavesTheRestOfTheBatchServed() {
+        givenSession("c1", true);
+        givenSession("c2", true);
+        doThrow(new IllegalStateException("expired callback")).when(callback).onSuccess();
+        doThrow(new IllegalStateException("stored callback")).when(cb1).onSuccess();
+        doThrow(new IllegalStateException("wake-up")).when(deviceActorManager).notifyPublishMsg(eq("c1"), any());
+
+        submit("ss_g_t", withExpiry(0), callback);                                      // expired: its callback throws
+        submit("c1", msg("m1"), cb1);
+        submit("c2", msg("m2"), cb2);
+        runBatch();
+
+        assertThat(captureSingleAppend()).extracting(QueueAppend::queueKey).containsExactly("c1", "c2");
+        verify(cb2).onSuccess();
+        verify(deviceActorManager).notifyPublishMsg(eq("c2"), any());
+        assertThat(consumerLog.list).hasSize(3).allSatisfy(event -> assertThat(event.getLevel()).isEqualTo(Level.ERROR));
+    }
+
+    @Test
+    void aThrowingCallbackLeavesTheOtherFailuresDelivered() {
+        doThrow(new StoreException("disk")).when(store).append(any());
+        doThrow(new IllegalStateException("failure callback")).when(cb1).onFailure(any());
+
+        submit("c1", msg("m1"), cb1);
+        submit("c2", msg("m2"), cb2);
+        runBatch();
+
+        verify(cb2).onFailure(isA(StoreException.class));
+        verify(cb2, never()).onSuccess();
     }
 
     @Test
@@ -389,7 +414,7 @@ class StandalonePersistStageTest {
         // a registry of its own: a meter registered again under the same name would stay bound to the old stage
         meterRegistry = new SimpleMeterRegistry();
         StatsFactory statsFactory = new DefaultStatsFactory(meterRegistry);
-        consumer = new StandaloneDeviceMsgQueueConsumer(properties, statsFactory, store, clientSessionCache, deviceActorManager, statsClient);
+        consumer = new StandaloneDeviceMsgQueueConsumer(properties, statsFactory, store, clientSessionCache, deviceActorManager);
         consumer.init();
         publisher = new StandaloneDeviceMsgQueuePublisher(consumer);
     }

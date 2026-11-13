@@ -88,6 +88,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class StandaloneDeviceActorMessageProcessorTest {
@@ -108,8 +109,7 @@ class StandaloneDeviceActorMessageProcessorTest {
     private final PublishedInFlightCtx inFlightCtx2 = mock(PublishedInFlightCtx.class);
     private final ClientSessionCtx sessionCtx2 = session(inFlightCtx2);
     private final TopicSharedSubscription sub = new TopicSharedSubscription("t", "g", 1, 7);
-    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-    private final StatsFactory statsFactory = new DefaultStatsFactory(meterRegistry);
+    private final StatsFactory statsFactory = new DefaultStatsFactory(new SimpleMeterRegistry());
     private final DefaultCounter undecodable = statsFactory.createDefaultCounter("undecodableDeviceMsgs");
 
     private final Logger processorLogger = (Logger) LoggerFactory.getLogger(StandaloneDeviceActorMessageProcessor.class);
@@ -698,7 +698,9 @@ class StandaloneDeviceActorMessageProcessorTest {
 
     @Test
     void theFactoryHandsEveryProcessorTheOneRegisteredUndecodableCounter() {
-        var factory = new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, statsFactory, READ_PAGE_SIZE);
+        StatsFactory countingFactory = mock(StatsFactory.class);
+        when(countingFactory.createDefaultCounter("undecodableDeviceMsgs")).thenReturn(undecodable);
+        var factory = new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, countingFactory, READ_PAGE_SIZE);
         queue.add(new Entry(1, 1, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
         factory.create(systemContext, CLIENT_ID).processDeviceConnect(actorCtx, connected(sessionCtx));
         queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
@@ -706,7 +708,42 @@ class StandaloneDeviceActorMessageProcessorTest {
         factory.create(systemContext, CLIENT_ID).processDeviceConnect(actorCtx, connected(sessionCtx2));
 
         assertThat(queue).isEmpty();
-        assertThat(meterRegistry.get("undecodableDeviceMsgs").counter().count()).isEqualTo(2.0);
+        verify(countingFactory).createDefaultCounter("undecodableDeviceMsgs");
+        verifyNoMoreInteractions(countingFactory);
+        assertThat(undecodable.get()).isEqualTo(2);                                      // both processors count into the one counter
+    }
+
+    @Test
+    void anUndecodableGroupEntryIsDroppedOnTheMoveAndTheMemberGetsTheOthers() {
+        when(sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID, sub)).thenReturn(false);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        List<byte[]> groupBodies = List.of(body(null), undecodableBody(), body(null));
+        when(store.moveQueue(eq("ss_g_t"), eq(CLIENT_ID), any())).thenAnswer(inv -> moveIntoQueue(inv.getArgument(2), groupBodies));
+
+        processor.processSharedSubscriptions(actorCtx, new SharedSubscriptionEventMsg(Set.of(sub)));
+
+        verify(delivery, times(2)).sendPublishMsgToClient(eq(sessionCtx), any(), eq(false));
+        assertThat(queue).extracting(Entry::packetId).containsExactly(1, 2);
+        assertThat(undecodable.get()).isOne();
+        verifyNoInteractions(clientMqttActorManager);                                   // the member stays connected
+        assertThat(processorLog.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getArgumentArray()).containsExactly(CLIENT_ID, "ss_g_t");    // the client id and the group key
+            assertThat(event.getThrowableProxy()).isNotNull();
+        });
+    }
+
+    // what RocksDbDeviceMsgQueueStore.moveQueue does: a body the mapper returns null for is dropped
+    private int moveIntoQueue(UnaryOperator<byte[]> mapper, List<byte[]> groupBodies) {
+        int moved = 0;
+        for (byte[] groupBody : groupBodies) {
+            byte[] body = mapper.apply(groupBody);
+            if (body != null) {
+                moved++;
+                queue.add(new Entry(moved, moved, PersistedPacketType.PUBLISH, NOW_MS, body));
+            }
+        }
+        return moved;
     }
 
     private void givenQueue(int size) {

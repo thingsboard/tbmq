@@ -31,7 +31,6 @@ import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
@@ -64,7 +63,6 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
     private final DeviceMsgQueueStore store;
     private final ClientSessionCache clientSessionCache;
     private final DeviceActorManager deviceActorManager;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     // copies with a Message Expiry Interval of 0 that were not kept; the store counts the entries it expires itself
     private final AtomicLong expiredCopies = new AtomicLong();
@@ -113,19 +111,21 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
             String clientId = copy.clientId();
             DevicePublishMsg msg;
             NewDeviceMsg newMsg;
+            boolean expired;
             try {
                 msg = ProtoConverter.protoToDevicePublishMsg(clientId, copy.msg().getValue(), copy.msg().getHeaders());
                 newMsg = DeviceMsgBodyCodec.toNew(msg);
+                Integer msgExpiryInterval = newMsg.msgExpiryIntervalSec();
+                expired = msgExpiryInterval != null && msgExpiryInterval == 0 && !isConnected(clientId);
             } catch (Throwable t) {
-                log.error("[{}] Failed to read the message for the DEVICE queue", clientId, t);
-                fail(List.of(copy), t);
+                fail(copy, t);
+                log.error("[{}] Failed to prepare the message for the DEVICE queue", clientId, t);
                 continue;
             }
-            Integer msgExpiryInterval = newMsg.msgExpiryIntervalSec();
-            if (msgExpiryInterval != null && msgExpiryInterval == 0 && !isConnected(clientId)) {
+            if (expired) {
                 // [MQTT-3.3.2-5] a lifetime of 0 seconds has passed before an offline subscriber could take it
                 expiredCopies.incrementAndGet();
-                copy.callback().onSuccess();
+                succeed(copy);
                 continue;
             }
             queues.computeIfAbsent(clientId, id -> new ArrayList<>()).add(newMsg);
@@ -138,18 +138,27 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
         try {
             store.append(queues.entrySet().stream().map(queue -> new QueueAppend(queue.getKey(), queue.getValue())).toList());
         } catch (Throwable t) {
+            toStore.forEach(copy -> fail(copy, t));
             log.error("Failed to store {} messages for {} DEVICE clients", toStore.size(), queues.size(), t);
-            fail(toStore, t);
             return;
         }
-        toStore.forEach(copy -> copy.callback().onSuccess());
-        // a wake-up only: the device actor reads the new messages from the store. The session is looked up again, so a
-        // subscriber that connected while the batch was written is woken up too
-        lastMsgs.forEach((clientId, msg) -> {
+        toStore.forEach(this::succeed);
+        lastMsgs.forEach(this::wakeUp);
+    }
+
+    /**
+     * A wake-up only: the device actor reads the new messages from the store. The session is looked up again, after the
+     * append, so a subscriber that connected while the batch was written is woken up too.
+     */
+    private void wakeUp(String clientId, DevicePublishMsg lastMsg) {
+        try {
             if (isConnected(clientId)) {
-                deviceActorManager.notifyPublishMsg(clientId, msg);
+                deviceActorManager.notifyPublishMsg(clientId, lastMsg);
             }
-        });
+        } catch (Throwable t) {
+            // the messages are stored: the next wake-up or connect delivers them
+            log.error("[{}] Failed to wake up the device actor", clientId, t);
+        }
     }
 
     /**
@@ -160,9 +169,25 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
         return session != null && session.isConnected();
     }
 
-    private void fail(List<PendingCopy> copies, Throwable t) {
-        tbMessageStatsReportClient.reportDroppedMsgs(copies.size());
-        copies.forEach(copy -> copy.callback().onFailure(t));
+    /**
+     * A copy is failed, not counted as dropped: the publish's caller counts the failed publish once.
+     */
+    private void fail(PendingCopy copy, Throwable failure) {
+        try {
+            copy.callback().onFailure(failure);
+        } catch (Throwable t) {
+            // the other copies of the batch must still be completed
+            log.error("[{}] The failure callback of a DEVICE queue message failed", copy.clientId(), t);
+        }
+    }
+
+    private void succeed(PendingCopy copy) {
+        try {
+            copy.callback().onSuccess();
+        } catch (Throwable t) {
+            // the other copies of the batch must still be completed
+            log.error("[{}] The success callback of a DEVICE queue message failed", copy.clientId(), t);
+        }
     }
 
     private double expiredDeviceMsgs() {

@@ -163,6 +163,27 @@ class RocksDbDeviceMsgExpiryTest {
     }
 
     @Test
+    void anExpiredEntryBehindThePacketIdWindowIsCountedAsExpiredNotTrimmed() {
+        var wide = new RocksDbDeviceMsgQueueStore(rocksDb, 65_535, TTL_SECONDS, clock);
+        wide.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 1)))));      // id 1 stays unsent, lives 1 s
+        for (int appended = 0; appended < 65_534; ) {                                        // ids 2..65535 are appended and acknowledged
+            int n = Math.min(5_000, 65_534 - appended);
+            wide.append(List.of(new QueueAppend("c1", msgs(n))));
+            for (int i = 0; i < n; i++) {
+                assertThat(wide.remove("c1", 2 + appended + i)).isTrue();
+            }
+            appended += n;
+        }
+        clock.advanceSeconds(2);
+
+        wide.append(List.of(new QueueAppend("c1", msgs(1))));                               // id 1 again, within the limit
+
+        assertThat(wide.read("c1", 0, 100)).extracting(StoredDeviceMsg::sequence).containsExactly(65_536L);
+        assertThat(wide.expiredEntries()).isOne();
+        assertThat(wide.trimmedEntries()).isZero();
+    }
+
+    @Test
     void aFullQueueWithNothingExpiredIsTrimmedWithoutAScan() {
         store.append(List.of(new QueueAppend("c1", msgs(10))));
         long seeksBefore = store.iteratorSeekCount();                                        // test-visible counter
