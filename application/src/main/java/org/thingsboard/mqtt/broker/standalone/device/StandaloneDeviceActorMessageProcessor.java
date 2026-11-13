@@ -258,8 +258,8 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
 
     /**
      * Hands the next page of the queue to the channel. The page is no larger than the free part of the read page
-     * size and of the client's Receive Maximum, and it is marked sent before it is handed over, so that neither a
-     * sweep nor a trim deletes a handed-over entry as expired.
+     * size and of the client's Receive Maximum, and the store marks it sent as it reads it, so that neither a sweep
+     * nor a trim deletes a handed-over entry as expired.
      */
     private void pull() {
         if (sessionCtx == null || !channelWritable || replay == Replay.AWAITING_PERMIT) {
@@ -269,9 +269,8 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         if (budget <= 0) {
             return;
         }
-        List<StoredDeviceMsg> page = store.read(clientId, cursor, budget);
+        List<StoredDeviceMsg> page = store.readForDelivery(clientId, cursor, budget);
         if (!page.isEmpty()) {
-            store.markSent(clientId, page.get(page.size() - 1).sequence());
             long now = clock.millis();
             for (StoredDeviceMsg entry : page) {
                 handOver(entry, now);

@@ -19,7 +19,6 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.ClientActorContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
@@ -74,7 +73,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -120,15 +118,15 @@ class StandaloneDeviceActorMessageProcessorTest {
         givenFreeSlots(65535);
         when(inFlightCtx2.freeSlots()).thenReturn(65535);
 
-        when(store.read(eq(CLIENT_ID), anyLong(), anyInt())).thenAnswer(inv -> {
+        when(store.readForDelivery(eq(CLIENT_ID), anyLong(), anyInt())).thenAnswer(inv -> {
             long after = inv.getArgument(1);
             int limit = inv.getArgument(2);
-            return queue.stream().filter(e -> e.sequence() > after).limit(limit).map(this::stored).toList();
+            List<StoredDeviceMsg> page = queue.stream().filter(e -> e.sequence() > after).limit(limit).map(this::stored).toList();
+            if (!page.isEmpty()) {
+                sentUpTo = Math.max(sentUpTo, page.get(page.size() - 1).sequence());
+            }
+            return page;
         });
-        doAnswer(inv -> {
-            sentUpTo = Math.max(sentUpTo, (long) inv.getArgument(1));
-            return null;
-        }).when(store).markSent(eq(CLIENT_ID), anyLong());
         when(store.remove(eq(CLIENT_ID), anyInt())).thenAnswer(inv -> queue.removeIf(e -> e.packetId() == (int) inv.getArgument(1)));
         when(store.markPubRel(eq(CLIENT_ID), anyInt())).thenAnswer(inv -> {
             int packetId = inv.getArgument(1);
@@ -150,25 +148,16 @@ class StandaloneDeviceActorMessageProcessorTest {
     }
 
     @Test
-    void connectDeliversOnePageAndMarksItSent() {
+    void connectDeliversOnePageReadForDelivery() {                   // the store marks the page sent as it reads it
         givenQueue(600);
         givenFreeSlots(1000);
 
         processor.processDeviceConnect(actorCtx, connected(sessionCtx));
 
         verify(delivery, times(256)).sendPublishMsgToClient(eq(sessionCtx), any(), eq(false));
-        verify(store).markSent(CLIENT_ID, 256);
-    }
-
-    @Test
-    void thePageIsMarkedSentBeforeItIsHandedOver() {                 // a sweep or trim must never delete a handed-over entry
-        givenQueue(3);
-
-        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
-
-        InOrder inOrder = inOrder(store, delivery);
-        inOrder.verify(store).markSent(CLIENT_ID, 3);
-        inOrder.verify(delivery, times(3)).sendPublishMsgToClient(eq(sessionCtx), any(), anyBoolean());
+        verify(store).readForDelivery(CLIENT_ID, 0, 256);
+        verify(store, never()).read(any(), anyLong(), anyInt());
+        assertThat(sentUpTo).isEqualTo(256);
     }
 
     @Test
@@ -276,7 +265,7 @@ class StandaloneDeviceActorMessageProcessorTest {
 
         processor.processDeviceConnect(actorCtx, connected(sessionCtx2));
 
-        verify(store, atLeastOnce()).read(CLIENT_ID, 0, 256);
+        verify(store, atLeastOnce()).readForDelivery(CLIENT_ID, 0, 256);
         verify(replayLimiter, times(2)).tryAcquire(CLIENT_ID);
         verify(delivery, never()).sendPublishMsgToClient(eq(sessionCtx2), argThat(m -> m.getPacketId() == 1), anyBoolean());
         verify(delivery).sendPublishMsgToClient(eq(sessionCtx2), argThat(m -> m.getPacketId() == 2), eq(true));
@@ -511,7 +500,7 @@ class StandaloneDeviceActorMessageProcessorTest {
     @Test
     void aStoreErrorDisconnectsTheClient() {
         givenQueue(5);
-        when(store.read(eq(CLIENT_ID), anyLong(), anyInt())).thenThrow(new StoreException("Failed to read the device queue"));
+        when(store.readForDelivery(eq(CLIENT_ID), anyLong(), anyInt())).thenThrow(new StoreException("Failed to read the device queue"));
 
         processor.processDeviceConnect(actorCtx, connected(sessionCtx));
 

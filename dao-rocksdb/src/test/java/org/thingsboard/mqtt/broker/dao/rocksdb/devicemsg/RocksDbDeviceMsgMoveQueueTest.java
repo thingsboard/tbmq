@@ -146,7 +146,7 @@ class RocksDbDeviceMsgMoveQueueTest {
     @Test
     void theEmptiedGroupContinuesItsSequenceAndPacketIds() {             // Trello #654
         store.append(List.of(new QueueAppend("ss_g_t", msgs(3))));
-        store.markSent("ss_g_t", 2);
+        store.readForDelivery("ss_g_t", 0, 2);
 
         store.moveQueue("ss_g_t", "m1", b -> b);
 
@@ -164,7 +164,7 @@ class RocksDbDeviceMsgMoveQueueTest {
     void movedEntriesAreUnsentPublishesThatKeepTheirTimes() {
         long created = clock.millis() - 1_000;
         store.append(List.of(new QueueAppend("ss_g_t", List.of(msg(created, 30), msg(created, null), msg(created, 60)))));
-        store.markSent("ss_g_t", 2);
+        store.readForDelivery("ss_g_t", 0, 2);
         store.markPubRel("ss_g_t", 2);
 
         store.moveQueue("ss_g_t", "m1", b -> b);
@@ -201,7 +201,7 @@ class RocksDbDeviceMsgMoveQueueTest {
     @Test
     void mqtt_3_3_2_5_aSentGroupEntryWhoseIntervalHasPassedIsNotMovedToAnotherMember() {
         store.append(List.of(new QueueAppend("ss_g_t", List.of(msg(clock.millis(), 5), msg(clock.millis(), null)))));
-        store.markSent("ss_g_t", 2);
+        store.readForDelivery("ss_g_t", 0, 2);
         clock.advanceSeconds(6);
 
         assertThat(store.moveQueue("ss_g_t", "m1", b -> b)).isOne();

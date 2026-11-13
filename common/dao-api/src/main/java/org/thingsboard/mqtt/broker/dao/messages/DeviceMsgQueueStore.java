@@ -29,14 +29,19 @@ public interface DeviceMsgQueueStore {
      */
     List<AppendResult> append(List<QueueAppend> appends);
 
+    /**
+     * @return up to {@code limit} live entries after {@code afterSequence}, in order; an expired entry met on the way is
+     * deleted and not returned
+     */
     List<StoredDeviceMsg> read(String queueKey, long afterSequence, int limit);
 
     /**
-     * Raises the sent mark of the queue to {@code upToSequence}, at most to its last sequence; never lowers it.
-     * A caller marks entries sent before it hands them to the channel; otherwise a sweep or a trim may delete a
-     * handed-over entry as expired, which breaks [MQTT-4.3.3-7] and [MQTT-4.4.0-1].
+     * Reads like {@link #read} and, in the same atomic step, raises the sent mark of the queue to the last entry it
+     * returns, so that neither a sweep nor a trim deletes a returned entry as expired ([MQTT-4.3.3-7],
+     * [MQTT-4.4.0-1]). The {@code sent} flag of each returned entry is the one it had before this call. The sent mark
+     * never goes down.
      */
-    void markSent(String queueKey, long upToSequence);
+    List<StoredDeviceMsg> readForDelivery(String queueKey, long afterSequence, int limit);
 
     /**
      * @return {@code false} when the queue has no such entry

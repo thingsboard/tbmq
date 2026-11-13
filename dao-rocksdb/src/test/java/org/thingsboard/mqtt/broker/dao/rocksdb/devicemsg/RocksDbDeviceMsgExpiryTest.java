@@ -43,6 +43,7 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -86,7 +87,7 @@ class RocksDbDeviceMsgExpiryTest {
     @Test
     void mqtt_4_3_3_7_aSentEntryOutlivesItsMessageExpiryInterval() {
         store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 5)))));
-        store.markSent("c1", 1);
+        store.readForDelivery("c1", 0, 1);
         clock.advanceSeconds(599);                                                     // far past the 5 s interval, before the 600 s operator TTL
         var read = store.read("c1", 0, 100);
         assertThat(read).hasSize(1);
@@ -96,7 +97,7 @@ class RocksDbDeviceMsgExpiryTest {
     @Test
     void aPubRelEntryOutlivesTheMessageExpiryIntervalButNotTheOperatorTtl() {   // Trello #652
         store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 5)))));
-        store.markSent("c1", 1);
+        store.readForDelivery("c1", 0, 1);
         store.markPubRel("c1", 1);
         clock.advanceSeconds(599);
         assertThat(store.read("c1", 0, 100)).hasSize(1);
@@ -213,7 +214,7 @@ class RocksDbDeviceMsgExpiryTest {
         store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 5), msg(clock.millis(), 5),
                 msg(clock.millis(), 60)))));
         store.append(List.of(new QueueAppend("c2", msgs(3))));
-        store.markSent("c1", 1);
+        store.readForDelivery("c1", 0, 1);
         clock.advanceSeconds(6);
 
         assertThat(store.sweepExpired()).isOne();
@@ -254,23 +255,64 @@ class RocksDbDeviceMsgExpiryTest {
     }
 
     @Test
-    void markSentNeverMovesBackwards() {
+    void readForDeliveryMarksThePageSentAndReportsTheFlagsFromBeforeTheCall() {
         store.append(List.of(new QueueAppend("c1", msgs(5))));
-        store.markSent("c1", 4);
-        store.markSent("c1", 2);
+
+        assertThat(store.readForDelivery("c1", 0, 4)).extracting(StoredDeviceMsg::sent).containsOnly(false);
         assertThat(store.info("c1").sentUpTo()).isEqualTo(4);
+        assertThat(store.readForDelivery("c1", 0, 2)).extracting(StoredDeviceMsg::sent).containsExactly(true, true);
+        assertThat(store.info("c1").sentUpTo()).isEqualTo(4);                              // never goes down
+        assertThat(store.readForDelivery("c1", 4, 100)).extracting(StoredDeviceMsg::sequence, StoredDeviceMsg::sent)
+                .containsExactly(tuple(5L, false));
+        assertThat(store.info("c1").sentUpTo()).isEqualTo(5);
     }
 
     @Test
-    void markSentNeverPassesTheLastSequence() {
+    void readDoesNotMarkAnythingSent() {
         store.append(List.of(new QueueAppend("c1", msgs(2))));
-        store.markSent("c1", 100);
-        store.markSent("unknown", 5);
 
-        assertThat(store.info("c1").sentUpTo()).isEqualTo(2);
+        store.read("c1", 0, 100);
+
+        assertThat(store.info("c1").sentUpTo()).isZero();
+    }
+
+    @Test
+    void readForDeliveryOfAnEmptyPageLeavesTheMarkAlone() {
+        store.append(List.of(new QueueAppend("c1", msgs(2))));
+
+        assertThat(store.readForDelivery("c1", 2, 100)).isEmpty();
+        assertThat(store.readForDelivery("unknown", 0, 100)).isEmpty();
+
+        assertThat(store.info("c1").sentUpTo()).isZero();
         assertThat(store.info("unknown").sentUpTo()).isZero();
-        store.append(List.of(new QueueAppend("c1", msgs(1))));
-        assertThat(store.read("c1", 0, 100)).extracting(StoredDeviceMsg::sent).containsExactly(true, true, false);
+    }
+
+    @Test
+    void readForDeliveryDeletesTheExpiredEntriesAndMarksTheRestInOneStep() {
+        store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 5), msg(clock.millis(), null),
+                msg(clock.millis(), 5), msg(clock.millis(), null)))));
+        clock.advanceSeconds(6);
+
+        assertThat(store.readForDelivery("c1", 0, 100)).extracting(StoredDeviceMsg::packetId).containsExactly(2, 4);
+
+        var info = store.info("c1");
+        assertThat(info.count()).isEqualTo(2);
+        assertThat(info.firstSequence()).isEqualTo(2);
+        assertThat(info.sentUpTo()).isEqualTo(4);
+        assertThat(store.expiredEntries()).isEqualTo(2);
+    }
+
+    @Test
+    void anEntryReadForDeliveryIsNeitherSweptNorTrimmedByItsMessageExpiry() {          // limit 10
+        store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 5)))));
+        store.readForDelivery("c1", 0, 100);
+        clock.advanceSeconds(6);
+
+        assertThat(store.sweepExpired()).isZero();
+        store.append(List.of(new QueueAppend("c1", msgs(LIMIT))));
+
+        assertThat(store.read("c1", 0, 100)).hasSize(LIMIT).extracting(StoredDeviceMsg::packetId).doesNotContain(1);
+        assertThat(store.expiredEntries()).isZero();                                       // the sent entry was trimmed, not expired
     }
 
     @Test

@@ -34,6 +34,11 @@ public record DeviceQueueMeta(long firstSequence, long lastSequence, int lastPac
         return new DeviceQueueMeta(0, 0, 0, 0, 0, 0);
     }
 
+    public DeviceQueueMeta withSentUpTo(long sentUpTo) {
+        return sentUpTo == this.sentUpTo ? this
+                : new DeviceQueueMeta(firstSequence, lastSequence, lastPacketId, count, sentUpTo, earliestMsgExpiryMs);
+    }
+
     public byte[] toBytes() {
         return ByteBuffer.allocate(LENGTH)
                 .put(FORMAT_VERSION)

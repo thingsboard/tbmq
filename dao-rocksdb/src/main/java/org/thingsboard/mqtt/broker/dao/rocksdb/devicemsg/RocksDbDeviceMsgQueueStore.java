@@ -126,11 +126,21 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         }
     }
 
-    /**
-     * Deletes the expired entries it meets on the way and does not return them.
-     */
     @Override
     public List<StoredDeviceMsg> read(String queueKey, long afterSequence, int limit) {
+        return read(queueKey, afterSequence, limit, false);
+    }
+
+    @Override
+    public List<StoredDeviceMsg> readForDelivery(String queueKey, long afterSequence, int limit) {
+        return read(queueKey, afterSequence, limit, true);
+    }
+
+    /**
+     * Deletes the expired entries it meets on the way and does not return them. With {@code markSent} it raises the
+     * sent mark to the last entry returned; the deletes and the new mark go in one batch.
+     */
+    private List<StoredDeviceMsg> read(String queueKey, long afterSequence, int limit, boolean markSent) {
         if (limit <= 0) {
             return List.of();
         }
@@ -165,6 +175,10 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 }
                 return !iterator.isValid();
             });
+            long sentUpTo = markSent && !page.isEmpty()
+                    ? Math.max(meta.sentUpTo(), page.get(page.size() - 1).sequence())
+                    : meta.sentUpTo();
+            DeviceQueueMeta marked = meta.withSentUpTo(sentUpTo);
             if (!expired.isEmpty()) {
                 boolean fromHead = from == meta.firstSequence();
                 long first = meta.firstSequence();
@@ -175,32 +189,11 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 }
                 // only a read that saw the whole queue knows every unsent entry; otherwise the old bound still holds
                 long earliest = fromHead && reachedEnd ? bound.value() : meta.earliestMsgExpiryMs();
-                deleteExpired(queueKey, meta, expired, first, earliest);
+                deleteExpired(queueKey, marked, expired, first, earliest);
+            } else if (sentUpTo != meta.sentUpTo()) {
+                store.put(METAS, DeviceMsgKeys.metaKey(queueKey), marked.toBytes());
             }
             return page;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Raises the sent mark of the queue to {@code upToSequence}, at most to its last sequence; never lowers it.
-     * A caller marks entries sent before it hands them to the channel; otherwise a sweep or a trim may delete an entry
-     * already handed over as expired.
-     */
-    @Override
-    public void markSent(String queueKey, long upToSequence) {
-        ReentrantLock lock = lockFor(queueKey);
-        lock.lock();
-        try {
-            DeviceQueueMeta meta = loadMeta(queueKey);
-            long sentUpTo = Math.min(upToSequence, meta.lastSequence());
-            if (sentUpTo <= meta.sentUpTo()) {
-                return;
-            }
-            DeviceQueueMeta updated = new DeviceQueueMeta(meta.firstSequence(), meta.lastSequence(), meta.lastPacketId(),
-                    meta.count(), sentUpTo, meta.earliestMsgExpiryMs());
-            store.put(METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
         } finally {
             lock.unlock();
         }
