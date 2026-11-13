@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Starts the TBMQ nodes and Integration Executors, recreating them if their image or
-# configuration changed (for example, after an upgrade). Docker Compose also starts
-# PostgreSQL, Kafka and the cache if they are not running.
 
 set -e
 

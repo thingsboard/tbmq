@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Stops only the TBMQ nodes and Integration Executors.
-# PostgreSQL, Kafka, the cache and HAProxy keep running.
 
 set -e
 
