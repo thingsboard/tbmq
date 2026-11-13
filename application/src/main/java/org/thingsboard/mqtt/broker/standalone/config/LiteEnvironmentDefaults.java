@@ -127,31 +127,29 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         }
     }
 
-    private static final class LazyDefaultsPropertySource extends EnumerablePropertySource<Environment> {
+    /**
+     * The source is the map of values, never the environment: Spring Boot walks into a property source whose source is
+     * an environment as into a nested one, and this environment lists this property source.
+     */
+    private static final class LazyDefaultsPropertySource extends EnumerablePropertySource<Map<String, Object>> {
 
-        private final Map<String, Object> values;
+        private final Environment environment;
 
         private LazyDefaultsPropertySource(String name, Environment environment, Map<String, Object> values) {
-            super(name, environment);
-            this.values = values;
+            super(name, values);
+            this.environment = environment;
         }
 
         @Override
         public String[] getPropertyNames() {
-            return values.keySet().toArray(new String[0]);
+            return source.keySet().toArray(new String[0]);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public Object getProperty(String name) {
-            Object value = values.get(name);
-            return value instanceof Function<?, ?> function ? ((Function<Environment, Object>) function).apply(source) : value;
-        }
-
-        // the source is the live Environment, which lists this property source: the default toString would recurse
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + " {name='" + getName() + "'}";
+            Object value = source.get(name);
+            return value instanceof Function<?, ?> function ? ((Function<Environment, Object>) function).apply(environment) : value;
         }
     }
 

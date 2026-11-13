@@ -24,6 +24,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.env.SimpleCommandLinePropertySource;
@@ -37,6 +39,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -163,7 +166,7 @@ class LiteEnvironmentDefaultsTest {
     void givenLiteEdition_whenEnvironmentIsPrintedWithDebugOn_thenNoRecursion() {
         var env = new MockEnvironment();
         new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
-        // with DEBUG on, the default PropertySource.toString prints its source, here the Environment itself
+        // with DEBUG on, the default PropertySource.toString prints its source
         Logger logger = (Logger) LoggerFactory.getLogger(env.getPropertySources().get(SOURCE_NAME).getClass());
         Level previous = logger.getLevel();
         logger.setLevel(Level.DEBUG);
@@ -172,6 +175,19 @@ class LiteEnvironmentDefaultsTest {
         } finally {
             logger.setLevel(previous);
         }
+    }
+
+    // Spring Boot's binder walks into a property source whose source is an environment, as into a nested one
+    @Test
+    void givenLiteEdition_whenSpringBootBindsFromTheEnvironment_thenTheDefaultsResolveWithoutRecursion() {
+        var env = environmentWithBrokerYml();
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+        ConfigurationPropertySources.attach(env);
+
+        Binder binder = Binder.get(env);
+
+        assertThat(binder.bind("service.id", String.class).get()).isEqualTo("tbmq-lite");
+        assertThat(binder.bind("spring.lifecycle.timeout-per-shutdown-phase", Duration.class).get()).isEqualTo(Duration.ofSeconds(6));
     }
 
     @Test
