@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgChangesCallback;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -242,15 +243,46 @@ class StandaloneRetainedMsgStateTest {
     }
 
     @Test
-    void theEnvelopeLayoutIsOneVersionByteThenAFourByteIntervalThenTheProto() {
+    void theEnvelopeLayoutIsVersionFlagsAFourByteIntervalThenTheProto() {
         RetainedMsgProto proto = proto(retained("t", 1));
 
         byte[] withInterval = RetainedMsgEnvelope.encode(0x01020304, proto);
         byte[] withoutInterval = RetainedMsgEnvelope.encode(null, proto);
 
-        assertThat(withInterval).startsWith(1, 1, 2, 3, 4);
-        assertThat(withoutInterval).startsWith(1, 0xFF, 0xFF, 0xFF, 0xFF);
-        assertThat(withInterval).hasSize(5 + proto.getSerializedSize());
+        assertThat(withInterval).startsWith(1, 1, 1, 2, 3, 4);
+        assertThat(withoutInterval).startsWith(1, 0, 0, 0, 0, 0);
+        assertThat(withInterval).hasSize(6 + proto.getSerializedSize());
+        assertThat(withoutInterval).hasSize(6 + proto.getSerializedSize());
+        assertThat(Arrays.copyOfRange(withInterval, 6, withInterval.length)).isEqualTo(proto.toByteArray());
+        assertThat(Arrays.copyOfRange(withoutInterval, 6, withoutInterval.length)).isEqualTo(proto.toByteArray());
+    }
+
+    @Test
+    void theEnvelopeRoundTripsAnIntervalOfMinusOne_0xFFFFFFFF() throws Exception {
+        RetainedMsgProto proto = proto(retained("t", 1));
+
+        RetainedMsgEnvelope.Decoded decoded = RetainedMsgEnvelope.decode(RetainedMsgEnvelope.encode(-1, proto));
+
+        assertThat(decoded.messageExpiryInterval()).isEqualTo(-1);
+        assertThat(decoded.proto()).isEqualTo(proto);
+    }
+
+    @Test
+    void theEnvelopeRejectsAnUnknownFlagBit() {
+        byte[] value = RetainedMsgEnvelope.encode(30, proto(retained("t", 0)));
+        value[1] = 0b11;
+
+        assertThatThrownBy(() -> RetainedMsgEnvelope.decode(value))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("flags");
+    }
+
+    @Test
+    void anIntervalOfMinusOneSurvivesPersistAndInitLoad() throws Exception {
+        persistence.persistRetainedMsgAsync("t", proto(retained("t", 0)), null, -1);
+
+        assertThat(consumer.initLoad().get("t").getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID).value())
+                .isEqualTo(-1);
     }
 
     @Test
@@ -267,6 +299,9 @@ class StandaloneRetainedMsgStateTest {
     @Test
     void theEnvelopeRejectsATooShortValue() {
         assertThatThrownBy(() -> RetainedMsgEnvelope.decode(new byte[]{1, 0, 0}))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("too short");
+        assertThatThrownBy(() -> RetainedMsgEnvelope.decode(new byte[]{1, 1, 0, 0, 0}))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("too short");
         assertThatThrownBy(() -> RetainedMsgEnvelope.decode(new byte[0]))

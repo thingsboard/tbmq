@@ -21,16 +21,21 @@ import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import java.nio.ByteBuffer;
 
 /**
- * The value stored for a retained message: one version byte, a four-byte message expiry interval (-1 when the
- * message has none) and then the {@link RetainedMsgProto}. The cluster edition carries the interval in a Kafka
- * header; the store has no headers, so the interval travels in front of the proto.
+ * The value stored for a retained message: one version byte, one flags byte, a four-byte message expiry interval and
+ * then the {@link RetainedMsgProto}. The cluster edition carries the interval in a Kafka header; the store has no
+ * headers, so the interval travels in front of the proto.
+ * <p>
+ * Bit 0 of the flags says that the message has an interval. The interval is then stored exactly as given, whatever
+ * its value: the Message Expiry Interval is an unsigned 32-bit integer that Netty reads as an {@code int}, so
+ * 0xFFFFFFFF arrives as -1 and must come back as -1, as the cluster edition does, and no {@code int} can stand for
+ * "no interval". Without the flag the interval field is 0 and is ignored on read. Any other flag bit is rejected.
  */
 final class RetainedMsgEnvelope {
 
     static final byte VERSION = 1;
 
-    private static final int NO_INTERVAL = -1;
-    private static final int HEADER_SIZE = Byte.BYTES + Integer.BYTES;
+    private static final byte FLAG_HAS_INTERVAL = 1;
+    private static final int HEADER_SIZE = Byte.BYTES + Byte.BYTES + Integer.BYTES;
 
     private RetainedMsgEnvelope() {
     }
@@ -39,7 +44,8 @@ final class RetainedMsgEnvelope {
         byte[] protoBytes = proto.toByteArray();
         return ByteBuffer.allocate(HEADER_SIZE + protoBytes.length)
                 .put(VERSION)
-                .putInt(messageExpiryInterval == null ? NO_INTERVAL : messageExpiryInterval)
+                .put(messageExpiryInterval == null ? 0 : FLAG_HAS_INTERVAL)
+                .putInt(messageExpiryInterval == null ? 0 : messageExpiryInterval)
                 .put(protoBytes)
                 .array();
     }
@@ -53,9 +59,13 @@ final class RetainedMsgEnvelope {
         if (version != VERSION) {
             throw new IllegalArgumentException("Unknown retained message value version " + version + ", only version " + VERSION + " is supported");
         }
+        byte flags = buffer.get();
+        if ((flags & ~FLAG_HAS_INTERVAL) != 0) {
+            throw new IllegalArgumentException("Unknown retained message value flags " + (flags & 0xFF) + ", only bit 0 is supported");
+        }
         int interval = buffer.getInt();
         RetainedMsgProto proto = RetainedMsgProto.parseFrom(buffer);
-        return new Decoded(interval == NO_INTERVAL ? null : interval, proto);
+        return new Decoded((flags & FLAG_HAS_INTERVAL) != 0 ? interval : null, proto);
     }
 
     /**
