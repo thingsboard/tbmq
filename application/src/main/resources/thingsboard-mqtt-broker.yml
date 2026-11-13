@@ -145,6 +145,9 @@ listener:
           key_alias: "${LISTENER_SSL_KEY_ALIAS:}"
           # Optional. Password to access the private key. If not set, the platform will attempt to load private keys that are not password-protected.
           key_password: "${LISTENER_SSL_KEY_PASSWORD:server_key_password}"
+          # Optional. Comma-separated trusted-certificate aliases of this key store that are accepted as client-certificate issuers.
+          # Empty (default): every certificate in the key store is trusted, including the server key's own chain.
+          client_trust_aliases: "${LISTENER_SSL_KEY_STORE_CLIENT_TRUST_ALIASES:}"
     netty:
       # Number of Netty boss group threads.
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
@@ -237,6 +240,9 @@ listener:
           key_alias: "${LISTENER_WSS_KEY_ALIAS:}"
           # Optional. Password to access the private key. If not set, the platform will attempt to load private keys that are not password-protected.
           key_password: "${LISTENER_WSS_KEY_PASSWORD:ws_server_key_password}"
+          # Optional. Comma-separated trusted-certificate aliases of this key store that are accepted as client-certificate issuers.
+          # Empty (default): every certificate in the key store is trusted, including the server key's own chain.
+          client_trust_aliases: "${LISTENER_WSS_KEY_STORE_CLIENT_TRUST_ALIASES:}"
     netty:
       # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5.
       sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
