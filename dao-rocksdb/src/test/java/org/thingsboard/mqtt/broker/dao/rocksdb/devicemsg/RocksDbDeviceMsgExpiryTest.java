@@ -125,6 +125,18 @@ class RocksDbDeviceMsgExpiryTest {
     }
 
     @Test
+    void mqtt_1_5_3_anIntervalOfTwoToThe31SecondsOrMoreIsReadAsUnsigned() {      // Trello #657
+        // netty reads the Four Byte Integer into a signed int: 0xFFFFFFFF arrives as -1, 2^31 s as Integer.MIN_VALUE
+        long createdTimeMs = clock.millis();
+        store.append(List.of(new QueueAppend("c1", List.of(msg(createdTimeMs, -1), msg(createdTimeMs, Integer.MIN_VALUE)))));
+        clock.advanceSeconds(TTL_SECONDS - 1);
+
+        assertThat(store.read("c1", 0, 100))
+                .extracting(StoredDeviceMsg::packetId, StoredDeviceMsg::msgExpiresAtMs)
+                .containsExactly(tuple(1, createdTimeMs + 0xFFFF_FFFFL * 1000L), tuple(2, createdTimeMs + (1L << 31) * 1000L));
+    }
+
+    @Test
     void expiredEntriesAreDroppedBeforeAnyLiveOneWhenTheLimitIsHit() {          // Trello #655; limit 10
         store.append(List.of(new QueueAppend("c1", List.of(
                 msg(clock.millis(), null), msg(clock.millis(), 1), msg(clock.millis(), 1)))));   // ids 1 (live), 2 and 3 (short-lived)
