@@ -84,6 +84,7 @@ public enum StatsType {
     EXPIRED_DEVICE_MSGS("expiredDeviceMsgs"),
     TRIMMED_DEVICE_MSGS("trimmedDeviceMsgs"),
     UNDECODABLE_DEVICE_MSGS("undecodableDeviceMsgs"),
+    APPLICATION_CLIENTS_MAPPED_TO_DEVICE("applicationClientsMappedToDevice"),
     ;
 
     private final String printName;

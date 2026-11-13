@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
+import org.thingsboard.mqtt.broker.service.auth.ClientTypePolicy;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
@@ -83,6 +84,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final BlockedClientService blockedClientService;
     private final AuthorizationRoutingService authorizationRoutingService;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final ClientTypePolicy clientTypePolicy;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -294,7 +296,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             logAuthRules(clientId, authRulePatterns);
             sessionCtx.setAuthRulePatterns(authRulePatterns);
         }
-        sessionCtx.setClientType(clientType);
+        sessionCtx.setClientType(clientTypePolicy.resolve(clientId, clientType));
     }
 
     private void logAuthRules(String clientId, List<AuthRulePatterns> authRulePatterns) {
