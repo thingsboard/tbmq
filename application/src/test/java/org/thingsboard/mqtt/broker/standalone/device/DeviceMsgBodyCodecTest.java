@@ -124,7 +124,8 @@ class DeviceMsgBodyCodecTest {
 
     @Test
     void theMessageExpiryIntervalRoundTripsWhenAbsentZeroAndSet() {
-        for (Integer interval : new Integer[]{null, 0, 10}) {
+        // -1 and Integer.MIN_VALUE are how netty's signed int carries 0xFFFFFFFF and 2^31 s (Trello #657)
+        for (Integer interval : new Integer[]{null, 0, 10, -1, Integer.MIN_VALUE}) {
             DevicePublishMsg msg = msg();
             msg.setMsgExpiryInterval(interval);
 

@@ -274,6 +274,21 @@ class StandaloneDeviceActorMessageProcessorTest {
     }
 
     @Test
+    void mqtt_3_3_2_6_theRemainingLifetimeOfAnIntervalOfTwoToThe31SecondsOrMoreIsUnsigned() {   // Trello #657
+        // netty reads the Four Byte Integer into a signed int: 0xFFFFFFFF arrives as -1, 2^31 s as Integer.MIN_VALUE;
+        // the remaining interval goes back into the int property the same way and netty writes it unsigned
+        queue.add(new Entry(1, 1, PersistedPacketType.PUBLISH, NOW_MS - 4_000, body(-1)));
+        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS - 4_000, body(Integer.MIN_VALUE)));
+
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+
+        ArgumentCaptor<DevicePublishMsg> sent = ArgumentCaptor.forClass(DevicePublishMsg.class);
+        verify(delivery, times(2)).sendPublishMsgToClient(eq(sessionCtx), sent.capture(), anyBoolean());
+        assertThat(sent.getAllValues()).extracting(m -> Integer.toUnsignedLong(m.getMsgExpiryInterval()))
+                .containsExactly(0xFFFF_FFFFL - 4, (1L << 31) - 4);
+    }
+
+    @Test
     void aStoredPubRelIsResentAsPubRel() {
         queue.add(new Entry(1, 1, PersistedPacketType.PUBREL, NOW_MS, body(null)));
         queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS, body(null)));

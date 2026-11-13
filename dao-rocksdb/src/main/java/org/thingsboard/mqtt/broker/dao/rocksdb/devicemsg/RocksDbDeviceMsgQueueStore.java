@@ -720,14 +720,15 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
 
         /**
          * An interval of 0 is kept for one second: such a copy is appended only for a subscriber that is online, which
-         * picks it up at once.
+         * picks it up at once. The interval is an unsigned Four Byte Integer that arrives in a signed {@code int}, so
+         * 0xFFFFFFFF comes as -1 and every value of 2^31 or more as a negative one.
          */
         private static long msgExpiresAtMs(NewDeviceMsg msg) {
             Integer interval = msg.msgExpiryIntervalSec();
             if (interval == null) {
                 return 0;
             }
-            return msg.createdTimeMs() + (interval == 0 ? 1000L : interval * 1000L);
+            return msg.createdTimeMs() + (interval == 0 ? 1000L : Integer.toUnsignedLong(interval) * 1000L);
         }
 
     }

@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEven
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceQueueInfo;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
@@ -302,13 +301,24 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
                 Integer msgExpiryInterval = msg.getMsgExpiryInterval();
                 if (msgExpiryInterval != null) {
                     // [MQTT-3.3.2-6] the interval left; a sent entry is resent even once its interval has passed, with 0 left
-                    MsgExpiryResult expiry = MqttPropertiesUtil.getMsgExpiryResult(msgExpiryInterval, entry.createdTimeMs(), now);
-                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(msg.getProperties(), expiry.getMsgExpiryInterval());
+                    int remaining = remainingMsgExpiryInterval(msgExpiryInterval, entry.createdTimeMs(), now);
+                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(msg.getProperties(), remaining);
                 }
                 // [MQTT-4.4.0-1] [MQTT-3.3.1-1] a resend keeps the original packet id and carries DUP=1
                 mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, msg, entry.sent());
             }
         }
+    }
+
+    /**
+     * The Message Expiry Interval left after the message waited since {@code createdTimeMs}, in whole seconds, and 0
+     * once it has passed. The interval is an unsigned Four Byte Integer that netty reads into a signed {@code int}:
+     * 0xFFFFFFFF arrives as -1 and every value of 2^31 or more as a negative one. The result goes back into an
+     * {@code int} the same way, and netty writes it unsigned.
+     */
+    static int remainingMsgExpiryInterval(int msgExpiryInterval, long createdTimeMs, long now) {
+        long leftMs = TimeUnit.SECONDS.toMillis(Integer.toUnsignedLong(msgExpiryInterval)) - (now - createdTimeMs);
+        return leftMs <= 0 ? 0 : (int) TimeUnit.MILLISECONDS.toSeconds(leftMs);
     }
 
     /**
