@@ -71,9 +71,8 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
 
     @PostConstruct
     public void init() {
-        PipelineProperties.Persist persist = properties.getPersist();
         workers = new PartitionedWorkers<>(THREAD_NAME_PREFIX, properties.effectivePersistPartitions(),
-                persist.getPartitionQueueCapacity(), persist.getBatchSize(), this::persist);
+                properties.persistPartitionQueueCapacity(), properties.getPersist().getBatchSize(), this::persist);
         statsFactory.createGauge(PERSIST_QUEUED_GAUGE, workers, PartitionedWorkers::queued);
         statsFactory.createFunctionCounter(StatsType.EXPIRED_DEVICE_MSGS.getPrintName(), this, StandaloneDeviceMsgQueueConsumer::expiredDeviceMsgs);
         statsFactory.createFunctionCounter(StatsType.TRIMMED_DEVICE_MSGS.getPrintName(), store, DeviceMsgQueueStore::trimmedEntries);

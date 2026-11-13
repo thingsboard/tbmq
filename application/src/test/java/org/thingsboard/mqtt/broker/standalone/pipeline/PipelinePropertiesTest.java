@@ -47,6 +47,7 @@ class PipelinePropertiesTest {
         assertThat(properties.effectivePersistPartitions()).isEqualTo(5);
         assertThat(properties.getPersist().getBatchSize()).isEqualTo(64);
         assertThat(properties.getPersist().getPartitionQueueCapacity()).isEqualTo(128);
+        assertThat(properties.persistPartitionQueueCapacity()).isEqualTo(128);
         assertThat(properties.effectiveMaxBytes()).isEqualTo(1000);
         assertThat(properties.getPipeline().getMaxMessages()).isEqualTo(200);
         assertThat(properties.getPipeline().getPausePercent()).isEqualTo(70);
@@ -86,6 +87,21 @@ class PipelinePropertiesTest {
 
         assertThatThrownBy(properties::effectiveDispatchPartitions).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(properties::effectivePersistPartitions).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void givenZeroOrNegativePartitionQueueCapacity_whenResolve_thenRejectedNamingTheProperty() {
+        PipelineProperties properties = new PipelineProperties();
+
+        for (int capacity : new int[]{0, -1}) {
+            properties.getPersist().setPartitionQueueCapacity(capacity);
+
+            // 0 would make the persist queues unbounded and take the bound off stage 2
+            assertThatThrownBy(properties::persistPartitionQueueCapacity)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("standalone.persist.partition-queue-capacity")
+                    .hasMessageContaining(String.valueOf(capacity));
+        }
     }
 
     @Test

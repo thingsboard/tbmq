@@ -65,6 +65,17 @@ public class PipelineProperties {
         return Math.max(1, Runtime.getRuntime().maxMemory() / 100 * DEFAULT_MAX_BYTES_HEAP_PERCENT);
     }
 
+    /**
+     * @return the capacity of each persist worker's queue; at least 1, because the queues bound the persist stage
+     */
+    public int persistPartitionQueueCapacity() {
+        if (persist.partitionQueueCapacity < 1) {
+            throw new IllegalArgumentException("standalone.persist.partition-queue-capacity must be at least 1, but was "
+                    + persist.partitionQueueCapacity);
+        }
+        return persist.partitionQueueCapacity;
+    }
+
     private static int effectivePartitions(String property, int configured) {
         if (configured < 0) {
             throw new IllegalArgumentException(property + " must not be negative, but was " + configured);

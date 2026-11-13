@@ -58,6 +58,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -426,6 +427,17 @@ class StandalonePersistStageTest {
 
         verify(callback).onFailure(isA(PipelineClosedException.class));
         verifyNoInteractions(store);
+    }
+
+    @Test
+    void givenAZeroPartitionQueueCapacity_whenInit_thenTheStageRefusesToStart() {
+        properties.getPersist().setPartitionQueueCapacity(0);
+        StandaloneDeviceMsgQueueConsumer unbounded = new StandaloneDeviceMsgQueueConsumer(properties,
+                new DefaultStatsFactory(new SimpleMeterRegistry()), store, clientSessionCache, deviceActorManager);
+
+        assertThatThrownBy(unbounded::init)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("standalone.persist.partition-queue-capacity");
     }
 
     @Test

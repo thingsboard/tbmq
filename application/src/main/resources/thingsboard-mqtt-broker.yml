@@ -1234,7 +1234,7 @@ standalone:
     # Maximum number of messages a persist worker writes to the store in one batch.
     batch-size: "${STANDALONE_PERSIST_BATCH_SIZE:256}"
     # Capacity of the queue in front of each persist worker. When a queue is full, the dispatch worker that feeds it waits
-    # until the persist worker takes a batch.
+    # until the persist worker takes a batch. Must be at least 1.
     partition-queue-capacity: "${STANDALONE_PERSIST_PARTITION_QUEUE_CAPACITY:4096}"
     # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
     # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.
@@ -1245,10 +1245,13 @@ standalone:
     replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
   pipeline:
     # Maximum total payload size (in bytes) of the publishes in the pipeline, from the moment a publish is accepted until its
-    # delivery and storage are done. When it is reached, further publishes are held back.
+    # delivery and storage are done. When it is reached, further publishes are refused: QoS 0 is dropped and counted, and
+    # QoS 1/2 gets Quota exceeded (0x97) on MQTT 5, while an MQTT 3.x connection is closed.
+    # A single publish larger than this limit is still accepted when the pipeline is empty.
     # 0 means 10% of the maximum JVM heap.
     max-bytes: "${STANDALONE_PIPELINE_MAX_BYTES:0}"
-    # Maximum number of publishes in the pipeline, counted the same way. When it is reached, further publishes are held back.
+    # Maximum number of publishes in the pipeline, counted the same way. When it is reached, further publishes are refused
+    # as with max-bytes.
     max-messages: "${STANDALONE_PIPELINE_MAX_MESSAGES:100000}"
     # Share (in percent, 1 to 100) of max-messages or max-bytes at which the broker stops reading from publishing connections.
     pause-percent: "${STANDALONE_PIPELINE_PAUSE_PERCENT:80}"
@@ -1257,7 +1260,8 @@ standalone:
     resume-percent: "${STANDALONE_PIPELINE_RESUME_PERCENT:50}"
   shutdown:
     # Time (in ms) the broker waits on shutdown for the publishes in the pipeline to be dispatched and stored before it stops
-    # the workers. Publishes still queued after it are lost. Defaults to 4 s (4000 ms).
+    # the workers. QoS 0 publishes still queued after it are lost. QoS 1/2 publishes still queued were never acknowledged,
+    # so their clients can send them again. Defaults to 4 s (4000 ms).
     drain-timeout-ms: "${STANDALONE_SHUTDOWN_DRAIN_TIMEOUT_MS:4000}"
   cache:
     # Maximum number of entries in each credentials cache. When it is reached, the least useful entries are evicted.
