@@ -256,12 +256,12 @@ public class PersistedDeviceActorMessageProcessorTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         persistedDeviceActorMessageProcessor.setSessionCtx(ctx);
         MqttProperties properties = new MqttProperties();
-        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, -100));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 10));
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
                 .packetId(1)
                 .packetType(PersistedPacketType.PUBLISH)
-                .time(System.currentTimeMillis())
+                .time(System.currentTimeMillis() - 11_000)
                 .properties(properties)
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
@@ -303,13 +303,14 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenDevicePublishMsg_whenMessageIsExpired_thenStopProcessing() {
+        persistedDeviceActorMessageProcessor.setSessionCtx(mock(ClientSessionCtx.class));
         MqttProperties properties = new MqttProperties();
-        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, -100));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 10));
 
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
                 .packetId(2)
-                .time(System.currentTimeMillis())
+                .time(System.currentTimeMillis() - 11_000)
                 .properties(properties)
                 .build();
 
