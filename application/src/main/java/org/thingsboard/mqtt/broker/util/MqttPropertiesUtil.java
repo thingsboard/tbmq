@@ -347,7 +347,10 @@ public class MqttPropertiesUtil {
 
     /**
      * @return the expiry of a message received at {@code createdTime} with a Message Expiry Interval of
-     * {@code messageExpiryInterval} seconds; an interval of 0 stays 0 and never expires here
+     * {@code messageExpiryInterval} seconds; an interval of 0 stays 0 and never expires here. The interval is a Four
+     * Byte Integer, i.e. unsigned [MQTT-5 1.5.3]: netty reads it into a signed int, so 0xFFFFFFFF arrives as -1 and every
+     * value of 2^31 or more as a negative one. The interval left goes back into an int the same way, and netty writes
+     * it unsigned.
      */
     public static MsgExpiryResult getMsgExpiryResult(int messageExpiryInterval, long createdTime, long currentTs) {
         if (messageExpiryInterval == 0) {
@@ -388,11 +391,14 @@ public class MqttPropertiesUtil {
     // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value
     // minus the time that the Application Message has been waiting in the Server
     private static long calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
-        return TimeUnit.SECONDS.toMillis(messageExpiryInterval) - (currentTs - createdTime);
+        return TimeUnit.SECONDS.toMillis(Integer.toUnsignedLong(messageExpiryInterval)) - (currentTs - createdTime);
     }
 
+    /**
+     * @return the whole seconds as an unsigned int; they fit, as they never exceed the unsigned interval they come from
+     */
     private static int msToSeconds(long value) {
-        return Math.toIntExact(TimeUnit.MILLISECONDS.toSeconds(value));
+        return (int) TimeUnit.MILLISECONDS.toSeconds(value);
     }
 
     public static MqttProperties getMqttProperties(PublishMsg publishMsg) {

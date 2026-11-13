@@ -19,8 +19,12 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class MqttPropertiesUtilTest {
 
@@ -96,6 +100,42 @@ public class MqttPropertiesUtilTest {
         assertEquals(MqttPropertiesUtil.getMsgExpiryResult(10, 1_000L, 5_500L),
                 MqttPropertiesUtil.getMsgExpiryResult(props, 1_000L, 5_500L));
         assertEquals(new MsgExpiryResult(false, false, 0), MqttPropertiesUtil.getMsgExpiryResult(new MqttProperties(), 1_000L, 5_500L));
+    }
+
+    @Test
+    public void getMsgExpiryResult_maxUnsignedInterval_isNotExpired() {
+        // MQTT-5 §1.5.3: the interval is a Four Byte Integer (unsigned); netty reads 0xFFFFFFFF into an int as -1
+        MsgExpiryResult result = MqttPropertiesUtil.getMsgExpiryResult(0xFFFFFFFF, 1_000L, 5_500L);
+        assertEquals(new MsgExpiryResult(true, false, (int) (0xFFFFFFFFL - 5)), result);
+        assertEquals(0xFFFFFFFFL - 5, Integer.toUnsignedLong(result.getMsgExpiryInterval()));
+    }
+
+    @Test
+    public void getMsgExpiryResult_intervalOf2To31Seconds_isNotExpired() {
+        MsgExpiryResult result = MqttPropertiesUtil.getMsgExpiryResult(Integer.MIN_VALUE, 1_000L, 5_000L);
+        assertEquals((1L << 31) - 4, Integer.toUnsignedLong(result.getMsgExpiryInterval()));
+        assertFalse(result.isExpired());
+    }
+
+    @Test
+    public void getMsgExpiryResult_maxUnsignedInterval_expiresOnceItHasPassed() {
+        long createdTime = 1_000L;
+        long passed = createdTime + 0xFFFFFFFFL * 1000 + 1;
+        assertEquals(new MsgExpiryResult(true, true, 0), MqttPropertiesUtil.getMsgExpiryResult(0xFFFFFFFF, createdTime, passed));
+    }
+
+    @Test
+    public void getMsgExpiryResult_retainedDeviceAndApplicationPaths_readTheIntervalUnsigned() {
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 0xFFFFFFFF));
+        MsgExpiryResult expected = MqttPropertiesUtil.getMsgExpiryResult(0xFFFFFFFF, 1_000L, 5_500L);
+
+        assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(props, 1_000L, 5_500L));          // retained, DEVICE
+
+        TbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();                                     // APPLICATION
+        headers.put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(0xFFFFFFFF));
+        headers.put(BrokerConstants.CREATED_TIME, BytesUtil.longToBytes(1_000L));
+        assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(headers, 5_500L));
     }
 
     private static MqttProperties sessionExpiry(int value) {
