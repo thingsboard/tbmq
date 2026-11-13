@@ -50,15 +50,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -192,6 +195,25 @@ class StandalonePublishStageTest {
         assertThat(seen).containsExactlyElementsOf(IntStream.range(0, total).boxed().toList());
         verify(queueCallback, timeout(TimeUnit.SECONDS.toMillis(WAIT_SECONDS)).times(total)).onSuccess(null);
         await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).until(() -> budget.queuedMessages() == 0);
+    }
+
+    @Test
+    void everyDispatchedPublishGetsItsOwnIdFromACounterNotFromSecureRandom() throws Exception {
+        int total = 100;
+        for (int i = 0; i < total; i++) {
+            publisher.sendMsg(msg("t/" + (i % 7), 1, i), queueCallback);
+        }
+
+        List<UUID> ids = new ArrayList<>();
+        for (int i = 0; i < total; i++) {
+            ids.add(nextDispatch().msg().getId());
+        }
+
+        assertThat(ids).doesNotHaveDuplicates();
+        // UUID.randomUUID() takes a lock on a shared SecureRandom for every publish: the ids are one counter instead
+        assertThat(ids).extracting(UUID::getMostSignificantBits).containsOnly(ids.get(0).getMostSignificantBits());
+        assertThat(ids).extracting(UUID::getLeastSignificantBits).containsExactlyInAnyOrderElementsOf(
+                LongStream.range(0, total).boxed().toList());
     }
 
     @Test

@@ -32,6 +32,8 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Stage 1 of the publish pipeline: the dispatch workers, partitioned by topic, hand each publish to the dispatcher,
@@ -54,6 +56,11 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
     private final StatsFactory statsFactory;
     // the dispatcher publishes through this stage, so it is resolved on first use
     private final @Lazy MsgDispatcherService msgDispatcherService;
+
+    // the id of a dispatched publish: the dispatcher reads only the publish and its headers, so an id unique within this
+    // process is enough. UUID.randomUUID() would take a lock on a shared SecureRandom for every publish
+    private final long publishIdHighBits = ThreadLocalRandom.current().nextLong();
+    private final AtomicLong publishIdSequence = new AtomicLong();
 
     private PartitionedWorkers<PendingPublish> workers;
 
@@ -92,7 +99,8 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
         for (PendingPublish pending : batch) {
             TbProtoQueueMsg<PublishMsgProto> msg = pending.msg();
             try {
-                msgDispatcherService.processPublishMsg(new PublishMsgWithId(UUID.randomUUID(), msg.getValue(), msg.getHeaders()), pending.callback());
+                UUID id = new UUID(publishIdHighBits, publishIdSequence.getAndIncrement());
+                msgDispatcherService.processPublishMsg(new PublishMsgWithId(id, msg.getValue(), msg.getHeaders()), pending.callback());
             } catch (Throwable t) {
                 // an Error too: the publish is failed, and the worker lives on to serve its partition
                 log.error("[{}] Failed to dispatch the publish to topic {}", msg.getValue().getClientId(), msg.getKey(), t);
