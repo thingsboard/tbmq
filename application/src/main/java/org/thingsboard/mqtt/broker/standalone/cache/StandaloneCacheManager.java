@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The {@link CacheManager} of the standalone edition. It serves the caches of {@link CacheProperties} under their
@@ -51,6 +52,13 @@ public class StandaloneCacheManager implements CacheManager {
 
     private StandaloneCacheManager(Map<String, Cache> caches) {
         this.caches = caches;
+    }
+
+    /**
+     * The prefixed names under which the session attribute caches keep their entries in the store.
+     */
+    static Set<String> storeBackedCacheNames(CacheProperties properties) {
+        return STORE_BACKED_CACHES.stream().map(properties::prefixKey).collect(Collectors.toUnmodifiableSet());
     }
 
     public static StandaloneCacheManager create(CacheProperties properties, KeyValueStore sessionAttributes,

@@ -20,7 +20,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
@@ -32,9 +31,9 @@ import java.util.Set;
 /**
  * Removes the session attributes of the clients that have no session after the startup load: a non-persistent
  * session leaves its attributes behind when the process dies. It also removes the attributes stored under a cache
- * name other than the two current ones, which a changed {@code cache.cachePrefix} leaves behind, whether or not the
- * client has a session. Runs right after {@code BrokerInitializer} (order 1)
- * and before the MQTT listeners bind, so no client can connect meanwhile.
+ * name that is not one of {@link StandaloneCacheManager#storeBackedCacheNames}, which a changed
+ * {@code cache.cachePrefix} leaves behind, whether or not the client has a session. Runs right after
+ * {@code BrokerInitializer} (order 1) and before the MQTT listeners bind, so no client can connect meanwhile.
  */
 @Slf4j
 @Component
@@ -49,9 +48,7 @@ public class SessionAttributeCleanup {
                                    CacheProperties cacheProperties) {
         this.sessionAttributes = stores.clientSessionAttributes();
         this.clientSessionCache = clientSessionCache;
-        this.currentCacheNames = Set.of(
-                cacheProperties.prefixKey(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE),
-                cacheProperties.prefixKey(CacheConstants.CLIENT_MQTT_VERSION_CACHE));
+        this.currentCacheNames = StandaloneCacheManager.storeBackedCacheNames(cacheProperties);
     }
 
     @EventListener(ApplicationReadyEvent.class)

@@ -15,13 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.standalone.cache;
 
+import com.github.benmanes.caffeine.cache.Ticker;
 import org.junit.jupiter.api.Test;
+import org.springframework.cache.Cache;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.cache.CacheSpecs;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
-import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.standalone.state.InMemoryKeyValueStore;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +87,29 @@ class SessionAttributeCleanupTest {
         cleanup.removeAttributesOfClientsWithoutSession();
 
         assertThat(store.size()).isEqualTo(1);
+    }
+
+    @Test
+    void theAttributesOfEveryStoreBackedCacheOfTheManagerAreKeptForAClientWithASession() {
+        when(sessionCache.getAllClientSessions()).thenReturn(Map.of("c1", mock(ClientSessionInfo.class)));
+        CacheProperties properties = cacheProperties();
+        properties.setSpecs(Map.of(
+                CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE, new CacheSpecs(),
+                CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE, new CacheSpecs(),
+                CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE, new CacheSpecs(),
+                CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, new CacheSpecs(),
+                CacheConstants.CLIENT_MQTT_VERSION_CACHE, new CacheSpecs()));
+        StandaloneCacheManager manager = StandaloneCacheManager.create(properties, store, 10, Ticker.systemTicker());
+        List<Cache> storeBacked = manager.getCacheNames().stream()
+                .map(manager::getCache)
+                .filter(StoreBackedCache.class::isInstance)
+                .toList();
+        storeBacked.forEach(cache -> cache.put("c1", "value"));
+
+        new SessionAttributeCleanup(stores(store), sessionCache, properties).removeAttributesOfClientsWithoutSession();
+
+        assertThat(storeBacked).isNotEmpty();
+        assertThat(store.size()).isEqualTo(storeBacked.size());
     }
 
     @Test
