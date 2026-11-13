@@ -27,5 +27,11 @@ public interface PublishedInFlightCtx {
 
     void expireTtl(long ttlMs);
 
+    /**
+     * The number of PUBLISH packets that can be written now without being delayed:
+     * the receive maximum minus the in-flight count while no message is delayed, otherwise 0.
+     */
+    int freeSlots();
+
     void release();
 }

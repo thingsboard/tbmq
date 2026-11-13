@@ -490,6 +490,31 @@ public class PublishedInFlightCtxImplTest {
         assertEquals(2, captor.getValue().variableHeader().packetId());
     }
 
+    @Test
+    public void freeSlotsIsTheWindowMinusInFlightAndZeroWhileMessagesAreDelayed() {
+        ctx = new PublishedInFlightCtxImpl(flowControlService, clientSessionCtx, deliveryService, stats,
+                tbMessageStatsReportClient, 3, 5);
+
+        assertEquals(3, ctx.freeSlots());
+
+        assertTrue(ctx.addInFlightMsg(qos1(1)));
+        assertEquals(2, ctx.freeSlots());
+
+        assertTrue(ctx.addInFlightMsg(qos1(2)));
+        assertTrue(ctx.addInFlightMsg(qos1(3)));
+        assertEquals(0, ctx.freeSlots());
+
+        // a 4th message is delayed
+        assertFalse(ctx.addInFlightMsg(qos1(4)));
+        assertEquals(0, ctx.freeSlots());
+
+        // a slot frees up, the delayed message takes it; the queue is empty again but the window is full
+        ctx.ackInFlightMsg(1);
+        assertEquals(0, ctx.freeSlots());
+        ctx.ackInFlightMsg(2);
+        assertEquals(1, ctx.freeSlots());
+    }
+
     private MqttPublishMessage qos1(int packetId) {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
         return new MqttPublishMessage(fixed,

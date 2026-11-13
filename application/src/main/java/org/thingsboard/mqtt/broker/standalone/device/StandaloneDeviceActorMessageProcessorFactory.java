@@ -1,0 +1,51 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.standalone.device;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.device.DeviceActorMessageProcessor;
+import org.thingsboard.mqtt.broker.actors.device.DeviceActorMessageProcessorFactory;
+import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
+
+import java.time.Clock;
+
+@Component
+@StandaloneComponent
+public class StandaloneDeviceActorMessageProcessorFactory implements DeviceActorMessageProcessorFactory {
+
+    private final DeviceMsgQueueStore store;
+    private final ReplayLimiter replayLimiter;
+    private final int readPageSize;
+
+    public StandaloneDeviceActorMessageProcessorFactory(DeviceMsgQueueStore store, ReplayLimiter replayLimiter,
+                                                        @Value("${store.device-msg.read-page-size:256}") int readPageSize) {
+        if (readPageSize < 1) {
+            throw new IllegalArgumentException("store.device-msg.read-page-size must be at least 1, but was " + readPageSize);
+        }
+        this.store = store;
+        this.replayLimiter = replayLimiter;
+        this.readPageSize = readPageSize;
+    }
+
+    @Override
+    public DeviceActorMessageProcessor create(ActorSystemContext systemContext, String clientId) {
+        return new StandaloneDeviceActorMessageProcessor(systemContext, clientId, store, replayLimiter, readPageSize, Clock.systemUTC());
+    }
+
+}
