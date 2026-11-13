@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -102,17 +102,19 @@ class LocalMechanismsTest {
     }
 
     @Test
-    void broadcastDoesNotRethrowAnApplierFailure() {
+    void broadcastPropagatesAnApplierFailure() {
         InternodeNotificationsApplier applier = mock(InternodeNotificationsApplier.class);
         ServiceInfoProvider serviceInfoProvider = mock(ServiceInfoProvider.class);
         when(serviceInfoProvider.getServiceId()).thenReturn("lite-node");
         InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
                 .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.getDefaultInstance())
                 .build();
-        doThrow(new IllegalStateException("applier failed")).when(applier).apply(any(), any());
+        IllegalStateException failure = new IllegalStateException("applier failed");
+        doThrow(failure).when(applier).apply(any(), any());
 
-        assertThatCode(() -> new LocalInternodeNotificationsService(applier, serviceInfoProvider).broadcast(proto))
-                .doesNotThrowAnyException();
+        // as in the cluster service: the caller that saved the change learns that it was not applied
+        assertThatThrownBy(() -> new LocalInternodeNotificationsService(applier, serviceInfoProvider).broadcast(proto))
+                .isSameAs(failure);
 
         verify(applier).apply(eq("lite-node"), eq(proto));
     }

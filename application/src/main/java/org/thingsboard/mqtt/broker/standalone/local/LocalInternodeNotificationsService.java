@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.standalone.local;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
@@ -25,10 +24,9 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsAp
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 
 /**
- * There are no other nodes to notify: the notification is applied in-process. As in the cluster consumer, a failure
- * to apply it is only logged, so it never reaches the caller that already saved the change.
+ * There are no other nodes to notify: the notification is only applied in-process. As in the cluster service, a
+ * failure to apply it propagates to the caller, since then nothing was notified at all.
  */
-@Slf4j
 @Component
 @StandaloneComponent
 @RequiredArgsConstructor
@@ -39,11 +37,7 @@ public class LocalInternodeNotificationsService implements InternodeNotification
 
     @Override
     public void broadcast(InternodeNotificationProto notificationProto) {
-        try {
-            applier.apply(serviceInfoProvider.getServiceId(), notificationProto);
-        } catch (Exception e) {
-            log.warn("Failed to process internode notification [{}].", notificationProto, e);
-        }
+        applier.apply(serviceInfoProvider.getServiceId(), notificationProto);
     }
 
 }
