@@ -33,10 +33,12 @@ import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -139,7 +141,14 @@ public class MqttPublishHandler {
             if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
             }
-            publishMsg = retainedMsgProcessor.process(publishMsg);
+            try {
+                publishMsg = retainedMsgProcessor.process(publishMsg);
+            } catch (StoreException e) {
+                log.warn("[{}][{}] Failed to store retained msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
+                tbMessageStatsReportClient.reportDroppedMsgs();
+                handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, e);
+                return;
+            }
         }
 
         sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx));
@@ -187,10 +196,11 @@ public class MqttPublishHandler {
         }
     }
 
-    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
+    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper, Throwable t) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             if (mqttMsgWrapper != null) {
                 // the error PUBACK/PUBREC goes through the ordered queue, otherwise the failed msg blocks all later responses
+                mqttMsgWrapper.setLimitExceeded(t instanceof PublishLimitExceededException);
                 mqttMsgWrapper.setPersistFailed(true);
                 sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
             }
@@ -251,7 +261,7 @@ public class MqttPublishHandler {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
                     tbMessageStatsReportClient.reportDroppedMsgs();
-                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper);
+                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t);
                 });
             }
         });
@@ -263,7 +273,7 @@ public class MqttPublishHandler {
             return;
         }
         for (var ackMsg : ackMsgs) {
-            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubAckError() : MqttReasonCodeResolver.pubAckSuccess(ctx);
+            var ackCode = ackMsg.isPersistFailed() ? pubAckFailureCode(ackMsg) : MqttReasonCodeResolver.pubAckSuccess(ctx);
             ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
@@ -279,10 +289,18 @@ public class MqttPublishHandler {
             return;
         }
         for (var ackMsg : ackMsgs) {
-            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubRecError() : MqttReasonCodeResolver.pubRecSuccess(ctx);
+            var ackCode = ackMsg.isPersistFailed() ? pubRecFailureCode(ackMsg) : MqttReasonCodeResolver.pubRecSuccess(ctx);
             ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
+    }
+
+    private static MqttReasonCodes.PubAck pubAckFailureCode(MqttMsgWrapper ackMsg) {
+        return ackMsg.isLimitExceeded() ? MqttReasonCodeResolver.pubAckQuotaExceeded() : MqttReasonCodeResolver.pubAckError();
+    }
+
+    private static MqttReasonCodes.PubRec pubRecFailureCode(MqttMsgWrapper ackMsg) {
+        return ackMsg.isLimitExceeded() ? MqttReasonCodeResolver.pubRecQuotaExceeded() : MqttReasonCodeResolver.pubRecError();
     }
 
     private void updateAwaitingPubRelPacket(ClientSessionCtx ctx, MqttMsgWrapper mqttMsgWrapper) {

@@ -38,8 +38,10 @@ import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueueImp
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -609,6 +611,102 @@ public class MqttPublishHandlerTest {
         verify(clientMqttActorManager, timeout(5000)).disconnect(eq("clientId"), disconnectCaptor.capture());
         assertThat(disconnectCaptor.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_ERROR);
         verify(actorRef, never()).tell(any());
+    }
+
+    @Test
+    public void aLimitFailureOnMqtt5IsAcknowledgedWithQuotaExceeded() {
+        givenMqtt5Session();
+        processPublishMsgs(1, 1);
+        processPublishMsgs(2, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.get(0).onFailure(new PublishLimitExceededException("pipeline is full"));
+        callbacks.get(1).onFailure(new PublishLimitExceededException("pipeline is full"));
+        processPubResponsesSentToActor(2);
+
+        verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.QUOTA_EXCEEDED);
+        verify(mqttMessageGenerator).createPubRecMsg(2, MqttReasonCodes.PubRec.QUOTA_EXCEEDED);
+        verify(tbMessageStatsReportClient, times(2)).reportDroppedMsgs();
+        // a failure PUBREC ends the QoS 2 flow
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(2)).isNull();
+    }
+
+    @Test
+    public void anyOtherFailureOnMqtt5KeepsUnspecifiedError() {
+        givenMqtt5Session();
+        processPublishMsgs(1, 1, 2);
+        processPublishMsgs(2, 3);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(3);
+
+        callbacks.get(0).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+        callbacks.get(1).onFailure(new StoreException("disk"));
+        callbacks.get(2).onFailure(new StoreException("disk"));
+        processPubResponsesSentToActor(3);
+
+        verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.UNSPECIFIED_ERROR);
+        verify(mqttMessageGenerator).createPubAckMsg(2, MqttReasonCodes.PubAck.UNSPECIFIED_ERROR);
+        verify(mqttMessageGenerator).createPubRecMsg(3, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), eq(MqttReasonCodes.PubAck.QUOTA_EXCEEDED));
+        verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), eq(MqttReasonCodes.PubRec.QUOTA_EXCEEDED));
+        verify(tbMessageStatsReportClient, times(3)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void aFailureOnMqtt311ClosesTheConnection() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        processPublishMsgs(1, 1, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.get(0).onFailure(new PublishLimitExceededException("pipeline is full"));
+        callbacks.get(1).onFailure(new StoreException("disk"));
+
+        ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, timeout(5000).times(2)).disconnect(eq("clientId"), disconnectCaptor.capture());
+        assertThat(disconnectCaptor.getAllValues())
+                .extracting(disconnectMsg -> disconnectMsg.getReason().getType())
+                .containsExactly(DisconnectReasonType.ON_ERROR, DisconnectReasonType.ON_ERROR);
+        verify(actorRef, never()).tell(any());
+        verify(tbMessageStatsReportClient, times(2)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void aRetainedStoreFailureFailsThePublishWithoutDispatching() {
+        givenMqtt5Session();
+        when(retainedMsgProcessor.process(any())).thenThrow(new StoreException("disk"));
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(1, 1, true)), actorRef);
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(2, 2, true)), actorRef);
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(3, 0, true)), actorRef);
+        processPubResponsesSentToActor(2);
+
+        verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.UNSPECIFIED_ERROR);
+        verify(mqttMessageGenerator).createPubRecMsg(2, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(2)).isNull();
+        verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
+        verify(sparkplugCertificateRepublisher, never()).maybeRepublish(any(), any(), any());
+        verify(tbMessageStatsReportClient, times(3)).reportDroppedMsgs();
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+    }
+
+    @Test
+    public void aRetainedStoreFailureOnMqtt311ClosesTheConnection() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        when(retainedMsgProcessor.process(any())).thenThrow(new StoreException("disk"));
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(1, 1, true)), actorRef);
+
+        ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager).disconnect(eq("clientId"), disconnectCaptor.capture());
+        assertThat(disconnectCaptor.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_ERROR);
+        verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
+        verify(actorRef, never()).tell(any());
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
     private void givenMqtt5Session() {
