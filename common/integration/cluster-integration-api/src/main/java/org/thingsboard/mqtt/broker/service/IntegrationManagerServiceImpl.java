@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationRequestProto;
@@ -84,6 +85,7 @@ import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INT
 @Service
 @RequiredArgsConstructor
 @Order
+@ClusterComponent
 @TbmqOrIntegrationExecutorComponent
 public class IntegrationManagerServiceImpl implements IntegrationManagerService {
 

@@ -70,11 +70,9 @@ class EditionArchitectureTest {
     private static final ArchRule CACHE_REDIS_RULE = forbid(KAFKA, ROCKSDB);
 
     /**
-     * Not Kafka-backed: DefaultTbAppService takes an optional ObjectProvider of the admin, IntegrationManagerServiceImpl
-     * takes a lazy provider used only by cluster beans.
+     * Not Kafka-backed: DefaultTbAppService takes an optional ObjectProvider of the admin.
      */
-    private static final Set<String> KAFKA_BACKED_BEAN_EXCEPTIONS = Set.of(
-            "DefaultTbAppService", "IntegrationManagerServiceImpl");
+    private static final Set<String> KAFKA_BACKED_BEAN_EXCEPTIONS = Set.of("DefaultTbAppService");
 
     private static final DescribedPredicate<JavaClass> DEPENDS_ON_KAFKA_BACKED_TYPE = new DescribedPredicate<>(
             "are not a named exception and depend on a TbQueueAdmin, or on a queue factory or provider") {
