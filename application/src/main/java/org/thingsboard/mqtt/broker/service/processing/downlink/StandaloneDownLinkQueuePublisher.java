@@ -25,7 +25,9 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 
 /**
  * A single-node broker has no remote node to deliver to, so a request for remote delivery is a defect
- * in the caller. It is never reported as delivered: it is logged and counted as a dropped message.
+ * in the caller (or a session stored under another service id). It is never reported as delivered and is
+ * logged as an error. As in the cluster publisher, only a BASIC message is counted as dropped: a PERSISTENT
+ * one is already in the device store and is delivered when the client reconnects.
  */
 @Slf4j
 @Service
@@ -37,18 +39,15 @@ class StandaloneDownLinkQueuePublisher implements DownLinkQueuePublisher {
 
     @Override
     public void publishBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
-        reject("BASIC", targetServiceId, clientId);
+        log.error("[{}] BASIC msg dropped: remote delivery requested on a single-node broker, target service {}.",
+                clientId, targetServiceId);
+        tbMessageStatsReportClient.reportDroppedMsgs();
     }
 
     @Override
     public void publishPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg msg) {
-        reject("PERSISTENT", targetServiceId, clientId);
-    }
-
-    private void reject(String type, String targetServiceId, String clientId) {
-        log.error("[{}] {} msg dropped: remote delivery requested on a single-node broker, target service {}.",
-                clientId, type, targetServiceId);
-        tbMessageStatsReportClient.reportDroppedMsgs();
+        log.error("[{}] PERSISTENT msg not delivered: remote delivery requested on a single-node broker, " +
+                "target service {}. It stays stored until the client reconnects.", clientId, targetServiceId);
     }
 
 }

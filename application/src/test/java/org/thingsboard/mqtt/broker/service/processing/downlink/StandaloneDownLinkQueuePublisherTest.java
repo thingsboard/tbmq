@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class StandaloneDownLinkQueuePublisherTest {
@@ -64,21 +65,21 @@ class StandaloneDownLinkQueuePublisherTest {
     }
 
     @Test
-    void publishPersistentMsgCountsOneDroppedMessageAndLogsAnError() {
+    void publishPersistentMsgLogsAnErrorWithoutCountingADrop() {
+        // the message is already in the device store and is delivered when the client reconnects
         publisher.publishPersistentMsg("remote-node", "client-2", mock(DevicePublishMsg.class));
 
-        verify(statsReportClient).reportDroppedMsgs();
-        verifyNoMoreInteractions(statsReportClient);
+        verifyNoInteractions(statsReportClient);
         assertSingleErrorMentions("client-2", "remote-node");
     }
 
     @Test
-    void eachCallCountsOneDroppedMessage() {
+    void eachBasicCallCountsOneDroppedMessage() {
         publisher.publishBasicMsg("remote-node", "client-1", PublishMsgProto.getDefaultInstance());
         publisher.publishPersistentMsg("remote-node", "client-1", mock(DevicePublishMsg.class));
         publisher.publishBasicMsg("remote-node", "client-3", PublishMsgProto.getDefaultInstance());
 
-        verify(statsReportClient, times(3)).reportDroppedMsgs();
+        verify(statsReportClient, times(2)).reportDroppedMsgs();
         verifyNoMoreInteractions(statsReportClient);
     }
 
