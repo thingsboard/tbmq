@@ -38,17 +38,7 @@ public class MqttPropertiesUtil {
      */
 
     public static boolean isRetainedMsgExpired(RetainedMsg retainedMsg, long currentTs) {
-        MqttProperties.IntegerProperty property = getPubExpiryIntervalProperty(retainedMsg);
-        if (property != null && property.value() > 0) {
-            int messageExpiryInterval = property.value();
-            long createdTime = retainedMsg.getCreatedTime();
-            return isMsgExpired(createdTime, messageExpiryInterval, currentTs);
-        }
-        return false;
-    }
-
-    private static boolean isMsgExpired(long createdTime, int messageExpiryInterval, long currentTs) {
-        return createdTime + TimeUnit.SECONDS.toMillis(messageExpiryInterval) < currentTs;
+        return getMsgExpiryResult(retainedMsg, currentTs).isExpired();
     }
 
     public static boolean isRetainedMsgNotExpired(RetainedMsg retainedMsg, long currentTs) {

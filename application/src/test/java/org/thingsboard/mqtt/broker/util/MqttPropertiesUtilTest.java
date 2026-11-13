@@ -22,9 +22,11 @@ import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MqttPropertiesUtilTest {
 
@@ -143,6 +145,33 @@ public class MqttPropertiesUtilTest {
         // createdTime stamped by a node whose clock is 1.5 s ahead: the message counts as not having waited
         assertEquals(new MsgExpiryResult(true, false, 10), MqttPropertiesUtil.getMsgExpiryResult(10, 2_500L, 1_000L));
         assertEquals(new MsgExpiryResult(true, false, 0xFFFFFFFF), MqttPropertiesUtil.getMsgExpiryResult(0xFFFFFFFF, 2_500L, 1_000L));
+    }
+
+    @Test
+    public void isRetainedMsgExpired_readsTheIntervalUnsigned() {
+        long createdTime = 1_000L;
+        RetainedMsg maxInterval = retainedMsg(0xFFFFFFFF, createdTime);
+        assertFalse(MqttPropertiesUtil.isRetainedMsgExpired(maxInterval, createdTime + 5_000L));
+        assertTrue(MqttPropertiesUtil.isRetainedMsgExpired(maxInterval, createdTime + 0xFFFFFFFFL * 1000 + 1));
+
+        RetainedMsg interval2To31 = retainedMsg(Integer.MIN_VALUE, createdTime);
+        assertTrue(MqttPropertiesUtil.isRetainedMsgExpired(interval2To31, createdTime + (1L << 31) * 1000 + 1));
+    }
+
+    @Test
+    public void isRetainedMsgExpired_matchesGetMsgExpiryResult() {
+        long createdTime = 1_000L;
+        assertFalse(MqttPropertiesUtil.isRetainedMsgExpired(retainedMsg(10, createdTime), createdTime + 10_000L));
+        assertTrue(MqttPropertiesUtil.isRetainedMsgExpired(retainedMsg(10, createdTime), createdTime + 10_001L));
+        assertFalse(MqttPropertiesUtil.isRetainedMsgExpired(retainedMsg(0, createdTime), createdTime + 60_000L));
+        assertFalse(MqttPropertiesUtil.isRetainedMsgExpired(
+                new RetainedMsg("t", null, 1, new MqttProperties(), createdTime), createdTime + 60_000L));
+    }
+
+    private static RetainedMsg retainedMsg(int messageExpiryInterval, long createdTime) {
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval));
+        return new RetainedMsg("t", null, 1, props, createdTime);
     }
 
     private static MqttProperties sessionExpiry(int value) {
