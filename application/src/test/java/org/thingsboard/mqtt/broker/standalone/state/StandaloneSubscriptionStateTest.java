@@ -54,6 +54,7 @@ class StandaloneSubscriptionStateTest {
 
     private InMemoryKeyValueStore store;
     private InMemoryKeyValueStore storeSpy;
+    private InMemoryKeyValueStore sessionsStore;
     private ClientSessionCache clientSessionCache;
     private BasicCallback callback;
     private StandaloneSubscriptionPersistenceService persistence;
@@ -65,6 +66,9 @@ class StandaloneSubscriptionStateTest {
         storeSpy = spy(store);
         BrokerStateStores stores = mock(BrokerStateStores.class);
         when(stores.clientSubscriptions()).thenReturn(storeSpy);
+        sessionsStore = new InMemoryKeyValueStore();
+        when(stores.clientSessions()).thenReturn(sessionsStore);
+        storeSession("c1");
         clientSessionCache = mock(ClientSessionCache.class);
         when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(persistentSession("c1"));
         callback = mock(BasicCallback.class);
@@ -97,6 +101,7 @@ class StandaloneSubscriptionStateTest {
     @Test
     void theSourceOfTheSubscriptionsIsKeptInTheLoadedKey() throws Exception {
         when(clientSessionCache.getClientSessionInfo("int1")).thenReturn(persistentSession("int1"));
+        storeSession("int1");
         persistence.persistClientSubscriptionsAsync("int1", Set.of(new IntegrationTopicSubscription("i/#")), null);
 
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> loaded = consumer.initLoad();
@@ -206,12 +211,45 @@ class StandaloneSubscriptionStateTest {
     @Test
     void initLoadFailsOnAnUnreadableEntryAndNamesTheStoreAndTheKey() {
         persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), null);
+        storeSession("broken-client");
         store.put("broken-client", new byte[]{(byte) 0xFF, 0x01, 0x02});
 
         assertThatThrownBy(() -> consumer.initLoad())
                 .isInstanceOf(QueuePersistenceException.class)
                 .hasMessageContaining("client subscriptions")
                 .hasMessageContaining("broken-client");
+    }
+
+    @Test
+    void initLoadDeletesAndDoesNotReturnSubscriptionsWithoutAStoredSession() throws Exception {
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), null);
+        store.put("orphan", store.get("c1"));
+
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> loaded = consumer.initLoad();
+
+        assertThat(loaded).containsOnlyKeys(SubscriptionsSourceKey.newInstance("c1"));
+        assertThat(store.get("orphan")).isNull();
+    }
+
+    @Test
+    void initLoadKeepsAndReturnsSubscriptionsWithAStoredSession() throws Exception {
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), null);
+        byte[] storedBefore = store.get("c1");
+
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> loaded = consumer.initLoad();
+
+        assertThat(loaded).containsOnlyKeys(SubscriptionsSourceKey.newInstance("c1"));
+        assertThat(store.get("c1")).isEqualTo(storedBefore);
+    }
+
+    @Test
+    void initLoadFailsWhenThePurgeFails() {
+        StoreException failure = new StoreException("retain failed");
+        doThrow(failure).when(storeSpy).retainKeys(any());
+
+        assertThatThrownBy(() -> consumer.initLoad())
+                .isInstanceOf(QueuePersistenceException.class)
+                .hasCause(failure);
     }
 
     @Test
@@ -223,6 +261,10 @@ class StandaloneSubscriptionStateTest {
         consumer.listen(changes);
 
         verifyNoInteractions(changes);
+    }
+
+    private void storeSession(String clientId) {
+        sessionsStore.put(clientId, new byte[]{1});
     }
 
     private static TopicSubscription sub(String filter, int qos) {
