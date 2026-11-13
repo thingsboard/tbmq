@@ -20,12 +20,13 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import java.nio.ByteBuffer;
 
 /**
- * The value of {@code device_msg_meta}: the bookkeeping of one queue. {@code earliestMsgExpiryMs} is {@code 0} when
- * no entry expires. Fixed 44-byte big-endian layout: version (1, value 1), first sequence (8), last sequence (8),
- * last packet id (4), count (4), sent-up-to (8), earliest message expiry (8), 3 reserved zero bytes.
+ * The value of {@code device_msg_meta}: the bookkeeping of one queue. {@code earliestExpiryMs} is a lower bound of the
+ * time the next entry of the queue expires, {@code 0} when no entry expires. Fixed 44-byte big-endian layout:
+ * version (1, value 1), first sequence (8), last sequence (8), last packet id (4), count (4), sent-up-to (8),
+ * earliest expiry (8), 3 reserved zero bytes.
  */
 public record DeviceQueueMeta(long firstSequence, long lastSequence, int lastPacketId, int count, long sentUpTo,
-                              long earliestMsgExpiryMs) {
+                              long earliestExpiryMs) {
 
     static final int LENGTH = 44;
     private static final byte FORMAT_VERSION = 1;
@@ -36,7 +37,7 @@ public record DeviceQueueMeta(long firstSequence, long lastSequence, int lastPac
 
     public DeviceQueueMeta withSentUpTo(long sentUpTo) {
         return sentUpTo == this.sentUpTo ? this
-                : new DeviceQueueMeta(firstSequence, lastSequence, lastPacketId, count, sentUpTo, earliestMsgExpiryMs);
+                : new DeviceQueueMeta(firstSequence, lastSequence, lastPacketId, count, sentUpTo, earliestExpiryMs);
     }
 
     public byte[] toBytes() {
@@ -47,7 +48,7 @@ public record DeviceQueueMeta(long firstSequence, long lastSequence, int lastPac
                 .putInt(lastPacketId)
                 .putInt(count)
                 .putLong(sentUpTo)
-                .putLong(earliestMsgExpiryMs).array();
+                .putLong(earliestExpiryMs).array();
     }
 
     public static DeviceQueueMeta fromBytes(byte[] bytes) {

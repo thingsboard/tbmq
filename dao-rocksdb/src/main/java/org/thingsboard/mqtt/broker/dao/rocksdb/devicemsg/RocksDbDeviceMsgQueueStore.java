@@ -57,10 +57,11 @@ import java.util.stream.IntStream;
  * <p>
  * An entry is sent when its sequence is at most {@code sentUpTo} or it is a PUBREL. An entry expires when its TTL has
  * passed, or when it is unsent and its message expiry time has passed: a sent entry never expires by its message
- * expiry ([MQTT-4.3.3-7], [MQTT-4.4.0-1]). {@code earliestMsgExpiryMs} of the meta is a lower bound of the message
- * expiry times of the unsent entries: an append lowers it, a scan that deletes expired entries recomputes it. Expired
- * entries are deleted by {@link #read}, by the trim of a full queue and by {@link #sweepExpired}. The trim looks for
- * them only when the bound or the TTL of the head entry has passed, and drops them before any live entry.
+ * expiry ([MQTT-4.3.3-7], [MQTT-4.4.0-1]). {@code earliestExpiryMs} of the meta is a lower bound of the TTLs of the
+ * entries and of the message expiry times of the unsent ones: an append or a move lowers it, a scan that sees the
+ * whole queue recomputes it. TTLs do not grow with the sequence, since a moved entry keeps the TTL it had in its group
+ * queue. Expired entries are deleted by {@link #read}, by the trim of a full queue and by {@link #sweepExpired}. The
+ * trim and the sweep look for them only once the bound has passed; the trim drops them before any live entry.
  */
 @Component
 public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
@@ -187,8 +188,8 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                             ? firstLiveSequence(queueKey, expired.get(expired.size() - 1) + 1, meta.lastSequence())
                             : page.get(0).sequence();
                 }
-                // only a read that saw the whole queue knows every unsent entry; otherwise the old bound still holds
-                long earliest = fromHead && reachedEnd ? bound.value() : meta.earliestMsgExpiryMs();
+                // only a read that saw the whole queue knows every entry; otherwise the old bound still holds
+                long earliest = fromHead && reachedEnd ? bound.value() : meta.earliestExpiryMs();
                 deleteExpired(queueKey, marked, expired, first, earliest);
             } else if (sentUpTo != meta.sentUpTo()) {
                 store.put(METAS, DeviceMsgKeys.metaKey(queueKey), marked.toBytes());
@@ -217,7 +218,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 first = isDense(meta) ? first + 1 : firstLiveSequence(queueKey, first + 1, meta.lastSequence());
             }
             DeviceQueueMeta updated = new DeviceQueueMeta(first, meta.lastSequence(), meta.lastPacketId(), count,
-                    meta.sentUpTo(), count == 0 ? 0 : meta.earliestMsgExpiryMs());
+                    meta.sentUpTo(), count == 0 ? 0 : meta.earliestExpiryMs());
             store.write(batch -> {
                 batch.delete(ENTRIES, entry.key());
                 batch.put(METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
@@ -333,7 +334,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 return false;
             }
             DeviceQueueMeta updated = new DeviceQueueMeta(meta.firstSequence(), meta.lastSequence(), lastPacketId, 0,
-                    meta.sentUpTo(), meta.earliestMsgExpiryMs());
+                    meta.sentUpTo(), meta.earliestExpiryMs());
             store.put(METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
             return true;
         } finally {
@@ -348,8 +349,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     /**
-     * Walks the metas and scans, each under its own lock, every queue whose {@code earliestMsgExpiryMs} or head entry
-     * TTL has passed.
+     * Walks the metas and scans, each under its own lock, every queue whose {@code earliestExpiryMs} has passed.
      */
     @Override
     public int sweepExpired() {
@@ -358,7 +358,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             List<String> queueKeys = new ArrayList<>();
             while (iterator.isValid()) {
                 String queueKey = new String(iterator.key(), StandardCharsets.UTF_8);
-                if (expiryDue(queueKey, DeviceQueueMeta.fromBytes(iterator.value()), now)) {
+                if (expiryDue(DeviceQueueMeta.fromBytes(iterator.value()), now)) {
                     queueKeys.add(queueKey);
                 }
                 iterator.next();
@@ -371,7 +371,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             lock.lock();
             try {
                 DeviceQueueMeta meta = loadMeta(queueKey);
-                if (expiryDue(queueKey, meta, now)) {
+                if (expiryDue(meta, now)) {
                     removed += expireQueue(queueKey, meta, now);
                 }
             } finally {
@@ -435,21 +435,14 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     /**
-     * Whether the queue may hold an expired entry: its message expiry bound or the TTL of its head entry has passed.
+     * Whether the queue may hold an expired entry: its expiry bound has passed.
      */
-    private boolean expiryDue(String queueKey, DeviceQueueMeta meta, long now) {
-        if (meta.count() == 0) {
-            return false;
-        }
-        if (meta.earliestMsgExpiryMs() != 0 && meta.earliestMsgExpiryMs() <= now) {
-            return true;
-        }
-        byte[] head = store.get(ENTRIES, DeviceMsgKeys.entryKey(queueKey, meta.firstSequence()));
-        return head != null && ttlPassed(DeviceMsgEntryCodec.header(head), now);
+    private static boolean expiryDue(DeviceQueueMeta meta, long now) {
+        return meta.count() > 0 && meta.earliestExpiryMs() != 0 && meta.earliestExpiryMs() <= now;
     }
 
     /**
-     * Deletes every expired entry of the queue and recomputes its message expiry bound. Runs under the queue's lock.
+     * Deletes every expired entry of the queue and recomputes its expiry bound. Runs under the queue's lock.
      *
      * @return the number of entries deleted
      */
@@ -472,20 +465,20 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                     }
                     return first;
                 });
-        if (!expired.isEmpty() || bound.value() != meta.earliestMsgExpiryMs()) {
+        if (!expired.isEmpty() || bound.value() != meta.earliestExpiryMs()) {
             deleteExpired(queueKey, meta, expired, firstLive, bound.value());
         }
         return expired.size();
     }
 
     /**
-     * Deletes the given expired entries and writes the meta with the new head and message expiry bound in one batch.
+     * Deletes the given expired entries and writes the meta with the new head and expiry bound in one batch.
      */
     private void deleteExpired(String queueKey, DeviceQueueMeta meta, List<Long> expired, long firstSequence,
-                               long earliestMsgExpiryMs) {
+                               long earliestExpiryMs) {
         int count = meta.count() - expired.size();
         DeviceQueueMeta updated = new DeviceQueueMeta(count == 0 ? meta.lastSequence() + 1 : firstSequence,
-                meta.lastSequence(), meta.lastPacketId(), count, meta.sentUpTo(), count == 0 ? 0 : earliestMsgExpiryMs);
+                meta.lastSequence(), meta.lastPacketId(), count, meta.sentUpTo(), count == 0 ? 0 : earliestExpiryMs);
         store.write(batch -> {
             for (long sequence : expired) {
                 batch.delete(ENTRIES, DeviceMsgKeys.entryKey(queueKey, sequence));
@@ -509,6 +502,14 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
 
     private static boolean ttlPassed(DeviceMsgEntryCodec.Header header, long now) {
         return header.ttlExpiresAtMs() != 0 && header.ttlExpiresAtMs() <= now;
+    }
+
+    /**
+     * @return when the entry expires: its TTL, or its message expiry time when that is earlier and it is unsent;
+     * {@code 0} meaning never
+     */
+    private static long expiresAtMs(boolean sent, DeviceMsgEntryCodec.Header header) {
+        return sent ? header.ttlExpiresAtMs() : earlier(header.ttlExpiresAtMs(), header.msgExpiresAtMs());
     }
 
     /**
@@ -551,16 +552,14 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     }
 
     /**
-     * Collects the earliest message expiry time of the unsent entries a scan keeps.
+     * Collects the earliest expiry time of the entries a scan keeps.
      */
     private static final class ExpiryBound {
 
         private long value;
 
         void add(boolean sent, DeviceMsgEntryCodec.Header header) {
-            if (!sent) {
-                value = earlier(value, header.msgExpiresAtMs());
-            }
+            value = earlier(value, expiresAtMs(sent, header));
         }
 
         long value() {
@@ -586,15 +585,15 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         private int droppedNew;
         private int expired;
         private long firstSequence;
-        private long oldEarliestMsgExpiryMs;
-        private long newEarliestMsgExpiryMs;
+        private long oldEarliestExpiryMs;
+        private long newEarliestExpiryMs;
 
         PendingAppend(String queueKey, DeviceQueueMeta before) {
             this.queueKey = queueKey;
             this.before = before;
             this.lastSequence = before.lastSequence();
             this.lastPacketId = before.lastPacketId();
-            this.oldEarliestMsgExpiryMs = before.earliestMsgExpiryMs();
+            this.oldEarliestExpiryMs = before.earliestExpiryMs();
         }
 
         AppendResult add(List<NewDeviceMsg> messages, long now) {
@@ -611,7 +610,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         void add(long createdTimeMs, long msgExpiresAtMs, long ttlExpiresAtMs, byte[] body) {
             lastSequence++;
             lastPacketId = nextPacketId(lastPacketId);
-            newEarliestMsgExpiryMs = earlier(newEarliestMsgExpiryMs, msgExpiresAtMs);
+            newEarliestExpiryMs = earlier(newEarliestExpiryMs, earlier(ttlExpiresAtMs, msgExpiresAtMs));
             entries.add(DeviceMsgEntryCodec.encode(lastPacketId, PersistedPacketType.PUBLISH, createdTimeMs,
                     msgExpiresAtMs, ttlExpiresAtMs, body));
         }
@@ -631,7 +630,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             int excess = Math.max(0, before.count() + entries.size() - limit);
             long nextOldSequence = -1;
             if (before.count() > 0) {
-                if (excess > 0 && expiryDue(queueKey, before, now)) {
+                if (excess > 0 && expiryDue(before, now)) {
                     nextOldSequence = scanOldEntriesExpiredFirst(excess, oldestInIdWindow, now);
                 } else if (isDense(before)) {
                     int dropOld = Math.min(excess, before.count());
@@ -671,7 +670,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
 
         /**
          * Collects into {@link #droppedOld} every expired old entry, then the oldest live ones while the queue is still
-         * over the limit, and recomputes the message expiry bound of the old entries kept.
+         * over the limit, and recomputes the expiry bound of the old entries kept.
          *
          * @return the sequence of the oldest entry kept, or {@code -1} when every old entry is dropped
          */
@@ -687,7 +686,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                                 droppedOld.add(sequence);
                             } else {
                                 live.add(sequence);
-                                liveExpiry.add(isSent(sequence, header, before.sentUpTo()) ? 0 : header.msgExpiresAtMs());
+                                liveExpiry.add(expiresAtMs(isSent(sequence, header, before.sentUpTo()), header));
                             }
                             iterator.next();
                         }
@@ -698,9 +697,9 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             while (kept < live.size() && (droppedOld.size() < excess || live.get(kept) < oldestInIdWindow)) {
                 droppedOld.add(live.get(kept++));
             }
-            oldEarliestMsgExpiryMs = 0;
+            oldEarliestExpiryMs = 0;
             for (int i = kept; i < live.size(); i++) {
-                oldEarliestMsgExpiryMs = earlier(oldEarliestMsgExpiryMs, liveExpiry.get(i));
+                oldEarliestExpiryMs = earlier(oldEarliestExpiryMs, liveExpiry.get(i));
             }
             return kept < live.size() ? live.get(kept) : -1;
         }
@@ -715,7 +714,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             }
             int count = before.count() + entries.size() - droppedOld.size() - droppedNew;
             DeviceQueueMeta after = new DeviceQueueMeta(firstSequence, lastSequence, lastPacketId, count,
-                    before.sentUpTo(), earlier(oldEarliestMsgExpiryMs, newEarliestMsgExpiryMs));
+                    before.sentUpTo(), earlier(oldEarliestExpiryMs, newEarliestExpiryMs));
             batch.put(METAS, DeviceMsgKeys.metaKey(queueKey), after.toBytes());
         }
 

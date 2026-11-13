@@ -188,6 +188,33 @@ class RocksDbDeviceMsgMoveQueueTest {
     }
 
     @Test
+    void movedEntriesThatOutliveTheirTtlBeforeTheMembersHeadAreSwept() {   // TTL 600 s
+        store.append(List.of(new QueueAppend("ss_g_t", msgs(2))));               // the group collects first
+        clock.advanceSeconds(TTL_SECONDS / 2);
+        store.append(List.of(new QueueAppend("m1", msgs(1))));
+        store.moveQueue("ss_g_t", "m1", b -> b);                                 // behind the member's head, expiring 300 s earlier
+        clock.advanceSeconds(TTL_SECONDS / 2 + 1);
+
+        assertThat(store.sweepExpired()).isEqualTo(2);
+        assertThat(store.read("m1", 0, 100)).extracting(StoredDeviceMsg::packetId).containsExactly(1);
+    }
+
+    @Test
+    void aFullMemberQueueDropsItsExpiredMovedEntriesBeforeAnyLiveOne() {  // limit 10, TTL 600 s
+        store.append(List.of(new QueueAppend("ss_g_t", msgs(2))));
+        clock.advanceSeconds(TTL_SECONDS / 2);
+        store.append(List.of(new QueueAppend("m1", msgs(8))));
+        store.moveQueue("ss_g_t", "m1", b -> b);                                 // the member is full: 8 own entries and 2 moved
+        clock.advanceSeconds(TTL_SECONDS / 2 + 1);
+
+        store.append(List.of(new QueueAppend("m1", msgs(2))));
+
+        assertThat(store.read("m1", 0, 100)).extracting(StoredDeviceMsg::packetId)
+                .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 11, 12);
+        assertThat(store.expiredEntries()).isEqualTo(2);
+    }
+
+    @Test
     void aMovedEntryCountsTowardTheMembersMessageExpiryBound() {
         store.append(List.of(new QueueAppend("m1", msgs(1))));
         store.append(List.of(new QueueAppend("ss_g_t", List.of(msg(clock.millis(), 5)))));
