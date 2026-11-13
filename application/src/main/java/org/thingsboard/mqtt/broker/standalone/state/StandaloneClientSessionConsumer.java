@@ -29,17 +29,15 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionChangesCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Loads the persistent client sessions from the embedded store at startup. There is only one node, so nobody else
  * changes the sessions and {@link #listen} has nothing to deliver.
  * <p>
- * A session is adjusted to this run while loading, and the adjusted session is written back to the store before the
- * load returns, so that the adjustment survives the next restart:
+ * Once the sessions are read, each one is adjusted to this run, and an adjusted session is written back to the store
+ * before the load returns, so that the adjustment survives the next restart:
  * <ul>
  *   <li>a session stored as connected is disconnected at the load time: no connection survives a restart, and its
  *   Session Expiry Interval (and the administrative TTL) must count from the first restart, not from every one;</li>
@@ -68,17 +66,20 @@ public class StandaloneClientSessionConsumer implements ClientSessionConsumer {
         log.debug("Starting client sessions initLoad");
         long loadTs = System.currentTimeMillis();
         String serviceId = serviceInfoProvider.getServiceId();
-        Set<ClientSessionInfo> adjusted = Collections.newSetFromMap(new IdentityHashMap<>());
-        Map<String, ClientSessionInfo> sessions = StoreStateSupport.loadAll(store, "client sessions", bytes -> {
-            ClientSessionInfo stored = ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(bytes));
-            ClientSessionInfo session = adjust(stored, loadTs, serviceId);
-            if (session != stored) {
-                adjusted.add(session);
+        Map<String, ClientSessionInfo> stored = StoreStateSupport.loadAll(store, "client sessions",
+                bytes -> ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(bytes)));
+        // after the scan: the store must not be written from inside its own scan
+        Map<String, ClientSessionInfo> sessions = new HashMap<>();
+        int storedBack = 0;
+        for (Map.Entry<String, ClientSessionInfo> entry : stored.entrySet()) {
+            ClientSessionInfo session = adjust(entry.getValue(), loadTs, serviceId);
+            if (session != entry.getValue()) {
+                writeBack(entry.getKey(), session);
+                storedBack++;
             }
-            return session;
-        });
-        writeBack(sessions, adjusted);
-        log.debug("Finished client sessions initLoad, loaded {} sessions, stored back {} adjusted ones", sessions.size(), adjusted.size());
+            sessions.put(entry.getKey(), session);
+        }
+        log.debug("Finished client sessions initLoad, loaded {} sessions, stored back {} adjusted ones", sessions.size(), storedBack);
         return sessions;
     }
 
@@ -97,19 +98,12 @@ public class StandaloneClientSessionConsumer implements ClientSessionConsumer {
         return session.toBuilder().connected(false).disconnectedAt(loadTs).build();
     }
 
-    // after the scan: the store must not be written from inside its own scan
-    private void writeBack(Map<String, ClientSessionInfo> sessions, Set<ClientSessionInfo> adjusted) throws QueuePersistenceException {
-        for (Map.Entry<String, ClientSessionInfo> entry : sessions.entrySet()) {
-            if (!adjusted.contains(entry.getValue())) {
-                continue;
-            }
-            String clientId = entry.getKey();
-            try {
-                store.put(clientId, ProtoConverter.convertToClientSessionInfoProto(entry.getValue()).toByteArray());
-            } catch (StoreException e) {
-                log.error("[{}] Failed to store the loaded client session back", clientId, e);
-                throw new QueuePersistenceException("Failed to store the loaded client session of client '" + clientId + "' back", e);
-            }
+    private void writeBack(String clientId, ClientSessionInfo session) throws QueuePersistenceException {
+        try {
+            store.put(clientId, ProtoConverter.convertToClientSessionInfoProto(session).toByteArray());
+        } catch (StoreException e) {
+            log.error("[{}] Failed to store the loaded client session back", clientId, e);
+            throw new QueuePersistenceException("Failed to store the loaded client session of client '" + clientId + "' back", e);
         }
     }
 
