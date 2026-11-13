@@ -58,7 +58,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATE
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
-import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
+import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalAccumulator.ONE_MINUTE_MS;
 
 @Data
 @Component
