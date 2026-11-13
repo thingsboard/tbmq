@@ -81,6 +81,12 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
             Object value = values.get(name);
             return value instanceof Function<?, ?> function ? ((Function<Environment, Object>) function).apply(source) : value;
         }
+
+        // the source is the live Environment, which lists this property source: the default toString would recurse
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + " {name='" + getName() + "'}";
+        }
     }
 
 }

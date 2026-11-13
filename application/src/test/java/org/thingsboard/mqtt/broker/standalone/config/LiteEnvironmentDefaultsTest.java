@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.standalone.config;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -122,6 +125,21 @@ class LiteEnvironmentDefaultsTest {
 
         assertThat(env.getProperty("service.id")).isEqualTo("host-42");
         assertThat(env.getPropertySources().contains(SOURCE_NAME)).isFalse();
+    }
+
+    @Test
+    void givenLiteEdition_whenEnvironmentIsPrintedWithDebugOn_thenNoRecursion() {
+        var env = new MockEnvironment();
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+        // with DEBUG on, the default PropertySource.toString prints its source, here the Environment itself
+        Logger logger = (Logger) LoggerFactory.getLogger(env.getPropertySources().get(SOURCE_NAME).getClass());
+        Level previous = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
+        try {
+            assertThat(env.toString()).contains(SOURCE_NAME);
+        } finally {
+            logger.setLevel(previous);
+        }
     }
 
     // The resolver caches per class loader, so every test gets a fresh one.
