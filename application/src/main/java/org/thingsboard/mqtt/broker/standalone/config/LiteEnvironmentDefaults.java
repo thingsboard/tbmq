@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.standalone.config;
 
+import org.apache.commons.logging.Log;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.logging.DeferredLogFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
@@ -29,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Applies the settings of the lite edition through two property sources. The cluster edition, and a classpath
@@ -56,6 +59,20 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
     static final String GRACEFUL_SHUTDOWN_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
     static final String GRACEFUL_SHUTDOWN_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
     static final String LITE_GRACEFUL_SHUTDOWN_SEC = "1";
+
+    private final Log log;
+
+    /**
+     * @param logFactory Spring Boot's deferred logs: logging is not set up yet when the environment is prepared
+     */
+    public LiteEnvironmentDefaults(DeferredLogFactory logFactory) {
+        this.log = logFactory.getLog(LiteEnvironmentDefaults.class);
+    }
+
+    // logs straight away; Spring Boot uses the public constructor
+    LiteEnvironmentDefaults() {
+        this(Supplier::get);
+    }
 
     static Map<String, Object> defaults() {
         Function<Environment, Object> serviceId = env -> {
@@ -109,7 +126,7 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    private static void addShutdownWaits(MutablePropertySources sources, PropertySource<?> waits) {
+    private void addShutdownWaits(MutablePropertySources sources, PropertySource<?> waits) {
         for (PropertySource<?> source : sources) {
             if (source.getName().startsWith("Config resource") && source.getName().contains(BROKER_YML_SOURCE_MARKER)) {
                 sources.addBefore(source.getName(), waits);
@@ -118,6 +135,8 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         }
         // no config-data source for the file, for example in a unit test: below everything else
         sources.addLast(waits);
+        log.info("The Lite shutdown waits are not applied: no config source for the class path thingsboard-mqtt-broker.yml "
+                + "was found, so they rank below every other property source, and the file's cluster values win if it is loaded another way");
     }
 
     // ThingsBoardExecutors reads the process environment and the system properties, not the Spring environment

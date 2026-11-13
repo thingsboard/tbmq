@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.standalone.config;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import org.apache.commons.logging.Log;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class LiteEnvironmentDefaultsTest {
 
@@ -378,6 +385,26 @@ class LiteEnvironmentDefaultsTest {
         env.getPropertySources().addFirst(new MapPropertySource("args", Map.of("standalone.service-id", "edge-7")));
 
         assertThat(env.getProperty("service.id")).isEqualTo("edge-7");
+    }
+
+    @Test
+    void givenLiteEditionAndNoConfigSourceForTheBrokerYml_whenPostProcess_thenTheFallbackIsLoggedOnceAtInfo() {
+        Log log = mock(Log.class);
+
+        new LiteEnvironmentDefaults(destination -> log).postProcessEnvironment(new MockEnvironment(), appWithMarker("lite"));
+
+        // the waits source goes last, so the file's 15000 / 1m / 5 would win: say so instead of failing silently
+        verify(log, times(1)).info(argThat(message -> message.toString().contains("shutdown waits are not applied")
+                && message.toString().contains("thingsboard-mqtt-broker.yml")));
+    }
+
+    @Test
+    void givenLiteEditionAndTheBrokerYmlSource_whenPostProcess_thenNothingIsLogged() {
+        Log log = mock(Log.class);
+
+        new LiteEnvironmentDefaults(destination -> log).postProcessEnvironment(environmentWithBrokerYml(), appWithMarker("lite"));
+
+        verify(log, never()).info(any());
     }
 
     @Test
