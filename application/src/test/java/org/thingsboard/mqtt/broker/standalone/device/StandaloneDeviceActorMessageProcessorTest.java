@@ -239,7 +239,7 @@ class StandaloneDeviceActorMessageProcessorTest {
     @Test
     void mqtt_3_3_2_6_theForwardedIntervalIsTheRemainingLifetimeAndZeroOncePassed() {
         queue.add(new Entry(1, 1, PersistedPacketType.PUBLISH, NOW_MS - 60_000, body(10)));   // sent, lifetime passed
-        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS - 4_500, body(10)));    // 4.5 s old: floor to 4 s
+        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS - 4_500, body(10)));    // 5.5 s left: floor to 5 s
         queue.add(new Entry(3, 3, PersistedPacketType.PUBLISH, NOW_MS - 4_000, body(0)));
         queue.add(new Entry(4, 4, PersistedPacketType.PUBLISH, NOW_MS - 4_000, body(null)));
         sentUpTo = 1;
@@ -248,7 +248,7 @@ class StandaloneDeviceActorMessageProcessorTest {
 
         ArgumentCaptor<DevicePublishMsg> sent = ArgumentCaptor.forClass(DevicePublishMsg.class);
         verify(delivery, times(4)).sendPublishMsgToClient(eq(sessionCtx), sent.capture(), anyBoolean());
-        assertThat(sent.getAllValues()).extracting(DevicePublishMsg::getMsgExpiryInterval).containsExactly(0, 6, 0, null);
+        assertThat(sent.getAllValues()).extracting(DevicePublishMsg::getMsgExpiryInterval).containsExactly(0, 5, 0, null);
     }
 
     @Test

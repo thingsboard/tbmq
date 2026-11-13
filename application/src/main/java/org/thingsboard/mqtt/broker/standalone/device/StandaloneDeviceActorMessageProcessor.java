@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEven
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceQueueInfo;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
@@ -297,9 +298,9 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
                 DevicePublishMsg msg = DeviceMsgBodyCodec.toMsg(clientId, entry);
                 Integer msgExpiryInterval = msg.getMsgExpiryInterval();
                 if (msgExpiryInterval != null) {
-                    // [MQTT-3.3.2-6] the interval left: the original one less the whole seconds the message waited, never below 0
-                    long waitedSec = Math.max(0, now - entry.createdTimeMs()) / 1000;
-                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(msg.getProperties(), (int) Math.max(0, msgExpiryInterval - waitedSec));
+                    // [MQTT-3.3.2-6] the interval left; a sent entry is resent even once its interval has passed, with 0 left
+                    MsgExpiryResult expiry = MqttPropertiesUtil.getMsgExpiryResult(msgExpiryInterval, entry.createdTimeMs(), now);
+                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(msg.getProperties(), expiry.getMsgExpiryInterval());
                 }
                 // [MQTT-4.4.0-1] [MQTT-3.3.1-1] a resend keeps the original packet id and carries DUP=1
                 mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, msg, entry.sent());

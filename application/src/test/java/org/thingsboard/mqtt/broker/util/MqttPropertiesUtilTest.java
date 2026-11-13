@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.util;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 
 import static org.junit.Assert.assertEquals;
 
@@ -69,6 +70,32 @@ public class MqttPropertiesUtilTest {
     @Test
     public void getDisconnectSessionExpiryIntervalValue_absent_returnsNotSet() {
         assertEquals(-1, MqttPropertiesUtil.getDisconnectSessionExpiryIntervalValue(new MqttProperties(), 604800));
+    }
+
+    @Test
+    public void getMsgExpiryResult_interval_returnsTheWholeSecondsLeft() {
+        // MQTT-5 [MQTT-3.3.2-6]: the received value minus the time the message waited, 5.5 s here
+        MsgExpiryResult result = MqttPropertiesUtil.getMsgExpiryResult(10, 1_000L, 5_500L);
+        assertEquals(new MsgExpiryResult(true, false, 5), result);
+    }
+
+    @Test
+    public void getMsgExpiryResult_intervalPassed_returnsExpired() {
+        assertEquals(new MsgExpiryResult(true, true, 0), MqttPropertiesUtil.getMsgExpiryResult(10, 1_000L, 11_001L));
+    }
+
+    @Test
+    public void getMsgExpiryResult_zeroInterval_staysZero() {
+        assertEquals(new MsgExpiryResult(true, false, 0), MqttPropertiesUtil.getMsgExpiryResult(0, 1_000L, 60_000L));
+    }
+
+    @Test
+    public void getMsgExpiryResult_properties_matchTheIntervalOverload() {
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 10));
+        assertEquals(MqttPropertiesUtil.getMsgExpiryResult(10, 1_000L, 5_500L),
+                MqttPropertiesUtil.getMsgExpiryResult(props, 1_000L, 5_500L));
+        assertEquals(new MsgExpiryResult(false, false, 0), MqttPropertiesUtil.getMsgExpiryResult(new MqttProperties(), 1_000L, 5_500L));
     }
 
     private static MqttProperties sessionExpiry(int value) {
