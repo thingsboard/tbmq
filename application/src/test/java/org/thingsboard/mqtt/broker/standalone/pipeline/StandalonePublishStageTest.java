@@ -160,7 +160,11 @@ class StandalonePublishStageTest {
         verify(cb0).onSuccess(null);
         verify(cb0, never()).onFailure(any());
         verify(statsClient, times(1)).reportDroppedMsgs();
-        verify(cb1).onFailure(isA(PublishLimitExceededException.class));
+        ArgumentCaptor<Throwable> refusal = ArgumentCaptor.forClass(Throwable.class);
+        verify(cb1).onFailure(refusal.capture());
+        assertThat(refusal.getValue()).isInstanceOf(PublishLimitExceededException.class);
+        // a refusal is flow control on the overload path, not an error: it carries no stack trace
+        assertThat(refusal.getValue().getStackTrace()).isEmpty();
         verify(cb1, never()).onSuccess(any());
         verify(cb2).onFailure(isA(PublishLimitExceededException.class));
         verify(cb2, never()).onSuccess(any());
@@ -185,8 +189,8 @@ class StandalonePublishStageTest {
 
         await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).until(() -> seen.size() == total);
         assertThat(seen).containsExactlyElementsOf(IntStream.range(0, total).boxed().toList());
-        verify(queueCallback, times(total)).onSuccess(null);
-        assertThat(budget.queuedMessages()).isZero();
+        verify(queueCallback, timeout(TimeUnit.SECONDS.toMillis(WAIT_SECONDS)).times(total)).onSuccess(null);
+        await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).until(() -> budget.queuedMessages() == 0);
     }
 
     @Test
@@ -211,6 +215,31 @@ class StandalonePublishStageTest {
         assertThat(consumerLog.list).singleElement().satisfies(event -> {
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
             assertThat(event.getThrowableProxy().getMessage()).isEqualTo("dispatch failed");
+        });
+    }
+
+    @Test
+    void aDispatcherErrorFailsThePublishAndTheWorkerKeepsServing() {
+        StackOverflowError failure = new StackOverflowError("dispatch overflow");
+        TbQueueCallback nextCallback = mock(TbQueueCallback.class);
+        doAnswer(inv -> {
+            throw failure;
+        }).doAnswer(inv -> {
+            inv.<PublishMsgCallback>getArgument(1).onSuccess();
+            return null;
+        }).when(msgDispatcherService).processPublishMsg(any(), any());
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+        publisher.sendMsg(qos1("t/1"), nextCallback);
+
+        verify(queueCallback, timeout(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).onFailure(failure);
+        verify(queueCallback, never()).onSuccess(any());
+        // the worker thread survived: the next publish of the same topic, on the same worker, is dispatched
+        verify(nextCallback, timeout(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).onSuccess(null);
+        assertThat(budget.queuedMessages()).isZero();
+        assertThat(consumerLog.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getThrowableProxy().getMessage()).isEqualTo("dispatch overflow");
         });
     }
 

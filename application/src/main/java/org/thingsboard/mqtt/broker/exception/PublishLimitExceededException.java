@@ -19,28 +19,16 @@ import java.io.Serial;
 
 /**
  * A publish failed because a limit was hit, not because of an error: the client gets Quota exceeded (0x97) on MQTT 5.
+ * <p>
+ * It is the expected outcome on the overload path, so it carries no stack trace: filling one in for every refused
+ * publish would cost the most when the broker can least afford it.
  */
 public class PublishLimitExceededException extends RuntimeException {
 
     @Serial
     private static final long serialVersionUID = 3954184236714382690L;
 
-    public PublishLimitExceededException() {
-    }
-
     public PublishLimitExceededException(String message) {
-        super(message);
-    }
-
-    public PublishLimitExceededException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public PublishLimitExceededException(Throwable cause) {
-        super(cause);
-    }
-
-    public PublishLimitExceededException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
+        super(message, null, false, false);
     }
 }

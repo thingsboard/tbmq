@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -23,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -632,6 +637,41 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
+    public void aLimitFailureIsLoggedAtDebugWithoutAStackTraceAndAnyOtherFailureStillAtWarn() {
+        Logger logger = (Logger) LoggerFactory.getLogger(MqttPublishHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        logger.setLevel(Level.DEBUG);
+        try {
+            givenMqtt5Session();
+            processPublishMsgs(1, 1, 2);
+            List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+            callbacks.get(0).onFailure(new PublishLimitExceededException("pipeline is full"));
+            callbacks.get(1).onFailure(new RuntimeException("NOT_LEADER_OR_FOLLOWER"));
+            processPubResponsesSentToActor(2);
+
+            List<ILoggingEvent> failures = appender.list.stream()
+                    .filter(event -> event.getFormattedMessage().contains("publish msg"))
+                    .toList();
+            assertThat(failures).hasSize(2);
+            ILoggingEvent limit = failures.stream().filter(event -> event.getFormattedMessage().contains("pipeline is full")).findFirst().orElseThrow();
+            assertThat(limit.getLevel()).isEqualTo(Level.DEBUG);
+            assertThat(limit.getThrowableProxy()).isNull();
+            ILoggingEvent other = failures.stream().filter(event -> event != limit).findFirst().orElseThrow();
+            assertThat(other.getLevel()).isEqualTo(Level.WARN);
+            assertThat(other.getThrowableProxy().getMessage()).isEqualTo("NOT_LEADER_OR_FOLLOWER");
+        } finally {
+            logger.setLevel(null);
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+            appender.stop();
+        }
+    }
+
+    @Test
     public void anyOtherFailureOnMqtt5KeepsUnspecifiedError() {
         givenMqtt5Session();
         processPublishMsgs(1, 1, 2);
@@ -684,6 +724,9 @@ public class MqttPublishHandlerTest {
 
         verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.UNSPECIFIED_ERROR);
         verify(mqttMessageGenerator).createPubRecMsg(2, MqttReasonCodes.PubRec.UNSPECIFIED_ERROR);
+        // QoS 0 has no acknowledgement to fail
+        verify(mqttMessageGenerator, never()).createPubAckMsg(eq(3), any());
+        verify(mqttMessageGenerator, never()).createPubRecMsg(eq(3), any());
         assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(2)).isNull();
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
         verify(sparkplugCertificateRepublisher, never()).maybeRepublish(any(), any(), any());

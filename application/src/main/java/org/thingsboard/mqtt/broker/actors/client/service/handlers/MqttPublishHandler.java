@@ -259,7 +259,12 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
-                    log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+                    if (t instanceof PublishLimitExceededException) {
+                        // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
+                        log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
+                    } else {
+                        log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+                    }
                     tbMessageStatsReportClient.reportDroppedMsgs();
                     handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t);
                 });

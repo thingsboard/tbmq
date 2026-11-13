@@ -92,9 +92,10 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
             TbProtoQueueMsg<PublishMsgProto> msg = pending.msg();
             try {
                 msgDispatcherService.processPublishMsg(new PublishMsgWithId(UUID.randomUUID(), msg.getValue(), msg.getHeaders()), pending.callback());
-            } catch (Exception e) {
-                log.error("[{}] Failed to dispatch the publish to topic {}", msg.getValue().getClientId(), msg.getKey(), e);
-                pending.callback().onFailure(e);
+            } catch (Throwable t) {
+                // an Error too: the publish is failed, and the worker lives on to serve its partition
+                log.error("[{}] Failed to dispatch the publish to topic {}", msg.getValue().getClientId(), msg.getKey(), t);
+                pending.callback().onFailure(t);
             }
         }
     }

@@ -15,8 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.standalone.pipeline;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -241,6 +246,41 @@ class PartitionedWorkersTest {
 
         assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
         assertThat(handled).containsExactly(1, 2, 3, 4);
+    }
+
+    @Test
+    void givenHandlerThrowingAnError_whenBatchFails_thenTheWorkerThreadSurvives() throws Exception {
+        Logger logger = (Logger) LoggerFactory.getLogger(PartitionedWorkers.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        try {
+            AtomicInteger calls = new AtomicInteger();
+            List<Integer> handled = new CopyOnWriteArrayList<>();
+            workers = new PartitionedWorkers<>("test-error", 1, 0, 1, batch -> {
+                if (calls.incrementAndGet() == 1) {
+                    throw new StackOverflowError("handler overflow");
+                }
+                batch.forEach(item -> handled.add(item.seq()));
+            });
+            workers.start();
+
+            for (int i = 0; i < 5; i++) {
+                workers.submit("k", new Item("k", i));
+            }
+
+            assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
+            assertThat(handled).containsExactly(1, 2, 3, 4);
+            assertThat(appender.list).singleElement().satisfies(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+                assertThat(event.getThrowableProxy().getMessage()).isEqualTo("handler overflow");
+            });
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+            appender.stop();
+        }
     }
 
     @Test

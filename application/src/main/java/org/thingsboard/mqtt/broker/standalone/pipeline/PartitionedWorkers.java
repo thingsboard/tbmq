@@ -29,7 +29,8 @@ import java.util.function.Consumer;
  * A fixed set of worker threads, each with its own queue. Items with the same key always go to the same worker, so
  * their order is kept. A worker takes what is waiting, up to a maximum batch, and hands it to the batch handler.
  * <p>
- * A handler that throws is logged and the worker goes on with the next batch; the handler fails its own items.
+ * A handler that throws, even an {@link Error}, is logged and the worker goes on with the next batch; the handler
+ * fails its own items.
  * Reading {@link #queued()} takes no lock, so it works while a handler is stuck in a slow call.
  */
 @Slf4j
@@ -170,8 +171,9 @@ public class PartitionedWorkers<T> {
             int size = batch.size();
             try {
                 batchHandler.accept(batch);
-            } catch (Exception e) {
-                log.error("[{}] Batch of {} items failed", Thread.currentThread().getName(), size, e);
+            } catch (Throwable t) {
+                // an Error too: a dead worker would never serve its partition again
+                log.error("[{}] Batch of {} items failed", Thread.currentThread().getName(), size, t);
             } finally {
                 finished(size);
             }
