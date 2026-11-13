@@ -124,4 +124,12 @@ class StoreBackedCacheTest {
         assertThat(cache.get("loaded").get()).isEqualTo("from-loader");
     }
 
+    @Test
+    void getWithANullTypeSkipsTheTypeCheck() {
+        cache.put("c1", "value");
+
+        assertThat(cache.get("c1", (Class<String>) null)).isEqualTo("value");
+        assertThat(cache.get("missing", (Class<String>) null)).isNull();
+    }
+
 }

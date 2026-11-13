@@ -37,7 +37,9 @@ import java.util.Set;
  * prefixed names, and returns {@code null} for any other name, like the Redis manager of the cluster edition.
  * The session attribute caches are {@link StoreBackedCache}s over {@code sessionAttributes}, so they survive a restart
  * and are never evicted; every other cache is a {@link CaffeineCache} that allows null values, holds at most
- * {@code maxEntries} entries, and expires its entries after the TTL of its spec when that is above 0.
+ * {@code maxEntries} entries, and expires its entries after the TTL of its spec when that is above 0. The Caffeine
+ * caches record statistics when {@code cache.stats.enabled} is on, so the cache metrics binder can read them.
+ * A {@code maxEntries} of 0 or less is rejected, as it would make every Caffeine cache hold nothing.
  */
 public class StandaloneCacheManager implements CacheManager {
 
@@ -53,18 +55,26 @@ public class StandaloneCacheManager implements CacheManager {
 
     public static StandaloneCacheManager create(CacheProperties properties, KeyValueStore sessionAttributes,
                                                 long maxEntries, Ticker ticker) {
+        if (maxEntries <= 0) {
+            throw new IllegalArgumentException("standalone.cache.max-entries must be above 0, got " + maxEntries);
+        }
+        boolean recordStats = properties.getStats() != null && properties.getStats().isEnabled();
         Map<String, Cache> caches = new LinkedHashMap<>();
         properties.getSpecs().forEach((rawName, spec) -> {
             String name = properties.prefixKey(rawName);
             caches.put(name, STORE_BACKED_CACHES.contains(rawName)
                     ? new StoreBackedCache(name, sessionAttributes)
-                    : newCaffeineCache(name, spec, maxEntries, ticker));
+                    : newCaffeineCache(name, spec, maxEntries, ticker, recordStats));
         });
         return new StandaloneCacheManager(Collections.unmodifiableMap(caches));
     }
 
-    private static CaffeineCache newCaffeineCache(String name, CacheSpecs spec, long maxEntries, Ticker ticker) {
+    private static CaffeineCache newCaffeineCache(String name, CacheSpecs spec, long maxEntries, Ticker ticker,
+                                                boolean recordStats) {
         Caffeine<Object, Object> builder = Caffeine.newBuilder().maximumSize(maxEntries).ticker(ticker);
+        if (recordStats) {
+            builder.recordStats();
+        }
         Integer ttlInMinutes = spec == null ? null : spec.getTimeToLiveInMinutes();
         if (ttlInMinutes != null && ttlInMinutes > 0) {
             builder.expireAfterWrite(Duration.ofMinutes(ttlInMinutes));

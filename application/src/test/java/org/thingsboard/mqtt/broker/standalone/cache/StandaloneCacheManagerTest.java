@@ -23,6 +23,7 @@ import org.springframework.cache.caffeine.CaffeineCache;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.cache.CacheSpecs;
+import org.thingsboard.mqtt.broker.cache.CacheStats;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StandaloneCacheManagerTest {
 
@@ -184,6 +186,52 @@ class StandaloneCacheManagerTest {
         nanos.addAndGet(Duration.ofDays(3650).toNanos());
 
         assertThat(ssl.get("k")).isNotNull();
+    }
+
+    @Test
+    void withStatsEnabledAHitIsCountedByTheNativeCache() {
+        CacheProperties withStats = properties(0);
+        withStats.setStats(stats(true));
+        StandaloneCacheManager m = StandaloneCacheManager.create(withStats, store, 5, ticker);
+        CaffeineCache cache = (CaffeineCache) m.getCache(PREFIX + "mqttClientCredentials");
+        cache.put("k", "v");
+
+        cache.get("k");
+
+        assertThat(cache.getNativeCache().stats().hitCount()).isEqualTo(1);
+    }
+
+    @Test
+    void withStatsUnsetOrDisabledTheNativeCacheRecordsNothing() {
+        CacheProperties disabled = properties(0);
+        disabled.setStats(stats(false));
+        for (CacheProperties p : new CacheProperties[]{properties(0), disabled}) {
+            StandaloneCacheManager m = StandaloneCacheManager.create(p, store, 5, ticker);
+            CaffeineCache cache = (CaffeineCache) m.getCache(PREFIX + "mqttClientCredentials");
+            cache.put("k", "v");
+
+            cache.get("k");
+
+            assertThat(cache.getNativeCache().stats().hitCount()).isZero();
+        }
+    }
+
+    @Test
+    void aMaxEntriesOfZeroOrLessIsRejected() {
+        assertThatThrownBy(() -> StandaloneCacheManager.create(properties, store, 0, ticker))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("standalone.cache.max-entries")
+                .hasMessageContaining("0");
+        assertThatThrownBy(() -> StandaloneCacheManager.create(properties, store, -7, ticker))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("standalone.cache.max-entries")
+                .hasMessageContaining("-7");
+    }
+
+    private static CacheStats stats(boolean enabled) {
+        CacheStats stats = new CacheStats();
+        stats.setEnabled(enabled);
+        return stats;
     }
 
     private static CacheProperties properties(int sslTtl) {

@@ -26,6 +26,9 @@ import java.util.concurrent.Callable;
  * A Spring {@link Cache} of {@code String} keys and values over a {@link KeyValueStore}, so entries survive a restart
  * and are never evicted. Several caches can share one store: an entry is stored under
  * {@code <cache name> + U+0000 + <key>}, with a tag byte before the UTF-8 value ({@code 0} = cached null, {@code 1} = value).
+ * <p>
+ * {@link #clear()} and {@link #invalidate()} use {@link KeyValueStore#retainKeys}, which is meant for startup and
+ * cleanup, not for a store with concurrent writers. No runtime caller clears these caches today.
  */
 public class StoreBackedCache implements Cache {
 
@@ -62,13 +65,14 @@ public class StoreBackedCache implements Cache {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(Object key, Class<T> type) {
         ValueWrapper wrapper = get(key);
         Object value = wrapper == null ? null : wrapper.get();
-        if (value != null && !type.isInstance(value)) {
+        if (type != null && value != null && !type.isInstance(value)) {
             throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
         }
-        return type.cast(value);
+        return type == null ? (T) value : type.cast(value);
     }
 
     @Override

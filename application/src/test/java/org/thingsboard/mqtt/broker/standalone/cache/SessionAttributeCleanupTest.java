@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.standalone.cache;
 
 import org.junit.jupiter.api.Test;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
@@ -31,7 +32,7 @@ class SessionAttributeCleanupTest {
 
     private final InMemoryKeyValueStore store = new InMemoryKeyValueStore();
     private final ClientSessionCache sessionCache = mock(ClientSessionCache.class);
-    private final SessionAttributeCleanup cleanup = new SessionAttributeCleanup(stores(store), sessionCache);
+    private final SessionAttributeCleanup cleanup = new SessionAttributeCleanup(stores(store), sessionCache, cacheProperties());
 
     @Test
     void attributesOfClientsWithoutASessionAreRemoved() {
@@ -40,6 +41,21 @@ class SessionAttributeCleanupTest {
         new StoreBackedCache("p:clientSessionCredentials", store).put("c2", "creds-2");
         new StoreBackedCache("p:clientMqttVersion", store).put("c1", "5");
         new StoreBackedCache("p:clientMqttVersion", store).put("c2", "3");
+
+        cleanup.removeAttributesOfClientsWithoutSession();
+
+        assertThat(store.snapshot()).containsOnlyKeys(
+                "p:clientSessionCredentials\u0000c1",
+                "p:clientMqttVersion\u0000c1");
+    }
+
+    @Test
+    void aKeyUnderAnotherCacheNameIsRemovedEvenForAClientWithASession() {
+        when(sessionCache.getAllClientSessions()).thenReturn(Map.of("c1", mock(ClientSessionInfo.class)));
+        new StoreBackedCache("old:clientSessionCredentials", store).put("c1", "creds-1");
+        new StoreBackedCache("old:clientMqttVersion", store).put("c1", "5");
+        new StoreBackedCache("p:clientSessionCredentials", store).put("c1", "creds-1");
+        new StoreBackedCache("p:clientMqttVersion", store).put("c1", "5");
 
         cleanup.removeAttributesOfClientsWithoutSession();
 
@@ -75,6 +91,12 @@ class SessionAttributeCleanupTest {
         cleanup.removeAttributesOfClientsWithoutSession();
 
         assertThat(store.size()).isZero();
+    }
+
+    private static CacheProperties cacheProperties() {
+        CacheProperties properties = new CacheProperties();
+        properties.setCachePrefix("p:");
+        return properties;
     }
 
     private static BrokerStateStores stores(InMemoryKeyValueStore attributes) {
