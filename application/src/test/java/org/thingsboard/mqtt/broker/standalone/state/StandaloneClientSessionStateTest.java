@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionChangesCallback;
 
@@ -44,9 +45,13 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_ID_HEADER;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
 class StandaloneClientSessionStateTest {
+
+    // the service id of the test fixtures, so that a fixture session is "this node's" unless a test says otherwise
+    private static final String CURRENT_SERVICE_ID = SERVICE_ID_HEADER;
 
     private InMemoryKeyValueStore store;
     private InMemoryKeyValueStore storeSpy;
@@ -62,7 +67,9 @@ class StandaloneClientSessionStateTest {
         when(stores.clientSessions()).thenReturn(storeSpy);
         callback = mock(BasicCallback.class);
         persistence = new StandaloneClientSessionPersistenceService(stores);
-        consumer = new StandaloneClientSessionConsumer(stores);
+        ServiceInfoProvider serviceInfoProvider = mock(ServiceInfoProvider.class);
+        when(serviceInfoProvider.getServiceId()).thenReturn(CURRENT_SERVICE_ID);
+        consumer = new StandaloneClientSessionConsumer(stores, serviceInfoProvider);
     }
 
     @Test
@@ -191,6 +198,64 @@ class StandaloneClientSessionStateTest {
     }
 
     @Test
+    void initLoadStoresBackASessionStoredConnectedAsDisconnectedAtTheLoadTime() throws Exception {
+        store.put("c1", proto(persistentSession("c1").toBuilder().connected(true).disconnectedAt(0).build()).toByteArray());
+        long before = System.currentTimeMillis();
+
+        ClientSessionInfo loaded = consumer.initLoad().get("c1");
+
+        long after = System.currentTimeMillis();
+        ClientSessionInfo stored = decodeStored("c1");
+        assertThat(stored.isConnected()).isFalse();
+        assertThat(stored.getDisconnectedAt()).isBetween(before, after).isEqualTo(loaded.getDisconnectedAt());
+    }
+
+    @Test
+    void theDisconnectTimeSurvivesAnotherRestart() throws Exception {
+        store.put("c1", proto(persistentSession("c1").toBuilder().connected(true).disconnectedAt(0).build()).toByteArray());
+        long firstLoadTs = consumer.initLoad().get("c1").getDisconnectedAt();
+        Thread.sleep(5);
+
+        long secondLoadTs = consumer.initLoad().get("c1").getDisconnectedAt();
+
+        assertThat(secondLoadTs).isEqualTo(firstLoadTs);
+    }
+
+    @Test
+    void aSessionStoredWithAnotherServiceIdLoadsAndIsStoredBackWithTheCurrentOne() throws Exception {
+        ClientSessionInfo foreign = persistentSession("c1").toBuilder().connected(false).disconnectedAt(12345L).serviceId("old-node").build();
+        store.put("c1", proto(foreign).toByteArray());
+
+        ClientSessionInfo loaded = consumer.initLoad().get("c1");
+
+        assertThat(loaded.getServiceId()).isEqualTo(CURRENT_SERVICE_ID);
+        assertThat(loaded.getDisconnectedAt()).isEqualTo(12345L);
+        assertThat(decodeStored("c1").getServiceId()).isEqualTo(CURRENT_SERVICE_ID);
+        assertThat(decodeStored("c1").getDisconnectedAt()).isEqualTo(12345L);
+    }
+
+    @Test
+    void aSessionStoredDisconnectedWithTheCurrentServiceIdIsNotRewritten() throws Exception {
+        store.put("c1", proto(persistentSession("c1").toBuilder().connected(false).disconnectedAt(12345L).serviceId(CURRENT_SERVICE_ID).build()).toByteArray());
+
+        consumer.initLoad();
+
+        verify(storeSpy, never()).put(any(), any());
+    }
+
+    @Test
+    void aFailureToStoreALoadedSessionBackFailsTheLoadAndNamesTheClient() {
+        store.put("c1", proto(persistentSession("c1").toBuilder().connected(true).disconnectedAt(0).build()).toByteArray());
+        StoreException failure = new StoreException("put failed");
+        doThrow(failure).when(storeSpy).put(eq("c1"), any());
+
+        assertThatThrownBy(() -> consumer.initLoad())
+                .isInstanceOf(QueuePersistenceException.class)
+                .hasMessageContaining("c1")
+                .hasCause(failure);
+    }
+
+    @Test
     void initLoadOfAnEmptyStoreReturnsNothing() throws Exception {
         assertThat(consumer.initLoad()).isEmpty();
     }
@@ -225,6 +290,10 @@ class StandaloneClientSessionStateTest {
         consumer.listen(changes);
 
         verifyNoInteractions(changes);
+    }
+
+    private ClientSessionInfo decodeStored(String clientId) throws Exception {
+        return ProtoConverter.convertToClientSessionInfo(ClientSessionInfoProto.parseFrom(store.get(clientId)));
     }
 
     private static ClientSessionInfo persistentSession(String clientId) {
