@@ -45,6 +45,9 @@ readonly MY_VOLUMES=(
   "tbmq-ie-config"
 )
 
+# TBMQ nodes and Integration Executors, managed by docker-stop-tbmq.sh and docker-start-tbmq.sh
+readonly TBMQ_SERVICES="tbmq1 tbmq2 tbmq-integration-executor1 tbmq-integration-executor2"
+
 function additionalComposeCacheArgs() {
   source .env
   CACHE_COMPOSE_ARGS=""
