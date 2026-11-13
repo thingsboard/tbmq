@@ -1,0 +1,190 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+// The svg is taken out of flow so the chart can follow the box height without feeding its own size back.
+.tb-chart {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 84px;
+}
+
+.tb-chart-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  touch-action: none;
+
+  &:focus-visible {
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--tb-primary-300);
+  }
+}
+
+.tb-chart-fill-stop {
+  stop-color: var(--tb-series);
+}
+
+.tb-chart-baseline {
+  stroke: rgba(0, 0, 0, 0.1);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tb-chart-line {
+  fill: none;
+  stroke: var(--tb-series);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tb-chart-marker {
+  fill: var(--tb-series);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.tb-chart-cursor {
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tb-chart-tick,
+.tb-chart-empty {
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+.tb-chart-empty {
+  font-family: inherit;
+  font-size: 11px;
+  fill: rgba(0, 0, 0, 0.38);
+}
+
+.tb-chart-tooltip {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  white-space: nowrap;
+
+  &.tb-chart-tooltip-left {
+    margin-left: -8px;
+    transform: translateX(-100%);
+  }
+}
+
+.tb-chart-tooltip-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.tb-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+}
+
+.tb-chart-tooltip-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.tb-chart-tooltip-label {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tb-legend {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.tb-legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: rgba(0, 0, 0, 0.76);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tb-primary-300);
+    outline-offset: -2px;
+  }
+
+  &.tb-legend-item-hidden {
+    color: rgba(0, 0, 0, 0.38);
+
+    .tb-legend-key {
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px var(--tb-series);
+    }
+
+    .tb-legend-label {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.tb-legend-key {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--tb-series);
+}
+
+.tb-legend-label {
+  font-size: 12px;
+}
+
+.tb-legend-value {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.54);
+}

@@ -36,19 +36,36 @@ import {
   resourceUsageStatusStyle,
   resourceUsageStatusTranslationMap,
   resourceUsageTooltipTranslationMap,
-  serviceTypeMap
+  serviceTimeseriesId,
+  serviceTypeMap,
+  usageLevel
 } from '@app/shared/models/resource-usage.model';
 import { DialogService } from '@core/services/dialog.service';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
+import { SettingsService } from '@core/http/settings.service';
+import { defaultResourceUsageAlertSettings, ResourceUsageThresholds } from '@shared/models/settings.models';
+import { catchError, map, tap } from 'rxjs/operators';
+import { SnapshotTrend } from '@shared/models/live-stats.model';
+import { AggregationType, HOUR } from '@shared/models/time/time.models';
+import { Direction } from '@shared/models/page/sort-order';
+import { PageData } from '@shared/models/page/page-data';
+
+const CPU_TREND_WINDOW_MS = HOUR;
+const CPU_TREND_MAX_SAMPLES = 120;
 
 @Injectable()
 export class ResourceUsageTableConfigResolver {
 
   private readonly config: EntityTableConfig<ResourceUsage> = new EntityTableConfig<ResourceUsage>();
+  private readonly cpuTrend = new SnapshotTrend(CPU_TREND_MAX_SAMPLES);
+  private thresholds: ResourceUsageThresholds = defaultResourceUsageAlertSettings;
+  private cpuTrendLoad: Subscription | null = null;
 
   constructor(private timeseriesService: TimeseriesService,
               private translate: TranslateService,
               private dialogService: DialogService,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              private settingsService: SettingsService) {
 
     this.config.entityType = EntityType.RESOURCE_USAGE;
     this.config.entityComponent = null;
@@ -64,7 +81,9 @@ export class ResourceUsageTableConfigResolver {
     this.config.displayPagination = false;
 
     this.config.cellActionDescriptors = this.configureCellActions();
-    this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos();
+    this.config.entitiesFetchFunction = () => this.timeseriesService.getServiceInfos().pipe(
+      tap(page => this.loadCpuTrend(page))
+    );
 
     this.config.columns.push(
       new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'common.update-time', this.datePipe, '150px', undefined, undefined, false),
@@ -73,6 +92,9 @@ export class ResourceUsageTableConfigResolver {
           entity => serviceTypeMap.get(entity.serviceType), undefined, false),
       new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '100px', (entity) => this.usageCell(entity.cpuUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.cpuUsage, 'cpu', entity.cpuCount)),
+      new EntityTableColumn<ResourceUsage>('cpuTrend', 'monitoring.resource-usage.cpu-trend', '120px',
+        (entity) => this.cpuTrend.sparkline(this.trendId(entity)), undefined, false, undefined,
+        (entity) => this.cpuTrendTooltip(entity)),
       new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '100px', (entity) => this.usageCell(entity.memoryUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.memoryUsage, 'ram', entity.totalMemory)),
       new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '100px', (entity) => this.usageCell(entity.diskUsage),
@@ -88,8 +110,14 @@ export class ResourceUsageTableConfigResolver {
     );
   }
 
-  resolve(): EntityTableConfig<ResourceUsage> {
-    return this.config;
+  resolve(): Observable<EntityTableConfig<ResourceUsage>> {
+    this.cpuTrendLoad?.unsubscribe();
+    return this.settingsService.getResourceUsageThresholds().pipe(
+      map(thresholds => {
+        this.thresholds = thresholds;
+        return this.config;
+      })
+    );
   }
 
   private configureCellActions(): Array<CellActionDescriptor<ResourceUsage>> {
@@ -119,10 +147,56 @@ export class ResourceUsageTableConfigResolver {
       true
     ).subscribe((res) => {
         if (res) {
-          this.timeseriesService.deleteServiceInfo(entity.serviceId).subscribe(() => this.config.getTable().updateData());
+          this.timeseriesService.deleteServiceInfo(entity.serviceId, entity.serviceType).subscribe(() => this.config.getTable().updateData());
         }
       }
     );
+  }
+
+  // CPU usage is stored as history, so the trend covers the last hour no matter how often the table is refreshed. The rows
+  // are shown right away and the sparklines fill in once every history request has answered.
+  private loadCpuTrend(page: PageData<ResourceUsage>) {
+    this.cpuTrendLoad?.unsubscribe();
+    if (!page.data.length) {
+      return;
+    }
+    const endTs = Date.now();
+    this.cpuTrendLoad = forkJoin(page.data.map(usage => {
+      const id = this.trendId(usage);
+      return this.timeseriesService.getEntityTimeseries(id, endTs - CPU_TREND_WINDOW_MS, endTs, ['cpuUsage'], CPU_TREND_MAX_SAMPLES,
+        AggregationType.NONE, undefined, Direction.ASC).pipe(
+        map(history => (history.cpuUsage ?? []).map(sample => Number(sample.value))),
+        catchError(() => of<number[]>([])),
+        map(values => [id, values] as const)
+      );
+    })).subscribe(entries => {
+      this.cpuTrend.replace(entries);
+      this.refreshCpuTrendCells(page.data.length);
+    });
+  }
+
+  private refreshCpuTrendCells(rows: number) {
+    const table = this.config.getTable();
+    const column = this.config.columns.findIndex(column => column.key === 'cpuTrend');
+    if (!table || column < 0) {
+      return;
+    }
+    for (let row = 0; row < rows; row++) {
+      table.clearCellCache(column, row);
+    }
+    table.detectChanges();
+  }
+
+  private trendId(usage: ResourceUsage): string {
+    return serviceTimeseriesId(usage.serviceType, usage.serviceId);
+  }
+
+  private cpuTrendTooltip(usage: ResourceUsage): string {
+    const range = this.cpuTrend.range(this.trendId(usage));
+    if (!range) {
+      return undefined;
+    }
+    return this.translate.instant('monitoring.resource-usage.cpu-trend-tooltip', {min: Math.round(range.min), max: Math.round(range.max)});
   }
 
   private toGb(value: number): string {
@@ -138,21 +212,18 @@ export class ResourceUsageTableConfigResolver {
 
   private usageCell(usage: number): string {
     const value = this.toPercentage(usage);
-    let iconColor;
-    if (this.isCritical(usage)) {
-      iconColor = STATUS_COLOR.INACTIVE.content;
-    } else if (this.isHigh(usage)) {
-      iconColor = STATUS_COLOR.PENDING.content;
-    } else {
+    const level = usageLevel(usage ?? null, this.thresholds);
+    if (level === 'ok') {
       return value;
     }
-    return cellWithIcon(value,  'warning', 'transparent', iconColor);
+    return cellWithIcon(value, 'warning', 'transparent', level === 'crit' ? STATUS_COLOR.INACTIVE.content : STATUS_COLOR.PENDING.content);
   }
 
   private usageTooltip(usage: number, type: string, value: number): string  {
-    if (this.isCritical(usage)) {
+    const level = usageLevel(usage ?? null, this.thresholds);
+    if (level === 'crit') {
       return this.translate.instant(`monitoring.resource-usage.${type}-critical-text`);
-    } else if (this.isHigh(usage)) {
+    } else if (level === 'warn') {
       return this.translate.instant(`monitoring.resource-usage.${type}-warning-text`);
     } else {
       const prefix = this.translate.instant('home.total');
@@ -162,13 +233,5 @@ export class ResourceUsageTableConfigResolver {
         return `${prefix} ${this.toGb(value)}`;
       }
     }
-  }
-
-  private isCritical(usage: number): boolean {
-    return usage > 85;
-  }
-
-  private isHigh(usage: number): boolean {
-    return usage > 75;
   }
 }
