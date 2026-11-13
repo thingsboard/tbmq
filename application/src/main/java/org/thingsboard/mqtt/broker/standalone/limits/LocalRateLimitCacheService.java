@@ -115,12 +115,18 @@ public class LocalRateLimitCacheService implements RateLimitCacheService {
     @Override
     public void initSessionCount(int count) {
         sessionCount.set(count);
+        if (clientsLimitProperties.isSessionsLimitDisabled()) {
+            return;
+        }
         log.info("Client session count is initialized with {}", count);
     }
 
     @Override
     public void initApplicationClientsCount(int count) {
         applicationClientsCount.set(count);
+        if (clientsLimitProperties.isApplicationClientsLimitDisabled()) {
+            return;
+        }
         log.info("Application clients count is initialized with {}", count);
     }
 

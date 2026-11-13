@@ -15,11 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.standalone.limits;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.github.bucket4j.BucketConfiguration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +39,23 @@ class LocalRateLimitCacheServiceTest {
     private final DevicePersistedMsgsRateLimitsConfiguration deviceConfig = new DevicePersistedMsgsRateLimitsConfiguration();
     private final TotalMsgsRateLimitsConfiguration totalConfig = new TotalMsgsRateLimitsConfiguration();
 
+    private final Logger logger = (Logger) LoggerFactory.getLogger(LocalRateLimitCacheService.class);
+    private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+
     private LocalRateLimitCacheService service;
+
+    @BeforeEach
+    void attachAppender() {
+        logger.setLevel(Level.INFO);
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void detachAppender() {
+        logger.detachAppender(appender);
+        appender.stop();
+    }
 
     private LocalRateLimitCacheService startService() {
         service = new LocalRateLimitCacheService(
@@ -185,6 +210,27 @@ class LocalRateLimitCacheServiceTest {
         assertThat(TotalMsgsRateLimitsConfiguration.class
                 .getMethod(LocalRateLimitCacheService.TOTAL_MSGS_BUCKET_CONFIGURATION_BEAN).getReturnType())
                 .isEqualTo(BucketConfiguration.class);
+    }
+
+    @Test
+    void theCounterInitIsLoggedOnlyWhileTheRespectiveLimitIsOn() {
+        startService();
+        service.initSessionCount(3);
+        service.initApplicationClientsCount(5);
+        assertThat(initLogLines()).isEmpty();
+
+        clientsLimit.setSessionsLimit(100);
+        service.initSessionCount(3);
+        assertThat(initLogLines()).singleElement().asString().contains("Client session count");
+
+        clientsLimit.setApplicationClientsLimit(100);
+        service.initApplicationClientsCount(5);
+        assertThat(initLogLines()).hasSize(2).last().asString().contains("Application clients count");
+    }
+
+    private List<String> initLogLines() {
+        return appender.list.stream().map(ILoggingEvent::getFormattedMessage)
+                .filter(message -> message.contains("is initialized with")).toList();
     }
 
 }
