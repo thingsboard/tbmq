@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Service
+@ClusterComponent
 public class HistoricalStatsTotalHelperImpl implements HistoricalStatsTotalHelper {
 
     @Value("${queue.kafka.historical-data-total.topic}")

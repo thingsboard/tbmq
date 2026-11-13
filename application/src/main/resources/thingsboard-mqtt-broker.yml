@@ -1219,6 +1219,10 @@ store:
 
 # Standalone runtime parameters (standalone edition only)
 standalone:
+  # ID of the single TBMQ node, used as service.id (TB_SERVICE_ID is ignored in the standalone edition).
+  # Keep it stable: sessions stored under a different ID are treated as belonging to another node.
+  # Falls back to tbmq-lite if empty.
+  service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
   persist:
     # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
     # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.

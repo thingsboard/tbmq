@@ -65,7 +65,7 @@ public class IntegrationCleanupServiceImpl {
     private final InternodeNotificationsService internodeNotificationsService;
     private final IntegrationExpiryChecker expiryChecker;
     // Read only for its initialization flag - the subscriptions themselves go through
-    // integrationSubscriptionUpdateService. Same use as in HistoricalStatsTotalConsumer.checkAllStatsServicesReady.
+    // integrationSubscriptionUpdateService. Same use as in HistoricalStatsCountsReporter.checkAllStatsServicesReady.
     private final ClientSubscriptionService clientSubscriptionService;
 
     @Scheduled(initialDelay = INITIAL_DELAY_SEC, fixedRateString = "${integrations.cleanup.period}", timeUnit = TimeUnit.SECONDS)

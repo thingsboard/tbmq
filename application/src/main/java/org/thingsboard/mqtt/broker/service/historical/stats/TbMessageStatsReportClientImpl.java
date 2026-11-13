@@ -35,10 +35,7 @@ import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.DroppedMsgStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -61,7 +58,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATE
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTBOUND_PAYLOAD_BYTES;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
-import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
+import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalAccumulator.ONE_MINUTE_MS;
 
 @Data
 @Component
@@ -69,17 +66,15 @@ import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalSta
 @RequiredArgsConstructor
 public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClient {
 
-    private final HistoricalDataQueueFactory historicalDataQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
-    private final HistoricalStatsTotalHelper helper;
+    private final HistoricalStatsTotalPublisher historicalStatsTotalPublisher;
     private final HistoricalDataReportProperties historicalDataReportProperties;
     private final StatsManager statsManager;
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
     private ConcurrentMap<String, ConcurrentMap<String, ClientSessionMetricState>> clientSessionsStats;
-    private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
     // Cached at init time to avoid Spring MethodValidationInterceptor AOP overhead on the hot path
     // (HistoricalDataReportProperties is @Validated, so every getter call would otherwise go through a CGLIB proxy).
     private boolean enabled;
@@ -94,7 +89,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
 
         serviceId = serviceInfoProvider.getServiceId();
-        historicalStatsProducer = historicalDataQueueFactory.createProducer(serviceId);
         stats = new ConcurrentHashMap<>();
         clientSessionsStats = new ConcurrentHashMap<>();
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
@@ -115,9 +109,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                 Thread.currentThread().interrupt();
                 log.warn("[{}] Interrupted while flushing stats on shutdown", serviceId, e);
             }
-        }
-        if (historicalStatsProducer != null) {
-            historicalStatsProducer.stop();
         }
     }
 
@@ -192,7 +183,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                     futures.add(timeseriesService.save(statsMsg.getServiceId(), new BasicTsKvEntry(
                             statsMsg.getTs(), new LongDataEntry(statsMsg.getUsageStats().getKey(), statsMsg.getUsageStats().getValue()))));
 
-                    historicalStatsProducer.send(helper.getTopic(), null, new TbProtoQueueMsg<>(statsMsg), new TbQueueCallback() {
+                    historicalStatsTotalPublisher.publish(statsMsg, new TbQueueCallback() {
                         @Override
                         public void onSuccess(TbQueueMsgMetadata metadata) {
                             log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);

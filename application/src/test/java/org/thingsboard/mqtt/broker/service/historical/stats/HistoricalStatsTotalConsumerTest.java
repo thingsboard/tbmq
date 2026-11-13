@@ -16,12 +16,12 @@
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import com.google.common.util.concurrent.Futures;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.config.HistoricalDataReportProperties;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -30,299 +30,60 @@ import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
 
+@ExtendWith(MockitoExtension.class)
+class HistoricalStatsTotalConsumerTest {
 
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-public class HistoricalStatsTotalConsumerTest {
-
+    @Mock
     private TimeseriesService timeseriesService;
+    @Mock
     private HistoricalDataReportProperties historicalDataReportProperties;
 
     private HistoricalStatsTotalConsumer historicalStatsTotalConsumer;
 
-    private long ts;
-
-    @Before
-    public void init() {
-        ts = System.currentTimeMillis();
-        timeseriesService = mock(TimeseriesService.class);
-        historicalDataReportProperties = mock(HistoricalDataReportProperties.class);
-        historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
-                null, null, null, null, null, null,
-                timeseriesService, historicalDataReportProperties
-        ));
-        historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());
+    @BeforeEach
+    void init() {
+        var accumulator = new HistoricalStatsTotalAccumulator(timeseriesService, historicalDataReportProperties);
+        historicalStatsTotalConsumer = new HistoricalStatsTotalConsumer(null, null, null,
+                accumulator, timeseriesService, historicalDataReportProperties);
     }
 
     @Test
-    public void givenStatsMsg_whenReceiveIncomingMessage_thenCalculateTsTotalStatsForIncomingMsgs() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        var msg1 = buildMessage(INCOMING_MSGS, 5);
-        var msg2 = buildMessage(INCOMING_MSGS, 10);
-        var msg3 = buildMessage(INCOMING_MSGS, 25);
-        var msg4 = buildMessage(INCOMING_MSGS, 3);
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
-        HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
-        }
-
-        Assert.assertEquals(43, results.getTotalMsgCounter());
-        verify(timeseriesService, times(1)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsg_whenReceiveOutgoingMessage_thenCalculateTsTotalStatsForOutgoingMsgs() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        var msg1 = buildMessage(OUTGOING_MSGS, 5);
-        var msg2 = buildMessage(OUTGOING_MSGS, 10);
-        var msg3 = buildMessage(OUTGOING_MSGS, 25);
-        var msg4 = buildMessage(OUTGOING_MSGS, 3);
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
-        HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
-        }
-
-        Assert.assertEquals(43, results.getTotalMsgCounter());
-        verify(timeseriesService, times(1)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsg_whenReceiveDroppedMessage_thenCalculateTsTotalStatsForDroppedMsgs() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        var msg1 = buildMessage(DROPPED_MSGS, 5);
-        var msg2 = buildMessage(DROPPED_MSGS, 10);
-        var msg3 = buildMessage(DROPPED_MSGS, 25);
-        var msg4 = buildMessage(DROPPED_MSGS, 3);
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
-        HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
-        }
-
-        Assert.assertEquals(43, results.getTotalMsgCounter());
-        verify(timeseriesService, times(1)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsg_whenReceiveNextTs_thenCalculateForNextTotalTs() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        int nextMsgTs = 100;
-
-        var msg1 = buildMessage(INCOMING_MSGS, 5);
-        var msg2 = buildMessage(INCOMING_MSGS, 10);
-        var msg3 = buildMessage(INCOMING_MSGS, 25);
-        var msg4 = buildMessageWithDifferentTs(INCOMING_MSGS, 10, nextMsgTs);
-        var msg5 = buildMessageWithDifferentTs(INCOMING_MSGS, 13, nextMsgTs);
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
-        HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
-        }
-
-        Assert.assertEquals(23, results.getTotalMsgCounter());
-        verify(timeseriesService, times(1)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsg_whenReceivePreviousTs_thenSkipStaleMessages() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        int nextTsMsg = -100;
-
-        var msg1 = buildMessage(OUTGOING_MSGS, 5);
-        var msg2 = buildMessage(OUTGOING_MSGS, 10);
-        var msg3 = buildMessage(OUTGOING_MSGS, 25);
-        var msg4 = buildMessageWithDifferentTs(OUTGOING_MSGS, 10, nextTsMsg);
-        var msg5 = buildMessageWithDifferentTs(OUTGOING_MSGS, 13, nextTsMsg);
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
-        HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
-        }
-
-        Assert.assertEquals(40, results.getTotalMsgCounter());
-        verify(timeseriesService, times(1)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsgs_thenCalculateTotalForEachKey() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        var msg1 = buildMessage(DROPPED_MSGS, 5);
-        var msg2 = buildMessage(DROPPED_MSGS, 13);
-        var msg3 = buildMessage(DROPPED_MSGS, 6);
-        var msg4 = buildMessage(INCOMING_MSGS, 10);
-        var msg5 = buildMessage(INCOMING_MSGS, 3);
-        var msg6 = buildMessage(INCOMING_MSGS, 3);
-        var msg7 = buildMessage(INCOMING_MSGS, 11);
-        var msg8 = buildMessage(OUTGOING_MSGS, 25);
-        var msg9 = buildMessage(OUTGOING_MSGS, 11);
-
-        Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> tsMsgTotalPairMap = new HashMap<>();
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            String key = msg.getValue().getUsageStats().getKey();
-            tsMsgTotalPairMap.put(key, historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg));
-        }
-
-        tsMsgTotalPairMap.forEach((key, value) -> {
-            if (INCOMING_MSGS.equals(key)) {
-                Assert.assertEquals(27, value.getTotalMsgCounter());
-            } else if (OUTGOING_MSGS.equals(key)) {
-                Assert.assertEquals(36, value.getTotalMsgCounter());
-            } else {
-                Assert.assertEquals(24, value.getTotalMsgCounter());
-            }
-        });
-        verify(timeseriesService, times(3)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenStatsMsgs_whenNextTsComes_thenCalculateNewTotalForEachKey() {
-        List<TsKvEntry> entries = new ArrayList<>();
-        var futuresEntry = Futures.immediateFuture(entries);
-        when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
-
-        int nextTsMsg = 100;
-
-        var msg1 = buildMessage(DROPPED_MSGS, 5);
-        var msg2 = buildMessage(DROPPED_MSGS, 13);
-        var msg3 = buildMessageWithDifferentTs(DROPPED_MSGS, 6, nextTsMsg);
-        var msg4 = buildMessage(INCOMING_MSGS, 10);
-        var msg5 = buildMessage(INCOMING_MSGS, 3);
-        var msg6 = buildMessageWithDifferentTs(INCOMING_MSGS, 3, nextTsMsg);
-        var msg7 = buildMessageWithDifferentTs(INCOMING_MSGS, 11, nextTsMsg);
-        var msg8 = buildMessage(OUTGOING_MSGS, 25);
-        var msg9 = buildMessageWithDifferentTs(OUTGOING_MSGS, 11, -nextTsMsg);
-
-        Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> tsMsgTotalPairMap = new HashMap<>();
-
-        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
-
-        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
-            String key = msg.getValue().getUsageStats().getKey();
-            tsMsgTotalPairMap.put(key, historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg));
-        }
-
-        tsMsgTotalPairMap.forEach((key, value) -> {
-            if (INCOMING_MSGS.equals(key)) {
-                Assert.assertEquals(14, value.getTotalMsgCounter());
-            } else if (OUTGOING_MSGS.equals(key)) {
-                Assert.assertEquals(25, value.getTotalMsgCounter());
-            } else {
-                Assert.assertEquals(6, value.getTotalMsgCounter());
-            }
-        });
-        verify(timeseriesService, times(3)).findLatest(any(), any());
-    }
-
-    @Test
-    public void givenMsgWithUnknownRemovedKey_whenProcessSaveHistoricalStatsTotal_thenIgnoredWithoutSaveOrNpe() {
-        // processedBytes was removed from the historical key set, so totalStatsMap has no entry for it.
-        // A message with such a key (e.g. produced by a not-yet-upgraded node during a rolling upgrade)
-        // must be ignored, not throw NPE — otherwise the uncommitted batch is re-polled forever and
-        // poisons cluster-wide historical aggregation.
-        var msg = buildMessage(PROCESSED_BYTES, 7);
-
-        historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(msg);
+    void givenMsgWithUnknownRemovedKey_whenProcessSaveHistoricalStatsTotal_thenIgnoredWithoutSaveOrNpe() {
+        historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(buildMessage(PROCESSED_BYTES, 7));
 
         verify(timeseriesService, never()).save(any(), any(TsKvEntry.class));
     }
 
     @Test
-    public void givenMsgWithKnownKey_whenProcessSaveHistoricalStatsTotal_thenSavesExactlyOnce() {
+    void givenMsgsWithKnownKey_whenProcessSaveHistoricalStatsTotal_thenEachSavesTheRunningTotal() {
         when(timeseriesService.findLatest(any(), any())).thenReturn(Futures.immediateFuture(new ArrayList<>()));
         when(timeseriesService.save(any(), any(TsKvEntry.class))).thenReturn(Futures.immediateFuture(null));
 
         historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(buildMessage(INCOMING_MSGS, 5));
+        historicalStatsTotalConsumer.processSaveHistoricalStatsTotal(buildMessage(INCOMING_MSGS, 3));
 
-        // A known key is aggregated and persisted exactly once — proving the guard only filters unknown keys.
-        verify(timeseriesService, times(1)).save(any(), any(TsKvEntry.class));
+        ArgumentCaptor<TsKvEntry> saved = ArgumentCaptor.forClass(TsKvEntry.class);
+        verify(timeseriesService, times(2)).save(eq(ENTITY_ID_TOTAL), saved.capture());
+        assertThat(saved.getAllValues()).extracting(e -> e.getLongValue().orElseThrow()).containsExactly(5L, 8L);
     }
 
     private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessage(String key, int value) {
-
-        UsageStatsKVProto statsItem = UsageStatsKVProto.newBuilder()
-                .setKey(key)
-                .setValue(value)
-                .build();
-
-        ToUsageStatsMsgProto statsMsg = ToUsageStatsMsgProto.newBuilder()
-                .setTs(ts)
-                .setUsageStats(statsItem)
-                .build();
-
-        return new TbProtoQueueMsg<>(statsMsg);
-    }
-
-    private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessageWithDifferentTs(String key, int value, int updateTs) {
-
-        UsageStatsKVProto statsItem = UsageStatsKVProto.newBuilder()
-                .setKey(key)
-                .setValue(value)
-                .build();
-
-        ToUsageStatsMsgProto statsMsg = ToUsageStatsMsgProto.newBuilder()
-                .setTs(ts + updateTs)
-                .setUsageStats(statsItem)
-                .build();
-
-        return new TbProtoQueueMsg<>(statsMsg);
-    }
-
-    private Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> initAndGetTotalMessageMap() {
-        Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> totalMessageCounter = new HashMap<>();
-        for (String key : MSG_RELATED_HISTORICAL_KEYS) {
-            totalMessageCounter.put(key, new HistoricalStatsTotalConsumer.TsMsgTotalPair());
-        }
-        return totalMessageCounter;
+        return new TbProtoQueueMsg<>(ToUsageStatsMsgProto.newBuilder()
+                .setTs(1000L)
+                .setUsageStats(UsageStatsKVProto.newBuilder().setKey(key).setValue(value).build())
+                .build());
     }
 
 }
