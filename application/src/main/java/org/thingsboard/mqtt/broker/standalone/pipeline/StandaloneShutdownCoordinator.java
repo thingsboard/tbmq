@@ -29,8 +29,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Stops the publish pipeline before every other bean: it stops reading from the clients, then drains the dispatch
  * stage and the persist stage in that order within one deadline, {@code standalone.shutdown.drain-timeout-ms}. A
- * publish that was not dispatched in time was never acknowledged. The final WAL sync and the close of the store stay
- * with the store, which Spring closes last because every store user depends on it.
+ * publish that was not dispatched in time was never acknowledged. One that reaches a drained stage fails with
+ * {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException}: it is not acknowledged either, and its client
+ * is disconnected with Server shutting down. The final WAL sync and the close of the store stay with the store, which
+ * Spring closes last because every store user depends on it.
  */
 @Slf4j
 @Component

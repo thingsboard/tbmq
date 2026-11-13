@@ -73,8 +73,9 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
     }
 
     /**
-     * Queues the publish for the worker of its key, the MQTT topic. When it cannot be queued, because the workers no
-     * longer accept items or the caller is interrupted, the callback fails instead.
+     * Queues the publish for the worker of its key, the MQTT topic. When it cannot be queued, the callback fails
+     * instead: with {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException} once the workers no longer
+     * accept items on shutdown, or with the {@link InterruptedException} of an interrupted caller.
      */
     void submit(TbProtoQueueMsg<PublishMsgProto> msg, PublishMsgCallback callback) {
         try {

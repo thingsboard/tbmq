@@ -22,6 +22,7 @@ import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -216,13 +217,15 @@ class PartitionedWorkersTest {
     }
 
     @Test
-    void givenDrained_whenSubmit_thenThrowsIllegalState() throws Exception {
+    void givenDrained_whenSubmit_thenThrowsPipelineClosedWithoutAStackTrace() throws Exception {
         workers = new PartitionedWorkers<>("test-after-drain", 1, 0, 8, batch -> {
         });
         workers.start();
         assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
 
-        assertThatThrownBy(() -> workers.submit("k", new Item("k", 0))).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> workers.submit("k", new Item("k", 0)))
+                .isInstanceOf(PipelineClosedException.class)
+                .satisfies(e -> assertThat(e.getStackTrace()).isEmpty());
         assertThat(workers.queued()).isZero();
         // the rejected submit left nothing unfinished
         assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
@@ -309,7 +312,8 @@ class PartitionedWorkersTest {
         workers.stop();
 
         await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).untilAsserted(() -> assertThat(interrupted).hasValue(1));
-        assertThatThrownBy(() -> blocked.get(WAIT_SECONDS, TimeUnit.SECONDS)).hasRootCauseInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> blocked.get(WAIT_SECONDS, TimeUnit.SECONDS)).hasRootCauseInstanceOf(PipelineClosedException.class);
+        assertThatThrownBy(() -> workers.submit("k", new Item("k", 3))).isInstanceOf(PipelineClosedException.class);
     }
 
     @Test

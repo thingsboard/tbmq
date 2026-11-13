@@ -31,6 +31,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -249,10 +250,26 @@ class StandalonePublishStageTest {
 
         publisher.sendMsg(qos1("t/1"), queueCallback);
 
-        verify(queueCallback).onFailure(isA(IllegalStateException.class));
+        ArgumentCaptor<Throwable> failure = ArgumentCaptor.forClass(Throwable.class);
+        verify(queueCallback).onFailure(failure.capture());
+        assertThat(failure.getValue()).isInstanceOf(PipelineClosedException.class);
+        // every publish still on its way fails like this on shutdown: no stack trace to fill in or to log
+        assertThat(failure.getValue().getStackTrace()).isEmpty();
         verify(queueCallback, never()).onSuccess(any());
         assertThat(budget.queuedMessages()).isZero();
         assertThat(budget.queuedBytes()).isZero();
+        assertThat(consumerLog.list).isEmpty();
+    }
+
+    @Test
+    void givenStoppedStage_whenSendMsg_thenThePublishFailsAsClosed() {
+        consumerService.destroy();
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+
+        verify(queueCallback).onFailure(isA(PipelineClosedException.class));
+        verify(queueCallback, never()).onSuccess(any());
+        assertThat(budget.queuedMessages()).isZero();
     }
 
     @Test

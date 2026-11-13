@@ -90,7 +90,9 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
 
     /**
      * Queues the copy for the worker of its subscriber and blocks while that worker's queue is full. When it cannot be
-     * queued, because the workers no longer accept copies or the caller is interrupted, the callback fails instead.
+     * queued, the callback fails instead: with {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException}
+     * once the workers no longer accept copies on shutdown, which fails the whole publish the same way, or with the
+     * {@link InterruptedException} of an interrupted caller.
      */
     void submit(String clientId, TbProtoQueueMsg<PublishMsgProto> msg, PublishMsgCallback callback) {
         try {

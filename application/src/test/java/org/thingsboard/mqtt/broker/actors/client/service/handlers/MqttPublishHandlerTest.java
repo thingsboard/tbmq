@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -713,6 +714,91 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
+    public void aClosedPipelineOnMqtt5IsNotAnsweredAndDisconnectsWithServerShuttingDown() {
+        givenMqtt5Session();
+        processPublishMsgs(1, 1);
+        processPublishMsgs(2, 2);
+        processPublishMsgs(0, 3);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(3);
+
+        callbacks.forEach(callback -> callback.onFailure(new PipelineClosedException("publish pipeline is closed")));
+
+        assertShutdownDisconnects(3);
+        // no PUBACK or PUBREC at all: the client keeps the msgs and a client that keeps its session resends them
+        verify(actorRef, never()).tell(any());
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
+        verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
+        verify(tbMessageStatsReportClient, times(3)).reportDroppedMsgs();
+        // the QoS 2 msg stays unpersisted, so it is not saved as awaiting PUBREL and its resend is persisted
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(2).isPersisted()).isFalse();
+    }
+
+    @Test
+    public void aClosedPipelineOnMqtt311DisconnectsWithServerShuttingDown() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        processPublishMsgs(1, 1);
+        processPublishMsgs(2, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.forEach(callback -> callback.onFailure(new PipelineClosedException("publish pipeline is closed")));
+
+        assertShutdownDisconnects(2);
+        verify(actorRef, never()).tell(any());
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
+        verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
+        verify(tbMessageStatsReportClient, times(2)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void aSuccessAfterAnUnansweredClosedPipelineMsgIsHeldBack() {
+        givenMqtt5Session();
+        processPublishMsgs(1, 1, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.get(0).onFailure(new PipelineClosedException("publish pipeline is closed"));
+        callbacks.get(1).onSuccess(null);
+        processPubResponsesSentToActor(1);
+
+        // PUBACKs go out in the order of the PUBLISHes [MQTT-4.6.0-2]: msg 2 waits behind msg 1, which is never answered
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
+        assertShutdownDisconnects(1);
+    }
+
+    @Test
+    public void aClosedPipelineIsLoggedAtDebugWithoutAStackTrace() {
+        Logger logger = (Logger) LoggerFactory.getLogger(MqttPublishHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        logger.setLevel(Level.DEBUG);
+        try {
+            givenMqtt5Session();
+            processPublishMsgs(1, 1);
+
+            capturePersistCallbacks(1).get(0).onFailure(new PipelineClosedException("publish pipeline is closed"));
+            assertShutdownDisconnects(1);
+
+            assertThat(appender.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
+            assertThat(appender.list)
+                    .filteredOn(event -> event.getFormattedMessage().contains("publish pipeline is closed"))
+                    .singleElement()
+                    .satisfies(event -> {
+                        assertThat(event.getLevel()).isEqualTo(Level.DEBUG);
+                        assertThat(event.getThrowableProxy()).isNull();
+                    });
+        } finally {
+            logger.setLevel(null);
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+            appender.stop();
+        }
+    }
+
+    @Test
     public void aRetainedStoreFailureFailsThePublishWithoutDispatching() {
         givenMqtt5Session();
         when(retainedMsgProcessor.process(any())).thenThrow(new StoreException("disk"));
@@ -750,6 +836,14 @@ public class MqttPublishHandlerTest {
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
         verify(actorRef, never()).tell(any());
         verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+    }
+
+    private void assertShutdownDisconnects(int expectedCount) {
+        ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, timeout(5000).times(expectedCount)).disconnect(eq("clientId"), disconnectCaptor.capture());
+        assertThat(disconnectCaptor.getAllValues())
+                .extracting(disconnectMsg -> disconnectMsg.getReason().getType())
+                .containsOnly(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN);
     }
 
     private void givenMqtt5Session() {

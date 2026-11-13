@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.standalone.pipeline;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,8 +88,8 @@ public class PartitionedWorkers<T> {
     /**
      * Hands the item to the worker of the key and blocks while that worker's queue is full.
      *
-     * @throws IllegalStateException if {@link #drain} or {@link #stop} was called; the item is not taken
-     * @throws InterruptedException  if the thread is interrupted while it waits for space; the item is not taken
+     * @throws PipelineClosedException if {@link #drain} or {@link #stop} was called; the item is not taken
+     * @throws InterruptedException     if the thread is interrupted while it waits for space; the item is not taken
      */
     public void submit(String key, T item) throws InterruptedException {
         BlockingQueue<T> queue = queues.get(Math.floorMod(key.hashCode(), queues.size()));
@@ -98,7 +99,7 @@ public class PartitionedWorkers<T> {
             requireAccepting();
             while (!queue.offer(item, SUBMIT_RETRY_MS, TimeUnit.MILLISECONDS)) {
                 if (stopped) {
-                    throw new IllegalStateException(threadNamePrefix + " workers are stopped");
+                    throw new PipelineClosedException(threadNamePrefix + " workers are stopped");
                 }
             }
         } catch (InterruptedException | RuntimeException e) {
@@ -154,7 +155,7 @@ public class PartitionedWorkers<T> {
 
     private void requireAccepting() {
         if (!accepting) {
-            throw new IllegalStateException(threadNamePrefix + " workers no longer accept items");
+            throw new PipelineClosedException(threadNamePrefix + " workers no longer accept items");
         }
     }
 

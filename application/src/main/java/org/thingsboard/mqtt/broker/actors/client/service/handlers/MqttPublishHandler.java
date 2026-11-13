@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -259,6 +260,10 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
+                    if (t instanceof PipelineClosedException) {
+                        handlePipelineClosed(ctx, publishMsg, t);
+                        return;
+                    }
                     if (t instanceof PublishLimitExceededException) {
                         // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
                         log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
@@ -270,6 +275,17 @@ public class MqttPublishHandler {
                 });
             }
         });
+    }
+
+    /**
+     * The broker is shutting down and the msg was never published. It gets no PUBACK or PUBREC: its entry stays
+     * unacknowledged at its place in the ordered queue, so no later msg of the client is acknowledged before it, and the
+     * client is disconnected instead. A client that keeps its session resends the msg after it reconnects.
+     */
+    private void handlePipelineClosed(ClientSessionCtx ctx, PublishMsg publishMsg, Throwable t) {
+        log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
+        tbMessageStatsReportClient.reportDroppedMsgs();
+        disconnectClient(ctx, DisconnectReasonType.ON_SERVER_SHUTTING_DOWN, t.getMessage());
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {

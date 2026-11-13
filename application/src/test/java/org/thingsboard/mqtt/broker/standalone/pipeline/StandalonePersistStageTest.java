@@ -41,11 +41,14 @@ import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
+import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.standalone.device.DeviceMsgBodyCodec;
 
@@ -387,8 +390,41 @@ class StandalonePersistStageTest {
 
         publisher.sendMsg("c1", msg("m1"), callback);
 
-        verify(callback).onFailure(isA(IllegalStateException.class));
+        ArgumentCaptor<Throwable> failure = ArgumentCaptor.forClass(Throwable.class);
+        verify(callback).onFailure(failure.capture());
+        assertThat(failure.getValue()).isInstanceOf(PipelineClosedException.class);
+        assertThat(failure.getValue().getStackTrace()).isEmpty();
         verify(callback, never()).onSuccess();
+        verifyNoInteractions(store);
+        assertThat(consumerLog.list).isEmpty();
+    }
+
+    @Test
+    void givenDrainedStage_whenTheCopiesOfADispatchedPublishArrive_thenThePublishFailsOnceAsClosed() {
+        consumer.startConsuming();
+        assertThat(consumer.workers().drain(WAIT_MS)).isTrue();
+        PipelineBudget budget = new PipelineBudget(10, 1000, 80, 50);
+        assertThat(budget.tryAcquire(7)).isTrue();
+        TbQueueCallback queueCallback = mock(TbQueueCallback.class);
+        // what the dispatcher hands the persist stage for a publish with two persistent DEVICE subscribers
+        PublishMsgCallback copies = new MultiplePublishMsgCallbackWrapper(2, new CompleteOncePublishCallback(budget, 7, queueCallback));
+
+        publisher.sendMsg("c1", msg("m1"), copies);
+        publisher.sendMsg("c2", msg("m1"), copies);
+
+        verify(queueCallback).onFailure(isA(PipelineClosedException.class));
+        verify(queueCallback, never()).onSuccess(any());
+        assertThat(budget.queuedMessages()).isZero();
+    }
+
+    @Test
+    void givenStoppedStage_whenSendMsg_thenTheCopyFailsAsClosed() {
+        consumer.startConsuming();
+        consumer.destroy();
+
+        publisher.sendMsg("c1", msg("m1"), callback);
+
+        verify(callback).onFailure(isA(PipelineClosedException.class));
         verifyNoInteractions(store);
     }
 
