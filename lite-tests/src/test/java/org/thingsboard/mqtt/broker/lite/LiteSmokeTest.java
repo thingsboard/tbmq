@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -58,7 +59,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
@@ -202,8 +202,11 @@ public class LiteSmokeTest {
     public void anApplicationCredentialConnectsAsDevice() throws Exception {
         String clientId = "smoke-app";
         MqttClientCredentials credentials = credentialsService.saveCredentials(applicationCredentials(clientId, "smoke-app-user"));
-        UUID basicProviderId = authProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC).orElseThrow().getId();
-        authProviderManagerService.enableAuthProvider(basicProviderId);
+        MqttAuthProvider basicProvider = authProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC).orElseThrow();
+        boolean basicWasEnabled = basicProvider.isEnabled();
+        if (!basicWasEnabled) {
+            authProviderManagerService.enableAuthProvider(basicProvider.getId());
+        }
         try {
             MqttClient client = v5Client(clientId);
             MqttConnectionOptions options = cleanStart();
@@ -214,7 +217,9 @@ public class LiteSmokeTest {
             assertThat(clientSessionCache.getClientSessionInfo(clientId).getType()).isEqualTo(ClientType.DEVICE);
             client.disconnect();
         } finally {
-            authProviderManagerService.disableAuthProvider(basicProviderId);
+            if (!basicWasEnabled) {
+                authProviderManagerService.disableAuthProvider(basicProvider.getId());
+            }
             credentialsService.deleteCredentials(credentials.getId());
         }
     }

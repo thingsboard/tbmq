@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.dao.service.DeviceMsgServiceContract;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +34,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Runs on a Lite classpath: the application and dao-rocksdb, without queue-kafka and cache-redis.
  */
 class LiteClasspathTest {
+
+    private static final String RESTRICTED_DAO_TEST_JAR_SUFFIX = "-lite-tests.jar";
+    private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao-\\d[^/]*-tests\\.jar!/");
 
     @Test
     void theClasspathResolvesToTheLiteEdition() {
@@ -51,19 +55,29 @@ class LiteClasspathTest {
         assertThatThrownBy(() -> Class.forName(className)).isInstanceOf(ClassNotFoundException.class);
     }
 
+    @Test
+    void daosTestClassesComeFromTheRestrictedJar() {
+        assertThat(DeviceMsgServiceContract.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+                .endsWith(RESTRICTED_DAO_TEST_JAR_SUFFIX);
+    }
+
     /**
      * lite-tests takes only the contract and the test-database setup from dao's tests; dao's test configuration
-     * would otherwise configure the Lite tests from another module.
+     * would otherwise configure the Lite tests from another module. Checked over the whole classpath, so it also
+     * catches dao's full test-jar or its test-classes directory.
      */
     @ParameterizedTest
     @ValueSource(strings = {"logback.xml", "application-test.properties", "sql-test.properties", "xss-policy.xml"})
     void noTestConfigurationComesFromDaosTests(String resource) throws IOException {
-        String daoTests = DeviceMsgServiceContract.class.getProtectionDomain().getCodeSource().getLocation().toString();
-
         assertThat(Collections.list(getClass().getClassLoader().getResources(resource)))
                 .map(URL::toString)
                 .as("%s on the classpath", resource)
-                .noneMatch(url -> url.startsWith(daoTests) || url.startsWith("jar:" + daoTests + "!/"));
+                .noneMatch(LiteClasspathTest::isDaoTestOutput);
+    }
+
+    // dao's test-classes directory, or any of its test jars (dao-<version>-tests.jar, dao-<version>-lite-tests.jar)
+    private static boolean isDaoTestOutput(String url) {
+        return url.contains("/dao/target/test-classes/") || DAO_TEST_JAR.matcher(url).find();
     }
 
 }
