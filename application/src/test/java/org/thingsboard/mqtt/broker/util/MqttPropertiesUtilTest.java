@@ -138,6 +138,13 @@ public class MqttPropertiesUtilTest {
         assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(headers, 5_500L));
     }
 
+    @Test
+    public void getMsgExpiryResult_createdTimeAheadOfNow_staysAtTheReceivedInterval() {
+        // createdTime stamped by a node whose clock is 1.5 s ahead: the message counts as not having waited
+        assertEquals(new MsgExpiryResult(true, false, 10), MqttPropertiesUtil.getMsgExpiryResult(10, 2_500L, 1_000L));
+        assertEquals(new MsgExpiryResult(true, false, 0xFFFFFFFF), MqttPropertiesUtil.getMsgExpiryResult(0xFFFFFFFF, 2_500L, 1_000L));
+    }
+
     private static MqttProperties sessionExpiry(int value) {
         MqttProperties props = new MqttProperties();
         props.add(new MqttProperties.IntegerProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID, value));

@@ -389,9 +389,11 @@ public class MqttPropertiesUtil {
     }
 
     // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value
-    // minus the time that the Application Message has been waiting in the Server
+    // minus the time that the Application Message has been waiting in the Server. A createdTime ahead of currentTs (it may
+    // come from another node's clock) counts as no wait, so the result never exceeds the received value.
     private static long calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
-        return TimeUnit.SECONDS.toMillis(Integer.toUnsignedLong(messageExpiryInterval)) - (currentTs - createdTime);
+        long waitedMs = Math.max(0, currentTs - createdTime);
+        return TimeUnit.SECONDS.toMillis(Integer.toUnsignedLong(messageExpiryInterval)) - waitedMs;
     }
 
     /**
