@@ -338,18 +338,21 @@ public class MqttPropertiesUtil {
     }
 
     public static MsgExpiryResult getMsgExpiryResult(MqttProperties properties, long createdTime, long currentTs) {
-        int messageExpiryInterval;
-
         MqttProperties.IntegerProperty pubExpiryIntervalProperty = getPubExpiryIntervalProperty(properties);
         if (pubExpiryIntervalProperty == null) {
             return new MsgExpiryResult(false, false, 0);
-        } else {
-            messageExpiryInterval = pubExpiryIntervalProperty.value();
-            if (messageExpiryInterval == 0) {
-                return new MsgExpiryResult(true, false, 0);
-            }
         }
+        return getMsgExpiryResult(pubExpiryIntervalProperty.value(), createdTime, currentTs);
+    }
 
+    /**
+     * @return the expiry of a message received at {@code createdTime} with a Message Expiry Interval of
+     * {@code messageExpiryInterval} seconds; an interval of 0 stays 0 and never expires here
+     */
+    public static MsgExpiryResult getMsgExpiryResult(int messageExpiryInterval, long createdTime, long currentTs) {
+        if (messageExpiryInterval == 0) {
+            return new MsgExpiryResult(true, false, 0);
+        }
         long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
         if (publishMsgExpiryInterval < 0) {
             return new MsgExpiryResult(true, true, 0);
@@ -379,12 +382,7 @@ public class MqttPropertiesUtil {
             createdTime = BytesUtil.bytesToLong(createdTimeBytes);
         }
 
-        long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
-        if (publishMsgExpiryInterval < 0) {
-            return new MsgExpiryResult(true, true, 0);
-        } else {
-            return new MsgExpiryResult(true, false, msToSeconds(publishMsgExpiryInterval));
-        }
+        return getMsgExpiryResult(messageExpiryInterval, createdTime, currentTs);
     }
 
     // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value

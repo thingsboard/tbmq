@@ -682,13 +682,6 @@ service:
     # Maximum drain duration before the operation is marked as timed out (in ms).
     timeout-ms: "${NODE_DRAIN_TIMEOUT_MS:300000}"
 
-# Standalone (lite) edition parameters. Ignored by the cluster edition.
-standalone:
-  # ID of the single TBMQ node, used as service.id (TB_SERVICE_ID is ignored in the standalone edition).
-  # Keep it stable: sessions stored under a different ID are treated as belonging to another node.
-  # Falls back to tbmq-lite if empty.
-  service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
-
 # Actor system parameters
 actors:
   system:
@@ -1218,6 +1211,26 @@ store:
     block-cache-bytes: "${STORE_MEMORY_BLOCK_CACHE_BYTES:0}"
     # Memory budget of the memtables (in bytes). Defaults to 0, which derives it as 25% of the block cache.
     write-buffer-bytes: "${STORE_MEMORY_WRITE_BUFFER_BYTES:0}"
+  device-msg:
+    # Maximum number of messages read from a persisted DEVICE client queue in one page.
+    read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"
+    # Interval (in ms) between sweeps that delete the expired messages of persisted DEVICE client queues. Defaults to 10 minutes.
+    sweep-interval-ms: "${STORE_DEVICE_MSG_SWEEP_INTERVAL_MS:600000}"
+
+# Standalone runtime parameters (standalone edition only)
+standalone:
+  # ID of the single TBMQ node, used as service.id (TB_SERVICE_ID is ignored in the standalone edition).
+  # Keep it stable: sessions stored under a different ID are treated as belonging to another node.
+  # Falls back to tbmq-lite if empty.
+  service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
+  persist:
+    # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
+    # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.
+    max-concurrent-replays: "${STANDALONE_PERSIST_MAX_CONCURRENT_REPLAYS:16}"
+    # Time (in ms) a replay may go without progress, for example because its client stopped acknowledging, before
+    # a client that waits for a replay slot takes its slot. The stalled client then waits for a slot like any other.
+    # Defaults to 30 s (30000 ms).
+    replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
 
 # Statistics parameters
 stats:
