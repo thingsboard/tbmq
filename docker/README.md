@@ -49,6 +49,19 @@ Execute the following command to stop services:
 ./scripts/docker-stop-services.sh
 ```
 
+To stop or start only the TBMQ nodes and Integration Executors, while PostgreSQL, Kafka, the cache and HAProxy keep
+running, execute:
+
+```
+./scripts/docker-stop-tbmq.sh
+```
+
+```
+./scripts/docker-start-tbmq.sh
+```
+
+`docker-start-tbmq.sh` also recreates the TBMQ containers when their image or configuration changed.
+
 Execute the following command to stop and completely remove deployed docker containers:
 
 ```
@@ -86,7 +99,7 @@ docker exec -it haproxy-certbot sh -c "kill -HUP 1"
 After that execute the following commands:
 
 ```
-./scripts/docker-stop-services.sh
+./scripts/docker-stop-tbmq.sh
 ```
 
 ```
@@ -94,7 +107,11 @@ After that execute the following commands:
 ```
 
 ```
-./scripts/docker-start-services.sh
+./scripts/docker-start-tbmq.sh
 ```
+
+PostgreSQL, Kafka, the cache and HAProxy keep running during the upgrade. If the target version changes third-party
+services, use `./scripts/docker-stop-services.sh` and `./scripts/docker-start-services.sh` instead of the first and last
+commands.
 
 See [Upgrade Instructions](https://tbmq.io/docs/installation/upgrade-instructions/) for more details.
