@@ -36,6 +36,7 @@ import org.rocksdb.Slice;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteBufferManager;
 import org.rocksdb.WriteOptions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
@@ -51,9 +52,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongSupplier;
 
 /**
  * The embedded RocksDB store of the standalone edition: one database under {@code store.path}, one column family
@@ -76,6 +79,7 @@ public class RocksDbStore {
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
 
+    private static final long SLOW_CLOSE_MS = 1000;
     private static final int MAX_OPEN_FILES = 256;
     private static final int DEVICE_MSG_KEY_PREFIX_LENGTH = 8;
     private static final double BLOOM_BITS_PER_KEY = 10;
@@ -90,6 +94,7 @@ public class RocksDbStore {
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
+    private final LongSupplier nanoClock;
 
     private final Map<StoreColumnFamily, ColumnFamilyHandle> handles = new EnumMap<>(StoreColumnFamily.class);
     // the default family and any family this build does not know (a later schema): opened so the meta check can refuse
@@ -104,9 +109,16 @@ public class RocksDbStore {
     private RocksDB db;
     private boolean open;
 
+    @Autowired
     public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
+        this(properties, memoryBudget, System::nanoTime);
+    }
+
+    // the clock is a seam for the test of the slow-close warning
+    RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, LongSupplier nanoClock) {
         this.properties = properties;
         this.memoryBudget = memoryBudget;
+        this.nanoClock = nanoClock;
     }
 
     @PostConstruct
@@ -261,7 +273,9 @@ public class RocksDbStore {
     public void close() {
         lock.writeLock().lock();
         try {
-            if (open) {
+            boolean wasOpen = open;
+            long startNanos = nanoClock.getAsLong();
+            if (wasOpen) {
                 try {
                     db.syncWal();
                 } catch (RocksDBException e) {
@@ -270,6 +284,11 @@ public class RocksDbStore {
             }
             open = false;
             releaseNativeResources();
+            long tookMs = TimeUnit.NANOSECONDS.toMillis(nanoClock.getAsLong() - startNanos);
+            if (wasOpen && tookMs > SLOW_CLOSE_MS) {
+                // on a slow disk this is the part of the shutdown that can outlast the stop timeout of the container
+                log.warn("The final WAL sync and close of the store at {} took {} ms", properties.getPath(), tookMs);
+            }
         } finally {
             lock.writeLock().unlock();
         }

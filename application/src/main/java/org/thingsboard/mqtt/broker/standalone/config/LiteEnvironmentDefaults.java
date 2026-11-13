@@ -23,6 +23,7 @@ import org.springframework.core.env.Environment;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -38,13 +39,33 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
 
     static final String DEFAULT_SERVICE_ID = "tbmq-lite";
 
+    static final String GRACEFUL_SHUTDOWN_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
+    static final String GRACEFUL_SHUTDOWN_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
+    static final String LITE_GRACEFUL_SHUTDOWN_SEC = "1";
+
     static Map<String, Object> defaults() {
         Function<Environment, Object> serviceId = env -> {
             // a blank value (an empty STANDALONE_SERVICE_ID) must not fall through to the hostname
             String configured = env.getProperty("standalone.service-id");
             return configured == null || configured.isBlank() ? DEFAULT_SERVICE_ID : configured;
         };
-        return Map.of("service.id", serviceId);
+        Map<String, Object> defaults = new HashMap<>();
+        defaults.put("service.id", serviceId);
+        // each wait keeps the environment variable the key already has in thingsboard-mqtt-broker.yml winning
+        defaults.put("actors.system.disconnect-wait-timeout-ms", envOrDefault("ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "1500"));
+        defaults.put("spring.lifecycle.timeout-per-shutdown-phase", envOrDefault("SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "6s"));
+        defaults.put("listener.tcp.netty.shutdown_timeout", envOrDefault("TCP_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        defaults.put("listener.ssl.netty.shutdown_timeout", envOrDefault("SSL_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        defaults.put("listener.ws.netty.shutdown_timeout", envOrDefault("WS_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        defaults.put("listener.wss.netty.shutdown_timeout", envOrDefault("WSS_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        return Map.copyOf(defaults);
+    }
+
+    private static Function<Environment, Object> envOrDefault(String variable, String liteValue) {
+        return env -> {
+            String configured = env.getProperty(variable);
+            return configured == null || configured.isBlank() ? liteValue : configured;
+        };
     }
 
     @Override
@@ -58,6 +79,14 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
         }
         if (edition == TbmqEdition.LITE) {
             environment.getPropertySources().addFirst(new LazyDefaultsPropertySource(environment, defaults()));
+            shortenGracefulExecutorShutdown(environment);
+        }
+    }
+
+    // ThingsBoardExecutors reads the process environment and the system properties, not the Spring environment
+    private static void shortenGracefulExecutorShutdown(ConfigurableEnvironment environment) {
+        if (System.getProperty(GRACEFUL_SHUTDOWN_PROPERTY) == null && environment.getProperty(GRACEFUL_SHUTDOWN_ENV) == null) {
+            System.setProperty(GRACEFUL_SHUTDOWN_PROPERTY, LITE_GRACEFUL_SHUTDOWN_SEC);
         }
     }
 

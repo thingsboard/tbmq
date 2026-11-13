@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.standalone.config;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
@@ -36,8 +38,29 @@ class LiteEnvironmentDefaultsTest {
 
     private static final String SOURCE_NAME = "tbmqLiteDefaults";
 
+    private static final String GRACEFUL_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
+    private static final String GRACEFUL_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
+
     @TempDir
     Path tmp;
+
+    private String gracefulPropertyBefore;
+
+    // the post-processor sets a JVM-wide system property: keep it from leaking between tests
+    @BeforeEach
+    void rememberGracefulProperty() {
+        gracefulPropertyBefore = System.getProperty(GRACEFUL_PROPERTY);
+        System.clearProperty(GRACEFUL_PROPERTY);
+    }
+
+    @AfterEach
+    void restoreGracefulProperty() {
+        if (gracefulPropertyBefore == null) {
+            System.clearProperty(GRACEFUL_PROPERTY);
+        } else {
+            System.setProperty(GRACEFUL_PROPERTY, gracefulPropertyBefore);
+        }
+    }
 
     @Test
     void givenLiteEdition_whenServiceIdIsSet_thenFixedServiceIdWins() {
@@ -140,6 +163,85 @@ class LiteEnvironmentDefaultsTest {
         } finally {
             logger.setLevel(previous);
         }
+    }
+
+    @Test
+    void givenLiteEdition_whenNoEnvironmentVariablesAreSet_thenInheritedWaitsAreShortened() {
+        var env = new MockEnvironment();
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isEqualTo("1500");
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("6s");
+        for (String listener : new String[]{"tcp", "ssl", "ws", "wss"}) {
+            assertThat(env.getProperty("listener." + listener + ".netty.shutdown_timeout")).as(listener).isEqualTo("1");
+        }
+    }
+
+    @Test
+    void givenLiteEdition_whenTheEnvironmentVariablesAreSet_thenTheUsersValuesWin() {
+        var env = new MockEnvironment()
+                .withProperty("ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "9000")
+                .withProperty("SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "30s")
+                .withProperty("TCP_NETTY_SHUTDOWN_TIMEOUT", "7")
+                .withProperty("SSL_NETTY_SHUTDOWN_TIMEOUT", "8")
+                .withProperty("WS_NETTY_SHUTDOWN_TIMEOUT", "9")
+                .withProperty("WSS_NETTY_SHUTDOWN_TIMEOUT", "10");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isEqualTo("9000");
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("30s");
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isEqualTo("7");
+        assertThat(env.getProperty("listener.ssl.netty.shutdown_timeout")).isEqualTo("8");
+        assertThat(env.getProperty("listener.ws.netty.shutdown_timeout")).isEqualTo("9");
+        assertThat(env.getProperty("listener.wss.netty.shutdown_timeout")).isEqualTo("10");
+    }
+
+    @Test
+    void givenLiteEdition_whenAnEnvironmentVariableIsBlank_thenTheLiteValueApplies() {
+        var env = new MockEnvironment().withProperty("TCP_NETTY_SHUTDOWN_TIMEOUT", " ");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isEqualTo("1");
+    }
+
+    @Test
+    void givenClusterEdition_whenPostProcess_thenNoWaitIsShortenedAndNoSystemPropertyIsSet() {
+        var env = new MockEnvironment();
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("cluster"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isNull();
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isNull();
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isNull();
+        assertThat(System.getProperty(GRACEFUL_PROPERTY)).isNull();
+    }
+
+    @Test
+    void givenLiteEdition_whenNeitherGracefulTimeoutIsSet_thenSystemPropertyIsOne() {
+        new LiteEnvironmentDefaults().postProcessEnvironment(new MockEnvironment(), appWithMarker("lite"));
+
+        assertThat(System.getProperty(GRACEFUL_PROPERTY)).isEqualTo("1");
+    }
+
+    @Test
+    void givenLiteEdition_whenGracefulSystemPropertyIsSet_thenItIsKept() {
+        System.setProperty(GRACEFUL_PROPERTY, "12");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(new MockEnvironment(), appWithMarker("lite"));
+
+        assertThat(System.getProperty(GRACEFUL_PROPERTY)).isEqualTo("12");
+    }
+
+    @Test
+    void givenLiteEdition_whenGracefulEnvironmentVariableIsSet_thenSystemPropertyIsNotSet() {
+        var env = new MockEnvironment().withProperty(GRACEFUL_ENV, "20");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(System.getProperty(GRACEFUL_PROPERTY)).isNull();
     }
 
     // The resolver caches per class loader, so every test gets a fresh one.
