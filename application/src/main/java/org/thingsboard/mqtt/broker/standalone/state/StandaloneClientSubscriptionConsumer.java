@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionChangesCallback;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.HashMap;
@@ -39,9 +40,10 @@ import java.util.Set;
  * Loads the subscriptions of persistent clients from the embedded store at startup. There is only one node, so
  * nobody else changes the subscriptions and {@link #listen} has nothing to deliver.
  * <p>
- * The load first deletes the stored subscriptions of every client that has no stored session (see
- * {@link #purgeSubscriptionsWithoutSession()}), so that they cannot come back attached to a later session of the
- * same client id.
+ * The load applies the rule of {@code BrokerInitializer.removeSubscriptionIfSessionIsAbsent}: the subscriptions of an
+ * MQTT client without a stored session are dropped. Here the stored entry is deleted as well, so that the
+ * subscriptions cannot come back attached to a later session of the same client id (see
+ * {@link #purgeOrphans(Map)}).
  */
 @Slf4j
 @Component
@@ -59,9 +61,9 @@ public class StandaloneClientSubscriptionConsumer implements ClientSubscriptionC
     @Override
     public Map<SubscriptionsSourceKey, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
         log.debug("Starting subscriptions initLoad");
-        purgeSubscriptionsWithoutSession();
         Map<String, SourcedSubscriptions> stored = StoreStateSupport.loadAll(store, "client subscriptions",
                 bytes -> ProtoConverter.convertProtoToClientSubscriptions(ClientSubscriptionsProto.parseFrom(bytes)));
+        purgeOrphans(stored);
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> subscriptions = new HashMap<>();
         stored.forEach((clientId, sourced) ->
                 subscriptions.put(new SubscriptionsSourceKey(clientId, sourced.getSource()), sourced.getSubscriptions()));
@@ -70,24 +72,33 @@ public class StandaloneClientSubscriptionConsumer implements ClientSubscriptionC
     }
 
     /**
-     * Deletes the stored subscriptions of every client id that has no entry in the sessions store. Such an entry is
-     * left behind when a session stops being persistent while stored (an MQTT 5 client with cleanStart=true that
-     * disconnects with Session Expiry Interval 0 loses its session entry but not its subscriptions) or when a
-     * crash falls between the two separate writes of a session removal. Left in the store it would be loaded
-     * and attached to a later persistent session of the same client id that has not subscribed yet.
+     * Removes from {@code stored}, and deletes from the store in one batch, the entries of MQTT clients that have no
+     * entry in the sessions store. Such an entry is left behind when a session stops being persistent while stored
+     * (an MQTT 5 client with cleanStart=true that disconnects with Session Expiry Interval 0 loses its session entry
+     * but not its subscriptions) or when a crash falls between the two separate writes of a session removal. Left
+     * in the store it would be loaded and attached to a later persistent session of the same client id that has not
+     * subscribed yet.
      * <p>
-     * It is safe: only persistent sessions are stored, a session is stored before the CONNACK and the subscriptions
-     * only after it, so a stored subscriptions entry without a stored session is never live; and the subscriptions
-     * of integrations are not stored here (they are cluster-only).
+     * It mirrors the in-memory rule of {@code BrokerInitializer}: only the entries with the MQTT client source are
+     * judged, the integration-sourced ones are never purged. The session store is the right place to look: only
+     * persistent sessions are stored, and a session is stored before the CONNACK, the subscriptions only after it.
      */
-    private void purgeSubscriptionsWithoutSession() throws QueuePersistenceException {
+    private void purgeOrphans(Map<String, SourcedSubscriptions> stored) throws QueuePersistenceException {
         try {
             Set<String> sessionIds = new HashSet<>();
             sessionsStore.forEach((clientId, bytes) -> sessionIds.add(clientId));
-            int purged = store.retainKeys(sessionIds::contains);
-            if (purged > 0) {
-                log.info("Deleted the stored subscriptions of {} clients that have no stored session", purged);
+            Set<String> orphans = new HashSet<>();
+            stored.forEach((clientId, sourced) -> {
+                if (SubscriptionsSource.MQTT_CLIENT.equals(sourced.getSource()) && !sessionIds.contains(clientId)) {
+                    orphans.add(clientId);
+                }
+            });
+            if (orphans.isEmpty()) {
+                return;
             }
+            store.retainKeys(clientId -> !orphans.contains(clientId));
+            stored.keySet().removeAll(orphans);
+            log.info("Deleted the stored subscriptions of {} clients that have no stored session", orphans.size());
         } catch (StoreException e) {
             log.error("Failed to delete the stored subscriptions of clients without a stored session", e);
             throw new QueuePersistenceException("Failed to load client subscriptions: could not delete the subscriptions of clients without a stored session", e);

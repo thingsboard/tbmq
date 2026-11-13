@@ -101,7 +101,6 @@ class StandaloneSubscriptionStateTest {
     @Test
     void theSourceOfTheSubscriptionsIsKeptInTheLoadedKey() throws Exception {
         when(clientSessionCache.getClientSessionInfo("int1")).thenReturn(persistentSession("int1"));
-        storeSession("int1");
         persistence.persistClientSubscriptionsAsync("int1", Set.of(new IntegrationTopicSubscription("i/#")), null);
 
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> loaded = consumer.initLoad();
@@ -243,7 +242,31 @@ class StandaloneSubscriptionStateTest {
     }
 
     @Test
+    void initLoadKeepsAndReturnsIntegrationSubscriptionsWithoutAStoredSession() throws Exception {
+        when(clientSessionCache.getClientSessionInfo("int1")).thenReturn(persistentSession("int1"));
+        persistence.persistClientSubscriptionsAsync("int1", Set.of(new IntegrationTopicSubscription("i/#")), null);
+        assertThat(sessionsStore.get("int1")).isNull();
+
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> loaded = consumer.initLoad();
+
+        assertThat(loaded).hasSize(1);
+        assertThat(loaded.keySet().iterator().next().getSource()).isEqualTo(SubscriptionsSource.INTEGRATION);
+        assertThat(store.get("int1")).isNotNull();
+    }
+
+    @Test
+    void initLoadDoesNotDeleteAnythingWhenThereIsNoOrphan() throws Exception {
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), null);
+
+        consumer.initLoad();
+
+        verify(storeSpy, never()).retainKeys(any());
+    }
+
+    @Test
     void initLoadFailsWhenThePurgeFails() {
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), null);
+        store.put("orphan", store.get("c1"));
         StoreException failure = new StoreException("retain failed");
         doThrow(failure).when(storeSpy).retainKeys(any());
 
