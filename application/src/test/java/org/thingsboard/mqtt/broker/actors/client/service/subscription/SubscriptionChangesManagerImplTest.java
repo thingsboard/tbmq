@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doAnswer;
+import java.util.function.Consumer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -51,6 +53,11 @@ public class SubscriptionChangesManagerImplTest {
     public void setUp() {
         clientSubscriptionService = mock(ClientSubscriptionServiceImpl.class);
         subscriptionChangesManager = spy(new SubscriptionChangesManagerImpl(clientSubscriptionService));
+        doAnswer(invocation -> {
+            Consumer<Set<TopicSubscription>> apply = invocation.getArgument(2);
+            apply.accept(((SubscriptionChangedEventMsg) invocation.getArgument(1)).getTopicSubscriptions());
+            return null;
+        }).when(clientSubscriptionService).reconcileSubscriptionUpdate(any(), any(), any());
     }
 
     @Test
@@ -64,7 +71,7 @@ public class SubscriptionChangesManagerImplTest {
         SubscriptionChangedEventMsg msg = new SubscriptionChangedEventMsg(Set.of(
                 getTopicSubs("topic2", 2, null, new SubscriptionOptions(), 2),
                 getTopicSubs("topic3", 2, "s2", new SubscriptionOptions(true, false, SubscriptionOptions.RetainHandlingPolicy.DONT_SEND_AT_SUBSCRIBE), 3),
-                getTopicSubs("topic4", 1)));
+                getTopicSubs("topic4", 1)), 0, false);
         subscriptionChangesManager.processSubscriptionChangedEvent("clientId", msg);
 
         verify(clientSubscriptionService, never()).clearSubscriptionsInternally(any());
@@ -98,7 +105,7 @@ public class SubscriptionChangesManagerImplTest {
         Set<TopicSubscription> currentTopicSubscriptions = Set.of(getTopicSubs("topic1", 0));
         doReturn(currentTopicSubscriptions).when(clientSubscriptionService).getClientSubscriptions("clientId");
 
-        SubscriptionChangedEventMsg msg = new SubscriptionChangedEventMsg(Set.of(getTopicSubs("topic1", 1)));
+        SubscriptionChangedEventMsg msg = new SubscriptionChangedEventMsg(Set.of(getTopicSubs("topic1", 1)), 0, false);
         subscriptionChangesManager.processSubscriptionChangedEvent("clientId", msg);
 
         verify(clientSubscriptionService, never()).clearSubscriptionsInternally(any());
@@ -111,7 +118,7 @@ public class SubscriptionChangesManagerImplTest {
         Set<TopicSubscription> currentTopicSubscriptions = Set.of(getTopicSubs("topic1", 0));
         doReturn(currentTopicSubscriptions).when(clientSubscriptionService).getClientSubscriptions("clientId");
 
-        SubscriptionChangedEventMsg msg = new SubscriptionChangedEventMsg(Set.of());
+        SubscriptionChangedEventMsg msg = new SubscriptionChangedEventMsg(Set.of(), 0, false);
         subscriptionChangesManager.processSubscriptionChangedEvent("clientId", msg);
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsInternally("clientId");

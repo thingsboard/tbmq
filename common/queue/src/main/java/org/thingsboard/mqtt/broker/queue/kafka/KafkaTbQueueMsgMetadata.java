@@ -24,4 +24,9 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 @AllArgsConstructor
 public class KafkaTbQueueMsgMetadata implements TbQueueMsgMetadata {
     private RecordMetadata metadata;
+
+    @Override
+    public long offset() {
+        return metadata != null && metadata.hasOffset() ? metadata.offset() : -1;
+    }
 }

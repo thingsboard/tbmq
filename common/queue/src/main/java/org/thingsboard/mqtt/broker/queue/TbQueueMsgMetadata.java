@@ -17,4 +17,12 @@ package org.thingsboard.mqtt.broker.queue;
 
 public interface TbQueueMsgMetadata {
 
+    /**
+     * Position of the written record in its partition, or -1 when the queue does not report one.
+     * Subscription snapshots use it to order a broker's own writes against the snapshots it consumes.
+     */
+    default long offset() {
+        return -1;
+    }
+
 }

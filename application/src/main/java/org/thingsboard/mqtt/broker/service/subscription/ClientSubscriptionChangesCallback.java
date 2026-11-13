@@ -22,6 +22,6 @@ import java.util.Set;
 @FunctionalInterface
 public interface ClientSubscriptionChangesCallback {
 
-    boolean accept(String clientId, String serviceId, Set<TopicSubscription> topicSubscriptions);
+    boolean accept(String clientId, String serviceId, Set<TopicSubscription> topicSubscriptions, long offset);
 
 }

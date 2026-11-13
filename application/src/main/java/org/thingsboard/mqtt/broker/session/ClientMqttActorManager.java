@@ -55,7 +55,9 @@ public interface ClientMqttActorManager {
 
     void notifyChannelWritable(String clientId, WritableChannelMsg writableChannelMsg);
 
-    void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions);
+    void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions, long offset);
+
+    void processSubscriptionWriteCompleted(String clientId);
 
     void processSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg msg);
 
