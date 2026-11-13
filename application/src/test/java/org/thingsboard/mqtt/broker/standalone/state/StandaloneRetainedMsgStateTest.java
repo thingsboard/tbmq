@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -146,11 +147,13 @@ class StandaloneRetainedMsgStateTest {
     }
 
     @Test
-    void aStoreErrorWithoutACallbackIsThrown() {
+    void aStoreErrorWithoutACallbackIsSwallowedAndLeavesTheStoreUnchanged() {
         doThrow(new StoreException("put failed")).when(storeSpy).put(eq("t"), any());
 
-        assertThatThrownBy(() -> persistence.persistRetainedMsgAsync("t", proto(retained("t", 0)), null))
-                .isInstanceOf(StoreException.class);
+        assertThatCode(() -> persistence.persistRetainedMsgAsync("t", proto(retained("t", 0)), null))
+                .doesNotThrowAnyException();
+
+        assertThat(store.size()).isZero();
     }
 
     @Test

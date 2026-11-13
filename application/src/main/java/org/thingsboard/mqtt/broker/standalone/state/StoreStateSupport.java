@@ -37,17 +37,19 @@ final class StoreStateSupport {
 
     /**
      * Runs the write, then reports the outcome. The callback fires only after the write has finished. A failed write
-     * goes to the callback, or is rethrown when there is none, so that a failure is never swallowed.
+     * is logged through {@code logFailure} and goes to the callback. With no callback it is only logged, never
+     * thrown: a caller that passes none is fire-and-forget, like the cluster producers whose failure is logged in the
+     * producer callback, and it goes on with its next steps (for example the rest of a session removal) after the
+     * call returns.
      */
     static void writeThenCallback(Runnable write, BasicCallback callback, Consumer<StoreException> logFailure) {
         try {
             write.run();
         } catch (StoreException e) {
             logFailure.accept(e);
-            if (callback == null) {
-                throw e;
+            if (callback != null) {
+                callback.onFailure(e);
             }
-            callback.onFailure(e);
             return;
         }
         if (callback != null) {

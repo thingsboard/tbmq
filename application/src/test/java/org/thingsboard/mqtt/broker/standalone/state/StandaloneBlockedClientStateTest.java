@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTa
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -117,11 +118,13 @@ class StandaloneBlockedClientStateTest {
     }
 
     @Test
-    void aStoreErrorWithoutACallbackIsThrown() {
+    void aStoreErrorWithoutACallbackIsSwallowedAndLeavesTheStoreUnchanged() {
         doThrow(new StoreException("put failed")).when(storeSpy).put(any(), any());
 
-        assertThatThrownBy(() -> producer.persistBlockedClient("k", proto(new ClientIdBlockedClient("c1")), null))
-                .isInstanceOf(StoreException.class);
+        assertThatCode(() -> producer.persistBlockedClient("k", proto(new ClientIdBlockedClient("c1")), null))
+                .doesNotThrowAnyException();
+
+        assertThat(store.size()).isZero();
     }
 
     @Test
