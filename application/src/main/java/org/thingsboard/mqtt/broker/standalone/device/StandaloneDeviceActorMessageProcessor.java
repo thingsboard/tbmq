@@ -269,6 +269,10 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         if (budget <= 0) {
             return;
         }
+        if (replay == Replay.RUNNING && !replayLimiter.renew(clientId) && !acquireReplayPermit()) {
+            // the permit went to a waiting client while this replay made no progress
+            return;
+        }
         List<StoredDeviceMsg> page = store.readForDelivery(clientId, cursor, budget);
         if (!page.isEmpty()) {
             long now = clock.millis();

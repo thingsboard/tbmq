@@ -1223,6 +1223,10 @@ standalone:
     # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
     # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.
     max-concurrent-replays: "${STANDALONE_PERSIST_MAX_CONCURRENT_REPLAYS:16}"
+    # Time (in ms) a replay may go without progress, for example because its client stopped acknowledging, before
+    # a client that waits for a replay slot takes its slot. The stalled client then waits for a slot like any other.
+    # Defaults to 30 s (30000 ms).
+    replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
 
 # Statistics parameters
 stats:

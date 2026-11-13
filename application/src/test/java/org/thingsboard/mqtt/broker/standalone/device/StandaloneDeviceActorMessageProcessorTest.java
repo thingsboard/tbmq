@@ -115,6 +115,7 @@ class StandaloneDeviceActorMessageProcessorTest {
         when(systemContext.getClientMqttActorManager()).thenReturn(clientMqttActorManager);
         when(systemContext.getDeviceActorConfiguration()).thenReturn(new DeviceActorConfiguration());
         when(replayLimiter.tryAcquire(CLIENT_ID)).thenReturn(true);
+        when(replayLimiter.renew(CLIENT_ID)).thenReturn(true);
         givenFreeSlots(65535);
         when(inFlightCtx2.freeSlots()).thenReturn(65535);
 
@@ -158,6 +159,38 @@ class StandaloneDeviceActorMessageProcessorTest {
         verify(store).readForDelivery(CLIENT_ID, 0, 256);
         verify(store, never()).read(any(), anyLong(), anyInt());
         assertThat(sentUpTo).isEqualTo(256);
+    }
+
+    @Test
+    void aRunningReplayRenewsItsPermitBeforeEveryRead() {
+        givenQueue(600);
+
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(1));
+
+        verify(replayLimiter, times(2)).renew(CLIENT_ID);
+        verify(store).readForDelivery(CLIENT_ID, 256, 1);
+    }
+
+    @Test
+    void aStalledReplayWhosePermitWasTakenWaitsForANewOneBeforeItReadsOn() {
+        givenQueue(600);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        when(replayLimiter.renew(CLIENT_ID)).thenReturn(false);
+        when(replayLimiter.tryAcquire(CLIENT_ID)).thenReturn(false);
+
+        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(1));
+
+        verify(store).remove(CLIENT_ID, 1);
+        verify(store, times(1)).readForDelivery(eq(CLIENT_ID), anyLong(), anyInt());
+        verify(systemContext).scheduleMsgWithDelay(eq(actorCtx), any(DeliverPersistedMessagesEventMsg.class), eq(100L));
+        verify(replayLimiter, never()).release(any());
+
+        when(replayLimiter.tryAcquire(CLIENT_ID)).thenReturn(true);
+        when(replayLimiter.renew(CLIENT_ID)).thenReturn(true);
+        processor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));
+
+        verify(store).readForDelivery(CLIENT_ID, 256, 1);
     }
 
     @Test
