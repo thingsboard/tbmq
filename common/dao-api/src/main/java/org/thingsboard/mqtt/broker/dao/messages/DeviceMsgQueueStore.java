@@ -79,4 +79,10 @@ public interface DeviceMsgQueueStore {
      */
     long expiredEntries();
 
+    /**
+     * @return a monotonic count of every live entry this store dropped to keep a queue within its limit or within the
+     * packet id window; an expired entry the trim drops counts in {@link #expiredEntries()} only
+     */
+    long trimmedEntries();
+
 }

@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommand
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceQueueInfo;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
@@ -81,6 +82,8 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     private final MqttMsgDeliveryService mqttMsgDeliveryService;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final ClientLogger clientLogger;
+    // shared by every processor: the entries skipped because their body cannot be decoded
+    private final DefaultCounter undecodableMsgs;
 
     private ClientSessionCtx sessionCtx;
     private TbActorCtx actorCtx;
@@ -97,13 +100,14 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     private UUID stopActorCommandUUID;
 
     StandaloneDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId, DeviceMsgQueueStore store,
-                                          ReplayLimiter replayLimiter, int readPageSize, Clock clock) {
+                                          ReplayLimiter replayLimiter, int readPageSize, Clock clock, DefaultCounter undecodableMsgs) {
         super(systemContext);
         this.clientId = clientId;
         this.store = store;
         this.replayLimiter = replayLimiter;
         this.readPageSize = readPageSize;
         this.clock = clock;
+        this.undecodableMsgs = undecodableMsgs;
         this.mqttMsgDeliveryService = systemContext.getMqttMsgDeliveryService();
         this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
@@ -257,35 +261,53 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
     }
 
     /**
+     * Hands the next pages of the queue to the channel. An undecodable entry leaves its page short, so the place it
+     * took is read again; every page that skips one removes it, so the reading ends.
+     */
+    private void pull() {
+        boolean skipped;
+        do {
+            skipped = pullPage();
+        } while (skipped);
+    }
+
+    /**
      * Hands the next page of the queue to the channel. The page is no larger than the free part of the read page
      * size and of the client's Receive Maximum, and the store marks it sent as it reads it, so that neither a sweep
      * nor a trim deletes a handed-over entry as expired.
+     *
+     * @return {@code true} when the page had an undecodable entry, which was skipped and removed
      */
-    private void pull() {
+    private boolean pullPage() {
         if (sessionCtx == null || !channelWritable || replay == Replay.AWAITING_PERMIT) {
-            return;
+            return false;
         }
         int budget = Math.min(readPageSize - outstanding, freeSlots());
         if (budget <= 0) {
-            return;
+            return false;
         }
         if (replay == Replay.RUNNING && !replayLimiter.renew(clientId) && !acquireReplayPermit()) {
             // the permit went to a waiting client while this replay made no progress
-            return;
+            return false;
         }
         List<StoredDeviceMsg> page = store.readForDelivery(clientId, cursor, budget);
+        boolean skipped = false;
         if (!page.isEmpty()) {
             long now = clock.millis();
             for (StoredDeviceMsg entry : page) {
-                handOver(entry, now);
+                if (handOver(entry, now)) {
+                    outstanding++;
+                } else {
+                    skipped = true;
+                }
                 cursor = entry.sequence();
-                outstanding++;
             }
         }
         if (cursor >= replayEnd || page.size() < budget) {
             // the connect-time backlog is handed over, or the page reached the end of the queue
             releaseReplayPermit();
         }
+        return skipped;
     }
 
     private int freeSlots() {
@@ -294,11 +316,20 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
         return inFlightCtx == null ? Integer.MAX_VALUE : inFlightCtx.freeSlots();
     }
 
-    private void handOver(StoredDeviceMsg entry, long now) {
+    /**
+     * @return {@code false} when the entry cannot be decoded; it is then removed instead of handed over
+     */
+    private boolean handOver(StoredDeviceMsg entry, long now) {
         switch (entry.packetType()) {
             case PUBREL -> mqttMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, entry.packetId());
             case PUBLISH -> {
-                DevicePublishMsg msg = DeviceMsgBodyCodec.toMsg(clientId, entry);
+                DevicePublishMsg msg;
+                try {
+                    msg = DeviceMsgBodyCodec.toMsg(clientId, entry);
+                } catch (RuntimeException e) {
+                    removeUndecodable(entry, e);
+                    return false;
+                }
                 Integer msgExpiryInterval = msg.getMsgExpiryInterval();
                 if (msgExpiryInterval != null) {
                     // [MQTT-3.3.2-6] the interval left; a sent entry is resent even once its interval has passed, with 0 left
@@ -309,6 +340,16 @@ class StandaloneDeviceActorMessageProcessor extends AbstractContextAwareMsgProce
                 mqttMsgDeliveryService.sendPublishMsgToClient(sessionCtx, msg, entry.sent());
             }
         }
+        return true;
+    }
+
+    /**
+     * An entry that cannot be decoded would fail every delivery, and every reconnect would meet it again.
+     */
+    private void removeUndecodable(StoredDeviceMsg entry, RuntimeException e) {
+        log.error("[{}] Removing the undecodable entry {} from the device queue", clientId, entry.sequence(), e);
+        store.remove(clientId, entry.packetId());
+        undecodableMsgs.increment();
     }
 
     /**

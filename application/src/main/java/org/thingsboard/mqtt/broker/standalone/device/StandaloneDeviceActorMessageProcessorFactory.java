@@ -20,6 +20,9 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorMessageProcessor;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorMessageProcessorFactory;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
+import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 
@@ -32,8 +35,9 @@ public class StandaloneDeviceActorMessageProcessorFactory implements DeviceActor
     private final DeviceMsgQueueStore store;
     private final ReplayLimiter replayLimiter;
     private final int readPageSize;
+    private final DefaultCounter undecodableMsgs;
 
-    public StandaloneDeviceActorMessageProcessorFactory(DeviceMsgQueueStore store, ReplayLimiter replayLimiter,
+    public StandaloneDeviceActorMessageProcessorFactory(DeviceMsgQueueStore store, ReplayLimiter replayLimiter, StatsFactory statsFactory,
                                                         @Value("${store.device-msg.read-page-size:256}") int readPageSize) {
         if (readPageSize < 1) {
             throw new IllegalArgumentException("store.device-msg.read-page-size must be at least 1, but was " + readPageSize);
@@ -41,11 +45,12 @@ public class StandaloneDeviceActorMessageProcessorFactory implements DeviceActor
         this.store = store;
         this.replayLimiter = replayLimiter;
         this.readPageSize = readPageSize;
+        this.undecodableMsgs = statsFactory.createDefaultCounter(StatsType.UNDECODABLE_DEVICE_MSGS.getPrintName());
     }
 
     @Override
     public DeviceActorMessageProcessor create(ActorSystemContext systemContext, String clientId) {
-        return new StandaloneDeviceActorMessageProcessor(systemContext, clientId, store, replayLimiter, readPageSize, Clock.systemUTC());
+        return new StandaloneDeviceActorMessageProcessor(systemContext, clientId, store, replayLimiter, readPageSize, Clock.systemUTC(), undecodableMsgs);
     }
 
 }

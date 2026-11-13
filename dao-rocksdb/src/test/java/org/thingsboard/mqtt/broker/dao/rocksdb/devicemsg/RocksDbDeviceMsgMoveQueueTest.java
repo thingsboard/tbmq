@@ -247,6 +247,7 @@ class RocksDbDeviceMsgMoveQueueTest {
         assertThat(store.read("m1", 0, 100)).extracting(StoredDeviceMsg::packetId).containsExactly(4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
         assertThat(store.info("m1").count()).isEqualTo(10);
         assertThat(store.info("m1").firstSequence()).isEqualTo(4);
+        assertThat(store.trimmedEntries()).isEqualTo(3);
     }
 
     @Test

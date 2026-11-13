@@ -78,6 +78,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     private final Clock clock;
     private final ReentrantLock[] locks = new ReentrantLock[LOCK_STRIPES];
     private final AtomicLong expiredEntries = new AtomicLong();
+    private final AtomicLong trimmedEntries = new AtomicLong();
     private final AtomicLong iteratorSeeks = new AtomicLong();
 
     @Autowired
@@ -119,7 +120,10 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             changed.forEach(queue -> queue.planTrim(now));
             if (!changed.isEmpty()) {
                 store.write(batch -> changed.forEach(queue -> queue.writeTo(batch)));
-                changed.forEach(queue -> expiredEntries.addAndGet(queue.expired));
+                changed.forEach(queue -> {
+                    expiredEntries.addAndGet(queue.expired);
+                    trimmedEntries.addAndGet(queue.trimmed());
+                });
             }
             return results;
         } finally {
@@ -315,6 +319,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 }
             });
             expiredEntries.addAndGet(expired + to.expired);
+            trimmedEntries.addAndGet(to.trimmed());
             return to.entries.size();
         } finally {
             unlockAll(stripes);
@@ -384,6 +389,11 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     @Override
     public long expiredEntries() {
         return expiredEntries.get();
+    }
+
+    @Override
+    public long trimmedEntries() {
+        return trimmedEntries.get();
     }
 
     /**
@@ -617,6 +627,13 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
 
         boolean hasEntries() {
             return !entries.isEmpty();
+        }
+
+        /**
+         * @return the number of live entries the trim drops: the old and new ones it drops, less the expired ones
+         */
+        int trimmed() {
+            return droppedOld.size() - expired + droppedNew;
         }
 
         /**

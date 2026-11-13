@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.stats;
 
+import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -84,6 +85,11 @@ public class DefaultStatsFactory implements StatsFactory {
     @Override
     public <T> T createGauge(String key, T stateObject, ToDoubleFunction<T> valueFunction, String... tags) {
         return meterRegistry.gauge(key, Tags.of(tags), stateObject, valueFunction);
+    }
+
+    @Override
+    public <T> void createFunctionCounter(String key, T stateObject, ToDoubleFunction<T> countFunction, String... tags) {
+        FunctionCounter.builder(key, stateObject, countFunction).tags(tags).register(meterRegistry);
     }
 
     @Override

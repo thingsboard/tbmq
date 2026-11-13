@@ -159,6 +159,7 @@ class RocksDbDeviceMsgExpiryTest {
         assertThat(store.info("c1").count()).isEqualTo(10);
         assertThat(store.info("c1").firstSequence()).isEqualTo(4);
         assertThat(store.expiredEntries()).isEqualTo(1);
+        assertThat(store.trimmedEntries()).isEqualTo(2);                                    // an expired entry is not counted twice
     }
 
     @Test
