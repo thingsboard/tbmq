@@ -1231,6 +1231,10 @@ standalone:
     # a client that waits for a replay slot takes its slot. The stalled client then waits for a slot like any other.
     # Defaults to 30 s (30000 ms).
     replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
+  cache:
+    # Maximum number of entries per Caffeine cache; the oldest entries are evicted beyond it. The two session attribute caches
+    # (clientSessionCredentials, clientMqttVersion) are kept in the store and are never evicted.
+    max-entries: "${STANDALONE_CACHE_MAX_ENTRIES:100000}"
 
 # Statistics parameters
 stats:
