@@ -98,9 +98,15 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         boolean dispatchDrained = drain(dispatch, deadlineNanos);
         boolean persistDrained = drain(persist, deadlineNanos);
         if (!dispatchDrained || !persistDrained) {
-            log.warn("The publish pipeline did not drain within {} ms: {} dispatch and {} persist items were left unprocessed "
-                    + "(batches in progress not counted); they were never acknowledged", timeoutMs, dispatch.queued(), persist.queued());
+            log.warn("The publish pipeline did not drain within {} ms. Dispatch stage: {}. Persist stage: {}. "
+                            + "The publishes it still held were never acknowledged",
+                    timeoutMs, stageState(dispatchDrained, dispatch), stageState(persistDrained, persist));
         }
+    }
+
+    // a stage that did not drain may hold a batch in a handler as well, and the queue size does not count that
+    private static String stageState(boolean drained, PartitionedWorkers<?> workers) {
+        return drained ? "drained" : workers.queued() + " queued and a handler still running";
     }
 
     private boolean drain(PartitionedWorkers<?> workers, long deadlineNanos) {

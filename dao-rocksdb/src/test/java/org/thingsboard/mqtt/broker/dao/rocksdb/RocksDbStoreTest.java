@@ -53,6 +53,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -528,7 +529,7 @@ class RocksDbStoreTest {
         logger.setAdditive(true);
     }
 
-    private RocksDbStore openWithClock(Path path, java.util.function.LongSupplier nanoClock) {
+    private RocksDbStore openWithClock(Path path, LongSupplier nanoClock) {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync("periodic");

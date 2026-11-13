@@ -23,6 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.env.SimpleCommandLinePropertySource;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.io.IOException;
@@ -31,12 +37,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LiteEnvironmentDefaultsTest {
 
     private static final String SOURCE_NAME = "tbmqLiteDefaults";
+    private static final String WAITS_SOURCE_NAME = "tbmqLiteShutdownWaits";
 
     private static final String GRACEFUL_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
     private static final String GRACEFUL_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
@@ -242,6 +251,137 @@ class LiteEnvironmentDefaultsTest {
         new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
 
         assertThat(System.getProperty(GRACEFUL_PROPERTY)).isNull();
+    }
+
+    @Test
+    void givenLiteEdition_whenBrokerYmlIsLoaded_thenWaitsSourceSitsJustBeforeItsConfigDataSource() {
+        var env = environmentWithBrokerYml();
+        String ymlSource = brokerYmlSourceName(env);
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        List<String> names = env.getPropertySources().stream().map(PropertySource::getName).toList();
+        assertThat(names.indexOf(WAITS_SOURCE_NAME)).isEqualTo(names.indexOf(ymlSource) - 1);
+        assertThat(names.indexOf(SOURCE_NAME)).isZero();
+    }
+
+    @Test
+    void givenLiteEdition_whenBrokerYmlIsLoadedAndNothingIsSet_thenLiteWaitsBeatTheFilesDefaults() {
+        var env = environmentWithBrokerYml();
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("1m");
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isEqualTo("1500");
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("6s");
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isEqualTo("1");
+        assertThat(env.getProperty("listener.ssl.netty.shutdown_timeout")).isEqualTo("1");
+        assertThat(env.getProperty("listener.ws.netty.shutdown_timeout")).isEqualTo("1");
+        assertThat(env.getProperty("listener.wss.netty.shutdown_timeout")).isEqualTo("1");
+    }
+
+    @Test
+    void givenLiteEdition_whenASystemPropertyIsSet_thenItBeatsTheLiteWait() {
+        var env = environmentWithBrokerYml();
+        String key = "listener.tcp.netty.shutdown_timeout";
+        System.setProperty(key, "3");
+        try {
+            new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+            assertThat(env.getProperty(key)).isEqualTo("3");
+        } finally {
+            System.clearProperty(key);
+        }
+    }
+
+    @Test
+    void givenLiteEdition_whenACommandLineArgumentIsSet_thenItBeatsTheLiteWait() {
+        var env = environmentWithBrokerYml();
+        env.getPropertySources().addFirst(new SimpleCommandLinePropertySource("--spring.lifecycle.timeout-per-shutdown-phase=30s"));
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("30s");
+    }
+
+    @Test
+    void givenLiteEdition_whenASystemEnvironmentVariableUsesTheRelaxedName_thenItBeatsTheLiteWait() {
+        var env = environmentWithBrokerYml();
+        env.getPropertySources().addAfter(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME,
+                new SystemEnvironmentPropertySource(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
+                        Map.of("LISTENER_TCP_NETTY_SHUTDOWN_TIMEOUT", "4")));
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isEqualTo("4");
+    }
+
+    @Test
+    void givenLiteEdition_whenAnAdditionalConfigSourceIsAboveTheYml_thenItBeatsTheLiteWait() {
+        var env = environmentWithBrokerYml();
+        String ymlSource = brokerYmlSourceName(env);
+        // what a file under spring.config.additional-location becomes: a config-data source above the classpath one
+        env.getPropertySources().addBefore(ymlSource, new MapPropertySource("Config resource 'file [/etc/tbmq/extra.yml]'",
+                Map.of("actors.system.disconnect-wait-timeout-ms", "7000")));
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isEqualTo("7000");
+    }
+
+    @Test
+    void givenLiteEdition_whenAnExternalFileHasTheYmlsName_thenItStaysAboveTheWaitsSource() {
+        var env = environmentWithBrokerYml();
+        String ymlSource = brokerYmlSourceName(env);
+        env.getPropertySources().addBefore(ymlSource, new MapPropertySource(
+                "Config resource 'file [/etc/tbmq/thingsboard-mqtt-broker.yml]' via location 'file:/etc/tbmq/'",
+                Map.of("listener.ws.netty.shutdown_timeout", "9")));
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("listener.ws.netty.shutdown_timeout")).isEqualTo("9");
+        assertThat(env.getProperty("listener.wss.netty.shutdown_timeout")).isEqualTo("1");
+    }
+
+    @Test
+    void givenLiteEdition_whenBrokerYmlIsLoadedAndTheEnvironmentVariablesAreSet_thenTheUsersValuesWin() {
+        var env = environmentWithBrokerYml();
+        env.getPropertySources().addFirst(new MapPropertySource("vars", Map.of("SSL_NETTY_SHUTDOWN_TIMEOUT", "8")));
+
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("listener.ssl.netty.shutdown_timeout")).isEqualTo("8");
+    }
+
+    @Test
+    void givenLiteEdition_whenBrokerYmlIsLoaded_thenServiceIdStillBeatsTheYmlAndHonoursStandaloneServiceId() {
+        var env = environmentWithBrokerYml();
+        new LiteEnvironmentDefaults().postProcessEnvironment(env, appWithMarker("lite"));
+        assertThat(env.getProperty("service.id")).isEqualTo("tbmq-lite");
+
+        env.getPropertySources().addFirst(new MapPropertySource("args", Map.of("standalone.service-id", "edge-7")));
+
+        assertThat(env.getProperty("service.id")).isEqualTo("edge-7");
+    }
+
+    @Test
+    void whenOrdered_thenItRunsAfterTheConfigDataPostProcessor() {
+        assertThat(new LiteEnvironmentDefaults().getOrder()).isGreaterThan(ConfigDataEnvironmentPostProcessor.ORDER);
+    }
+
+    // the broker's yml loaded by Spring Boot's config-data loader, the way the application loads it
+    private StandardEnvironment environmentWithBrokerYml() {
+        var env = new StandardEnvironment();
+        env.getPropertySources().addFirst(new MapPropertySource("test", Map.of("spring.config.name", "thingsboard-mqtt-broker")));
+        ConfigDataEnvironmentPostProcessor.applyTo(env);
+        env.getPropertySources().remove("test");
+        return env;
+    }
+
+    private static String brokerYmlSourceName(StandardEnvironment env) {
+        return env.getPropertySources().stream().map(PropertySource::getName)
+                .filter(name -> name.startsWith("Config resource") && name.contains("class path resource [thingsboard-mqtt-broker.yml]"))
+                .findFirst().orElseThrow();
     }
 
     // The resolver caches per class loader, so every test gets a fresh one.

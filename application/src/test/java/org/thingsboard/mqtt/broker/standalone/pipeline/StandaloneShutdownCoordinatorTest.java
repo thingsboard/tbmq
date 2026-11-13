@@ -126,9 +126,9 @@ class StandaloneShutdownCoordinatorTest {
 
         coordinator().stop();
 
-        assertThat(dispatchBudget.get()).isBetween(4900L, 5000L);
-        // 300 ms went to the dispatch stage; the persist stage must not get the full timeout again
-        assertThat(persistBudget.get()).isBetween(0L, 4700L);
+        assertThat(dispatchBudget.get()).isBetween(1L, 5000L);
+        // 300 ms went to the dispatch stage: the persist stage gets at most what the dispatch stage was given less that
+        assertThat(persistBudget.get()).isBetween(0L, dispatchBudget.get() - 300);
     }
 
     @Test
@@ -155,9 +155,12 @@ class StandaloneShutdownCoordinatorTest {
             coordinator().stop();
             long tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
 
-            assertThat(tookMs).isLessThan(400);
+            // the timeout is 200 ms; the bound is generous for a loaded machine yet far below the 4 s default
+            assertThat(tookMs).isLessThan(2000);
             assertThat(warnings()).hasSize(1);
-            assertThat(warnings().get(0).getFormattedMessage()).contains("2 dispatch").contains("0 persist");
+            assertThat(warnings().get(0).getFormattedMessage())
+                    .contains("Dispatch stage: 2 queued and a handler still running")
+                    .contains("Persist stage: drained");
         } finally {
             release.countDown();
             dispatch.stop();

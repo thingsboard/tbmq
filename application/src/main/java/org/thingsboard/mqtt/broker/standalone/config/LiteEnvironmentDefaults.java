@@ -17,9 +17,12 @@ package org.thingsboard.mqtt.broker.standalone.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
@@ -28,14 +31,25 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Adds the fixed settings of the lite edition as the highest-precedence property source. A value is either a
- * constant or a {@code Function<Environment, Object>} evaluated on every lookup, so a setting the user may still
- * choose (for example {@code standalone.service-id}) applies whether it is loaded before or after this source.
- * The cluster edition, and a classpath without an edition marker, are left untouched.
+ * Applies the settings of the lite edition through two property sources. The cluster edition, and a classpath
+ * without an edition marker, are left untouched.
+ * <ul>
+ * <li>{@value #PROPERTY_SOURCE_NAME}, first in the list: {@code service.id}, which the user chooses through
+ * {@code standalone.service-id}. A value is either a constant or a {@code Function<Environment, Object>} evaluated on
+ * every lookup, so that key applies whether it is loaded before or after this source.</li>
+ * <li>{@value #SHUTDOWN_WAITS_SOURCE_NAME}: the shortened shutdown waits. It sits just before the source of
+ * {@code thingsboard-mqtt-broker.yml}, so that command-line arguments, system properties, environment variables and
+ * files of {@code spring.config.additional-location} still win, while the 15000 / 1m / 5 of the file do not. Each
+ * value is a placeholder on the key's environment variable, because this source hides the file's own placeholder.</li>
+ * </ul>
  */
-public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
+public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordered {
 
     static final String PROPERTY_SOURCE_NAME = "tbmqLiteDefaults";
+    static final String SHUTDOWN_WAITS_SOURCE_NAME = "tbmqLiteShutdownWaits";
+
+    // the name of the config-data source of the file starts with "Config resource" and holds the resource description
+    static final String BROKER_YML_SOURCE_MARKER = "class path resource [thingsboard-mqtt-broker.yml]";
 
     static final String DEFAULT_SERVICE_ID = "tbmq-lite";
 
@@ -49,16 +63,18 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
             String configured = env.getProperty("standalone.service-id");
             return configured == null || configured.isBlank() ? DEFAULT_SERVICE_ID : configured;
         };
-        Map<String, Object> defaults = new HashMap<>();
-        defaults.put("service.id", serviceId);
-        // each wait keeps the environment variable the key already has in thingsboard-mqtt-broker.yml winning
-        defaults.put("actors.system.disconnect-wait-timeout-ms", envOrDefault("ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "1500"));
-        defaults.put("spring.lifecycle.timeout-per-shutdown-phase", envOrDefault("SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "6s"));
-        defaults.put("listener.tcp.netty.shutdown_timeout", envOrDefault("TCP_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        defaults.put("listener.ssl.netty.shutdown_timeout", envOrDefault("SSL_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        defaults.put("listener.ws.netty.shutdown_timeout", envOrDefault("WS_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        defaults.put("listener.wss.netty.shutdown_timeout", envOrDefault("WSS_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        return Map.copyOf(defaults);
+        return Map.of("service.id", serviceId);
+    }
+
+    static Map<String, Object> shutdownWaits() {
+        Map<String, Object> waits = new HashMap<>();
+        waits.put("actors.system.disconnect-wait-timeout-ms", envOrDefault("ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "1500"));
+        waits.put("spring.lifecycle.timeout-per-shutdown-phase", envOrDefault("SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "6s"));
+        waits.put("listener.tcp.netty.shutdown_timeout", envOrDefault("TCP_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        waits.put("listener.ssl.netty.shutdown_timeout", envOrDefault("SSL_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        waits.put("listener.ws.netty.shutdown_timeout", envOrDefault("WS_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        waits.put("listener.wss.netty.shutdown_timeout", envOrDefault("WSS_NETTY_SHUTDOWN_TIMEOUT", "1"));
+        return Map.copyOf(waits);
     }
 
     private static Function<Environment, Object> envOrDefault(String variable, String liteValue) {
@@ -78,9 +94,30 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
             return;
         }
         if (edition == TbmqEdition.LITE) {
-            environment.getPropertySources().addFirst(new LazyDefaultsPropertySource(environment, defaults()));
+            MutablePropertySources sources = environment.getPropertySources();
+            sources.addFirst(new LazyDefaultsPropertySource(PROPERTY_SOURCE_NAME, environment, defaults()));
+            addShutdownWaits(sources, new LazyDefaultsPropertySource(SHUTDOWN_WAITS_SOURCE_NAME, environment, shutdownWaits()));
             shortenGracefulExecutorShutdown(environment);
         }
+    }
+
+    /**
+     * @return after the config-data post-processor, whose property sources the waits are placed against
+     */
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
+    }
+
+    private static void addShutdownWaits(MutablePropertySources sources, PropertySource<?> waits) {
+        for (PropertySource<?> source : sources) {
+            if (source.getName().startsWith("Config resource") && source.getName().contains(BROKER_YML_SOURCE_MARKER)) {
+                sources.addBefore(source.getName(), waits);
+                return;
+            }
+        }
+        // no config-data source for the file, for example in a unit test: below everything else
+        sources.addLast(waits);
     }
 
     // ThingsBoardExecutors reads the process environment and the system properties, not the Spring environment
@@ -94,8 +131,8 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor {
 
         private final Map<String, Object> values;
 
-        private LazyDefaultsPropertySource(Environment environment, Map<String, Object> values) {
-            super(PROPERTY_SOURCE_NAME, environment);
+        private LazyDefaultsPropertySource(String name, Environment environment, Map<String, Object> values) {
+            super(name, environment);
             this.values = values;
         }
 
