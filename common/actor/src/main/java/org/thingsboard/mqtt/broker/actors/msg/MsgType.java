@@ -50,6 +50,7 @@ public enum MsgType {
     SESSION_INIT_MSG,
     DISCONNECT_MSG,
     CONNECTION_ACCEPTED_MSG,
+    CHECK_SESSION_MSG,
 
     // Client Enhanced Authentication Msg Types
     ENHANCED_AUTH_INIT_MSG,
