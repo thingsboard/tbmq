@@ -57,6 +57,15 @@ CREATE TABLE IF NOT EXISTS mqtt_auth_provider (
     additional_info varchar
 );
 
+CREATE TABLE IF NOT EXISTS authorization_policy (
+    id uuid NOT NULL CONSTRAINT authorization_policy_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    name varchar(255) NOT NULL,
+    authorization_rules jsonb NOT NULL,
+    additional_info varchar,
+    CONSTRAINT authorization_policy_name_unq_key UNIQUE (name)
+);
+
 CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     id uuid NOT NULL CONSTRAINT mqtt_client_credentials_pkey PRIMARY KEY,
     created_time bigint NOT NULL,
@@ -64,10 +73,16 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     client_type varchar(255),
     credentials_id varchar,
     credentials_type varchar(255),
+    authorization_policy_id uuid,
     credentials_value varchar,
     additional_info varchar,
-    CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id)
+    CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id),
+    CONSTRAINT fk_mqtt_client_credentials_authorization_policy FOREIGN KEY (authorization_policy_id)
+        REFERENCES authorization_policy(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_mqtt_client_credentials_authorization_policy_id
+    ON mqtt_client_credentials (authorization_policy_id);
 
 CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,

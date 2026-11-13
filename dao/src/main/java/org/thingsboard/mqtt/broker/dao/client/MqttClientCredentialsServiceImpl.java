@@ -39,12 +39,14 @@ import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -61,6 +63,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
+    private final AuthorizationPolicyService authorizationPolicyService;
     private final TbCacheOps cacheOps;
 
     @Override
@@ -260,7 +263,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         } else {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
-        AuthRulesUtil.validateAndCompileBasicAuthRules(mqttCredentials.getAuthRules());
+        if (mqttClientCredentials.getAuthorizationPolicyId() == null) {
+            AuthRulesUtil.validateAndCompileBasicAuthRules(mqttCredentials.getAuthRules());
+        }
     }
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -284,17 +289,18 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 throw new DataValidationException("Client ID pattern [" + clientIdPattern + "] must be a valid regex");
             }
         }
-        if (CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
+        if (mqttClientCredentials.getAuthorizationPolicyId() == null && CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
         }
-        mqttCredentials.getAuthRulesMapping().forEach((certificateMatcherRegex, authRules) -> {
-            try {
-                Pattern.compile(certificateMatcherRegex);
-            } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
-            }
-            AuthRulesUtil.validateAndCompileSslAuthRules(authRules);
-        });
+        Optional.ofNullable(mqttCredentials.getAuthRulesMapping()).orElseGet(Collections::emptyMap)
+                .forEach((certificateMatcherRegex, authRules) -> {
+                    try {
+                        Pattern.compile(certificateMatcherRegex);
+                    } catch (PatternSyntaxException e) {
+                        throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
+                    }
+                    AuthRulesUtil.validateAndCompileSslAuthRules(authRules);
+                });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
         mqttClientCredentials.setCredentialsId(credentialsId);
@@ -307,7 +313,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
         mqttClientCredentials.setCredentialsId(ProtocolUtil.scramCredentialsId(mqttCredentials.getUserName()));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
-        AuthRulesUtil.validateAndCompileAuthRules(mqttCredentials.getAuthRules());
+        if (mqttClientCredentials.getAuthorizationPolicyId() == null) {
+            AuthRulesUtil.validateAndCompileAuthRules(mqttCredentials.getAuthRules());
+        }
     }
 
     private <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
@@ -390,6 +398,10 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     }
                     if (mqttClientCredentials.getCredentialsType() == null) {
                         throw new DataValidationException("MQTT Client credentials type should be specified!");
+                    }
+                    if (mqttClientCredentials.getAuthorizationPolicyId() != null &&
+                            authorizationPolicyService.getPolicyById(mqttClientCredentials.getAuthorizationPolicyId()).isEmpty()) {
+                        throw new DataValidationException("Authorization policy does not exist!");
                     }
                     if (StringUtils.isEmpty(mqttClientCredentials.getCredentialsId())) {
                         throw new DataValidationException("MQTT Client credentials id should be specified!");

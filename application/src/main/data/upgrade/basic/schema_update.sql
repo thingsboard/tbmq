@@ -16,5 +16,26 @@
 
 -- UPGRADE FROM VERSION 2.4.0 TO 2.4.1 START
 
+CREATE TABLE IF NOT EXISTS authorization_policy (
+    id uuid NOT NULL CONSTRAINT authorization_policy_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    name varchar(255) NOT NULL,
+    authorization_rules jsonb NOT NULL,
+    additional_info varchar,
+    CONSTRAINT authorization_policy_name_unq_key UNIQUE (name)
+);
+
+ALTER TABLE mqtt_client_credentials
+    ADD COLUMN IF NOT EXISTS authorization_policy_id uuid;
+
+ALTER TABLE mqtt_client_credentials
+    DROP CONSTRAINT IF EXISTS fk_mqtt_client_credentials_authorization_policy;
+
+ALTER TABLE mqtt_client_credentials
+    ADD CONSTRAINT fk_mqtt_client_credentials_authorization_policy
+        FOREIGN KEY (authorization_policy_id) REFERENCES authorization_policy(id);
+
+CREATE INDEX IF NOT EXISTS idx_mqtt_client_credentials_authorization_policy_id
+    ON mqtt_client_credentials (authorization_policy_id);
 
 -- UPGRADE FROM VERSION 2.4.0 TO 2.4.1 END

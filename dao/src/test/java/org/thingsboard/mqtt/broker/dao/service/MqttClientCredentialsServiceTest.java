@@ -29,17 +29,20 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.AuthorizationPolicy;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -48,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @DaoSqlTest
@@ -57,6 +61,8 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    private AuthorizationPolicyService authorizationPolicyService;
     @Autowired
     private TbCacheOps tbCacheOps;
 
@@ -79,6 +85,10 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         PageData<ShortMqttClientCredentials> credentials = mqttClientCredentialsService.getCredentials(new PageLink(1000));
         for (var credential : credentials.getData()) {
             mqttClientCredentialsService.deleteCredentials(credential.getId());
+        }
+        PageData<AuthorizationPolicy> policies = authorizationPolicyService.getPolicies(new PageLink(1000));
+        for (var policy : policies.getData()) {
+            authorizationPolicyService.deletePolicy(policy.getId());
         }
     }
 
@@ -158,6 +168,62 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Test
     public void testCreateValidCredentials() throws JsonProcessingException {
         mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", null));
+    }
+
+    @Test
+    public void testCreateCredentialsWithAuthorizationPolicy() throws JsonProcessingException {
+        AuthorizationPolicy policy = authorizationPolicyService.savePolicy(validAuthorizationPolicy("shared-policy"));
+        MqttClientCredentials credentials = validMqttClientCredentials("policy-credentials", "client", "user", null);
+        credentials.setAuthorizationPolicyId(policy.getId());
+        BasicMqttCredentials basicCredentials = JacksonUtil.fromString(credentials.getCredentialsValue(), BasicMqttCredentials.class);
+        basicCredentials.setAuthRules(null);
+        credentials.setCredentialsValue(JacksonUtil.toString(basicCredentials));
+
+        MqttClientCredentials saved = mqttClientCredentialsService.saveCredentials(credentials);
+
+        Assert.assertEquals(policy.getId(), saved.getAuthorizationPolicyId());
+        Assert.assertEquals(policy.getAuthorizationRules(),
+                authorizationPolicyService.resolveRules(saved.getAuthorizationPolicyId(), null));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testRejectAuthenticationSpecificPlaceholderInAuthorizationPolicy() {
+        AuthorizationPolicy policy = new AuthorizationPolicy();
+        policy.setName("x509-placeholder-policy");
+        policy.setAuthorizationRules(new PubSubAuthorizationRules(
+                List.of("devices/${cn}/telemetry"), List.of("devices/${cn}/commands")));
+
+        authorizationPolicyService.savePolicy(policy);
+    }
+
+    @Test
+    public void testCreateAuthorizationPolicyWithClientIdPlaceholder() {
+        AuthorizationPolicy policy = new AuthorizationPolicy();
+        policy.setName("client-id-placeholder-policy");
+        policy.setAuthorizationRules(new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/telemetry"), List.of("devices/${clientId}/commands")));
+
+        AuthorizationPolicy saved = authorizationPolicyService.savePolicy(policy);
+
+        Assert.assertEquals(policy.getAuthorizationRules(), saved.getAuthorizationRules());
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testDeleteReferencedAuthorizationPolicy() throws JsonProcessingException {
+        AuthorizationPolicy policy = authorizationPolicyService.savePolicy(validAuthorizationPolicy("referenced-policy"));
+        MqttClientCredentials credentials = validMqttClientCredentials("policy-credentials", "client", "user", null);
+        credentials.setAuthorizationPolicyId(policy.getId());
+        mqttClientCredentialsService.saveCredentials(credentials);
+
+        authorizationPolicyService.deletePolicy(policy.getId());
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testRejectMissingAuthorizationPolicy() throws JsonProcessingException {
+        MqttClientCredentials credentials = validMqttClientCredentials("missing-policy", "client", "user", null);
+        credentials.setAuthorizationPolicyId(UUID.randomUUID());
+
+        mqttClientCredentialsService.saveCredentials(credentials);
     }
 
     @Test
@@ -717,6 +783,14 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance(clientId, username, password, null);
         clientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return clientCredentials;
+    }
+
+    private AuthorizationPolicy validAuthorizationPolicy(String name) {
+        AuthorizationPolicy policy = new AuthorizationPolicy();
+        policy.setName(name);
+        policy.setAuthorizationRules(new PubSubAuthorizationRules(
+                List.of("devices/.+/telemetry"), List.of("devices/.+/commands")));
+        return policy;
     }
 
     private MqttClientCredentials validMqttBasicClientCredentials(ClientType clientType) throws JsonProcessingException {

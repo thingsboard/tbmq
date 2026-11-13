@@ -1411,5 +1411,23 @@
         "unauthorized-client": "अनधिकृत क्लाइंट",
         "unauthorized-clients": "अनधिकृत क्लाइंट्स",
         "unauthorized-client-name-starts-with": "जिन अनधिकृत क्लाइंट्स के client ID '{{prefix}}' से शुरू होते हैं"
+    },
+    "authorization-policy": {
+        "policies": "Authorization policies",
+        "policy": "Authorization policy",
+        "name": "Name",
+        "list": "Authorization policies",
+        "name-starts-with": "Policy name starts with",
+        "details": "Authorization policy details",
+        "add": "Add authorization policy",
+        "no-policies": "No authorization policies found",
+        "search": "Search authorization policies",
+        "selected-policies": "Selected authorization policies",
+        "embedded-rules": "Use embedded authorization rules",
+        "selection-hint": "A selected policy overrides the authorization rules embedded in these credentials.",
+        "rules-hint": "Define reusable publish and subscribe topic rules. Policies are shared across authentication methods and do not support the ${cn} placeholder.",
+        "delete-title": "Delete authorization policy '{{name}}'?",
+        "delete-text": "The policy can be deleted only when no MQTT client credentials reference it.",
+        "delete-many-title": "Delete {{count}} authorization policies?"
     }
 }

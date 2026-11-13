@@ -34,6 +34,7 @@ export enum MenuId {
   sessions = 'sessions',
   subscriptions = 'subscriptions',
   client_credentials = 'client_credentials',
+  authorization_policies = 'authorization_policies',
   unauthorized_clients = 'unauthorized_clients',
   web_socket_client = 'web_socket_client',
   retained_messages = 'retained_messages',

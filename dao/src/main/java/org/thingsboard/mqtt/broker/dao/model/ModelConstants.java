@@ -83,6 +83,15 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY = "name";
     public static final String MQTT_CLIENT_CREDENTIALS_CLIENT_TYPE_PROPERTY = "client_type";
     public static final String MQTT_CLIENT_CREDENTIALS_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
+    public static final String MQTT_CLIENT_CREDENTIALS_AUTHORIZATION_POLICY_ID_PROPERTY = "authorization_policy_id";
+
+    /**
+     * authorization_policy constants.
+     */
+    public static final String AUTHORIZATION_POLICY_COLUMN_FAMILY_NAME = "authorization_policy";
+    public static final String AUTHORIZATION_POLICY_NAME_PROPERTY = "name";
+    public static final String AUTHORIZATION_POLICY_RULES_PROPERTY = "authorization_rules";
+    public static final String AUTHORIZATION_POLICY_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
 
     /**
      * application_shared_subscription constants.

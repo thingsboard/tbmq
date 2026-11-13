@@ -37,6 +37,8 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
 
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 
+    boolean existsByAuthorizationPolicyId(UUID authorizationPolicyId);
+
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
             "LOWER(c.name) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,

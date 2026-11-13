@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandle
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.TbScramSaslServer;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import javax.security.sasl.Sasl;
@@ -63,6 +64,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final AuthorizationPolicyService authorizationPolicyService;
     private final MqttAuthProviderService mqttAuthProviderService;
 
     private volatile boolean enabled;
@@ -187,7 +189,8 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     }
 
     private boolean initiateScramServerWithCallback(String clientId, String authMethod, ClientSessionCtx sessionCtx) {
-        var callbackHandler = new ScramAuthCallbackHandler(credentialsService, authorizationRuleService);
+        var callbackHandler = new ScramAuthCallbackHandler(credentialsService, authorizationRuleService,
+                authorizationPolicyService, clientId);
         SaslServer saslServer;
         try {
             saslServer = createSaslServer(authMethod, callbackHandler);

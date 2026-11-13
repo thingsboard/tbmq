@@ -104,6 +104,13 @@ export class MenuService {
             icon: 'mdi:account-lock-outline'
           },
           {
+            id: MenuId.authorization_policies,
+            name: 'authorization-policy.policies',
+            type: 'link',
+            path: '/authentication/authorization-policies',
+            icon: 'policy'
+          },
+          {
             id: MenuId.mqtt_auth_provider,
             name: 'authentication.providers',
             type: 'link',
@@ -313,4 +320,3 @@ export class MenuService {
     ]);
   }
 }
-

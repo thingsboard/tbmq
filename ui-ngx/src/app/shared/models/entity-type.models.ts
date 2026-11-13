@@ -19,6 +19,7 @@ import { BaseData } from '@shared/models/base-data';
 export enum EntityType {
   USER = 'USER',
   MQTT_CLIENT_CREDENTIALS = 'MQTT_CLIENT_CREDENTIALS',
+  AUTHORIZATION_POLICY = 'AUTHORIZATION_POLICY',
   MQTT_SESSION = 'MQTT_SESSION',
   SHARED_SUBSCRIPTION = 'SHARED_SUBSCRIPTION',
   SHARED_SUBSCRIPTION_GROUP = 'SHARED_SUBSCRIPTION_GROUP',
@@ -82,6 +83,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         noEntities: 'mqtt-client-credentials.no-client-credentials-text',
         search: 'mqtt-client-credentials.search',
         selectedEntities: 'mqtt-client-credentials.selected-client-credentials'
+      }
+    ],
+    [
+      EntityType.AUTHORIZATION_POLICY,
+      {
+        type: 'authorization-policy.policy',
+        typePlural: 'authorization-policy.policies',
+        list: 'authorization-policy.list',
+        nameStartsWith: 'authorization-policy.name-starts-with',
+        details: 'authorization-policy.details',
+        add: 'authorization-policy.add',
+        noEntities: 'authorization-policy.no-policies',
+        search: 'authorization-policy.search',
+        selectedEntities: 'authorization-policy.selected-policies'
       }
     ],
     [
@@ -285,6 +300,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
     ],
     [
       EntityType.MQTT_CLIENT_CREDENTIALS,
+      {
+        helpLinkId: 'clientCredentials'
+      }
+    ],
+    [
+      EntityType.AUTHORIZATION_POLICY,
       {
         helpLinkId: 'clientCredentials'
       }
