@@ -69,11 +69,16 @@ class StandaloneClientSessionEventServiceTest {
 
     @BeforeEach
     void setUp() {
-        pending = new PendingConnectionRequests(1, 100, 20);
+        // a long timeout, so no request times out while a test is still running on a slow agent
+        pending = new PendingConnectionRequests(1, 60_000, 1_000);
         pending.init();
-        service = new StandaloneClientSessionEventService(new ClientSessionEventFactoryImpl(),
-                new ClientSessionCallbackMsgFactoryImpl(), actorManager, pending);
+        service = newService(pending);
         sender = new LocalClientSessionEventResponseSender(pending);
+    }
+
+    private StandaloneClientSessionEventService newService(PendingConnectionRequests pendingRequests) {
+        return new StandaloneClientSessionEventService(new ClientSessionEventFactoryImpl(),
+                new ClientSessionCallbackMsgFactoryImpl(), actorManager, pendingRequests);
     }
 
     @AfterEach
@@ -109,11 +114,17 @@ class StandaloneClientSessionEventServiceTest {
 
     @Test
     void aRequestNobodyAnswersTimesOut() {
-        var future = service.requestConnection(PendingConnectionRequestsTest.sessionInfo("c1"), connectInfo());
+        var shortTimeout = new PendingConnectionRequests(1, 100, 20);
+        shortTimeout.init();
+        try {
+            var future = newService(shortTimeout).requestConnection(PendingConnectionRequestsTest.sessionInfo("c1"), connectInfo());
 
-        assertThatThrownBy(() -> future.get(2, TimeUnit.SECONDS))
-                .isInstanceOf(ExecutionException.class)
-                .hasCauseInstanceOf(TimeoutException.class);
+            assertThatThrownBy(() -> future.get(2, TimeUnit.SECONDS))
+                    .isInstanceOf(ExecutionException.class)
+                    .hasCauseInstanceOf(TimeoutException.class);
+        } finally {
+            shortTimeout.destroy();
+        }
     }
 
     @Test
