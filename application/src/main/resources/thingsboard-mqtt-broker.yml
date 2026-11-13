@@ -1231,6 +1231,11 @@ standalone:
     # a client that waits for a replay slot takes its slot. The stalled client then waits for a slot like any other.
     # Defaults to 30 s (30000 ms).
     replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
+  cache:
+    # Maximum number of entries in each credentials cache. When it is reached, the least useful entries are evicted.
+    # Must be above 0. The client session attribute caches (credentials name, MQTT version) are kept in the store
+    # and do not count towards it.
+    max-entries: "${STANDALONE_CACHE_MAX_ENTRIES:100000}"
 
 # Statistics parameters
 stats:
