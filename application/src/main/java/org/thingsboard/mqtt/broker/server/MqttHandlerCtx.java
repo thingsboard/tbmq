@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 @Component
@@ -38,6 +39,7 @@ public class MqttHandlerCtx {
     private final ThroughputQuotaService throughputQuotaService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final StatsManager statsManager;
+    private final ClientTraceRecorder clientTraceRecorder;
 
     @Value("${mqtt.max-in-flight-msgs:1000}")
     private int maxInFlightMsgs;

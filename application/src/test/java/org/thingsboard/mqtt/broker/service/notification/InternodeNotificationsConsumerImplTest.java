@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRegistry;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +73,9 @@ public class InternodeNotificationsConsumerImplTest {
     private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
 
     @Mock
+    private ClientTraceRegistry clientTraceRegistry;
+
+    @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
 
     private InternodeNotificationsConsumerImpl notificationsConsumer;
@@ -85,7 +89,8 @@ public class InternodeNotificationsConsumerImplTest {
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
                 authorizationRoutingService,
-                integrationLifecycleEventTypeCache);
+                integrationLifecycleEventTypeCache,
+                clientTraceRegistry);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
