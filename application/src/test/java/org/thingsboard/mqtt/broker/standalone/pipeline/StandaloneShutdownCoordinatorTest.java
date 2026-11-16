@@ -254,16 +254,18 @@ class StandaloneShutdownCoordinatorTest {
         coordinator().stop();
 
         ArgumentCaptor<MqttDisconnectMsg> disconnect = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
-        verify(actors).disconnect(eq("with-will"), disconnect.capture());
+        verify(actors).disconnectAfterQueuedMsgs(eq("with-will"), disconnect.capture());
         assertThat(disconnect.getValue().getSessionId()).isEqualTo(withWill.getSessionId());
         assertThat(disconnect.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN);
-        verify(actors, never()).disconnect(eq("without-will"), any());
+        verify(actors, never()).disconnectAfterQueuedMsgs(eq("without-will"), any());
+        // queued behind what the client sent before the pause, so a DISCONNECT 0x00 it sent still discards the will
+        verify(actors, never()).disconnect(any(), any());
         // reads are paused first, so a will holder sends nothing more; its will enters the pipeline before the drain
         InOrder order = inOrder(budget, withWillConfig, withoutWillConfig, actors, lastWills, dispatch);
         order.verify(budget).stopResuming();
         order.verify(withWillConfig).setAutoRead(false);
         order.verify(withoutWillConfig).setAutoRead(false);
-        order.verify(actors).disconnect(eq("with-will"), any());
+        order.verify(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
         order.verify(lastWills).dueLastWillsHandled();
         order.verify(dispatch).drain(anyLong());
         assertThat(warnings()).isEmpty();
@@ -298,7 +300,7 @@ class StandaloneShutdownCoordinatorTest {
             });
             actor.start();
             return null;
-        }).when(actors).disconnect(eq("with-will"), any());
+        }).when(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
         AtomicBoolean closedWhenAwaited = new AtomicBoolean();
         when(lastWills.dueLastWillsHandled()).thenAnswer(invocation -> {
             closedWhenAwaited.set(closed.get());
@@ -389,7 +391,7 @@ class StandaloneShutdownCoordinatorTest {
         ClientSessionCtx failing = willHolder("failing", mock(ChannelConfig.class));
         ClientSessionCtx healthy = willHolder("healthy", mock(ChannelConfig.class));
         when(sessions.getAllClientSessionCtx()).thenReturn(List.of(failing, healthy));
-        doThrow(new IllegalStateException("boom")).when(actors).disconnect(eq("failing"), any());
+        doThrow(new IllegalStateException("boom")).when(actors).disconnectAfterQueuedMsgs(eq("failing"), any());
         disconnectsAtOnce(healthy);
         when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
         PartitionedWorkers<?> dispatch = drained();
@@ -399,7 +401,7 @@ class StandaloneShutdownCoordinatorTest {
 
         coordinator().stop();
 
-        verify(actors).disconnect(eq("healthy"), any());
+        verify(actors).disconnectAfterQueuedMsgs(eq("healthy"), any());
         verify(dispatch).drain(anyLong());
         verify(persist).drain(anyLong());
     }
@@ -468,7 +470,7 @@ class StandaloneShutdownCoordinatorTest {
         doAnswer(invocation -> {
             closed.set(true);
             return null;
-        }).when(actors).disconnect(eq(clientId), any());
+        }).when(actors).disconnectAfterQueuedMsgs(eq(clientId), any());
     }
 
     private long timedStop() {

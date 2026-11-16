@@ -42,8 +42,9 @@ import java.util.concurrent.TimeoutException;
  * what the wills left of it.
  * <p>
  * A Will Message is published once its connection closes [MQTT-3.1.2-8]. Each client that has a Last Will is
- * disconnected with Server shutting down through its client actor, which hands a will that is due to the Last Will
- * scheduler and then closes the channel. The coordinator waits until every such channel is being closed and the
+ * disconnected with Server shutting down through its client actor, after the messages the client sent before: a
+ * DISCONNECT with reason code 0x00 among them still discards the will. The actor hands a will that is due to the Last
+ * Will scheduler and then closes the channel. The coordinator waits until every such channel is being closed and the
  * scheduler has handed those wills to the pipeline, so the drain delivers them. A will with a Will Delay Interval is not
  * due yet: the shutdown does not wait for it, and it is not published, since wills are not kept across a restart. The
  * clients without a will stay connected through the drain, so a subscriber still receives the wills, and are closed
@@ -154,7 +155,8 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         for (ClientSessionCtx session : clientSessionCtxService.getAllClientSessionCtx()) {
             try {
                 if (lastWillService.hasLastWill(session.getSessionId())) {
-                    clientMqttActorManager.disconnect(session.getClientId(), new MqttDisconnectMsg(session.getSessionId(),
+                    // behind what the client sent before its reads were paused: a DISCONNECT 0x00 it sent still discards the will
+                    clientMqttActorManager.disconnectAfterQueuedMsgs(session.getClientId(), new MqttDisconnectMsg(session.getSessionId(),
                             new DisconnectReason(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN)));
                     disconnecting.add(session);
                 }

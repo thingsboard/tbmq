@@ -113,6 +113,21 @@ class DefaultLastWillServiceDueWillsTest {
     }
 
     @Test
+    void givenADisconnect0x00ProcessedBeforeTheShutdownDisconnect_whenTheDueWillsAreHandled_thenNoWillIsPublished() throws Exception {
+        SessionInfo session = session(0);
+        lastWillService.saveLastWillMsg(session, will(0), PublisherIdentity.EMPTY);
+
+        // the order the client actor keeps when the shutdown disconnect is queued behind the client's DISCONNECT
+        lastWillService.removeAndExecuteLastWillIfNeeded(new MqttDisconnectMsg(session.getSessionId(),
+                new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG)), -1);
+        lastWillService.removeAndExecuteLastWillIfNeeded(shutdownDisconnect(session), -1);
+        lastWillService.dueLastWillsHandled().get(WAIT_SECONDS, TimeUnit.SECONDS);
+
+        assertThat(lastWillService.hasLastWill(session.getSessionId())).isFalse();
+        verify(dispatcher, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
+    }
+
+    @Test
     void givenAStoppedScheduler_whenDueLastWillsHandled_thenItIsCompleteAtOnce() {
         scheduler.shutdownNow();
 
