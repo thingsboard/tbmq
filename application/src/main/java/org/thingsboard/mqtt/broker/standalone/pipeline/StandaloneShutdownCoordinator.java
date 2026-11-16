@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.standalone.pipeline;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.EventLoop;
+import io.netty.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.SmartLifecycle;
@@ -31,15 +34,17 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
  * Stops the publish pipeline before every other bean: it stops the budget from resuming reads, stops reading from the
- * clients, publishes the Last Wills of the connected clients, then drains the dispatch stage and the persist stage in
- * that order. One deadline, {@code standalone.shutdown.drain-timeout-ms}, covers the wills and the drain: the drain gets
- * what the wills left of it.
+ * clients and waits for the reads in progress, publishes the Last Wills of the connected clients, then drains the
+ * dispatch stage and the persist stage in that order. One deadline, {@code standalone.shutdown.drain-timeout-ms}, covers
+ * these waits: the drain gets what the others left of it.
  * <p>
  * A Will Message is published once its connection closes [MQTT-3.1.2-8]. Each client that has a Last Will is
  * disconnected with Server shutting down through its client actor, after the messages the client sent before: a
@@ -86,8 +91,9 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         running = false;
         try {
             budget.stopResuming();
-            pauseReading();
             long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(properties.getShutdown().getDrainTimeoutMs());
+            Set<EventLoop> eventLoops = pauseReading();
+            awaitReadsInProgress(eventLoops, deadlineNanos);
             publishWills(deadlineNanos);
             drainStages(deadlineNanos);
         } catch (Throwable t) {
@@ -108,16 +114,67 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         return Integer.MAX_VALUE;
     }
 
-    private void pauseReading() {
+    /**
+     * @return the event loops of the paused channels
+     */
+    private Set<EventLoop> pauseReading() {
+        Set<EventLoop> eventLoops = new HashSet<>();
         for (ClientSessionCtx session : clientSessionCtxService.getAllClientSessionCtx()) {
             try {
-                ChannelHandlerContext channel = session.getChannel();
-                if (channel != null) {
-                    channel.channel().config().setAutoRead(false);
+                ChannelHandlerContext channelCtx = session.getChannel();
+                if (channelCtx != null) {
+                    Channel channel = channelCtx.channel();
+                    channel.config().setAutoRead(false);
+                    EventLoop eventLoop = channel.eventLoop();
+                    if (eventLoop != null) {
+                        eventLoops.add(eventLoop);
+                    }
                 }
             } catch (Throwable t) {
                 log.warn("[{}] Failed to stop reading from the client on shutdown", session.getClientId(), t);
             }
+        }
+        return eventLoops;
+    }
+
+    /**
+     * Runs an empty task on each event loop and waits for them, within the deadline. A read that was in progress when
+     * reading was paused runs on the event loop before that task, and {@code channelRead} tells the client actor
+     * there, so every packet it decoded is in the actor's mailbox once the task has run. After that a paused channel
+     * reads only to complete a packet that the end of a read cut in two. So the disconnects of the will step are
+     * queued behind what the clients had sent when reading was paused. Never throws, and returns by the deadline.
+     */
+    private void awaitReadsInProgress(Set<EventLoop> eventLoops, long deadlineNanos) {
+        if (eventLoops.isEmpty()) {
+            return;
+        }
+        try {
+            List<Future<?>> fences = new ArrayList<>(eventLoops.size());
+            int notFinished = 0;
+            for (EventLoop eventLoop : eventLoops) {
+                try {
+                    fences.add(eventLoop.submit(() -> {
+                    }));
+                } catch (Throwable t) {
+                    log.warn("Failed to wait for the reads in progress on an event loop on shutdown", t);
+                    notFinished++;
+                }
+            }
+            for (Future<?> fence : fences) {
+                if (!fence.await(Math.max(0, deadlineNanos - System.nanoTime()), TimeUnit.NANOSECONDS)) {
+                    notFinished++;
+                }
+            }
+            if (notFinished > 0) {
+                log.warn("The reads in progress on {} of {} event loops did not finish within {} ms: "
+                                + "a packet they decode may reach its client actor after the shutdown disconnect",
+                        notFinished, eventLoops.size(), properties.getShutdown().getDrainTimeoutMs());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the reads in progress on shutdown");
+        } catch (Throwable t) {
+            log.error("Failed to wait for the reads in progress on shutdown", t);
         }
     }
 

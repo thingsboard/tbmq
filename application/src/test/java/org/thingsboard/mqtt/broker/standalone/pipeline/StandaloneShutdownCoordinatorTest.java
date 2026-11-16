@@ -22,6 +22,9 @@ import ch.qos.logback.core.read.ListAppender;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultEventLoop;
+import io.netty.channel.EventLoop;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +55,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -425,6 +429,101 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     @Test
+    void givenChannelsOnOneEventLoop_whenStop_thenOneFenceRunsThereAfterTheyArePausedAndBeforeTheWillHoldersAreDisconnected() {
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.submit(any(Runnable.class))).thenAnswer(invocation -> ImmediateEventExecutor.INSTANCE.newSucceededFuture(null));
+        ChannelConfig withWillConfig = mock(ChannelConfig.class);
+        ChannelConfig withoutWillConfig = mock(ChannelConfig.class);
+        ClientSessionCtx withWill = willHolder("with-will", withWillConfig, eventLoop);
+        ClientSessionCtx withoutWill = sessionOf(withoutWillConfig, eventLoop);
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill, withoutWill));
+        disconnectsAtOnce(withWill);
+        when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        InOrder order = inOrder(withWillConfig, withoutWillConfig, eventLoop, actors);
+        order.verify(withWillConfig).setAutoRead(false);
+        order.verify(withoutWillConfig).setAutoRead(false);
+        order.verify(eventLoop).submit(any(Runnable.class));
+        order.verify(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
+        verify(eventLoop, times(1)).submit(any(Runnable.class));
+        assertThat(warnings()).isEmpty();
+    }
+
+    @Test
+    void givenAReadInProgress_whenStop_thenTheWillHoldersAreDisconnectedOnlyAfterItHasFinished() throws Exception {
+        DefaultEventLoop eventLoop = new DefaultEventLoop();
+        try {
+            // a read in progress runs on the event loop: channelRead tells the client actor from there
+            AtomicBoolean readFinished = new AtomicBoolean();
+            CountDownLatch reading = new CountDownLatch(1);
+            eventLoop.execute(() -> {
+                reading.countDown();
+                sleep(200);
+                readFinished.set(true);
+            });
+            assertThat(reading.await(10, TimeUnit.SECONDS)).isTrue();
+            ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class), eventLoop);
+            when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+            AtomicBoolean closed = closeFlagOf(withWill);
+            AtomicBoolean readFinishedWhenDisconnected = new AtomicBoolean();
+            doAnswer(invocation -> {
+                readFinishedWhenDisconnected.set(readFinished.get());
+                closed.set(true);
+                return null;
+            }).when(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
+            when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
+            PartitionedWorkers<?> idle = drained();
+            when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+            when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+            coordinator().stop();
+
+            assertThat(readFinishedWhenDisconnected).isTrue();
+            assertThat(warnings()).isEmpty();
+        } finally {
+            eventLoop.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void givenAnEventLoopThatNeverRunsTheFence_whenStop_thenTheDrainStillRunsWithinTheDeadline() throws Exception {
+        properties.getShutdown().setDrainTimeoutMs(200);
+        DefaultEventLoop eventLoop = new DefaultEventLoop();
+        CountDownLatch release = new CountDownLatch(1);
+        try {
+            CountDownLatch blocked = new CountDownLatch(1);
+            eventLoop.execute(() -> {
+                blocked.countDown();
+                await(release);
+            });
+            assertThat(blocked.await(10, TimeUnit.SECONDS)).isTrue();
+            ClientSessionCtx session = sessionOf(mock(ChannelConfig.class), eventLoop);
+            when(sessions.getAllClientSessionCtx()).thenReturn(List.of(session));
+            PartitionedWorkers<?> dispatch = drained();
+            PartitionedWorkers<?> persist = drained();
+            when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+            when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+            long tookMs = timedStop();
+
+            // the timeout is 200 ms; the bound is generous for a loaded machine yet far below the 4 s default
+            assertThat(tookMs).isLessThan(2000);
+            verify(dispatch).drain(anyLong());
+            verify(persist).drain(anyLong());
+            assertThat(warnings()).first().satisfies(event -> assertThat(event.getFormattedMessage())
+                    .startsWith("The reads in progress on 1 of 1 event loops did not finish within 200 ms"));
+        } finally {
+            release.countDown();
+            eventLoop.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     void whenCreated_thenItStopsBeforeEveryOtherBean() {
         var coordinator = coordinator();
 
@@ -448,7 +547,11 @@ class StandaloneShutdownCoordinatorTest {
      * A connected session with a Last Will, whose channel the client actor has not closed yet.
      */
     private ClientSessionCtx willHolder(String clientId, ChannelConfig config) {
-        ClientSessionCtx session = sessionOf(config);
+        return willHolder(clientId, config, null);
+    }
+
+    private ClientSessionCtx willHolder(String clientId, ChannelConfig config, EventLoop eventLoop) {
+        ClientSessionCtx session = sessionOf(config, eventLoop);
         UUID sessionId = UUID.randomUUID();
         when(session.getClientId()).thenReturn(clientId);
         when(session.getSessionId()).thenReturn(sessionId);
@@ -490,12 +593,17 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     private static ClientSessionCtx sessionOf(ChannelConfig config) {
+        return sessionOf(config, null);
+    }
+
+    private static ClientSessionCtx sessionOf(ChannelConfig config, EventLoop eventLoop) {
         ClientSessionCtx session = mock(ClientSessionCtx.class);
         ChannelHandlerContext channelCtx = mock(ChannelHandlerContext.class);
         Channel channel = mock(Channel.class);
         when(session.getChannel()).thenReturn(channelCtx);
         when(channelCtx.channel()).thenReturn(channel);
         when(channel.config()).thenReturn(config);
+        when(channel.eventLoop()).thenReturn(eventLoop);
         return session;
     }
 
