@@ -30,6 +30,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ThingsBoardExecutors {
 
+    /**
+     * The environment variable and the system property that set the default graceful shutdown timeout, in seconds.
+     */
+    public static final String GRACEFUL_SHUTDOWN_TIMEOUT_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
+    public static final String GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
+
     /** Cannot instantiate. */
     private ThingsBoardExecutors() {
     }
@@ -126,9 +132,9 @@ public class ThingsBoardExecutors {
         if (timeoutSeconds > 0) {
             return timeoutSeconds;
         }
-        String timeoutValue = System.getenv("TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC");
+        String timeoutValue = System.getenv(GRACEFUL_SHUTDOWN_TIMEOUT_ENV);
         if (timeoutValue == null) {
-            timeoutValue = System.getProperty("tbmq.graceful.shutdown.timeout.sec");
+            timeoutValue = System.getProperty(GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY);
         }
         final long defaultTimeout = 5L;
         try {

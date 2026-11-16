@@ -25,10 +25,13 @@ import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -56,9 +59,19 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
 
     static final String DEFAULT_SERVICE_ID = "tbmq-lite";
 
-    static final String GRACEFUL_SHUTDOWN_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
-    static final String GRACEFUL_SHUTDOWN_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
     static final String LITE_GRACEFUL_SHUTDOWN_SEC = "1";
+
+    /**
+     * The inherited waits the Lite edition shortens. Each is set in {@code thingsboard-mqtt-broker.yml} as
+     * {@code ${variable:clusterDefault}}; a source above the file hides that placeholder, so the variable is read here.
+     */
+    static final List<ShutdownWait> SHUTDOWN_WAITS = List.of(
+            new ShutdownWait("actors.system.disconnect-wait-timeout-ms", "ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "15000", "1500"),
+            new ShutdownWait("spring.lifecycle.timeout-per-shutdown-phase", "SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "1m", "6s"),
+            new ShutdownWait("listener.tcp.netty.shutdown_timeout", "TCP_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new ShutdownWait("listener.ssl.netty.shutdown_timeout", "SSL_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new ShutdownWait("listener.ws.netty.shutdown_timeout", "WS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new ShutdownWait("listener.wss.netty.shutdown_timeout", "WSS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"));
 
     private final Log log;
 
@@ -83,15 +96,12 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         return Map.of("service.id", serviceId);
     }
 
-    static Map<String, Object> shutdownWaits() {
-        Map<String, Object> waits = new HashMap<>();
-        waits.put("actors.system.disconnect-wait-timeout-ms", envOrDefault("ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "1500"));
-        waits.put("spring.lifecycle.timeout-per-shutdown-phase", envOrDefault("SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "6s"));
-        waits.put("listener.tcp.netty.shutdown_timeout", envOrDefault("TCP_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        waits.put("listener.ssl.netty.shutdown_timeout", envOrDefault("SSL_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        waits.put("listener.ws.netty.shutdown_timeout", envOrDefault("WS_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        waits.put("listener.wss.netty.shutdown_timeout", envOrDefault("WSS_NETTY_SHUTDOWN_TIMEOUT", "1"));
-        return Map.copyOf(waits);
+    static Map<String, Object> shutdownWaits(List<ShutdownWait> waits) {
+        Map<String, Object> values = new HashMap<>();
+        for (ShutdownWait wait : waits) {
+            values.put(wait.key(), envOrDefault(wait.variable(), wait.liteValue()));
+        }
+        return Map.copyOf(values);
     }
 
     private static Function<Environment, Object> envOrDefault(String variable, String liteValue) {
@@ -113,7 +123,7 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         if (edition == TbmqEdition.LITE) {
             MutablePropertySources sources = environment.getPropertySources();
             sources.addFirst(new LazyDefaultsPropertySource(PROPERTY_SOURCE_NAME, environment, defaults()));
-            addShutdownWaits(sources, new LazyDefaultsPropertySource(SHUTDOWN_WAITS_SOURCE_NAME, environment, shutdownWaits()));
+            addShutdownWaits(sources, environment);
             shortenGracefulExecutorShutdown(environment);
         }
     }
@@ -126,23 +136,62 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    private void addShutdownWaits(MutablePropertySources sources, PropertySource<?> waits) {
+    /**
+     * Places the waits just above the config-data source of {@code thingsboard-mqtt-broker.yml}. A wait is left out
+     * when the file sets its key to anything but the shipped placeholder: an operator who edited the file, for example
+     * the copy in the {@code conf} directory that the packages put on the class path, gets the value they wrote.
+     */
+    private void addShutdownWaits(MutablePropertySources sources, Environment environment) {
+        PropertySource<?> yml = null;
         for (PropertySource<?> source : sources) {
             if (source.getName().startsWith("Config resource") && source.getName().contains(BROKER_YML_SOURCE_MARKER)) {
-                sources.addBefore(source.getName(), waits);
-                return;
+                yml = source;
+                break;
             }
         }
-        // no config-data source for the file, for example in a unit test: below everything else
-        sources.addLast(waits);
-        log.info("The Lite shutdown waits are not applied: no config source for the class path thingsboard-mqtt-broker.yml "
-                + "was found, so they rank below every other property source, and the file's cluster values win if it is loaded another way");
+        if (yml == null) {
+            // no config-data source for the file, for example in a unit test: below everything else
+            sources.addLast(new LazyDefaultsPropertySource(SHUTDOWN_WAITS_SOURCE_NAME, environment, shutdownWaits(SHUTDOWN_WAITS)));
+            log.info("The Lite shutdown waits are not applied: no config source for the class path thingsboard-mqtt-broker.yml "
+                    + "was found, so they rank below every other property source, and the file's cluster values win if it is loaded another way");
+            return;
+        }
+        List<ShutdownWait> shipped = new ArrayList<>();
+        List<String> configured = new ArrayList<>();
+        for (ShutdownWait wait : SHUTDOWN_WAITS) {
+            Object value = yml.getProperty(wait.key());
+            if (value != null && wait.shippedValue().equals(value.toString())) {
+                shipped.add(wait);
+            } else {
+                configured.add(wait.key());
+            }
+        }
+        sources.addBefore(yml.getName(), new LazyDefaultsPropertySource(SHUTDOWN_WAITS_SOURCE_NAME, environment, shutdownWaits(shipped)));
+        if (!configured.isEmpty()) {
+            log.info("The Lite shutdown waits are not applied to " + configured + ": thingsboard-mqtt-broker.yml sets them "
+                    + "to values of its own, which apply");
+        }
     }
 
     // ThingsBoardExecutors reads the process environment and the system properties, not the Spring environment
     private static void shortenGracefulExecutorShutdown(ConfigurableEnvironment environment) {
-        if (System.getProperty(GRACEFUL_SHUTDOWN_PROPERTY) == null && environment.getProperty(GRACEFUL_SHUTDOWN_ENV) == null) {
-            System.setProperty(GRACEFUL_SHUTDOWN_PROPERTY, LITE_GRACEFUL_SHUTDOWN_SEC);
+        if (System.getProperty(ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY) == null
+                && environment.getProperty(ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_ENV) == null) {
+            System.setProperty(ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY, LITE_GRACEFUL_SHUTDOWN_SEC);
+        }
+    }
+
+    /**
+     * @param clusterDefault the default in the yml's placeholder, which the cluster edition uses
+     * @param liteValue      the value the Lite edition uses when the variable is not set
+     */
+    record ShutdownWait(String key, String variable, String clusterDefault, String liteValue) {
+
+        /**
+         * @return the value the shipped yml sets the key to
+         */
+        String shippedValue() {
+            return "${" + variable + ":" + clusterDefault + "}";
         }
     }
 

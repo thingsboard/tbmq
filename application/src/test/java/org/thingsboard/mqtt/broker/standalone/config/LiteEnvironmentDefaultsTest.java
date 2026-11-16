@@ -33,6 +33,7 @@ import org.springframework.core.env.SimpleCommandLinePropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.mock.env.MockEnvironment;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -57,8 +58,8 @@ class LiteEnvironmentDefaultsTest {
     private static final String SOURCE_NAME = "tbmqLiteDefaults";
     private static final String WAITS_SOURCE_NAME = "tbmqLiteShutdownWaits";
 
-    private static final String GRACEFUL_PROPERTY = "tbmq.graceful.shutdown.timeout.sec";
-    private static final String GRACEFUL_ENV = "TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC";
+    private static final String GRACEFUL_PROPERTY = ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY;
+    private static final String GRACEFUL_ENV = ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_ENV;
 
     @TempDir
     Path tmp;
@@ -405,6 +406,39 @@ class LiteEnvironmentDefaultsTest {
         new LiteEnvironmentDefaults(destination -> log).postProcessEnvironment(environmentWithBrokerYml(), appWithMarker("lite"));
 
         verify(log, never()).info(any());
+    }
+
+    @Test
+    void givenTheShippedBrokerYml_whenRead_thenEveryShortenedWaitIsTheExpectedPlaceholder() {
+        var env = environmentWithBrokerYml();
+        PropertySource<?> yml = env.getPropertySources().get(brokerYmlSourceName(env));
+
+        // a renamed key or variable would make the wait silently stop applying, or ignore the documented variable
+        assertThat(LiteEnvironmentDefaults.SHUTDOWN_WAITS).hasSize(6);
+        for (LiteEnvironmentDefaults.ShutdownWait wait : LiteEnvironmentDefaults.SHUTDOWN_WAITS) {
+            assertThat(yml.getProperty(wait.key())).as(wait.key()).hasToString(wait.shippedValue());
+        }
+    }
+
+    @Test
+    void givenABrokerYmlWithAnEditedWait_whenPostProcess_thenTheEditedValueWinsAndTheOthersAreShortened() {
+        Log log = mock(Log.class);
+        var env = new StandardEnvironment();
+        // what Spring Boot makes of an operator's copy of the file in a class path directory: the same source name
+        env.getPropertySources().addLast(new MapPropertySource(
+                "Config resource 'class path resource [thingsboard-mqtt-broker.yml]' via location 'optional:classpath:/'",
+                Map.of("actors.system.disconnect-wait-timeout-ms", "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:20000}",
+                        "listener.tcp.netty.shutdown_timeout", "3",
+                        "listener.ssl.netty.shutdown_timeout", "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}")));
+
+        new LiteEnvironmentDefaults(destination -> log).postProcessEnvironment(env, appWithMarker("lite"));
+
+        assertThat(env.getProperty("actors.system.disconnect-wait-timeout-ms")).isEqualTo("20000");
+        assertThat(env.getProperty("listener.tcp.netty.shutdown_timeout")).isEqualTo("3");
+        assertThat(env.getProperty("listener.ssl.netty.shutdown_timeout")).isEqualTo("1");
+        verify(log, times(1)).info(argThat(message -> message.toString().contains("actors.system.disconnect-wait-timeout-ms")
+                && message.toString().contains("listener.tcp.netty.shutdown_timeout")
+                && !message.toString().contains("listener.ssl.netty.shutdown_timeout")));
     }
 
     @Test
