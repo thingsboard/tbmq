@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Stops reading from a client that publishes while the pipeline is at its pause level, and starts reading again from
@@ -47,7 +49,7 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
     private final DefaultCounter publishPauses;
     // the sessions paused here; an entry and its autoRead change are made together, under the entry's lock, so a
     // resume cannot overtake a newer pause of the same session
-    private final ConcurrentMap<UUID, ClientSessionCtx> pausedSessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, PausedSession> pausedSessions = new ConcurrentHashMap<>();
 
     public StandalonePublishBackpressure(PipelineBudget budget, StatsFactory statsFactory) {
         this.budget = budget;
@@ -66,20 +68,70 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         pausedSessions.computeIfAbsent(sessionId, id -> {
             ctx.getChannel().channel().config().setAutoRead(false);
             publishPauses.increment();
-            return ctx;
+            return new PausedSession(ctx);
         });
         // While the budget is still paused, its resume runs after the pause above and sees this session. If it is not,
         // the resume may have run between the check and the pause without seeing the session, so it is resumed here.
         budget.resumeUnlessPaused(() -> resume(sessionId));
     }
 
+    // runs on the event loop for every inbound packet, so a session that is not paused costs one lookup at most
     @Override
     public void onChannelRead(ClientSessionCtx ctx) {
+        if (pausedSessions.isEmpty()) {
+            return;
+        }
+        PausedSession paused = pausedSessions.get(ctx.getSessionId());
+        if (paused != null) {
+            paused.dataArrived.set(true);
+        }
     }
 
+    /**
+     * [MQTT-3.1.2-22] The keep-alive stays enforced on a paused connection, which does not read what the client sent:
+     * the first probe reads once, and the next tick closes the session unless data arrived meanwhile.
+     */
     @Override
     public KeepAliveProbe probe(UUID sessionId) {
-        return KeepAliveProbe.CLOSE;
+        if (pausedSessions.isEmpty()) {
+            return KeepAliveProbe.CLOSE;
+        }
+        AtomicReference<KeepAliveProbe> outcome = new AtomicReference<>(KeepAliveProbe.CLOSE);
+        // under the entry's lock, like a pause and a resume of the session
+        pausedSessions.computeIfPresent(sessionId, (id, paused) -> {
+            KeepAliveProbe probe = probe(paused);
+            outcome.set(probe);
+            // a dead client is not kept until the next resume
+            return probe == KeepAliveProbe.CLOSE ? null : paused;
+        });
+        return outcome.get();
+    }
+
+    private KeepAliveProbe probe(PausedSession paused) {
+        if (budget.resumingStopped()) {
+            // the shutdown closes the connections itself, and the reads stay paused through its drain
+            return KeepAliveProbe.WAIT;
+        }
+        if (paused.dataArrived.getAndSet(false)) {
+            paused.probed = false;
+            return KeepAliveProbe.ALIVE;
+        }
+        if (paused.probed || !paused.ctx.getChannel().channel().isActive()) {
+            return KeepAliveProbe.CLOSE;
+        }
+        paused.probed = true;
+        // the shutdown may stop the reads between the check above and the read: then the read does not happen
+        budget.runUnlessResumingStopped(() -> read(paused.ctx));
+        return KeepAliveProbe.WAIT;
+    }
+
+    private void read(ClientSessionCtx ctx) {
+        try {
+            ctx.getChannel().channel().read();
+        } catch (Exception e) {
+            // the next keep-alive check closes the session, as no data arrived
+            log.warn("[{}][{}] Failed to read once from the paused client", ctx.getClientId(), ctx.getSessionId(), e);
+        }
     }
 
     // runs on the thread that released the budget
@@ -91,7 +143,8 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
 
     // a closed channel is only forgotten; a failure is logged and the session forgotten too, so the others still resume
     private void resume(UUID sessionId) {
-        pausedSessions.computeIfPresent(sessionId, (id, ctx) -> {
+        pausedSessions.computeIfPresent(sessionId, (id, paused) -> {
+            ClientSessionCtx ctx = paused.ctx;
             try {
                 Channel channel = ctx.getChannel().channel();
                 if (channel.isActive()) {
@@ -103,6 +156,20 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
             }
             return null;
         });
+    }
+
+    private static final class PausedSession {
+
+        private final ClientSessionCtx ctx;
+        // set on the event loop when a packet arrives on the paused connection, taken by the keep-alive thread
+        private final AtomicBoolean dataArrived = new AtomicBoolean();
+        // a probe read once since the pause or since data last arrived; only touched under the entry's lock
+        private boolean probed;
+
+        private PausedSession(ClientSessionCtx ctx) {
+            this.ctx = ctx;
+        }
+
     }
 
 }

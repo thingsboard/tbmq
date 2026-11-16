@@ -471,6 +471,29 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenResumingNotStopped_whenRunUnlessResumingStopped_thenTheActionRuns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger ran = new AtomicInteger();
+
+        assertThat(budget.resumingStopped()).isFalse();
+        assertThat(budget.runUnlessResumingStopped(ran::incrementAndGet)).isTrue();
+
+        assertThat(ran).hasValue(1);
+    }
+
+    @Test
+    void givenResumingStopped_whenRunUnlessResumingStopped_thenTheActionDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger ran = new AtomicInteger();
+
+        budget.stopResuming();
+
+        assertThat(budget.resumingStopped()).isTrue();
+        assertThat(budget.runUnlessResumingStopped(ran::incrementAndGet)).isFalse();
+        assertThat(ran).hasValue(0);
+    }
+
+    @Test
     void givenListenerBlockedOnReleasingThread_whenReadingDepth_thenReadsDoNotWait() throws Exception {
         PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
         CountDownLatch listenerEntered = new CountDownLatch(1);

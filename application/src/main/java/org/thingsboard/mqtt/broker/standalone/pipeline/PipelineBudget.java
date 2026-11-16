@@ -202,6 +202,18 @@ public class PipelineBudget {
     }
 
     /**
+     * @return {@code true} once {@link #stopResuming} was called
+     */
+    public boolean resumingStopped() {
+        resumeLock.readLock().lock();
+        try {
+            return resumesStopped;
+        } finally {
+            resumeLock.readLock().unlock();
+        }
+    }
+
+    /**
      * Runs {@code resume} unless the usage is still paused (it reached the pause level and has not fallen back to the
      * resume level since) or {@link #stopResuming} was called. It is for a caller that paused something after it saw
      * the usage at the pause level, since a resume that ran between the check and the pause did not see it. While the
@@ -238,13 +250,21 @@ public class PipelineBudget {
         });
     }
 
-    // stopResuming takes the write lock, so it waits for the action to return, and no action runs after it
-    private void runUnlessResumingStopped(Runnable action) {
+    /**
+     * Runs {@code action} unless {@link #stopResuming} was called. It is for an action that starts reading from a
+     * client, which must not happen once the shutdown has stopped the reads. {@link #stopResuming} waits for the action
+     * to return, and no action runs after it. Like a resume listener, {@code action} must be cheap and must not throw.
+     *
+     * @return {@code false} when resuming was stopped and the action did not run
+     */
+    public boolean runUnlessResumingStopped(Runnable action) {
         resumeLock.readLock().lock();
         try {
-            if (!resumesStopped) {
-                action.run();
+            if (resumesStopped) {
+                return false;
             }
+            action.run();
+            return true;
         } finally {
             resumeLock.readLock().unlock();
         }

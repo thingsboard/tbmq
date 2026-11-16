@@ -23,6 +23,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.KeepAliveProbe;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -43,6 +45,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     private final Map<UUID, KeepAliveInfo> keepAliveInfoMap = new ConcurrentHashMap<>();
 
     private final ClientMqttActorManager clientMqttActorManager;
+    private final PublishBackpressure publishBackpressure;
 
     @Scheduled(fixedRateString = "${mqtt.keep-alive.monitoring-delay-ms}")
     public void processKeepAlive() {
@@ -50,8 +53,20 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             UUID sessionId = entry.getKey();
             KeepAliveInfo keepAliveInfo = entry.getValue();
             long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
-            if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
-                    && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
+            if (!isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)) {
+                continue;
+            }
+            // a paused connection does not read what the client sent, so the session may be alive although it is silent
+            KeepAliveProbe probe = publishBackpressure.probe(sessionId);
+            if (probe == KeepAliveProbe.ALIVE) {
+                // a lost CAS means the session was refreshed or cleared meanwhile
+                keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, System.currentTimeMillis());
+                continue;
+            }
+            if (probe == KeepAliveProbe.WAIT) {
+                continue;
+            }
+            if (keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
                 keepAliveInfoMap.remove(sessionId);
                 log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
                         keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
