@@ -150,8 +150,12 @@ public class OverloadLiteTest {
     private static final long KEEP_ALIVE_DEADLINE_MS = KEEP_ALIVE_SECONDS * 1500L;
     // the broker times the keep-alive with currentTimeMillis, the test with nanoTime
     private static final long CLOCK_TOLERANCE_MS = 10;
-    // scheduling, the disconnect through the client actor and the DISCONNECT on the wire
-    private static final long CLOSE_SLACK_MS = 500;
+    // scheduling, the disconnect through the client actor and the DISCONNECT on the wire: closes were measured 3.3 s
+    // after the PUBACK against a bound of 3.9 s without the slack; at 1.5 s the bound is still under a close one
+    // deadline (3 s) late
+    private static final long CLOSE_SLACK_MS = 1_500;
+    // the load lasts seconds, so far more depth samples than this are taken at one every 50 ms
+    private static final int MIN_DEPTH_SAMPLES = 50;
     private static final String STALL_TOPIC_PREFIX = "stall/";
     // the meter StandalonePublishBackpressure registers
     private static final String PAUSED_CONNECTIONS_GAUGE = "pausedConnections";
@@ -211,6 +215,9 @@ public class OverloadLiteTest {
     private final LongAccumulator peakPausedConnections = new LongAccumulator(Math::max, 0);
     private final LongAccumulator peakHeap = new LongAccumulator(Math::max, 0);
     private final AtomicInteger heapSamples = new AtomicInteger();
+    private final AtomicInteger depthSamples = new AtomicInteger();
+    // a sampler that throws is silently not run again by the scheduler: the failures are recorded and asserted
+    private final List<String> samplerFailures = new CopyOnWriteArrayList<>();
 
     private long peakQueuedMessages;
     private long baselineHeapBytes;
@@ -242,6 +249,10 @@ public class OverloadLiteTest {
         runLoad();
 
         Set<String> refusedIds = refusals.keySet();
+        // the samplers ran throughout, so that the peaks below are not those of a sampler that stopped early
+        assertThat(samplerFailures).as("sampler failures").isEmpty();
+        assertThat(depthSamples.get()).as("pipeline depth samples").isGreaterThanOrEqualTo(MIN_DEPTH_SAMPLES);
+        assertThat(heapSamples.get()).as("heap samples").isGreaterThanOrEqualTo(2);
         // the broker closed no connection, and paused connections resumed: checked first, as the load stops early when
         // a connection is lost, and the checks below then fail for that reason only
         assertThat(publishersDisconnectedByBroker).as("publisher connections the broker closed: %s", brokerDisconnects)
@@ -251,6 +262,9 @@ public class OverloadLiteTest {
         // nothing acknowledged and then dropped
         assertThat(notReceived(successfullyAcknowledgedIds)).as("acknowledged ids the subscriber did not receive")
                 .isEmpty();
+        // the overload must have refused publishes and dropped QoS 0 ones, or the checks on them prove nothing
+        assertThat(refusedIds).as("ids refused with an error code").isNotEmpty();
+        assertThat(qos0Sent).as("QoS 0 publishes sent, against received %s", qos0Received).isGreaterThan(qos0Received);
         assertThat(refusedIds).as("ids refused with an error code")
                 .allSatisfy(id -> assertThat(refusalCode(id)).as(id).isEqualTo(QUOTA_EXCEEDED));
         // sampled from PipelineBudget every 50 ms
@@ -327,6 +341,9 @@ public class OverloadLiteTest {
         long stallNanos =
                 TimeUnit.MILLISECONDS.toNanos(2 * (KEEP_ALIVE_DEADLINE_MS + monitoringDelayMs) + monitoringDelayMs);
         waitUntil(() -> silentClient.closed() && System.nanoTime() - allPausedAt >= stallNanos, STALL_TIMEOUT);
+        // the broker forgets the closed dead client's paused connection as it cleans the session up; the live ones,
+        // the filler and the live publishers, stay paused
+        waitUntil(() -> pausedConnections() == pausedBefore + 1 + STALL_PUBLISHERS, CONNECT_TIMEOUT);
         long pausedAtRelease = pausedConnections();
         long releasedAt = System.nanoTime();
         appendsReleased.countDown();
@@ -336,6 +353,9 @@ public class OverloadLiteTest {
         boolean allLiveFinished = runs.stream().map(this::finished).reduce(true, Boolean::logicalAnd)
                 && publishFailures.isEmpty();
         long finishedAt = System.nanoTime();
+        // the pipeline drains and every connection that was paused is read again and leaves the paused set
+        waitUntil(() -> budget.queuedMessages() == 0 && pausedConnections() == pausedBefore, DRAIN_TIMEOUT);
+        long pausedAfterDrain = pausedConnections();
 
         log.info("Stall: pipeline full at {} ms, every live publisher paused at {} ms; dead client published at {} ms, "
                         + "answered 0x{} at {} ms, closed with 0x{} at {} ms; store released at {} ms with {} "
@@ -350,7 +370,9 @@ public class OverloadLiteTest {
         // the live clients: none closed, all still paused when the store let the appends through, all resumed after
         assertThat(brokerDisconnects).as("live client connections the broker closed").isEmpty();
         assertThat(pausedAtRelease - pausedBefore).as("connections still paused when the store let the appends through")
-                .isEqualTo(STALL_PUBLISHERS + 2);
+                .isEqualTo(STALL_PUBLISHERS + 1);
+        assertThat(pausedAfterDrain - pausedBefore).as("connections still paused after the pipeline drained")
+                .isZero();
         assertThat(allLiveFinished).as("every live client finished after the stall; failed publishes %s, connections "
                 + "given up by the client %s", publishFailures, clientDisconnects).isTrue();
         // the dead client: refused because the pipeline was full, then closed for its keep-alive
@@ -656,17 +678,26 @@ public class OverloadLiteTest {
     }
 
     private void sampleDepth() {
-        peakQueued.accumulate(budget.queuedMessages());
-        peakDispatchQueued.accumulate(dispatchQueue.workers().queued());
-        peakPersistQueued.accumulate(persistStage.workers().queued());
-        peakPausedConnections.accumulate(pausedConnections());
-        // a spy records every call for verification; those records are not what the broker holds on to
-        clearInvocations(deviceMsgQueueStore);
+        try {
+            peakQueued.accumulate(budget.queuedMessages());
+            peakDispatchQueued.accumulate(dispatchQueue.workers().queued());
+            peakPersistQueued.accumulate(persistStage.workers().queued());
+            peakPausedConnections.accumulate(pausedConnections());
+            // a spy records every call for verification; those records are not what the broker holds on to
+            clearInvocations(deviceMsgQueueStore);
+            depthSamples.incrementAndGet();
+        } catch (Throwable t) {
+            samplerFailures.add("depth: " + t);
+        }
     }
 
     private void sampleHeap() {
-        peakHeap.accumulate(heapUsedAfterGc());
-        heapSamples.incrementAndGet();
+        try {
+            peakHeap.accumulate(heapUsedAfterGc());
+            heapSamples.incrementAndGet();
+        } catch (Throwable t) {
+            samplerFailures.add("heap: " + t);
+        }
     }
 
     /**
