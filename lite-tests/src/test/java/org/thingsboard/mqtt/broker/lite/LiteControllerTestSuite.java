@@ -15,24 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.lite;
 
+import org.junit.extensions.cpsuite.ClasspathSuite;
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.thingsboard.mqtt.broker.controller.LookupEndpointsControllerTest;
-import org.thingsboard.mqtt.broker.controller.MqttAuthProviderControllerTest;
-import org.thingsboard.mqtt.broker.controller.MqttClientCredentialsControllerTest;
-import org.thingsboard.mqtt.broker.controller.MqttPublishControllerTest;
 
 /**
- * The application's controller tests that apply to Lite, on the Lite classpath. Not run here:
- * {@code IntegrationControllerTest} and {@code NodeDrainControllerTest} (Lite has neither integrations nor node
- * drain), and {@code OpenApiSpecTest} (it checks the cluster edition's spec).
+ * The application's controller tests on the Lite classpath. Like the integration suite, it selects them by name from
+ * the application's test-jar, so a new controller test runs here too unless it is excluded below with its reason.
+ * {@code OpenApiSpecTest} is not a {@code *ControllerTest}, so it is not picked up: it checks the cluster edition's
+ * spec.
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-        LookupEndpointsControllerTest.class,
-        MqttAuthProviderControllerTest.class,
-        MqttClientCredentialsControllerTest.class,
-        MqttPublishControllerTest.class,
+@RunWith(ClasspathSuite.class)
+@ClasspathSuite.IncludeJars(true)
+@ClasspathSuite.ClassnameFilters({
+        "org.thingsboard.mqtt.broker.controller.*ControllerTest",
+        // Lite has neither integrations nor node drain
+        "!.*IntegrationControllerTest",
+        "!.*NodeDrainControllerTest",
 })
 public class LiteControllerTestSuite {
 
