@@ -50,8 +50,10 @@ import java.util.concurrent.TimeoutException;
  * disconnected with Server shutting down through its client actor, after the messages the client sent before: a
  * DISCONNECT with reason code 0x00 among them still discards the will. The actor hands a will that is due to the Last
  * Will scheduler and then closes the channel. The coordinator waits until every such channel is being closed and the
- * scheduler has handed those wills to the pipeline, so the drain delivers them. A will with a Will Delay Interval is not
- * due yet: the shutdown does not wait for it, and it is not published, since wills are not kept across a restart. The
+ * scheduler has handed those wills to the pipeline, so the drain delivers them. A will whose delay has not passed is not
+ * due yet (the delay is the lesser of the Will Delay Interval and the session expiry, so a will of a session that
+ * expires at once is due): the shutdown does not wait for it, and it is not published, since wills are not kept across
+ * a restart. The
  * clients without a will stay connected through the drain, so a subscriber still receives the wills, and are closed
  * when the servers stop.
  * <p>
@@ -140,9 +142,11 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     /**
      * Runs an empty task on each event loop and waits for them, within the deadline. A read that was in progress when
      * reading was paused runs on the event loop before that task, and {@code channelRead} tells the client actor
-     * there, so every packet it decoded is in the actor's mailbox once the task has run. After that a paused channel
-     * reads only to complete a packet that the end of a read cut in two. So the disconnects of the will step are
-     * queued behind what the clients had sent when reading was paused. Never throws, and returns by the deadline.
+     * there, so every packet it decoded is in the actor's mailbox once the task has run. So the disconnects of the will
+     * step are queued behind what the clients had sent when reading was paused. A keep-alive read that was issued
+     * before the budget stopped resuming, on a socket that had nothing to read, stays pending and can still take one
+     * buffer after the task has run, so a packet read that late may reach the actor behind the disconnect. Never
+     * throws, and returns by the deadline.
      */
     private void awaitReadsInProgress(Set<EventLoop> eventLoops, long deadlineNanos) {
         if (eventLoops.isEmpty()) {
