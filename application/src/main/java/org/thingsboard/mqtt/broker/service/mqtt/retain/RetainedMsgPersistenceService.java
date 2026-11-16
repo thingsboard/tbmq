@@ -19,6 +19,20 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 
+/**
+ * Writes the retained msg of a topic, or clears it with {@code QueueConstants.EMPTY_RETAINED_MSG_PROTO}.
+ * <p>
+ * The two async methods report the outcome to the callback in one of two ways, and callers rely on that:
+ * <ul>
+ *     <li>the write is done, and the callback completed, before the method returns; a failed write is reported as a
+ *     {@link org.thingsboard.mqtt.broker.dao.store.StoreException} (the standalone store);</li>
+ *     <li>the outcome is reported later, and never with a {@link org.thingsboard.mqtt.broker.dao.store.StoreException}
+ *     (the cluster producer).</li>
+ * </ul>
+ * So a {@link org.thingsboard.mqtt.broker.dao.store.StoreException} reported before the method returned means the
+ * write did not happen: the caller leaves the retained msg of the topic as it was, and can still fail the request
+ * that asked for the write.
+ */
 public interface RetainedMsgPersistenceService {
 
     void persistRetainedMsgAsync(String topic, RetainedMsgProto retainedMsgProto, BasicCallback callback);

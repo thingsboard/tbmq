@@ -94,7 +94,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         } else {
             retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, tracking);
         }
-        if (!tracking.storeFailed()) {
+        if (!tracking.failedBeforeReturn()) {
             cacheRetainedMsg(topic, retainedMsg);
         }
     }
@@ -123,7 +123,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         StoreFailureTrackingCallback tracking = new StoreFailureTrackingCallback(callback);
 
         retainedMsgPersistenceService.persistRetainedMsgAsync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO, tracking);
-        if (!tracking.storeFailed()) {
+        if (!tracking.failedBeforeReturn()) {
             clearRetainedMsg(topic);
         }
     }
