@@ -67,12 +67,23 @@ class LiteClasspathTest {
      * catches dao's full test-jar or its test-classes directory.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"logback.xml", "application-test.properties", "sql-test.properties", "xss-policy.xml"})
+    @ValueSource(strings = {"logback.xml", "application-test.properties", "xss-policy.xml"})
     void noTestConfigurationComesFromDaosTests(String resource) throws IOException {
         assertThat(Collections.list(getClass().getClassLoader().getResources(resource)))
                 .map(URL::toString)
                 .as("%s on the classpath", resource)
                 .noneMatch(LiteClasspathTest::isDaoTestOutput);
+    }
+
+    /**
+     * The test database of {@code @DaoSqlTest} is dao's own, taken from the restricted jar rather than kept as a copy.
+     */
+    @Test
+    void theTestDatabaseSettingsComeFromTheRestrictedJar() throws IOException {
+        assertThat(Collections.list(getClass().getClassLoader().getResources("sql-test.properties")))
+                .map(URL::toString)
+                .singleElement()
+                .satisfies(url -> assertThat(url).endsWith(RESTRICTED_DAO_TEST_JAR_SUFFIX + "!/sql-test.properties"));
     }
 
     // dao's test-classes directory, or any of its test jars (dao-<version>-tests.jar, dao-<version>-lite-tests.jar)
