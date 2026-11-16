@@ -92,6 +92,15 @@ public abstract class AbstractLiteSpecCase extends AbstractPubSubIntegrationTest
         return packet;
     }
 
+    /**
+     * A precondition of every resend check: a new connection numbers its packets from 1, and an empty queue numbers its
+     * entries from 1 too, so an original packet id of 1 could not tell a resend with the original id from one that was
+     * numbered again.
+     */
+    static void assertOriginalPacketIdIsNotTheFirst(RawMqttClient.Packet sent) {
+        assertThat(sent.packetId()).as("original packet id, which must not be the first id of a connection").isNotEqualTo(1);
+    }
+
     private RawMqttClient track(RawMqttClient client) {
         clients.add(client);
         return client;

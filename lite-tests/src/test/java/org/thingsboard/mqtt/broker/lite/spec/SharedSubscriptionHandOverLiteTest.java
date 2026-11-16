@@ -61,12 +61,23 @@ public class SharedSubscriptionHandOverLiteTest extends AbstractLiteSpecCase {
         String memberA = "handover-member-a";
         String memberB = "handover-member-b";
         String sharedFilter = "$share/" + shareName + "/" + topic;
-        disconnect(persistentSubscriber(memberA, sharedFilter, 2), memberA);
+        RawMqttClient firstA = persistentSubscriber(memberA, sharedFilter, 2);
         disconnect(persistentSubscriber(memberB, sharedFilter, 2), memberB);
+        RawMqttClient publisher = connectClean("handover-pub", MqttVersion.MQTT_5);
+
+        // A, the only member online, gets and completes one message first, so that the message handed over later does
+        // not get the first packet id of A's queue
+        assertThat(publisher.publishQos2(topic, 1, "first", null)).isEqualTo(SUCCESS);
+        RawMqttClient.Packet first = nextPublish(firstA);
+        assertThat(first.payload()).isEqualTo("first");
+        firstA.pubRec(first.packetId());
+        firstA.expect(MqttMessageType.PUBREL, first.packetId());
+        firstA.pubComp(first.packetId());
+        await("member A's queue empty").atMost(TIMEOUT).until(() -> deviceMsgQueueStore.info(memberA).count() == 0);
+        disconnect(firstA, memberA);
 
         // the whole group is offline: the message waits in the group's queue
-        RawMqttClient publisher = connectClean("handover-pub", MqttVersion.MQTT_5);
-        assertThat(publisher.publishQos2(topic, 1, "once", null)).isEqualTo(SUCCESS);
+        assertThat(publisher.publishQos2(topic, 2, "once", null)).isEqualTo(SUCCESS);
         assertThat(deviceMsgQueueStore.info(groupQueue).count()).isEqualTo(1);
 
         // member A connects first and is handed the message; it withholds its PUBREC
@@ -75,6 +86,7 @@ public class SharedSubscriptionHandOverLiteTest extends AbstractLiteSpecCase {
         assertThat(sent.qos()).isEqualTo(2);
         assertThat(sent.dup()).isFalse();
         assertThat(sent.payload()).isEqualTo("once");
+        assertOriginalPacketIdIsNotTheFirst(sent);
         disconnect(a, memberA);
         assertThat(deviceMsgQueueStore.info(groupQueue).count()).as("entries left in the group's queue").isZero();
         assertThat(deviceMsgQueueStore.info(memberA).count()).as("entries in member A's queue").isEqualTo(1);

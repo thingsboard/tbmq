@@ -60,10 +60,12 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
         String subscriberId = "resend-qos1-sub";
         RawMqttClient subscriber = persistentSubscriber(subscriberId, topic, 1);
         RawMqttClient publisher = connectClean("resend-qos1-pub", MqttVersion.MQTT_5);
-        assertThat(publisher.publishQos1(topic, 1, "qos1", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        deliverAndAcknowledgeOne(publisher, subscriber, subscriberId, topic, 1);
+        assertThat(publisher.publishQos1(topic, 2, "qos1", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
 
         RawMqttClient.Packet sent = nextPublish(subscriber);
         assertThat(sent.dup()).isFalse();
+        assertOriginalPacketIdIsNotTheFirst(sent);
         // no PUBACK
         disconnect(subscriber, subscriberId);
         Thread.sleep(AWAY);
@@ -82,10 +84,12 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
         String subscriberId = "resend-qos2-sub";
         RawMqttClient subscriber = persistentSubscriber(subscriberId, topic, 2);
         RawMqttClient publisher = connectClean("resend-qos2-pub", MqttVersion.MQTT_5);
-        assertThat(publisher.publishQos2(topic, 1, "qos2", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        deliverAndAcknowledgeOne(publisher, subscriber, subscriberId, topic, 2);
+        assertThat(publisher.publishQos2(topic, 2, "qos2", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
 
         RawMqttClient.Packet sent = nextPublish(subscriber);
         assertThat(sent.dup()).isFalse();
+        assertOriginalPacketIdIsNotTheFirst(sent);
         // no PUBREC
         disconnect(subscriber, subscriberId);
         Thread.sleep(AWAY);
@@ -106,9 +110,11 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
         String subscriberId = "resend-pubrel-sub";
         RawMqttClient subscriber = persistentSubscriber(subscriberId, topic, 2);
         RawMqttClient publisher = connectClean("resend-pubrel-pub", MqttVersion.MQTT_5);
-        assertThat(publisher.publishQos2(topic, 1, "pubrel", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        deliverAndAcknowledgeOne(publisher, subscriber, subscriberId, topic, 2);
+        assertThat(publisher.publishQos2(topic, 2, "pubrel", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
 
         RawMqttClient.Packet sent = nextPublish(subscriber);
+        assertOriginalPacketIdIsNotTheFirst(sent);
         subscriber.pubRec(sent.packetId());
         subscriber.expect(MqttMessageType.PUBREL, sent.packetId());
         // no PUBCOMP
@@ -133,10 +139,12 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
         String subscriberId = "resend-restart-sub";
         RawMqttClient subscriber = persistentSubscriber(subscriberId, topic, 1);
         RawMqttClient publisher = connectClean("resend-restart-pub", MqttVersion.MQTT_5);
-        assertThat(publisher.publishQos1(topic, 1, "restart", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        deliverAndAcknowledgeOne(publisher, subscriber, subscriberId, topic, 1);
+        assertThat(publisher.publishQos1(topic, 2, "restart", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
 
         RawMqttClient.Packet sent = nextPublish(subscriber);
         assertThat(sent.dup()).isFalse();
+        assertOriginalPacketIdIsNotTheFirst(sent);
         long sentAtNanos = System.nanoTime();
         // no PUBACK; the restart closes the connection
         SpringRestarter.getInstance().restart();
@@ -150,6 +158,30 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
         assertResentAfterItsIntervalPassed(resent, sent, 1);
 
         reconnected.pubAck(resent.packetId());
+        awaitQueueEmpty(subscriberId);
+    }
+
+    /**
+     * Publishes one message (packet id 1 of the publisher) and has the subscriber complete it, so that the message
+     * withheld next does not get the subscriber queue's first packet id.
+     */
+    private void deliverAndAcknowledgeOne(RawMqttClient publisher, RawMqttClient subscriber, String subscriberId,
+                                          String topic, int qos) throws IOException {
+        if (qos == 1) {
+            assertThat(publisher.publishQos1(topic, 1, "first", null)).isEqualTo(SUCCESS);
+        } else {
+            assertThat(publisher.publishQos2(topic, 1, "first", null)).isEqualTo(SUCCESS);
+        }
+        RawMqttClient.Packet first = nextPublish(subscriber);
+        assertThat(first.payload()).isEqualTo("first");
+        if (qos == 1) {
+            subscriber.pubAck(first.packetId());
+        } else {
+            subscriber.pubRec(first.packetId());
+            subscriber.expect(MqttMessageType.PUBREL, first.packetId());
+            subscriber.pubComp(first.packetId());
+        }
+        // completed and removed: a reconnect has only the withheld message to resend
         awaitQueueEmpty(subscriberId);
     }
 
