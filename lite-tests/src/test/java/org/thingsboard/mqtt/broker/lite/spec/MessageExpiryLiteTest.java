@@ -68,6 +68,7 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
         String subscriberId = "expiry-zero-offline-sub";
         disconnect(persistentSubscriber(subscriberId, topic, 1), subscriberId);
         double expiredBefore = expiredDeviceMsgs();
+        double droppedBefore = droppedMsgs();
         RawMqttClient publisher = connectClean("expiry-zero-offline-pub", MqttVersion.MQTT_5);
 
         assertThat(publisher.publishQos1(topic, 1, "zero", 0)).isEqualTo(SUCCESS);
@@ -78,6 +79,8 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
         RawMqttClient subscriber = connectPersistent(subscriberId);
         assertThat(subscriber.sessionPresent()).isTrue();
         assertTheNextMessageIsAMarker(publisher, subscriber, topic);
+        // counted as expired, not as dropped
+        assertThat(droppedMsgs()).as("droppedMsgs").isEqualTo(droppedBefore);
     }
 
     @Test
@@ -113,6 +116,13 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
 
     private double expiredDeviceMsgs() {
         return meterRegistry.get(StatsType.EXPIRED_DEVICE_MSGS.getPrintName()).functionCounter().count();
+    }
+
+    /**
+     * The Micrometer counter, which only grows; the stats counter next to it is reset by a scheduler.
+     */
+    private double droppedMsgs() {
+        return meterRegistry.get(StatsType.DROPPED_MSGS.getPrintName()).counter().count();
     }
 
 }

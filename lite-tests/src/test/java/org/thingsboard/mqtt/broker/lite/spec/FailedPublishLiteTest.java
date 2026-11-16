@@ -36,7 +36,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * A publish whose copy for a persistent DEVICE subscriber cannot be written to the store fails (the card #656 rule in
@@ -75,6 +78,7 @@ public class FailedPublishLiteTest extends AbstractLiteSpecCase {
 
         assertThat(publisher.publishQos1(FAILING_TOPIC, 1, "qos1", null)).as("PUBACK reason code").isEqualTo(UNSPECIFIED_ERROR);
         assertThat(publisher.publishQos2(FAILING_TOPIC, 2, "qos2", null)).as("PUBREC reason code").isEqualTo(UNSPECIFIED_ERROR);
+        verifyTheStoreFailedTheCopies(2);
     }
 
     @Test
@@ -84,6 +88,7 @@ public class FailedPublishLiteTest extends AbstractLiteSpecCase {
         publisher.publish(FAILING_TOPIC, 1, 1, "qos1", null);
         // the next thing the publisher sees is the closed connection, not a PUBACK
         assertThatThrownBy(() -> publisher.next(TIMEOUT)).isInstanceOf(EOFException.class);
+        verifyTheStoreFailedTheCopies(1);
     }
 
     @Test
@@ -92,12 +97,22 @@ public class FailedPublishLiteTest extends AbstractLiteSpecCase {
         RawMqttClient otherSubscriber = persistentSubscriber("failed-publish-other-sub", otherTopic, 1);
         RawMqttClient publisher = connectClean("failed-publish-serving-pub", MqttVersion.MQTT_5);
         assertThat(publisher.publishQos1(FAILING_TOPIC, 1, "failing", null)).isEqualTo(UNSPECIFIED_ERROR);
+        verifyTheStoreFailedTheCopies(1);
 
         assertThat(publisher.publishQos1(otherTopic, 2, "after", null)).isEqualTo(SUCCESS);
 
         RawMqttClient.Packet publish = nextPublish(otherSubscriber);
         assertThat(publish.payload()).isEqualTo("after");
         otherSubscriber.pubAck(publish.packetId());
+    }
+
+    /**
+     * The failure the test saw is the stubbed one: the store was asked {@code count} times to append a batch holding a
+     * copy for the failing subscriber (the spy's invocations are reset after each test).
+     */
+    private void verifyTheStoreFailedTheCopies(int count) {
+        verify(deviceMsgQueueStore, times(count)).append(argThat(appends ->
+                appends.stream().anyMatch(append -> FAILING_SUBSCRIBER.equals(append.queueKey()))));
     }
 
 }

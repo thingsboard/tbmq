@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -47,7 +48,8 @@ import static org.awaitility.Awaitility.await;
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
 
-    private static final int MSG_EXPIRY_INTERVAL_SEC = 1;
+    // long enough to outlast the first delivery to the online subscriber on a loaded machine
+    private static final int MSG_EXPIRY_INTERVAL_SEC = 2;
     // the subscriber stays away for longer than the interval
     private static final Duration AWAY = Duration.ofSeconds(MSG_EXPIRY_INTERVAL_SEC + 1);
 
@@ -130,35 +132,52 @@ public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
     }
 
     /**
-     * The broker restarts while the subscriber is away and the interval passes meanwhile: the store keeps that the
-     * message was sent, so it is resent as it would be after a reconnect alone.
+     * The broker restarts while the subscribers are away and the interval passes meanwhile: the store keeps that the
+     * messages were sent, so a QoS 1 and a QoS 2 message are resent as they would be after a reconnect alone.
      */
     @Test
     public void mqtt_3_3_1_1_dupSurvivesABrokerRestart() throws Exception {
-        String topic = "spec/resend/restart";
-        String subscriberId = "resend-restart-sub";
-        RawMqttClient subscriber = persistentSubscriber(subscriberId, topic, 1);
+        String qos1Topic = "spec/resend/restart/qos1";
+        String qos2Topic = "spec/resend/restart/qos2";
+        String qos1SubscriberId = "resend-restart-qos1-sub";
+        String qos2SubscriberId = "resend-restart-qos2-sub";
+        RawMqttClient qos1Subscriber = persistentSubscriber(qos1SubscriberId, qos1Topic, 1);
+        RawMqttClient qos2Subscriber = persistentSubscriber(qos2SubscriberId, qos2Topic, 2);
         RawMqttClient publisher = connectClean("resend-restart-pub", MqttVersion.MQTT_5);
-        deliverAndAcknowledgeOne(publisher, subscriber, subscriberId, topic, 1);
-        assertThat(publisher.publishQos1(topic, 2, "restart", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        deliverAndAcknowledgeOne(publisher, qos1Subscriber, qos1SubscriberId, qos1Topic, 1);
+        deliverAndAcknowledgeOne(publisher, qos2Subscriber, qos2SubscriberId, qos2Topic, 2);
+        assertThat(publisher.publishQos1(qos1Topic, 2, "restart-qos1", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
+        assertThat(publisher.publishQos2(qos2Topic, 3, "restart-qos2", MSG_EXPIRY_INTERVAL_SEC)).isEqualTo(SUCCESS);
 
-        RawMqttClient.Packet sent = nextPublish(subscriber);
-        assertThat(sent.dup()).isFalse();
-        assertOriginalPacketIdIsNotTheFirst(sent);
+        RawMqttClient.Packet qos1Sent = nextPublish(qos1Subscriber);
+        RawMqttClient.Packet qos2Sent = nextPublish(qos2Subscriber);
         long sentAtNanos = System.nanoTime();
-        // no PUBACK; the restart closes the connection
+        for (RawMqttClient.Packet sent : List.of(qos1Sent, qos2Sent)) {
+            assertThat(sent.dup()).isFalse();
+            assertOriginalPacketIdIsNotTheFirst(sent);
+        }
+        // no PUBACK and no PUBREC; the restart closes the connections
         SpringRestarter.getInstance().restart();
-        subscriber.close();
+        qos1Subscriber.close();
+        qos2Subscriber.close();
         publisher.close();
         Thread.sleep(remaining(AWAY, sentAtNanos));
 
-        RawMqttClient reconnected = connectPersistent(subscriberId);
-        assertThat(reconnected.sessionPresent()).isTrue();
-        RawMqttClient.Packet resent = nextPublish(reconnected);
-        assertResentAfterItsIntervalPassed(resent, sent, 1);
+        RawMqttClient qos1Reconnected = connectPersistent(qos1SubscriberId);
+        RawMqttClient qos2Reconnected = connectPersistent(qos2SubscriberId);
+        assertThat(qos1Reconnected.sessionPresent()).isTrue();
+        assertThat(qos2Reconnected.sessionPresent()).isTrue();
+        RawMqttClient.Packet qos1Resent = nextPublish(qos1Reconnected);
+        RawMqttClient.Packet qos2Resent = nextPublish(qos2Reconnected);
+        assertResentAfterItsIntervalPassed(qos1Resent, qos1Sent, 1);
+        assertResentAfterItsIntervalPassed(qos2Resent, qos2Sent, 2);
 
-        reconnected.pubAck(resent.packetId());
-        awaitQueueEmpty(subscriberId);
+        qos1Reconnected.pubAck(qos1Resent.packetId());
+        qos2Reconnected.pubRec(qos2Resent.packetId());
+        qos2Reconnected.expect(MqttMessageType.PUBREL, qos2Resent.packetId());
+        qos2Reconnected.pubComp(qos2Resent.packetId());
+        awaitQueueEmpty(qos1SubscriberId);
+        awaitQueueEmpty(qos2SubscriberId);
     }
 
     /**

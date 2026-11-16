@@ -36,7 +36,8 @@ import static org.awaitility.Awaitility.await;
 /**
  * A message of a shared subscription, once handed to one member, is that member's: it is moved from the group's queue
  * into the member's own queue, completed with that member when it reconnects, and never sent to another member
- * ([MQTT-4.8.2-4], [MQTT-4.8.2-5]).
+ * ([MQTT-4.8.2-4], [MQTT-4.8.2-5]). The member's queue keeps its packet id across the hand-over and the reconnect
+ * (the card #654 rule in Lite: a queue's packet ids never restart at 1 while it has entries).
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = SharedSubscriptionHandOverLiteTest.class, loader = SpringBootContextLoader.class)
@@ -93,6 +94,8 @@ public class SharedSubscriptionHandOverLiteTest extends AbstractLiteSpecCase {
 
         // member B is now the only member online: the message is not B's to get
         RawMqttClient b = connectPersistent(memberB);
+        // B still has its session and its shared subscription, so it could be sent the message
+        assertThat(b.sessionPresent()).as("member B's session present").isTrue();
         assertThat(b.poll(NOTHING_ARRIVES_WITHIN)).as("packet to member B").isEmpty();
         disconnect(b, memberB);
 
