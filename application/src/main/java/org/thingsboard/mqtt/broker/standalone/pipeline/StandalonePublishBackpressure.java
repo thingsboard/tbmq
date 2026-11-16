@@ -88,6 +88,15 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         budget.resumeUnlessPaused(() -> resume(sessionId));
     }
 
+    /**
+     * Only forgets the session: no channel call and no budget lock, so it cannot join a lock cycle. The channel is
+     * closed by now. A session still connected is never passed here, such as one whose keep-alive closing was lost.
+     */
+    @Override
+    public void onSessionClosed(UUID sessionId) {
+        pausedSessions.remove(sessionId);
+    }
+
     // runs on the event loop for every inbound packet, so a session that is not paused costs one lookup at most
     @Override
     public void onChannelRead(ClientSessionCtx ctx) {

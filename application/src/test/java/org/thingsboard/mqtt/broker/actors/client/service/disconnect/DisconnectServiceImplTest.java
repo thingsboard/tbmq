@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -92,6 +93,8 @@ public class DisconnectServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     ChannelBackpressureManager channelBackpressureManager;
+    @MockitoBean
+    PublishBackpressure publishBackpressure;
     @MockitoBean
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoBean
@@ -246,6 +249,18 @@ public class DisconnectServiceImplTest {
         disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
 
         verify(channelBackpressureManager).onSessionDisconnect(clientActorState);
+    }
+
+    @Test
+    public void cleanupClientSession_forgetsTheSessionInPublishBackpressure() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        UUID sessionId = UUID.randomUUID();
+        when(ctx.getSessionId()).thenReturn(sessionId);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        verify(publishBackpressure).onSessionClosed(sessionId);
     }
 
     @Test

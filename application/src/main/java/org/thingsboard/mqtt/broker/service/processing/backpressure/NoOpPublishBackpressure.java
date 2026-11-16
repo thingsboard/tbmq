@@ -33,6 +33,10 @@ public class NoOpPublishBackpressure implements PublishBackpressure {
     }
 
     @Override
+    public void onSessionClosed(UUID sessionId) {
+    }
+
+    @Override
     public void onChannelRead(ClientSessionCtx ctx) {
     }
 

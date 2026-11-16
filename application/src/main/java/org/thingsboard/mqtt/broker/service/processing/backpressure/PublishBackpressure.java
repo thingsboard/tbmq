@@ -26,10 +26,16 @@ import java.util.UUID;
 public interface PublishBackpressure {
 
     /**
-     * Called on the client actor thread before a PUBLISH of the session is dispatched. Pauses reading from the
-     * session's connection while the broker holds too many publishes; reading resumes once it has caught up.
+     * Called on the client actor thread before the pipeline decides on a PUBLISH of the session. Pauses reading from
+     * the session's connection while the broker holds too many publishes; reading resumes once it has caught up.
      */
     void onPublish(ClientSessionCtx ctx);
+
+    /**
+     * Called on the client actor thread when the session is cleaned up after its disconnect. Forgets the session, so
+     * that a closed session is not kept until the next resume.
+     */
+    void onSessionClosed(UUID sessionId);
 
     /**
      * Called on the event loop for every inbound packet of the session, once the session knows its channel. A packet

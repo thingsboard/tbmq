@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.service.stats.ClientDisconnectStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -65,6 +66,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final FlowControlService flowControlService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ChannelBackpressureManager channelBackpressureManager;
+    private final PublishBackpressure publishBackpressure;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final StatsManager statsManager;
 
@@ -173,6 +175,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         flowControlService.removeFromMap(sessionCtx.getClientId());
         tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
         channelBackpressureManager.onSessionDisconnect(actorState);
+        publishBackpressure.onSessionClosed(sessionCtx.getSessionId());
         closeChannel(sessionCtx);
 
         log.debug("[{}][{}] Client disconnected", sessionCtx.getClientId(), sessionCtx.getSessionId());

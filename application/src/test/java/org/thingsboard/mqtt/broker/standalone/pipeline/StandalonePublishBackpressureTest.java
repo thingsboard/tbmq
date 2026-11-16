@@ -244,6 +244,58 @@ class StandalonePublishBackpressureTest {
         }
     }
 
+    @Test
+    void givenPausedSessionClosed_whenSessionClosed_thenItIsForgottenAndALaterResumeDoesNotTouchIt() {
+        Connection closed = connection();
+        Connection open = connection();
+        acquire(8);
+        backpressure.onPublish(closed.session());
+        backpressure.onPublish(open.session());
+        assertThat(pausedConnections()).isEqualTo(2);
+
+        backpressure.onSessionClosed(closed.session().getSessionId());
+
+        assertThat(pausedConnections()).isEqualTo(1);
+
+        release(3);
+
+        verify(closed.config(), never()).setAutoRead(true);
+        verify(closed.channel(), never()).read();
+        verify(open.config()).setAutoRead(true);
+        verify(open.channel()).read();
+        assertThat(pausedConnections()).isZero();
+    }
+
+    @Test
+    void givenSessionThatIsNotPaused_whenSessionClosed_thenNothingChanges() {
+        Connection paused = connection();
+        Connection other = connection();
+        acquire(8);
+        backpressure.onPublish(paused.session());
+
+        backpressure.onSessionClosed(other.session().getSessionId());
+
+        assertThat(pausedConnections()).isEqualTo(1);
+        verifyNoInteractions(other.config());
+    }
+
+    @Test
+    void givenSessionClosedAndPausedAgain_whenSessionClosed_thenItDoesNotLeaveAStaleEntryForAnotherSession() {
+        Connection first = connection();
+        Connection second = connection();
+        acquire(8);
+        backpressure.onPublish(first.session());
+        backpressure.onSessionClosed(first.session().getSessionId());
+
+        backpressure.onPublish(second.session());
+
+        assertThat(pausedConnections()).isEqualTo(1);
+        release(3);
+        verify(second.config()).setAutoRead(true);
+        verify(first.config(), never()).setAutoRead(true);
+        assertThat(pausedConnections()).isZero();
+    }
+
     private void acquire(int messages) {
         for (int i = 0; i < messages; i++) {
             assertThat(budget.tryAcquire(1)).isTrue();
