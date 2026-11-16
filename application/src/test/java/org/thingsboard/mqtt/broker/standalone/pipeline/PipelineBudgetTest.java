@@ -113,6 +113,66 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenMaxBytesOfLongMaxValue_whenEmpty_thenNotAbovePauseAndNoProductOverflows() {
+        PipelineBudget budget = new PipelineBudget(10, Long.MAX_VALUE, 80, 50);
+
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(budget.hasRoom(Integer.MAX_VALUE)).isTrue();
+        assertThat(budget.tryAcquire(Integer.MAX_VALUE)).isTrue();
+        assertThat(budget.abovePause()).isFalse();
+    }
+
+    @Test
+    void givenMaxBytesOfLongMaxValue_whenMessagesReachPause_thenPauseAndResumeFireAtTheirPercentages() {
+        PipelineBudget budget = new PipelineBudget(10, Long.MAX_VALUE, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(resumed::incrementAndGet);
+
+        for (int i = 0; i < 7; i++) {
+            budget.tryAcquire(1);
+        }
+        assertThat(budget.abovePause()).isFalse();
+        budget.tryAcquire(1);
+        assertThat(budget.abovePause()).isTrue();
+
+        budget.release(1);
+        budget.release(1);
+        assertThat(resumed).hasValue(0);
+        budget.release(1);
+
+        assertThat(budget.queuedMessages()).isEqualTo(5);
+        assertThat(resumed).hasValue(1);
+    }
+
+    @Test
+    void givenMaxBytesOfLongMaxValue_whenForcedTakesPushBytesPastTheMaximum_thenStillPausedAndResumesWhenReleased() {
+        PipelineBudget budget = new PipelineBudget(Integer.MAX_VALUE, Long.MAX_VALUE, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(resumed::incrementAndGet);
+
+        // forced takes go past the byte maximum: the bound must leave room for queuedBytes * 100 beyond it
+        int taken = 0;
+        while (budget.queuedBytes() <= Long.MAX_VALUE / 200) {
+            budget.acquire(Integer.MAX_VALUE);
+            taken++;
+        }
+        budget.acquire(Integer.MAX_VALUE);
+        taken++;
+
+        assertThat(budget.queuedBytes()).isGreaterThan(Long.MAX_VALUE / 200).isPositive();
+        assertThat(budget.abovePause()).isTrue();
+        assertThat(resumed).hasValue(0);
+
+        for (int i = 0; i < taken; i++) {
+            budget.release(Integer.MAX_VALUE);
+        }
+
+        assertThat(budget.queuedBytes()).isZero();
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(resumed).hasValue(1);
+    }
+
+    @Test
     void givenAbovePause_whenUsageFallsToResume_thenListenerFiresOnce() {
         PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
         AtomicInteger resumed = new AtomicInteger();

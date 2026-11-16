@@ -40,6 +40,12 @@ public class PipelineBudget {
     static final String QUEUED_MESSAGES_GAUGE = "standalonePipelineQueuedMessages";
     static final String QUEUED_BYTES_GAUGE = "standalonePipelineQueuedBytes";
 
+    // The percentage checks multiply a byte count by 100 (or by a percentage of at most 100). Capping the maximum at
+    // Long.MAX_VALUE / 200 keeps maxBytes * percent below Long.MAX_VALUE / 2, and leaves queuedBytes twice the maximum
+    // to grow to, which is the room a forced acquire() needs, before queuedBytes * 100 could overflow. It is some
+    // 46 petabytes, so no real setting is cut.
+    static final long MAX_BYTES_LIMIT = Long.MAX_VALUE / 200;
+
     private final int maxMessages;
     private final long maxBytes;
     private final int pausePercent;
@@ -80,7 +86,7 @@ public class PipelineBudget {
                     + pausePercent + "), but was " + resumePercent);
         }
         this.maxMessages = maxMessages;
-        this.maxBytes = maxBytes;
+        this.maxBytes = Math.min(maxBytes, MAX_BYTES_LIMIT);
         this.pausePercent = pausePercent;
         this.resumePercent = resumePercent;
     }
