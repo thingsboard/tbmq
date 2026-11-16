@@ -101,6 +101,31 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenUsageReachedPause_whenItFallsBetweenTheLevels_thenItStaysPausedUntilTheResumeLevel() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        for (int i = 0; i < 7; i++) {
+            budget.tryAcquire(1);
+        }
+        assertThat(budget.paused()).isFalse();
+
+        budget.tryAcquire(1);
+        assertThat(budget.paused()).isTrue();
+
+        budget.release(1);
+        budget.release(1);
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(budget.paused()).isTrue();
+
+        budget.release(1);
+        assertThat(budget.paused()).isFalse();
+
+        // between the levels again, but on the way up from the resume level
+        budget.tryAcquire(1);
+        budget.tryAcquire(1);
+        assertThat(budget.paused()).isFalse();
+    }
+
+    @Test
     void givenBytesReachPause_whenCheck_thenAbovePause() {
         PipelineBudget budget = new PipelineBudget(1000, 100, 80, 50);
 

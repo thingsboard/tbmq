@@ -33,9 +33,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Stops reading from a client that publishes while the pipeline is at its pause level, and starts reading again from
- * every such client when the pipeline falls to its resume level. A paused client still publishes what was read before
- * the pause. Once the shutdown has called {@link PipelineBudget#stopResuming}, nothing here starts reading again.
+ * Stops reading from a client that publishes while the pipeline is paused, from the moment it reaches its pause level
+ * until it falls back to its resume level, and starts reading again from every such client when it does. A paused
+ * client still publishes what was read before the pause. Once the shutdown has called
+ * {@link PipelineBudget#stopResuming}, nothing here starts reading again.
  */
 @Slf4j
 @Component
@@ -60,8 +61,11 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
     @Override
     public void onPublish(ClientSessionCtx ctx) {
         UUID sessionId = ctx.getSessionId();
-        // only the session's own actor pauses it, so the session cannot be paused between this check and the pause
-        if (!budget.abovePause() || pausedSessions.containsKey(sessionId)) {
+        // Paused from the pause level all the way down to the resume level, not only at or above the pause level: a
+        // client left reading in between could hold the pipeline there, and the clients already paused would never
+        // resume.
+        // Only the session's own actor pauses it, so the session cannot be paused between this check and the pause.
+        if (!budget.paused() || pausedSessions.containsKey(sessionId)) {
             return;
         }
         pausedSessions.computeIfAbsent(sessionId, id -> {

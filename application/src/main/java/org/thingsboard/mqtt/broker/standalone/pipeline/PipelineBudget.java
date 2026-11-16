@@ -55,8 +55,8 @@ public class PipelineBudget {
     // written only under the lock, read without it
     private volatile int queuedMessages;
     private volatile long queuedBytes;
-    // under the lock: usage reached the pause level and has not yet fallen back to the resume level
-    private boolean paused;
+    // usage reached the pause level and has not yet fallen back to the resume level; written only under the lock
+    private volatile boolean paused;
 
     private final List<Runnable> resumeListeners = new CopyOnWriteArrayList<>();
     // a resume holds the read lock and stopResuming the write lock: once stopResuming returns, no resume runs
@@ -168,6 +168,14 @@ public class PipelineBudget {
     public boolean abovePause() {
         return queuedMessages * 100L >= (long) maxMessages * pausePercent
                 || queuedBytes * 100L >= maxBytes * pausePercent;
+    }
+
+    /**
+     * @return {@code true} from the moment messages or bytes reach the pause level until both fall back to the resume
+     * level
+     */
+    public boolean paused() {
+        return paused;
     }
 
     public int queuedMessages() {

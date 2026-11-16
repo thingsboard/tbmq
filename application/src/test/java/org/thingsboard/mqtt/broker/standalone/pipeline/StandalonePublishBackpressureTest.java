@@ -78,6 +78,45 @@ class StandalonePublishBackpressureTest {
     }
 
     @Test
+    void givenBudgetFellBetweenTheLevelsAfterAPause_whenAnotherConnectionPublishes_thenItIsPausedUntilTheResume() {
+        Connection paused = connection();
+        Connection publishing = connection();
+        acquire(8);
+        backpressure.onPublish(paused.session());
+        // below the pause level, not yet down to the resume level
+        release(1);
+
+        // left reading, the connection could keep the budget between the levels and the paused one would never resume
+        backpressure.onPublish(publishing.session());
+
+        verify(publishing.config()).setAutoRead(false);
+        assertThat(pausedConnections()).isEqualTo(2);
+        assertThat(publishPauses()).isEqualTo(2);
+
+        release(2);
+
+        for (Connection connection : new Connection[]{paused, publishing}) {
+            verify(connection.config()).setAutoRead(true);
+            verify(connection.channel()).read();
+        }
+        assertThat(pausedConnections()).isZero();
+    }
+
+    @Test
+    void givenBudgetResumedAndBackBetweenTheLevels_whenPublish_thenNothingIsPaused() {
+        Connection connection = connection();
+        acquire(8);
+        release(3);
+        // above the resume level again, still below the pause level
+        acquire(2);
+
+        backpressure.onPublish(connection.session());
+
+        verifyNoInteractions(connection.config());
+        assertThat(pausedConnections()).isZero();
+    }
+
+    @Test
     void givenPausedChannels_whenBudgetFallsToResume_thenEachGetsAutoReadAndOneRead() {
         Connection first = connection();
         Connection second = connection();
@@ -256,14 +295,14 @@ class StandalonePublishBackpressureTest {
         }
 
         @Override
-        public boolean abovePause() {
-            boolean above = super.abovePause();
+        public boolean paused() {
+            boolean paused = super.paused();
             Runnable hook = afterNextPauseCheck;
             afterNextPauseCheck = null;
             if (hook != null) {
                 hook.run();
             }
-            return above;
+            return paused;
         }
 
     }
