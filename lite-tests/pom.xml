@@ -207,6 +207,8 @@
                         </goals>
                         <configuration>
                             <includeScope>test</includeScope>
+                            <!-- the tbmq-lite pom brings dependencies, not classes -->
+                            <excludeTypes>pom</excludeTypes>
                             <outputFile>${project.build.directory}/lite-test-classpath.txt</outputFile>
                         </configuration>
                     </execution>
@@ -223,6 +225,7 @@
                         </goals>
                         <configuration>
                             <includeScope>runtime</includeScope>
+                            <excludeTypes>pom</excludeTypes>
                             <outputFile>${project.build.directory}/lite-runtime-classpath.txt</outputFile>
                         </configuration>
                     </execution>
@@ -243,19 +246,23 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
-                        <configuration>
-                            <!-- the root pom skips it unless a module sets up the packaging -->
-                            <skip>false</skip>
-                            <mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</mainClass>
-                            <classifier>boot</classifier>
-                            <!-- a plain jar for java -jar, without the launch script of the installation packages -->
-                            <executable>false</executable>
-                        </configuration>
                         <executions>
+                            <!--
+                                An execution of its own: the root pom's default one, which stays skipped here, also runs
+                                build-info, whose file for lite-tests would hide the application's.
+                            -->
                             <execution>
+                                <id>lite-runnable</id>
                                 <goals>
                                     <goal>repackage</goal>
                                 </goals>
+                                <configuration>
+                                    <skip>false</skip>
+                                    <mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</mainClass>
+                                    <classifier>boot</classifier>
+                                    <!-- a plain jar for java -jar, without the launch script of the installation packages -->
+                                    <executable>false</executable>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

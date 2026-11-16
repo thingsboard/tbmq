@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,8 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * The crash guarantee (D15): a broker killed with {@code SIGKILL} under QoS 1 and QoS 2 load loses no acknowledged
- * message for persistent DEVICE subscribers, and only messages in flight at a kill may reach them twice.
+ * The crash guarantee: a broker killed with {@code SIGKILL} under QoS 1 and QoS 2 load loses no acknowledged message
+ * for persistent DEVICE subscribers, and only messages in flight at a kill may reach them twice.
  * <p>
  * The broker runs in a JVM of its own ({@link LiteBrokerProcess}) on a store directory and a PostgreSQL container the
  * test owns, and is started again on the same store after each kill. Every client uses MQTT 3.1.1 with a persistent
@@ -70,8 +71,14 @@ import static org.awaitility.Awaitility.await;
  * The broker hands a persisted DEVICE client at most one page ({@code store.device-msg.read-page-size}) of messages
  * that are not acknowledged, and frees a place only once it removed the acknowledged message from the store. So when
  * the subscriber holds a full page, every acknowledgement it sent earlier has been stored, and none is still on its
- * way to a broker about to be killed.</li>
+ * way to a broker about to be killed. Each held message must reach it again after the restart [MQTT-4.4.0-1].</li>
  * </ul>
+ * The offline subscriber receives nothing before the last broker, so only the publishers' ids in flight at a kill may
+ * reach it twice.
+ * <p>
+ * After each restart, the store's own log ({@code <store>/LOG}, which RocksDB writes and the broker's output does not
+ * show) must report no corruption from the recovery.
+ * <p>
  * The offline subscriber's queue must hold every message of the run, and the store keeps at most 65,535 messages for
  * a client. So each publisher is capped at {@value #PUBLISH_RATE} publishes a second, which keeps the run near 30,000
  * messages: uncapped, the four of them publish tens of thousands a second.
@@ -101,6 +108,10 @@ class KillNineDurabilityLiteTest {
     private static final Duration IDLE = Duration.ofSeconds(5);
     private static final Duration DRAIN_TIMEOUT = Duration.ofMinutes(3);
     private static final Pattern CORRUPTION = Pattern.compile("corrupt", Pattern.CASE_INSENSITIVE);
+    // what RocksDB logs once it opened a database, and flushes its log after
+    private static final String STORE_LOG_OPENED = "DB pointer";
+    // how RocksDB's status reports a corruption; a WAL whose tail a kill cut off is reported as its end instead
+    private static final String STORE_LOG_CORRUPTION = "Corruption:";
 
     private static LiteTestDatabase db;
 
@@ -128,18 +139,24 @@ class KillNineDurabilityLiteTest {
 
     @AfterEach
     void stopEverything() throws InterruptedException {
-        for (Publisher publisher : publishers) {
-            publisher.stopPublishing();
+        try {
+            for (Publisher publisher : publishers) {
+                publisher.stopPublishing();
+            }
+        } finally {
+            try {
+                if (broker != null && broker.isAlive()) {
+                    broker.kill9();
+                }
+            } finally {
+                publishers.forEach(Client::closeQuietly);
+                subscribers.forEach(Client::closeQuietly);
+            }
         }
-        if (broker != null && broker.isAlive()) {
-            broker.kill9();
-        }
-        publishers.forEach(Client::closeQuietly);
-        subscribers.forEach(Client::closeQuietly);
     }
 
     @Test
-    void d15_noAcknowledgedMessageIsLostAcrossThreeKills() throws Exception {
+    void noAcknowledgedMessageIsLostAcrossThreeKills() throws Exception {
         Path store = tempDir.resolve("store");
         startBroker(store);
         Subscriber online = subscriber("kill9-online");
@@ -149,7 +166,10 @@ class KillNineDurabilityLiteTest {
         List<Client> onlineClients = new ArrayList<>(publishers);
         onlineClients.add(online);
 
-        Set<Long> idsInFlightAtAKill = new HashSet<>();
+        // ids a publisher had sent and not yet seen acknowledged when a kill happened
+        Set<Long> publishedIdsInFlightAtAKill = new HashSet<>();
+        // ids the online subscriber had received and not acknowledged when a kill happened
+        Set<Long> heldIds = new HashSet<>();
         // a publish in flight at a kill may be stored again when it is sent again
         long publishesSentAgainAtMost = 0;
         for (int kill = 1; kill <= KILLS; kill++) {
@@ -158,17 +178,20 @@ class KillNineDurabilityLiteTest {
             awaitPromptly("the online subscriber holding a full delivery window").until(() -> online.heldCount() >= DELIVERY_WINDOW);
             assertThat(online.heldCount()).as("messages the online subscriber holds, which the broker sent in one window")
                     .isEqualTo(DELIVERY_WINDOW);
+            int inFlightBeforeKill = unacknowledgedByPublishers().size();
             broker.kill9();
             await("every client disconnected").atMost(TIMEOUT).until(() -> onlineClients.stream().noneMatch(Client::isConnected));
+            // taken once the broker is gone, so it holds every id sent before the kill and not acknowledged
             Set<Long> sentNotAcknowledged = unacknowledgedByPublishers();
             List<Long> held = online.releaseHeld();
-            idsInFlightAtAKill.addAll(sentNotAcknowledged);
-            idsInFlightAtAKill.addAll(held);
+            publishedIdsInFlightAtAKill.addAll(sentNotAcknowledged);
+            heldIds.addAll(held);
             publishesSentAgainAtMost += sentNotAcknowledged.size();
-            log.info("Kill {}: {} ids acknowledged, {} sent and not acknowledged, {} held by the online subscriber",
-                    kill, acknowledgedIds.size(), sentNotAcknowledged.size(), held.size());
+            log.info("Kill {}: {} ids acknowledged, {} publishes in flight just before it ({} once every client saw the drop), "
+                    + "{} held by the online subscriber", kill, acknowledgedIds.size(), inFlightBeforeKill, sentNotAcknowledged.size(), held.size());
 
             startBroker(store);
+            assertStoreRecoveredWithoutCorruption(store);
             connectAll(onlineClients);
         }
         // the last broker takes new publishes as well as the ones sent again
@@ -177,18 +200,22 @@ class KillNineDurabilityLiteTest {
             publisher.stopPublishing();
         }
         await("every publish acknowledged").atMost(TIMEOUT).until(() -> unacknowledgedByPublishers().isEmpty());
-        connectAll(List.of(offline));
-        await("both subscribers idle for " + IDLE).atMost(DRAIN_TIMEOUT).pollInterval(Duration.ofMillis(500))
-                .until(() -> online.idleFor(IDLE) && offline.idleFor(IDLE));
-
         Set<Long> acknowledged = Set.copyOf(acknowledgedIds);
+        connectAll(List.of(offline));
+        // idle as well, so that a late duplicate is counted too
+        await("both subscribers holding every acknowledged id and idle for " + IDLE).atMost(DRAIN_TIMEOUT).pollInterval(Duration.ofMillis(500))
+                .until(() -> online.receivedAll(acknowledged) && offline.receivedAll(acknowledged) && online.idleFor(IDLE) && offline.idleFor(IDLE));
+
         Set<Long> onlineIds = online.receivedIds();
         Set<Long> offlineIds = offline.receivedIds();
         Set<Long> onlineDuplicates = online.duplicates();
         Set<Long> offlineDuplicates = offline.duplicates();
-        log.info("{} ids published, {} acknowledged, {} in flight at a kill; the online subscriber received {} ids, {} of them twice "
-                        + "or more; the offline subscriber received {} ids, {} of them twice or more", lastId.get(), acknowledged.size(),
-                idsInFlightAtAKill.size(), onlineIds.size(), onlineDuplicates.size(), offlineIds.size(), offlineDuplicates.size());
+        Set<Long> onlineAllowance = new HashSet<>(publishedIdsInFlightAtAKill);
+        onlineAllowance.addAll(heldIds);
+        log.info("{} ids published, {} acknowledged, {} published ids and {} held ids in flight at a kill; the online subscriber "
+                        + "received {} ids, {} of them twice or more; the offline subscriber received {} ids, {} of them twice or more",
+                lastId.get(), acknowledged.size(), publishedIdsInFlightAtAKill.size(), heldIds.size(), onlineIds.size(),
+                onlineDuplicates.size(), offlineIds.size(), offlineDuplicates.size());
         assertThat(lastId.get() + publishesSentAgainAtMost).as("messages the offline subscriber's queue had to hold, at most")
                 .isLessThanOrEqualTo(QUEUE_LIMIT);
         for (Client client : onlineClients) {
@@ -197,9 +224,13 @@ class KillNineDurabilityLiteTest {
         assertThat(offline.connectionsLost.get()).as("connections the offline subscriber lost").isZero();
         assertNoIds(difference(acknowledged, onlineIds), "acknowledged ids the online subscriber never received");
         assertNoIds(difference(acknowledged, offlineIds), "acknowledged ids the offline subscriber never received");
-        // D15: only a message in flight at a kill may arrive twice
-        assertNoIds(difference(onlineDuplicates, idsInFlightAtAKill), "ids the online subscriber received twice that were not in flight at a kill");
-        assertNoIds(difference(offlineDuplicates, idsInFlightAtAKill), "ids the offline subscriber received twice that were not in flight at a kill");
+        // a held message is sent again after the restart, and reaches the subscriber again
+        assertNoIds(difference(heldIds, onlineDuplicates), "ids the online subscriber held at a kill and never received again");
+        // only a message in flight at a kill may arrive twice
+        assertNoIds(difference(onlineDuplicates, onlineAllowance),
+                "ids the online subscriber received twice that neither a publisher nor it had in flight at a kill");
+        assertNoIds(difference(offlineDuplicates, publishedIdsInFlightAtAKill),
+                "ids the offline subscriber received twice that no publisher had in flight at a kill");
     }
 
     @Test
@@ -217,6 +248,18 @@ class KillNineDurabilityLiteTest {
                 .anyMatch(line -> line.contains("Opened the store at " + store));
         assertThat(lines).as("lines of the restarted broker (%s) that report a corruption", broker.logFile())
                 .noneMatch(line -> CORRUPTION.matcher(line).find());
+        assertStoreRecoveredWithoutCorruption(store);
+    }
+
+    /**
+     * RocksDB logs its recovery to {@code LOG} in the store directory, not to the broker's output, and flushes that log
+     * once the store is open.
+     */
+    private static void assertStoreRecoveredWithoutCorruption(Path store) throws IOException {
+        Path storeLog = store.resolve("LOG");
+        List<String> lines = Files.readAllLines(storeLog, StandardCharsets.ISO_8859_1);
+        assertThat(lines).as("lines of %s", storeLog).anyMatch(line -> line.contains(STORE_LOG_OPENED));
+        assertThat(lines).as("lines of %s that report a corruption", storeLog).noneMatch(line -> line.contains(STORE_LOG_CORRUPTION));
     }
 
     private void startBroker(Path store) {
@@ -509,6 +552,10 @@ class KillNineDurabilityLiteTest {
 
         private synchronized Set<Long> receivedIds() {
             return Set.copyOf(receivedCounts.keySet());
+        }
+
+        private synchronized boolean receivedAll(Set<Long> ids) {
+            return receivedCounts.keySet().containsAll(ids);
         }
 
         private synchronized Set<Long> duplicates() {

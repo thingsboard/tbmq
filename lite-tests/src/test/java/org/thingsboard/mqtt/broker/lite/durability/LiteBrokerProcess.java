@@ -45,8 +45,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ({@code target/lite-runtime-classpath.txt}, written by the build) with its output in {@code target/lite-broker-<n>.log}.
  * <p>
  * The ports are system properties, which win over the {@code LISTENER_*} variables a developer or a build agent may
- * have set: the MQTT port the caller chose, a free HTTP port, and no WebSocket listener. PostgreSQL is the caller's
- * {@link LiteTestDatabase}.
+ * have set: the MQTT port the caller chose, a free HTTP port, and no WebSocket, SSL or WSS listener. PostgreSQL is the
+ * caller's {@link LiteTestDatabase}.
  * <p>
  * No broker outlives the tests: a shutdown hook kills the ones still running when the test JVM exits, and
  * {@link LiteBrokerLauncher} halts a broker whose test JVM was killed.
@@ -94,6 +94,8 @@ public final class LiteBrokerProcess {
         properties.put("listener.tcp.bind_port", String.valueOf(mqttPort));
         properties.put("server.port", String.valueOf(freePort()));
         properties.put("listener.ws.enabled", "false");
+        properties.put("listener.ssl.enabled", "false");
+        properties.put("listener.wss.enabled", "false");
         properties.putAll(extraProperties);
 
         List<String> command = new ArrayList<>();
@@ -148,7 +150,9 @@ public final class LiteBrokerProcess {
      */
     public void kill9() {
         process.destroyForcibly();
-        awaitExit();
+        if (!awaitExit()) {
+            throw new IllegalStateException("The broker did not exit within " + EXIT_TIMEOUT + " of SIGKILL; see " + logFile);
+        }
     }
 
     /**
@@ -244,6 +248,9 @@ public final class LiteBrokerProcess {
     }
 
     /**
+     * Copies the one class file of the launcher, so the launcher must stay a single class, without nested, anonymous
+     * or local classes.
+     *
      * @return a directory holding the launcher class and nothing else
      */
     private static Path launcherDir(Path targetDir) {
