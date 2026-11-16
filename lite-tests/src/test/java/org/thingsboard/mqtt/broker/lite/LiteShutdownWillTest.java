@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.lite;
 
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
@@ -39,12 +40,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 
 import java.nio.charset.StandardCharsets;
@@ -52,10 +55,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doAnswer;
 
 /**
  * [MQTT-3.1.2-8]: the Will Message of a client that is connected when the broker shuts down is published after its
@@ -77,6 +84,7 @@ public class LiteShutdownWillTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final long SESSION_EXPIRY_SECONDS = 3600;
     private static final int SERVER_SHUTTING_DOWN = 0x8B;
+    private static final int SERVER_UNAVAILABLE = 0x88;
 
     @ClassRule
     public static TempStorePathRule store = new TempStorePathRule();
@@ -87,7 +95,13 @@ public class LiteShutdownWillTest {
     @Value("${listener.tcp.bind_port}")
     private int mqttPort;
 
+    // a spy for the test that holds the drain; the listeners of this class do not inject it, so it is taken from the
+    // context
+    @MockitoSpyBean
+    private DeviceMsgQueueStore deviceMsgQueueStore;
+
     private final List<Object> clients = new ArrayList<>();
+    private final AtomicInteger connectAttempts = new AtomicInteger();
 
     @After
     public void closeClients() {
@@ -146,6 +160,58 @@ public class LiteShutdownWillTest {
             assertThat(message.getQos()).isEqualTo(1);
             assertThat(new String(message.getPayload(), StandardCharsets.UTF_8)).isEqualTo("offline-will");
         });
+    }
+
+    @Test
+    public void aClientConnectingWhileTheBrokerShutsDownIsRefusedAsServerUnavailable() throws Exception {
+        CountDownLatch appendEntered = new CountDownLatch(1);
+        CountDownLatch appendsReleased = new CountDownLatch(1);
+        DeviceMsgQueueStore store = context.getBean(DeviceMsgQueueStore.class);
+        doAnswer(invocation -> {
+            appendEntered.countDown();
+            try {
+                appendsReleased.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                // the shutdown stops the persist workers: the append goes on
+                Thread.currentThread().interrupt();
+            }
+            return invocation.callRealMethod();
+        }).when(store).append(anyList());
+        MqttClient subscriber = v5Client("shutdown-connect-sub");
+        subscriber.connect(persistentSession());
+        subscriber.subscribe("shutdown-connect/#", 1);
+        MqttAsyncClient publisher = new MqttAsyncClient("tcp://localhost:" + mqttPort, "shutdown-connect-pub", new MemoryPersistence());
+        clients.add(publisher);
+        publisher.connect(cleanStart()).waitForCompletion(TIMEOUT.toMillis());
+        // not waited for: its acknowledgement waits for the held append
+        publisher.publish("shutdown-connect/data", new MqttMessage("held".getBytes(StandardCharsets.UTF_8), 1, false, new MqttProperties()));
+        assertThat(appendEntered.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)).isTrue();
+
+        // the held append keeps the drain going, and the listeners open, until the drain timeout
+        Thread closer = new Thread(context::close, "context-closer");
+        closer.start();
+        try {
+            // a connect accepted before the shutdown began is closed and tried again
+            await().atMost(TIMEOUT).until(() -> connectWithWill() == SERVER_UNAVAILABLE);
+        } finally {
+            appendsReleased.countDown();
+            closer.join(TIMEOUT.toMillis());
+        }
+        assertThat(closer.isAlive()).isFalse();
+    }
+
+    /**
+     * @return the reason code the connect failed with, or -1 if it was accepted
+     */
+    private int connectWithWill() throws MqttException {
+        MqttClient client = v5Client("shutdown-connect-" + connectAttempts.incrementAndGet());
+        try {
+            client.connect(withWill(cleanStart(), "shutdown-connect/will", "late-will"));
+        } catch (MqttException e) {
+            return e.getReasonCode();
+        }
+        LiteTestClients.closeQuietly(client);
+        return -1;
     }
 
     /**

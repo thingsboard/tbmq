@@ -41,10 +41,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Stops the publish pipeline before every other bean: it stops the budget from resuming reads, stops reading from the
- * clients and waits for the reads in progress, publishes the Last Wills of the connected clients, then drains the
- * dispatch stage and the persist stage in that order. One deadline, {@code standalone.shutdown.drain-timeout-ms}, covers
- * these waits: the drain gets what the others left of it.
+ * Stops the publish pipeline before every other bean: it refuses new connections with Server unavailable and waits for
+ * the connections being accepted, stops the budget from resuming reads, stops reading from the clients and waits for
+ * the reads in progress, publishes the Last Wills of the connected clients, then drains the dispatch stage and the
+ * persist stage in that order. One deadline, {@code standalone.shutdown.drain-timeout-ms}, covers these waits: the drain
+ * gets what the others left of it.
+ * <p>
+ * The listeners stay open until the servers stop, after this bean. A client accepted after the sessions were taken
+ * would be neither paused nor disconnected, and its Last Will would be lost, so a CONNECT is refused from the first
+ * step on, and one admitted before it is waited for until its session is registered or it is disconnected.
  * <p>
  * A Will Message is published once its connection closes [MQTT-3.1.2-8]. Each client that has a Last Will is
  * disconnected with Server shutting down through its client actor, after the messages the client sent before: a
@@ -68,7 +73,7 @@ import java.util.concurrent.TimeoutException;
 @RequiredArgsConstructor
 public class StandaloneShutdownCoordinator implements SmartLifecycle {
 
-    private static final long DISCONNECT_POLL_NANOS = TimeUnit.MILLISECONDS.toNanos(5);
+    private static final long POLL_NANOS = TimeUnit.MILLISECONDS.toNanos(5);
 
     private final ClientSessionCtxService clientSessionCtxService;
     private final ClientMqttActorManager clientMqttActorManager;
@@ -77,6 +82,7 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     private final StandalonePublishMsgQueue dispatchStage;
     private final StandaloneDeviceMsgQueueConsumer persistStage;
     private final PipelineProperties properties;
+    private final StandaloneConnectionAdmission admission;
 
     private volatile boolean running;
 
@@ -92,8 +98,10 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     public void stop() {
         running = false;
         try {
+            admission.close();
             budget.stopResuming();
             long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(properties.getShutdown().getDrainTimeoutMs());
+            awaitConnectsInProgress(deadlineNanos);
             Set<EventLoop> eventLoops = pauseReading();
             awaitReadsInProgress(eventLoops, deadlineNanos);
             publishWills(deadlineNanos);
@@ -114,6 +122,34 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     @Override
     public int getPhase() {
         return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Waits, within the deadline, for the CONNECTs admitted before new ones were refused: each ends once its session is
+     * registered, so the steps after this one find it, or once it is disconnected. Never throws, and returns by the
+     * deadline.
+     */
+    private void awaitConnectsInProgress(long deadlineNanos) {
+        try {
+            while (true) {
+                int inFlight = admission.inFlight();
+                long remainingNanos = deadlineNanos - System.nanoTime();
+                if (inFlight == 0) {
+                    return;
+                }
+                if (remainingNanos <= 0) {
+                    log.warn("The connections being accepted on shutdown did not finish within {} ms: {} still being accepted; "
+                            + "one of them with a Last Will may lose it", properties.getShutdown().getDrainTimeoutMs(), inFlight);
+                    return;
+                }
+                TimeUnit.NANOSECONDS.sleep(Math.min(remainingNanos, POLL_NANOS));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the connections being accepted on shutdown");
+        } catch (Throwable t) {
+            log.error("Failed to wait for the connections being accepted on shutdown", t);
+        }
     }
 
     /**
@@ -246,7 +282,7 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
             if (pending.isEmpty() || remainingNanos <= 0) {
                 return pending.size();
             }
-            TimeUnit.NANOSECONDS.sleep(Math.min(remainingNanos, DISCONNECT_POLL_NANOS));
+            TimeUnit.NANOSECONDS.sleep(Math.min(remainingNanos, POLL_NANOS));
         }
     }
 

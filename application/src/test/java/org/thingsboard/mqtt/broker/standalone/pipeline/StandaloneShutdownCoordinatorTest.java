@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,6 +70,7 @@ class StandaloneShutdownCoordinatorTest {
     private final StandaloneDeviceMsgQueueConsumer persistStage = mock(StandaloneDeviceMsgQueueConsumer.class);
     private final PipelineProperties properties = new PipelineProperties();
     private final PipelineBudget budget = mock(PipelineBudget.class);
+    private final StandaloneConnectionAdmission admission = new StandaloneConnectionAdmission();
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(StandaloneShutdownCoordinator.class);
     private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
@@ -554,6 +556,70 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     @Test
+    void whenStop_thenNewConnectsAreRefusedBeforeTheSessionsAreTaken() {
+        AtomicBoolean admittedWhenTaken = new AtomicBoolean(true);
+        when(sessions.getAllClientSessionCtx()).thenAnswer(invocation -> {
+            admittedWhenTaken.set(admission.tryAdmit(UUID.randomUUID()));
+            return List.of();
+        });
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        assertThat(admittedWhenTaken).isFalse();
+    }
+
+    @Test
+    void givenAConnectInProgress_whenStop_thenItsSessionIsTakenAfterItRegistered() throws Exception {
+        UUID connecting = UUID.randomUUID();
+        assertThat(admission.tryAdmit(connecting)).isTrue();
+        List<ClientSessionCtx> registered = new CopyOnWriteArrayList<>();
+        when(sessions.getAllClientSessionCtx()).thenAnswer(invocation -> List.copyOf(registered));
+        ChannelConfig lateConfig = mock(ChannelConfig.class);
+        ClientSessionCtx late = willHolder("late", lateConfig);
+        disconnectsAtOnce(late);
+        when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+        // the client actor registers the session, then ends the connect
+        Thread actor = new Thread(() -> {
+            sleep(200);
+            registered.add(late);
+            admission.release(connecting);
+        });
+        actor.start();
+
+        coordinator().stop();
+        actor.join(TimeUnit.SECONDS.toMillis(10));
+
+        verify(lateConfig).setAutoRead(false);
+        verify(actors).disconnectAfterQueuedMsgs(eq("late"), any());
+        assertThat(warnings()).isEmpty();
+    }
+
+    @Test
+    void givenAConnectThatNeverEnds_whenStop_thenTheWaitEndsAtTheDeadlineAndTheDrainStillRuns() {
+        properties.getShutdown().setDrainTimeoutMs(200);
+        admission.tryAdmit(UUID.randomUUID());
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        long tookMs = timedStop();
+
+        // the timeout is 200 ms; the bound is generous for a loaded machine yet far below the 4 s default
+        assertThat(tookMs).isLessThan(2000);
+        verify(dispatch).drain(anyLong());
+        verify(persist).drain(anyLong());
+        assertThat(warnings()).first().satisfies(event -> assertThat(event.getFormattedMessage())
+                .contains("1 still being accepted"));
+    }
+
+    @Test
     void whenCreated_thenItStopsBeforeEveryOtherBean() {
         var coordinator = coordinator();
 
@@ -570,7 +636,7 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     private StandaloneShutdownCoordinator coordinator() {
-        return new StandaloneShutdownCoordinator(sessions, actors, lastWills, budget, dispatchStage, persistStage, properties);
+        return new StandaloneShutdownCoordinator(sessions, actors, lastWills, budget, dispatchStage, persistStage, properties, admission);
     }
 
     /**

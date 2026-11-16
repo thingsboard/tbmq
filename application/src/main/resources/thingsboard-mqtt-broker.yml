@@ -1262,11 +1262,12 @@ standalone:
     # connections again. Must be at least 1 and below pause-percent.
     resume-percent: "${STANDALONE_PIPELINE_RESUME_PERCENT:50}"
   shutdown:
-    # Time (in ms) the broker waits on shutdown, in total, for the reads in progress to finish, for the Last Wills of the
-    # connected clients to be handed to the pipeline, and for the publishes in the pipeline to be dispatched and stored,
-    # in that order, before it stops the workers: what the first two steps leave of it is the time of the drain. QoS 0
-    # publishes still queued after it are lost. QoS 1/2 publishes still queued were never acknowledged, so their
-    # clients can send them again. Defaults to 4 s (4000 ms).
+    # Time (in ms) the broker waits on shutdown, in total, for the connections being accepted, for the reads in progress
+    # to finish, for the Last Wills of the connected clients to be handed to the pipeline, and for the publishes in the
+    # pipeline to be dispatched and stored, in that order, before it stops the workers: what the first three steps leave
+    # of it is the time of the drain. QoS 0 publishes still queued after it are lost. QoS 1/2 publishes still queued were
+    # never acknowledged, so their clients can send them again. New connections are refused from the start of the
+    # shutdown. Defaults to 4 s (4000 ms).
     drain-timeout-ms: "${STANDALONE_SHUTDOWN_DRAIN_TIMEOUT_MS:4000}"
   cache:
     # Maximum number of entries in each credentials cache. When it is reached, the least useful entries are evicted.
