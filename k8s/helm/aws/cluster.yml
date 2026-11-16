@@ -22,7 +22,7 @@ availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 metadata:
   name: tbmq
   region: us-east-1
-  version: "1.34"
+  version: "1.37"
 
 iam:
   withOIDC: true
@@ -72,8 +72,8 @@ managedNodeGroups:
   #   - You want to keep the cache outside the EKS cluster.
   - name: tbmq-redis
     instanceType: c7a.medium
-    desiredCapacity: 6
-    maxSize: 6
+    desiredCapacity: 1
+    maxSize: 1
     minSize: 0
     labels: { role: redis }
     privateNetworking: true
