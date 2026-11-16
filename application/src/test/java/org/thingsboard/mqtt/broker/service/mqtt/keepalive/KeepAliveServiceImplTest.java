@@ -66,7 +66,7 @@ class KeepAliveServiceImplTest {
     void setUp() {
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         publishBackpressure = mock(PublishBackpressure.class);
-        when(publishBackpressure.probe(any())).thenReturn(KeepAliveProbe.CLOSE);
+        when(publishBackpressure.probe(any(), anyLong())).thenReturn(KeepAliveProbe.CLOSE);
         keepAliveService = spy(new KeepAliveServiceImpl(clientMqttActorManager, publishBackpressure));
     }
 
@@ -128,7 +128,7 @@ class KeepAliveServiceImplTest {
 
         keepAliveService.processKeepAlive();
 
-        verify(publishBackpressure).probe(sessionId);
+        verify(publishBackpressure).probe(eq(sessionId), anyLong());
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID), argThat(msg -> isKeepAliveDisconnect(msg, sessionId)));
         assertEquals(0, keepAliveService.getKeepAliveInfoSize());
     }
@@ -138,7 +138,7 @@ class KeepAliveServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
         expire();
-        when(publishBackpressure.probe(sessionId)).thenReturn(KeepAliveProbe.WAIT);
+        when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.WAIT);
 
         keepAliveService.processKeepAlive();
 
@@ -146,7 +146,7 @@ class KeepAliveServiceImplTest {
         assertEquals(1, keepAliveService.getKeepAliveInfoSize());
         // the session is still inactive: the next check probes it again
         keepAliveService.processKeepAlive();
-        verify(publishBackpressure, times(2)).probe(sessionId);
+        verify(publishBackpressure, times(2)).probe(eq(sessionId), anyLong());
     }
 
     @Test
@@ -154,7 +154,7 @@ class KeepAliveServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
         expire();
-        when(publishBackpressure.probe(sessionId)).thenReturn(KeepAliveProbe.ALIVE);
+        when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
 
         keepAliveService.processKeepAlive();
 
@@ -162,7 +162,7 @@ class KeepAliveServiceImplTest {
         assertEquals(1, keepAliveService.getKeepAliveInfoSize());
         // refreshed: the session is no longer inactive, so the next check does not probe it
         keepAliveService.processKeepAlive();
-        verify(publishBackpressure).probe(sessionId);
+        verify(publishBackpressure).probe(eq(sessionId), anyLong());
     }
 
     // [MQTT-3.1.2-22]: a paused connection does not read, so a live client's PINGREQ waits in the socket
@@ -196,6 +196,27 @@ class KeepAliveServiceImplTest {
         keepAliveService.processKeepAlive();
 
         verify(paused.channel()).read();
+        verify(clientMqttActorManager).disconnect(eq(CLIENT_ID),
+                argThat(msg -> isKeepAliveDisconnect(msg, paused.session().getSessionId())));
+    }
+
+    // data read by the probe is counted once: when the actor refreshed the session for it, the next deadline probes again
+    @Test
+    void mqtt_3_1_2_22_dataAlreadyCountedByTheSessionDoesNotKeepADeadClientOpen() throws Exception {
+        Connection paused = pausedSession();
+        expire();
+
+        keepAliveService.processKeepAlive(); // probe -> read #1
+        paused.backpressure().onChannelRead(paused.session()); // the PINGREQ
+        Thread.sleep(2);
+        keepAliveService.acknowledgeControlPacket(paused.session().getSessionId()); // the actor counts it
+        expire(); // a keep-alive time later, the client has died
+
+        keepAliveService.processKeepAlive();
+        verify(paused.channel(), times(2)).read();
+        verifyNoInteractions(clientMqttActorManager);
+
+        keepAliveService.processKeepAlive();
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID),
                 argThat(msg -> isKeepAliveDisconnect(msg, paused.session().getSessionId())));
     }

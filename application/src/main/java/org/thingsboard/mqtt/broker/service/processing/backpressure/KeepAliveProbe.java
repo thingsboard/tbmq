@@ -21,19 +21,19 @@ package org.thingsboard.mqtt.broker.service.processing.backpressure;
 public enum KeepAliveProbe {
 
     /**
-     * The connection is not paused, or it was probed already and no data arrived since: the keep-alive closes it as
-     * it closes any other.
+     * The connection is not paused, or it was probed after the session's last packet and nothing was read since: the
+     * keep-alive closes it as it closes any other.
      */
     CLOSE,
 
     /**
-     * The paused connection was just probed with one read: the keep-alive skips this check, and the next one shows
-     * whether the client sent anything.
+     * The paused connection was just probed with one read, or the shutdown has stopped the reads: the keep-alive skips
+     * this check, and the next one shows whether the client sent anything.
      */
     WAIT,
 
     /**
-     * Data arrived on the paused connection since it was paused or probed, so the client is alive: the keep-alive
+     * Data was read on the paused connection after the session's last packet, so the client is alive: the keep-alive
      * refreshes the session and skips it.
      */
     ALIVE

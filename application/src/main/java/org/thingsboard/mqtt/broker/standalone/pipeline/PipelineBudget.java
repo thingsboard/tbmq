@@ -202,18 +202,6 @@ public class PipelineBudget {
     }
 
     /**
-     * @return {@code true} once {@link #stopResuming} was called
-     */
-    public boolean resumingStopped() {
-        resumeLock.readLock().lock();
-        try {
-            return resumesStopped;
-        } finally {
-            resumeLock.readLock().unlock();
-        }
-    }
-
-    /**
      * Runs {@code resume} unless the usage is still paused (it reached the pause level and has not fallen back to the
      * resume level since) or {@link #stopResuming} was called. It is for a caller that paused something after it saw
      * the usage at the pause level, since a resume that ran between the check and the pause did not see it. While the

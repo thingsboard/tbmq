@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -83,45 +82,54 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         }
         PausedSession paused = pausedSessions.get(ctx.getSessionId());
         if (paused != null) {
-            paused.dataArrived.set(true);
+            paused.lastReadTime = System.currentTimeMillis();
         }
     }
 
     /**
      * [MQTT-3.1.2-22] The keep-alive stays enforced on a paused connection, which does not read what the client sent:
-     * the first probe reads once, and the next tick closes the session unless data arrived meanwhile.
+     * the first probe after a packet reads once, and the next one closes the session unless data was read meanwhile.
      */
     @Override
-    public KeepAliveProbe probe(UUID sessionId) {
+    public KeepAliveProbe probe(UUID sessionId, long lastPacketTime) {
         if (pausedSessions.isEmpty()) {
             return KeepAliveProbe.CLOSE;
         }
         AtomicReference<KeepAliveProbe> outcome = new AtomicReference<>(KeepAliveProbe.CLOSE);
-        // under the entry's lock, like a pause and a resume of the session
-        pausedSessions.computeIfPresent(sessionId, (id, paused) -> {
-            KeepAliveProbe probe = probe(paused);
-            outcome.set(probe);
-            // a dead client is not kept until the next resume
-            return probe == KeepAliveProbe.CLOSE ? null : paused;
-        });
+        // The budget's lock is taken before the entry's, as a resume takes them: an entry's lock held while waiting for
+        // the budget's could deadlock with a resume and a shutdown queued for the write lock between them.
+        boolean ran = budget.runUnlessResumingStopped(() ->
+                pausedSessions.computeIfPresent(sessionId, (id, paused) -> {
+                    outcome.set(probe(paused, lastPacketTime));
+                    // only a resume takes a session out of the paused set: a session the keep-alive did not close
+                    // after all (its refresh lost a race) must still be resumed
+                    return paused;
+                }));
+        if (!ran) {
+            // the shutdown closes the connections itself, and the reads stay paused through its drain
+            return pausedSessions.containsKey(sessionId) ? KeepAliveProbe.WAIT : KeepAliveProbe.CLOSE;
+        }
         return outcome.get();
     }
 
-    private KeepAliveProbe probe(PausedSession paused) {
-        if (budget.resumingStopped()) {
-            // the shutdown closes the connections itself, and the reads stay paused through its drain
-            return KeepAliveProbe.WAIT;
-        }
-        if (paused.dataArrived.getAndSet(false)) {
-            paused.probed = false;
+    // Both times are compared with the keep-alive's last packet time, on the same clock, so that data the actor already
+    // counted, and a probe it already answered, do not count again for a later deadline.
+    private KeepAliveProbe probe(PausedSession paused, long lastPacketTime) {
+        if (paused.lastReadTime > lastPacketTime) {
+            // strict: a packet read at the very time of the last packet time was most likely that packet
             return KeepAliveProbe.ALIVE;
         }
-        if (paused.probed || !paused.ctx.getChannel().channel().isActive()) {
+        if (paused.probeTime > lastPacketTime) {
+            // probed after the last known packet, and nothing was read since
             return KeepAliveProbe.CLOSE;
         }
-        paused.probed = true;
-        // the shutdown may stop the reads between the check above and the read: then the read does not happen
-        budget.runUnlessResumingStopped(() -> read(paused.ctx));
+        // not probed yet, or the probe is not newer than the last packet (non-strict: the packet that refreshed the
+        // session may have been read by that very probe), so that it belongs to an older deadline
+        if (!paused.ctx.getChannel().channel().isActive()) {
+            return KeepAliveProbe.CLOSE;
+        }
+        paused.probeTime = System.currentTimeMillis();
+        read(paused.ctx);
         return KeepAliveProbe.WAIT;
     }
 
@@ -161,10 +169,10 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
     private static final class PausedSession {
 
         private final ClientSessionCtx ctx;
-        // set on the event loop when a packet arrives on the paused connection, taken by the keep-alive thread
-        private final AtomicBoolean dataArrived = new AtomicBoolean();
-        // a probe read once since the pause or since data last arrived; only touched under the entry's lock
-        private boolean probed;
+        // when the event loop last read a packet on the paused connection; 0 for none
+        private volatile long lastReadTime;
+        // when the keep-alive last read once from the paused connection; 0 for none; only touched under the entry's lock
+        private long probeTime;
 
         private PausedSession(ClientSessionCtx ctx) {
             this.ctx = ctx;

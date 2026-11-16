@@ -42,8 +42,11 @@ public interface PublishBackpressure {
      * keep-alive closes its connection. A paused connection does not read the packets the client sent, so the
      * keep-alive asks first whether the session is paused, and whether the client is alive.
      *
+     * @param lastPacketTime the session's last packet time as the keep-alive knows it, in milliseconds of
+     *                       {@link System#currentTimeMillis()}: data read or a probe made before it belongs to an
+     *                       earlier deadline
      * @return what the keep-alive does with the session
      */
-    KeepAliveProbe probe(UUID sessionId);
+    KeepAliveProbe probe(UUID sessionId, long lastPacketTime);
 
 }

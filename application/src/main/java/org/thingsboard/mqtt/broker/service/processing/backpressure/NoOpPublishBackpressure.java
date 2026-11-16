@@ -37,7 +37,7 @@ public class NoOpPublishBackpressure implements PublishBackpressure {
     }
 
     @Override
-    public KeepAliveProbe probe(UUID sessionId) {
+    public KeepAliveProbe probe(UUID sessionId, long lastPacketTime) {
         return KeepAliveProbe.CLOSE;
     }
 

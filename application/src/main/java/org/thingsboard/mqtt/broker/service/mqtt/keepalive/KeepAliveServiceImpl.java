@@ -57,7 +57,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
                 continue;
             }
             // a paused connection does not read what the client sent, so the session may be alive although it is silent
-            KeepAliveProbe probe = publishBackpressure.probe(sessionId);
+            KeepAliveProbe probe = publishBackpressure.probe(sessionId, lastPacketTime);
             if (probe == KeepAliveProbe.ALIVE) {
                 // a lost CAS means the session was refreshed or cleared meanwhile
                 keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, System.currentTimeMillis());
