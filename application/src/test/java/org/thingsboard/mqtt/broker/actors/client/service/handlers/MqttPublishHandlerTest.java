@@ -714,7 +714,7 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
-    public void aClosedPipelineOnMqtt5IsNotAnsweredAndDisconnectsWithServerShuttingDown() {
+    public void aClosedPipelineOnMqtt5IsNotAnsweredAndDoesNotDisconnect() {
         givenMqtt5Session();
         processPublishMsgs(1, 1);
         processPublishMsgs(2, 2);
@@ -723,18 +723,17 @@ public class MqttPublishHandlerTest {
 
         callbacks.forEach(callback -> callback.onFailure(new PipelineClosedException("publish pipeline is closed")));
 
-        assertShutdownDisconnects(3);
+        assertDroppedWithoutDisconnect(3);
         // no PUBACK or PUBREC at all: the client keeps the msgs and a client that keeps its session resends them
         verify(actorRef, never()).tell(any());
         verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
         verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
-        verify(tbMessageStatsReportClient, times(3)).reportDroppedMsgs();
         // the QoS 2 msg stays unpersisted, so it is not saved as awaiting PUBREL and its resend is persisted
         assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(2).isPersisted()).isFalse();
     }
 
     @Test
-    public void aClosedPipelineOnMqtt311DisconnectsWithServerShuttingDown() {
+    public void aClosedPipelineOnMqtt311IsNotAnsweredAndDoesNotDisconnect() {
         when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
         when(ctx.getClientId()).thenReturn("clientId");
@@ -745,11 +744,28 @@ public class MqttPublishHandlerTest {
 
         callbacks.forEach(callback -> callback.onFailure(new PipelineClosedException("publish pipeline is closed")));
 
-        assertShutdownDisconnects(2);
+        assertDroppedWithoutDisconnect(2);
         verify(actorRef, never()).tell(any());
         verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
         verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
-        verify(tbMessageStatsReportClient, times(2)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void anEarlierQos2MsgIsStillAnsweredWhenALaterMsgReachesTheClosedPipeline() {
+        givenMqtt5Session();
+        processPublishMsgs(2, 1);
+        processPublishMsgs(1, 2);
+        List<TbQueueCallback> callbacks = capturePersistCallbacks(2);
+
+        callbacks.get(0).onSuccess(null);
+        callbacks.get(1).onFailure(new PipelineClosedException("publish pipeline is closed"));
+        assertDroppedWithoutDisconnect(1);
+        processPubResponsesSentToActor(1);
+
+        // no disconnect overtakes the response of the earlier msg, so it is answered and saved as awaiting PUBREL
+        verify(mqttMessageGenerator).createPubRecMsg(1, MqttReasonCodes.PubRec.SUCCESS);
+        assertThat(awaitingPubRelPacketsCtx.getAwaitingPacket(1).isPersisted()).isTrue();
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
     }
 
     @Test
@@ -761,10 +777,10 @@ public class MqttPublishHandlerTest {
         callbacks.get(0).onFailure(new PipelineClosedException("publish pipeline is closed"));
         callbacks.get(1).onSuccess(null);
         processPubResponsesSentToActor(1);
+        assertDroppedWithoutDisconnect(1);
 
         // PUBACKs go out in the order of the PUBLISHes [MQTT-4.6.0-2]: msg 2 waits behind msg 1, which is never answered
         verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
-        assertShutdownDisconnects(1);
     }
 
     @Test
@@ -780,7 +796,7 @@ public class MqttPublishHandlerTest {
             processPublishMsgs(1, 1);
 
             capturePersistCallbacks(1).get(0).onFailure(new PipelineClosedException("publish pipeline is closed"));
-            assertShutdownDisconnects(1);
+            assertDroppedWithoutDisconnect(1);
 
             assertThat(appender.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
             assertThat(appender.list)
@@ -838,12 +854,10 @@ public class MqttPublishHandlerTest {
         verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
-    private void assertShutdownDisconnects(int expectedCount) {
-        ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
-        verify(clientMqttActorManager, timeout(5000).times(expectedCount)).disconnect(eq("clientId"), disconnectCaptor.capture());
-        assertThat(disconnectCaptor.getAllValues())
-                .extracting(disconnectMsg -> disconnectMsg.getReason().getType())
-                .containsOnly(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN);
+    // the failure callbacks run on the callback processor: once each one counted its drop, none disconnected the client
+    private void assertDroppedWithoutDisconnect(int expectedDrops) {
+        verify(tbMessageStatsReportClient, timeout(5000).times(expectedDrops)).reportDroppedMsgs();
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
     }
 
     private void givenMqtt5Session() {

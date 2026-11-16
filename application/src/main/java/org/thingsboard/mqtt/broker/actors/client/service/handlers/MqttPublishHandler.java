@@ -279,13 +279,14 @@ public class MqttPublishHandler {
 
     /**
      * The broker is shutting down and the msg was never published. It gets no PUBACK or PUBREC: its entry stays
-     * unacknowledged at its place in the ordered queue, so no later msg of the client is acknowledged before it, and the
-     * client is disconnected instead. A client that keeps its session resends the msg after it reconnects.
+     * unacknowledged at its place in the ordered queue, so no later msg of the client is acknowledged before it. The
+     * client is not disconnected here: a disconnect would overtake the responses of its earlier msgs that are still on
+     * their way to the client actor. The connection closes when the server shuts down, after those responses, and a
+     * client that keeps its session resends the msg after it reconnects.
      */
     private void handlePipelineClosed(ClientSessionCtx ctx, PublishMsg publishMsg, Throwable t) {
         log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
         tbMessageStatsReportClient.reportDroppedMsgs();
-        disconnectClient(ctx, DisconnectReasonType.ON_SERVER_SHUTTING_DOWN, t.getMessage());
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {
