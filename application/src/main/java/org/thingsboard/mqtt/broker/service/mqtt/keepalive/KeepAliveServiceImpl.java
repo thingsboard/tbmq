@@ -79,8 +79,9 @@ public class KeepAliveServiceImpl implements KeepAliveService {
 
     /**
      * A paused connection does not read what the client sent, a PINGREQ included, and a client that waits a keep-alive
-     * for its PINGRESP gives up. Read every half keep-alive, a PINGREQ is answered within half a keep-alive and one
-     * monitoring tick. A keep-alive of 0 turns the keep-alive off, and these reads with it.
+     * for its PINGRESP gives up. Read once every half keep-alive. With the reads off, each read takes one
+     * buffer: a PINGREQ queued behind publishes is reached only as these reads work through them, so it can be
+     * answered later than half a keep-alive. A keep-alive of 0 turns the keep-alive off, and these reads with it.
      */
     private void readPausedConnectionIfDue(UUID sessionId, int keepAliveSeconds) {
         if (keepAliveSeconds > 0) {
@@ -122,9 +123,11 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             log.warn("[{}] Cannot find keepAliveInfo", sessionId);
             throw new MqttException("Cannot find KeepAliveInfo for session " + sessionId);
         }
-        long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
-        if (lastPacketTime == CLEARED_KEEP_ALIVE_VALUE
-                || !keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, System.currentTimeMillis())) {
+        // not a compare-and-set against a value read before: the keep-alive thread may refresh the time meanwhile
+        // (a probe that found the client alive), which is no reason to refuse the packet
+        long now = System.currentTimeMillis();
+        long previous = keepAliveInfo.getLastPacketTime().getAndUpdate(v -> v == CLEARED_KEEP_ALIVE_VALUE ? v : now);
+        if (previous == CLEARED_KEEP_ALIVE_VALUE) {
             log.warn("[{}] LastPacketTime is already cleared", sessionId);
             throw new MqttException("LastPacketTime is already cleared for session " + sessionId);
         }

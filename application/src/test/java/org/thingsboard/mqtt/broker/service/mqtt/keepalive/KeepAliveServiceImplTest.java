@@ -34,12 +34,10 @@ import org.thingsboard.mqtt.broker.standalone.pipeline.PipelineProperties;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishBackpressure;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -74,14 +72,15 @@ class KeepAliveServiceImplTest {
     @Test
     void testIsInactive() {
         var ts = System.currentTimeMillis() - 20000;
-        assertTrue(keepAliveService.isInactive(10, ts));
+        assertThat(keepAliveService.isInactive(10, ts)).isTrue();
         ts = System.currentTimeMillis() - 10000;
-        assertFalse(keepAliveService.isInactive(10, ts));
+        assertThat(keepAliveService.isInactive(10, ts)).isFalse();
     }
 
     @Test
     void testAcknowledgeControlPacket() {
-        assertThrows(MqttException.class, () -> keepAliveService.acknowledgeControlPacket(UUID.randomUUID()));
+        assertThatThrownBy(() -> keepAliveService.acknowledgeControlPacket(UUID.randomUUID()))
+                .isInstanceOf(MqttException.class);
     }
 
     @Test
@@ -94,10 +93,10 @@ class KeepAliveServiceImplTest {
         keepAliveService.processKeepAlive();
 
         verify(clientMqttActorManager, never()).disconnect(any(), any());
-        assertEquals(3, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(3);
 
         keepAliveService.registerSession("clientId4", UUID.randomUUID(), 0);
-        assertEquals(4, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(4);
 
         // need to sleep to wait for keepAlive to be expired
         Thread.sleep(5);
@@ -107,7 +106,7 @@ class KeepAliveServiceImplTest {
         verify(clientMqttActorManager, times(0)).disconnect(any(), any());
 
         keepAliveService.unregisterSession(sessionId1);
-        assertEquals(3, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(3);
     }
 
     @Test
@@ -163,7 +162,7 @@ class KeepAliveServiceImplTest {
 
         verify(publishBackpressure).probe(eq(sessionId), anyLong());
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID), argThat(msg -> isKeepAliveDisconnect(msg, sessionId)));
-        assertEquals(0, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(0);
     }
 
     @Test
@@ -176,7 +175,7 @@ class KeepAliveServiceImplTest {
         keepAliveService.processKeepAlive();
 
         verify(clientMqttActorManager, never()).disconnect(any(), any());
-        assertEquals(1, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(1);
         // the session is still inactive: the next check probes it again
         keepAliveService.processKeepAlive();
         verify(publishBackpressure, times(2)).probe(eq(sessionId), anyLong());
@@ -192,7 +191,7 @@ class KeepAliveServiceImplTest {
         keepAliveService.processKeepAlive();
 
         verify(clientMqttActorManager, never()).disconnect(any(), any());
-        assertEquals(1, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(1);
         // refreshed: the session is no longer inactive, so the next check does not probe it
         keepAliveService.processKeepAlive();
         verify(publishBackpressure).probe(eq(sessionId), anyLong());
@@ -216,7 +215,7 @@ class KeepAliveServiceImplTest {
         verify(clientMqttActorManager, never()).disconnect(any(), any());
         // refreshed once: no further probe after the ALIVE one
         verify(paused.channel()).read();
-        assertEquals(1, keepAliveService.getKeepAliveInfoSize());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(1);
     }
 
     @Test
@@ -287,6 +286,59 @@ class KeepAliveServiceImplTest {
         verify(connection.channel(), never()).read();
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID),
                 argThat(msg -> isKeepAliveDisconnect(msg, connection.session().getSessionId())));
+    }
+
+    // The keep-alive thread refreshes the last packet time when a probe finds the client alive. A packet the actor
+    // acknowledges meanwhile must not be refused: it would disconnect a live client.
+    @Test
+    void givenKeepAliveThreadRefreshesLastPacketTime_whenActorAcknowledgesPackets_thenNoneIsRefused() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
+        when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
+        doReturn(true).when(keepAliveService).isInactive(anyInt(), anyLong());
+
+        AtomicBoolean stop = new AtomicBoolean();
+        Thread refresher = new Thread(() -> {
+            while (!stop.get()) {
+                keepAliveService.processKeepAlive();
+            }
+        });
+        refresher.start();
+        try {
+            for (int i = 0; i < 200_000; i++) {
+                keepAliveService.acknowledgeControlPacket(sessionId);
+            }
+        } finally {
+            stop.set(true);
+            refresher.join(5000);
+        }
+
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        assertThat(keepAliveService.getKeepAliveInfoSize()).isEqualTo(1);
+    }
+
+    @Test
+    void givenSessionRefreshedByTheKeepAlive_whenAcknowledgeControlPacket_thenItIsAccepted() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
+        expire();
+        when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
+        keepAliveService.processKeepAlive();
+
+        keepAliveService.acknowledgeControlPacket(sessionId);
+
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+    }
+
+    @Test
+    void givenSessionClosedForInactivity_whenAcknowledgeControlPacket_thenItIsRefused() throws MqttException {
+        UUID sessionId = UUID.randomUUID();
+        keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
+        expire();
+        keepAliveService.processKeepAlive();
+
+        assertThatThrownBy(() -> keepAliveService.acknowledgeControlPacket(sessionId))
+                .isInstanceOf(MqttException.class);
     }
 
     // the sessions registered so far are inactive, and the ones refreshed from now on are not
