@@ -20,8 +20,8 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 /**
  * Passes the outcome of a retained-message write on, and remembers a {@link StoreException}. The standalone store
- * writes before the persist call returns, so its failure is known right after that call. The cluster producer reports
- * later and never with a {@link StoreException}, so nothing is remembered there. See
+ * writes before the persist call returns, so its failure is known right after that call. The cluster producer may
+ * report later, and never with a {@link StoreException}, so nothing is remembered there. See
  * {@link RetainedMsgPersistenceService} for that contract.
  */
 public final class StoreFailureTrackingCallback implements BasicCallback {

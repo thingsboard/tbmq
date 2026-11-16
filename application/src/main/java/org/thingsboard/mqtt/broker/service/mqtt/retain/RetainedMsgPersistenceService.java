@@ -26,8 +26,8 @@ import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
  * <ul>
  *     <li>the write is done, and the callback completed, before the method returns; a failed write is reported as a
  *     {@link org.thingsboard.mqtt.broker.dao.store.StoreException} (the standalone store);</li>
- *     <li>the outcome is reported later, and never with a {@link org.thingsboard.mqtt.broker.dao.store.StoreException}
- *     (the cluster producer).</li>
+ *     <li>the outcome may be reported later, and never with a
+ *     {@link org.thingsboard.mqtt.broker.dao.store.StoreException} (the cluster producer).</li>
  * </ul>
  * So a {@link org.thingsboard.mqtt.broker.dao.store.StoreException} reported before the method returned means the
  * write did not happen: the caller leaves the retained msg of the topic as it was, and can still fail the request
