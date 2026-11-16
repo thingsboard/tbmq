@@ -45,4 +45,9 @@ public class StandaloneClientTypePolicy implements ClientTypePolicy {
         return ClientType.DEVICE;
     }
 
+    @Override
+    public ClientType resolveOnReAuth(String clientId, ClientType authenticated) {
+        return authenticated == ClientType.APPLICATION ? ClientType.DEVICE : authenticated;
+    }
+
 }

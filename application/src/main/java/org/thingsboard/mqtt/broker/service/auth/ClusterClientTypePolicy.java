@@ -28,4 +28,9 @@ public class ClusterClientTypePolicy implements ClientTypePolicy {
         return authenticated;
     }
 
+    @Override
+    public ClientType resolveOnReAuth(String clientId, ClientType authenticated) {
+        return authenticated;
+    }
+
 }

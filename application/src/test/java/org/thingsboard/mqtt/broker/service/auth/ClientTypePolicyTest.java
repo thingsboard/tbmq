@@ -61,6 +61,19 @@ class ClientTypePolicyTest {
 
         assertThat(policy.resolve("client", ClientType.APPLICATION)).isEqualTo(ClientType.APPLICATION);
         assertThat(policy.resolve("client", ClientType.DEVICE)).isEqualTo(ClientType.DEVICE);
+        assertThat(policy.resolveOnReAuth("client", ClientType.APPLICATION)).isEqualTo(ClientType.APPLICATION);
+        assertThat(policy.resolveOnReAuth("client", ClientType.DEVICE)).isEqualTo(ClientType.DEVICE);
+    }
+
+    @Test
+    void givenStandalonePolicy_whenReAuthAsApplication_thenDeviceWithoutWarnOrCount() {
+        ClientTypePolicy policy = new StandaloneClientTypePolicy(statsFactory);
+
+        assertThat(policy.resolveOnReAuth("client", ClientType.APPLICATION)).isEqualTo(ClientType.DEVICE);
+        assertThat(policy.resolveOnReAuth("client", ClientType.DEVICE)).isEqualTo(ClientType.DEVICE);
+
+        assertThat(counter()).isZero();
+        assertThat(appender.list).isEmpty();
     }
 
     @Test

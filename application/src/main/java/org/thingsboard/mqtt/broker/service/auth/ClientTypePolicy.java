@@ -22,6 +22,15 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
  */
 public interface ClientTypePolicy {
 
+    /**
+     * For a client that connects.
+     */
     ClientType resolve(String clientId, ClientType authenticated);
+
+    /**
+     * For a connected client that authenticates again (MQTT 5 re-authentication): the same type as {@link #resolve},
+     * but nothing connects, so nothing is logged or counted.
+     */
+    ClientType resolveOnReAuth(String clientId, ClientType authenticated);
 
 }

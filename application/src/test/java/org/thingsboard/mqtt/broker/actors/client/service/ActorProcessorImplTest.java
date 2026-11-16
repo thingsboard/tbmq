@@ -120,6 +120,7 @@ public class ActorProcessorImplTest {
         integrationLifecycleEventPublisher = mock(IntegrationLifecycleEventPublisher.class);
         clientTypePolicy = mock(ClientTypePolicy.class);
         lenient().when(clientTypePolicy.resolve(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
+        lenient().when(clientTypePolicy.resolveOnReAuth(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, enhancedAuthenticationService,
                 mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService, integrationLifecycleEventPublisher,
                 clientTypePolicy));
@@ -396,7 +397,7 @@ public class ActorProcessorImplTest {
     @Test
     public void givenApplicationCredentialsOnScramReAuth_whenOnEnhancedAuthContinue_thenSessionStoresTypeFromPolicy() {
         updateSessionState(SessionState.CONNECTED);
-        when(clientTypePolicy.resolve(CLIENT_ID, ClientType.APPLICATION)).thenReturn(ClientType.DEVICE);
+        when(clientTypePolicy.resolveOnReAuth(CLIENT_ID, ClientType.APPLICATION)).thenReturn(ClientType.DEVICE);
 
         ClientSessionCtx sessionCtxMock = mock(ClientSessionCtx.class);
         when(sessionCtxMock.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
@@ -412,7 +413,9 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, getMqttAuthMsg(sessionId));
 
-        verify(clientTypePolicy).resolve(CLIENT_ID, ClientType.APPLICATION);
+        // a re-authentication connects nothing, so the policy neither logs nor counts it
+        verify(clientTypePolicy).resolveOnReAuth(CLIENT_ID, ClientType.APPLICATION);
+        verify(clientTypePolicy, never()).resolve(anyString(), any());
         verify(sessionCtxMock).setClientType(ClientType.DEVICE);
         verify(sessionCtxMock, never()).setClientType(ClientType.APPLICATION);
     }
