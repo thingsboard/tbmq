@@ -189,6 +189,78 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- inherited from the root pom for the modules that compile protos: this one has none -->
+                        <id>copy-protoc</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <!-- with target/test-classes, the classpath of LiteTestDatabase.main, which prepares a database for the capacity runs -->
+                        <id>lite-test-classpath</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>build-classpath</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>test</includeScope>
+                            <outputFile>${project.build.directory}/lite-test-classpath.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!--
+                            The classpath the standalone image ships, which LiteBrokerProcess starts the broker on. The test
+                            classpath would make beans of the test-jars' @Service and @Component classes, since the
+                            application scans its whole package.
+                        -->
+                        <id>lite-runtime-classpath</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>build-classpath</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputFile>${project.build.directory}/lite-runtime-classpath.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <!--
+                A runnable broker jar on the Lite classpath for the capacity runs: target/lite-tests-<version>-boot.jar.
+                Off by default; the module is never installed or deployed, so the jar is never published.
+            -->
+            <id>lite-runnable</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- the root pom skips it unless a module sets up the packaging -->
+                            <skip>false</skip>
+                            <mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</mainClass>
+                            <classifier>boot</classifier>
+                            <!-- a plain jar for java -jar, without the launch script of the installation packages -->
+                            <executable>false</executable>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>repackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
