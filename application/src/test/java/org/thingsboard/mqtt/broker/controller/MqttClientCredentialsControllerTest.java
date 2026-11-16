@@ -35,10 +35,10 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest.IdComparator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DaoSqlTest
 public class MqttClientCredentialsControllerTest extends AbstractControllerTest {
 
-    private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
+    private final Comparator<ShortMqttClientCredentials> idComparator = Comparator.comparing(ShortMqttClientCredentials::getId);
 
     @Before
     public void beforeTest() throws Exception {
