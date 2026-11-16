@@ -103,17 +103,19 @@ public class DefaultLastWillService implements LastWillService {
         }
 
         log.debug("[{}][{}] Removing last will msg, sendMsg - {}", lastWillMsgWithSessionInfo.getClientId(), sessionId, sendMsg);
-        lastWillMessages.remove(sessionId);
-        if (sendMsg) {
-            try {
+        try {
+            if (sendMsg) {
                 int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
                 if (!newSessionCleanStart && willDelay > 0) {
                     return;
                 }
                 scheduleLastWill(lastWillMsgWithSessionInfo, willDelay);
-            } catch (Exception e) {
-                log.warn("[{}] Failed to send last will msg", lastWillMsgWithSessionInfo.getClientId(), e);
             }
+        } catch (Exception e) {
+            log.warn("[{}] Failed to send last will msg", lastWillMsgWithSessionInfo.getClientId(), e);
+        } finally {
+            // only now: a session without a will in the store has its due will on the scheduler already
+            lastWillMessages.remove(sessionId);
         }
     }
 

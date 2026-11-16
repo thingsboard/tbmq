@@ -296,18 +296,18 @@ class StandaloneShutdownCoordinatorTest {
     void givenAnActorThatDisconnectsLater_whenStop_thenTheDueWillsAreAwaitedOnlyAfterItHasDisconnected() {
         ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
         when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
-        AtomicBoolean closed = closeFlagOf(withWill);
+        AtomicBoolean taken = willTakenFlagOf(withWill);
         doAnswer(invocation -> {
             Thread actor = new Thread(() -> {
                 sleep(200);
-                closed.set(true);
+                taken.set(true);
             });
             actor.start();
             return null;
         }).when(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
-        AtomicBoolean closedWhenAwaited = new AtomicBoolean();
+        AtomicBoolean takenWhenAwaited = new AtomicBoolean();
         when(lastWills.dueLastWillsHandled()).thenAnswer(invocation -> {
-            closedWhenAwaited.set(closed.get());
+            takenWhenAwaited.set(taken.get());
             return CompletableFuture.completedFuture(null);
         });
         PartitionedWorkers<?> idle = drained();
@@ -316,8 +316,38 @@ class StandaloneShutdownCoordinatorTest {
 
         coordinator().stop();
 
-        // the actor hands a due will to the will scheduler before it closes the channel
-        assertThat(closedWhenAwaited).isTrue();
+        // the disconnect hands a due will to the will scheduler before it takes the will from the store
+        assertThat(takenWhenAwaited).isTrue();
+        assertThat(warnings()).isEmpty();
+    }
+
+    @Test
+    void givenAChannelClosedBeforeTheWillIsTaken_whenStop_thenTheDueWillsAreAwaitedOnlyAfterTheWillIsTaken() {
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        // closing the channel says nothing about the will: anyone can set the flag, the client's own close among them
+        when(withWill.isCloseInitiated()).thenReturn(true);
+        AtomicBoolean taken = willTakenFlagOf(withWill);
+        doAnswer(invocation -> {
+            Thread actor = new Thread(() -> {
+                sleep(200);
+                taken.set(true);
+            });
+            actor.start();
+            return null;
+        }).when(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
+        AtomicBoolean takenWhenAwaited = new AtomicBoolean();
+        when(lastWills.dueLastWillsHandled()).thenAnswer(invocation -> {
+            takenWhenAwaited.set(taken.get());
+            return CompletableFuture.completedFuture(null);
+        });
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        assertThat(takenWhenAwaited).isTrue();
         assertThat(warnings()).isEmpty();
     }
 
@@ -469,11 +499,11 @@ class StandaloneShutdownCoordinatorTest {
             assertThat(reading.await(10, TimeUnit.SECONDS)).isTrue();
             ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class), eventLoop);
             when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
-            AtomicBoolean closed = closeFlagOf(withWill);
+            AtomicBoolean taken = willTakenFlagOf(withWill);
             AtomicBoolean readFinishedWhenDisconnected = new AtomicBoolean();
             doAnswer(invocation -> {
                 readFinishedWhenDisconnected.set(readFinished.get());
-                closed.set(true);
+                taken.set(true);
                 return null;
             }).when(actors).disconnectAfterQueuedMsgs(eq("with-will"), any());
             when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
@@ -544,7 +574,7 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     /**
-     * A connected session with a Last Will, whose channel the client actor has not closed yet.
+     * A connected session with a Last Will that no disconnect has taken from the will store yet.
      */
     private ClientSessionCtx willHolder(String clientId, ChannelConfig config) {
         return willHolder(clientId, config, null);
@@ -555,23 +585,24 @@ class StandaloneShutdownCoordinatorTest {
         UUID sessionId = UUID.randomUUID();
         when(session.getClientId()).thenReturn(clientId);
         when(session.getSessionId()).thenReturn(sessionId);
-        when(lastWills.hasLastWill(sessionId)).thenReturn(true);
-        closeFlagOf(session);
+        willTakenFlagOf(session);
         return session;
     }
 
-    private static AtomicBoolean closeFlagOf(ClientSessionCtx session) {
-        AtomicBoolean closed = new AtomicBoolean();
-        when(session.isCloseInitiated()).thenAnswer(invocation -> closed.get());
-        return closed;
+    /**
+     * Set once the disconnect has taken the session's will from the will store: a due will is on the scheduler by then.
+     */
+    private AtomicBoolean willTakenFlagOf(ClientSessionCtx session) {
+        AtomicBoolean taken = new AtomicBoolean();
+        when(lastWills.hasLastWill(session.getSessionId())).thenAnswer(invocation -> !taken.get());
+        return taken;
     }
 
-    // the client actor closes the channel at the end of the disconnect, after it has handed a due will on
     private void disconnectsAtOnce(ClientSessionCtx session) {
         String clientId = session.getClientId();
-        AtomicBoolean closed = closeFlagOf(session);
+        AtomicBoolean taken = willTakenFlagOf(session);
         doAnswer(invocation -> {
-            closed.set(true);
+            taken.set(true);
             return null;
         }).when(actors).disconnectAfterQueuedMsgs(eq(clientId), any());
     }

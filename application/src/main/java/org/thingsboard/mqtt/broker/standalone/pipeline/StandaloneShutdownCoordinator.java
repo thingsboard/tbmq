@@ -49,8 +49,9 @@ import java.util.concurrent.TimeoutException;
  * A Will Message is published once its connection closes [MQTT-3.1.2-8]. Each client that has a Last Will is
  * disconnected with Server shutting down through its client actor, after the messages the client sent before: a
  * DISCONNECT with reason code 0x00 among them still discards the will. The actor hands a will that is due to the Last
- * Will scheduler and then closes the channel. The coordinator waits until every such channel is being closed and the
- * scheduler has handed those wills to the pipeline, so the drain delivers them. A will whose delay has not passed is not
+ * Will scheduler and only then takes it from the will store. The coordinator waits until the disconnect has taken each
+ * will from the store — a due will is on the scheduler by then — and until the scheduler has handed those wills to the
+ * pipeline, so the drain delivers them. A will whose delay has not passed is not
  * due yet (the delay is the lesser of the Will Delay Interval and the session expiry, so a will of a session that
  * expires at once is due): the shutdown does not wait for it, and it is not published, since wills are not kept across
  * a restart. The clients without a will stay connected through the drain, so a subscriber still receives the wills, and
@@ -231,15 +232,16 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     }
 
     /**
-     * The client actor closes the channel at the end of the disconnect, after it has handed a will that is due to the
-     * Last Will scheduler, so a session whose close was initiated has its due will scheduled.
+     * The disconnect takes the will from the will store only after it has handed a due will to the Last Will
+     * scheduler, so a session that no longer has a will has its due will scheduled. A closed channel says nothing
+     * about the will: the client can close it first.
      *
-     * @return the number of sessions whose close was still not initiated at the deadline
+     * @return the number of sessions that still had a will at the deadline
      */
-    private static int awaitDisconnects(List<ClientSessionCtx> sessions, long deadlineNanos) throws InterruptedException {
+    private int awaitDisconnects(List<ClientSessionCtx> sessions, long deadlineNanos) throws InterruptedException {
         List<ClientSessionCtx> pending = new ArrayList<>(sessions);
         while (true) {
-            pending.removeIf(ClientSessionCtx::isCloseInitiated);
+            pending.removeIf(session -> !lastWillService.hasLastWill(session.getSessionId()));
             long remainingNanos = deadlineNanos - System.nanoTime();
             if (pending.isEmpty() || remainingNanos <= 0) {
                 return pending.size();

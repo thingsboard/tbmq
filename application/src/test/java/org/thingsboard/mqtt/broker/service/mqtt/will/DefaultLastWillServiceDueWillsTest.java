@@ -38,15 +38,20 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * The two queries the standalone shutdown makes: which sessions have a Last Will, and when the wills that are due
@@ -78,6 +83,48 @@ class DefaultLastWillServiceDueWillsTest {
 
         assertThat(lastWillService.hasLastWill(session.getSessionId())).isTrue();
         assertThat(lastWillService.hasLastWill(UUID.randomUUID())).isFalse();
+
+        lastWillService.removeAndExecuteLastWillIfNeeded(shutdownDisconnect(session), -1);
+
+        assertThat(lastWillService.hasLastWill(session.getSessionId())).isFalse();
+    }
+
+    @Test
+    void givenADueWill_whenItsSessionDisconnects_thenItIsOnTheSchedulerBeforeTheSessionNoLongerHasOne() {
+        ScheduledExecutorService willScheduler = mock(ScheduledExecutorService.class);
+        lastWillService.setScheduler(willScheduler);
+        SessionInfo session = session(0);
+        lastWillService.saveLastWillMsg(session, will(0), PublisherIdentity.EMPTY);
+        AtomicBoolean hadOneWhenScheduled = new AtomicBoolean();
+        when(willScheduler.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class))).thenAnswer(invocation -> {
+            hadOneWhenScheduled.set(lastWillService.hasLastWill(session.getSessionId()));
+            return mock(ScheduledFuture.class);
+        });
+
+        lastWillService.removeAndExecuteLastWillIfNeeded(shutdownDisconnect(session), -1);
+
+        // the shutdown reads a session without a will as one whose due will is already on the scheduler
+        assertThat(hadOneWhenScheduled).isTrue();
+        assertThat(lastWillService.hasLastWill(session.getSessionId())).isFalse();
+    }
+
+    @Test
+    void givenSchedulingFails_whenItsSessionDisconnects_thenTheSessionNoLongerHasOne() {
+        ScheduledExecutorService willScheduler = mock(ScheduledExecutorService.class);
+        lastWillService.setScheduler(willScheduler);
+        when(willScheduler.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class))).thenThrow(new RejectedExecutionException("stopped"));
+        SessionInfo session = session(0);
+        lastWillService.saveLastWillMsg(session, will(0), PublisherIdentity.EMPTY);
+
+        lastWillService.removeAndExecuteLastWillIfNeeded(shutdownDisconnect(session), -1);
+
+        assertThat(lastWillService.hasLastWill(session.getSessionId())).isFalse();
+    }
+
+    @Test
+    void givenADelayedWill_whenItsSessionDisconnects_thenTheSessionNoLongerHasOne() {
+        SessionInfo session = session(120);
+        lastWillService.saveLastWillMsg(session, will(60), PublisherIdentity.EMPTY);
 
         lastWillService.removeAndExecuteLastWillIfNeeded(shutdownDisconnect(session), -1);
 

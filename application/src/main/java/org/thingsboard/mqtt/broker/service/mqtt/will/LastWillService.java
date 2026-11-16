@@ -32,7 +32,9 @@ public interface LastWillService {
     void cancelLastWillDelayIfScheduled(String clientId);
 
     /**
-     * @return whether a Last Will saved at the session's CONNECT is still waiting for the session's disconnect
+     * @return whether a Last Will saved at the session's CONNECT is still waiting for the session's disconnect. The
+     * disconnect takes the will from the store only after it has handed a due will to the scheduler, so once this is
+     * {@code false} after a disconnect, {@link #dueLastWillsHandled()} covers that will
      */
     boolean hasLastWill(UUID sessionId);
 
