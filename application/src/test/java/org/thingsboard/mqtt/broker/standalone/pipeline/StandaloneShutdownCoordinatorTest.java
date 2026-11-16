@@ -49,6 +49,7 @@ class StandaloneShutdownCoordinatorTest {
     private final StandalonePublishMsgQueue dispatchStage = mock(StandalonePublishMsgQueue.class);
     private final StandaloneDeviceMsgQueueConsumer persistStage = mock(StandaloneDeviceMsgQueueConsumer.class);
     private final PipelineProperties properties = new PipelineProperties();
+    private final PipelineBudget budget = mock(PipelineBudget.class);
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(StandaloneShutdownCoordinator.class);
     private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
@@ -84,7 +85,9 @@ class StandaloneShutdownCoordinatorTest {
 
         coordinator().stop();
 
-        InOrder order = inOrder(first, second, dispatch);
+        // the releases of the drain must not resume reading: resuming is stopped before reading is paused
+        InOrder order = inOrder(budget, first, second, dispatch);
+        order.verify(budget).stopResuming();
         order.verify(first).setAutoRead(false);
         order.verify(second).setAutoRead(false);
         order.verify(dispatch).drain(anyLong());
@@ -103,6 +106,8 @@ class StandaloneShutdownCoordinatorTest {
         order.verify(dispatch).drain(anyLong());
         order.verify(persist).drain(anyLong());
         assertThat(warnings()).isEmpty();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .singleElement().satisfies(event -> assertThat(event.getFormattedMessage()).startsWith("The publish pipeline drained in "));
     }
 
     @Test
@@ -232,7 +237,7 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     private StandaloneShutdownCoordinator coordinator() {
-        return new StandaloneShutdownCoordinator(sessions, dispatchStage, persistStage, properties);
+        return new StandaloneShutdownCoordinator(sessions, budget, dispatchStage, persistStage, properties);
     }
 
     private static PartitionedWorkers<?> drained() {

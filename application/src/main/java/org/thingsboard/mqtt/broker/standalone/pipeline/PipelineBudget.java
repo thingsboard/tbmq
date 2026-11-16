@@ -52,6 +52,7 @@ public class PipelineBudget {
     private boolean paused;
 
     private final List<Runnable> resumeListeners = new CopyOnWriteArrayList<>();
+    private volatile boolean resumesStopped;
 
     @Autowired
     public PipelineBudget(PipelineProperties properties, StatsFactory statsFactory) {
@@ -137,7 +138,7 @@ public class PipelineBudget {
                 resumed = true;
             }
         }
-        if (resumed) {
+        if (resumed && !resumesStopped) {
             notifyResumed();
         }
     }
@@ -161,10 +162,18 @@ public class PipelineBudget {
     /**
      * Registers a listener that runs each time the usage falls to or below the resume level after having been at or
      * above the pause level. It runs on the thread that releases, so it must be cheap and must not throw; one that
-     * throws, even an {@link Error}, is logged and the others still run.
+     * throws, even an {@link Error}, is logged and the others still run. No listener runs after {@link #stopResuming}.
      */
     public void onResume(Runnable listener) {
         resumeListeners.add(listener);
+    }
+
+    /**
+     * Stops running the resume listeners for good. The shutdown calls it before it stops reading from the clients, so
+     * the releases of the drain cannot start reading again.
+     */
+    public void stopResuming() {
+        resumesStopped = true;
     }
 
     private boolean atOrBelowResume() {

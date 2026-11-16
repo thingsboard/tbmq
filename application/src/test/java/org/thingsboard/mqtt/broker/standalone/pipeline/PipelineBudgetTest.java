@@ -133,6 +133,24 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenResumingStopped_whenUsageFallsToResume_thenNoListenerRuns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(resumed::incrementAndGet);
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+
+        budget.stopResuming();
+        for (int i = 0; i < 8; i++) {
+            budget.release(1);
+        }
+
+        assertThat(budget.queuedMessages()).isZero();
+        assertThat(resumed).hasValue(0);
+    }
+
+    @Test
     void givenFullBudget_whenAcquire_thenTakenOverTheLimit() {
         PipelineBudget budget = new PipelineBudget(2, 10, 80, 50);
         budget.tryAcquire(5);

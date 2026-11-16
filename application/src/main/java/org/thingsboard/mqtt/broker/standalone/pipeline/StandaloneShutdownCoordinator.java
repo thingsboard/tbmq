@@ -27,12 +27,12 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Stops the publish pipeline before every other bean: it stops reading from the clients, then drains the dispatch
- * stage and the persist stage in that order within one deadline, {@code standalone.shutdown.drain-timeout-ms}. A
- * publish that was not dispatched in time was never acknowledged. One that reaches a drained stage fails with
- * {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException}: it is not acknowledged either, and its client
- * stays connected until the server closes the connections. The final WAL sync and the close of the store stay with the store, which
- * Spring closes last because every store user depends on it.
+ * Stops the publish pipeline before every other bean: it stops the budget from resuming reads, stops reading from the
+ * clients, then drains the dispatch stage and the persist stage in that order within one deadline,
+ * {@code standalone.shutdown.drain-timeout-ms}. A publish that was not dispatched in time was never acknowledged. One
+ * that reaches a drained stage fails with {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException}: it is
+ * not acknowledged either, and its client stays connected until the server closes the connections. The final WAL sync
+ * and the close of the store stay with the store, which Spring closes last because every store user depends on it.
  */
 @Slf4j
 @Component
@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 public class StandaloneShutdownCoordinator implements SmartLifecycle {
 
     private final ClientSessionCtxService clientSessionCtxService;
+    private final PipelineBudget budget;
     private final StandalonePublishMsgQueue dispatchStage;
     private final StandaloneDeviceMsgQueueConsumer persistStage;
     private final PipelineProperties properties;
@@ -59,6 +60,7 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     public void stop() {
         running = false;
         try {
+            budget.stopResuming();
             pauseReading();
             drainStages();
         } catch (Throwable t) {
@@ -97,9 +99,12 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
         PartitionedWorkers<?> dispatch = dispatchStage.workers();
         PartitionedWorkers<?> persist = persistStage.workers();
+        long startNanos = System.nanoTime();
         boolean dispatchDrained = drain(dispatch, deadlineNanos);
         boolean persistDrained = drain(persist, deadlineNanos);
-        if (!dispatchDrained || !persistDrained) {
+        if (dispatchDrained && persistDrained) {
+            log.info("The publish pipeline drained in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos));
+        } else {
             log.warn("The publish pipeline did not drain within {} ms. Dispatch stage: {}. Persist stage: {}. "
                             + "The publishes it still held were never acknowledged",
                     timeoutMs, stageState(dispatchDrained, dispatch), stageState(persistDrained, persist));

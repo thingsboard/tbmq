@@ -57,6 +57,10 @@ import org.thingsboard.mqtt.broker.actors.client.service.handlers.MqttPublishHan
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.will.DefaultLastWillService;
+import org.thingsboard.mqtt.broker.standalone.pipeline.PartitionedWorkers;
+import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneDeviceMsgQueueConsumer;
+import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishMsgQueue;
+import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneShutdownCoordinator;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -152,6 +156,9 @@ public class LiteShutdownTest {
         AtomicLong firehoseSent = startFirehose("shutdown-firehose", "shutdown-firehose/unsubscribed");
         await().atMost(TIMEOUT).until(() -> firehoseSent.get() >= FIREHOSE_MSGS_BEFORE_CLOSE);
 
+        PartitionedWorkers<?> dispatchWorkers = context.getBean(StandalonePublishMsgQueue.class).workers();
+        PartitionedWorkers<?> persistWorkers = context.getBean(StandaloneDeviceMsgQueueConsumer.class).workers();
+        ListAppender<ILoggingEvent> coordinatorLog = capture(StandaloneShutdownCoordinator.class, Level.INFO);
         ListAppender<ILoggingEvent> publishHandlerLog = capture(MqttPublishHandler.class, null);
         // TRACE shows whether the will was removed, scheduled, acknowledged or failed
         ListAppender<ILoggingEvent> lastWillLog = capture(DefaultLastWillService.class, Level.TRACE);
@@ -163,6 +170,7 @@ public class LiteShutdownTest {
             context.close();
             elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
         } finally {
+            release(StandaloneShutdownCoordinator.class, coordinatorLog);
             release(MqttPublishHandler.class, publishHandlerLog);
             release(DefaultLastWillService.class, lastWillLog);
         }
@@ -174,6 +182,10 @@ public class LiteShutdownTest {
                         + "last will service log: {}", willsReceived.get(),
                 droppedMsgs == null ? "n/a" : droppedMsgs.count() - droppedBefore, describe(lastWillLog));
         assertThat(elapsedMs).as("context.close() in ms").isLessThan(MAX_CLOSE_MS);
+        // without the drain, the workers would only be stopped and close() would get faster, so check the drain itself
+        assertThat(describe(coordinatorLog)).as("shutdown coordinator log").anyMatch(line -> line.startsWith("INFO The publish pipeline drained in "));
+        assertThat(dispatchWorkers.queued()).as("publishes left in the dispatch queues").isZero();
+        assertThat(persistWorkers.queued()).as("copies left in the persist queues").isZero();
         assertThat(errorAcks).as("PUBACKs with a reason code of 0x80 or above").isEmpty();
         assertThat(publishHandlerLog.list).as("WARN or ERROR from the publish handler during close")
                 .noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
