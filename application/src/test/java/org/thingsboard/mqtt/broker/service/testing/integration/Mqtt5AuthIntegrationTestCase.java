@@ -32,9 +32,9 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5Disconnect;
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5DisconnectReasonCode;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.security.scram.internals.ScramSaslClientProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -53,16 +53,10 @@ import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient.Mechanism;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
@@ -76,8 +70,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthenticationService.SCRAM_SASL_PROPS;
-import static org.thingsboard.mqtt.broker.service.auth.DefaultEnhancedAuthenticationService.SCRAM_SASL_PROTOCOL;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -113,8 +105,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testConnectWithAuthenticationMethodAndDataProvided() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient);
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient);
 
         Mqtt5AsyncClient client = Mqtt5Client.builder()
                 .identifier(TEST_CLIENT_ID)
@@ -124,26 +116,26 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
         // The auth mechanism verifies the SCRAM server-final message carried in the CONNACK Authentication Data,
         // so a CONNACK without it (or with a wrong server signature) fails the connect.
         client.connect().get(30, TimeUnit.SECONDS);
-        assertThat(saslClient.isComplete()).isTrue();
+        assertThat(authCallback.isServerVerified()).isTrue();
 
         String updatedUsername = TEST_CLIENT_USERNAME + "updated";
         String updatedPassword = TEST_CLIENT_PASSWORD + "updated";
         clientCredentials = updateCredentials(clientCredentials, updatedUsername, updatedPassword);
 
-        saslClient = createScramSaslClient(updatedUsername, updatedPassword);
-        authCallback.setSaslClient(saslClient);
+        scramClient = createScramClient(updatedUsername, updatedPassword);
+        authCallback.setScramClient(scramClient);
 
         // Same for re-authentication: the server-final message must arrive in the AUTH (Success) packet.
         client.reauth().get(30, TimeUnit.SECONDS);
-        assertThat(saslClient.isComplete()).isTrue();
+        assertThat(authCallback.isServerVerified()).isTrue();
 
         client.disconnect();
     }
 
     @Test
     public void testReAuthWithNewAuthMethod() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient);
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient);
 
         Mqtt5AsyncClient client = Mqtt5Client.builder()
                 .identifier(TEST_CLIENT_ID)
@@ -166,8 +158,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
         assertThat(connected.get()).isTrue();
 
-        saslClient = createScramSaslClient(TEST_CLIENT_ID, TEST_CLIENT_PASSWORD, ScramAlgorithm.SHA_256);
-        authCallback.setSaslClient(saslClient);
+        scramClient = createScramClient(TEST_CLIENT_ID, TEST_CLIENT_PASSWORD, ScramAlgorithm.SHA_256);
+        authCallback.setScramClient(scramClient);
         authCallback.setAuthMethod(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         var reAuthLatch = new CountDownLatch(1);
@@ -194,8 +186,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testReAuthWithInvalidCredentials() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient);
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient);
 
         Mqtt5AsyncClient client = Mqtt5Client.builder()
                 .identifier(TEST_CLIENT_ID)
@@ -219,8 +211,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
         assertThat(connected.get()).isTrue();
 
         String updatedPassword = TEST_CLIENT_PASSWORD + "_updated";
-        saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, updatedPassword);
-        authCallback.setSaslClient(saslClient);
+        scramClient = createScramClient(TEST_CLIENT_USERNAME, updatedPassword);
+        authCallback.setScramClient(scramClient);
 
         var reAuthLatch = new CountDownLatch(1);
         var actualException = new AtomicReference<Throwable>();
@@ -246,8 +238,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testConnectWithUnsupportedAuthMethod() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient) {
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient) {
             @Override
             public @NotNull MqttUtf8String getMethod() {
                 return MqttUtf8String.of("UNSUPPORTED_AUTH_METHOD");
@@ -282,8 +274,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testConnectWithMissingAuthData() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient) {
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient) {
             @Override
             public @NotNull CompletableFuture<Void> onAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Connect mqtt5Connect, @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
                 mqtt5EnhancedAuthBuilder.data((byte[]) null);
@@ -321,8 +313,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testConnectWithMissingAuthChallengeResponse() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient) {
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient) {
             @Override
             public @NotNull CompletableFuture<Boolean> onContinue(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Auth mqtt5Auth, @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
                 mqtt5Auth.getData().ifPresent(authDataBuffer -> {
@@ -364,8 +356,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
     @Test
     public void testConnectWithInvalidAuthChallengeResponse() throws Throwable {
-        var saslClient = createScramSaslClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
-        var authCallback = new TestMqtt5EnhancedAuthMechanism(saslClient) {
+        var scramClient = createScramClient(TEST_CLIENT_USERNAME, TEST_CLIENT_PASSWORD);
+        var authCallback = new TestMqtt5EnhancedAuthMechanism(scramClient) {
             @Override
             public @NotNull CompletableFuture<Boolean> onContinue(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Auth mqtt5Auth, @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
                 mqtt5Auth.getData().ifPresent(authDataBuffer -> {
@@ -405,62 +397,28 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 .isEqualTo(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED);
     }
 
-    private SaslClient createScramSaslClient(String username, String password) {
-        return createScramSaslClient(username, password, ScramAlgorithm.SHA_512);
+    private ScramTestClient createScramClient(String username, String password) {
+        return createScramClient(username, password, ScramAlgorithm.SHA_512);
     }
 
-    private SaslClient createScramSaslClient(String username, String password, ScramAlgorithm algorithm) {
-        ScramSaslClientProvider.initialize();
-        try {
-            return Sasl.createSaslClient(
-                    new String[]{algorithm.getMqttAlgorithmName()},
-                    null,
-                    SCRAM_SASL_PROTOCOL,
-                    null,
-                    SCRAM_SASL_PROPS,
-                    new ScramClientCallbackHandler(username, password)
-            );
-        } catch (SaslException e) {
-            throw new RuntimeException("Failed to initialize Sasl client", e);
-        }
-    }
-
-    private static class ScramClientCallbackHandler implements CallbackHandler {
-
-        private final String username;
-        private final char[] password;
-
-        public ScramClientCallbackHandler(String username, String password) {
-            this.username = username;
-            this.password = password.toCharArray();
-        }
-
-        @Override
-        public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
-            for (Callback callback : callbacks) {
-                if (callback instanceof NameCallback nameCallback) {
-                    nameCallback.setName(username);
-                } else if (callback instanceof PasswordCallback passwordCallback) {
-                    passwordCallback.setPassword(password);
-                } else {
-                    throw new UnsupportedCallbackException(callback);
-                }
-            }
-        }
+    private ScramTestClient createScramClient(String username, String password, ScramAlgorithm algorithm) {
+        return new ScramTestClient(username, password, algorithm == ScramAlgorithm.SHA_256 ? Mechanism.SCRAM_SHA_256 : Mechanism.SCRAM_SHA_512);
     }
 
     @Setter
     private static class TestMqtt5EnhancedAuthMechanism implements Mqtt5EnhancedAuthMechanism {
 
-        private SaslClient saslClient;
+        private ScramTestClient scramClient;
         private String authMethod;
+        @Getter
+        private volatile boolean serverVerified;
 
-        public TestMqtt5EnhancedAuthMechanism(SaslClient saslClient) {
-            this(saslClient, ScramAlgorithm.SHA_512.getMqttAlgorithmName());
+        public TestMqtt5EnhancedAuthMechanism(ScramTestClient scramClient) {
+            this(scramClient, ScramAlgorithm.SHA_512.getMqttAlgorithmName());
         }
 
-        public TestMqtt5EnhancedAuthMechanism(SaslClient saslClient, String authMethod) {
-            this.saslClient = saslClient;
+        public TestMqtt5EnhancedAuthMechanism(ScramTestClient scramClient, String authMethod) {
+            this.scramClient = scramClient;
             this.authMethod = authMethod;
         }
 
@@ -476,23 +434,15 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
 
         @Override
         public @NotNull CompletableFuture<Void> onAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Connect mqtt5Connect, @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
-            try {
-                byte[] initialRequest = saslClient.evaluateChallenge(new byte[0]);
-                mqtt5EnhancedAuthBuilder.data(initialRequest);
-            } catch (SaslException e) {
-                throw new RuntimeException(e);
-            }
+            serverVerified = false;
+            mqtt5EnhancedAuthBuilder.data(scramClient.clientFirstMessage());
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
         public @NotNull CompletableFuture<Void> onReAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
-            try {
-                byte[] initialRequest = saslClient.evaluateChallenge(new byte[0]);
-                mqtt5AuthBuilder.data(initialRequest);
-            } catch (SaslException e) {
-                throw new RuntimeException(e);
-            }
+            serverVerified = false;
+            mqtt5AuthBuilder.data(scramClient.clientFirstMessage());
             return CompletableFuture.completedFuture(null);
         }
 
@@ -502,12 +452,7 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
             if (reasonCode == Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION) {
                 mqtt5Auth.getData().ifPresentOrElse(authDataBuffer -> {
                     byte[] authDataAsByteArray = getBytes(authDataBuffer);
-                    try {
-                        byte[] response = saslClient.evaluateChallenge(authDataAsByteArray);
-                        mqtt5AuthBuilder.data(response);
-                    } catch (SaslException e) {
-                        throw new RuntimeException(e);
-                    }
+                    mqtt5AuthBuilder.data(scramClient.clientFinalMessage(authDataAsByteArray));
                 }, () -> log.error("Received empty auth response from server"));
                 return CompletableFuture.completedFuture(true);
             }
@@ -532,9 +477,10 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 return false;
             }
             try {
-                saslClient.evaluateChallenge(getBytes(serverFinalMessage.get()));
-                return saslClient.isComplete();
-            } catch (SaslException e) {
+                scramClient.verifyServerFinalMessage(getBytes(serverFinalMessage.get()));
+                serverVerified = true;
+                return true;
+            } catch (IllegalStateException e) {
                 log.error("Failed to verify server-final message", e);
                 return false;
             }

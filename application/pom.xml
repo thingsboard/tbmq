@@ -370,6 +370,31 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--
+                            The application's test classes for the integration suite that runs on the Lite classpath,
+                            without what only the cluster edition can run: the cluster test infrastructure with its
+                            service registration, and the architecture rules.
+                            Packaged at process-test-classes, so a reactor build that stops at test already hands
+                            consumers this jar rather than the whole test-classes directory.
+                        -->
+                        <id>application-tests-jar</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/testsupport/cluster/**</exclude>
+                                <exclude>META-INF/services/org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure</exclude>
+                                <!-- the directory entry the line above leaves behind -->
+                                <exclude>META-INF/services</exclude>
+                                <exclude>**/architecture/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
