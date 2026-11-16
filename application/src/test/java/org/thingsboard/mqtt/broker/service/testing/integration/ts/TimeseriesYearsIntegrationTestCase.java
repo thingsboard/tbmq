@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.testing.integration.ts;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +39,7 @@ import org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -47,8 +49,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = TimeseriesYearsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+// the test database outlives the class: a year partition left behind would overlap the day partitions of
+// every later context, so the broker writes no stats here and each test drops what it created
 @TestPropertySource(properties = {
-        "sql.ts_key_value_partitioning=YEARS"
+        "sql.ts_key_value_partitioning=YEARS",
+        "historical-data-report.enabled=false"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -69,9 +74,10 @@ public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegratio
     protected DataSource dataSource;
 
     @Before
+    @After
     public void dropTsKvPartitions() {
-        try {
-            PostgreSqlInitializer.dropTsKvPartitions(dataSource.getConnection());
+        try (Connection connection = dataSource.getConnection()) {
+            PostgreSqlInitializer.dropTsKvPartitions(connection);
             jpaSqlTimeseriesDao.clearPartitionsCache();
         } catch (SQLException e) {
             throw new RuntimeException(e);
