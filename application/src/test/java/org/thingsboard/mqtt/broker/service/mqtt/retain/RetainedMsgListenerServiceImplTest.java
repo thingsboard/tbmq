@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.retain;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -29,6 +30,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -93,6 +95,20 @@ class RetainedMsgListenerServiceImplTest {
         service.cacheRetainedMsgAndPersist(TOPIC, retainedMsg("new"), callback);
 
         assertThat(service.getRetainedMsgForTopic(TOPIC)).isNotNull();
+    }
+
+    @Test
+    void givenAStoreFailureReportedAfterTheCallReturned_whenCacheAndPersist_thenTheMsgStaysCached() {
+        // only a failure reported before the persist call returns keeps the cache as it was (RetainedMsgPersistenceService)
+        service.cacheRetainedMsgAndPersist(TOPIC, retainedMsg("new"), callback);
+        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        verify(persistenceService).persistRetainedMsgAsync(eq(TOPIC), any(), persistCallback.capture());
+
+        persistCallback.getValue().onFailure(new StoreException("disk"));
+
+        assertThat(service.getRetainedMsgForTopic(TOPIC)).isNotNull();
+        verify(retainedMsgService).saveRetainedMsg(eq(TOPIC), any());
+        verify(callback).onFailure(any(StoreException.class));
     }
 
     private void storeFails() {

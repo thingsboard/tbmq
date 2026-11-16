@@ -20,11 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.RetainMsgTrieClearException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.StoreFailureTrackingCallback;
+
+import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
 @Slf4j
 @Service
@@ -43,9 +47,26 @@ public class DefaultTbRetainedMsgService extends AbstractTbEntityService impleme
         }
     }
 
+    /**
+     * @throws StoreException if the store failed to clear the retained msg before the call returned; the retained msg
+     *                        is then still there, and the REST caller gets an error
+     */
     @Override
     public void delete(String topicName, User currentUser) {
-        retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
+        StoreFailureTrackingCallback callback = new StoreFailureTrackingCallback(createCallback(
+                () -> log.trace("[{}] Persisted cleared retained msg", topicName),
+                t -> logFailure(topicName, t)));
+        retainedMsgListenerService.clearRetainedMsgAndPersist(topicName, callback);
+        callback.throwIfStoreFailed();
+    }
+
+    // a StoreException is thrown to the caller; the store has logged it with its stack trace already
+    private static void logFailure(String topicName, Throwable t) {
+        if (t instanceof StoreException) {
+            log.debug("[{}] Failed to persist cleared retained msg", topicName, t);
+        } else {
+            log.warn("[{}] Failed to persist cleared retained msg", topicName, t);
+        }
     }
 
 }
