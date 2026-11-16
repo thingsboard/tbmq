@@ -32,8 +32,9 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgQueuePublisher;
  * When the pipeline is full, the publish fails with {@link PublishLimitExceededException}, whatever its QoS: the
  * caller decides what a refusal means for it, and counts the drop. It never blocks the caller.
  * <p>
- * A retained publish is never refused. Its caller has already stored its retained msg, so a refusal would leave that
- * msg in place while the client is told the publish failed. It still takes its share, so it counts toward the limits.
+ * A retained publish is never refused here. Its caller checks {@link #hasCapacity} first and then stores its retained
+ * msg, which a refusal could no longer undo. Only the publishes that pass that check at the same moment can take the
+ * pipeline past its limits, and they still count toward them.
  */
 @Service
 @StandaloneComponent
@@ -54,6 +55,11 @@ public class StandalonePublishMsgQueuePublisher implements PublishMsgQueuePublis
             return;
         }
         queue.submit(msgProto, new CompleteOncePublishCallback(budget, bytes, callback));
+    }
+
+    @Override
+    public boolean hasCapacity(int payloadBytes) {
+        return budget.hasRoom(payloadBytes);
     }
 
 }

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import com.google.common.collect.Lists;
+import io.netty.buffer.Unpooled;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
@@ -52,6 +54,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -92,6 +95,15 @@ public class MsgDispatcherServiceImplTest {
     @Before
     public void setUp() {
         clientSessionInfo = mock(ClientSessionInfo.class);
+    }
+
+    @Test
+    public void givenAPublish_whenHasCapacity_thenThePublisherIsAskedWithItsPayloadSize() {
+        when(publishMsgQueuePublisher.hasCapacity(5)).thenReturn(false);
+        when(publishMsgQueuePublisher.hasCapacity(3)).thenReturn(true);
+
+        assertFalse(msgDispatcherService.hasCapacity(PublishMsg.builder().payload(new byte[5]).build()));
+        assertTrue(msgDispatcherService.hasCapacity(PublishMsg.builder().byteBuf(Unpooled.wrappedBuffer(new byte[3])).build()));
     }
 
     @Test

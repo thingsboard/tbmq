@@ -49,6 +49,11 @@ public class SparkplugCertificateRepublisherImpl implements SparkplugCertificate
             // Store as retained first (same order as MqttPublishHandler.process for client-originated
             // retained publishes), then dispatch through the standard Kafka pipeline so live subscribers
             // receive it. Without the retained-store step the fresh-subscribe path would see nothing.
+            if (!msgDispatcherService.hasCapacity(republished)) {
+                // skipped before its retained msg is stored, which a refusal could no longer undo
+                log.warn("Skipped republishing Sparkplug certificate on topic {}: the publish queue is full", certTopic);
+                return;
+            }
             republished = retainedMsgProcessor.process(republished);
             msgDispatcherService.persistPublishMsg(sessionInfo, republished, publisher, new TbQueueCallback() {
                 @Override

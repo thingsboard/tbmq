@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.PublishFailures;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -94,6 +95,13 @@ public class RestPublishServiceImpl implements RestPublishService {
         }
 
         if (publishMsg.isRetained()) {
+            if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                // refused before its retained msg is stored, which a refusal could no longer undo
+                log.debug("[{}] REST publish refused by the queue, payload size: {}: publish queue is full", publishMsg.getTopicName(), publishMsg.getPayload().length);
+                tbMessageStatsReportClient.reportDroppedMsgs();
+                stats.increment(RestPublishOutcome.QUOTA_EXCEEDED);
+                return Futures.immediateFailedFuture(new PublishLimitExceededException("publish queue is full"));
+            }
             try {
                 publishMsg = retainedMsgProcessor.process(publishMsg);
             } catch (StoreException e) {

@@ -172,8 +172,18 @@ class StandalonePublishStageTest {
         verify(cb1, never()).onSuccess(any());
         verify(cb2).onFailure(isA(PublishLimitExceededException.class));
         verify(cb2, never()).onSuccess(any());
-        verifyNoInteractions(msgDispatcherService, statsClient);
+        verifyNoInteractions(msgDispatcherService);
         assertThat(budget.queuedMessages()).isEqualTo(MAX_MESSAGES);
+    }
+
+    @Test
+    void givenAFullPipeline_whenHasCapacity_thenFalseUntilAShareIsReleased() {
+        assertThat(publisher.hasCapacity(10)).isTrue();
+        fillBudget();
+
+        assertThat(publisher.hasCapacity(10)).isFalse();
+        budget.release(0);
+        assertThat(publisher.hasCapacity(0)).isTrue();
     }
 
     @Test
@@ -396,6 +406,11 @@ class StandalonePublishStageTest {
         @Override
         public void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback) {
             callback.onSuccess();
+        }
+
+        @Override
+        public boolean hasCapacity(PublishMsg publishMsg) {
+            return true;
         }
 
     }

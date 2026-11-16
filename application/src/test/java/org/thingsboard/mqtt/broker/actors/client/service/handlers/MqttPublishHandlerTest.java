@@ -125,6 +125,7 @@ public class MqttPublishHandlerTest {
         awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
         when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(awaitingPubRelPacketsCtx);
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(true);
     }
 
     @Test
@@ -852,6 +853,22 @@ public class MqttPublishHandlerTest {
         verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
         verify(sparkplugCertificateRepublisher, never()).maybeRepublish(any(), any(), any());
         verify(tbMessageStatsReportClient, times(3)).reportDroppedMsgs();
+        verify(clientMqttActorManager, never()).disconnect(any(), any());
+    }
+
+    @Test
+    public void aRetainedMsgWithoutQueueCapacityIsRefusedBeforeItIsStored() {
+        givenMqtt5Session();
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(1, 1, true)), actorRef);
+        processPubResponsesSentToActor(1);
+
+        // a refusal after the retained msg was stored could no longer undo it
+        verify(mqttMessageGenerator).createPubAckMsg(1, MqttReasonCodes.PubAck.QUOTA_EXCEEDED);
+        verify(retainedMsgProcessor, never()).process(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
         verify(clientMqttActorManager, never()).disconnect(any(), any());
     }
 

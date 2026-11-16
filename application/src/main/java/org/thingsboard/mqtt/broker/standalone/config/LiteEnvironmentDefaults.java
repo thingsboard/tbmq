@@ -138,7 +138,7 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
 
     /**
      * Places the waits just above the config-data source of {@code thingsboard-mqtt-broker.yml}. A wait is left out
-     * when the file sets its key to anything but the shipped placeholder: an operator who edited the file, for example
+     * when the file sets its key to anything but the shipped placeholder (a key the file leaves out keeps the wait): an operator who edited the file, for example
      * the copy in the {@code conf} directory that the packages put on the class path, gets the value they wrote.
      */
     private void addShutdownWaits(MutablePropertySources sources, Environment environment) {
@@ -160,7 +160,8 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         List<String> configured = new ArrayList<>();
         for (ShutdownWait wait : SHUTDOWN_WAITS) {
             Object value = yml.getProperty(wait.key());
-            if (value != null && wait.shippedValue().equals(value.toString())) {
+            // a key the file does not set at all is not an operator's value either
+            if (value == null || wait.shippedValue().equals(value.toString())) {
                 shipped.add(wait);
             } else {
                 configured.add(wait.key());

@@ -23,4 +23,12 @@ public interface PublishMsgQueuePublisher {
 
     void sendMsg(TbProtoQueueMsg<PublishMsgProto> msgProto, TbQueueCallback callback);
 
+    /**
+     * @return {@code false} if a publish with a payload of this size would be refused now. A queue without such a
+     * limit always has capacity
+     */
+    default boolean hasCapacity(int payloadBytes) {
+        return true;
+    }
+
 }

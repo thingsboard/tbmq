@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.exception.PublishFailures;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -141,12 +142,15 @@ public class MqttPublishHandler {
             if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
             }
+            if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                // refused before its retained msg is stored, which a refusal could no longer undo
+                onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, new PublishLimitExceededException("publish queue is full"));
+                return;
+            }
             try {
                 publishMsg = retainedMsgProcessor.process(publishMsg);
             } catch (StoreException e) {
-                log.warn("[{}][{}] Failed to store retained msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
-                tbMessageStatsReportClient.reportDroppedMsgs();
-                handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, e);
+                onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, e);
                 return;
             }
         }
@@ -264,22 +268,24 @@ public class MqttPublishHandler {
 
             @Override
             public void onFailure(Throwable t) {
-                callbackProcessor.submit(() -> {
-                    if (PublishFailures.isPipelineClosed(t)) {
-                        handlePipelineClosed(ctx, publishMsg, t);
-                        return;
-                    }
-                    if (PublishFailures.isLimitExceeded(t)) {
-                        // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
-                        log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
-                    } else {
-                        log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    }
-                    tbMessageStatsReportClient.reportDroppedMsgs();
-                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t);
-                });
+                callbackProcessor.submit(() -> onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t));
             }
         });
+    }
+
+    private void onPublishFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper, Throwable t) {
+        if (PublishFailures.isPipelineClosed(t)) {
+            handlePipelineClosed(ctx, publishMsg, t);
+            return;
+        }
+        if (PublishFailures.isLimitExceeded(t)) {
+            // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
+            log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
+        } else {
+            log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+        }
+        tbMessageStatsReportClient.reportDroppedMsgs();
+        handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t);
     }
 
     /**

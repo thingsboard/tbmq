@@ -52,16 +52,25 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
         if (payloadIsEmpty(publishMsg)) {
             callback = new StoreFailureTrackingCallback(createCallback(
                     () -> log.trace("[{}] Persisted cleared retained msg", topic),
-                    t -> log.warn("[{}] Failed to persist cleared retained msg", topic, t)));
+                    t -> logFailure("[{}] Failed to persist cleared retained msg", topic, t)));
             retainedMsgListenerService.clearRetainedMsgAndPersist(topic, callback);
         } else {
             callback = new StoreFailureTrackingCallback(createCallback(
                     () -> log.trace("[{}] Persisted retained msg", topic),
-                    t -> log.warn("[{}] Failed to persist retained msg", topic, t)));
+                    t -> logFailure("[{}] Failed to persist retained msg", topic, t)));
             retainedMsgListenerService.cacheRetainedMsgAndPersist(topic, newRetainedMsg(publishMsg), callback);
         }
         callback.throwIfStoreFailed();
         return publishMsg;
+    }
+
+    // a StoreException is thrown to the caller, which logs it; the store has logged it with its stack trace already
+    private static void logFailure(String message, String topic, Throwable t) {
+        if (t instanceof StoreException) {
+            log.debug(message, topic, t);
+        } else {
+            log.warn(message, topic, t);
+        }
     }
 
     private boolean payloadIsEmpty(PublishMsg publishMsg) {

@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Bounds the publishes inside the pipeline by count and by payload bytes. A publish takes its share when it enters
@@ -52,7 +53,9 @@ public class PipelineBudget {
     private boolean paused;
 
     private final List<Runnable> resumeListeners = new CopyOnWriteArrayList<>();
-    private volatile boolean resumesStopped;
+    // a notification holds the read lock and stopResuming the write lock: once stopResuming returns, no listener runs
+    private final ReentrantReadWriteLock resumeLock = new ReentrantReadWriteLock();
+    private boolean resumesStopped;
 
     @Autowired
     public PipelineBudget(PipelineProperties properties, StatsFactory statsFactory) {
@@ -104,6 +107,16 @@ public class PipelineBudget {
     }
 
     /**
+     * @return {@code true} if {@link #tryAcquire} would take a message of {@code bytes} bytes now; nothing is taken
+     */
+    public boolean hasRoom(int bytes) {
+        requireNotNegative(bytes);
+        synchronized (lock) {
+            return queuedMessages < maxMessages && (queuedMessages == 0 || queuedBytes + bytes <= maxBytes);
+        }
+    }
+
+    /**
      * Takes one message of {@code bytes} bytes even when that goes over a limit. It is for a publish whose effects
      * were applied before it reached the pipeline, so a refusal could no longer undo them.
      */
@@ -138,7 +151,7 @@ public class PipelineBudget {
                 resumed = true;
             }
         }
-        if (resumed && !resumesStopped) {
+        if (resumed) {
             notifyResumed();
         }
     }
@@ -169,11 +182,16 @@ public class PipelineBudget {
     }
 
     /**
-     * Stops running the resume listeners for good. The shutdown calls it before it stops reading from the clients, so
-     * the releases of the drain cannot start reading again.
+     * Stops running the resume listeners for good, and waits for the ones running now to return. The shutdown calls it
+     * before it stops reading from the clients, so the releases of the drain cannot start reading again.
      */
     public void stopResuming() {
-        resumesStopped = true;
+        resumeLock.writeLock().lock();
+        try {
+            resumesStopped = true;
+        } finally {
+            resumeLock.writeLock().unlock();
+        }
     }
 
     private boolean atOrBelowResume() {
@@ -182,13 +200,21 @@ public class PipelineBudget {
     }
 
     private void notifyResumed() {
-        for (Runnable listener : resumeListeners) {
-            try {
-                listener.run();
-            } catch (Throwable t) {
-                // an Error too: the release must return, so that the publish it belongs to is still answered
-                log.error("Pipeline resume listener failed", t);
+        resumeLock.readLock().lock();
+        try {
+            if (resumesStopped) {
+                return;
             }
+            for (Runnable listener : resumeListeners) {
+                try {
+                    listener.run();
+                } catch (Throwable t) {
+                    // an Error too: the release must return, so that the publish it belongs to is still answered
+                    log.error("Pipeline resume listener failed", t);
+                }
+            }
+        } finally {
+            resumeLock.readLock().unlock();
         }
     }
 

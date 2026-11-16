@@ -153,6 +153,13 @@ public class DefaultLastWillService implements LastWillService {
         PublishMsg publishMsg = lastWillMsgWithSessionInfo.getPublishMsg();
         try {
             if (publishMsg.isRetained()) {
+                if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                    // refused before its retained msg is stored, which a refusal could no longer undo
+                    SessionInfo sessionInfo = lastWillMsgWithSessionInfo.getSessionInfo();
+                    log.warn("[{}][{}] Failed to publish last will msg: the publish queue is full", sessionInfo.getClientId(), sessionInfo.getSessionId());
+                    tbMessageStatsReportClient.reportDroppedMsgs();
+                    return;
+                }
                 publishMsg = retainedMsgProcessor.process(publishMsg);
             }
             persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getPublisherIdentity());

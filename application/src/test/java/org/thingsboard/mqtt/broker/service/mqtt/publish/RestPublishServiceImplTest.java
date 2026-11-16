@@ -71,6 +71,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -104,6 +105,7 @@ class RestPublishServiceImplTest {
     @BeforeEach
     void setUp() {
         when(statsManager.getRestPublishStats()).thenReturn(restPublishStats);
+        lenient().when(msgDispatcherService.hasCapacity(any())).thenReturn(true);
         service.maxPayloadSize = 64;
         service.init();
     }
@@ -335,6 +337,22 @@ class RestPublishServiceImplTest {
         verify(retainedMsgProcessor).process(toProcessor.capture());
         assertThat(toProcessor.getValue().isRetained()).isTrue();
         assertThat(capturedPublishMsg()).isSameAs(processed);
+    }
+
+    @Test
+    void givenNoQueueCapacity_whenPublishRetained_thenRefusedBeforeTheRetainedMsgIsStored() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setRetain(true);
+
+        ListenableFuture<RestPublishResponse> future = service.publish(request);
+
+        assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCauseInstanceOf(PublishLimitExceededException.class);
+        verify(retainedMsgProcessor, never()).process(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
+        verify(restPublishStats).increment(RestPublishOutcome.QUOTA_EXCEEDED);
     }
 
     @Test

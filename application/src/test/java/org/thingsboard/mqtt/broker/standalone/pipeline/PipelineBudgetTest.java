@@ -20,7 +20,11 @@ import org.mockito.ArgumentCaptor;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToDoubleFunction;
 
@@ -148,6 +152,57 @@ class PipelineBudgetTest {
 
         assertThat(budget.queuedMessages()).isZero();
         assertThat(resumed).hasValue(0);
+    }
+
+    @Test
+    void givenAListenerRunning_whenStopResuming_thenItWaitsForTheListenerToReturn() throws Exception {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        CountDownLatch listenerEntered = new CountDownLatch(1);
+        CountDownLatch releaseListener = new CountDownLatch(1);
+        budget.onResume(() -> {
+            listenerEntered.countDown();
+            try {
+                releaseListener.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+        ExecutorService threads = Executors.newFixedThreadPool(2);
+        try {
+            threads.submit(() -> {
+                for (int i = 0; i < 3; i++) {
+                    budget.release(1);
+                }
+            });
+            assertThat(listenerEntered.await(10, TimeUnit.SECONDS)).isTrue();
+
+            Future<?> stop = threads.submit(budget::stopResuming);
+
+            // a listener that already started may still resume reading: the shutdown must pause reading after it
+            assertThatThrownBy(() -> stop.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+            releaseListener.countDown();
+            stop.get(10, TimeUnit.SECONDS);
+        } finally {
+            releaseListener.countDown();
+            threads.shutdownNow();
+        }
+    }
+
+    @Test
+    void givenRoomOrNot_whenHasRoom_thenItAnswersLikeTryAcquireWithoutTakingAnything() {
+        PipelineBudget budget = new PipelineBudget(2, 10, 80, 50);
+        assertThat(budget.hasRoom(50)).as("an empty pipeline admits one oversized message").isTrue();
+        budget.tryAcquire(5);
+
+        assertThat(budget.hasRoom(5)).isTrue();
+        assertThat(budget.hasRoom(6)).isFalse();
+        budget.tryAcquire(5);
+        assertThat(budget.hasRoom(0)).isFalse();
+        assertThat(budget.queuedMessages()).isEqualTo(2);
+        assertThat(budget.queuedBytes()).isEqualTo(10);
     }
 
     @Test

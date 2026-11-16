@@ -49,6 +49,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -85,6 +86,7 @@ public class DefaultLastWillServiceTest {
         scheduledExecutorService = mock(ScheduledExecutorService.class);
         lastWillService.setScheduler(scheduledExecutorService);
         doNothing().when(lastWillService).scheduleLastWill(any(), anyInt());
+        lenient().when(msgDispatcherService.hasCapacity(any())).thenReturn(true);
     }
 
     @Test
@@ -137,6 +139,24 @@ public class DefaultLastWillServiceTest {
         willTask.getValue().run();
 
         verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+        verify(msgDispatcherService, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
+    }
+
+    @Test
+    public void givenARetainedWillWithoutQueueCapacity_whenItFires_thenItIsCountedAsDroppedAndNotStored() {
+        doCallRealMethod().when(lastWillService).scheduleLastWill(any(), anyInt());
+        doReturn(mock(ScheduledFuture.class)).when(scheduledExecutorService).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        when(sessionInfo.getClientId()).thenReturn("will-client");
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+        PublishMsg will = getPublishMsg().toBuilder().topicName("will/topic").isRetained(true).build();
+
+        lastWillService.scheduleLastWill(new DefaultLastWillService.MsgWithSessionInfo(will, sessionInfo, PublisherIdentity.EMPTY), 0);
+        ArgumentCaptor<Runnable> willTask = ArgumentCaptor.forClass(Runnable.class);
+        verify(scheduledExecutorService).schedule(willTask.capture(), eq(0L), eq(TimeUnit.SECONDS));
+        willTask.getValue().run();
+
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+        verify(retainedMsgProcessor, never()).process(any());
         verify(msgDispatcherService, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
     }
 
