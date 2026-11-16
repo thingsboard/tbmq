@@ -24,12 +24,12 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
  * later and never with a {@link StoreException}, so nothing is remembered there. See
  * {@link RetainedMsgPersistenceService} for that contract.
  */
-final class StoreFailureTrackingCallback implements BasicCallback {
+public final class StoreFailureTrackingCallback implements BasicCallback {
 
     private final BasicCallback delegate;
     private volatile StoreException storeFailure;
 
-    StoreFailureTrackingCallback(BasicCallback delegate) {
+    public StoreFailureTrackingCallback(BasicCallback delegate) {
         this.delegate = delegate;
     }
 
@@ -49,11 +49,11 @@ final class StoreFailureTrackingCallback implements BasicCallback {
     /**
      * @return whether the write failed before the persist call returned; asked right after that call
      */
-    boolean failedBeforeReturn() {
+    public boolean failedBeforeReturn() {
         return storeFailure != null;
     }
 
-    void throwIfStoreFailed() {
+    public void throwIfStoreFailed() {
         StoreException failure = storeFailure;
         if (failure != null) {
             throw failure;
