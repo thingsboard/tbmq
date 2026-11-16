@@ -49,12 +49,75 @@
             <type>pom</type>
         </dependency>
         <dependency>
+            <!--
+                The application's integration and controller tests, without the cluster test infrastructure.
+                Its transitive dependencies are the application's own, queue-kafka and cache-redis among them:
+                tbmq-lite above already brings the Lite ones.
+            -->
+            <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>application</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <!-- the shared DeviceMsgService contract suite and the PostgreSQL test-database setup, without dao's test configuration -->
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <classifier>lite-tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <!-- the application's test dependencies, except Kafka's test container -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.dbunit</groupId>
+            <artifactId>dbunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.springtestdbunit</groupId>
+            <artifactId>spring-test-dbunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>concurrentunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.takari.junit</groupId>
+            <artifactId>takari-cpsuite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>netty-mqtt</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock.integrations.testcontainers</groupId>
+            <artifactId>wiremock-testcontainers-module</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hivemq</groupId>
+            <artifactId>hivemq-mqtt-client</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

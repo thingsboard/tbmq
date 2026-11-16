@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 
 import java.time.Duration;
@@ -72,6 +73,8 @@ public abstract class AbstractTotalThroughputQuotaIntegrationTest extends Abstra
     protected MeterRegistry meterRegistry;
     @Autowired
     protected RateLimitCacheService rateLimitCacheService;
+    @Autowired
+    private TbmqEdition edition;
 
     /**
      * The reporting scheduler zeroes the historical droppedMsgs counter; this Micrometer one is monotonic, so
@@ -126,9 +129,15 @@ public abstract class AbstractTotalThroughputQuotaIntegrationTest extends Abstra
      * {@code incomingPublishMsg.consumed}. A pack is only logged once every one of its callbacks has resolved, so
      * this moving is proof that a publish has been charged for its whole fan-out AND persisted - the observable
      * that lets the suites wait on the event rather than guess at a duration.
+     * <p>
+     * Lite has no such consumer: its pipeline completes the publish's own callback only once the publish was charged
+     * for its whole fan-out and every copy was handed off, and the dispatcher counts it as published
+     * ({@code incomingPublishMsg.published}) at that moment. In the cluster that counter moves as soon as Kafka has
+     * the publish, before any of that, which is why the cluster reads the consumer's counter.
      */
     protected double publishesProcessed() {
-        return meterRegistry.find(StatsType.PUBLISH_MSG_CONSUMER.getPrintName())
+        StatsType processed = edition == TbmqEdition.LITE ? StatsType.MSG_DISPATCHER_PRODUCER : StatsType.PUBLISH_MSG_CONSUMER;
+        return meterRegistry.find(processed.getPrintName())
                 .tag(STATS_NAME_TAG, SUCCESSFUL_MSGS)
                 .counters().stream()
                 .mapToDouble(Counter::count)

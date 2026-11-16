@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.lite;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 import org.thingsboard.mqtt.broker.dao.service.DeviceMsgServiceContract;
@@ -37,6 +38,8 @@ class LiteClasspathTest {
 
     private static final String RESTRICTED_DAO_TEST_JAR_SUFFIX = "-lite-tests.jar";
     private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao-\\d[^/]*-tests\\.jar!/");
+    // in the reactor the application's jars carry its final name, thingsboard-mqtt-broker; in a repository, its artifact id
+    private static final Pattern APPLICATION_TEST_JAR = Pattern.compile("/(application|thingsboard-mqtt-broker)-\\d[^/]*-tests\\.jar!/");
 
     @Test
     void theClasspathResolvesToTheLiteEdition() {
@@ -67,7 +70,7 @@ class LiteClasspathTest {
      * catches dao's full test-jar or its test-classes directory.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"logback.xml", "application-test.properties", "sql-test.properties", "xss-policy.xml"})
+    @ValueSource(strings = {"logback.xml", "application-test.properties", "xss-policy.xml"})
     void noTestConfigurationComesFromDaosTests(String resource) throws IOException {
         assertThat(Collections.list(getClass().getClassLoader().getResources(resource)))
                 .map(URL::toString)
@@ -75,9 +78,46 @@ class LiteClasspathTest {
                 .noneMatch(LiteClasspathTest::isDaoTestOutput);
     }
 
+    /**
+     * The test database of {@code @DaoSqlTest} is dao's own, taken from the restricted jar rather than kept as a copy.
+     */
+    @Test
+    void theTestDatabaseSettingsComeFromTheRestrictedJar() throws IOException {
+        assertThat(Collections.list(getClass().getClassLoader().getResources("sql-test.properties")))
+                .map(URL::toString)
+                .singleElement()
+                .satisfies(url -> assertThat(url).endsWith(RESTRICTED_DAO_TEST_JAR_SUFFIX + "!/sql-test.properties"));
+    }
+
     // dao's test-classes directory, or any of its test jars (dao-<version>-tests.jar, dao-<version>-lite-tests.jar)
     private static boolean isDaoTestOutput(String url) {
         return url.contains("/dao/target/test-classes/") || DAO_TEST_JAR.matcher(url).find();
+    }
+
+    /**
+     * The application's test-jar leaves out the cluster test infrastructure; its test-classes directory would not.
+     */
+    @Test
+    void theApplicationsTestClassesComeFromItsTestJar() {
+        assertThat(AbstractPubSubIntegrationTest.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+                .endsWith("-tests.jar");
+    }
+
+    /**
+     * The Lite suites run the application's tests with the test configuration of lite-tests.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"logback.xml", "application-test.properties"})
+    void noTestConfigurationComesFromTheApplicationsTests(String resource) throws IOException {
+        assertThat(Collections.list(getClass().getClassLoader().getResources(resource)))
+                .map(URL::toString)
+                .as("%s on the classpath", resource)
+                .noneMatch(LiteClasspathTest::isApplicationTestOutput);
+    }
+
+    // the application's test-classes directory, or its test-jar
+    private static boolean isApplicationTestOutput(String url) {
+        return url.contains("/application/target/test-classes/") || APPLICATION_TEST_JAR.matcher(url).find();
     }
 
 }

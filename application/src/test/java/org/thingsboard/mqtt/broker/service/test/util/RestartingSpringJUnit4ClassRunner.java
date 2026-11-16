@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.test.util;
 
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -32,11 +33,13 @@ public class RestartingSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
         super(clazz);
     }
 
+    /**
+     * Binds {@link SpringRestarter} to this class's context when the class runs. The runners of all classes are created
+     * before the first one runs, so binding at creation would leave the restarter on the last class created.
+     */
     @Override
-    protected TestContextManager createTestContextManager(Class<?> clazz) {
-        TestContextManager testContextManager = super.createTestContextManager(clazz);
-
-        SpringRestarter.getInstance().init(testContextManager);
-        return testContextManager;
+    public void run(RunNotifier notifier) {
+        SpringRestarter.getInstance().init(getTestContextManager());
+        super.run(notifier);
     }
 }
