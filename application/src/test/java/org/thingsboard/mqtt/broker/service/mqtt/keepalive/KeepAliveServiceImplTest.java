@@ -43,6 +43,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -52,6 +53,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class KeepAliveServiceImplTest {
 
@@ -293,8 +295,13 @@ class KeepAliveServiceImplTest {
     @Test
     void givenKeepAliveThreadRefreshesLastPacketTime_whenActorAcknowledgesPackets_thenNoneIsRefused() throws Exception {
         UUID sessionId = UUID.randomUUID();
+        // stubOnly: neither is verified, and recording ~200k calls would cost memory and time
+        PublishBackpressure stubbedBackpressure = mock(PublishBackpressure.class, withSettings().stubOnly());
+        KeepAliveServiceImpl keepAliveService = mock(KeepAliveServiceImpl.class, withSettings()
+                .spiedInstance(new KeepAliveServiceImpl(clientMqttActorManager, stubbedBackpressure))
+                .defaultAnswer(CALLS_REAL_METHODS).stubOnly());
         keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
-        when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
+        when(stubbedBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
         doReturn(true).when(keepAliveService).isInactive(anyInt(), anyLong());
 
         AtomicBoolean stop = new AtomicBoolean();

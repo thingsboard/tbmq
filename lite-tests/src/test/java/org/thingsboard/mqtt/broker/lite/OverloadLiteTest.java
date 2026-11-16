@@ -151,7 +151,8 @@ public class OverloadLiteTest {
     // the broker times the keep-alive with currentTimeMillis, the test with nanoTime
     private static final long CLOCK_TOLERANCE_MS = 10;
     // scheduling, the disconnect through the client actor and the DISCONNECT on the wire: closes were measured 3.3 s
-    // after the PUBACK against a bound of 3.9 s without the slack; at 1.5 s the bound is still under a close one
+    // after the PUBACK against a bound of 3.4 s (the 3 s deadline and two 200 ms ticks) without the slack; at 1.5 s the
+    // bound is still under a close one
     // deadline (3 s) late
     private static final long CLOSE_SLACK_MS = 1_500;
     // the load lasts seconds, so far more depth samples than this are taken at one every 50 ms

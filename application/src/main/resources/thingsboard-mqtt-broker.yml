@@ -1256,6 +1256,7 @@ standalone:
     max-messages: "${STANDALONE_PIPELINE_MAX_MESSAGES:100000}"
     # Share (in percent, 1 to 100) of max-messages or max-bytes at which the broker stops reading from publishing connections.
     # A paused connection is still read once every half keep-alive, so that the PINGREQs of its client are answered.
+    # A connection with keep-alive 0 has no such reads, so it is not read at all while paused.
     pause-percent: "${STANDALONE_PIPELINE_PAUSE_PERCENT:80}"
     # Share (in percent) of max-messages and max-bytes the pipeline must fall to before the broker reads from publishing
     # connections again. Must be at least 1 and below pause-percent.

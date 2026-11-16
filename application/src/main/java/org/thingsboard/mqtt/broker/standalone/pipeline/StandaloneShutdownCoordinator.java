@@ -53,9 +53,8 @@ import java.util.concurrent.TimeoutException;
  * scheduler has handed those wills to the pipeline, so the drain delivers them. A will whose delay has not passed is not
  * due yet (the delay is the lesser of the Will Delay Interval and the session expiry, so a will of a session that
  * expires at once is due): the shutdown does not wait for it, and it is not published, since wills are not kept across
- * a restart. The
- * clients without a will stay connected through the drain, so a subscriber still receives the wills, and are closed
- * when the servers stop.
+ * a restart. The clients without a will stay connected through the drain, so a subscriber still receives the wills, and
+ * are closed when the servers stop.
  * <p>
  * A publish that was not dispatched in time was never acknowledged. One that reaches a drained stage fails with
  * {@link PipelineClosedException}: it is not acknowledged either, and its client stays connected until the server
@@ -143,10 +142,13 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
      * Runs an empty task on each event loop and waits for them, within the deadline. A read that was in progress when
      * reading was paused runs on the event loop before that task, and {@code channelRead} tells the client actor
      * there, so every packet it decoded is in the actor's mailbox once the task has run. So the disconnects of the will
-     * step are queued behind what the clients had sent when reading was paused. A keep-alive read that was issued
-     * before the budget stopped resuming, on a socket that had nothing to read, stays pending and can still take one
-     * buffer after the task has run, so a packet read that late may reach the actor behind the disconnect. Never
-     * throws, and returns by the deadline.
+     * step are queued behind what the clients had sent when reading was paused. Two reads can still happen after the
+     * task has run. A keep-alive read that was issued before the budget stopped resuming, on a socket that had nothing
+     * to read, stays pending and can take one buffer. And on a channel with auto-read off, Netty's
+     * {@code ByteToMessageDecoder.channelReadComplete} still calls {@code ctx.read()} when a read decoded no complete
+     * message, such as a packet cut at the end of the buffer. Both only bring in bytes the server had not read when the
+     * shutdown began, so a packet read that late may reach the actor behind the disconnect. Never throws, and returns
+     * by the deadline.
      */
     private void awaitReadsInProgress(Set<EventLoop> eventLoops, long deadlineNanos) {
         if (eventLoops.isEmpty()) {

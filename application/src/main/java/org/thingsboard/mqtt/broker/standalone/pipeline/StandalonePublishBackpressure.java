@@ -89,8 +89,9 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
     }
 
     /**
-     * Only forgets the session: no channel call and no budget lock, so it cannot join a lock cycle. The channel is
-     * closed by now. A session still connected is never passed here, such as one whose keep-alive closing was lost.
+     * Only forgets the session: no channel call and no budget lock, so it cannot join a lock cycle. The session is
+     * being cleaned up and its channel is closed right after this call, so the entry is dropped without touching the
+     * channel. A session still connected is never passed here, such as one whose keep-alive closing was lost.
      */
     @Override
     public void onSessionClosed(UUID sessionId) {
