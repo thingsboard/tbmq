@@ -78,18 +78,24 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         cacheRetainedMsgAndPersist(topic, retainedMsg, callback);
     }
 
+    /**
+     * Writes first and updates the cache after: a store that writes before the call returns and fails leaves the cache
+     * as it was, so no subscriber gets a retained msg that was not stored.
+     */
     @Override
     public void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg, BasicCallback callback) {
         log.trace("[{}] Executing cacheRetainedMsgAndPersist {}.", topic, retainedMsg);
-        cacheRetainedMsg(topic, retainedMsg);
-
         RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        StoreFailureTrackingCallback tracking = new StoreFailureTrackingCallback(callback);
 
         MqttProperties.IntegerProperty messageExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(retainedMsg);
         if (messageExpiryIntervalProperty != null) {
-            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback, messageExpiryIntervalProperty.value());
+            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, tracking, messageExpiryIntervalProperty.value());
         } else {
-            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback);
+            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, tracking);
+        }
+        if (!tracking.storeFailed()) {
+            cacheRetainedMsg(topic, retainedMsg);
         }
     }
 
@@ -108,12 +114,18 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         clearRetainedMsgAndPersist(topic, callback);
     }
 
+    /**
+     * Writes first and clears the cache after, like {@link #cacheRetainedMsgAndPersist(String, RetainedMsg, BasicCallback)}.
+     */
     @Override
     public void clearRetainedMsgAndPersist(String topic, BasicCallback callback) {
         log.trace("[{}] Executing clearRetainedMsgAndPersist", topic);
-        clearRetainedMsg(topic);
+        StoreFailureTrackingCallback tracking = new StoreFailureTrackingCallback(callback);
 
-        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO, callback);
+        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO, tracking);
+        if (!tracking.storeFailed()) {
+            clearRetainedMsg(topic);
+        }
     }
 
     @Override

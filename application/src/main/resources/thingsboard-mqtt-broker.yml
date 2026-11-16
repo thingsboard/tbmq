@@ -1246,8 +1246,9 @@ standalone:
   pipeline:
     # Maximum total payload size (in bytes) of the publishes in the pipeline, from the moment a publish is accepted until its
     # delivery and storage are done. When it is reached, further publishes are refused: QoS 0 is dropped and counted, and
-    # QoS 1/2 gets Quota exceeded (0x97) on MQTT 5, while an MQTT 3.x connection is closed.
-    # A single publish larger than this limit is still accepted when the pipeline is empty.
+    # QoS 1/2 gets Quota exceeded (0x97) on MQTT 5, while an MQTT 3.x connection is closed. A REST publish gets 503.
+    # A single publish larger than this limit is still accepted when the pipeline is empty. A retained publish is always
+    # accepted, because its retained message is stored before it reaches the pipeline; it still counts toward the limit.
     # 0 means 10% of the maximum JVM heap.
     max-bytes: "${STANDALONE_PIPELINE_MAX_BYTES:0}"
     # Maximum number of publishes in the pipeline, counted the same way. When it is reached, further publishes are refused

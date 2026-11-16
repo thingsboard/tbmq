@@ -133,6 +133,20 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenFullBudget_whenAcquire_thenTakenOverTheLimit() {
+        PipelineBudget budget = new PipelineBudget(2, 10, 80, 50);
+        budget.tryAcquire(5);
+        budget.tryAcquire(5);
+        assertThat(budget.tryAcquire(1)).isFalse();
+
+        budget.acquire(7);
+
+        assertThat(budget.queuedMessages()).isEqualTo(3);
+        assertThat(budget.queuedBytes()).isEqualTo(17);
+        assertThat(budget.abovePause()).isTrue();
+    }
+
+    @Test
     void givenAbovePauseOnBytesOnly_whenBytesFallToResume_thenListenerFires() {
         PipelineBudget budget = new PipelineBudget(1000, 100, 80, 50);
         AtomicInteger resumed = new AtomicInteger();

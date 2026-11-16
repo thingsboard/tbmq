@@ -25,6 +25,7 @@ import org.mockito.verification.VerificationMode;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -37,12 +38,17 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -62,6 +68,8 @@ public class DefaultLastWillServiceTest {
     SessionInfo sessionInfo;
     UUID savedSessionId;
 
+    private ScheduledExecutorService scheduledExecutorService;
+
     @Before
     public void setUp() {
         msgDispatcherService = mock(MsgDispatcherService.class);
@@ -74,7 +82,7 @@ public class DefaultLastWillServiceTest {
         savedSessionId = UUID.randomUUID();
         when(sessionInfo.getSessionId()).thenReturn(savedSessionId);
 
-        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
+        scheduledExecutorService = mock(ScheduledExecutorService.class);
         lastWillService.setScheduler(scheduledExecutorService);
         doNothing().when(lastWillService).scheduleLastWill(any(), anyInt());
     }
@@ -113,6 +121,23 @@ public class DefaultLastWillServiceTest {
         callback.onFailure(new RuntimeException("Kafka is not available"));
 
         verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void givenARetainedWillWhoseStoreWriteFails_whenItFires_thenItIsCountedAsDroppedAndNotPublished() {
+        doCallRealMethod().when(lastWillService).scheduleLastWill(any(), anyInt());
+        doReturn(mock(ScheduledFuture.class)).when(scheduledExecutorService).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        when(sessionInfo.getClientId()).thenReturn("will-client");
+        when(retainedMsgProcessor.process(any())).thenThrow(new StoreException("disk"));
+        PublishMsg will = getPublishMsg().toBuilder().topicName("will/topic").isRetained(true).build();
+
+        lastWillService.scheduleLastWill(new DefaultLastWillService.MsgWithSessionInfo(will, sessionInfo, PublisherIdentity.EMPTY), 0);
+        ArgumentCaptor<Runnable> willTask = ArgumentCaptor.forClass(Runnable.class);
+        verify(scheduledExecutorService).schedule(willTask.capture(), eq(0L), eq(TimeUnit.SECONDS));
+        willTask.getValue().run();
+
+        verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
+        verify(msgDispatcherService, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
     }
 
     @Test

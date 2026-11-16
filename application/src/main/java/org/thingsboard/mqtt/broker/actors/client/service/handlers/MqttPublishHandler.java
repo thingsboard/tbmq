@@ -38,8 +38,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
-import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
-import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -198,15 +197,21 @@ public class MqttPublishHandler {
     }
 
     private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper, Throwable t) {
+        boolean limitExceeded = PublishFailures.isLimitExceeded(t);
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             if (mqttMsgWrapper != null) {
                 // the error PUBACK/PUBREC goes through the ordered queue, otherwise the failed msg blocks all later responses
-                mqttMsgWrapper.setLimitExceeded(t instanceof PublishLimitExceededException);
+                mqttMsgWrapper.setLimitExceeded(limitExceeded);
                 mqttMsgWrapper.setPersistFailed(true);
                 sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
             }
+        } else if (limitExceeded && MqttQoS.AT_MOST_ONCE.value() == publishMsg.getQos()) {
+            // a QoS 0 msg the broker has no room for is dropped, which QoS 0 allows: the connection stays open
+            return;
+        } else if (limitExceeded) {
+            disconnectClient(ctx, DisconnectReasonType.ON_QUOTA_EXCEEDED, "Publish refused: " + t.getMessage());
         } else {
-            disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
+            disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg");
         }
     }
 
@@ -260,11 +265,11 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
-                    if (t instanceof PipelineClosedException) {
+                    if (PublishFailures.isPipelineClosed(t)) {
                         handlePipelineClosed(ctx, publishMsg, t);
                         return;
                     }
-                    if (t instanceof PublishLimitExceededException) {
+                    if (PublishFailures.isLimitExceeded(t)) {
                         // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
                         log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
                     } else {

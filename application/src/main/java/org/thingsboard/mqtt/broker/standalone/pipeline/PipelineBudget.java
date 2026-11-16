@@ -97,12 +97,28 @@ public class PipelineBudget {
             if (queuedMessages > 0 && queuedBytes + bytes > maxBytes) {
                 return false;
             }
-            queuedMessages++;
-            queuedBytes += bytes;
-            if (!paused && abovePause()) {
-                paused = true;
-            }
+            take(bytes);
             return true;
+        }
+    }
+
+    /**
+     * Takes one message of {@code bytes} bytes even when that goes over a limit. It is for a publish whose effects
+     * were applied before it reached the pipeline, so a refusal could no longer undo them.
+     */
+    public void acquire(int bytes) {
+        requireNotNegative(bytes);
+        synchronized (lock) {
+            take(bytes);
+        }
+    }
+
+    // called with the lock held
+    private void take(int bytes) {
+        queuedMessages++;
+        queuedBytes += bytes;
+        if (!paused && abovePause()) {
+            paused = true;
         }
     }
 

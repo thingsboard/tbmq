@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -59,7 +60,11 @@ public class SparkplugCertificateRepublisherImpl implements SparkplugCertificate
 
                 @Override
                 public void onFailure(Throwable t) {
-                    log.warn("Failed to republish Sparkplug certificate on topic {}", certTopic, t);
+                    if (PublishFailures.isExpected(t)) {
+                        log.warn("Failed to republish Sparkplug certificate on topic {}: {}", certTopic, t.getMessage());
+                    } else {
+                        log.warn("Failed to republish Sparkplug certificate on topic {}", certTopic, t);
+                    }
                 }
             });
         } catch (Exception e) {

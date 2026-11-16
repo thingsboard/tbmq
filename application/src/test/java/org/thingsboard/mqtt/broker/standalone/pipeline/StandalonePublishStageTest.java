@@ -116,7 +116,7 @@ class StandalonePublishStageTest {
         properties.getDispatch().setPartitions(4);
         budget = new PipelineBudget(MAX_MESSAGES, UNLIMITED_BYTES, 80, 50);
         queue = startedQueue();
-        publisher = new StandalonePublishMsgQueuePublisher(budget, queue, statsClient);
+        publisher = new StandalonePublishMsgQueuePublisher(budget, queue);
     }
 
     @AfterEach
@@ -151,7 +151,7 @@ class StandalonePublishStageTest {
     }
 
     @Test
-    void aFullPipelineDropsQos0AndRefusesQos1() {
+    void aFullPipelineRefusesEveryQosAndLeavesTheCountToTheCaller() {
         TbQueueCallback cb0 = mock(TbQueueCallback.class);
         TbQueueCallback cb1 = mock(TbQueueCallback.class);
         TbQueueCallback cb2 = mock(TbQueueCallback.class);
@@ -161,9 +161,9 @@ class StandalonePublishStageTest {
         publisher.sendMsg(qos1("t/1"), cb1);
         publisher.sendMsg(msg("t/1", 2, 3), cb2);
 
-        verify(cb0).onSuccess(null);
-        verify(cb0, never()).onFailure(any());
-        verify(statsClient, times(1)).reportDroppedMsgs();
+        // a QoS 0 refusal is a failure too: a REST caller must not report it as accepted
+        verify(cb0).onFailure(isA(PublishLimitExceededException.class));
+        verify(cb0, never()).onSuccess(any());
         ArgumentCaptor<Throwable> refusal = ArgumentCaptor.forClass(Throwable.class);
         verify(cb1).onFailure(refusal.capture());
         assertThat(refusal.getValue()).isInstanceOf(PublishLimitExceededException.class);
@@ -172,7 +172,22 @@ class StandalonePublishStageTest {
         verify(cb1, never()).onSuccess(any());
         verify(cb2).onFailure(isA(PublishLimitExceededException.class));
         verify(cb2, never()).onSuccess(any());
-        verifyNoInteractions(msgDispatcherService);
+        verifyNoInteractions(msgDispatcherService, statsClient);
+        assertThat(budget.queuedMessages()).isEqualTo(MAX_MESSAGES);
+    }
+
+    @Test
+    void aFullPipelineStillAcceptsARetainedPublishAndCountsIt() throws Exception {
+        fillBudget();
+        TbProtoQueueMsg<PublishMsgProto> retained = new TbProtoQueueMsg<>("t/1",
+                qos1("t/1").getValue().toBuilder().setRetain(true).build(), new DefaultTbQueueMsgHeaders());
+
+        publisher.sendMsg(retained, queueCallback);
+
+        // its retained msg is stored already: a refusal would contradict it
+        nextDispatch().callback().onSuccess();
+        verify(queueCallback).onSuccess(null);
+        verify(queueCallback, never()).onFailure(any());
         assertThat(budget.queuedMessages()).isEqualTo(MAX_MESSAGES);
     }
 
@@ -325,7 +340,7 @@ class StandalonePublishStageTest {
         StandalonePublishMsgQueue notStarted = new StandalonePublishMsgQueue(properties, statsFactory);
         notStarted.init();
         try {
-            StandalonePublishMsgQueuePublisher notStartedPublisher = new StandalonePublishMsgQueuePublisher(budget, notStarted, statsClient);
+            StandalonePublishMsgQueuePublisher notStartedPublisher = new StandalonePublishMsgQueuePublisher(budget, notStarted);
             notStartedPublisher.sendMsg(qos1("t/1"), queueCallback);
             notStartedPublisher.sendMsg(qos1("t/2"), queueCallback);
             notStartedPublisher.sendMsg(qos0("t/3"), queueCallback);

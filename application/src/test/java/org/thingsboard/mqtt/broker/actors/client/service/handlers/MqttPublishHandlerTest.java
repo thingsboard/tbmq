@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -707,11 +708,28 @@ public class MqttPublishHandlerTest {
 
         ArgumentCaptor<MqttDisconnectMsg> disconnectCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
         verify(clientMqttActorManager, timeout(5000).times(2)).disconnect(eq("clientId"), disconnectCaptor.capture());
+        // the callbacks run on two threads, so the disconnects come in either order
         assertThat(disconnectCaptor.getAllValues())
-                .extracting(disconnectMsg -> disconnectMsg.getReason().getType())
-                .containsExactly(DisconnectReasonType.ON_ERROR, DisconnectReasonType.ON_ERROR);
+                .extracting(disconnectMsg -> disconnectMsg.getReason().getType(), disconnectMsg -> disconnectMsg.getReason().getMessage())
+                .containsExactlyInAnyOrder(
+                        tuple(DisconnectReasonType.ON_QUOTA_EXCEEDED, "Publish refused: pipeline is full"),
+                        tuple(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
         verify(actorRef, never()).tell(any());
         verify(tbMessageStatsReportClient, times(2)).reportDroppedMsgs();
+    }
+
+    @Test
+    public void aRefusedQos0MsgOnMqtt311IsDroppedAndTheConnectionStays() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+        processPublishMsgs(0, 1);
+
+        capturePersistCallbacks(1).get(0).onFailure(new PublishLimitExceededException("pipeline is full"));
+
+        assertDroppedWithoutDisconnect(1);
+        verify(actorRef, never()).tell(any());
     }
 
     @Test

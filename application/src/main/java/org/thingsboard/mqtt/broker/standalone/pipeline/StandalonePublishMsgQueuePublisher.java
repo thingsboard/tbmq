@@ -17,13 +17,11 @@ package org.thingsboard.mqtt.broker.standalone.pipeline;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgQueuePublisher;
 
 /**
@@ -31,8 +29,11 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgQueuePublisher;
  * stage; its callback completes after the fan-out, so the PUBACK or PUBREC goes out only once every copy was handed
  * to Netty or written to the store.
  * <p>
- * When the pipeline is full, a QoS 0 publish is dropped and counted, and a QoS 1 or 2 publish fails with
- * {@link PublishLimitExceededException}. It never blocks the caller.
+ * When the pipeline is full, the publish fails with {@link PublishLimitExceededException}, whatever its QoS: the
+ * caller decides what a refusal means for it, and counts the drop. It never blocks the caller.
+ * <p>
+ * A retained publish is never refused. Its caller has already stored its retained msg, so a refusal would leave that
+ * msg in place while the client is told the publish failed. It still takes its share, so it counts toward the limits.
  */
 @Service
 @StandaloneComponent
@@ -41,26 +42,18 @@ public class StandalonePublishMsgQueuePublisher implements PublishMsgQueuePublis
 
     private final PipelineBudget budget;
     private final StandalonePublishMsgQueue queue;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Override
     public void sendMsg(TbProtoQueueMsg<PublishMsgProto> msgProto, TbQueueCallback callback) {
         PublishMsgProto publishMsgProto = msgProto.getValue();
         int bytes = publishMsgProto.getPayload().size();
-        if (!budget.tryAcquire(bytes)) {
-            refuse(publishMsgProto, callback);
+        if (publishMsgProto.getRetain()) {
+            budget.acquire(bytes);
+        } else if (!budget.tryAcquire(bytes)) {
+            callback.onFailure(new PublishLimitExceededException("pipeline is full"));
             return;
         }
         queue.submit(msgProto, new CompleteOncePublishCallback(budget, bytes, callback));
-    }
-
-    private void refuse(PublishMsgProto publishMsgProto, TbQueueCallback callback) {
-        if (MqttQoS.AT_MOST_ONCE.value() == publishMsgProto.getQos()) {
-            tbMessageStatsReportClient.reportDroppedMsgs();
-            callback.onSuccess(null);
-        } else {
-            callback.onFailure(new PublishLimitExceededException("pipeline is full"));
-        }
     }
 
 }
