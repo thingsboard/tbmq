@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.EnhancedAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectionAdmission;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
@@ -85,6 +86,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final AuthorizationRoutingService authorizationRoutingService;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final ClientTypePolicy clientTypePolicy;
+    private final ConnectionAdmission connectionAdmission;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -289,6 +291,8 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     void resetStateToDisconnected(ClientActorState state) {
         state.updateSessionState(SessionState.DISCONNECTED);
+        // no disconnect follows a reset, and the disconnect is what ends an admitted connect otherwise
+        connectionAdmission.release(state.getCurrentSessionId());
     }
 
     /**

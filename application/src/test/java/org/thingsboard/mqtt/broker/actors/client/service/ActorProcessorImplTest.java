@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectionAdmission;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
@@ -105,6 +106,7 @@ public class ActorProcessorImplTest {
     AuthorizationRoutingService authorizationRoutingService;
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     ClientTypePolicy clientTypePolicy;
+    ConnectionAdmission connectionAdmission;
 
     ClientActorState clientActorState;
 
@@ -119,11 +121,12 @@ public class ActorProcessorImplTest {
         blockedClientService = mock(BlockedClientService.class);
         integrationLifecycleEventPublisher = mock(IntegrationLifecycleEventPublisher.class);
         clientTypePolicy = mock(ClientTypePolicy.class);
+        connectionAdmission = mock(ConnectionAdmission.class);
         lenient().when(clientTypePolicy.resolve(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
         lenient().when(clientTypePolicy.resolveOnReAuth(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, enhancedAuthenticationService,
                 mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService, integrationLifecycleEventPublisher,
-                clientTypePolicy));
+                clientTypePolicy, connectionAdmission));
         clientActorState = new DefaultClientActorState(CLIENT_ID, false, 0);
     }
 
@@ -526,6 +529,7 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).setUsername(any());
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
+        verify(sessionCtxMock).getSessionId();
         verifyNoMoreInteractions(sessionCtxMock);
 
         verify(mqttMessageGenerator).createMqttConnAckMsg(eq(CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD));
@@ -557,6 +561,7 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).setUsername(any());
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
+        verify(sessionCtxMock).getSessionId();
         verifyNoMoreInteractions(sessionCtxMock);
 
         verify(mqttMessageGenerator).createMqttConnAckMsg(eq(CONNECTION_REFUSED_UNSPECIFIED_ERROR));
@@ -580,11 +585,29 @@ public class ActorProcessorImplTest {
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
+        verify(sessionCtxMock).getSessionId();
         verifyNoMoreInteractions(sessionCtxMock);
 
         verify(mqttMessageGenerator).createMqttConnAckMsg(eq(CONNECTION_REFUSED_NOT_AUTHORIZED_5));
         verify(ctxMock).writeAndFlush(any());
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.DISCONNECTED);
+    }
+
+    @Test
+    public void givenAConnectBeingAccepted_whenOnEnhancedAuthContinue_thenItsConnectIsReleased() {
+        // the reset closes the channel without a disconnect, so the channel-closed disconnect finds nothing to do
+        updateSessionState(SessionState.CONNECTING);
+        ClientSessionCtx sessionCtxMock = mock(ClientSessionCtx.class);
+        UUID sessionId = UUID.randomUUID();
+        when(sessionCtxMock.getSessionId()).thenReturn(sessionId);
+        when(sessionCtxMock.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        when(sessionCtxMock.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        clientActorState.setClientSessionCtx(sessionCtxMock);
+
+        actorProcessor.onEnhancedAuthContinue(clientActorState, mock(MqttAuthMsg.class));
+
+        assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.DISCONNECTED);
+        verify(connectionAdmission).release(sessionId);
     }
 
     @Test
