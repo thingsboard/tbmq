@@ -30,6 +30,9 @@ public class MqttMsgWrapper {
     private volatile boolean ack;
     @Setter
     private volatile boolean persistFailed;
+    // the persist failed because a limit was hit: the failure code is Quota exceeded
+    @Setter
+    private volatile boolean limitExceeded;
 
     public static MqttMsgWrapper newInstance(int msgId) {
         return MqttMsgWrapper.builder().msgId(msgId).build();

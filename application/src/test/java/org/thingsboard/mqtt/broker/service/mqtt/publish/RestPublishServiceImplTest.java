@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -27,15 +31,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -64,6 +71,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -97,6 +105,7 @@ class RestPublishServiceImplTest {
     @BeforeEach
     void setUp() {
         when(statsManager.getRestPublishStats()).thenReturn(restPublishStats);
+        lenient().when(msgDispatcherService.hasCapacity(any())).thenReturn(true);
         service.maxPayloadSize = 64;
         service.init();
     }
@@ -331,6 +340,38 @@ class RestPublishServiceImplTest {
     }
 
     @Test
+    void givenNoQueueCapacity_whenPublishRetained_thenRefusedBeforeTheRetainedMsgIsStored() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setRetain(true);
+
+        ListenableFuture<RestPublishResponse> future = service.publish(request);
+
+        assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCauseInstanceOf(PublishLimitExceededException.class);
+        verify(retainedMsgProcessor, never()).process(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
+        verify(restPublishStats).increment(RestPublishOutcome.QUOTA_EXCEEDED);
+    }
+
+    @Test
+    void givenRetainedStoreFailure_whenPublish_thenFutureFailsWithoutDispatchAndDropCounted() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        StoreException failure = new StoreException("disk");
+        when(retainedMsgProcessor.process(any())).thenThrow(failure);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setRetain(true);
+
+        ListenableFuture<RestPublishResponse> future = service.publish(request);
+
+        assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCause(failure);
+        verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
+        verify(tbMessageStatsReportClient).reportDroppedMsgs();
+        verify(restPublishStats).increment(RestPublishOutcome.FAILED);
+    }
+
+    @Test
     void givenNoRetainFlag_whenPublish_thenRetainedProcessorNotInvolved() {
         when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
 
@@ -364,6 +405,33 @@ class RestPublishServiceImplTest {
 
         assertThat(future.get().getReasonCode()).isEqualTo(MqttReasonCodes.PubAck.NO_MATCHING_SUBSCRIBERS.byteValue());
         verify(restPublishStats).increment(RestPublishOutcome.ACCEPTED);
+    }
+
+    @Test
+    void givenQueueAtItsLimit_whenPublishQos0_thenFutureFailsAsQuotaExceededWithoutAWarn() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        Logger logger = (Logger) LoggerFactory.getLogger(RestPublishServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+            request.setQos(0);
+            PublishLimitExceededException refusal = new PublishLimitExceededException("pipeline is full");
+
+            ListenableFuture<RestPublishResponse> future = service.publish(request);
+            capturedQueueCallback().onFailure(refusal);
+
+            // a QoS 0 publish refused at the limit is not accepted: the controller answers 503
+            assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCause(refusal);
+            verify(tbMessageStatsReportClient).reportDroppedMsgs();
+            verify(restPublishStats).increment(RestPublishOutcome.QUOTA_EXCEEDED);
+            verify(restPublishStats, never()).increment(RestPublishOutcome.ACCEPTED);
+            assertThat(appender.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 
     @Test

@@ -20,8 +20,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+
+import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
 @Slf4j
 @Service
@@ -39,13 +42,35 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
         return processRetainedMsg(publishMsg);
     }
 
+    /**
+     * @throws StoreException if the store failed to write the retained msg before the call returned; the retained msg
+     *                        of the topic is then unchanged, and the publish must fail
+     */
     private PublishMsg processRetainedMsg(PublishMsg publishMsg) {
+        String topic = publishMsg.getTopicName();
+        StoreFailureTrackingCallback callback;
         if (payloadIsEmpty(publishMsg)) {
-            retainedMsgListenerService.clearRetainedMsgAndPersist(publishMsg.getTopicName());
+            callback = new StoreFailureTrackingCallback(createCallback(
+                    () -> log.trace("[{}] Persisted cleared retained msg", topic),
+                    t -> logFailure("[{}] Failed to persist cleared retained msg", topic, t)));
+            retainedMsgListenerService.clearRetainedMsgAndPersist(topic, callback);
         } else {
-            retainedMsgListenerService.cacheRetainedMsgAndPersist(publishMsg.getTopicName(), newRetainedMsg(publishMsg));
+            callback = new StoreFailureTrackingCallback(createCallback(
+                    () -> log.trace("[{}] Persisted retained msg", topic),
+                    t -> logFailure("[{}] Failed to persist retained msg", topic, t)));
+            retainedMsgListenerService.cacheRetainedMsgAndPersist(topic, newRetainedMsg(publishMsg), callback);
         }
+        callback.throwIfStoreFailed();
         return publishMsg;
+    }
+
+    // a StoreException is thrown to the caller, which logs it; the store has logged it with its stack trace already
+    private static void logFailure(String message, String topic, Throwable t) {
+        if (t instanceof StoreException) {
+            log.debug(message, topic, t);
+        } else {
+            log.warn(message, topic, t);
+        }
     }
 
     private boolean payloadIsEmpty(PublishMsg publishMsg) {

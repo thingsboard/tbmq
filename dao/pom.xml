@@ -209,6 +209,28 @@
                             <goal>test-jar</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <!--
+                            What lite-tests takes from dao's tests: the DeviceMsgService contract and the PostgreSQL
+                            test-database setup, without dao's test logback, property files and xss-policy.xml.
+                            Packaged at process-test-classes, so a reactor build that stops at test already hands
+                            lite-tests this jar rather than the whole test-classes directory.
+                        -->
+                        <id>lite-tests-jar</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>lite-tests</classifier>
+                            <includes>
+                                <include>org/thingsboard/mqtt/broker/dao/service/DeviceMsgServiceContract*.class</include>
+                                <include>org/thingsboard/mqtt/broker/dao/DaoSqlTest.class</include>
+                                <include>org/thingsboard/mqtt/broker/dao/PostgreSqlInitializer.class</include>
+                                <include>sql/**</include>
+                            </includes>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

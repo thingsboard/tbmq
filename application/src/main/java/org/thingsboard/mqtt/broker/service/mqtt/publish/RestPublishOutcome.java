@@ -21,9 +21,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.publish;
 public enum RestPublishOutcome {
     /** Accepted by the publish queue (regardless of whether any subscription matched). */
     ACCEPTED("accepted"),
-    /** Refused by the total incoming throughput quota. */
+    /**
+     * Refused by a broker limit: the total incoming throughput quota (HTTP 429), or the standalone edition's publish
+     * pipeline limits (HTTP 503).
+     */
     QUOTA_EXCEEDED("quotaExceeded"),
-    /** Passed the quota but the publish queue rejected the message. */
+    /** Passed the quota but failed: the retained-message store or the publish queue rejected the message. */
     FAILED("failed");
 
     private final String tagValue;

@@ -33,7 +33,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SparkplugCertificateRepublisherImplTest {
@@ -49,8 +48,21 @@ public class SparkplugCertificateRepublisherImplTest {
         msgDispatcherService = mock(MsgDispatcherService.class);
         retainedMsgProcessor = mock(RetainedMsgProcessor.class);
         when(retainedMsgProcessor.process(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(true);
         sessionInfo = mock(SessionInfo.class);
         republisher = new SparkplugCertificateRepublisherImpl(msgDispatcherService, retainedMsgProcessor);
+    }
+
+    @Test
+    public void givenNoQueueCapacity_whenMaybeRepublish_thenTheCertificateIsNeitherStoredNorDispatched() {
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+        PublishMsg original = PublishMsg.builder().packetId(42).topicName("spBv1.0/G1/NBIRTH/E1").payload(new byte[]{1})
+                .qos(0).isRetained(false).isDup(false).build();
+
+        republisher.maybeRepublish(sessionInfo, original, publisher);
+
+        verify(retainedMsgProcessor, never()).process(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
     }
 
     @Test
@@ -237,7 +249,7 @@ public class SparkplugCertificateRepublisherImplTest {
         // Must not propagate — the §10.1.4 hook must never break the primary publish path.
         republisher.maybeRepublish(sessionInfo, original, publisher);
 
-        verifyNoInteractions(msgDispatcherService);
+        verify(msgDispatcherService, never()).persistPublishMsg(any(SessionInfo.class), any(), any(), any());
     }
 
     @Test

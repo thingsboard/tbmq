@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -149,11 +151,25 @@ public class DefaultLastWillService implements LastWillService {
 
     private void processLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo) {
         PublishMsg publishMsg = lastWillMsgWithSessionInfo.getPublishMsg();
-        if (publishMsg.isRetained()) {
-            publishMsg = retainedMsgProcessor.process(publishMsg);
+        try {
+            if (publishMsg.isRetained()) {
+                if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                    // refused before its retained msg is stored, which a refusal could no longer undo
+                    SessionInfo sessionInfo = lastWillMsgWithSessionInfo.getSessionInfo();
+                    log.warn("[{}][{}] Failed to publish last will msg: the publish queue is full", sessionInfo.getClientId(), sessionInfo.getSessionId());
+                    tbMessageStatsReportClient.reportDroppedMsgs();
+                    return;
+                }
+                publishMsg = retainedMsgProcessor.process(publishMsg);
+            }
+            persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getPublisherIdentity());
+        } catch (StoreException e) {
+            SessionInfo sessionInfo = lastWillMsgWithSessionInfo.getSessionInfo();
+            log.warn("[{}][{}] Failed to store the retained last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId(), e);
+            tbMessageStatsReportClient.reportDroppedMsgs();
+        } finally {
+            delayedLastWillFuturesMap.remove(getClientId(lastWillMsgWithSessionInfo));
         }
-        persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, lastWillMsgWithSessionInfo.getPublisherIdentity());
-        delayedLastWillFuturesMap.remove(getClientId(lastWillMsgWithSessionInfo));
     }
 
     private String getClientId(MsgWithSessionInfo lastWillMsgWithSessionInfo) {
@@ -170,7 +186,11 @@ public class DefaultLastWillService implements LastWillService {
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.warn("[{}][{}] Failed to acknowledge last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId(), t);
+                        if (PublishFailures.isExpected(t)) {
+                            log.warn("[{}][{}] Failed to acknowledge last will msg: {}", sessionInfo.getClientId(), sessionInfo.getSessionId(), t.getMessage());
+                        } else {
+                            log.warn("[{}][{}] Failed to acknowledge last will msg.", sessionInfo.getClientId(), sessionInfo.getSessionId(), t);
+                        }
                         // The will was accepted at CONNECT and its publisher is gone, so a produce failure is a
                         // permanent loss with no resend — counted here, mirroring the client-PUBLISH persist-failure
                         // accounting in MqttPublishHandler.

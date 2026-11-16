@@ -79,6 +79,12 @@ public enum StatsType {
     CONNECTION_ERROR("connectionError"),
     THROUGHPUT_QUOTA_DEGRADED("throughputQuotaDegraded"),
     REST_PUBLISH_MSGS("restPublishMsgs"),
+
+    // registered in the standalone edition only
+    EXPIRED_DEVICE_MSGS("expiredDeviceMsgs"),
+    TRIMMED_DEVICE_MSGS("trimmedDeviceMsgs"),
+    UNDECODABLE_DEVICE_MSGS("undecodableDeviceMsgs"),
+    APPLICATION_CLIENTS_MAPPED_TO_DEVICE("applicationClientsMappedToDevice"),
     ;
 
     private final String printName;

@@ -1223,7 +1223,19 @@ standalone:
   # Keep it stable: sessions stored under a different ID are treated as belonging to another node.
   # Falls back to tbmq-lite if empty.
   service-id: "${STANDALONE_SERVICE_ID:tbmq-lite}"
+  dispatch:
+    # Number of dispatch workers. Each handles the publishes of the MQTT topics assigned to it, so the publishes of one topic
+    # are dispatched in order. 0 means the number of available processors, but at least 2.
+    partitions: "${STANDALONE_DISPATCH_PARTITIONS:0}"
   persist:
+    # Number of persist workers. Each writes the messages of the subscriber clients assigned to it, so the messages of one client
+    # are stored in order. 0 means the number of available processors, but at least 2.
+    partitions: "${STANDALONE_PERSIST_PARTITIONS:0}"
+    # Maximum number of messages a persist worker writes to the store in one batch.
+    batch-size: "${STANDALONE_PERSIST_BATCH_SIZE:256}"
+    # Capacity of the queue in front of each persist worker. When a queue is full, the dispatch worker that feeds it waits
+    # until the persist worker takes a batch. Must be at least 1.
+    partition-queue-capacity: "${STANDALONE_PERSIST_PARTITION_QUEUE_CAPACITY:4096}"
     # Maximum number of persisted DEVICE clients that replay their stored messages at the same time after they connect.
     # A client that connects while every replay slot is taken waits, retrying every 100 ms, and gets no messages until it takes one.
     max-concurrent-replays: "${STANDALONE_PERSIST_MAX_CONCURRENT_REPLAYS:16}"
@@ -1231,6 +1243,27 @@ standalone:
     # a client that waits for a replay slot takes its slot. The stalled client then waits for a slot like any other.
     # Defaults to 30 s (30000 ms).
     replay-stall-timeout-ms: "${STANDALONE_PERSIST_REPLAY_STALL_TIMEOUT_MS:30000}"
+  pipeline:
+    # Maximum total payload size (in bytes) of the publishes in the pipeline, from the moment a publish is accepted until its
+    # delivery and storage are done. When it is reached, further publishes are refused: QoS 0 is dropped and counted, and
+    # QoS 1/2 gets Quota exceeded (0x97) on MQTT 5, while an MQTT 3.x connection is closed. A REST publish gets 503.
+    # A single publish larger than this limit is still accepted when the pipeline is empty. A retained publish is checked
+    # against the limits before its retained message is stored, and is not refused after that.
+    # 0 means 10% of the maximum JVM heap.
+    max-bytes: "${STANDALONE_PIPELINE_MAX_BYTES:0}"
+    # Maximum number of publishes in the pipeline, counted the same way. When it is reached, further publishes are refused
+    # as with max-bytes.
+    max-messages: "${STANDALONE_PIPELINE_MAX_MESSAGES:100000}"
+    # Share (in percent, 1 to 100) of max-messages or max-bytes at which the broker stops reading from publishing connections.
+    pause-percent: "${STANDALONE_PIPELINE_PAUSE_PERCENT:80}"
+    # Share (in percent) of max-messages and max-bytes the pipeline must fall to before the broker reads from publishing
+    # connections again. Must be at least 1 and below pause-percent.
+    resume-percent: "${STANDALONE_PIPELINE_RESUME_PERCENT:50}"
+  shutdown:
+    # Time (in ms) the broker waits on shutdown for the publishes in the pipeline to be dispatched and stored before it stops
+    # the workers. QoS 0 publishes still queued after it are lost. QoS 1/2 publishes still queued were never acknowledged,
+    # so their clients can send them again. Defaults to 4 s (4000 ms).
+    drain-timeout-ms: "${STANDALONE_SHUTDOWN_DRAIN_TIMEOUT_MS:4000}"
   cache:
     # Maximum number of entries in each credentials cache. When it is reached, the least useful entries are evicted.
     # Must be above 0. The client session attribute caches (credentials name, MQTT version) are kept in the store

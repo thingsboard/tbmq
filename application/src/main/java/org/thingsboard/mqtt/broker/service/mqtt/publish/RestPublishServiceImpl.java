@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.publish;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -27,12 +28,15 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -91,7 +95,21 @@ public class RestPublishServiceImpl implements RestPublishService {
         }
 
         if (publishMsg.isRetained()) {
-            publishMsg = retainedMsgProcessor.process(publishMsg);
+            if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                // refused before its retained msg is stored, which a refusal could no longer undo
+                log.debug("[{}] REST publish refused by the queue, payload size: {}: publish queue is full", publishMsg.getTopicName(), publishMsg.getPayload().length);
+                tbMessageStatsReportClient.reportDroppedMsgs();
+                stats.increment(RestPublishOutcome.QUOTA_EXCEEDED);
+                return Futures.immediateFailedFuture(new PublishLimitExceededException("publish queue is full"));
+            }
+            try {
+                publishMsg = retainedMsgProcessor.process(publishMsg);
+            } catch (StoreException e) {
+                log.warn("[{}] Failed to store the retained REST publish, payload size: {}", publishMsg.getTopicName(), publishMsg.getPayload().length, e);
+                tbMessageStatsReportClient.reportDroppedMsgs();
+                stats.increment(RestPublishOutcome.FAILED);
+                return Futures.immediateFailedFuture(e);
+            }
         }
 
         boolean hasSubscribers = !subscriptionService.getSubscriptions(publishMsg.getTopicName()).isEmpty();
@@ -108,9 +126,13 @@ public class RestPublishServiceImpl implements RestPublishService {
 
             @Override
             public void onFailure(Throwable t) {
-                log.warn("[{}] Failed to persist REST publish to the queue, payload size: {}", msgToLog.getTopicName(), msgToLog.getPayload().length, t);
+                if (PublishFailures.isExpected(t)) {
+                    log.debug("[{}] REST publish refused by the queue, payload size: {}: {}", msgToLog.getTopicName(), msgToLog.getPayload().length, t.getMessage());
+                } else {
+                    log.warn("[{}] Failed to persist REST publish to the queue, payload size: {}", msgToLog.getTopicName(), msgToLog.getPayload().length, t);
+                }
                 tbMessageStatsReportClient.reportDroppedMsgs();
-                stats.increment(RestPublishOutcome.FAILED);
+                stats.increment(PublishFailures.isLimitExceeded(t) ? RestPublishOutcome.QUOTA_EXCEEDED : RestPublishOutcome.FAILED);
                 future.setException(t);
             }
         });

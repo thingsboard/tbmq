@@ -15,10 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.standalone.device;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.handler.codec.mqtt.MqttProperties;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.ClientActorContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
@@ -38,6 +45,9 @@ import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommand
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceQueueInfo;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
@@ -78,6 +88,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class StandaloneDeviceActorMessageProcessorTest {
@@ -98,6 +109,11 @@ class StandaloneDeviceActorMessageProcessorTest {
     private final PublishedInFlightCtx inFlightCtx2 = mock(PublishedInFlightCtx.class);
     private final ClientSessionCtx sessionCtx2 = session(inFlightCtx2);
     private final TopicSharedSubscription sub = new TopicSharedSubscription("t", "g", 1, 7);
+    private final StatsFactory statsFactory = new DefaultStatsFactory(new SimpleMeterRegistry());
+    private final DefaultCounter undecodable = statsFactory.createDefaultCounter("undecodableDeviceMsgs");
+
+    private final Logger processorLogger = (Logger) LoggerFactory.getLogger(StandaloneDeviceActorMessageProcessor.class);
+    private final ListAppender<ILoggingEvent> processorLog = new ListAppender<>();
 
     // the queue the mocked store serves: what RocksDbDeviceMsgQueueStore keeps, without expiry
     private final List<Entry> queue = new ArrayList<>();
@@ -107,6 +123,10 @@ class StandaloneDeviceActorMessageProcessorTest {
 
     @BeforeEach
     void setUp() {
+        processorLog.start();
+        processorLogger.addAppender(processorLog);
+        processorLogger.setAdditive(false);
+
         ClientActorContext clientActorContext = mock(ClientActorContext.class);
         when(systemContext.getClientActorContext()).thenReturn(clientActorContext);
         when(clientActorContext.getClientLogger()).thenReturn(mock(ClientLogger.class));
@@ -145,7 +165,14 @@ class StandaloneDeviceActorMessageProcessorTest {
         }).when(store).removeQueue(CLIENT_ID);
 
         processor = new StandaloneDeviceActorMessageProcessor(systemContext, CLIENT_ID, store, replayLimiter, READ_PAGE_SIZE,
-                Clock.fixed(Instant.ofEpochMilli(NOW_MS), ZoneOffset.UTC));
+                Clock.fixed(Instant.ofEpochMilli(NOW_MS), ZoneOffset.UTC), undecodable);
+    }
+
+    @AfterEach
+    void tearDown() {
+        processorLogger.detachAppender(processorLog);
+        processorLogger.setAdditive(true);
+        processorLog.stop();
     }
 
     @Test
@@ -599,7 +626,7 @@ class StandaloneDeviceActorMessageProcessorTest {
 
     @Test
     void aReadPageSizeBelowOneIsRejected() {
-        assertThatThrownBy(() -> new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, 0))
+        assertThatThrownBy(() -> new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, statsFactory, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("store.device-msg.read-page-size");
     }
@@ -626,8 +653,97 @@ class StandaloneDeviceActorMessageProcessorTest {
 
     @Test
     void theStandaloneFactoryCreatesTheCursorProcessor() {
-        assertThat(new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, READ_PAGE_SIZE).create(systemContext, CLIENT_ID))
+        assertThat(new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, statsFactory, READ_PAGE_SIZE).create(systemContext, CLIENT_ID))
                 .isExactlyInstanceOf(StandaloneDeviceActorMessageProcessor.class);
+    }
+
+    @Test
+    void anUndecodableEntryIsSkippedRemovedAndCountedAndTheNextOneIsDelivered() {
+        givenQueue(1);
+        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
+        appendEntries(3, 3);
+
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+
+        verify(delivery).sendPublishMsgToClient(eq(sessionCtx), argThat(m -> m.getPacketId() == 1), eq(false));
+        verify(delivery).sendPublishMsgToClient(eq(sessionCtx), argThat(m -> m.getPacketId() == 3), eq(false));
+        verify(delivery, times(2)).sendPublishMsgToClient(any(), any(), anyBoolean());
+        verify(store).remove(CLIENT_ID, 2);
+        assertThat(queue).extracting(Entry::packetId).containsExactly(1, 3);
+        assertThat(undecodable.get()).isOne();
+        verifyNoInteractions(clientMqttActorManager);                                   // the client stays connected
+        assertThat(processorLog.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getArgumentArray()).containsExactly(CLIENT_ID, 2L);          // the client id and the sequence
+            assertThat(event.getThrowableProxy()).isNotNull();
+        });
+    }
+
+    @Test
+    void anUndecodableEntryDoesNotTakeAPlaceOfThePage() {             // a page of one: the skipped entry must not stall the queue
+        givenQueue(1);
+        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
+        appendEntries(3, 3);
+        givenFreeSlots(1);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        clearInvocations(delivery);
+
+        processor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(1));
+
+        verify(delivery).sendPublishMsgToClient(eq(sessionCtx), argThat(m -> m.getPacketId() == 3), eq(false));
+        verify(delivery, times(1)).sendPublishMsgToClient(any(), any(), anyBoolean());
+        assertThat(queue).extracting(Entry::packetId).containsExactly(3);
+        assertThat(undecodable.get()).isOne();
+    }
+
+    @Test
+    void theFactoryHandsEveryProcessorTheOneRegisteredUndecodableCounter() {
+        StatsFactory countingFactory = mock(StatsFactory.class);
+        when(countingFactory.createDefaultCounter("undecodableDeviceMsgs")).thenReturn(undecodable);
+        var factory = new StandaloneDeviceActorMessageProcessorFactory(store, replayLimiter, countingFactory, READ_PAGE_SIZE);
+        queue.add(new Entry(1, 1, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
+        factory.create(systemContext, CLIENT_ID).processDeviceConnect(actorCtx, connected(sessionCtx));
+        queue.add(new Entry(2, 2, PersistedPacketType.PUBLISH, NOW_MS, undecodableBody()));
+
+        factory.create(systemContext, CLIENT_ID).processDeviceConnect(actorCtx, connected(sessionCtx2));
+
+        assertThat(queue).isEmpty();
+        verify(countingFactory).createDefaultCounter("undecodableDeviceMsgs");
+        verifyNoMoreInteractions(countingFactory);
+        assertThat(undecodable.get()).isEqualTo(2);                                      // both processors count into the one counter
+    }
+
+    @Test
+    void anUndecodableGroupEntryIsDroppedOnTheMoveAndTheMemberGetsTheOthers() {
+        when(sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID, sub)).thenReturn(false);
+        processor.processDeviceConnect(actorCtx, connected(sessionCtx));
+        List<byte[]> groupBodies = List.of(body(null), undecodableBody(), body(null));
+        when(store.moveQueue(eq("ss_g_t"), eq(CLIENT_ID), any())).thenAnswer(inv -> moveIntoQueue(inv.getArgument(2), groupBodies));
+
+        processor.processSharedSubscriptions(actorCtx, new SharedSubscriptionEventMsg(Set.of(sub)));
+
+        verify(delivery, times(2)).sendPublishMsgToClient(eq(sessionCtx), any(), eq(false));
+        assertThat(queue).extracting(Entry::packetId).containsExactly(1, 2);
+        assertThat(undecodable.get()).isOne();
+        verifyNoInteractions(clientMqttActorManager);                                   // the member stays connected
+        assertThat(processorLog.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getArgumentArray()).containsExactly(CLIENT_ID, "ss_g_t");    // the client id and the group key
+            assertThat(event.getThrowableProxy()).isNotNull();
+        });
+    }
+
+    // what RocksDbDeviceMsgQueueStore.moveQueue does: a body the mapper returns null for is dropped
+    private int moveIntoQueue(UnaryOperator<byte[]> mapper, List<byte[]> groupBodies) {
+        int moved = 0;
+        for (byte[] groupBody : groupBodies) {
+            byte[] body = mapper.apply(groupBody);
+            if (body != null) {
+                moved++;
+                queue.add(new Entry(moved, moved, PersistedPacketType.PUBLISH, NOW_MS, body));
+            }
+        }
+        return moved;
     }
 
     private void givenQueue(int size) {
@@ -667,6 +783,10 @@ class StandaloneDeviceActorMessageProcessorTest {
         DevicePublishMsg msg = msgWithPacketId(BrokerConstants.BLANK_PACKET_ID);
         msg.setMsgExpiryInterval(msgExpiryInterval);
         return DeviceMsgBodyCodec.toNew(msg).body();
+    }
+
+    private static byte[] undecodableBody() {
+        return new byte[]{9, 9, 9, 9, 9, 9, 9};                                          // an unknown frame format
     }
 
     private static DevicePublishMsg msgWithPacketId(int packetId) {

@@ -120,6 +120,16 @@ class RocksDbDeviceMsgQueueStoreTest {
     }
 
     @Test
+    void trimmedEntriesCountsEveryEntryTheLimitDropped() {         // limit 10
+        long before = store.trimmedEntries();
+
+        store.append(List.of(new QueueAppend("c1", msgs(LIMIT + 3))));
+
+        assertThat(store.trimmedEntries()).isEqualTo(before + 3);
+        assertThat(store.expiredEntries()).isZero();
+    }
+
+    @Test
     void readIsPagedAndResumesAfterTheLastSequence() {
         store.append(List.of(new QueueAppend("c1", msgs(7))));
 
@@ -161,6 +171,7 @@ class RocksDbDeviceMsgQueueStoreTest {
 
         assertThat(wide.read("c1", 0, 100)).extracting(StoredDeviceMsg::sequence).containsExactly(65_536L);
         assertThat(wide.info("c1").count()).isEqualTo(1);
+        assertThat(wide.trimmedEntries()).isOne();                       // the entry behind the packet id window
         assertThat(wide.remove("c1", 1)).isTrue();
         assertThat(wide.info("c1").count()).isZero();
     }
@@ -225,6 +236,7 @@ class RocksDbDeviceMsgQueueStoreTest {
         assertThat(store.read("c1", 0, 100)).extracting(StoredDeviceMsg::packetId).containsExactly(8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
         assertThat(store.info("c1").count()).isEqualTo(10);
         assertThat(store.info("c1").firstSequence()).isEqualTo(8);
+        assertThat(store.trimmedEntries()).isEqualTo(6);                // 4 old and 2 new
     }
 
     @Test

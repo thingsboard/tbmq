@@ -56,6 +56,11 @@ public interface DeviceMsgQueueStore {
     void removeQueue(String queueKey);
 
     /**
+     * Moves the live entries of {@code fromQueueKey} to the end of {@code toQueueKey}, each body passed through
+     * {@code bodyMapper}. A body the mapper returns {@code null} for, one it cannot decode, is dropped: it is removed
+     * from {@code fromQueueKey}, not written to {@code toQueueKey}, and counted neither in the result nor in
+     * {@link #trimmedEntries()} or {@link #expiredEntries()}.
+     *
      * @return the number of entries moved; it includes the entries the limit of the target queue then trims
      */
     int moveQueue(String fromQueueKey, String toQueueKey, UnaryOperator<byte[]> bodyMapper);
@@ -78,5 +83,11 @@ public interface DeviceMsgQueueStore {
      * @return a monotonic count of every entry this store deleted because it expired
      */
     long expiredEntries();
+
+    /**
+     * @return a monotonic count of every live entry this store dropped to keep a queue within its limit or within the
+     * packet id window; an expired entry the trim drops counts in {@link #expiredEntries()} only
+     */
+    long trimmedEntries();
 
 }

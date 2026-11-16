@@ -247,6 +247,7 @@ class RocksDbDeviceMsgMoveQueueTest {
         assertThat(store.read("m1", 0, 100)).extracting(StoredDeviceMsg::packetId).containsExactly(4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
         assertThat(store.info("m1").count()).isEqualTo(10);
         assertThat(store.info("m1").firstSequence()).isEqualTo(4);
+        assertThat(store.trimmedEntries()).isEqualTo(3);
     }
 
     @Test
@@ -262,6 +263,19 @@ class RocksDbDeviceMsgMoveQueueTest {
         assertThat(store.expiredEntries()).isEqualTo(2);
         assertThat(store.info("m1").count()).isZero();
         assertThat(store.info("m1").lastPacketId()).isZero();
+    }
+
+    @Test
+    void anEntryTheMapperCannotMapIsDroppedAndTheOthersMoveInOrder() {
+        store.append(List.of(new QueueAppend("m1", msgs(1)), new QueueAppend("ss_g_t", List.of(msg("a"), msg("bad"), msg("c")))));
+
+        assertThat(store.moveQueue("ss_g_t", "m1", b -> "bad".equals(new String(b, StandardCharsets.UTF_8)) ? null : b)).isEqualTo(2);
+
+        assertThat(store.read("m1", 0, 100)).extracting(StoredDeviceMsg::packetId, m -> new String(m.body(), StandardCharsets.UTF_8))
+                .containsExactly(tuple(1, "m0"), tuple(2, "a"), tuple(3, "c"));
+        assertThat(store.info("ss_g_t").count()).isZero();
+        assertThat(store.expiredEntries()).isZero();
+        assertThat(store.trimmedEntries()).isZero();
     }
 
     @Test

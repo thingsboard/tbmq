@@ -104,6 +104,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     @Override
+    public boolean hasCapacity(PublishMsg publishMsg) {
+        int payloadBytes = publishMsg.getByteBuf() != null ? publishMsg.getByteBuf().readableBytes()
+                : publishMsg.getPayload() != null ? publishMsg.getPayload().length : 0;
+        return publishMsgQueuePublisher.hasCapacity(payloadBytes);
+    }
+
+    @Override
     public void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback) {
         PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);

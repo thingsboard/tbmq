@@ -49,10 +49,37 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <!-- the shared DeviceMsgService contract suite -->
+            <!-- the shared DeviceMsgService contract suite and the PostgreSQL test-database setup, without dao's test configuration -->
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
+            <classifier>lite-tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

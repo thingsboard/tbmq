@@ -33,10 +33,13 @@ import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -139,7 +142,17 @@ public class MqttPublishHandler {
             if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
             }
-            publishMsg = retainedMsgProcessor.process(publishMsg);
+            if (!msgDispatcherService.hasCapacity(publishMsg)) {
+                // refused before its retained msg is stored, which a refusal could no longer undo
+                onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, new PublishLimitExceededException("publish queue is full"));
+                return;
+            }
+            try {
+                publishMsg = retainedMsgProcessor.process(publishMsg);
+            } catch (StoreException e) {
+                onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, e);
+                return;
+            }
         }
 
         sparkplugCertificateRepublisher.maybeRepublish(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx));
@@ -187,15 +200,22 @@ public class MqttPublishHandler {
         }
     }
 
-    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
+    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper, Throwable t) {
+        boolean limitExceeded = PublishFailures.isLimitExceeded(t);
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             if (mqttMsgWrapper != null) {
                 // the error PUBACK/PUBREC goes through the ordered queue, otherwise the failed msg blocks all later responses
+                mqttMsgWrapper.setLimitExceeded(limitExceeded);
                 mqttMsgWrapper.setPersistFailed(true);
                 sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
             }
+        } else if (limitExceeded && MqttQoS.AT_MOST_ONCE.value() == publishMsg.getQos()) {
+            // a QoS 0 msg the broker has no room for is dropped, which QoS 0 allows: the connection stays open
+            return;
+        } else if (limitExceeded) {
+            disconnectClient(ctx, DisconnectReasonType.ON_QUOTA_EXCEEDED, "Publish refused: " + t.getMessage());
         } else {
-            disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
+            disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg");
         }
     }
 
@@ -248,13 +268,36 @@ public class MqttPublishHandler {
 
             @Override
             public void onFailure(Throwable t) {
-                callbackProcessor.submit(() -> {
-                    log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    tbMessageStatsReportClient.reportDroppedMsgs();
-                    handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper);
-                });
+                callbackProcessor.submit(() -> onPublishFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t));
             }
         });
+    }
+
+    private void onPublishFailure(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper, Throwable t) {
+        if (PublishFailures.isPipelineClosed(t)) {
+            handlePipelineClosed(ctx, publishMsg, t);
+            return;
+        }
+        if (PublishFailures.isLimitExceeded(t)) {
+            // flow control on the overload path, counted below: no WARN with a stack trace per refused msg
+            log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
+        } else {
+            log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+        }
+        tbMessageStatsReportClient.reportDroppedMsgs();
+        handleMsgPersistenceFailure(ctx, publishMsg, actorRef, mqttMsgWrapper, t);
+    }
+
+    /**
+     * The broker is shutting down and the msg was never published. It gets no PUBACK or PUBREC: its entry stays
+     * unacknowledged at its place in the ordered queue, so no later msg of the client is acknowledged before it. The
+     * client is not disconnected here: a disconnect would overtake the responses of its earlier msgs that are still on
+     * their way to the client actor. The connection closes when the server shuts down, after those responses, and a
+     * client that keeps its session resends the msg after it reconnects.
+     */
+    private void handlePipelineClosed(ClientSessionCtx ctx, PublishMsg publishMsg, Throwable t) {
+        log.debug("[{}][{}] Failed to publish msg: {}, {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t.getMessage());
+        tbMessageStatsReportClient.reportDroppedMsgs();
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {
@@ -263,7 +306,7 @@ public class MqttPublishHandler {
             return;
         }
         for (var ackMsg : ackMsgs) {
-            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubAckError() : MqttReasonCodeResolver.pubAckSuccess(ctx);
+            var ackCode = ackMsg.isPersistFailed() ? pubAckFailureCode(ackMsg) : MqttReasonCodeResolver.pubAckSuccess(ctx);
             ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
@@ -279,10 +322,18 @@ public class MqttPublishHandler {
             return;
         }
         for (var ackMsg : ackMsgs) {
-            var ackCode = ackMsg.isPersistFailed() ? MqttReasonCodeResolver.pubRecError() : MqttReasonCodeResolver.pubRecSuccess(ctx);
+            var ackCode = ackMsg.isPersistFailed() ? pubRecFailureCode(ackMsg) : MqttReasonCodeResolver.pubRecSuccess(ctx);
             ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsg.getMsgId(), ackCode));
         }
         ctx.getChannel().flush();
+    }
+
+    private static MqttReasonCodes.PubAck pubAckFailureCode(MqttMsgWrapper ackMsg) {
+        return ackMsg.isLimitExceeded() ? MqttReasonCodeResolver.pubAckQuotaExceeded() : MqttReasonCodeResolver.pubAckError();
+    }
+
+    private static MqttReasonCodes.PubRec pubRecFailureCode(MqttMsgWrapper ackMsg) {
+        return ackMsg.isLimitExceeded() ? MqttReasonCodeResolver.pubRecQuotaExceeded() : MqttReasonCodeResolver.pubRecError();
     }
 
     private void updateAwaitingPubRelPacket(ClientSessionCtx ctx, MqttMsgWrapper mqttMsgWrapper) {

@@ -20,10 +20,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -48,7 +53,7 @@ public class RetainedMsgProcessorImplTest {
 
         retainedMsgProcessor.process(publishMsg);
 
-        verify(retainedMsgListenerService, times(1)).cacheRetainedMsgAndPersist(eq("test"), any());
+        verify(retainedMsgListenerService, times(1)).cacheRetainedMsgAndPersist(eq("test"), any(), any());
     }
 
     @Test
@@ -57,7 +62,37 @@ public class RetainedMsgProcessorImplTest {
 
         retainedMsgProcessor.process(publishMsg);
 
-        verify(retainedMsgListenerService, times(1)).clearRetainedMsgAndPersist(eq("test"));
+        verify(retainedMsgListenerService, times(1)).clearRetainedMsgAndPersist(eq("test"), any());
+    }
+
+    @Test
+    public void givenAStoreThatFailsBeforeTheCallReturns_whenProcess_thenTheStoreExceptionIsThrown() {
+        StoreException failure = new StoreException("disk");
+        doAnswer(invocation -> {
+            invocation.<BasicCallback>getArgument(2).onFailure(failure);
+            return null;
+        }).when(retainedMsgListenerService).cacheRetainedMsgAndPersist(eq("test"), any(), any());
+        doAnswer(invocation -> {
+            invocation.<BasicCallback>getArgument(1).onFailure(failure);
+            return null;
+        }).when(retainedMsgListenerService).clearRetainedMsgAndPersist(eq("test"), any());
+
+        // the publish must fail: the caller counts it and answers it as failed
+        assertThatThrownBy(() -> retainedMsgProcessor.process(getPublishMsg())).isSameAs(failure);
+        assertThatThrownBy(() -> retainedMsgProcessor.process(emptyPublishMsg())).isSameAs(failure);
+    }
+
+    @Test
+    public void givenAFailureThatIsNotFromTheStore_whenProcess_thenItIsOnlyLogged() {
+        // what the cluster producer reports: never a StoreException, and normally after the call returned
+        doAnswer(invocation -> {
+            invocation.<BasicCallback>getArgument(2).onFailure(new RuntimeException("kafka"));
+            return null;
+        }).when(retainedMsgListenerService).cacheRetainedMsgAndPersist(eq("test"), any(), any());
+
+        PublishMsg publishMsg = getPublishMsg();
+
+        assertThat(retainedMsgProcessor.process(publishMsg)).isSameAs(publishMsg);
     }
 
     private PublishMsg emptyPublishMsg() {

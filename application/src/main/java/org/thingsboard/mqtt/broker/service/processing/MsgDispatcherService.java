@@ -31,4 +31,11 @@ public interface MsgDispatcherService {
 
     void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
 
+    /**
+     * Checked before an effect that a refused publish could no longer undo, such as storing its retained msg.
+     *
+     * @return {@code false} if the publish queue would refuse the publish now
+     */
+    boolean hasCapacity(PublishMsg publishMsg);
+
 }

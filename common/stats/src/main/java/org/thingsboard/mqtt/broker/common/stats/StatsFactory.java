@@ -29,6 +29,11 @@ public interface StatsFactory {
 
     <T> T createGauge(String key, T stateObject, ToDoubleFunction<T> valueFunction, String... tags);
 
+    /**
+     * Registers a counter that reads a monotonic total from {@code stateObject}, for a total that is kept elsewhere.
+     */
+    <T> void createFunctionCounter(String key, T stateObject, ToDoubleFunction<T> countFunction, String... tags);
+
     MessagesStats createMessagesStats(String key, String... tags);
 
     Timer createTimer(String key, String... tags);

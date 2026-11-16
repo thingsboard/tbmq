@@ -19,5 +19,12 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface RetainedMsgProcessor {
 
+    /**
+     * Stores the retained msg of the publish, or clears the topic's retained msg for an empty payload.
+     *
+     * @throws org.thingsboard.mqtt.broker.dao.store.StoreException if the store failed to write before the call
+     *                                                              returned; the topic's retained msg is then unchanged,
+     *                                                              and the publish must fail
+     */
     PublishMsg process(PublishMsg publishMsg);
 }

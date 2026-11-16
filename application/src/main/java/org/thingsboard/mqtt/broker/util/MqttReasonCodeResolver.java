@@ -120,6 +120,10 @@ public final class MqttReasonCodeResolver {
         return PubAck.UNSPECIFIED_ERROR;
     }
 
+    public static PubAck pubAckQuotaExceeded() {
+        return PubAck.QUOTA_EXCEEDED;
+    }
+
     public static PubRec pubRecTopicNameInvalid() {
         return PubRec.TOPIC_NAME_INVALID;
     }
@@ -130,6 +134,10 @@ public final class MqttReasonCodeResolver {
 
     public static PubRec pubRecError() {
         return PubRec.UNSPECIFIED_ERROR;
+    }
+
+    public static PubRec pubRecQuotaExceeded() {
+        return PubRec.QUOTA_EXCEEDED;
     }
 
     public static PubComp packetIdNotFound(ClientSessionCtx ctx) {

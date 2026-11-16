@@ -78,6 +78,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     private final Clock clock;
     private final ReentrantLock[] locks = new ReentrantLock[LOCK_STRIPES];
     private final AtomicLong expiredEntries = new AtomicLong();
+    private final AtomicLong trimmedEntries = new AtomicLong();
     private final AtomicLong iteratorSeeks = new AtomicLong();
 
     @Autowired
@@ -119,7 +120,10 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             changed.forEach(queue -> queue.planTrim(now));
             if (!changed.isEmpty()) {
                 store.write(batch -> changed.forEach(queue -> queue.writeTo(batch)));
-                changed.forEach(queue -> expiredEntries.addAndGet(queue.expired));
+                changed.forEach(queue -> {
+                    expiredEntries.addAndGet(queue.expired);
+                    trimmedEntries.addAndGet(queue.trimmed());
+                });
             }
             return results;
         } finally {
@@ -264,7 +268,9 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
      * next sequence and packet id of {@code toQueueKey}, its body passed through {@code bodyMapper} and its created and
      * expiry times kept; the limit trim of {@code toQueueKey} applies. An entry whose message expiry or TTL has passed
      * is dropped and counted as expired, even one already sent from {@code fromQueueKey}: it would reach the member as
-     * a new message ([MQTT-3.3.2-5]). {@code fromQueueKey} is left empty and keeps its last sequence and packet id.
+     * a new message ([MQTT-3.3.2-5]). An entry whose body {@code bodyMapper} maps to {@code null} is dropped: it is
+     * not appended, and counted neither in the result nor as expired or trimmed. {@code fromQueueKey} is left empty and
+     * keeps its last sequence and packet id.
      *
      * @return the number of entries appended to {@code toQueueKey}
      */
@@ -296,9 +302,11 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 DeviceMsgEntryCodec.Header header = DeviceMsgEntryCodec.header(value);
                 if (ttlPassed(header, now) || msgExpiryPassed(header, now)) {
                     expired++;
-                } else {
-                    to.add(header.createdTimeMs(), header.msgExpiresAtMs(), header.ttlExpiresAtMs(),
-                            bodyMapper.apply(DeviceMsgEntryCodec.body(value)));
+                    continue;
+                }
+                byte[] body = bodyMapper.apply(DeviceMsgEntryCodec.body(value));
+                if (body != null) {
+                    to.add(header.createdTimeMs(), header.msgExpiresAtMs(), header.ttlExpiresAtMs(), body);
                 }
             }
             if (to.hasEntries()) {
@@ -315,6 +323,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 }
             });
             expiredEntries.addAndGet(expired + to.expired);
+            trimmedEntries.addAndGet(to.trimmed());
             return to.entries.size();
         } finally {
             unlockAll(stripes);
@@ -384,6 +393,11 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
     @Override
     public long expiredEntries() {
         return expiredEntries.get();
+    }
+
+    @Override
+    public long trimmedEntries() {
+        return trimmedEntries.get();
     }
 
     /**
@@ -620,6 +634,13 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         }
 
         /**
+         * @return the number of live entries the trim drops: the old and new ones it drops, less the expired ones
+         */
+        int trimmed() {
+            return droppedOld.size() - expired + droppedNew;
+        }
+
+        /**
          * Drops the oldest entries until the queue fits the limit. An entry older than the last 65,535 sequences is
          * dropped too: its packet id is taken again by a newer entry. Only a queue with holes can hold one, since
          * the limit is at most 65,535. When the queue is over the limit and may hold expired entries, those go first.
@@ -639,7 +660,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                     }
                     nextOldSequence = dropOld < before.count() ? before.firstSequence() + dropOld : -1;
                 } else if (excess > 0 || before.firstSequence() < oldestInIdWindow) {
-                    nextOldSequence = scanOldEntries(excess, oldestInIdWindow);
+                    nextOldSequence = scanOldEntries(excess, oldestInIdWindow, now);
                 } else {
                     nextOldSequence = before.firstSequence();
                 }
@@ -649,11 +670,14 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         }
 
         /**
-         * Collects into {@link #droppedOld} the oldest live entries to drop.
+         * Collects into {@link #droppedOld} the oldest entries to drop, counting the expired ones among them. Only the
+         * packet id window can drop an expired entry here: a queue over the limit whose expiry bound has passed takes
+         * {@link #scanOldEntriesExpiredFirst} instead.
          *
          * @return the sequence of the oldest entry kept, or {@code -1} when every old entry is dropped
          */
-        private long scanOldEntries(int excess, long oldestInIdWindow) {
+        private long scanOldEntries(int excess, long oldestInIdWindow, long now) {
+            boolean mayHoldExpired = expiryDue(before, now);
             return scan(ENTRIES, DeviceMsgKeys.entryKey(queueKey, before.firstSequence()),
                     DeviceMsgKeys.entryKey(queueKey, before.lastSequence() + 1), iterator -> {
                         while (iterator.isValid()) {
@@ -662,6 +686,9 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                                 return sequence;
                             }
                             droppedOld.add(sequence);
+                            if (mayHoldExpired && isExpired(sequence, DeviceMsgEntryCodec.header(iterator.value()), before.sentUpTo(), now)) {
+                                expired++;
+                            }
                             iterator.next();
                         }
                         return -1L;

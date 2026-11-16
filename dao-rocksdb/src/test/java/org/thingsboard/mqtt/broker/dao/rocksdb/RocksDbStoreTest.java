@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -26,6 +30,7 @@ import org.rocksdb.FlushOptions;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -47,6 +52,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -474,6 +481,62 @@ class RocksDbStoreTest {
                 handles.forEach(ColumnFamilyHandle::close);
             }
         }
+    }
+
+    @Test
+    void closeLogsTheDurationAtWarnWhenTheFinalSyncAndCloseTakeOverASecond() {
+        AtomicLong nanos = new AtomicLong();
+        RocksDbStore store = openWithClock(dir, () -> nanos.getAndAdd(TimeUnit.MILLISECONDS.toNanos(1500)));
+        ListAppender<ILoggingEvent> logged = captureStoreLog();
+        try {
+            store.close();
+            store.close();
+        } finally {
+            releaseStoreLog(logged);
+        }
+
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("1500 ms").contains(dir.toString()));
+    }
+
+    @Test
+    void closeStaysSilentWhenTheFinalSyncAndCloseTakeUnderASecond() {
+        AtomicLong nanos = new AtomicLong();
+        RocksDbStore store = openWithClock(dir, () -> nanos.getAndAdd(TimeUnit.MILLISECONDS.toNanos(999)));
+        ListAppender<ILoggingEvent> logged = captureStoreLog();
+        try {
+            store.close();
+        } finally {
+            releaseStoreLog(logged);
+        }
+
+        assertThat(logged.list).filteredOn(event -> event.getLevel().isGreaterOrEqual(Level.WARN)).isEmpty();
+    }
+
+    private ListAppender<ILoggingEvent> captureStoreLog() {
+        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        return appender;
+    }
+
+    private void releaseStoreLog(ListAppender<ILoggingEvent> appender) {
+        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+        logger.detachAppender(appender);
+        logger.setAdditive(true);
+    }
+
+    private RocksDbStore openWithClock(Path path, LongSupplier nanoClock) {
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(path.toString());
+        properties.setWalSync("periodic");
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), nanoClock);
+        opened.add(store);
+        store.open();
+        return store;
     }
 
     private RocksDbStore open(Path path) {

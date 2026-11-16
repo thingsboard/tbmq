@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
+import org.thingsboard.mqtt.broker.service.auth.ClientTypePolicy;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventPublisher;
@@ -74,6 +75,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -102,6 +104,7 @@ public class ActorProcessorImplTest {
     BlockedClientService blockedClientService;
     AuthorizationRoutingService authorizationRoutingService;
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    ClientTypePolicy clientTypePolicy;
 
     ClientActorState clientActorState;
 
@@ -115,8 +118,12 @@ public class ActorProcessorImplTest {
         authorizationRoutingService = mock(AuthorizationRoutingService.class);
         blockedClientService = mock(BlockedClientService.class);
         integrationLifecycleEventPublisher = mock(IntegrationLifecycleEventPublisher.class);
+        clientTypePolicy = mock(ClientTypePolicy.class);
+        lenient().when(clientTypePolicy.resolve(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
+        lenient().when(clientTypePolicy.resolveOnReAuth(anyString(), any(ClientType.class))).thenAnswer(invocation -> invocation.getArgument(1));
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, enhancedAuthenticationService,
-                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService, integrationLifecycleEventPublisher));
+                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService, authorizationRoutingService, integrationLifecycleEventPublisher,
+                clientTypePolicy));
         clientActorState = new DefaultClientActorState(CLIENT_ID, false, 0);
     }
 
@@ -345,6 +352,72 @@ public class ActorProcessorImplTest {
 
         verify(mqttMessageGenerator).createMqttAuthMsg(anyString(), any(), eq(MqttReasonCodes.Auth.SUCCESS));
         verify(channelHandlerCtxMock).writeAndFlush(mqttMessageMock);
+    }
+
+    @Test
+    public void givenApplicationCredentialsOnBasicAuth_whenOnInit_thenSessionStoresTypeFromPolicy() {
+        updateSessionState(SessionState.DISCONNECTED);
+        when(clientTypePolicy.resolve(CLIENT_ID, ClientType.APPLICATION)).thenReturn(ClientType.DEVICE);
+        doReturn(getAuthResponse(true)).when(authorizationRoutingService).executeAuthFlow(any());
+        when(blockedClientService.checkBlocked(anyString(), anyString(), anyString())).thenReturn(BlockedClientResult.notBlocked());
+
+        actorProcessor.onInit(clientActorState, getSessionInitMsg(getClientSessionCtx()));
+
+        verify(clientTypePolicy).resolve(CLIENT_ID, ClientType.APPLICATION);
+        assertEquals(ClientType.DEVICE, clientActorState.getCurrentSessionCtx().getClientType());
+    }
+
+    @Test
+    public void givenApplicationCredentialsOnScramFinal_whenOnEnhancedAuthContinue_thenSessionStoresTypeFromPolicy() {
+        updateSessionState(SessionState.ENHANCED_AUTH_STARTED);
+        when(clientTypePolicy.resolve(CLIENT_ID, ClientType.APPLICATION)).thenReturn(ClientType.DEVICE);
+
+        var connectMsg = mock(MqttConnectMessage.class);
+        when(connectMsg.payload()).thenReturn(mock(MqttConnectPayload.class));
+        when(connectMsg.variableHeader()).thenReturn(mock(MqttConnectVariableHeader.class));
+        ClientSessionCtx sessionCtxMock = mock(ClientSessionCtx.class);
+        UUID sessionId = UUID.fromString("32177be8-b247-411a-bd57-94bd92ac71f7");
+        when(sessionCtxMock.getSessionId()).thenReturn(sessionId);
+        when(sessionCtxMock.getConnectMsgFromEnhancedAuth()).thenReturn(connectMsg);
+        clientActorState.setClientSessionCtx(sessionCtxMock);
+
+        EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
+        when(authResponse.clientType()).thenReturn(ClientType.APPLICATION);
+        when(authResponse.success()).thenReturn(true);
+        doReturn(authResponse).when(enhancedAuthenticationService)
+                .onAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
+
+        actorProcessor.onEnhancedAuthContinue(clientActorState, getMqttAuthMsg(sessionId));
+
+        verify(clientTypePolicy).resolve(CLIENT_ID, ClientType.APPLICATION);
+        verify(sessionCtxMock).setClientType(ClientType.DEVICE);
+        verify(sessionCtxMock, never()).setClientType(ClientType.APPLICATION);
+    }
+
+    @Test
+    public void givenApplicationCredentialsOnScramReAuth_whenOnEnhancedAuthContinue_thenSessionStoresTypeFromPolicy() {
+        updateSessionState(SessionState.CONNECTED);
+        when(clientTypePolicy.resolveOnReAuth(CLIENT_ID, ClientType.APPLICATION)).thenReturn(ClientType.DEVICE);
+
+        ClientSessionCtx sessionCtxMock = mock(ClientSessionCtx.class);
+        when(sessionCtxMock.getChannel()).thenReturn(mock(ChannelHandlerContext.class));
+        UUID sessionId = UUID.fromString("31e11192-762d-4604-bf60-ac5f1aafedc7");
+        clientActorState.setClientSessionCtx(sessionCtxMock);
+        doReturn(mock(MqttMessage.class)).when(mqttMessageGenerator).createMqttAuthMsg(anyString(), any(), any(MqttReasonCodes.Auth.class));
+
+        EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
+        when(authResponse.clientType()).thenReturn(ClientType.APPLICATION);
+        when(authResponse.success()).thenReturn(true);
+        doReturn(authResponse).when(enhancedAuthenticationService)
+                .onReAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
+
+        actorProcessor.onEnhancedAuthContinue(clientActorState, getMqttAuthMsg(sessionId));
+
+        // a re-authentication connects nothing, so the policy neither logs nor counts it
+        verify(clientTypePolicy).resolveOnReAuth(CLIENT_ID, ClientType.APPLICATION);
+        verify(clientTypePolicy, never()).resolve(anyString(), any());
+        verify(sessionCtxMock).setClientType(ClientType.DEVICE);
+        verify(sessionCtxMock, never()).setClientType(ClientType.APPLICATION);
     }
 
     @Test

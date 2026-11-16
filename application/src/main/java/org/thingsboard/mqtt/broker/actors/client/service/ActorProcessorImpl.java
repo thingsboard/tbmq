@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
+import org.thingsboard.mqtt.broker.service.auth.ClientTypePolicy;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
@@ -83,6 +84,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final BlockedClientService blockedClientService;
     private final AuthorizationRoutingService authorizationRoutingService;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
+    private final ClientTypePolicy clientTypePolicy;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -111,7 +113,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         log.debug("[{}] Connection is authenticated: {}", state.getClientId(), CONNECTION_ACCEPTED);
 
         unauthorizedClientManager.removeClientUnauthorized(state);
-        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), clientTypePolicy.resolve(state.getClientId(), authResponse.getClientType()));
         sessionCtx.setAuthDetails(authResponse.getAuthDetails());
         sessionCtx.setClientCertCn(authResponse.getClientCertCn());
 
@@ -219,7 +221,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             return;
         }
         unauthorizedClientManager.removeClientUnauthorized(state);
-        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), clientTypePolicy.resolve(state.getClientId(), authResponse.clientType()));
         updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
         // Carry the SCRAM server-final message to the CONNACK so the client can verify the server signature (RFC 5802).
         clientMqttActorManager.connect(state.getClientId(),
@@ -242,7 +244,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         unauthorizedClientManager.removeClientUnauthorized(state);
         sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
                 authResponse.response(), MqttReasonCodes.Auth.SUCCESS);
-        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), clientTypePolicy.resolveOnReAuth(state.getClientId(), authResponse.clientType()));
         sessionCtx.clearScramServer();
         sessionCtx.setAuthDetails(SCRAM.name());
     }
@@ -289,6 +291,9 @@ public class ActorProcessorImpl implements ActorProcessor {
         state.updateSessionState(SessionState.DISCONNECTED);
     }
 
+    /**
+     * @param clientType the type the session runs with, already resolved by the {@link ClientTypePolicy}
+     */
     private void finishSessionAuth(String clientId, ClientSessionCtx sessionCtx, List<AuthRulePatterns> authRulePatterns, ClientType clientType) {
         if (!CollectionUtils.isEmpty(authRulePatterns)) {
             logAuthRules(clientId, authRulePatterns);
