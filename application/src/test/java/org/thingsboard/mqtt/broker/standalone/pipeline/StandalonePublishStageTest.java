@@ -284,6 +284,16 @@ class StandalonePublishStageTest {
     }
 
     @Test
+    void givenDestroyedConsumer_whenSendMsg_thenThePublishFailsAsClosed() {
+        new StandalonePublishMsgConsumerService(queue, msgDispatcherService).destroy();
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+
+        verify(queueCallback).onFailure(isA(PipelineClosedException.class));
+        verifyNoInteractions(msgDispatcherService);
+    }
+
+    @Test
     void givenStoppedStage_whenSendMsg_thenThePublishFailsAsClosed() {
         queue.destroy();
 

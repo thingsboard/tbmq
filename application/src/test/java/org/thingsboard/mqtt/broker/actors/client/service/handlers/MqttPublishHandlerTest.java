@@ -71,6 +71,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -854,10 +855,11 @@ public class MqttPublishHandlerTest {
         verify(tbMessageStatsReportClient, times(1)).reportDroppedMsgs();
     }
 
-    // the failure callbacks run on the callback processor: once each one counted its drop, none disconnected the client
+    // the failure callbacks run on the callback processor: each one counts its drop, and none disconnects the client
+    // later either
     private void assertDroppedWithoutDisconnect(int expectedDrops) {
         verify(tbMessageStatsReportClient, timeout(5000).times(expectedDrops)).reportDroppedMsgs();
-        verify(clientMqttActorManager, never()).disconnect(any(), any());
+        verify(clientMqttActorManager, after(300).never()).disconnect(any(), any());
     }
 
     private void givenMqtt5Session() {

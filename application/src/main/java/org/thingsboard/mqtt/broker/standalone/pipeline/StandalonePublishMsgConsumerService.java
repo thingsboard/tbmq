@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.standalone.pipeline;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,12 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
     @Override
     public void startConsuming() {
         queue.start(this::dispatch);
+    }
+
+    // this bean depends on the dispatcher, so Spring destroys it first: no worker dispatches into destroyed beans
+    @PreDestroy
+    public void destroy() {
+        queue.destroy();
     }
 
     private void dispatch(List<PendingPublish> batch) {

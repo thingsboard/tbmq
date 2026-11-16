@@ -19,8 +19,8 @@ import java.io.Serial;
 
 /**
  * A publish reached the publish pipeline after it stopped accepting, because the broker is shutting down. The publish
- * gets no PUBACK or PUBREC: its client is disconnected with Server shutting down (0x8B on MQTT 5) instead, so a client
- * that keeps its session sends the publish again after it reconnects.
+ * gets no PUBACK or PUBREC, and its connection closes when the server shuts down, so a client that keeps its session
+ * sends the publish again after it reconnects.
  * <p>
  * It is the expected outcome while the broker shuts down, so it carries no stack trace: every publish still on its way
  * to the pipeline fails with it.
