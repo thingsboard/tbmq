@@ -17,8 +17,14 @@ package org.thingsboard.mqtt.broker.standalone.pipeline;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.ClassPathResource;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,39 +32,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PipelinePropertiesTest {
 
-    @Test
-    void givenYamlKeys_whenBind_thenAllSettingsAreRead() {
-        MapConfigurationPropertySource source = new MapConfigurationPropertySource(Map.ofEntries(
-                Map.entry("standalone.dispatch.partitions", "3"),
-                Map.entry("standalone.persist.partitions", "5"),
-                Map.entry("standalone.persist.batch-size", "64"),
-                Map.entry("standalone.persist.partition-queue-capacity", "128"),
-                Map.entry("standalone.persist.max-concurrent-replays", "16"),
-                Map.entry("standalone.pipeline.max-bytes", "1000"),
-                Map.entry("standalone.pipeline.max-messages", "200"),
-                Map.entry("standalone.pipeline.pause-percent", "70"),
-                Map.entry("standalone.pipeline.resume-percent", "40"),
-                Map.entry("standalone.shutdown.drain-timeout-ms", "1500"),
-                Map.entry("standalone.service-id", "node")));
-
-        PipelineProperties properties = new Binder(source).bind("standalone", PipelineProperties.class).get();
-
-        assertThat(properties.effectiveDispatchPartitions()).isEqualTo(3);
-        assertThat(properties.effectivePersistPartitions()).isEqualTo(5);
-        assertThat(properties.getPersist().getBatchSize()).isEqualTo(64);
-        assertThat(properties.getPersist().getPartitionQueueCapacity()).isEqualTo(128);
-        assertThat(properties.persistPartitionQueueCapacity()).isEqualTo(128);
-        assertThat(properties.effectiveMaxBytes()).isEqualTo(1000);
-        assertThat(properties.getPipeline().getMaxMessages()).isEqualTo(200);
-        assertThat(properties.getPipeline().getPausePercent()).isEqualTo(70);
-        assertThat(properties.getPipeline().getResumePercent()).isEqualTo(40);
-        assertThat(properties.getShutdown().getDrainTimeoutMs()).isEqualTo(1500);
-    }
+    private static final String BROKER_CONFIG = "thingsboard-mqtt-broker.yml";
 
     @Test
-    void givenDefaults_whenRead_thenTheyMatchTheYamlDefaults() {
-        PipelineProperties properties = new PipelineProperties();
+    void givenTheShippedYml_whenBound_thenEveryDefaultMatchesTheJavaDefault() {
+        PipelineProperties properties = bindShippedYml(Map.of());
 
+        // a key renamed or mistyped in the yml would fall back to the Java default silently, so pin both sides
+        assertThat(properties).usingRecursiveComparison().isEqualTo(new PipelineProperties());
         assertThat(properties.getDispatch().getPartitions()).isZero();
         assertThat(properties.getPersist().getPartitions()).isZero();
         assertThat(properties.getPersist().getBatchSize()).isEqualTo(256);
@@ -68,6 +49,30 @@ class PipelinePropertiesTest {
         assertThat(properties.getPipeline().getPausePercent()).isEqualTo(80);
         assertThat(properties.getPipeline().getResumePercent()).isEqualTo(50);
         assertThat(properties.getShutdown().getDrainTimeoutMs()).isEqualTo(4000);
+    }
+
+    @Test
+    void givenEveryDocumentedVariable_whenTheShippedYmlIsBound_thenEachSettingTakesIt() {
+        PipelineProperties properties = bindShippedYml(Map.ofEntries(
+                Map.entry("STANDALONE_DISPATCH_PARTITIONS", "3"),
+                Map.entry("STANDALONE_PERSIST_PARTITIONS", "5"),
+                Map.entry("STANDALONE_PERSIST_BATCH_SIZE", "64"),
+                Map.entry("STANDALONE_PERSIST_PARTITION_QUEUE_CAPACITY", "128"),
+                Map.entry("STANDALONE_PIPELINE_MAX_BYTES", "1000"),
+                Map.entry("STANDALONE_PIPELINE_MAX_MESSAGES", "200"),
+                Map.entry("STANDALONE_PIPELINE_PAUSE_PERCENT", "70"),
+                Map.entry("STANDALONE_PIPELINE_RESUME_PERCENT", "40"),
+                Map.entry("STANDALONE_SHUTDOWN_DRAIN_TIMEOUT_MS", "1500")));
+
+        assertThat(properties.effectiveDispatchPartitions()).isEqualTo(3);
+        assertThat(properties.effectivePersistPartitions()).isEqualTo(5);
+        assertThat(properties.getPersist().getBatchSize()).isEqualTo(64);
+        assertThat(properties.persistPartitionQueueCapacity()).isEqualTo(128);
+        assertThat(properties.effectiveMaxBytes()).isEqualTo(1000);
+        assertThat(properties.getPipeline().getMaxMessages()).isEqualTo(200);
+        assertThat(properties.getPipeline().getPausePercent()).isEqualTo(70);
+        assertThat(properties.getPipeline().getResumePercent()).isEqualTo(40);
+        assertThat(properties.getShutdown().getDrainTimeoutMs()).isEqualTo(1500);
     }
 
     @Test
@@ -120,6 +125,21 @@ class PipelinePropertiesTest {
         properties.getPipeline().setMaxBytes(-1);
 
         assertThatThrownBy(properties::effectiveMaxBytes).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // the shipped yml with only the given variables set: no system property or environment variable of this machine
+    private static PipelineProperties bindShippedYml(Map<String, Object> variables) {
+        StandardEnvironment environment = new StandardEnvironment();
+        MutablePropertySources sources = environment.getPropertySources();
+        sources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME);
+        sources.remove(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
+        sources.addFirst(new MapPropertySource("variables", variables));
+        try {
+            new YamlPropertySourceLoader().load(BROKER_CONFIG, new ClassPathResource(BROKER_CONFIG)).forEach(sources::addLast);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return Binder.get(environment).bind("standalone", PipelineProperties.class).get();
     }
 
 }
