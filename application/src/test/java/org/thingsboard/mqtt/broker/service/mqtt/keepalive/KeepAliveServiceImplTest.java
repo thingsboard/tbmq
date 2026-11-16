@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishBackpres
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -325,15 +326,25 @@ class KeepAliveServiceImplTest {
     }
 
     @Test
-    void givenSessionRefreshedByTheKeepAlive_whenAcknowledgeControlPacket_thenItIsAccepted() throws Exception {
+    void givenTheKeepAliveRefreshesTheTimeWhileThePacketIsAcknowledged_whenAcknowledgeControlPacket_thenItIsAccepted() throws Exception {
         UUID sessionId = UUID.randomUUID();
         keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
         expire();
         when(publishBackpressure.probe(eq(sessionId), anyLong())).thenReturn(KeepAliveProbe.ALIVE);
-        keepAliveService.processKeepAlive();
+        // the acknowledge reads the clock after it started, and the keep-alive thread finds the client alive and
+        // refreshes the time right then; each read is later than the one before, so the refresh changes the time
+        AtomicBoolean refreshed = new AtomicBoolean();
+        AtomicLong clock = new AtomicLong(System.currentTimeMillis());
+        doAnswer(invocation -> {
+            if (refreshed.compareAndSet(false, true)) {
+                keepAliveService.processKeepAlive();
+            }
+            return clock.incrementAndGet();
+        }).when(keepAliveService).currentTimeMillis();
 
         keepAliveService.acknowledgeControlPacket(sessionId);
 
+        verify(publishBackpressure).probe(eq(sessionId), anyLong());
         verify(clientMqttActorManager, never()).disconnect(any(), any());
     }
 

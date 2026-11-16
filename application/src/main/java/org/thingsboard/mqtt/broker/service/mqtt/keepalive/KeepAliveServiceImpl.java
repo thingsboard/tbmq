@@ -61,7 +61,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             KeepAliveProbe probe = publishBackpressure.probe(sessionId, lastPacketTime);
             if (probe == KeepAliveProbe.ALIVE) {
                 // a lost CAS means the session was refreshed or cleared meanwhile
-                keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, System.currentTimeMillis());
+                keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, currentTimeMillis());
                 continue;
             }
             if (probe == KeepAliveProbe.WAIT) {
@@ -98,7 +98,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
         if (keepAliveSeconds == 0) {
             return false;
         }
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         long actualKeepAliveMs = (long) (TimeUnit.SECONDS.toMillis(keepAliveSeconds) * 1.5);
         return lastPacketTime + actualKeepAliveMs < now;
     }
@@ -107,7 +107,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     public void registerSession(String clientId, UUID sessionId, int keepAliveSeconds) throws MqttException {
         log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
         keepAliveInfoMap.put(sessionId, new KeepAliveInfo(clientId, keepAliveSeconds,
-                new AtomicLong(System.currentTimeMillis())));
+                new AtomicLong(currentTimeMillis())));
     }
 
     @Override
@@ -125,12 +125,17 @@ public class KeepAliveServiceImpl implements KeepAliveService {
         }
         // not a compare-and-set against a value read before: the keep-alive thread may refresh the time meanwhile
         // (a probe that found the client alive), which is no reason to refuse the packet
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         long previous = keepAliveInfo.getLastPacketTime().getAndUpdate(v -> v == CLEARED_KEEP_ALIVE_VALUE ? v : now);
         if (previous == CLEARED_KEEP_ALIVE_VALUE) {
             log.warn("[{}] LastPacketTime is already cleared", sessionId);
             throw new MqttException("LastPacketTime is already cleared for session " + sessionId);
         }
+    }
+
+    // every clock read of the class, so a test can run the keep-alive between a read and the update that uses it
+    long currentTimeMillis() {
+        return System.currentTimeMillis();
     }
 
     int getKeepAliveInfoSize() {
