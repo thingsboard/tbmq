@@ -61,6 +61,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_DISCONNECT_MSG;
+import static org.thingsboard.mqtt.broker.session.DisconnectReasonType.ON_SERVER_SHUTTING_DOWN;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -257,6 +258,19 @@ public class DisconnectServiceImplTest {
         InOrder inOrder = inOrder(ctx, flowControlService);
         inOrder.verify(ctx).releasePublishedInFlightCtx();
         inOrder.verify(flowControlService).removeFromMap(eq(CLIENT_ID));
+    }
+
+    @Test
+    public void cleanupClientSession_handsTheLastWillOnBeforeTheChannelIsClosed() {
+        // the standalone shutdown takes an initiated close as the sign that a due will reached the will scheduler
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_SERVER_SHUTTING_DOWN));
+        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+
+        InOrder inOrder = inOrder(lastWillService, ctx);
+        inOrder.verify(lastWillService).removeAndExecuteLastWillIfNeeded(disconnectMsg, -1);
+        inOrder.verify(ctx).closeChannel();
     }
 
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {

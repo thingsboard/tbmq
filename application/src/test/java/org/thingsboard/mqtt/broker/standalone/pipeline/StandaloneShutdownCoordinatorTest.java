@@ -25,27 +25,42 @@ import io.netty.channel.ChannelHandlerContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class StandaloneShutdownCoordinatorTest {
 
     private final ClientSessionCtxService sessions = mock(ClientSessionCtxService.class);
+    private final ClientMqttActorManager actors = mock(ClientMqttActorManager.class);
+    private final LastWillService lastWills = mock(LastWillService.class);
     private final StandalonePublishMsgQueue dispatchStage = mock(StandalonePublishMsgQueue.class);
     private final StandaloneDeviceMsgQueueConsumer persistStage = mock(StandaloneDeviceMsgQueueConsumer.class);
     private final PipelineProperties properties = new PipelineProperties();
@@ -221,6 +236,193 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     @Test
+    void givenSessionsWithAndWithoutAWill_whenStop_thenOnlyTheWillHoldersAreDisconnectedAsServerShuttingDownBeforeTheDrain() {
+        ChannelConfig withWillConfig = mock(ChannelConfig.class);
+        ChannelConfig withoutWillConfig = mock(ChannelConfig.class);
+        ClientSessionCtx withWill = willHolder("with-will", withWillConfig);
+        ClientSessionCtx withoutWill = sessionOf(withoutWillConfig);
+        when(withoutWill.getClientId()).thenReturn("without-will");
+        when(withoutWill.getSessionId()).thenReturn(UUID.randomUUID());
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill, withoutWill));
+        disconnectsAtOnce(withWill);
+        when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        ArgumentCaptor<MqttDisconnectMsg> disconnect = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(actors).disconnect(eq("with-will"), disconnect.capture());
+        assertThat(disconnect.getValue().getSessionId()).isEqualTo(withWill.getSessionId());
+        assertThat(disconnect.getValue().getReason().getType()).isEqualTo(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN);
+        verify(actors, never()).disconnect(eq("without-will"), any());
+        // reads are paused first, so a will holder sends nothing more; its will enters the pipeline before the drain
+        InOrder order = inOrder(budget, withWillConfig, withoutWillConfig, actors, lastWills, dispatch);
+        order.verify(budget).stopResuming();
+        order.verify(withWillConfig).setAutoRead(false);
+        order.verify(withoutWillConfig).setAutoRead(false);
+        order.verify(actors).disconnect(eq("with-will"), any());
+        order.verify(lastWills).dueLastWillsHandled();
+        order.verify(dispatch).drain(anyLong());
+        assertThat(warnings()).isEmpty();
+        assertThat(infos()).first().satisfies(event -> assertThat(event.getFormattedMessage())
+                .startsWith("Disconnected 1 clients that have a Last Will in "));
+    }
+
+    @Test
+    void givenNoWillHolders_whenStop_thenNoOneIsDisconnectedAndTheWillsAreNotAwaited() {
+        ClientSessionCtx withoutWill = sessionOf(mock(ChannelConfig.class));
+        when(withoutWill.getSessionId()).thenReturn(UUID.randomUUID());
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withoutWill));
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        verifyNoInteractions(actors);
+        verify(lastWills, never()).dueLastWillsHandled();
+    }
+
+    @Test
+    void givenAnActorThatDisconnectsLater_whenStop_thenTheDueWillsAreAwaitedOnlyAfterItHasDisconnected() {
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        AtomicBoolean closed = closeFlagOf(withWill);
+        doAnswer(invocation -> {
+            Thread actor = new Thread(() -> {
+                sleep(200);
+                closed.set(true);
+            });
+            actor.start();
+            return null;
+        }).when(actors).disconnect(eq("with-will"), any());
+        AtomicBoolean closedWhenAwaited = new AtomicBoolean();
+        when(lastWills.dueLastWillsHandled()).thenAnswer(invocation -> {
+            closedWhenAwaited.set(closed.get());
+            return CompletableFuture.completedFuture(null);
+        });
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        // the actor hands a due will to the will scheduler before it closes the channel
+        assertThat(closedWhenAwaited).isTrue();
+        assertThat(warnings()).isEmpty();
+    }
+
+    @Test
+    void givenAWillHolderThatIsNeverDisconnected_whenStop_thenTheWillStepEndsAtTheDeadlineAndTheDrainStillRuns() {
+        properties.getShutdown().setDrainTimeoutMs(200);
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        when(lastWills.dueLastWillsHandled()).thenReturn(new CompletableFuture<>());
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        long tookMs = timedStop();
+
+        // the timeout is 200 ms; the bound is generous for a loaded machine yet far below the 4 s default
+        assertThat(tookMs).isLessThan(2000);
+        verify(dispatch).drain(anyLong());
+        verify(persist).drain(anyLong());
+        assertThat(warnings()).first().satisfies(event -> assertThat(event.getFormattedMessage())
+                .contains("Clients still disconnecting: 1 of 1"));
+    }
+
+    @Test
+    void givenDueWillsThatAreNeverHandled_whenStop_thenTheWillStepEndsAtTheDeadlineAndTheDrainStillRuns() {
+        properties.getShutdown().setDrainTimeoutMs(200);
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        disconnectsAtOnce(withWill);
+        when(lastWills.dueLastWillsHandled()).thenReturn(new CompletableFuture<>());
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        long tookMs = timedStop();
+
+        assertThat(tookMs).isLessThan(2000);
+        verify(dispatch).drain(anyLong());
+        verify(persist).drain(anyLong());
+        assertThat(warnings()).first().satisfies(event -> assertThat(event.getFormattedMessage())
+                .contains("Clients still disconnecting: 0 of 1")
+                .contains("Due wills: not all handed to the pipeline"));
+    }
+
+    @Test
+    void givenASlowWillStep_whenStop_thenTheDrainGetsOnlyWhatIsLeftOfTheSharedDeadline() {
+        properties.getShutdown().setDrainTimeoutMs(5000);
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        disconnectsAtOnce(withWill);
+        when(lastWills.dueLastWillsHandled()).thenAnswer(invocation -> {
+            Thread.sleep(300);
+            return CompletableFuture.completedFuture(null);
+        });
+        AtomicLong dispatchBudget = new AtomicLong();
+        PartitionedWorkers<?> dispatch = drained();
+        when(dispatch.drain(anyLong())).thenAnswer(invocation -> {
+            dispatchBudget.set(invocation.getArgument(0));
+            return true;
+        });
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        // 300 ms went to the will step: the dispatch stage gets at most the shared deadline less that
+        assertThat(dispatchBudget.get()).isBetween(0L, 5000L - 300);
+    }
+
+    @Test
+    void givenADisconnectThatFails_whenStop_thenTheOtherWillHoldersAreStillDisconnectedAndTheDrainRuns() {
+        ClientSessionCtx failing = willHolder("failing", mock(ChannelConfig.class));
+        ClientSessionCtx healthy = willHolder("healthy", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(failing, healthy));
+        doThrow(new IllegalStateException("boom")).when(actors).disconnect(eq("failing"), any());
+        disconnectsAtOnce(healthy);
+        when(lastWills.dueLastWillsHandled()).thenReturn(CompletableFuture.completedFuture(null));
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        verify(actors).disconnect(eq("healthy"), any());
+        verify(dispatch).drain(anyLong());
+        verify(persist).drain(anyLong());
+    }
+
+    @Test
+    void givenAWillStepThatThrows_whenStop_thenItDoesNotThrowAndTheDrainRuns() {
+        ClientSessionCtx withWill = willHolder("with-will", mock(ChannelConfig.class));
+        when(sessions.getAllClientSessionCtx()).thenReturn(List.of(withWill));
+        disconnectsAtOnce(withWill);
+        when(lastWills.dueLastWillsHandled()).thenThrow(new IllegalStateException("boom"));
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        verify(dispatch).drain(anyLong());
+        verify(persist).drain(anyLong());
+        assertThat(warnings()).anySatisfy(event -> assertThat(event.getLevel()).isEqualTo(Level.ERROR));
+    }
+
+    @Test
     void whenCreated_thenItStopsBeforeEveryOtherBean() {
         var coordinator = coordinator();
 
@@ -237,7 +439,42 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     private StandaloneShutdownCoordinator coordinator() {
-        return new StandaloneShutdownCoordinator(sessions, budget, dispatchStage, persistStage, properties);
+        return new StandaloneShutdownCoordinator(sessions, actors, lastWills, budget, dispatchStage, persistStage, properties);
+    }
+
+    /**
+     * A connected session with a Last Will, whose channel the client actor has not closed yet.
+     */
+    private ClientSessionCtx willHolder(String clientId, ChannelConfig config) {
+        ClientSessionCtx session = sessionOf(config);
+        UUID sessionId = UUID.randomUUID();
+        when(session.getClientId()).thenReturn(clientId);
+        when(session.getSessionId()).thenReturn(sessionId);
+        when(lastWills.hasLastWill(sessionId)).thenReturn(true);
+        closeFlagOf(session);
+        return session;
+    }
+
+    private static AtomicBoolean closeFlagOf(ClientSessionCtx session) {
+        AtomicBoolean closed = new AtomicBoolean();
+        when(session.isCloseInitiated()).thenAnswer(invocation -> closed.get());
+        return closed;
+    }
+
+    // the client actor closes the channel at the end of the disconnect, after it has handed a due will on
+    private void disconnectsAtOnce(ClientSessionCtx session) {
+        String clientId = session.getClientId();
+        AtomicBoolean closed = closeFlagOf(session);
+        doAnswer(invocation -> {
+            closed.set(true);
+            return null;
+        }).when(actors).disconnect(eq(clientId), any());
+    }
+
+    private long timedStop() {
+        long startNanos = System.nanoTime();
+        coordinator().stop();
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
     }
 
     private static PartitionedWorkers<?> drained() {
@@ -260,8 +497,20 @@ class StandaloneShutdownCoordinatorTest {
         return session;
     }
 
+    private List<ILoggingEvent> infos() {
+        return logged.list.stream().filter(event -> event.getLevel() == Level.INFO).toList();
+    }
+
     private List<ILoggingEvent> warnings() {
         return logged.list.stream().filter(event -> event.getLevel().isGreaterOrEqual(Level.WARN)).toList();
+    }
+
+    private static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private static void await(CountDownLatch latch) {

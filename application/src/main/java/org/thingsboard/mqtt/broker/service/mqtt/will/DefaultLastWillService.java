@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -122,6 +123,25 @@ public class DefaultLastWillService implements LastWillService {
         if (task != null && !task.isCancelled()) {
             task.cancel(true);
         }
+    }
+
+    @Override
+    public boolean hasLastWill(UUID sessionId) {
+        return lastWillMessages.containsKey(sessionId);
+    }
+
+    /**
+     * Queues a marker behind the wills on the scheduler: it has one thread, and runs the tasks that fall due at the
+     * same time in the order they were scheduled, so the marker runs after every will that was due when it was queued.
+     */
+    @Override
+    public CompletableFuture<Void> dueLastWillsHandled() {
+        if (scheduler == null || scheduler.isShutdown()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        CompletableFuture<Void> handled = new CompletableFuture<>();
+        scheduler.execute(() -> handled.complete(null));
+        return handled;
     }
 
     void scheduleLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo, int willDelay) {
