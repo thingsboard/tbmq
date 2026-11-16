@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
@@ -89,16 +90,16 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
 
     /**
      * Queues the copy for the worker of its subscriber and blocks while that worker's queue is full. When it cannot be
-     * queued, the callback fails instead: with {@link org.thingsboard.mqtt.broker.exception.PipelineClosedException}
-     * once the workers no longer accept copies on shutdown, which fails the whole publish the same way, or with the
-     * {@link InterruptedException} of an interrupted caller.
+     * queued, the callback fails instead, with {@link PipelineClosedException}, which fails the whole publish the
+     * same way: once the workers no longer accept copies on shutdown, or when the caller is interrupted while it
+     * waits. The caller is a dispatch worker, and only the shutdown interrupts it.
      */
     void submit(String clientId, TbProtoQueueMsg<PublishMsgProto> msg, PublishMsgCallback callback) {
         try {
             workers.submit(clientId, new PendingCopy(clientId, msg, callback));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            callback.onFailure(e);
+            callback.onFailure(new PipelineClosedException(THREAD_NAME_PREFIX + " workers: interrupted while waiting for queue space"));
         } catch (RuntimeException e) {
             callback.onFailure(e);
         }

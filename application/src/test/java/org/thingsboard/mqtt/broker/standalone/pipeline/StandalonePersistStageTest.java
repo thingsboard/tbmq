@@ -441,7 +441,7 @@ class StandalonePersistStageTest {
     }
 
     @Test
-    void givenInterruptedCaller_whenSendMsg_thenTheCopyFailsAndTheInterruptIsKept() {
+    void givenInterruptedCaller_whenSendMsg_thenTheCopyFailsAsClosedAndTheInterruptIsKept() {
         Thread.currentThread().interrupt();
         try {
             publisher.sendMsg("c1", msg("m1"), callback);
@@ -450,7 +450,8 @@ class StandalonePersistStageTest {
         } finally {
             Thread.interrupted();
         }
-        verify(callback).onFailure(isA(InterruptedException.class));
+        // only the shutdown interrupts a dispatch worker: the publish is left for the client to resend, like the others
+        verify(callback).onFailure(isA(PipelineClosedException.class));
         verify(callback, never()).onSuccess();
         assertThat(consumer.workers().queued()).isZero();
     }
