@@ -37,16 +37,21 @@ public class StandaloneClientTypePolicy implements ClientTypePolicy {
 
     @Override
     public ClientType resolve(String clientId, ClientType authenticated) {
-        if (authenticated != ClientType.APPLICATION) {
-            return authenticated;
+        ClientType resolved = map(authenticated);
+        if (resolved != authenticated) {
+            log.warn("[{}] APPLICATION clients are not supported in TBMQ Lite; connecting as DEVICE", clientId);
+            applicationClientsMappedToDevice.increment();
         }
-        log.warn("[{}] APPLICATION clients are not supported in TBMQ Lite; connecting as DEVICE", clientId);
-        applicationClientsMappedToDevice.increment();
-        return ClientType.DEVICE;
+        return resolved;
     }
 
     @Override
     public ClientType resolveOnReAuth(String clientId, ClientType authenticated) {
+        return map(authenticated);
+    }
+
+    // the standalone edition has no APPLICATION persistence
+    private static ClientType map(ClientType authenticated) {
         return authenticated == ClientType.APPLICATION ? ClientType.DEVICE : authenticated;
     }
 
