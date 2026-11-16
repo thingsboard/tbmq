@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,9 @@ import java.util.function.Consumer;
 /**
  * A fixed set of worker threads, each with its own queue. Items with the same key always go to the same worker, so
  * their order is kept. A worker takes what is waiting, up to a maximum batch, and hands it to the batch handler.
+ * <p>
+ * The queues accept items from construction on; the batch handler is given to {@link #start}, so the owner of the
+ * queues need not know who handles their items.
  * <p>
  * A handler that throws, even an {@link Error}, is logged and the worker goes on with the next batch; the handler
  * fails its own items.
@@ -41,7 +45,6 @@ public class PartitionedWorkers<T> {
 
     private final String threadNamePrefix;
     private final int maxBatch;
-    private final Consumer<List<T>> batchHandler;
     private final List<BlockingQueue<T>> queues;
     private final List<Thread> threads = new ArrayList<>();
     private final Object idleMonitor = new Object();
@@ -51,11 +54,13 @@ public class PartitionedWorkers<T> {
     private volatile boolean accepting = true;
     private volatile boolean stopped;
     private boolean started;
+    // set before the worker threads start, which makes it visible to them
+    private Consumer<List<T>> batchHandler;
 
     /**
      * @param queueCapacity the capacity of each worker's queue; 0 means unbounded
      */
-    public PartitionedWorkers(String threadNamePrefix, int partitions, int queueCapacity, int maxBatch, Consumer<List<T>> batchHandler) {
+    public PartitionedWorkers(String threadNamePrefix, int partitions, int queueCapacity, int maxBatch) {
         if (partitions < 1) {
             throw new IllegalArgumentException("partitions must be at least 1, but was " + partitions);
         }
@@ -67,18 +72,22 @@ public class PartitionedWorkers<T> {
         }
         this.threadNamePrefix = threadNamePrefix;
         this.maxBatch = maxBatch;
-        this.batchHandler = batchHandler;
         this.queues = new ArrayList<>(partitions);
         for (int i = 0; i < partitions; i++) {
             queues.add(queueCapacity == 0 ? new LinkedBlockingQueue<>() : new LinkedBlockingQueue<>(queueCapacity));
         }
     }
 
-    public synchronized void start() {
+    /**
+     * Starts the worker threads, which hand the items to the batch handler, the ones queued so far first.
+     */
+    public synchronized void start(Consumer<List<T>> batchHandler) {
+        Objects.requireNonNull(batchHandler, "batchHandler");
         if (started) {
             throw new IllegalStateException(threadNamePrefix + " workers are already started");
         }
         started = true;
+        this.batchHandler = batchHandler;
         for (int i = 0; i < queues.size(); i++) {
             BlockingQueue<T> queue = queues.get(i);
             threads.add(Thread.ofPlatform().name(threadNamePrefix + "-" + i).daemon().start(() -> run(queue)));

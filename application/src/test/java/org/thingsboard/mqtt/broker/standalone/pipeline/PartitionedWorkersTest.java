@@ -66,9 +66,9 @@ class PartitionedWorkersTest {
     @Test
     void givenManyItemsOverFiftyKeys_whenSubmit_thenPerKeyOrderIsKept() throws Exception {
         Map<String, List<Integer>> seen = new ConcurrentHashMap<>();
-        workers = new PartitionedWorkers<>("test-order", 4, 100, 32, batch ->
+        workers = new PartitionedWorkers<>("test-order", 4, 100, 32);
+        workers.start(batch ->
                 batch.forEach(item -> seen.computeIfAbsent(item.key(), k -> new ArrayList<>()).add(item.seq())));
-        workers.start();
 
         int total = 10_000;
         Map<String, Integer> nextSeq = new HashMap<>();
@@ -90,10 +90,10 @@ class PartitionedWorkersTest {
     @Test
     void givenSameKey_whenSubmitRepeatedly_thenAlwaysSameThread() throws Exception {
         Map<String, Set<String>> threadsByKey = new ConcurrentHashMap<>();
-        workers = new PartitionedWorkers<>("test-thread", 4, 0, 16, batch ->
+        workers = new PartitionedWorkers<>("test-thread", 4, 0, 16);
+        workers.start(batch ->
                 batch.forEach(item -> threadsByKey.computeIfAbsent(item.key(), k -> ConcurrentHashMap.newKeySet())
                         .add(Thread.currentThread().getName())));
-        workers.start();
 
         for (int i = 0; i < 2_000; i++) {
             String key = "key-" + (i % 20);
@@ -112,11 +112,11 @@ class PartitionedWorkersTest {
     void givenBacklog_whenWorkerTakesBatches_thenNoBatchExceedsMaxBatch() throws Exception {
         CountDownLatch release = new CountDownLatch(1);
         List<Integer> batchSizes = new CopyOnWriteArrayList<>();
-        workers = new PartitionedWorkers<>("test-batch", 1, 0, 10, batch -> {
+        workers = new PartitionedWorkers<>("test-batch", 1, 0, 10);
+        workers.start(batch -> {
             awaitLatch(release);
             batchSizes.add(batch.size());
         });
-        workers.start();
 
         // the first item is taken at once; the other 95 pile up behind the blocked handler
         for (int i = 0; i < 96; i++) {
@@ -134,11 +134,11 @@ class PartitionedWorkersTest {
     void givenFullQueue_whenSubmit_thenBlocksUntilHandlerFreesSpace() throws Exception {
         CountDownLatch handlerEntered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        workers = new PartitionedWorkers<>("test-full", 1, 2, 1, batch -> {
+        workers = new PartitionedWorkers<>("test-full", 1, 2, 1);
+        workers.start(batch -> {
             handlerEntered.countDown();
             awaitLatch(release);
         });
-        workers.start();
         workers.submit("k", new Item("k", 0));
         assertThat(handlerEntered.await(WAIT_SECONDS, TimeUnit.SECONDS)).isTrue();
         workers.submit("k", new Item("k", 1));
@@ -163,11 +163,11 @@ class PartitionedWorkersTest {
     void givenHandlerBlocked_whenReadQueued_thenReadDoesNotWait() throws Exception {
         CountDownLatch handlerEntered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        workers = new PartitionedWorkers<>("test-queued", 1, 0, 256, batch -> {
+        workers = new PartitionedWorkers<>("test-queued", 1, 0, 256);
+        workers.start(batch -> {
             handlerEntered.countDown();
             awaitLatch(release);
         });
-        workers.start();
         workers.submit("k", new Item("k", 0));
         assertThat(handlerEntered.await(WAIT_SECONDS, TimeUnit.SECONDS)).isTrue();
         for (int i = 1; i <= 5; i++) {
@@ -185,8 +185,8 @@ class PartitionedWorkersTest {
     @Test
     void givenEverythingHandled_whenDrain_thenReturnsTrue() throws Exception {
         AtomicInteger handled = new AtomicInteger();
-        workers = new PartitionedWorkers<>("test-drain", 2, 0, 8, batch -> handled.addAndGet(batch.size()));
-        workers.start();
+        workers = new PartitionedWorkers<>("test-drain", 2, 0, 8);
+        workers.start(batch -> handled.addAndGet(batch.size()));
         for (int i = 0; i < 500; i++) {
             workers.submit("key-" + i, new Item("key-" + i, i));
         }
@@ -201,11 +201,11 @@ class PartitionedWorkersTest {
     void givenHandlerStillRunning_whenDrainTimesOut_thenReturnsFalse() throws Exception {
         CountDownLatch handlerEntered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        workers = new PartitionedWorkers<>("test-timeout", 1, 0, 8, batch -> {
+        workers = new PartitionedWorkers<>("test-timeout", 1, 0, 8);
+        workers.start(batch -> {
             handlerEntered.countDown();
             awaitLatch(release);
         });
-        workers.start();
         workers.submit("k", new Item("k", 0));
         assertThat(handlerEntered.await(WAIT_SECONDS, TimeUnit.SECONDS)).isTrue();
 
@@ -218,9 +218,9 @@ class PartitionedWorkersTest {
 
     @Test
     void givenDrained_whenSubmit_thenThrowsPipelineClosedWithoutAStackTrace() throws Exception {
-        workers = new PartitionedWorkers<>("test-after-drain", 1, 0, 8, batch -> {
+        workers = new PartitionedWorkers<>("test-after-drain", 1, 0, 8);
+        workers.start(batch -> {
         });
-        workers.start();
         assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
 
         assertThatThrownBy(() -> workers.submit("k", new Item("k", 0)))
@@ -235,13 +235,13 @@ class PartitionedWorkersTest {
     void givenThrowingHandler_whenBatchFails_thenWorkerContinuesAndDrainCompletes() throws Exception {
         AtomicInteger calls = new AtomicInteger();
         List<Integer> handled = new CopyOnWriteArrayList<>();
-        workers = new PartitionedWorkers<>("test-throw", 1, 0, 1, batch -> {
+        workers = new PartitionedWorkers<>("test-throw", 1, 0, 1);
+        workers.start(batch -> {
             if (calls.incrementAndGet() == 1) {
                 throw new IllegalStateException("handler failure");
             }
             batch.forEach(item -> handled.add(item.seq()));
         });
-        workers.start();
 
         for (int i = 0; i < 5; i++) {
             workers.submit("k", new Item("k", i));
@@ -261,13 +261,13 @@ class PartitionedWorkersTest {
         try {
             AtomicInteger calls = new AtomicInteger();
             List<Integer> handled = new CopyOnWriteArrayList<>();
-            workers = new PartitionedWorkers<>("test-error", 1, 0, 1, batch -> {
+            workers = new PartitionedWorkers<>("test-error", 1, 0, 1);
+            workers.start(batch -> {
                 if (calls.incrementAndGet() == 1) {
                     throw new StackOverflowError("handler overflow");
                 }
                 batch.forEach(item -> handled.add(item.seq()));
             });
-            workers.start();
 
             for (int i = 0; i < 5; i++) {
                 workers.submit("k", new Item("k", i));
@@ -290,7 +290,8 @@ class PartitionedWorkersTest {
     void givenBlockedSubmitter_whenStop_thenSubmitFailsAndWorkersAreInterrupted() throws Exception {
         CountDownLatch handlerEntered = new CountDownLatch(1);
         AtomicInteger interrupted = new AtomicInteger();
-        workers = new PartitionedWorkers<>("test-stop", 1, 1, 1, batch -> {
+        workers = new PartitionedWorkers<>("test-stop", 1, 1, 1);
+        workers.start(batch -> {
             handlerEntered.countDown();
             try {
                 new CountDownLatch(1).await();
@@ -299,7 +300,6 @@ class PartitionedWorkersTest {
                 Thread.currentThread().interrupt();
             }
         });
-        workers.start();
         workers.submit("k", new Item("k", 0));
         assertThat(handlerEntered.await(WAIT_SECONDS, TimeUnit.SECONDS)).isTrue();
         workers.submit("k", new Item("k", 1));
@@ -318,12 +318,35 @@ class PartitionedWorkersTest {
 
     @Test
     void givenInvalidArguments_whenCreate_thenRejected() {
-        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 0, 0, 1, batch -> {
-        })).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, -1, 1, batch -> {
-        })).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, 0, 0, batch -> {
-        })).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 0, 0, 1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, -1, 1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, 0, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void givenItemsSubmittedBeforeStart_whenStart_thenTheHandlerGetsThemInOrder() throws Exception {
+        List<Integer> handled = new CopyOnWriteArrayList<>();
+        workers = new PartitionedWorkers<>("test-before-start", 1, 0, 4);
+        for (int i = 0; i < 10; i++) {
+            workers.submit("k", new Item("k", i));
+        }
+        assertThat(workers.queued()).isEqualTo(10);
+
+        workers.start(batch -> batch.forEach(item -> handled.add(item.seq())));
+
+        assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
+        assertThat(handled).containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    }
+
+    @Test
+    void givenStarted_whenStartAgain_thenRejected() {
+        workers = new PartitionedWorkers<>("test-start-twice", 1, 0, 1);
+        workers.start(batch -> {
+        });
+
+        assertThatThrownBy(() -> workers.start(batch -> {
+        })).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, 0, 1).start(null)).isInstanceOf(NullPointerException.class);
     }
 
     private static void awaitLatch(CountDownLatch latch) {

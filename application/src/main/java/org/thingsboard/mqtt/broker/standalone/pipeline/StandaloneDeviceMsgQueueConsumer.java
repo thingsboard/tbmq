@@ -72,7 +72,7 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
     @PostConstruct
     public void init() {
         workers = new PartitionedWorkers<>(THREAD_NAME_PREFIX, properties.effectivePersistPartitions(),
-                properties.persistPartitionQueueCapacity(), properties.getPersist().getBatchSize(), this::persist);
+                properties.persistPartitionQueueCapacity(), properties.getPersist().getBatchSize());
         statsFactory.createGauge(PERSIST_QUEUED_GAUGE, workers, PartitionedWorkers::queued);
         statsFactory.createFunctionCounter(StatsType.EXPIRED_DEVICE_MSGS.getPrintName(), this, StandaloneDeviceMsgQueueConsumer::expiredDeviceMsgs);
         statsFactory.createFunctionCounter(StatsType.TRIMMED_DEVICE_MSGS.getPrintName(), store, DeviceMsgQueueStore::trimmedEntries);
@@ -80,7 +80,7 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
 
     @Override
     public void startConsuming() {
-        workers.start();
+        workers.start(this::persist);
     }
 
     public PartitionedWorkers<?> workers() {

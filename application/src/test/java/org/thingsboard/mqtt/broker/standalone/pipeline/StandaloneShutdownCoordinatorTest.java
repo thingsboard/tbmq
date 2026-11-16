@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 class StandaloneShutdownCoordinatorTest {
 
     private final ClientSessionCtxService sessions = mock(ClientSessionCtxService.class);
-    private final StandalonePublishMsgConsumerService dispatchStage = mock(StandalonePublishMsgConsumerService.class);
+    private final StandalonePublishMsgQueue dispatchStage = mock(StandalonePublishMsgQueue.class);
     private final StandaloneDeviceMsgQueueConsumer persistStage = mock(StandaloneDeviceMsgQueueConsumer.class);
     private final PipelineProperties properties = new PipelineProperties();
 
@@ -136,14 +136,15 @@ class StandaloneShutdownCoordinatorTest {
         properties.getShutdown().setDrainTimeoutMs(200);
         CountDownLatch blocked = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        PartitionedWorkers<String> dispatch = new PartitionedWorkers<>("test-dispatch", 1, 0, 1, batch -> {
-            blocked.countDown();
-            await(release);
-        });
+        PartitionedWorkers<String> dispatch = new PartitionedWorkers<>("test-dispatch", 1, 0, 1);
         PartitionedWorkers<String> persist = idleWorkers();
         try {
-            dispatch.start();
-            persist.start();
+            dispatch.start(batch -> {
+                blocked.countDown();
+                await(release);
+            });
+            persist.start(batch -> {
+            });
             dispatch.submit("t", "in-handler");
             assertThat(blocked.await(10, TimeUnit.SECONDS)).isTrue();
             dispatch.submit("t", "waiting-1");
@@ -241,8 +242,7 @@ class StandaloneShutdownCoordinatorTest {
     }
 
     private static PartitionedWorkers<String> idleWorkers() {
-        return new PartitionedWorkers<>("test-idle", 1, 0, 1, batch -> {
-        });
+        return new PartitionedWorkers<>("test-idle", 1, 0, 1);
     }
 
     private static ClientSessionCtx sessionOf(ChannelConfig config) {

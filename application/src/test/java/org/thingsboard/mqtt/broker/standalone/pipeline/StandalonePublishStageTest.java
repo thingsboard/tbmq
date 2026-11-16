@@ -95,7 +95,7 @@ class StandalonePublishStageTest {
 
     private PipelineProperties properties;
     private PipelineBudget budget;
-    private StandalonePublishMsgConsumerService consumerService;
+    private StandalonePublishMsgQueue queue;
     private StandalonePublishMsgQueuePublisher publisher;
 
     record Dispatched(PublishMsgWithId msg, PublishMsgCallback callback, String thread) {
@@ -115,13 +115,13 @@ class StandalonePublishStageTest {
         properties = new PipelineProperties();
         properties.getDispatch().setPartitions(4);
         budget = new PipelineBudget(MAX_MESSAGES, UNLIMITED_BYTES, 80, 50);
-        consumerService = startedConsumer();
-        publisher = new StandalonePublishMsgQueuePublisher(budget, consumerService, statsClient);
+        queue = startedQueue();
+        publisher = new StandalonePublishMsgQueuePublisher(budget, queue, statsClient);
     }
 
     @AfterEach
     void tearDown() {
-        consumerService.destroy();
+        queue.destroy();
         consumerLogger.detachAppender(consumerLog);
         consumerLogger.setAdditive(true);
         consumerLog.stop();
@@ -268,7 +268,7 @@ class StandalonePublishStageTest {
 
     @Test
     void givenDrainedStage_whenSendMsg_thenThePublishFailsAndItsShareIsReleased() {
-        assertThat(consumerService.workers().drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
+        assertThat(queue.workers().drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
 
         publisher.sendMsg(qos1("t/1"), queueCallback);
 
@@ -285,7 +285,7 @@ class StandalonePublishStageTest {
 
     @Test
     void givenStoppedStage_whenSendMsg_thenThePublishFailsAsClosed() {
-        consumerService.destroy();
+        queue.destroy();
 
         publisher.sendMsg(qos1("t/1"), queueCallback);
 
@@ -312,7 +312,7 @@ class StandalonePublishStageTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     void givenStage_whenInit_thenTheDispatchQueueGaugeReadsTheWaitingPublishes() {
-        StandalonePublishMsgConsumerService notStarted = new StandalonePublishMsgConsumerService(properties, statsFactory, msgDispatcherService);
+        StandalonePublishMsgQueue notStarted = new StandalonePublishMsgQueue(properties, statsFactory);
         notStarted.init();
         try {
             StandalonePublishMsgQueuePublisher notStartedPublisher = new StandalonePublishMsgQueuePublisher(budget, notStarted, statsClient);
@@ -330,14 +330,16 @@ class StandalonePublishStageTest {
     }
 
     @Test
-    void givenADispatcherThatPublishesThroughTheStage_whenTheContextStarts_thenTheirConstructorCycleIsResolved(@TempDir Path tmp) throws IOException {
+    void givenADispatcherThatPublishesThroughTheStage_whenTheContextStarts_thenThereIsNoConstructorCycle(@TempDir Path tmp) throws IOException {
         // the condition evaluator captures the class loader when the context is constructed
         var beanFactory = new DefaultListableBeanFactory();
         beanFactory.setBeanClassLoader(liteEditionLoader(tmp));
+        // as in Spring Boot, which refuses circular references
+        beanFactory.setAllowCircularReferences(false);
         try (var ctx = new AnnotationConfigApplicationContext(beanFactory)) {
-            // the dispatcher first: creating it creates the publisher, which creates the consumer, which needs the dispatcher
+            // the dispatcher first: it needs the publisher, which needs the queue; the consumer needs the queue and the dispatcher
             ctx.register(PublishingDispatcher.class, StandalonePublishMsgQueuePublisher.class, StandalonePublishMsgConsumerService.class,
-                    PipelineBudget.class, PipelineProperties.class);
+                    StandalonePublishMsgQueue.class, PipelineBudget.class, PipelineProperties.class);
             ctx.registerBean(StatsFactory.class, () -> statsFactory);
             ctx.registerBean(TbMessageStatsReportClient.class, () -> statsClient);
             ctx.refresh();
@@ -387,11 +389,11 @@ class StandalonePublishStageTest {
         };
     }
 
-    private StandalonePublishMsgConsumerService startedConsumer() {
-        StandalonePublishMsgConsumerService service = new StandalonePublishMsgConsumerService(properties, statsFactory, msgDispatcherService);
-        service.init();
-        service.startConsuming();
-        return service;
+    private StandalonePublishMsgQueue startedQueue() {
+        StandalonePublishMsgQueue publishMsgQueue = new StandalonePublishMsgQueue(properties, statsFactory);
+        publishMsgQueue.init();
+        new StandalonePublishMsgConsumerService(publishMsgQueue, msgDispatcherService).startConsuming();
+        return publishMsgQueue;
     }
 
     private Dispatched nextDispatch() throws InterruptedException {

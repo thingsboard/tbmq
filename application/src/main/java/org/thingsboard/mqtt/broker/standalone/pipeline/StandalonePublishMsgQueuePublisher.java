@@ -40,7 +40,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgQueuePublisher;
 public class StandalonePublishMsgQueuePublisher implements PublishMsgQueuePublisher {
 
     private final PipelineBudget budget;
-    private final StandalonePublishMsgConsumerService consumerService;
+    private final StandalonePublishMsgQueue queue;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Override
@@ -51,7 +51,7 @@ public class StandalonePublishMsgQueuePublisher implements PublishMsgQueuePublis
             refuse(publishMsgProto, callback);
             return;
         }
-        consumerService.submit(msgProto, new CompleteOncePublishCallback(budget, bytes, callback));
+        queue.submit(msgProto, new CompleteOncePublishCallback(budget, bytes, callback));
     }
 
     private void refuse(PublishMsgProto publishMsgProto, TbQueueCallback callback) {

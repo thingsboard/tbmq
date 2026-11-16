@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 public class StandaloneShutdownCoordinator implements SmartLifecycle {
 
     private final ClientSessionCtxService clientSessionCtxService;
-    private final StandalonePublishMsgConsumerService dispatchStage;
+    private final StandalonePublishMsgQueue dispatchStage;
     private final StandaloneDeviceMsgQueueConsumer persistStage;
     private final PipelineProperties properties;
 
