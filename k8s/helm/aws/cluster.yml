@@ -89,6 +89,7 @@ managedNodeGroups:
     maxSize: 1
     minSize: 0
     labels: { role: postgresql }
+    privateNetworking: true
     volumeType: gp3
     volumeSize: 20
 
