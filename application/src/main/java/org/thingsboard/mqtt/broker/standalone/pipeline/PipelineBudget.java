@@ -53,7 +53,7 @@ public class PipelineBudget {
     private boolean paused;
 
     private final List<Runnable> resumeListeners = new CopyOnWriteArrayList<>();
-    // a notification holds the read lock and stopResuming the write lock: once stopResuming returns, no listener runs
+    // a resume holds the read lock and stopResuming the write lock: once stopResuming returns, no resume runs
     private final ReentrantReadWriteLock resumeLock = new ReentrantReadWriteLock();
     private boolean resumesStopped;
 
@@ -182,8 +182,9 @@ public class PipelineBudget {
     }
 
     /**
-     * Stops running the resume listeners for good, and waits for the ones running now to return. The shutdown calls it
-     * before it stops reading from the clients, so the releases of the drain cannot start reading again.
+     * Stops running the resume listeners and the {@link #resumeUnlessPaused} resumes for good, and waits for the ones
+     * running now to return. The shutdown calls it before it stops reading from the clients, so the releases of the
+     * drain cannot start reading again.
      */
     public void stopResuming() {
         resumeLock.writeLock().lock();
@@ -194,17 +195,32 @@ public class PipelineBudget {
         }
     }
 
+    /**
+     * Runs {@code resume} unless the usage is still paused (it reached the pause level and has not fallen back to the
+     * resume level since) or {@link #stopResuming} was called. It is for a caller that paused something after it saw
+     * the usage at the pause level, since a resume that ran between the check and the pause did not see it. While the
+     * usage is still paused, its next resume runs after this call. Like a resume listener, {@code resume} must be cheap
+     * and must not throw, and {@link #stopResuming} waits for it to return.
+     */
+    public void resumeUnlessPaused(Runnable resume) {
+        runUnlessResumingStopped(() -> {
+            boolean stillPaused;
+            synchronized (lock) {
+                stillPaused = paused;
+            }
+            if (!stillPaused) {
+                resume.run();
+            }
+        });
+    }
+
     private boolean atOrBelowResume() {
         return queuedMessages * 100L <= (long) maxMessages * resumePercent
                 && queuedBytes * 100L <= maxBytes * resumePercent;
     }
 
     private void notifyResumed() {
-        resumeLock.readLock().lock();
-        try {
-            if (resumesStopped) {
-                return;
-            }
+        runUnlessResumingStopped(() -> {
             for (Runnable listener : resumeListeners) {
                 try {
                     listener.run();
@@ -212,6 +228,16 @@ public class PipelineBudget {
                     // an Error too: the release must return, so that the publish it belongs to is still answered
                     log.error("Pipeline resume listener failed", t);
                 }
+            }
+        });
+    }
+
+    // stopResuming takes the write lock, so it waits for the action to return, and no action runs after it
+    private void runUnlessResumingStopped(Runnable action) {
+        resumeLock.readLock().lock();
+        try {
+            if (!resumesStopped) {
+                action.run();
             }
         } finally {
             resumeLock.readLock().unlock();

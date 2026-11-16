@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -56,10 +57,13 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,6 +79,7 @@ public class MqttSessionHandlerTest {
     ClientMqttActorManager clientMqttActorManager;
     TbMessageStatsReportClient tbMessageStatsReportClient;
     ConnectionStats connectionStats;
+    PublishBackpressure publishBackpressure;
     MqttSessionHandler handler;
     ChannelHandlerContext ctx;
     Channel channel;
@@ -91,6 +96,7 @@ public class MqttSessionHandlerTest {
         when(statsManager.getConnectionStats()).thenReturn(connectionStats);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         tbMessageStatsReportClient = mock(TbMessageStatsReportClient.class);
+        publishBackpressure = mock(PublishBackpressure.class);
         MqttHandlerCtx handlerCtx = new MqttHandlerCtx(
                 clientMqttActorManager,
                 mock(ClientLogger.class),
@@ -98,7 +104,8 @@ public class MqttSessionHandlerTest {
                 mqttMessageGenerator,
                 throughputQuotaService,
                 tbMessageStatsReportClient,
-                statsManager);
+                statsManager,
+                publishBackpressure);
         handlerCtx.setMaxInFlightMsgs(1000);
         handler = new MqttSessionHandler(handlerCtx, null, BrokerConstants.TCP);
 
@@ -137,6 +144,29 @@ public class MqttSessionHandlerTest {
         verify(clientMqttActorManager).disconnect(any(), any());
         verify(clientMqttActorManager, never()).processMqttMsg(any(), any());
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenFirstInboundPacket_whenChannelRead_thenBackpressureSeesTheSessionWithItsChannel() {
+        when(addressAttr.get()).thenReturn(REMOTE);
+        when(channel.attr(MqttSessionHandler.CLIENT_ID_ATTR)).thenReturn(mock(Attribute.class));
+        AtomicReference<UUID> sessionIdAtCall = new AtomicReference<>();
+        AtomicReference<ChannelHandlerContext> channelAtCall = new AtomicReference<>();
+        doAnswer(invocation -> {
+            ClientSessionCtx session = invocation.getArgument(0);
+            sessionIdAtCall.set(session.getSessionId());
+            channelAtCall.set(session.getChannel());
+            return null;
+        }).when(publishBackpressure).onChannelRead(any());
+
+        handler.channelRead(ctx, MqttMessageBuilders.connect()
+                .clientId("client")
+                .protocolVersion(MqttVersion.MQTT_5)
+                .build());
+
+        assertThat(sessionIdAtCall.get()).isEqualTo(handler.getSessionId());
+        assertThat(channelAtCall.get()).isSameAs(ctx);
     }
 
     // --- [MQTT-3.14.2-2]: a client may send DISCONNECT right behind CONNECT, before the actor has handled the CONNECT,

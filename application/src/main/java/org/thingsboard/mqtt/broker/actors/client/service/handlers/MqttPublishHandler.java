@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRe
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -76,6 +77,7 @@ public class MqttPublishHandler {
     private final PublishMsgValidationService publishMsgValidationService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final SparkplugCertificateRepublisher sparkplugCertificateRepublisher;
+    private final PublishBackpressure publishBackpressure;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -251,6 +253,7 @@ public class MqttPublishHandler {
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
+        publishBackpressure.onPublish(ctx);
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {

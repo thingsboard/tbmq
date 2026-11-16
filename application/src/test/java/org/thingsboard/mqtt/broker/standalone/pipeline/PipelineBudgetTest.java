@@ -192,6 +192,78 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenUsageStillPaused_whenResumeUnlessPaused_thenItDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+        // below the pause level, but not yet down to the resume level
+        budget.release(1);
+        budget.release(1);
+
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(0);
+    }
+
+    @Test
+    void givenNeverPausedOrResumedSince_whenResumeUnlessPaused_thenItRuns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+        for (int i = 0; i < 3; i++) {
+            budget.release(1);
+        }
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(2);
+    }
+
+    @Test
+    void givenResumingStopped_whenResumeUnlessPaused_thenItDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+
+        budget.stopResuming();
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(0);
+    }
+
+    @Test
+    void givenAResumeUnlessPausedRunning_whenStopResuming_thenItWaitsForTheResumeToReturn() throws Exception {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        CountDownLatch resumeEntered = new CountDownLatch(1);
+        CountDownLatch releaseResume = new CountDownLatch(1);
+        ExecutorService threads = Executors.newFixedThreadPool(2);
+        try {
+            threads.submit(() -> budget.resumeUnlessPaused(() -> {
+                resumeEntered.countDown();
+                try {
+                    releaseResume.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+            assertThat(resumeEntered.await(10, TimeUnit.SECONDS)).isTrue();
+
+            Future<?> stop = threads.submit(budget::stopResuming);
+
+            assertThatThrownBy(() -> stop.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+            releaseResume.countDown();
+            stop.get(10, TimeUnit.SECONDS);
+        } finally {
+            releaseResume.countDown();
+            threads.shutdownNow();
+        }
+    }
+
+    @Test
     void givenRoomOrNot_whenHasRoom_thenItAnswersLikeTryAcquireWithoutTakingAnything() {
         PipelineBudget budget = new PipelineBudget(2, 10, 80, 50);
         assertThat(budget.hasRoom(50)).as("an empty pipeline admits one oversized message").isTrue();
