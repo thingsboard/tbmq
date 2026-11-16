@@ -140,6 +140,8 @@ public class MqttPublishHandler {
             return;
         }
 
+        // once for every publish that reaches the queue, also for a retained msg the queue has no room for
+        publishBackpressure.onPublish(ctx);
         if (publishMsg.isRetained()) {
             if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
@@ -253,7 +255,6 @@ public class MqttPublishHandler {
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
-        publishBackpressure.onPublish(ctx);
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, PublisherIdentity.of(ctx), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {

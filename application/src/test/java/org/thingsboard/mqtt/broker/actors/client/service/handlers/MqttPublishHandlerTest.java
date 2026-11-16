@@ -495,6 +495,21 @@ public class MqttPublishHandlerTest {
         InOrder inOrder = inOrder(publishBackpressure, msgDispatcherService);
         inOrder.verify(publishBackpressure).onPublish(ctx);
         inOrder.verify(msgDispatcherService).persistPublishMsg(any(), eq(publishMsg), any(), any());
+        verify(publishBackpressure, times(1)).onPublish(any());
+    }
+
+    @Test
+    public void givenRetainedPubMsgWithoutQueueCapacity_whenProcessPubMsg_thenBackpressureSeesThePublishBeforeTheRefusal() {
+        givenMqtt5Session();
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(1, 1, true)), actorRef);
+
+        InOrder inOrder = inOrder(publishBackpressure, msgDispatcherService);
+        inOrder.verify(publishBackpressure).onPublish(ctx);
+        inOrder.verify(msgDispatcherService).hasCapacity(any());
+        verify(publishBackpressure, times(1)).onPublish(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
     }
 
     @Test
