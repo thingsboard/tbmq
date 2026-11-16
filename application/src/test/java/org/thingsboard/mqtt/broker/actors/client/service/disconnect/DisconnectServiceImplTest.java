@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectionAdmission;
 import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
@@ -54,7 +56,9 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -99,6 +103,8 @@ public class DisconnectServiceImplTest {
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoBean
     StatsManager statsManager;
+    @MockitoBean
+    ConnectionAdmission connectionAdmission;
 
     @MockitoSpyBean
     DisconnectServiceImpl disconnectService;
@@ -276,16 +282,43 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
-    public void cleanupClientSession_handsTheLastWillOnBeforeTheChannelIsClosed() {
-        // the standalone shutdown takes an initiated close as the sign that a due will reached the will scheduler
+    public void givenAnEstablishedSession_whenDisconnect_thenItsConnectIsReleasedAfterTheWillAndTheChannelClose() {
+        // a shutdown that waits for the connects in progress then finds the will of this one on the will scheduler
         when(sessionInfo.isPersistent()).thenReturn(false);
+        UUID sessionId = UUID.randomUUID();
+        when(ctx.getSessionId()).thenReturn(sessionId);
 
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(ON_SERVER_SHUTTING_DOWN));
-        disconnectService.cleanupClientSession(clientActorState, disconnectMsg, -1);
+        disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        InOrder inOrder = inOrder(lastWillService, ctx);
+        InOrder inOrder = inOrder(lastWillService, ctx, connectionAdmission);
         inOrder.verify(lastWillService).removeAndExecuteLastWillIfNeeded(disconnectMsg, -1);
         inOrder.verify(ctx).closeChannel();
+        inOrder.verify(connectionAdmission).release(sessionId);
+    }
+
+    @Test
+    public void givenSessionInfoIsNull_whenDisconnect_thenItsConnectIsReleased() {
+        when(ctx.getSessionInfo()).thenReturn(null);
+        UUID sessionId = UUID.randomUUID();
+        when(ctx.getSessionId()).thenReturn(sessionId);
+
+        disconnectService.disconnect(clientActorState, newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG)));
+
+        verify(connectionAdmission).release(sessionId);
+    }
+
+    @Test
+    public void givenTheCleanupThrows_whenDisconnect_thenItsConnectIsStillReleased() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+        UUID sessionId = UUID.randomUUID();
+        when(ctx.getSessionId()).thenReturn(sessionId);
+        doThrow(new IllegalStateException("boom")).when(lastWillService).removeAndExecuteLastWillIfNeeded(any(), anyInt());
+
+        Assert.assertThrows(IllegalStateException.class,
+                () -> disconnectService.disconnect(clientActorState, newDisconnectMsg(new DisconnectReason(ON_DISCONNECT_MSG))));
+
+        verify(connectionAdmission).release(sessionId);
     }
 
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {

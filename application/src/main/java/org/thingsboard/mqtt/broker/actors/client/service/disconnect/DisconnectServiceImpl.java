@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectionAdmission;
 import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -69,6 +70,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final PublishBackpressure publishBackpressure;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final StatsManager statsManager;
+    private final ConnectionAdmission connectionAdmission;
 
     @Value("${mqtt.client-session-expiry.max-expiry-interval:604800}")
     private int maxExpiryInterval;
@@ -84,6 +86,16 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
+        try {
+            disconnectSession(actorState, disconnectMsg);
+        } finally {
+            // last, so a will this disconnect took is on the will scheduler, where a shutdown that waited for this
+            // CONNECT finds it
+            connectionAdmission.release(actorState.getCurrentSessionCtx().getSessionId());
+        }
+    }
+
+    private void disconnectSession(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
         DisconnectReason reason = disconnectMsg.getReason();
         var reasonType = reason.getType();
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();

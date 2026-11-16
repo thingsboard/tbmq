@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -71,11 +72,13 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -125,6 +128,8 @@ public class ConnectServiceImplTest {
     IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     @MockitoBean
     NodeDrainService nodeDrainService;
+    @MockitoBean
+    ConnectionAdmission connectionAdmission;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -151,6 +156,7 @@ public class ConnectServiceImplTest {
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
 
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
+        when(connectionAdmission.tryAdmit(any())).thenReturn(true);
     }
 
     @Test
@@ -162,6 +168,8 @@ public class ConnectServiceImplTest {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(ctx.getUsername()).thenReturn("alice");
         when(ctx.getClientCertCn()).thenReturn("CN=dev");
+        UUID sessionId = UUID.randomUUID();
+        when(ctx.getSessionId()).thenReturn(sessionId);
 
         PublishMsg publishMsg = PublishMsg.builder().build();
         ConnectionAcceptedMsg connectionAcceptedMsg = getConnectionAcceptedMsg(publishMsg);
@@ -172,6 +180,10 @@ public class ConnectServiceImplTest {
         verify(clientSessionCtxService, times(1)).registerSession(eq(ctx));
         verify(msgPersistenceManager, times(1)).startProcessingPersistedMessages(eq(actorState));
         verify(queuedMqttMessages, times(1)).process(any());
+        // the connect ends once the session is registered: a shutdown that waited for it finds the session
+        InOrder order = inOrder(clientSessionCtxService, connectionAdmission);
+        order.verify(clientSessionCtxService).registerSession(ctx);
+        order.verify(connectionAdmission).release(sessionId);
     }
 
     @Test
@@ -204,6 +216,42 @@ public class ConnectServiceImplTest {
         verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_USE_ANOTHER_SERVER"));
         verify(clientSessionEventService, never()).requestConnection(any(), any());
         verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        verify(connectionAdmission, never()).tryAdmit(any());
+    }
+
+    @Test
+    public void givenAdmissionClosed_whenStartConnection_thenRefusedAsServerUnavailableBeforeTheSessionInfoIsSet() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(connectionAdmission.tryAdmit(sessionId)).thenReturn(false);
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "testClient"), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE_5);
+        verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_SERVER_UNAVAILABLE_5"));
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(keepAliveService, never()).registerSession(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        // without session info, the disconnect that follows only closes the channel: no persistent-session cleanup
+        verify(ctx, never()).setSessionInfo(any());
+    }
+
+    @Test
+    public void givenAdmissionClosedAndMqtt3Client_whenStartConnection_thenRefusedWith0x03() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(connectionAdmission.tryAdmit(sessionId)).thenReturn(false);
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+
+        connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "testClient"), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(ctx, never()).setSessionInfo(any());
     }
 
     @Test
