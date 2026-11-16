@@ -54,10 +54,16 @@ import org.thingsboard.mqtt.broker.standalone.pipeline.PipelineBudget;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneDeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishMsgQueue;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -91,12 +97,12 @@ import static org.mockito.Mockito.doAnswer;
 /**
  * Overloads the publish pipeline of a Lite broker and checks what its back-pressure promises: no QoS 1 publish is
  * acknowledged and then lost, a full pipeline refuses QoS 1 with Quota exceeded (0x97) and counts every QoS 0 publish
- * it drops, the pipeline and the heap stay bounded, and the broker resumes the connections it paused without closing
- * any of them for inactivity meanwhile.
+ * it drops, the pipeline and the heap stay bounded, and the broker resumes the connections it paused; and, with the
+ * store stalled, that the keep-alive closes a dead client on a paused connection but none of the live ones.
  * <p>
- * The pipeline holds at most {@value #MAX_MESSAGES} publishes and every append to the store takes 2 ms longer, so the
- * persist worker of the one persistent subscriber stores at most 8 copies per 2 ms: far fewer than twenty QoS 1
- * publishers and a QoS 0 firehose send.
+ * The pipeline holds at most {@value #MAX_MESSAGES} publishes. In the overload, every append to the store takes 2 ms
+ * longer, so the persist worker of the one persistent subscriber stores at most 8 copies per 2 ms: far fewer than
+ * twenty QoS 1 publishers and a QoS 0 firehose send.
  */
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -115,9 +121,9 @@ public class OverloadLiteTest {
     private static final int QOS1_PUBLISHERS = 20;
     private static final int QOS1_MSGS_PER_PUBLISHER = 2_000;
     // A QoS 1 publisher sends its next publish as soon as one of its last 10 is answered. With the broker's whole
-    // Receive Maximum (1000) unanswered, refusals answer nearly every publish and the load is over in about a second,
-    // before the keep-alive could close any connection (1.5 x 2 s); with 10, the pipeline sets the pace and the load
-    // lasts several keep-alive periods.
+    // Receive Maximum (1000) unanswered, refusals answer nearly every publish and the load is over in about a second;
+    // with 10, the pipeline sets the pace, and the load lasts seconds in which the publishers are paused and resumed
+    // thousands of times. The keep-alive on paused connections has a test of its own.
     private static final int QOS1_WINDOW = 10;
     private static final int QOS0_MSGS = 20_000;
     // the QoS 0 publisher waits for every so many socket writes, so that its client's buffer stays small
@@ -134,7 +140,20 @@ public class OverloadLiteTest {
     private static final Duration DRAIN_TIMEOUT = Duration.ofSeconds(60);
     private static final int MAX_MARKERS = 10;
     private static final Duration MARKER_TIMEOUT = Duration.ofSeconds(2);
-    // the meter StandalonePublishBackpressure registers; only reported
+    // the stall: the filler fills the pipeline, then each live publisher sends its publishes into it
+    private static final int STALL_PUBLISHERS = 20;
+    private static final int STALL_MSGS_PER_PUBLISHER = 100;
+    private static final int STALL_FILLER_MSGS = MAX_MESSAGES + 50;
+    private static final Duration STALL_TIMEOUT = Duration.ofSeconds(30);
+    private static final int KEEP_ALIVE_TIMEOUT = 0x8D;
+    // the keep-alive closes a session after 1.5 times its keep-alive without a packet
+    private static final long KEEP_ALIVE_DEADLINE_MS = KEEP_ALIVE_SECONDS * 1500L;
+    // the broker times the keep-alive with currentTimeMillis, the test with nanoTime
+    private static final long CLOCK_TOLERANCE_MS = 10;
+    // scheduling, the disconnect through the client actor and the DISCONNECT on the wire
+    private static final long CLOSE_SLACK_MS = 500;
+    private static final String STALL_TOPIC_PREFIX = "stall/";
+    // the meter StandalonePublishBackpressure registers
     private static final String PAUSED_CONNECTIONS_GAUGE = "pausedConnections";
 
     private static final String SUBSCRIPTION = "overload/#";
@@ -162,10 +181,16 @@ public class OverloadLiteTest {
 
     @Value("${listener.tcp.bind_port}")
     private int mqttPort;
+    @Value("${mqtt.keep-alive.monitoring-delay-ms}")
+    private long monitoringDelayMs;
 
     private final List<MqttAsyncClient> clients = new ArrayList<>();
-    private final ExecutorService publishing = Executors.newFixedThreadPool(QOS1_PUBLISHERS + 1);
+    private final ExecutorService publishing =
+            Executors.newFixedThreadPool(Math.max(QOS1_PUBLISHERS, STALL_PUBLISHERS) + 1);
     private final ScheduledExecutorService samplers = Executors.newScheduledThreadPool(2);
+    // the stalled store lets the appends through once it is counted down
+    private final CountDownLatch appendsReleased = new CountDownLatch(1);
+    private SilentClient silentClient;
 
     // what the subscriber received; QoS 0 ids start with QOS0_ID_PREFIX
     private final Set<String> subscriberReceivedIds = ConcurrentHashMap.newKeySet();
@@ -199,6 +224,10 @@ public class OverloadLiteTest {
 
     @After
     public void stopClients() throws InterruptedException {
+        appendsReleased.countDown();
+        if (silentClient != null) {
+            silentClient.close();
+        }
         samplers.shutdownNow();
         publishing.shutdownNow();
         samplers.awaitTermination(CONNECT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
@@ -213,8 +242,8 @@ public class OverloadLiteTest {
         runLoad();
 
         Set<String> refusedIds = refusals.keySet();
-        // keep-alive did not fire on paused connections, and paused connections resumed: checked first, as the load
-        // stops early when a connection is lost, and the checks below then fail for that reason only
+        // the broker closed no connection, and paused connections resumed: checked first, as the load stops early when
+        // a connection is lost, and the checks below then fail for that reason only
         assertThat(publishersDisconnectedByBroker).as("publisher connections the broker closed: %s", brokerDisconnects)
                 .isZero();
         assertThat(allPublishersFinished).as("all publishers finished; failed publishes %s, connections given up by "
@@ -226,6 +255,14 @@ public class OverloadLiteTest {
                 .allSatisfy(id -> assertThat(refusalCode(id)).as(id).isEqualTo(QUOTA_EXCEEDED));
         // sampled from PipelineBudget every 50 ms
         assertThat(peakQueuedMessages).as("peak of the publishes in the pipeline").isLessThanOrEqualTo(MAX_MESSAGES);
+        // The stages' own queues, unbounded (dispatch) or bounded far above the budget (persist), are what the budget
+        // keeps small. With the budget's limits set to their maximum, the dispatch queues peaked at 269 publishes, and
+        // at 15,686 with the publishers' windows at the broker's Receive Maximum.
+        assertThat(peakDispatchQueued.get()).as("peak of the dispatch queues").isLessThanOrEqualTo(MAX_MESSAGES);
+        assertThat(peakPersistQueued.get()).as("peak of the persist queues").isLessThanOrEqualTo(MAX_MESSAGES);
+        // A sanity bound only: QoS 0 copies are dropped at the subscriber's channel once it is not writable, and the
+        // publishers' windows keep at most 200 QoS 1 publishes in the broker, so the heap stays far below the bound
+        // with or without the budget (it grew from 72 to 80 MiB with the budget's limits set to their maximum).
         assertThat(peakHeapUsedAfterGcBytes - baselineHeapBytes).as("heap growth after GC, in bytes")
                 .isLessThan(HEAP_BOUND_BYTES);
         assertThat(publishPausesCounterDelta).as("publishPauses counter delta").isGreaterThan(0);
@@ -235,16 +272,113 @@ public class OverloadLiteTest {
                 .isEqualTo((double) (qos0Sent - qos0Received + refusedIds.size()));
     }
 
+    /**
+     * [MQTT-3.1.2-22] The keep-alive stays enforced on a paused connection: the broker closes a client that sends
+     * nothing for one and a half keep-alive periods, and no other. The store blocks every append, so the pipeline
+     * fills up and stays full; every publisher is paused, and stays paused across two keep-alive deadlines, before the
+     * store lets the appends through. The live clients keep sending into connections that the broker reads once every
+     * half keep-alive only, which must answer their PINGREQs before they give up; the dead one sends one PUBLISH, which
+     * finds the pipeline paused and pauses its connection, and then nothing at all.
+     */
+    @Test
+    public void mqtt_3_1_2_22_pausedLiveClientsAreNotClosedAndADeadOneIs() throws Exception {
+        blockStoreAppends();
+        connectSubscriber("stall-sub", STALL_TOPIC_PREFIX + "#");
+        MqttAsyncClient filler = publisher("stall-filler");
+        List<MqttAsyncClient> livePublishers = new ArrayList<>();
+        for (int i = 0; i < STALL_PUBLISHERS; i++) {
+            livePublishers.add(publisher(stallPublisherId(i)));
+        }
+        List<MqttAsyncClient> liveClients = new ArrayList<>(livePublishers);
+        liveClients.add(filler);
+        connectAll(liveClients);
+        long pausedBefore = pausedConnections();
+        long t0 = System.nanoTime();
+
+        // the store keeps the filler's publishes in the pipeline, until it is full
+        CountDownLatch now = new CountDownLatch(0);
+        List<Future<Boolean>> runs = new ArrayList<>();
+        runs.add(publishing.submit(() -> publishQos1(filler, STALL_TOPIC_PREFIX + "filler", "stall-filler-",
+                STALL_FILLER_MSGS, STALL_FILLER_MSGS, now)));
+        assertThat(waitUntil(() -> budget.paused() && budget.queuedMessages() == MAX_MESSAGES
+                && pausedConnections() == pausedBefore + 1, CONNECT_TIMEOUT)).as("pipeline full, filler paused")
+                .isTrue();
+        long fullAt = System.nanoTime();
+        // the first publish of each live publisher finds the pipeline paused and full: it pauses the publisher and is
+        // refused, and the publisher sends its next ones into a connection the broker no longer reads
+        for (int i = 0; i < STALL_PUBLISHERS; i++) {
+            MqttAsyncClient publisher = livePublishers.get(i);
+            String topic = STALL_TOPIC_PREFIX + i;
+            String idPrefix = stallPublisherId(i) + "-";
+            runs.add(publishing.submit(() -> publishQos1(publisher, topic, idPrefix, STALL_MSGS_PER_PUBLISHER,
+                    QOS1_WINDOW, now)));
+        }
+        assertThat(waitUntil(() -> pausedConnections() == pausedBefore + 1 + STALL_PUBLISHERS, CONNECT_TIMEOUT))
+                .as("every live publisher paused").isTrue();
+        long allPausedAt = System.nanoTime();
+
+        silentClient = SilentClient.connect(mqttPort, "stall-dead", KEEP_ALIVE_SECONDS);
+        silentClient.publishOnceAndGoSilent(STALL_TOPIC_PREFIX + "dead", payload("stall-dead-0"));
+        assertThat(waitUntil(() -> pausedConnections() == pausedBefore + 2 + STALL_PUBLISHERS, CONNECT_TIMEOUT))
+                .as("dead client paused").isTrue();
+
+        // As long as two keep-alive deadlines, each 1.5 keep-alive periods after a packet and seen at the next
+        // monitoring tick at the latest, and one more tick. Meanwhile only the keep-alive reads the live clients.
+        long stallNanos =
+                TimeUnit.MILLISECONDS.toNanos(2 * (KEEP_ALIVE_DEADLINE_MS + monitoringDelayMs) + monitoringDelayMs);
+        waitUntil(() -> silentClient.closed() && System.nanoTime() - allPausedAt >= stallNanos, STALL_TIMEOUT);
+        long pausedAtRelease = pausedConnections();
+        long releasedAt = System.nanoTime();
+        appendsReleased.countDown();
+        waitUntil(() -> runs.stream().allMatch(Future::isDone) || !brokerDisconnects.isEmpty()
+                || !clientDisconnects.isEmpty(), LOAD_TIMEOUT);
+        // every run is looked at, so that each failure is recorded
+        boolean allLiveFinished = runs.stream().map(this::finished).reduce(true, Boolean::logicalAnd)
+                && publishFailures.isEmpty();
+        long finishedAt = System.nanoTime();
+
+        log.info("Stall: pipeline full at {} ms, every live publisher paused at {} ms; dead client published at {} ms, "
+                        + "answered 0x{} at {} ms, closed with 0x{} at {} ms; store released at {} ms with {} "
+                        + "connections paused; live clients done at {} ms", millisSince(t0, fullAt),
+                millisSince(t0, allPausedAt), millisSince(t0, silentClient.publishedAt()),
+                Integer.toHexString(silentClient.pubAckCode()), millisSince(t0, silentClient.answeredAt()),
+                Integer.toHexString(silentClient.disconnectCode()), millisSince(t0, silentClient.closedAt()),
+                millisSince(t0, releasedAt), pausedAtRelease - pausedBefore, millisSince(t0, finishedAt));
+        log.info("Stall: live connections closed by the broker {}, given up by the clients {}; subscriber connection "
+                + "lost {}", brokerDisconnects, clientDisconnects, subscriberDisconnects);
+
+        // the live clients: none closed, all still paused when the store let the appends through, all resumed after
+        assertThat(brokerDisconnects).as("live client connections the broker closed").isEmpty();
+        assertThat(pausedAtRelease - pausedBefore).as("connections still paused when the store let the appends through")
+                .isEqualTo(STALL_PUBLISHERS + 2);
+        assertThat(allLiveFinished).as("every live client finished after the stall; failed publishes %s, connections "
+                + "given up by the client %s", publishFailures, clientDisconnects).isTrue();
+        // the dead client: refused because the pipeline was full, then closed for its keep-alive
+        assertThat(silentClient.pubAckCode()).as("PUBACK reason code to the dead client").isEqualTo(QUOTA_EXCEEDED);
+        assertThat(silentClient.disconnectCode()).as("DISCONNECT reason code to the dead client")
+                .isEqualTo(KEEP_ALIVE_TIMEOUT);
+        // the broker took its last packet after it was sent and before it was answered
+        assertThat(millisSince(silentClient.publishedAt(), silentClient.closedAt()))
+                .as("ms from the dead client's PUBLISH to its close")
+                .isGreaterThanOrEqualTo(KEEP_ALIVE_DEADLINE_MS - CLOCK_TOLERANCE_MS);
+        // the tick that finds the deadline passed reads once, and the next one closes
+        assertThat(millisSince(silentClient.answeredAt(), silentClient.closedAt()))
+                .as("ms from the dead client's PUBACK to its close")
+                .isLessThanOrEqualTo(KEEP_ALIVE_DEADLINE_MS + 2 * monitoringDelayMs + CLOSE_SLACK_MS);
+    }
+
     private void runLoad() throws Exception {
         long setupStart = System.nanoTime();
         slowDownStoreAppends();
-        connectSubscriber();
+        connectSubscriber("overload-sub", SUBSCRIPTION);
         List<MqttAsyncClient> qos1Publishers = new ArrayList<>();
         for (int i = 0; i < QOS1_PUBLISHERS; i++) {
             qos1Publishers.add(publisher(publisherId(i)));
         }
         MqttAsyncClient qos0Publisher = publisher("overload-qos0-pub");
-        connectAll(qos1Publishers, qos0Publisher);
+        List<MqttAsyncClient> publishers = new ArrayList<>(qos1Publishers);
+        publishers.add(qos0Publisher);
+        connectAll(publishers);
 
         Counter droppedMsgs = counter(BrokerConstants.DROPPED_MSGS);
         Counter publishPauses = counter(StatsType.PUBLISH_PAUSES.getPrintName());
@@ -288,7 +422,8 @@ public class OverloadLiteTest {
             MqttAsyncClient publisher = qos1Publishers.get(i);
             String topic = QOS1_TOPIC_PREFIX + i;
             String idPrefix = publisherId(i) + "-";
-            runs.add(publishing.submit(() -> publishQos1(publisher, topic, idPrefix, start)));
+            runs.add(publishing.submit(() -> publishQos1(publisher, topic, idPrefix, QOS1_MSGS_PER_PUBLISHER,
+                    QOS1_WINDOW, start)));
         }
         runs.add(publishing.submit(() -> publishQos0(qos0Publisher, start)));
         start.countDown();
@@ -344,8 +479,23 @@ public class OverloadLiteTest {
         }).when(deviceMsgQueueStore).append(anyList());
     }
 
-    private void connectSubscriber() throws MqttException {
-        MqttAsyncClient subscriber = new MqttAsyncClient(serverUri(), "overload-sub", new MemoryPersistence());
+    /**
+     * Every append to the store waits until the test counts {@link #appendsReleased} down.
+     */
+    private void blockStoreAppends() {
+        doAnswer(invocation -> {
+            try {
+                appendsReleased.await(LOAD_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                // the shutdown stops the persist workers: the append goes on
+                Thread.currentThread().interrupt();
+            }
+            return invocation.callRealMethod();
+        }).when(deviceMsgQueueStore).append(anyList());
+    }
+
+    private void connectSubscriber(String clientId, String topicFilter) throws MqttException {
+        MqttAsyncClient subscriber = new MqttAsyncClient(serverUri(), clientId, new MemoryPersistence());
         clients.add(subscriber);
         subscriber.setCallback(new Callback() {
             @Override
@@ -362,7 +512,7 @@ public class OverloadLiteTest {
         options.setCleanStart(false);
         options.setSessionExpiryInterval(SESSION_EXPIRY_SECONDS);
         subscriber.connect(options).waitForCompletion(CONNECT_TIMEOUT.toMillis());
-        subscriber.subscribe(new MqttSubscription(SUBSCRIPTION, 1)).waitForCompletion(CONNECT_TIMEOUT.toMillis());
+        subscriber.subscribe(new MqttSubscription(topicFilter, 1)).waitForCompletion(CONNECT_TIMEOUT.toMillis());
     }
 
     private MqttAsyncClient publisher(String clientId) throws MqttException {
@@ -380,12 +530,11 @@ public class OverloadLiteTest {
     /**
      * Connects the publishers together: a Paho client takes some 300 ms to connect, as it starts its threads.
      */
-    private void connectAll(List<MqttAsyncClient> qos1Publishers, MqttAsyncClient qos0Publisher) throws Exception {
+    private static void connectAll(List<MqttAsyncClient> publishers) throws Exception {
         List<IMqttToken> connects = new ArrayList<>();
-        for (MqttAsyncClient publisher : qos1Publishers) {
+        for (MqttAsyncClient publisher : publishers) {
             connects.add(publisher.connect(publisherOptions()));
         }
-        connects.add(qos0Publisher.connect(publisherOptions()));
         for (IMqttToken connect : connects) {
             connect.waitForCompletion(CONNECT_TIMEOUT.toMillis());
         }
@@ -399,15 +548,15 @@ public class OverloadLiteTest {
     }
 
     /**
-     * Publishes {@value #QOS1_MSGS_PER_PUBLISHER} QoS 1 messages, each as soon as fewer than {@value #QOS1_WINDOW} are
-     * unanswered, and records how each one was answered.
+     * Publishes {@code count} QoS 1 messages, each as soon as fewer than {@code window} are unanswered, and records how
+     * each one was answered.
      *
      * @return {@code true} once every publish was answered, with a PUBACK or a failure
      */
-    private boolean publishQos1(MqttAsyncClient publisher, String topic, String idPrefix, CountDownLatch start)
-            throws Exception {
-        Semaphore unanswered = new Semaphore(QOS1_WINDOW);
-        CountDownLatch answered = new CountDownLatch(QOS1_MSGS_PER_PUBLISHER);
+    private boolean publishQos1(MqttAsyncClient publisher, String topic, String idPrefix, int count, int window,
+                                CountDownLatch start) throws Exception {
+        Semaphore unanswered = new Semaphore(window);
+        CountDownLatch answered = new CountDownLatch(count);
         MqttActionListener onAnswer = new MqttActionListener() {
             @Override
             public void onSuccess(IMqttToken token) {
@@ -431,7 +580,7 @@ public class OverloadLiteTest {
             }
         };
         start.await();
-        for (int i = 0; i < QOS1_MSGS_PER_PUBLISHER; i++) {
+        for (int i = 0; i < count; i++) {
             if (!unanswered.tryAcquire(LOAD_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
                 return false;
             }
@@ -510,10 +659,7 @@ public class OverloadLiteTest {
         peakQueued.accumulate(budget.queuedMessages());
         peakDispatchQueued.accumulate(dispatchQueue.workers().queued());
         peakPersistQueued.accumulate(persistStage.workers().queued());
-        Gauge pausedConnections = meterRegistry.find(PAUSED_CONNECTIONS_GAUGE).gauge();
-        if (pausedConnections != null) {
-            peakPausedConnections.accumulate((long) pausedConnections.value());
-        }
+        peakPausedConnections.accumulate(pausedConnections());
         // a spy records every call for verification; those records are not what the broker holds on to
         clearInvocations(deviceMsgQueueStore);
     }
@@ -568,6 +714,11 @@ public class OverloadLiteTest {
         return refusals.get(id);
     }
 
+    private long pausedConnections() {
+        Gauge gauge = meterRegistry.find(PAUSED_CONNECTIONS_GAUGE).gauge();
+        return gauge == null ? 0 : (long) gauge.value();
+    }
+
     private Counter counter(String name) {
         Counter counter = meterRegistry.find(name).counter();
         assertThat(counter).as("counter %s", name).isNotNull();
@@ -602,12 +753,193 @@ public class OverloadLiteTest {
         return String.format("overload-pub-%02d", index);
     }
 
+    private static String stallPublisherId(int index) {
+        return String.format("stall-pub-%02d", index);
+    }
+
+    private static long millisSince(long startNanos, long endNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(endNanos - startNanos);
+    }
+
     private static byte[] payload(String id) {
         return id.getBytes(StandardCharsets.UTF_8);
     }
 
     private String serverUri() {
         return "tcp://localhost:" + mqttPort;
+    }
+
+    /**
+     * A client that connects with MQTT 5, sends one QoS 1 PUBLISH and then never sends a packet again. The test reads
+     * what the broker sends it, only to see how its PUBLISH is answered, and when and how the broker closes it.
+     */
+    private static final class SilentClient implements AutoCloseable {
+
+        private static final int CONNACK = 2;
+        private static final int PUBACK = 4;
+        private static final int DISCONNECT = 14;
+        private static final long NOT_YET = Long.MIN_VALUE;
+
+        private final Socket socket;
+        private final InputStream in;
+        private final AtomicLong closedAt = new AtomicLong(NOT_YET);
+        private volatile long publishedAt = NOT_YET;
+        private volatile long answeredAt = NOT_YET;
+        private volatile int pubAckCode = -1;
+        private volatile int disconnectCode = -1;
+
+        private SilentClient(Socket socket) throws IOException {
+            this.socket = socket;
+            this.in = new BufferedInputStream(socket.getInputStream());
+        }
+
+        static SilentClient connect(int port, String clientId, int keepAliveSeconds) throws IOException {
+            Socket socket = new Socket("localhost", port);
+            SilentClient client = new SilentClient(socket);
+            socket.setSoTimeout((int) CONNECT_TIMEOUT.toMillis());
+            client.send(connectPacket(clientId, keepAliveSeconds));
+            Packet connAck = client.readPacket();
+            assertThat(connAck).as("CONNACK to %s", clientId).isNotNull();
+            assertThat(connAck.type()).as("packet type of the CONNACK").isEqualTo(CONNACK);
+            assertThat(connAck.body()[1]).as("CONNACK reason code").isZero();
+            socket.setSoTimeout(0);
+            return client;
+        }
+
+        void publishOnceAndGoSilent(String topic, byte[] payload) throws IOException {
+            publishedAt = System.nanoTime();
+            send(publishPacket(topic, 1, payload));
+            Thread reader = new Thread(this::readUntilClosed, "silent-client-reader");
+            reader.setDaemon(true);
+            reader.start();
+        }
+
+        private void readUntilClosed() {
+            try {
+                for (Packet packet = readPacket(); packet != null; packet = readPacket()) {
+                    long now = System.nanoTime();
+                    if (packet.type() == PUBACK) {
+                        // packet id, then the reason code, which may be left out for Success
+                        pubAckCode = packet.body().length > 2 ? packet.body()[2] & 0xFF : 0;
+                        answeredAt = now;
+                    } else if (packet.type() == DISCONNECT) {
+                        disconnectCode = packet.body().length > 0 ? packet.body()[0] & 0xFF : 0;
+                        closedAt.compareAndSet(NOT_YET, now);
+                    }
+                }
+            } catch (IOException e) {
+                // the connection is gone: the broker closed it, or the test did after the checks
+            }
+            closedAt.compareAndSet(NOT_YET, System.nanoTime());
+        }
+
+        boolean closed() {
+            return closedAt.get() != NOT_YET;
+        }
+
+        long publishedAt() {
+            return publishedAt;
+        }
+
+        long answeredAt() {
+            return answeredAt;
+        }
+
+        long closedAt() {
+            return closedAt.get();
+        }
+
+        int pubAckCode() {
+            return pubAckCode;
+        }
+
+        int disconnectCode() {
+            return disconnectCode;
+        }
+
+        @Override
+        public void close() {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // nothing is left to release
+            }
+        }
+
+        private void send(byte[] packet) throws IOException {
+            OutputStream out = socket.getOutputStream();
+            out.write(packet);
+            out.flush();
+        }
+
+        /**
+         * @return the next packet, or {@code null} when the connection ended
+         */
+        private Packet readPacket() throws IOException {
+            int firstByte = in.read();
+            if (firstByte < 0) {
+                return null;
+            }
+            int remainingLength = 0;
+            int multiplier = 1;
+            int digit;
+            do {
+                digit = in.read();
+                if (digit < 0) {
+                    return null;
+                }
+                remainingLength += (digit & 0x7F) * multiplier;
+                multiplier *= 128;
+            } while ((digit & 0x80) != 0);
+            byte[] body = in.readNBytes(remainingLength);
+            return body.length < remainingLength ? null : new Packet(firstByte >> 4, body);
+        }
+
+        private static byte[] connectPacket(String clientId, int keepAliveSeconds) {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            writeString(body, "MQTT");
+            body.write(5); // protocol version
+            body.write(0x02); // Clean Start
+            body.write(keepAliveSeconds >> 8);
+            body.write(keepAliveSeconds);
+            body.write(0); // no properties
+            writeString(body, clientId);
+            return packet(0x10, body.toByteArray());
+        }
+
+        private static byte[] publishPacket(String topic, int packetId, byte[] payload) {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            writeString(body, topic);
+            body.write(packetId >> 8);
+            body.write(packetId);
+            body.write(0); // no properties
+            body.writeBytes(payload);
+            return packet(0x32, body.toByteArray()); // PUBLISH, QoS 1
+        }
+
+        private static byte[] packet(int firstByte, byte[] body) {
+            ByteArrayOutputStream packet = new ByteArrayOutputStream();
+            packet.write(firstByte);
+            int length = body.length;
+            do {
+                int digit = length % 128;
+                length /= 128;
+                packet.write(length > 0 ? digit | 0x80 : digit);
+            } while (length > 0);
+            packet.writeBytes(body);
+            return packet.toByteArray();
+        }
+
+        private static void writeString(ByteArrayOutputStream out, String value) {
+            byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+            out.write(bytes.length >> 8);
+            out.write(bytes.length);
+            out.writeBytes(bytes);
+        }
+
+        private record Packet(int type, byte[] body) {
+        }
+
     }
 
     /**
