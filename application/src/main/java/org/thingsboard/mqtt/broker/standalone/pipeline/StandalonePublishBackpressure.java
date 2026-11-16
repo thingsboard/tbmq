@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.standalone.pipeline;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.stats.DefaultCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.service.processing.backpressure.KeepAliveProb
 import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,8 +37,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Stops reading from a client that publishes while the pipeline is paused, from the moment it reaches its pause level
  * until it falls back to its resume level, and starts reading again from every such client when it does. A paused
- * client still publishes what was read before the pause. Once the shutdown has called
- * {@link PipelineBudget#stopResuming}, nothing here starts reading again.
+ * client still publishes what was read before the pause. The keep-alive reads a paused connection now and then, so that
+ * a client's PINGREQ is answered and a dead client is found. Once the shutdown has called
+ * {@link PipelineBudget#stopResuming}, nothing here reads again.
  */
 @Slf4j
 @Component
@@ -46,13 +49,20 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
     static final String PAUSED_CONNECTIONS_GAUGE = "pausedConnections";
 
     private final PipelineBudget budget;
+    private final Clock clock;
     private final DefaultCounter publishPauses;
     // the sessions paused here; an entry and its autoRead change are made together, under the entry's lock, so a
     // resume cannot overtake a newer pause of the same session
     private final ConcurrentMap<UUID, PausedSession> pausedSessions = new ConcurrentHashMap<>();
 
+    @Autowired
     public StandalonePublishBackpressure(PipelineBudget budget, StatsFactory statsFactory) {
+        this(budget, statsFactory, Clock.systemUTC());
+    }
+
+    StandalonePublishBackpressure(PipelineBudget budget, StatsFactory statsFactory, Clock clock) {
         this.budget = budget;
+        this.clock = clock;
         this.publishPauses = statsFactory.createDefaultCounter(StatsType.PUBLISH_PAUSES.getPrintName());
         statsFactory.createGauge(PAUSED_CONNECTIONS_GAUGE, pausedSessions, Map::size);
         budget.onResume(this::resumeAll);
@@ -71,7 +81,7 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         pausedSessions.computeIfAbsent(sessionId, id -> {
             ctx.getChannel().channel().config().setAutoRead(false);
             publishPauses.increment();
-            return new PausedSession(ctx);
+            return new PausedSession(ctx, clock.millis());
         });
         // While the budget is still paused, its resume runs after the pause above and sees this session. If it is not,
         // the resume may have run between the check and the pause without seeing the session, so it is resumed here.
@@ -86,7 +96,7 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         }
         PausedSession paused = pausedSessions.get(ctx.getSessionId());
         if (paused != null) {
-            paused.lastReadTime = System.currentTimeMillis();
+            paused.lastReadTime = clock.millis();
         }
     }
 
@@ -132,16 +142,39 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         if (!paused.ctx.getChannel().channel().isActive()) {
             return KeepAliveProbe.CLOSE;
         }
-        paused.probeTime = System.currentTimeMillis();
+        paused.probeTime = clock.millis();
+        paused.keepAliveReadTime = paused.probeTime;
         read(paused.ctx);
         return KeepAliveProbe.WAIT;
+    }
+
+    /**
+     * Reads once from a paused connection that the keep-alive has not read for {@code readIntervalMs}. It sets neither
+     * the probe's time nor the time of read data, so it changes nothing in what {@link #probe} answers.
+     */
+    @Override
+    public void readIfDue(UUID sessionId, long readIntervalMs) {
+        if (!pausedSessions.containsKey(sessionId)) {
+            return;
+        }
+        // the budget's lock before the entry's, as in probe; no read once the shutdown has stopped them
+        budget.runUnlessResumingStopped(() ->
+                pausedSessions.computeIfPresent(sessionId, (id, paused) -> {
+                    long now = clock.millis();
+                    boolean due = now - paused.keepAliveReadTime >= readIntervalMs;
+                    if (due && paused.ctx.getChannel().channel().isActive()) {
+                        paused.keepAliveReadTime = now;
+                        read(paused.ctx);
+                    }
+                    return paused;
+                }));
     }
 
     private void read(ClientSessionCtx ctx) {
         try {
             ctx.getChannel().channel().read();
         } catch (Exception e) {
-            // the next keep-alive check closes the session, as no data arrived
+            // nothing was read: unless data arrives later, the keep-alive closes the session at its deadline
             log.warn("[{}][{}] Failed to read once from the paused client", ctx.getClientId(), ctx.getSessionId(), e);
         }
     }
@@ -175,11 +208,16 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         private final ClientSessionCtx ctx;
         // when the event loop last read a packet on the paused connection; 0 for none
         private volatile long lastReadTime;
-        // when the keep-alive last read once from the paused connection; 0 for none; only touched under the entry's lock
+        // when the keep-alive's probe last read once from the paused connection; 0 for none; only touched under the
+        // entry's lock
         private long probeTime;
+        // when the keep-alive last read from the paused connection, by its probe or by readIfDue, or else when the
+        // connection was paused; only touched under the entry's lock
+        private long keepAliveReadTime;
 
-        private PausedSession(ClientSessionCtx ctx) {
+        private PausedSession(ClientSessionCtx ctx, long pausedTime) {
             this.ctx = ctx;
+            this.keepAliveReadTime = pausedTime;
         }
 
     }

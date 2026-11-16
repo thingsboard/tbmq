@@ -46,6 +46,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -116,8 +117,40 @@ class KeepAliveServiceImplTest {
 
         keepAliveService.processKeepAlive();
 
-        verifyNoInteractions(publishBackpressure);
+        verify(publishBackpressure, never()).probe(any(), anyLong());
         verify(clientMqttActorManager, never()).disconnect(any(), any());
+    }
+
+    @Test
+    void givenActiveSession_whenProcessKeepAlive_thenAPausedConnectionIsReadEveryHalfKeepAlive() throws MqttException {
+        UUID sessionId = UUID.randomUUID();
+        keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
+
+        keepAliveService.processKeepAlive();
+
+        verify(publishBackpressure).readIfDue(sessionId, 5000);
+    }
+
+    @Test
+    void givenKeepAliveOff_whenProcessKeepAlive_thenNoReadAndNoProbe() throws Exception {
+        keepAliveService.registerSession(CLIENT_ID, UUID.randomUUID(), 0);
+        Thread.sleep(2);
+
+        keepAliveService.processKeepAlive();
+
+        verifyNoInteractions(publishBackpressure);
+    }
+
+    @Test
+    void givenInactiveSession_whenProcessKeepAlive_thenProbedInsteadOfRead() throws MqttException {
+        UUID sessionId = UUID.randomUUID();
+        keepAliveService.registerSession(CLIENT_ID, sessionId, 10);
+        expire();
+
+        keepAliveService.processKeepAlive();
+
+        verify(publishBackpressure).probe(eq(sessionId), anyLong());
+        verify(publishBackpressure, never()).readIfDue(any(), anyLong());
     }
 
     @Test
@@ -217,6 +250,29 @@ class KeepAliveServiceImplTest {
         verifyNoInteractions(clientMqttActorManager);
 
         keepAliveService.processKeepAlive();
+        verify(clientMqttActorManager).disconnect(eq(CLIENT_ID),
+                argThat(msg -> isKeepAliveDisconnect(msg, paused.session().getSessionId())));
+    }
+
+    // the reads before the deadline find nothing: the deadline probes, and the next check closes, as without them
+    @Test
+    void mqtt_3_1_2_22_aDeadClientOnAPausedConnectionReadEveryHalfKeepAliveIsStillClosedOnTheTickAfterItsDeadline()
+            throws MqttException {
+        Connection paused = pausedSession();
+        // every check before the deadline finds the read due
+        doReturn(0L).when(keepAliveService).pausedReadIntervalMs(anyInt());
+
+        keepAliveService.processKeepAlive();
+        keepAliveService.processKeepAlive();
+        verify(paused.channel(), times(2)).read();
+        expire();
+
+        keepAliveService.processKeepAlive();
+        verify(paused.channel(), times(3)).read();
+        verifyNoInteractions(clientMqttActorManager);
+
+        keepAliveService.processKeepAlive();
+        verify(paused.channel(), times(3)).read();
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID),
                 argThat(msg -> isKeepAliveDisconnect(msg, paused.session().getSessionId())));
     }

@@ -41,4 +41,8 @@ public class NoOpPublishBackpressure implements PublishBackpressure {
         return KeepAliveProbe.CLOSE;
     }
 
+    @Override
+    public void readIfDue(UUID sessionId, long readIntervalMs) {
+    }
+
 }

@@ -54,6 +54,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             KeepAliveInfo keepAliveInfo = entry.getValue();
             long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
             if (!isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)) {
+                readPausedConnectionIfDue(sessionId, keepAliveInfo.getKeepAliveSeconds());
                 continue;
             }
             // a paused connection does not read what the client sent, so the session may be alive although it is silent
@@ -74,6 +75,21 @@ public class KeepAliveServiceImpl implements KeepAliveService {
                         new DisconnectReason(DisconnectReasonType.ON_KEEP_ALIVE, "Client was inactive too long")));
             }
         }
+    }
+
+    /**
+     * A paused connection does not read what the client sent, a PINGREQ included, and a client that waits a keep-alive
+     * for its PINGRESP gives up. Read every half keep-alive, a PINGREQ is answered within half a keep-alive and one
+     * monitoring tick. A keep-alive of 0 turns the keep-alive off, and these reads with it.
+     */
+    private void readPausedConnectionIfDue(UUID sessionId, int keepAliveSeconds) {
+        if (keepAliveSeconds > 0) {
+            publishBackpressure.readIfDue(sessionId, pausedReadIntervalMs(keepAliveSeconds));
+        }
+    }
+
+    long pausedReadIntervalMs(int keepAliveSeconds) {
+        return TimeUnit.SECONDS.toMillis(keepAliveSeconds) / 2;
     }
 
     boolean isInactive(int keepAliveSeconds, long lastPacketTime) {

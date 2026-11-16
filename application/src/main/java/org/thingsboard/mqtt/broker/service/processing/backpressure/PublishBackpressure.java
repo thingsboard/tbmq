@@ -49,4 +49,14 @@ public interface PublishBackpressure {
      */
     KeepAliveProbe probe(UUID sessionId, long lastPacketTime);
 
+    /**
+     * Called on the keep-alive thread on every check of a session that has a keep-alive and has not reached its
+     * deadline. A paused connection does not read what the client sent, a PINGREQ included, and a client that waits too
+     * long for its PINGRESP closes the connection itself: so a paused connection is read once whenever
+     * {@code readIntervalMs} has passed since it was paused or last read for the keep-alive, here or by {@link #probe}.
+     * What such a read finds counts as any packet read on a paused connection; a read that finds nothing changes
+     * nothing in what {@link #probe} answers, so a dead client is closed at its deadline as before.
+     */
+    void readIfDue(UUID sessionId, long readIntervalMs);
+
 }

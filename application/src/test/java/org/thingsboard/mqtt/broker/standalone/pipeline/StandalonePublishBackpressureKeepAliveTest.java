@@ -25,9 +25,14 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.processing.backpressure.KeepAliveProbe;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,19 +44,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * [MQTT-3.1.2-22]: the keep-alive stays enforced on a paused connection, which is read once before it is closed.
+ * [MQTT-3.1.2-22]: the keep-alive stays enforced on a paused connection, which is read once before it is closed, and
+ * read every half keep-alive before that, so that a live client's PINGREQ is answered.
  * The times passed to {@code probe} stand for the keep-alive's last packet time of the session; every step that must
- * come later than another is separated from it by a few milliseconds.
+ * come later than another is separated from it by a few milliseconds, or by moving the clock forward.
  */
 class StandalonePublishBackpressureKeepAliveTest {
 
     private static final long UNLIMITED_BYTES = Long.MAX_VALUE / 200;
+    // half the keep-alive of a session; the margin keeps a step below it whatever real time passes meanwhile
+    private static final long READ_INTERVAL_MS = 60_000;
+    private static final long MARGIN_MS = 10_000;
+    private static final long TICK_MS = 1_000;
 
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private final StatsFactory statsFactory = new DefaultStatsFactory(registry);
     // pauses at 8 queued messages and resumes at 5
     private final ParkingBudget budget = new ParkingBudget();
-    private final StandalonePublishBackpressure backpressure = new StandalonePublishBackpressure(budget, statsFactory);
+    // the system clock, until a test moves it forward
+    private final ForwardClock clock = new ForwardClock();
+    private final StandalonePublishBackpressure backpressure =
+            new StandalonePublishBackpressure(budget, statsFactory, clock);
 
     @Test
     void givenSessionNeverPaused_whenProbe_thenClose() {
@@ -267,6 +280,118 @@ class StandalonePublishBackpressureKeepAliveTest {
         assertThat(backpressure.probe(connection.sessionId(), lastPacket)).isEqualTo(KeepAliveProbe.CLOSE);
     }
 
+    @Test
+    void givenPausedSession_whenReadIfDueBeforeTheInterval_thenNoRead() {
+        Connection connection = pausedConnection();
+        clock.advance(READ_INTERVAL_MS - MARGIN_MS);
+
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+
+        verify(connection.channel(), never()).read();
+    }
+
+    @Test
+    void givenPausedSession_whenTheIntervalPassed_thenOneReadAndNoOtherBeforeTheNextInterval() {
+        Connection connection = pausedConnection();
+        clock.advance(READ_INTERVAL_MS);
+
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        verify(connection.channel()).read();
+
+        clock.advance(READ_INTERVAL_MS - MARGIN_MS);
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        verify(connection.channel()).read();
+
+        clock.advance(MARGIN_MS);
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        verify(connection.channel(), times(2)).read();
+        assertThat(pausedConnections()).isEqualTo(1);
+    }
+
+    @Test
+    void givenProbeRead_whenReadIfDueBeforeAnIntervalPassedSinceIt_thenNoRead() {
+        Connection connection = pausedConnection();
+        clock.advance(READ_INTERVAL_MS - MARGIN_MS);
+        assertThat(backpressure.probe(connection.sessionId(), packetTime())).isEqualTo(KeepAliveProbe.WAIT);
+        verify(connection.channel()).read();
+
+        clock.advance(READ_INTERVAL_MS - MARGIN_MS);
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+
+        verify(connection.channel()).read();
+    }
+
+    @Test
+    void givenResumingStopped_whenReadIfDue_thenNoRead() {
+        Connection connection = pausedConnection();
+        budget.stopResuming();
+        clock.advance(READ_INTERVAL_MS);
+
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+
+        verify(connection.channel(), never()).read();
+    }
+
+    @Test
+    void givenSessionNotPaused_whenReadIfDue_thenNoRead() {
+        Connection connection = connection();
+        Connection resumed = pausedConnection();
+        release(3);
+        clock.advance(READ_INTERVAL_MS);
+
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        backpressure.readIfDue(resumed.sessionId(), READ_INTERVAL_MS);
+        backpressure.readIfDue(UUID.randomUUID(), READ_INTERVAL_MS);
+
+        verify(connection.channel(), never()).read();
+        verify(resumed.channel()).read(); // the resume's own read
+    }
+
+    @Test
+    void givenInactiveChannel_whenReadIfDue_thenNoRead() {
+        Connection connection = pausedConnection();
+        when(connection.channel().isActive()).thenReturn(false);
+        clock.advance(READ_INTERVAL_MS);
+
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+
+        verify(connection.channel(), never()).read();
+    }
+
+    // a read that finds nothing is just a read: the deadline probes and closes a dead client as before
+    @Test
+    void givenReadsThatFoundNothing_whenTheDeadlineComes_thenWaitAfterOneReadAndThenClose() {
+        Connection connection = pausedConnection();
+        long lastPacket = clock.millis();
+        for (int i = 1; i <= 2; i++) {
+            clock.advance(READ_INTERVAL_MS);
+            backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+            verify(connection.channel(), times(i)).read();
+        }
+        clock.advance(READ_INTERVAL_MS);
+
+        assertThat(backpressure.probe(connection.sessionId(), lastPacket)).isEqualTo(KeepAliveProbe.WAIT);
+        verify(connection.channel(), times(3)).read();
+        clock.advance(TICK_MS);
+        assertThat(backpressure.probe(connection.sessionId(), lastPacket)).isEqualTo(KeepAliveProbe.CLOSE);
+        verify(connection.channel(), times(3)).read();
+    }
+
+    // a read that finds a packet makes the client alive, as the probe's own read does
+    @Test
+    void givenReadThatFoundAPacket_whenTheDeadlineComes_thenAlive() {
+        Connection connection = pausedConnection();
+        long lastPacket = clock.millis();
+        clock.advance(READ_INTERVAL_MS);
+        backpressure.readIfDue(connection.sessionId(), READ_INTERVAL_MS);
+        backpressure.onChannelRead(connection.session());
+        clock.advance(2 * READ_INTERVAL_MS);
+
+        assertThat(backpressure.probe(connection.sessionId(), lastPacket)).isEqualTo(KeepAliveProbe.ALIVE);
+        verify(connection.channel()).read();
+    }
+
     // A probe takes the budget's lock before the session's entry lock, as a resume does. If it took them the other way
     // round, a probe holding the entry and waiting for the budget's read lock behind a queued shutdown (the write lock)
     // would wait for a resume that holds the read lock and waits for the entry: the three threads would deadlock.
@@ -377,6 +502,39 @@ class StandalonePublishBackpressureKeepAliveTest {
 
         UUID sessionId() {
             return session.getSessionId();
+        }
+
+    }
+
+    /**
+     * The system clock, moved forward by what the test adds.
+     */
+    private static final class ForwardClock extends Clock {
+
+        private final AtomicLong offset = new AtomicLong();
+
+        void advance(long millis) {
+            offset.addAndGet(millis);
+        }
+
+        @Override
+        public long millis() {
+            return System.currentTimeMillis() + offset.get();
+        }
+
+        @Override
+        public Instant instant() {
+            return Instant.ofEpochMilli(millis());
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
         }
 
     }
