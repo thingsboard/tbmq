@@ -46,8 +46,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @StandaloneComponent
 public class StandalonePublishBackpressure implements PublishBackpressure {
 
-    static final String PAUSED_CONNECTIONS_GAUGE = "pausedConnections";
-
     private final PipelineBudget budget;
     private final Clock clock;
     private final DefaultCounter publishPauses;
@@ -64,7 +62,7 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
         this.budget = budget;
         this.clock = clock;
         this.publishPauses = statsFactory.createDefaultCounter(StatsType.PUBLISH_PAUSES.getPrintName());
-        statsFactory.createGauge(PAUSED_CONNECTIONS_GAUGE, pausedSessions, Map::size);
+        statsFactory.createGauge(StatsType.PAUSED_CONNECTIONS.getPrintName(), pausedSessions, Map::size);
         budget.onResume(this::resumeAll);
     }
 
@@ -203,8 +201,8 @@ public class StandalonePublishBackpressure implements PublishBackpressure {
             try {
                 Channel channel = ctx.getChannel().channel();
                 if (channel.isActive()) {
+                    // turning auto-read back on reads once by itself; only a pause turns it off
                     channel.config().setAutoRead(true);
-                    channel.read();
                 }
             } catch (Exception e) {
                 log.warn("[{}][{}] Failed to resume reading from the client", ctx.getClientId(), id, e);

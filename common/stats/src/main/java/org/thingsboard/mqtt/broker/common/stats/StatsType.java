@@ -86,6 +86,7 @@ public enum StatsType {
     UNDECODABLE_DEVICE_MSGS("undecodableDeviceMsgs"),
     APPLICATION_CLIENTS_MAPPED_TO_DEVICE("applicationClientsMappedToDevice"),
     PUBLISH_PAUSES("publishPauses"),
+    PAUSED_CONNECTIONS("pausedConnections"),
     ;
 
     private final String printName;

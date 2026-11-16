@@ -23,6 +23,8 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,8 @@ import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
@@ -97,7 +101,6 @@ class StandalonePublishBackpressureTest {
 
         for (Connection connection : new Connection[]{paused, publishing}) {
             verify(connection.config()).setAutoRead(true);
-            verify(connection.channel()).read();
         }
         assertThat(pausedConnections()).isZero();
     }
@@ -117,7 +120,7 @@ class StandalonePublishBackpressureTest {
     }
 
     @Test
-    void givenPausedChannels_whenBudgetFallsToResume_thenEachGetsAutoReadAndOneRead() {
+    void givenPausedChannels_whenBudgetFallsToResume_thenEachGetsAutoReadBack() {
         Connection first = connection();
         Connection second = connection();
         acquire(8);
@@ -134,10 +137,37 @@ class StandalonePublishBackpressureTest {
             InOrder order = inOrder(connection.config(), connection.channel());
             order.verify(connection.config()).setAutoRead(false);
             order.verify(connection.config()).setAutoRead(true);
-            order.verify(connection.channel()).read();
         }
         assertThat(pausedConnections()).isZero();
         assertThat(publishPauses()).isEqualTo(2);
+    }
+
+    // a real channel: turning auto-read back on reads by itself, so the resume must not read again
+    @Test
+    void givenPausedNettyChannel_whenBudgetFallsToResume_thenItIsReadOnce() {
+        AtomicInteger reads = new AtomicInteger();
+        EmbeddedChannel channel = new EmbeddedChannel(new ChannelOutboundHandlerAdapter() {
+            @Override
+            public void read(ChannelHandlerContext ctx) {
+                reads.incrementAndGet();
+                ctx.read();
+            }
+        });
+        try {
+            ClientSessionCtx session = new ClientSessionCtx();
+            session.setChannel(channel.pipeline().firstContext());
+            acquire(8);
+            backpressure.onPublish(session);
+            assertThat(channel.config().isAutoRead()).isFalse();
+            reads.set(0);
+
+            release(3);
+
+            assertThat(channel.config().isAutoRead()).isTrue();
+            assertThat(reads).hasValue(1);
+        } finally {
+            channel.finishAndReleaseAll();
+        }
     }
 
     @Test
@@ -169,7 +199,6 @@ class StandalonePublishBackpressureTest {
         release(3);
 
         verify(connection.config()).setAutoRead(true);
-        verify(connection.channel()).read();
     }
 
     @Test
@@ -184,7 +213,6 @@ class StandalonePublishBackpressureTest {
         InOrder order = inOrder(connection.config(), connection.channel());
         order.verify(connection.config()).setAutoRead(false);
         order.verify(connection.config()).setAutoRead(true);
-        order.verify(connection.channel()).read();
         assertThat(pausedConnections()).isZero();
     }
 
@@ -235,7 +263,6 @@ class StandalonePublishBackpressureTest {
             release(3);
 
             verify(healthy.config()).setAutoRead(true);
-            verify(healthy.channel()).read();
             assertThat(pausedConnections()).isZero();
             assertThat(logged.list).singleElement().satisfies(event -> assertThat(event.getLevel()).isEqualTo(Level.WARN));
         } finally {
@@ -262,7 +289,6 @@ class StandalonePublishBackpressureTest {
         verify(closed.config(), never()).setAutoRead(true);
         verify(closed.channel(), never()).read();
         verify(open.config()).setAutoRead(true);
-        verify(open.channel()).read();
         assertThat(pausedConnections()).isZero();
     }
 
@@ -309,7 +335,7 @@ class StandalonePublishBackpressureTest {
     }
 
     private double pausedConnections() {
-        return registry.get("pausedConnections").gauge().value();
+        return registry.get(StatsType.PAUSED_CONNECTIONS.getPrintName()).gauge().value();
     }
 
     private double publishPauses() {

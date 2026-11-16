@@ -158,8 +158,6 @@ public class OverloadLiteTest {
     // the load lasts seconds, so far more depth samples than this are taken at one every 50 ms
     private static final int MIN_DEPTH_SAMPLES = 50;
     private static final String STALL_TOPIC_PREFIX = "stall/";
-    // the meter StandalonePublishBackpressure registers
-    private static final String PAUSED_CONNECTIONS_GAUGE = "pausedConnections";
 
     private static final String SUBSCRIPTION = "overload/#";
     private static final String QOS1_TOPIC_PREFIX = "overload/qos1/";
@@ -227,6 +225,9 @@ public class OverloadLiteTest {
     private double droppedMsgsCounterDelta;
     private int publishersDisconnectedByBroker;
     private boolean allPublishersFinished;
+    // the connections paused before the load, and those still paused once the broker was done with it
+    private long pausedBeforeLoad;
+    private long pausedAfterSettle;
     private long qos0Sent;
     private long qos0Received;
 
@@ -260,6 +261,10 @@ public class OverloadLiteTest {
                 .isZero();
         assertThat(allPublishersFinished).as("all publishers finished; failed publishes %s, connections given up by "
                 + "the client %s", publishFailures, clientDisconnects).isTrue();
+        // The keep-alive reads a paused connection every half keep-alive, so a publisher whose resume was lost still
+        // finishes: only the paused set shows it.
+        assertThat(pausedAfterSettle - pausedBeforeLoad).as("connections still paused after the pipeline drained")
+                .isZero();
         // nothing acknowledged and then dropped
         assertThat(notReceived(successfullyAcknowledgedIds)).as("acknowledged ids the subscriber did not receive")
                 .isEmpty();
@@ -402,6 +407,7 @@ public class OverloadLiteTest {
         List<MqttAsyncClient> publishers = new ArrayList<>(qos1Publishers);
         publishers.add(qos0Publisher);
         connectAll(publishers);
+        pausedBeforeLoad = pausedConnections();
 
         Counter droppedMsgs = counter(BrokerConstants.DROPPED_MSGS);
         Counter publishPauses = counter(StatsType.PUBLISH_PAUSES.getPrintName());
@@ -463,8 +469,9 @@ public class OverloadLiteTest {
      * @return the number of QoS 0 markers sent
      */
     private long settle(MqttAsyncClient qos0Publisher) throws Exception {
-        // the pipeline empties and every connection is read again
-        waitUntil(() -> budget.queuedMessages() == 0, DRAIN_TIMEOUT);
+        // the pipeline empties and every connection that was paused is read again and leaves the paused set
+        waitUntil(() -> budget.queuedMessages() == 0 && pausedConnections() == pausedBeforeLoad, DRAIN_TIMEOUT);
+        pausedAfterSettle = pausedConnections();
         long markersSent = sendMarkersUntilTheLastArrives(qos0Publisher);
         waitUntil(() -> notReceived(successfullyAcknowledgedIds).isEmpty(), DRAIN_TIMEOUT);
         awaitPublishHandlerCallbacks();
@@ -747,8 +754,10 @@ public class OverloadLiteTest {
     }
 
     private long pausedConnections() {
-        Gauge gauge = meterRegistry.find(PAUSED_CONNECTIONS_GAUGE).gauge();
-        return gauge == null ? 0 : (long) gauge.value();
+        String name = StatsType.PAUSED_CONNECTIONS.getPrintName();
+        Gauge gauge = meterRegistry.find(name).gauge();
+        assertThat(gauge).as("gauge %s", name).isNotNull();
+        return (long) gauge.value();
     }
 
     private Counter counter(String name) {

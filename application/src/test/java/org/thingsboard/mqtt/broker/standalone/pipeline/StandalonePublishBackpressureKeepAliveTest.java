@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsType;
 import org.thingsboard.mqtt.broker.service.processing.backpressure.KeepAliveProbe;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -241,7 +242,8 @@ class StandalonePublishBackpressureKeepAliveTest {
 
         release(3);
 
-        verify(connection.channel(), times(2)).read(); // the probe's read and the resume's
+        verify(connection.channel()).read(); // the probe's read
+        verify(connection.config()).setAutoRead(true);
         assertThat(pausedConnections()).isZero();
         assertThat(backpressure.probe(connection.sessionId(), lastPacket)).isEqualTo(KeepAliveProbe.CLOSE);
     }
@@ -345,7 +347,7 @@ class StandalonePublishBackpressureKeepAliveTest {
         backpressure.readIfDue(UUID.randomUUID(), READ_INTERVAL_MS);
 
         verify(connection.channel(), never()).read();
-        verify(resumed.channel()).read(); // the resume's own read
+        verify(resumed.channel(), never()).read();
     }
 
     @Test
@@ -464,7 +466,7 @@ class StandalonePublishBackpressureKeepAliveTest {
     }
 
     private double pausedConnections() {
-        return registry.get("pausedConnections").gauge().value();
+        return registry.get(StatsType.PAUSED_CONNECTIONS.getPrintName()).gauge().value();
     }
 
     private static long now() {
