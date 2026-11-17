@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +78,9 @@ import static org.awaitility.Awaitility.await;
  * reach it twice.
  * <p>
  * After each restart, the store's own log ({@code <store>/LOG}, which RocksDB writes and the broker's output does not
- * show) must report no corruption from the recovery.
+ * show) must report no corruption from the recovery. The one exception is the last record of the newest WAL when a
+ * kill cut it off. RocksDB reports such a record as a corruption at the end of the file, drops it and opens the store.
+ * The store write that record belonged to never returned, so nothing acknowledged is lost with it.
  * <p>
  * The offline subscriber's queue must hold every message of the run, and the store keeps at most 65,535 messages for
  * a client. So each publisher is capped at {@value #PUBLISH_RATE} publishes a second, which keeps the run near 30,000
@@ -110,8 +113,14 @@ class KillNineDurabilityLiteTest {
     private static final Pattern CORRUPTION = Pattern.compile("corrupt", Pattern.CASE_INSENSITIVE);
     // what RocksDB logs once it opened a database, and flushes its log after
     private static final String STORE_LOG_OPENED = "DB pointer";
-    // how RocksDB's status reports a corruption; a WAL whose tail a kill cut off is reported as its end instead
+    // how RocksDB's status reports a corruption
     private static final String STORE_LOG_CORRUPTION = "Corruption:";
+    // a WAL that RocksDB replays when it opens a database
+    private static final Pattern STORE_LOG_RECOVERED_WAL = Pattern.compile("Recovering log #(\\d+) ");
+    // a WAL whose last record a kill cut off; in point-in-time recovery (RocksDB's default) the record is reported as a
+    // corruption at the end of the file, dropped, and the database opens
+    private static final Pattern STORE_LOG_CUT_OFF_WAL_TAIL = Pattern.compile("/(\\d+)\\.log: dropping \\d+ bytes; Corruption: "
+            + "(truncated header|truncated record body|error reading trailing data due to encountering EOF)$");
 
     private static LiteTestDatabase db;
 
@@ -201,6 +210,9 @@ class KillNineDurabilityLiteTest {
         }
         await("every publish acknowledged").atMost(TIMEOUT).until(() -> unacknowledgedByPublishers().isEmpty());
         Set<Long> acknowledged = Set.copyOf(acknowledgedIds);
+        // checked before the drain: past the limit the store trims the offline subscriber's queue, and the drain never ends
+        assertThat(lastId.get() + publishesSentAgainAtMost).as("messages the offline subscriber's queue had to hold, at most")
+                .isLessThanOrEqualTo(QUEUE_LIMIT);
         connectAll(List.of(offline));
         // idle as well, so that a late duplicate is counted too
         await("both subscribers holding every acknowledged id and idle for " + IDLE).atMost(DRAIN_TIMEOUT).pollInterval(Duration.ofMillis(500))
@@ -216,8 +228,6 @@ class KillNineDurabilityLiteTest {
                         + "received {} ids, {} of them twice or more; the offline subscriber received {} ids, {} of them twice or more",
                 lastId.get(), acknowledged.size(), publishedIdsInFlightAtAKill.size(), heldIds.size(), onlineIds.size(),
                 onlineDuplicates.size(), offlineIds.size(), offlineDuplicates.size());
-        assertThat(lastId.get() + publishesSentAgainAtMost).as("messages the offline subscriber's queue had to hold, at most")
-                .isLessThanOrEqualTo(QUEUE_LIMIT);
         for (Client client : onlineClients) {
             assertThat(client.connectionsLost.get()).as("connections %s lost", client.clientId()).isEqualTo(KILLS);
         }
@@ -253,13 +263,23 @@ class KillNineDurabilityLiteTest {
 
     /**
      * RocksDB logs its recovery to {@code LOG} in the store directory, not to the broker's output, and flushes that log
-     * once the store is open.
+     * once the store is open. Only a kill can have cut off a WAL, and only the one being written then: the newest.
      */
     private static void assertStoreRecoveredWithoutCorruption(Path store) throws IOException {
         Path storeLog = store.resolve("LOG");
         List<String> lines = Files.readAllLines(storeLog, StandardCharsets.ISO_8859_1);
         assertThat(lines).as("lines of %s", storeLog).anyMatch(line -> line.contains(STORE_LOG_OPENED));
-        assertThat(lines).as("lines of %s that report a corruption", storeLog).noneMatch(line -> line.contains(STORE_LOG_CORRUPTION));
+        long newestWal = lines.stream().map(STORE_LOG_RECOVERED_WAL::matcher).filter(Matcher::find)
+                .mapToLong(recovered -> Long.parseLong(recovered.group(1))).max().orElse(-1);
+        lines.stream().filter(line -> isCutOffTailOf(line, newestWal))
+                .forEach(line -> log.info("The store dropped the record a kill cut off: {}", line));
+        assertThat(lines).as("lines of %s that report a corruption, other than a cut-off tail of the newest WAL (#%d)", storeLog, newestWal)
+                .noneMatch(line -> line.contains(STORE_LOG_CORRUPTION) && !isCutOffTailOf(line, newestWal));
+    }
+
+    private static boolean isCutOffTailOf(String line, long wal) {
+        Matcher cutOffTail = STORE_LOG_CUT_OFF_WAL_TAIL.matcher(line);
+        return cutOffTail.find() && Long.parseLong(cutOffTail.group(1)) == wal;
     }
 
     private void startBroker(Path store) {
