@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
+import org.thingsboard.mqtt.broker.exception.PublishFailures;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
 
@@ -75,9 +76,9 @@ public class MqttPublishController extends BaseController {
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
             @ApiResponse(responseCode = "413", description = "Request body exceeds the limit derived from 'server.rest_publish.max_payload_size'.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-            @ApiResponse(responseCode = "429", description = "Refused by the total incoming throughput quota.",
+            @ApiResponse(responseCode = "429", description = "Refused by a broker limit: the total incoming throughput quota, or a full publish pipeline.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class))),
-            @ApiResponse(responseCode = "503", description = "The broker queue rejected the message or did not acknowledge it in time. " +
+            @ApiResponse(responseCode = "503", description = "The broker queue failed the message, the broker is shutting down, or the queue did not acknowledge in time. " +
                     "On a timeout the message may still have been published, so retries can produce duplicates.",
                     content = @Content(schema = @Schema(implementation = ThingsboardErrorResponse.class)))
     })
@@ -100,10 +101,16 @@ public class MqttPublishController extends BaseController {
 
             @Override
             public void onFailure(Throwable t) {
-                result.setResult(serviceUnavailable("Failed to publish the message: " + t.getMessage()));
+                String message = "Failed to publish the message: " + t.getMessage();
+                result.setResult(PublishFailures.isLimitExceeded(t) ? tooManyRequests(message) : serviceUnavailable(message));
             }
         }, MoreExecutors.directExecutor());
         return result;
+    }
+
+    private static ResponseEntity<?> tooManyRequests(String message) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ThingsboardErrorResponse.of(message, ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS));
     }
 
     private static ResponseEntity<?> serviceUnavailable(String message) {

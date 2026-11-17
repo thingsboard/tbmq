@@ -102,6 +102,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final NodeDrainService nodeDrainService;
+    private final ConnectionAdmission connectionAdmission;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -152,6 +153,12 @@ public class ConnectServiceImpl implements ConnectService {
 
         if (nodeDrainService.isDraining()) {
             refuseConnection(sessionCtx, sessionInfo, USE_ANOTHER_SERVER, null);
+            return;
+        }
+
+        if (!connectionAdmission.tryAdmit(sessionId)) {
+            // the standalone broker is shutting down; refused before the session info is set, as on a node drain
+            refuseConnection(sessionCtx, sessionInfo, SERVER_UNAVAILABLE, null);
             return;
         }
 
@@ -224,6 +231,7 @@ public class ConnectServiceImpl implements ConnectService {
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);
+        connectionAdmission.release(sessionCtx.getSessionId());
         integrationLifecycleEventPublisher.publishConnected(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {

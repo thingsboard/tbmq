@@ -101,6 +101,31 @@ class PipelineBudgetTest {
     }
 
     @Test
+    void givenUsageReachedPause_whenItFallsBetweenTheLevels_thenItStaysPausedUntilTheResumeLevel() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        for (int i = 0; i < 7; i++) {
+            budget.tryAcquire(1);
+        }
+        assertThat(budget.paused()).isFalse();
+
+        budget.tryAcquire(1);
+        assertThat(budget.paused()).isTrue();
+
+        budget.release(1);
+        budget.release(1);
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(budget.paused()).isTrue();
+
+        budget.release(1);
+        assertThat(budget.paused()).isFalse();
+
+        // between the levels again, but on the way up from the resume level
+        budget.tryAcquire(1);
+        budget.tryAcquire(1);
+        assertThat(budget.paused()).isFalse();
+    }
+
+    @Test
     void givenBytesReachPause_whenCheck_thenAbovePause() {
         PipelineBudget budget = new PipelineBudget(1000, 100, 80, 50);
 
@@ -110,6 +135,66 @@ class PipelineBudgetTest {
         budget.tryAcquire(1);
 
         assertThat(budget.abovePause()).isTrue();
+    }
+
+    @Test
+    void givenMaxBytesOfLongMaxValue_whenEmpty_thenNotAbovePauseAndNoProductOverflows() {
+        PipelineBudget budget = new PipelineBudget(10, Long.MAX_VALUE, 80, 50);
+
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(budget.hasRoom(Integer.MAX_VALUE)).isTrue();
+        assertThat(budget.tryAcquire(Integer.MAX_VALUE)).isTrue();
+        assertThat(budget.abovePause()).isFalse();
+    }
+
+    @Test
+    void givenMaxBytesOfLongMaxValue_whenMessagesReachPause_thenPauseAndResumeFireAtTheirPercentages() {
+        PipelineBudget budget = new PipelineBudget(10, Long.MAX_VALUE, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(resumed::incrementAndGet);
+
+        for (int i = 0; i < 7; i++) {
+            budget.tryAcquire(1);
+        }
+        assertThat(budget.abovePause()).isFalse();
+        budget.tryAcquire(1);
+        assertThat(budget.abovePause()).isTrue();
+
+        budget.release(1);
+        budget.release(1);
+        assertThat(resumed).hasValue(0);
+        budget.release(1);
+
+        assertThat(budget.queuedMessages()).isEqualTo(5);
+        assertThat(resumed).hasValue(1);
+    }
+
+    @Test
+    void givenMaxBytesOfLongMaxValue_whenForcedTakesPushBytesPastTheMaximum_thenStillPausedAndResumesWhenReleased() {
+        PipelineBudget budget = new PipelineBudget(Integer.MAX_VALUE, Long.MAX_VALUE, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        budget.onResume(resumed::incrementAndGet);
+
+        // forced takes go past the byte maximum: the bound must leave room for queuedBytes * 100 beyond it
+        int taken = 0;
+        while (budget.queuedBytes() <= Long.MAX_VALUE / 200) {
+            budget.acquire(Integer.MAX_VALUE);
+            taken++;
+        }
+        budget.acquire(Integer.MAX_VALUE);
+        taken++;
+
+        assertThat(budget.queuedBytes()).isGreaterThan(Long.MAX_VALUE / 200).isPositive();
+        assertThat(budget.abovePause()).isTrue();
+        assertThat(resumed).hasValue(0);
+
+        for (int i = 0; i < taken; i++) {
+            budget.release(Integer.MAX_VALUE);
+        }
+
+        assertThat(budget.queuedBytes()).isZero();
+        assertThat(budget.abovePause()).isFalse();
+        assertThat(resumed).hasValue(1);
     }
 
     @Test
@@ -187,6 +272,78 @@ class PipelineBudgetTest {
             stop.get(10, TimeUnit.SECONDS);
         } finally {
             releaseListener.countDown();
+            threads.shutdownNow();
+        }
+    }
+
+    @Test
+    void givenUsageStillPaused_whenResumeUnlessPaused_thenItDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+        // below the pause level, but not yet down to the resume level
+        budget.release(1);
+        budget.release(1);
+
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(0);
+    }
+
+    @Test
+    void givenNeverPausedOrResumedSince_whenResumeUnlessPaused_thenItRuns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+        for (int i = 0; i < 8; i++) {
+            budget.tryAcquire(1);
+        }
+        for (int i = 0; i < 3; i++) {
+            budget.release(1);
+        }
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(2);
+    }
+
+    @Test
+    void givenResumingStopped_whenResumeUnlessPaused_thenItDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger resumed = new AtomicInteger();
+
+        budget.stopResuming();
+        budget.resumeUnlessPaused(resumed::incrementAndGet);
+
+        assertThat(resumed).hasValue(0);
+    }
+
+    @Test
+    void givenAResumeUnlessPausedRunning_whenStopResuming_thenItWaitsForTheResumeToReturn() throws Exception {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        CountDownLatch resumeEntered = new CountDownLatch(1);
+        CountDownLatch releaseResume = new CountDownLatch(1);
+        ExecutorService threads = Executors.newFixedThreadPool(2);
+        try {
+            threads.submit(() -> budget.resumeUnlessPaused(() -> {
+                resumeEntered.countDown();
+                try {
+                    releaseResume.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+            assertThat(resumeEntered.await(10, TimeUnit.SECONDS)).isTrue();
+
+            Future<?> stop = threads.submit(budget::stopResuming);
+
+            assertThatThrownBy(() -> stop.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+            releaseResume.countDown();
+            stop.get(10, TimeUnit.SECONDS);
+        } finally {
+            releaseResume.countDown();
             threads.shutdownNow();
         }
     }
@@ -336,6 +493,27 @@ class PipelineBudgetTest {
         assertThatThrownBy(() -> new PipelineBudget(10, 100, 101, 50)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new PipelineBudget(10, 100, 80, 80)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new PipelineBudget(10, 100, 80, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void givenResumingNotStopped_whenRunUnlessResumingStopped_thenTheActionRuns() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger ran = new AtomicInteger();
+
+        assertThat(budget.runUnlessResumingStopped(ran::incrementAndGet)).isTrue();
+
+        assertThat(ran).hasValue(1);
+    }
+
+    @Test
+    void givenResumingStopped_whenRunUnlessResumingStopped_thenTheActionDoesNotRun() {
+        PipelineBudget budget = new PipelineBudget(10, UNLIMITED_BYTES, 80, 50);
+        AtomicInteger ran = new AtomicInteger();
+
+        budget.stopResuming();
+
+        assertThat(budget.runUnlessResumingStopped(ran::incrementAndGet)).isFalse();
+        assertThat(ran).hasValue(0);
     }
 
     @Test

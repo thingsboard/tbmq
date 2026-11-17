@@ -81,6 +81,31 @@ public class ClientMqttActorManagerImplTest {
     }
 
     @Test
+    public void givenAnyDisconnectReason_whenDisconnectAfterQueuedMsgs_thenRoutedToNormalPriorityQueue() {
+        // the standalone shutdown must not overtake a DISCONNECT or PUBLISH the client sent before it
+        for (DisconnectReasonType type : DisconnectReasonType.values()) {
+            reset(actorRef);
+            MqttDisconnectMsg msg = new MqttDisconnectMsg(UUID.randomUUID(), new DisconnectReason(type));
+
+            manager.disconnectAfterQueuedMsgs(CLIENT_ID, msg);
+
+            verify(actorRef).tell(msg);
+            verify(actorRef, never()).tellWithHighPriority(any());
+        }
+    }
+
+    @Test
+    public void givenMissingActor_whenDisconnectAfterQueuedMsgs_thenNoInteractions() {
+        when(actorSystem.getActor(any(TbActorId.class))).thenReturn(null);
+
+        manager.disconnectAfterQueuedMsgs(CLIENT_ID, new MqttDisconnectMsg(UUID.randomUUID(),
+                new DisconnectReason(DisconnectReasonType.ON_SERVER_SHUTTING_DOWN)));
+
+        verify(actorRef, never()).tell(any());
+        verify(actorRef, never()).tellWithHighPriority(any());
+    }
+
+    @Test
     public void givenMissingActor_whenDisconnect_thenNoInteractions() {
         when(actorSystem.getActor(any(TbActorId.class))).thenReturn(null);
         for (DisconnectReasonType type : Arrays.asList(

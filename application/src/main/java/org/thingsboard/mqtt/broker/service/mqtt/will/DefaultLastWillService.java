@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -102,17 +103,19 @@ public class DefaultLastWillService implements LastWillService {
         }
 
         log.debug("[{}][{}] Removing last will msg, sendMsg - {}", lastWillMsgWithSessionInfo.getClientId(), sessionId, sendMsg);
-        lastWillMessages.remove(sessionId);
-        if (sendMsg) {
-            try {
+        try {
+            if (sendMsg) {
                 int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
                 if (!newSessionCleanStart && willDelay > 0) {
                     return;
                 }
                 scheduleLastWill(lastWillMsgWithSessionInfo, willDelay);
-            } catch (Exception e) {
-                log.warn("[{}] Failed to send last will msg", lastWillMsgWithSessionInfo.getClientId(), e);
             }
+        } catch (Exception e) {
+            log.warn("[{}] Failed to send last will msg", lastWillMsgWithSessionInfo.getClientId(), e);
+        } finally {
+            // only now: a session without a will in the store has its due will on the scheduler already
+            lastWillMessages.remove(sessionId);
         }
     }
 
@@ -122,6 +125,25 @@ public class DefaultLastWillService implements LastWillService {
         if (task != null && !task.isCancelled()) {
             task.cancel(true);
         }
+    }
+
+    @Override
+    public boolean hasLastWill(UUID sessionId) {
+        return lastWillMessages.containsKey(sessionId);
+    }
+
+    /**
+     * Queues a marker behind the wills on the scheduler: it has one thread, and runs the tasks that fall due at the
+     * same time in the order they were scheduled, so the marker runs after every will that was due when it was queued.
+     */
+    @Override
+    public CompletableFuture<Void> dueLastWillsHandled() {
+        if (scheduler == null || scheduler.isShutdown()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        CompletableFuture<Void> handled = new CompletableFuture<>();
+        scheduler.execute(() -> handled.complete(null));
+        return handled;
     }
 
     void scheduleLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo, int willDelay) {

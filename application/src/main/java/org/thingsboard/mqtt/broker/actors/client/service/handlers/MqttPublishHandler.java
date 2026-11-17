@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRe
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -76,6 +77,7 @@ public class MqttPublishHandler {
     private final PublishMsgValidationService publishMsgValidationService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final SparkplugCertificateRepublisher sparkplugCertificateRepublisher;
+    private final PublishBackpressure publishBackpressure;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -138,6 +140,8 @@ public class MqttPublishHandler {
             return;
         }
 
+        // once for every publish that reaches the queue, also for a retained msg the queue has no room for
+        publishBackpressure.onPublish(ctx);
         if (publishMsg.isRetained()) {
             if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);

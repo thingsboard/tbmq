@@ -37,6 +37,8 @@ import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
+import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
 
@@ -151,6 +153,27 @@ public class MqttPublishControllerTest extends AbstractControllerTest {
         doPostAsync(PUBLISH_URL, validRequest(), -1L)
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message").value("Failed to publish the message: queue unavailable"))
+                .andExpect(jsonPath("$.errorCode").value(2));
+    }
+
+    @Test
+    public void givenPublishLimitExceeded_whenPublish_thenTooManyRequestsWithErrorBody() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFailedFuture(new PublishLimitExceededException("pipeline is full")));
+
+        doPostAsync(PUBLISH_URL, validRequest(), -1L)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value("Failed to publish the message: pipeline is full"))
+                .andExpect(jsonPath("$.errorCode").value(33))
+                .andExpect(jsonPath("$.status").value(429));
+    }
+
+    @Test
+    public void givenPipelineClosed_whenPublish_thenServiceUnavailableWithErrorBody() throws Exception {
+        when(restPublishService.publish(any())).thenReturn(Futures.immediateFailedFuture(new PipelineClosedException("workers are stopped")));
+
+        doPostAsync(PUBLISH_URL, validRequest(), -1L)
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("Failed to publish the message: workers are stopped"))
                 .andExpect(jsonPath("$.errorCode").value(2));
     }
 

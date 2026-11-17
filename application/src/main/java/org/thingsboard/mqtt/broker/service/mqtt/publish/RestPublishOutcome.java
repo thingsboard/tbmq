@@ -22,8 +22,8 @@ public enum RestPublishOutcome {
     /** Accepted by the publish queue (regardless of whether any subscription matched). */
     ACCEPTED("accepted"),
     /**
-     * Refused by a broker limit: the total incoming throughput quota (HTTP 429), or the standalone edition's publish
-     * pipeline limits (HTTP 503).
+     * Refused by a broker limit (HTTP 429): the total incoming throughput quota, or the standalone edition's publish
+     * pipeline limits.
      */
     QUOTA_EXCEEDED("quotaExceeded"),
     /** Passed the quota but failed: the retained-message store or the publish queue rejected the message. */
