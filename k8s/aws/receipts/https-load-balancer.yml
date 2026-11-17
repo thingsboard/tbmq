@@ -20,7 +20,6 @@ metadata:
   name: tbmq-https-loadbalancer
   namespace: thingsboard-mqtt-broker
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     # Don't forget to replace YOUR_HTTPS_CERTIFICATE_ARN with the correct value
@@ -28,7 +27,10 @@ metadata:
     alb.ingress.kubernetes.io/certificate-arn: YOUR_HTTPS_CERTIFICATE_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # Allows TLS 1.3 and 1.2. The controller's default policy, ELBSecurityPolicy-2016-08, doesn't support TLS 1.3.
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
 spec:
+  ingressClassName: alb
   rules:
     - http:
         paths:
