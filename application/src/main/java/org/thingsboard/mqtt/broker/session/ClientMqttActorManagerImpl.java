@@ -97,6 +97,16 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
+    public void disconnectAfterQueuedMsgs(String clientId, MqttDisconnectMsg disconnectMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
+            return;
+        }
+        clientActorRef.tell(disconnectMsg);
+    }
+
+    @Override
     public void connect(String clientId, MqttConnectMsg connectMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {

@@ -40,6 +40,12 @@ public class PipelineBudget {
     static final String QUEUED_MESSAGES_GAUGE = "standalonePipelineQueuedMessages";
     static final String QUEUED_BYTES_GAUGE = "standalonePipelineQueuedBytes";
 
+    // The percentage checks multiply a byte count by 100 (or by a percentage of at most 100). Capping the maximum at
+    // Long.MAX_VALUE / 200 keeps maxBytes * percent below Long.MAX_VALUE / 2, and leaves queuedBytes twice the maximum
+    // to grow to, which is the room a forced acquire() needs, before queuedBytes * 100 could overflow. It is some
+    // 46 petabytes, so no real setting is cut.
+    static final long MAX_BYTES_LIMIT = Long.MAX_VALUE / 200;
+
     private final int maxMessages;
     private final long maxBytes;
     private final int pausePercent;
@@ -49,11 +55,11 @@ public class PipelineBudget {
     // written only under the lock, read without it
     private volatile int queuedMessages;
     private volatile long queuedBytes;
-    // under the lock: usage reached the pause level and has not yet fallen back to the resume level
-    private boolean paused;
+    // usage reached the pause level and has not yet fallen back to the resume level; written only under the lock
+    private volatile boolean paused;
 
     private final List<Runnable> resumeListeners = new CopyOnWriteArrayList<>();
-    // a notification holds the read lock and stopResuming the write lock: once stopResuming returns, no listener runs
+    // a resume holds the read lock and stopResuming the write lock: once stopResuming returns, no resume runs
     private final ReentrantReadWriteLock resumeLock = new ReentrantReadWriteLock();
     private boolean resumesStopped;
 
@@ -80,7 +86,7 @@ public class PipelineBudget {
                     + pausePercent + "), but was " + resumePercent);
         }
         this.maxMessages = maxMessages;
-        this.maxBytes = maxBytes;
+        this.maxBytes = Math.min(maxBytes, MAX_BYTES_LIMIT);
         this.pausePercent = pausePercent;
         this.resumePercent = resumePercent;
     }
@@ -164,6 +170,14 @@ public class PipelineBudget {
                 || queuedBytes * 100L >= maxBytes * pausePercent;
     }
 
+    /**
+     * @return {@code true} from the moment messages or bytes reach the pause level until both fall back to the resume
+     * level
+     */
+    public boolean paused() {
+        return paused;
+    }
+
     public int queuedMessages() {
         return queuedMessages;
     }
@@ -182,8 +196,9 @@ public class PipelineBudget {
     }
 
     /**
-     * Stops running the resume listeners for good, and waits for the ones running now to return. The shutdown calls it
-     * before it stops reading from the clients, so the releases of the drain cannot start reading again.
+     * Stops running the resume listeners and the {@link #resumeUnlessPaused} resumes for good, and waits for the ones
+     * running now to return. The shutdown calls it before it stops reading from the clients, so the releases of the
+     * drain cannot start reading again.
      */
     public void stopResuming() {
         resumeLock.writeLock().lock();
@@ -194,17 +209,32 @@ public class PipelineBudget {
         }
     }
 
+    /**
+     * Runs {@code resume} unless the usage is still paused (it reached the pause level and has not fallen back to the
+     * resume level since) or {@link #stopResuming} was called. It is for a caller that paused something after it saw
+     * the usage at the pause level, since a resume that ran between the check and the pause did not see it. While the
+     * usage is still paused, its next resume runs after this call. Like a resume listener, {@code resume} must be cheap
+     * and must not throw, and {@link #stopResuming} waits for it to return.
+     */
+    public void resumeUnlessPaused(Runnable resume) {
+        runUnlessResumingStopped(() -> {
+            boolean stillPaused;
+            synchronized (lock) {
+                stillPaused = paused;
+            }
+            if (!stillPaused) {
+                resume.run();
+            }
+        });
+    }
+
     private boolean atOrBelowResume() {
         return queuedMessages * 100L <= (long) maxMessages * resumePercent
                 && queuedBytes * 100L <= maxBytes * resumePercent;
     }
 
     private void notifyResumed() {
-        resumeLock.readLock().lock();
-        try {
-            if (resumesStopped) {
-                return;
-            }
+        runUnlessResumingStopped(() -> {
             for (Runnable listener : resumeListeners) {
                 try {
                     listener.run();
@@ -213,6 +243,24 @@ public class PipelineBudget {
                     log.error("Pipeline resume listener failed", t);
                 }
             }
+        });
+    }
+
+    /**
+     * Runs {@code action} unless {@link #stopResuming} was called. It is for an action that starts reading from a
+     * client, which must not happen once the shutdown has stopped the reads. {@link #stopResuming} waits for the action
+     * to return, and no action runs after it. Like a resume listener, {@code action} must be cheap and must not throw.
+     *
+     * @return {@code false} when resuming was stopped and the action did not run
+     */
+    public boolean runUnlessResumingStopped(Runnable action) {
+        resumeLock.readLock().lock();
+        try {
+            if (resumesStopped) {
+                return false;
+            }
+            action.run();
+            return true;
         } finally {
             resumeLock.readLock().unlock();
         }

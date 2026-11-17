@@ -23,6 +23,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.KeepAliveProbe;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -43,6 +45,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     private final Map<UUID, KeepAliveInfo> keepAliveInfoMap = new ConcurrentHashMap<>();
 
     private final ClientMqttActorManager clientMqttActorManager;
+    private final PublishBackpressure publishBackpressure;
 
     @Scheduled(fixedRateString = "${mqtt.keep-alive.monitoring-delay-ms}")
     public void processKeepAlive() {
@@ -50,8 +53,21 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             UUID sessionId = entry.getKey();
             KeepAliveInfo keepAliveInfo = entry.getValue();
             long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
-            if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
-                    && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
+            if (!isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)) {
+                readPausedConnectionIfDue(sessionId, keepAliveInfo.getKeepAliveSeconds());
+                continue;
+            }
+            // a paused connection does not read what the client sent, so the session may be alive although it is silent
+            KeepAliveProbe probe = publishBackpressure.probe(sessionId, lastPacketTime);
+            if (probe == KeepAliveProbe.ALIVE) {
+                // a lost CAS means the session was refreshed or cleared meanwhile
+                keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, currentTimeMillis());
+                continue;
+            }
+            if (probe == KeepAliveProbe.WAIT) {
+                continue;
+            }
+            if (keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
                 keepAliveInfoMap.remove(sessionId);
                 log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
                         keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
@@ -61,12 +77,28 @@ public class KeepAliveServiceImpl implements KeepAliveService {
         }
     }
 
+    /**
+     * A paused connection does not read what the client sent, a PINGREQ included, and a client that waits a keep-alive
+     * for its PINGRESP gives up. Read once every half keep-alive. With the reads off, each read takes one
+     * buffer: a PINGREQ queued behind publishes is reached only as these reads work through them, so it can be
+     * answered later than half a keep-alive. A keep-alive of 0 turns the keep-alive off, and these reads with it.
+     */
+    private void readPausedConnectionIfDue(UUID sessionId, int keepAliveSeconds) {
+        if (keepAliveSeconds > 0) {
+            publishBackpressure.readIfDue(sessionId, pausedReadIntervalMs(keepAliveSeconds));
+        }
+    }
+
+    long pausedReadIntervalMs(int keepAliveSeconds) {
+        return TimeUnit.SECONDS.toMillis(keepAliveSeconds) / 2;
+    }
+
     boolean isInactive(int keepAliveSeconds, long lastPacketTime) {
         // A Keep Alive value of 0 has the effect of turning off the Keep Alive mechanism
         if (keepAliveSeconds == 0) {
             return false;
         }
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         long actualKeepAliveMs = (long) (TimeUnit.SECONDS.toMillis(keepAliveSeconds) * 1.5);
         return lastPacketTime + actualKeepAliveMs < now;
     }
@@ -75,7 +107,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     public void registerSession(String clientId, UUID sessionId, int keepAliveSeconds) throws MqttException {
         log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
         keepAliveInfoMap.put(sessionId, new KeepAliveInfo(clientId, keepAliveSeconds,
-                new AtomicLong(System.currentTimeMillis())));
+                new AtomicLong(currentTimeMillis())));
     }
 
     @Override
@@ -91,12 +123,19 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             log.warn("[{}] Cannot find keepAliveInfo", sessionId);
             throw new MqttException("Cannot find KeepAliveInfo for session " + sessionId);
         }
-        long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
-        if (lastPacketTime == CLEARED_KEEP_ALIVE_VALUE
-                || !keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, System.currentTimeMillis())) {
+        // not a compare-and-set against a value read before: the keep-alive thread may refresh the time meanwhile
+        // (a probe that found the client alive), which is no reason to refuse the packet
+        long now = currentTimeMillis();
+        long previous = keepAliveInfo.getLastPacketTime().getAndUpdate(v -> v == CLEARED_KEEP_ALIVE_VALUE ? v : now);
+        if (previous == CLEARED_KEEP_ALIVE_VALUE) {
             log.warn("[{}] LastPacketTime is already cleared", sessionId);
             throw new MqttException("LastPacketTime is already cleared for session " + sessionId);
         }
+    }
+
+    // every clock read of the class, so a test can run the keep-alive between a read and the update that uses it
+    long currentTimeMillis() {
+        return System.currentTimeMillis();
     }
 
     int getKeepAliveInfoSize() {

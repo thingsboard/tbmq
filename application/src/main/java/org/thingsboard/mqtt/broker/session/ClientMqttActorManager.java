@@ -41,6 +41,13 @@ public interface ClientMqttActorManager {
 
     void disconnect(String clientId, MqttDisconnectMsg disconnectMsg);
 
+    /**
+     * Disconnects the client after every message already in its client actor's mailbox, whatever the reason: what the
+     * client sent before, a DISCONNECT included, is processed first. {@link #disconnect} lets a reason the server
+     * initiates overtake those messages.
+     */
+    void disconnectAfterQueuedMsgs(String clientId, MqttDisconnectMsg disconnectMsg);
+
     void connect(String clientId, MqttConnectMsg connectMsg);
 
     void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);

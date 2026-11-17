@@ -58,6 +58,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.sparkplug.SparkplugCertificateRe
 import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -104,6 +105,8 @@ public class MqttPublishHandlerTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockitoBean
     SparkplugCertificateRepublisher sparkplugCertificateRepublisher;
+    @MockitoBean
+    PublishBackpressure publishBackpressure;
 
     @MockitoSpyBean
     MqttPublishHandler mqttPublishHandler;
@@ -480,6 +483,33 @@ public class MqttPublishHandlerTest {
         mqttPublishHandler.persistPubMsg(ctx, publishMsg, actorRef, null);
 
         verify(msgDispatcherService).persistPublishMsg(eq(sessionInfo), eq(publishMsg), eq(new PublisherIdentity("alice", "CN=dev")), any());
+    }
+
+    @Test
+    public void givenPubMsg_whenProcessPubMsg_thenBackpressureSeesThePublishBeforeItIsDispatched() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+        PublishMsg publishMsg = getPublishMsg(1, "sensors/1", 1);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        InOrder inOrder = inOrder(publishBackpressure, msgDispatcherService);
+        inOrder.verify(publishBackpressure).onPublish(ctx);
+        inOrder.verify(msgDispatcherService).persistPublishMsg(any(), eq(publishMsg), any(), any());
+        verify(publishBackpressure, times(1)).onPublish(any());
+    }
+
+    @Test
+    public void givenRetainedPubMsgWithoutQueueCapacity_whenProcessPubMsg_thenBackpressureSeesThePublishBeforeTheRefusal() {
+        givenMqtt5Session();
+        when(msgDispatcherService.hasCapacity(any())).thenReturn(false);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(getPublishMsg(1, 1, true)), actorRef);
+
+        InOrder inOrder = inOrder(publishBackpressure, msgDispatcherService);
+        inOrder.verify(publishBackpressure).onPublish(ctx);
+        inOrder.verify(msgDispatcherService).hasCapacity(any());
+        verify(publishBackpressure, times(1)).onPublish(any());
+        verify(msgDispatcherService, never()).persistPublishMsg(any(), any(), any(), any());
     }
 
     @Test

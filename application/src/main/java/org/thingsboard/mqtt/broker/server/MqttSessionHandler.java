@@ -58,6 +58,7 @@ import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReport
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.processing.backpressure.PublishBackpressure;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -87,6 +88,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ThroughputQuotaService throughputQuotaService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ConnectionStats connectionStats;
+    private final PublishBackpressure publishBackpressure;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -102,6 +104,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.throughputQuotaService = mqttHandlerCtx.getThroughputQuotaService();
         this.tbMessageStatsReportClient = mqttHandlerCtx.getTbMessageStatsReportClient();
         this.connectionStats = mqttHandlerCtx.getStatsManager().getConnectionStats();
+        this.publishBackpressure = mqttHandlerCtx.getPublishBackpressure();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -119,6 +122,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             log.trace("[{}][{}][{}] Processing msg: {}", address, clientId, sessionId, msg);
         }
         try {
+            publishBackpressure.onChannelRead(clientSessionCtx);
             if (!(msg instanceof MqttMessage message)) {
                 log.warn("[{}][{}] Received unknown message", clientId, sessionId);
                 disconnect(new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR, "Received unknown message"));

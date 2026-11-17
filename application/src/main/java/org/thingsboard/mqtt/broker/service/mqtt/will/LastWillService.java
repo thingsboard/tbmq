@@ -20,6 +20,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.processing.PublisherIdentity;
 
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
 public interface LastWillService {
 
     void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg, PublisherIdentity publisher);
@@ -27,4 +30,18 @@ public interface LastWillService {
     void removeAndExecuteLastWillIfNeeded(MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval);
 
     void cancelLastWillDelayIfScheduled(String clientId);
+
+    /**
+     * @return whether a Last Will saved at the session's CONNECT is still waiting for the session's disconnect. The
+     * disconnect takes the will from the store only after it has handed a due will to the scheduler, so once this is
+     * {@code false} after a disconnect, {@link #dueLastWillsHandled()} covers that will
+     */
+    boolean hasLastWill(UUID sessionId);
+
+    /**
+     * @return a future that completes once every Last Will that is due by now has been processed: handed to the
+     * dispatcher, or failed. A will whose Will Delay Interval has not passed yet is not waited for. The future is
+     * complete at once when the scheduler of the wills is shut down.
+     */
+    CompletableFuture<Void> dueLastWillsHandled();
 }
