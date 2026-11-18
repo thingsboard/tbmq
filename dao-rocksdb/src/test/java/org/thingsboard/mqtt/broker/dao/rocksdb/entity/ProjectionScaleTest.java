@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,7 +42,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * The projection of 100,000 credentials: built at startup in seconds, small enough for the heap budget, and paged
  * without reading the store beyond the page. The time bounds leave room for a loaded CI agent; the size bound is the
- * real one. The size is the growth of the used heap across the build, each side measured after a full collection.
+ * real one. The size is the growth of the used heap across the build, each side measured after a full collection. It
+ * is only meaningful with compressed references (the module's surefire argLine pins the heap for that): without them
+ * every reference doubles and so does much of the size.
  */
 class ProjectionScaleTest {
 
@@ -61,6 +64,9 @@ class ProjectionScaleTest {
 
     @Test
     void oneHundredThousandCredentialsBuildQuicklyAndStaySmall() {
+        assertThat(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption("UseCompressedOops").getValue())
+                .as("UseCompressedOops: the size bound assumes compressed references; keep -Xmx below 32g in the surefire argLine")
+                .isEqualTo("true");
         open();
         writeCredentials();
         rocksDbStore.close();

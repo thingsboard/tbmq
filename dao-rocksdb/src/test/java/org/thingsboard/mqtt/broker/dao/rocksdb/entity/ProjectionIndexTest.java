@@ -194,6 +194,15 @@ class ProjectionIndexTest {
         assertThat(filters.get("certCnPattern").apply(credentials)).isNull();
     }
 
+    // every type: buildProjections walks ALL, and a type missing there would silently start with an empty projection
+    @Test
+    void everyStoredTypeHasADescriptorAndEveryPagedTypeAProjection() {
+        assertThat(EntityDescriptors.ALL).extracting(EntityDescriptor::type).containsExactly(StoredEntityType.values());
+        assertThat(EntityDescriptors.ALL).filteredOn(d -> d.projection() != null).extracting(EntityDescriptor::type)
+                .containsExactly(StoredEntityType.MQTT_AUTH_PROVIDER, StoredEntityType.MQTT_CLIENT_CREDENTIALS, StoredEntityType.USER,
+                        StoredEntityType.WEBSOCKET_CONNECTION, StoredEntityType.WEBSOCKET_SUBSCRIPTION, StoredEntityType.UNAUTHORIZED_CLIENT);
+    }
+
     @Test
     void aProjectionRejectsAFieldDeclaredTwice() {
         assertThatThrownBy(() -> Projection.<MqttClientCredentials>builder()

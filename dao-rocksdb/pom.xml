@@ -121,8 +121,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- The root argLine plus the native-access flag, which silences the JDK 25 warning when rocksdbjni
-                         loads its native library. A module-level argLine replaces the root one, so it is repeated. -->
+                         loads its native library. A module-level argLine replaces the root one, so it is repeated.
+                         The heap is pinned: without -Xmx it is a quarter of the agent's RAM, and from 32 GB up the JVM
+                         turns compressed references off, which changes what ProjectionScaleTest measures. -->
                     <argLine>
+                        -Xmx1g
                         -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=20
                         -XX:+EnableDynamicAgentLoading
                         --add-opens java.base/java.lang.reflect=ALL-UNNAMED
