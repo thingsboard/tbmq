@@ -890,6 +890,20 @@ security:
     # When disabled, unauthorized clients are logged only and are not stored.
     # When enabled, unauthorized client entries are persisted to the database.
     enabled: "${SECURITY_UNAUTH_CLIENTS_ENABLED:true}"
+  # HTTP authentication provider parameters.
+  http-auth:
+    # Connection pool of the HTTP client that sends requests to the external authentication service.
+    pool:
+      # Maximum number of connections in the pool. Defaults to 0, which uses the Reactor Netty default:
+      # twice the number of available processors, but at least 16.
+      max-connections: "${TB_HTTP_AUTH_CLIENT_POOL_MAX_CONNECTIONS:0}"
+      # Maximum time a connection may stay idle in the pool before it is closed (in ms). Keep it below the idle timeout
+      # of the authentication service and of any load balancer or proxy in between. Defaults to 30000 (30 s).
+      # 0 disables the limit.
+      max-idle-time-ms: "${TB_HTTP_AUTH_CLIENT_POOL_MAX_IDLE_TIME_MS:30000}"
+      # Maximum lifetime of a connection in the pool, regardless of activity (in ms). Defaults to 300000 (5 min).
+      # 0 disables the limit.
+      max-life-time-ms: "${TB_HTTP_AUTH_CLIENT_POOL_MAX_LIFE_TIME_MS:300000}"
 
 # MQTT parameters
 mqtt:

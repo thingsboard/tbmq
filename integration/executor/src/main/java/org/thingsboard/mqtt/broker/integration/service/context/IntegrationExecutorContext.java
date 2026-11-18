@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEve
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
+import org.thingsboard.mqtt.broker.integration.api.HttpClientPoolSettings;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
@@ -52,6 +53,7 @@ public class IntegrationExecutorContext implements IntegrationContext {
     private final BasicCallback callback;
     private final ExternalCallExecutorService externalCallExecutorService;
     private final int integrationConnectTimeoutSec;
+    private final HttpClientPoolSettings httpClientPoolSettings;
 
     @Override
     public EventLoopGroup getSharedEventLoop() {

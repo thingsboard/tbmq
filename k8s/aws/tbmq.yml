@@ -53,15 +53,15 @@ spec:
                 path: thingsboard-mqtt-broker.conf
               - key: logback
                 path: logback.xml
-      # Uncomment the following lines to enable two-way MQTTS
-      #        - name: tbmq-mqtts-config
-      #          configMap:
-      #            name: tbmq-mqtts-config
-      #            items:
-      #              - key: server.pem
-      #                path: server.pem
-      #              - key: mqttserver_key.pem
-      #                path: mqttserver_key.pem
+        # Uncomment the following lines to enable two-way MQTTS
+        # - name: tbmq-mqtts-config
+        #   configMap:
+        #     name: tbmq-mqtts-config
+        #     items:
+        #       - key: server.pem
+        #         path: server.pem
+        #       - key: mqttserver_key.pem
+        #         path: mqttserver_key.pem
       nodeSelector:
         role: tbmq
       containers:
@@ -106,15 +106,21 @@ spec:
               value: "prometheus"
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
-          #            Uncomment the following lines to enable two-way MQTTS
-          #            - name: LISTENER_SSL_ENABLED
-          #              value: "true"
-          #            - name: LISTENER_SSL_CREDENTIALS_TYPE
-          #              value: "PEM"
-          #            - name: LISTENER_SSL_PEM_CERT
-          #              value: "/ssl-config/server.pem"
-          #            - name: LISTENER_SSL_PEM_KEY
-          #              value: "/ssl-config/mqttserver_key.pem"
+            # Uncomment the following lines to enable two-way MQTTS
+            # - name: LISTENER_SSL_ENABLED
+            #   value: "true"
+            # - name: LISTENER_SSL_CREDENTIALS_TYPE
+            #   value: "PEM"
+            # - name: LISTENER_SSL_PEM_CERT
+            #   value: "/ssl-config/server.pem"
+            # - name: LISTENER_SSL_PEM_KEY
+            #   value: "/ssl-config/mqttserver_key.pem"
+            # - name: LISTENER_WSS_ENABLED
+            #   value: "true"
+            # - name: LISTENER_WSS_PEM_CERT
+            #   value: "/ssl-config/server.pem"
+            # - name: LISTENER_WSS_PEM_KEY
+            #   value: "/ssl-config/mqttserver_key.pem"
           envFrom:
             - configMapRef:
                 name: tbmq-db-config
@@ -124,8 +130,8 @@ spec:
             - mountPath: /config
               name: tbmq-config
             # Uncomment the following lines to enable two-way MQTTS
-            #            - mountPath: /ssl-config
-            #              name: tbmq-mqtts-config
+            # - mountPath: /ssl-config
+            #   name: tbmq-mqtts-config
           readinessProbe:
             tcpSocket:
               port: 1883

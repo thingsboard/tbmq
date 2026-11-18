@@ -24,6 +24,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -62,6 +63,13 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
     private final MqttAuthProviderService mqttAuthProviderService;
     private final AuthorizationRuleService authorizationRuleService;
 
+    @Value("${security.http-auth.pool.max-connections:0}")
+    private int poolMaxConnections;
+    @Value("${security.http-auth.pool.max-idle-time-ms:30000}")
+    private long poolMaxIdleTimeMs;
+    @Value("${security.http-auth.pool.max-life-time-ms:300000}")
+    private long poolMaxLifeTimeMs;
+
     private volatile HttpMqttAuthProviderConfiguration configuration;
     private volatile AuthRulePatterns authRulePatterns;
     private volatile HttpAuthClient client;
@@ -82,7 +90,7 @@ public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMq
     }
 
     private HttpAuthClient initClient(HttpMqttAuthProviderConfiguration config) {
-        return new HttpAuthClient(config);
+        return new HttpAuthClient(config, HttpAuthClient.PoolSettings.of(poolMaxConnections, poolMaxIdleTimeMs, poolMaxLifeTimeMs));
     }
 
     @Override
