@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbKeyValueStore.PutClass;
+import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
 
 @Component

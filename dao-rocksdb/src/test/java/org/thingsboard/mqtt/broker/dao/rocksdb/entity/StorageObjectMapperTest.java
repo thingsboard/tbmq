@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -90,6 +91,28 @@ class StorageObjectMapperTest {
     void anUnknownFormatByteNamesTheTypeAndTheByte() {
         assertThatThrownBy(() -> StorageObjectMapper.read(new byte[]{2, '{', '}'}, User.class))
                 .isInstanceOf(StoreException.class).hasMessageContaining("User").hasMessageContaining("2");
+    }
+
+    @Test
+    void aNullValueNamesTheType() {
+        assertThatThrownBy(() -> StorageObjectMapper.read(null, User.class))
+                .isInstanceOf(StoreException.class).hasMessageContaining("User");
+    }
+
+    @Test
+    void aWriteOnlyAndAReadOnlyPropertyAreStoredAndReadBack() throws Exception {
+        AccessAnnotated original = new AccessAnnotated();
+        original.setWriteOnly("secret");
+        original.setReadOnly("derived");
+
+        AccessAnnotated back = StorageObjectMapper.read(StorageObjectMapper.write(original), AccessAnnotated.class);
+
+        assertThat(back.getWriteOnly()).isEqualTo("secret");
+        assertThat(back.getReadOnly()).isEqualTo("derived");
+        // the REST mapper drops both, which is what the storage mapper must not do
+        AccessAnnotated restBack = TREES.readValue(TREES.writeValueAsBytes(original), AccessAnnotated.class);
+        assertThat(restBack.getWriteOnly()).isNull();
+        assertThat(restBack.getReadOnly()).isNull();
     }
 
     @Test
@@ -209,6 +232,31 @@ class StorageObjectMapperTest {
             case JsonNode n -> !n.isNull() && !n.isEmpty();
             default -> !value.getClass().isArray() || java.lang.reflect.Array.getLength(value) > 0;
         };
+    }
+
+    public static class AccessAnnotated {
+
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+        private String writeOnly;
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private String readOnly;
+
+        public String getWriteOnly() {
+            return writeOnly;
+        }
+
+        public void setWriteOnly(String writeOnly) {
+            this.writeOnly = writeOnly;
+        }
+
+        public String getReadOnly() {
+            return readOnly;
+        }
+
+        public void setReadOnly(String readOnly) {
+            this.readOnly = readOnly;
+        }
+
     }
 
 }

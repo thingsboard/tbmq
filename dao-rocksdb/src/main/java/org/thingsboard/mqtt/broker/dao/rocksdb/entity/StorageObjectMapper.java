@@ -55,9 +55,12 @@ public final class StorageObjectMapper {
     }
 
     public static <T> T read(byte[] value, Class<T> type) {
-        if (value.length == 0 || value[0] != FORMAT_JSON) {
-            throw new StoreException("Cannot read a " + type.getSimpleName() + " from the store: unknown format "
-                    + (value.length == 0 ? "(empty value)" : "byte " + value[0]));
+        if (value == null || value.length == 0) {
+            throw new StoreException("Cannot read a " + type.getSimpleName() + " from the store: the value is "
+                    + (value == null ? "missing" : "empty"));
+        }
+        if (value[0] != FORMAT_JSON) {
+            throw new StoreException("Cannot read a " + type.getSimpleName() + " from the store: unknown format byte " + value[0]);
         }
         try {
             return MAPPER.readValue(value, 1, value.length - 1, type);

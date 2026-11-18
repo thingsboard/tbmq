@@ -109,6 +109,38 @@ class RocksDbStoreTest {
     }
 
     @Test
+    void aStoreCreatedWithOnlyTheEightPhaseTwoFamiliesOpensAndGainsTheNewOnes() throws RocksDBException {
+        List<String> phaseTwo = List.of("meta", "client_session", "client_subscriptions", "retained_msg", "blocked_client",
+                "client_session_attr", "device_msg", "device_msg_meta");
+        createWithFamilies(dir, phaseTwo);
+
+        RocksDbStore store = open(dir);
+
+        for (StoreColumnFamily cf : List.of(StoreColumnFamily.ENTITY, StoreColumnFamily.ENTITY_INDEX,
+                StoreColumnFamily.SESSION_CTX, StoreColumnFamily.TS, StoreColumnFamily.TS_LATEST)) {
+            assertThat(store.get(cf, bytes("k"))).isNull();
+            store.put(StoreWriteClass.NEW_DATA, cf, bytes("k"), bytes("v-" + cf.name()));
+            assertThat(store.get(cf, bytes("k"))).isEqualTo(bytes("v-" + cf.name()));
+        }
+        assertThat(store.meta().schemaVersion()).isEqualTo(1);
+    }
+
+    private static void createWithFamilies(Path path, List<String> families) throws RocksDBException {
+        List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
+        descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY));
+        families.forEach(name -> descriptors.add(new ColumnFamilyDescriptor(name.getBytes(StandardCharsets.UTF_8))));
+        List<ColumnFamilyHandle> handles = new ArrayList<>();
+        try (DBOptions options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
+             RocksDB db = RocksDB.open(options, path.toString(), descriptors, handles)) {
+            // the meta of a store that Phase 2 had opened once
+            db.put(handles.get(1), RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
+            db.put(handles.get(1), RocksDbStore.META_PRODUCT_KEY, bytes("LITE"));
+            db.put(handles.get(1), RocksDbStore.META_INSTALL_ID_KEY, bytes(UUID.randomUUID().toString()));
+            handles.forEach(ColumnFamilyHandle::close);
+        }
+    }
+
+    @Test
     void aSecondStoreOnTheSamePathFailsWithAMessageThatNamesThePath() {
         RocksDbStore first = open(dir);
 
@@ -116,7 +148,7 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining(dir.toString());
 
-        first.put(StoreWriteClass.UPDATE, StoreColumnFamily.RETAINED_MSG, bytes("k"), bytes("v"));
+        first.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.RETAINED_MSG, bytes("k"), bytes("v"));
         assertThat(first.get(StoreColumnFamily.RETAINED_MSG, bytes("k"))).isEqualTo(bytes("v"));
     }
 
