@@ -36,7 +36,10 @@ public enum EntityIndex {
     WS_CONNECTION_USER_NAME(10, "name_unq_key"),
     WS_CONNECTION_USER(11, null),
     WS_SUBSCRIPTION_CONNECTION(12, null),
-    // the key string to its 4-byte key id, for the time series
+    // The time series key dictionary: one key string to one 4-byte key id. Not an index of any entity descriptor, and
+    // RocksEntityStore never touches it (it would treat it as non-unique, having no constraint name). The dictionary
+    // writes it directly, as a unique index: the key is EntityKeys.uniqueIndexKey (code 64, the 4-byte big-endian
+    // length of the UTF-8 key string, the key string) and the value is the key id as 4 big-endian bytes.
     TS_KEY_DICTIONARY(64, null);
 
     private final byte code;

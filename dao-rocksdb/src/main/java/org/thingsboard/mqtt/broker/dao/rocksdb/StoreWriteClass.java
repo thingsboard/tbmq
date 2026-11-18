@@ -17,8 +17,9 @@ package org.thingsboard.mqtt.broker.dao.rocksdb;
 
 /**
  * What a write does to the amount of data in the store. A store that is running out of room refuses
- * {@link #NEW_DATA} first and keeps accepting the writes that do not grow it. A batch takes its most restrictive class:
- * {@link #NEW_DATA} before {@link #UPDATE} before {@link #DELETE}.
+ * {@link #NEW_DATA} first and keeps accepting the writes that do not grow it. A batch is classed by its net effect: a
+ * batch that adds entries is {@link #NEW_DATA}, one that only replaces or moves entries is {@link #UPDATE}, and one that
+ * frees room is {@link #DELETE}, even when it also rewrites the metadata of the queue it removes from.
  */
 public enum StoreWriteClass {
 

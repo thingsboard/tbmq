@@ -75,7 +75,11 @@ public final class EntityKeys {
         return new byte[]{(byte) (type.code() + 1)};
     }
 
-    static byte[] uniqueIndexKey(EntityIndex index, String value) {
+    /**
+     * The key of the entry of {@code value} in the unique {@code index}. Public for the time series key dictionary,
+     * which writes its own entries with it.
+     */
+    public static byte[] uniqueIndexKey(EntityIndex index, String value) {
         byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
         return ByteBuffer.allocate(1 + Integer.BYTES + valueBytes.length)
                 .put(index.code()).putInt(valueBytes.length).put(valueBytes).array();
