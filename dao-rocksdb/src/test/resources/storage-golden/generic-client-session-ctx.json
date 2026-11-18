@@ -1,0 +1,5 @@
+{
+  "clientId" : "session-client-1",
+  "lastUpdatedTime" : 1700000000123,
+  "qos2PublishPacketIds" : [ 5, 9 ]
+}

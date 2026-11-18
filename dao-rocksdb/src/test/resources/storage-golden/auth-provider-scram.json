@@ -1,0 +1,12 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000d",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "SCRAM",
+  "configuration" : {
+    "type" : "SCRAM"
+  },
+  "additionalInfo" : {
+    "description" : "SCRAM provider"
+  }
+}

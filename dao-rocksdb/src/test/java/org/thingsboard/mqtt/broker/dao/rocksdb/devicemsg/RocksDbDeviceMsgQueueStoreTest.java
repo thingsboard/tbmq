@@ -23,9 +23,10 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
-import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
+import org.thingsboard.mqtt.broker.dao.rocksdb.RecordingRocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -56,14 +57,14 @@ class RocksDbDeviceMsgQueueStoreTest {
     @TempDir
     Path dir;
 
-    private RocksDbStore rocksDb;
+    private RecordingRocksDbStore rocksDb;
     private RocksDbDeviceMsgQueueStore store;
 
     @BeforeEach
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        rocksDb = new RecordingRocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
         rocksDb.open();
         store = storeWithLimit(LIMIT);
     }
@@ -337,6 +338,75 @@ class RocksDbDeviceMsgQueueStoreTest {
         } finally {
             pool.shutdownNow();
         }
+    }
+
+    @Test
+    void appendIsNewData() {
+        store.append(List.of(new QueueAppend("c1", msgs(3))));
+
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA);
+    }
+
+    @Test
+    void anAppendThatTrimsIsNewDataAsAWhole() {
+        store.append(List.of(new QueueAppend("c1", msgs(LIMIT))));
+        rocksDb.takeWriteClasses();
+
+        store.append(List.of(new QueueAppend("c1", msgs(3))));
+
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA);
+        assertThat(store.trimmedEntries()).isEqualTo(3);
+    }
+
+    @Test
+    void markingSentAndPubRelAreUpdates() {
+        store.append(List.of(new QueueAppend("c1", msgs(3))));
+        rocksDb.takeWriteClasses();
+
+        store.readForDelivery("c1", 0, 2);
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.UPDATE);
+
+        store.markPubRel("c1", 1);
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.UPDATE);
+    }
+
+    @Test
+    void resetPacketIdAndMoveQueueAreUpdates() {
+        store.append(List.of(new QueueAppend("c1", msgs(3))));
+        rocksDb.takeWriteClasses();
+
+        assertThat(store.resetPacketId("empty", 7)).isTrue();
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.UPDATE);
+
+        store.moveQueue("c1", "c2", body -> body);
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.UPDATE);
+    }
+
+    @Test
+    void anAckAndAQueueRemovalAreDeletes() {
+        store.append(List.of(new QueueAppend("c1", msgs(3)), new QueueAppend("c2", msgs(1))));
+        rocksDb.takeWriteClasses();
+
+        assertThat(store.remove("c1", 1)).isTrue();
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
+
+        store.removeQueue("c1");
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
+    }
+
+    @Test
+    void theExpiryDeletesOfAReadAndOfTheSweepAreDeletes() {
+        MutableClock clock = new MutableClock(NOW_MS);
+        RocksDbDeviceMsgQueueStore expiring = new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, TTL_SECONDS, clock);
+        expiring.append(List.of(new QueueAppend("c1", msgs(3)), new QueueAppend("c2", msgs(3))));
+        rocksDb.takeWriteClasses();
+        clock.advanceSeconds(TTL_SECONDS + 1);
+
+        expiring.read("c1", 0, 10);
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
+
+        assertThat(expiring.sweepExpired()).isPositive();
+        assertThat(rocksDb.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
     }
 
     @Test

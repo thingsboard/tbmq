@@ -15,13 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
 @Data
 @Builder(toBuilder = true)
+// the constructors let Jackson read it: the standalone entity store keeps it as JSON
+@NoArgsConstructor
+@AllArgsConstructor
 public class GenericClientSessionCtx {
 
     private String clientId;

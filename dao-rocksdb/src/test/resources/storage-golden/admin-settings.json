@@ -1,0 +1,11 @@
+{
+  "id" : "12345678-9abc-def0-0000-000000000003",
+  "createdTime" : 1700000000123,
+  "key" : "mail",
+  "jsonValue" : {
+    "smtpHost" : "localhost",
+    "smtpPort" : 25,
+    "password" : "mail-secret",
+    "tls" : true
+  }
+}

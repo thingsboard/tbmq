@@ -28,20 +28,52 @@ import java.util.function.Predicate;
  * {@link #put} and {@link #delete} go through {@link RocksDbStore#put} and {@link RocksDbStore#delete} with the
  * store's write options, and the batch of {@link #retainKeys} through {@link RocksDbStore#write}, so all of them
  * follow the WAL-sync mode.
+ * <p>
+ * A put is classified by {@link PutClass}; every delete and {@link #retainKeys} is {@link StoreWriteClass#DELETE}.
  */
 class RocksDbKeyValueStore implements KeyValueStore {
 
+    /**
+     * How the puts of one store are classified.
+     */
+    enum PutClass {
+        /**
+         * Every put is new data: a retained message or a block is new data or a management write.
+         */
+        ALWAYS_NEW_DATA,
+        /**
+         * Every put replaces a value of a key the store already knows.
+         */
+        ALWAYS_UPDATE,
+        /**
+         * An update when the key exists, else new data: a returning client keeps working on a full disk, a new one
+         * does not. Costs one {@code get} before the put.
+         */
+        UPDATE_IF_PRESENT
+    }
+
     private final RocksDbStore store;
     private final StoreColumnFamily columnFamily;
+    private final PutClass putClass;
 
-    RocksDbKeyValueStore(RocksDbStore store, StoreColumnFamily columnFamily) {
+    RocksDbKeyValueStore(RocksDbStore store, StoreColumnFamily columnFamily, PutClass putClass) {
         this.store = store;
         this.columnFamily = columnFamily;
+        this.putClass = putClass;
     }
 
     @Override
     public void put(String key, byte[] value) {
-        store.put(columnFamily, encode(key), value);
+        byte[] encoded = encode(key);
+        store.put(writeClassOfPut(encoded), columnFamily, encoded, value);
+    }
+
+    private StoreWriteClass writeClassOfPut(byte[] encodedKey) {
+        return switch (putClass) {
+            case ALWAYS_NEW_DATA -> StoreWriteClass.NEW_DATA;
+            case ALWAYS_UPDATE -> StoreWriteClass.UPDATE;
+            case UPDATE_IF_PRESENT -> store.get(columnFamily, encodedKey) != null ? StoreWriteClass.UPDATE : StoreWriteClass.NEW_DATA;
+        };
     }
 
     @Override
@@ -51,7 +83,7 @@ class RocksDbKeyValueStore implements KeyValueStore {
 
     @Override
     public void delete(String key) {
-        store.delete(columnFamily, encode(key));
+        store.delete(StoreWriteClass.DELETE, columnFamily, encode(key));
     }
 
     /**
@@ -85,7 +117,7 @@ class RocksDbKeyValueStore implements KeyValueStore {
             return keys;
         });
         if (!rejected.isEmpty()) {
-            store.write(batch -> rejected.forEach(key -> batch.delete(columnFamily, key)));
+            store.write(StoreWriteClass.DELETE, batch -> rejected.forEach(key -> batch.delete(columnFamily, key)));
         }
         return rejected.size();
     }

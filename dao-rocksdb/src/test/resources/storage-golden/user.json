@@ -1,0 +1,14 @@
+{
+  "id" : "12345678-9abc-def0-0000-000000000001",
+  "createdTime" : 1700000000123,
+  "email" : "admin@example.org",
+  "authority" : "SYS_ADMIN",
+  "firstName" : "Ada",
+  "lastName" : "Admin",
+  "additionalInfo" : {
+    "lang" : "en",
+    "nested" : {
+      "a" : 1
+    }
+  }
+}

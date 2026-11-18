@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.rocksdb;
 
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
+import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbKeyValueStore.PutClass;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
 
 @Component
@@ -29,11 +30,11 @@ public class RocksDbBrokerStateStores implements BrokerStateStores {
     private final KeyValueStore clientSessionAttributes;
 
     public RocksDbBrokerStateStores(RocksDbStore store) {
-        this.clientSessions = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SESSION);
-        this.clientSubscriptions = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SUBSCRIPTIONS);
-        this.retainedMessages = new RocksDbKeyValueStore(store, StoreColumnFamily.RETAINED_MSG);
-        this.blockedClients = new RocksDbKeyValueStore(store, StoreColumnFamily.BLOCKED_CLIENT);
-        this.clientSessionAttributes = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SESSION_ATTR);
+        this.clientSessions = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SESSION, PutClass.UPDATE_IF_PRESENT);
+        this.clientSubscriptions = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SUBSCRIPTIONS, PutClass.UPDATE_IF_PRESENT);
+        this.retainedMessages = new RocksDbKeyValueStore(store, StoreColumnFamily.RETAINED_MSG, PutClass.ALWAYS_NEW_DATA);
+        this.blockedClients = new RocksDbKeyValueStore(store, StoreColumnFamily.BLOCKED_CLIENT, PutClass.ALWAYS_NEW_DATA);
+        this.clientSessionAttributes = new RocksDbKeyValueStore(store, StoreColumnFamily.CLIENT_SESSION_ATTR, PutClass.ALWAYS_UPDATE);
     }
 
     @Override

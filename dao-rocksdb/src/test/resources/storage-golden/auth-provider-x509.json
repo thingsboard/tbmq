@@ -1,0 +1,14 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000b",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "X_509",
+  "configuration" : {
+    "type" : "X_509",
+    "skipValidityCheckForClientCert" : true,
+    "clientAuthType" : "CLIENT_AUTH_REQUIRED"
+  },
+  "additionalInfo" : {
+    "description" : "X_509 provider"
+  }
+}

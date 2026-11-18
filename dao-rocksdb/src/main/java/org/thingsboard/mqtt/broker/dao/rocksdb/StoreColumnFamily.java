@@ -30,7 +30,12 @@ public enum StoreColumnFamily {
     BLOCKED_CLIENT("blocked_client"),
     CLIENT_SESSION_ATTR("client_session_attr"),
     DEVICE_MSG("device_msg"),
-    DEVICE_MSG_META("device_msg_meta");
+    DEVICE_MSG_META("device_msg_meta"),
+    ENTITY("entity"),
+    ENTITY_INDEX("entity_index"),
+    SESSION_CTX("session_ctx"),
+    TS("ts"),
+    TS_LATEST("ts_latest");
 
     private final String columnFamilyName;
 

@@ -82,13 +82,13 @@ class RocksDbStoreTest {
     }
 
     @Test
-    void allEightColumnFamiliesExistAfterOpen() {
+    void everyColumnFamilyExistsAfterOpen() {
         RocksDbStore store = open(dir);
 
-        assertThat(StoreColumnFamily.values()).hasSize(8);
+        assertThat(StoreColumnFamily.values()).hasSize(13);
         for (StoreColumnFamily cf : StoreColumnFamily.values()) {
             byte[] key = bytes("key-" + cf.name());
-            store.put(cf, key, bytes("value-" + cf.name()));
+            store.put(StoreWriteClass.NEW_DATA, cf, key, bytes("value-" + cf.name()));
             assertThat(store.get(cf, key)).isEqualTo(bytes("value-" + cf.name()));
         }
     }
@@ -104,7 +104,8 @@ class RocksDbStoreTest {
         }
         // these names are the on-disk schema: changing one orphans its data
         assertThat(names).containsExactlyInAnyOrder("default", "meta", "client_session", "client_subscriptions",
-                "retained_msg", "blocked_client", "client_session_attr", "device_msg", "device_msg_meta");
+                "retained_msg", "blocked_client", "client_session_attr", "device_msg", "device_msg_meta",
+                "entity", "entity_index", "session_ctx", "ts", "ts_latest");
     }
 
     @Test
@@ -115,7 +116,7 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining(dir.toString());
 
-        first.put(StoreColumnFamily.RETAINED_MSG, bytes("k"), bytes("v"));
+        first.put(StoreWriteClass.UPDATE, StoreColumnFamily.RETAINED_MSG, bytes("k"), bytes("v"));
         assertThat(first.get(StoreColumnFamily.RETAINED_MSG, bytes("k"))).isEqualTo(bytes("v"));
     }
 
@@ -135,7 +136,7 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreOfAnotherProductIsRefused() {
-        open(dir).put(StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
         closeAll();
 
         assertThatThrownBy(() -> open(dir))
@@ -146,7 +147,7 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreWithAHigherSchemaVersionIsRefused() {
-        open(dir).put(StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
         closeAll();
 
         assertThatThrownBy(() -> open(dir))
@@ -157,7 +158,7 @@ class RocksDbStoreTest {
 
     @Test
     void aRefusedOpenReleasesTheLock() {
-        open(dir).put(StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
         closeAll();
         assertThatThrownBy(() -> open(dir)).hasMessageContaining("product 'X'");
 
@@ -168,7 +169,7 @@ class RocksDbStoreTest {
     @Test
     void writesAreReadableAfterCloseAndReopen() {
         RocksDbStore store = open(dir);
-        store.put(StoreColumnFamily.CLIENT_SESSION, bytes("c1"), bytes("session"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes("c1"), bytes("session"));
         closeAll();
 
         assertThat(open(dir).get(StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isEqualTo(bytes("session"));
@@ -177,9 +178,9 @@ class RocksDbStoreTest {
     @Test
     void deleteRemovesTheKey() {
         RocksDbStore store = open(dir);
-        store.put(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"), bytes("1"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.BLOCKED_CLIENT, bytes("a"), bytes("1"));
 
-        store.delete(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"));
+        store.delete(StoreWriteClass.DELETE, StoreColumnFamily.BLOCKED_CLIENT, bytes("a"));
 
         assertThat(store.get(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"))).isNull();
     }
@@ -187,12 +188,12 @@ class RocksDbStoreTest {
     @Test
     void aWriteBatchAppliesPutsDeletesAndRangeDeletesTogether() {
         RocksDbStore store = open(dir);
-        store.put(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"), bytes("1"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.BLOCKED_CLIENT, bytes("a"), bytes("1"));
         for (String k : List.of("k1", "k2", "k3", "k4")) {
-            store.put(StoreColumnFamily.RETAINED_MSG, bytes(k), bytes("v"));
+            store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.RETAINED_MSG, bytes(k), bytes("v"));
         }
 
-        store.write(batch -> {
+        store.write(StoreWriteClass.NEW_DATA, batch -> {
             batch.put(StoreColumnFamily.BLOCKED_CLIENT, bytes("b"), bytes("2"));
             batch.delete(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"));
             batch.deleteRange(StoreColumnFamily.RETAINED_MSG, bytes("k2"), bytes("k4"));
@@ -207,7 +208,7 @@ class RocksDbStoreTest {
     void aBodyThatThrowsWritesNothing() {
         RocksDbStore store = open(dir);
 
-        assertThatThrownBy(() -> store.write(batch -> {
+        assertThatThrownBy(() -> store.write(StoreWriteClass.NEW_DATA, batch -> {
             batch.put(StoreColumnFamily.BLOCKED_CLIENT, bytes("a"), bytes("1"));
             throw new IllegalArgumentException("boom");
         })).isInstanceOf(IllegalArgumentException.class).hasMessage("boom");
@@ -219,7 +220,7 @@ class RocksDbStoreTest {
     void aBatchKeptAfterTheWriteEndsCannotBeUsed() {
         RocksDbStore store = open(dir);
         List<StoreBatch> kept = new ArrayList<>();
-        store.write(kept::add);
+        store.write(StoreWriteClass.NEW_DATA, kept::add);
 
         StoreBatch batch = kept.get(0);
         assertThatThrownBy(() -> batch.put(StoreColumnFamily.META, bytes("k"), bytes("v")))
@@ -234,9 +235,9 @@ class RocksDbStoreTest {
     void aScanWalksOneColumnFamilyInKeyOrderBetweenItsBounds() {
         RocksDbStore store = open(dir);
         for (String k : List.of("b", "a", "d", "c")) {
-            store.put(StoreColumnFamily.RETAINED_MSG, bytes(k), bytes("v"));
+            store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.RETAINED_MSG, bytes(k), bytes("v"));
         }
-        store.put(StoreColumnFamily.CLIENT_SESSION, bytes("z"), bytes("3"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes("z"), bytes("3"));
 
         assertThat(keys(store, StoreColumnFamily.RETAINED_MSG, null, null)).containsExactly("a", "b", "c", "d");
         assertThat(keys(store, StoreColumnFamily.RETAINED_MSG, bytes("b"), bytes("d"))).containsExactly("b", "c");
@@ -250,7 +251,7 @@ class RocksDbStoreTest {
         RocksDbStore store = open(dir);
         for (long prefix : new long[]{1, 2}) {
             for (int seq = 1; seq <= 3; seq++) {
-                store.put(StoreColumnFamily.DEVICE_MSG, deviceKey(prefix, seq), bytes("p" + prefix + "s" + seq));
+                store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.DEVICE_MSG, deviceKey(prefix, seq), bytes("p" + prefix + "s" + seq));
             }
         }
 
@@ -266,7 +267,7 @@ class RocksDbStoreTest {
     @Test
     void syncWalSucceedsOnAnOpenStore() {
         RocksDbStore store = open(dir);
-        store.put(StoreColumnFamily.RETAINED_MSG, bytes("a"), bytes("1"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.RETAINED_MSG, bytes("a"), bytes("1"));
 
         assertThatCode(store::syncWal).doesNotThrowAnyException();
     }
@@ -297,7 +298,7 @@ class RocksDbStoreTest {
         for (int i = 0; i < 1000; i++) {
             byte[] value = new byte[1024];
             random.nextBytes(value);
-            store.put(StoreColumnFamily.CLIENT_SESSION, bytes(String.format("key-%04d", i)), value);
+            store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes(String.format("key-%04d", i)), value);
         }
         store.close();
         flushAll(dir);
@@ -319,7 +320,7 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreWithAnUnknownColumnFamilyAndALaterSchemaIsRefusedWithTheSchemaMessage() throws RocksDBException {
-        open(dir).put(StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
         closeAll();
         addColumnFamily(dir, "future_cf");
 
@@ -351,9 +352,9 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("get from meta")
                 .hasMessageContaining(dir.toString());
-        assertThatThrownBy(() -> store.put(StoreColumnFamily.META, bytes("k"), bytes("v"))).isInstanceOf(StoreException.class);
-        assertThatThrownBy(() -> store.delete(StoreColumnFamily.META, bytes("k"))).isInstanceOf(StoreException.class);
-        assertThatThrownBy(() -> store.write(batch -> batch.put(StoreColumnFamily.META, bytes("k"), bytes("v"))))
+        assertThatThrownBy(() -> store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.META, bytes("k"), bytes("v"))).isInstanceOf(StoreException.class);
+        assertThatThrownBy(() -> store.delete(StoreWriteClass.DELETE, StoreColumnFamily.META, bytes("k"))).isInstanceOf(StoreException.class);
+        assertThatThrownBy(() -> store.write(StoreWriteClass.NEW_DATA, batch -> batch.put(StoreColumnFamily.META, bytes("k"), bytes("v"))))
                 .isInstanceOf(StoreException.class).hasMessageContaining("write a batch");
         assertThatThrownBy(() -> store.scan(StoreColumnFamily.META, null, null, it -> null))
                 .isInstanceOf(StoreException.class).hasMessageContaining("scan meta");
@@ -377,9 +378,9 @@ class RocksDbStoreTest {
                     try {
                         for (long i = 0; ; i++) {
                             byte[] key = bytes("k-" + id + "-" + (i % 1000));
-                            store.put(StoreColumnFamily.CLIENT_SESSION, key, bytes("v" + i));
+                            store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, key, bytes("v" + i));
                             store.get(StoreColumnFamily.CLIENT_SESSION, key);
-                            store.write(batch -> {
+                            store.write(StoreWriteClass.NEW_DATA, batch -> {
                                 batch.put(StoreColumnFamily.DEVICE_MSG, deviceKey(id, 1), key);
                                 batch.deleteRange(StoreColumnFamily.RETAINED_MSG, bytes("a"), bytes("b"));
                             });
@@ -391,7 +392,7 @@ class RocksDbStoreTest {
                                 }
                                 return n;
                             });
-                            store.delete(StoreColumnFamily.CLIENT_SESSION, key);
+                            store.delete(StoreWriteClass.DELETE, StoreColumnFamily.CLIENT_SESSION, key);
                         }
                     } catch (StoreException e) {
                         refused.incrementAndGet();

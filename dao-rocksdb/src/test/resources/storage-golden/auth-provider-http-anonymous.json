@@ -1,0 +1,29 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000e",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "HTTP",
+  "configuration" : {
+    "type" : "HTTP",
+    "restEndpointUrl" : "https://auth.example.org/check",
+    "requestMethod" : "PUT",
+    "credentials" : {
+      "type" : "anonymous"
+    },
+    "headers" : {
+      "X-Token" : "http-header"
+    },
+    "requestBody" : "{\"clientId\":\"${clientId}\"}",
+    "readTimeoutMs" : 1234,
+    "maxParallelRequestsCount" : 7,
+    "maxInMemoryBufferSizeInKb" : 512,
+    "defaultClientType" : "APPLICATION",
+    "authRules" : {
+      "pubAuthRulePatterns" : [ "pub/.*" ],
+      "subAuthRulePatterns" : [ "sub/.*", "shared/.*" ]
+    }
+  },
+  "additionalInfo" : {
+    "description" : "HTTP provider"
+  }
+}
