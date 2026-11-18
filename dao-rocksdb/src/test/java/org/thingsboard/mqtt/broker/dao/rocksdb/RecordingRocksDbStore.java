@@ -18,14 +18,17 @@ package org.thingsboard.mqtt.broker.dao.rocksdb;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * A {@link RocksDbStore} that records the {@link StoreWriteClass} of every put, delete and batch it runs.
+ * A {@link RocksDbStore} that records the {@link StoreWriteClass} of every put, delete and batch it runs, and counts
+ * its point reads.
  */
 public class RecordingRocksDbStore extends RocksDbStore {
 
     private final List<StoreWriteClass> writeClasses = Collections.synchronizedList(new ArrayList<>());
+    private final AtomicInteger gets = new AtomicInteger();
 
     public RecordingRocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
         super(properties, memoryBudget);
@@ -47,6 +50,19 @@ public class RecordingRocksDbStore extends RocksDbStore {
     public void delete(StoreWriteClass writeClass, StoreColumnFamily cf, byte[] key) {
         writeClasses.add(writeClass);
         super.delete(writeClass, cf, key);
+    }
+
+    @Override
+    public byte[] get(StoreColumnFamily cf, byte[] key) {
+        gets.incrementAndGet();
+        return super.get(cf, key);
+    }
+
+    /**
+     * The number of {@link #get} calls since the last call.
+     */
+    public int takeGets() {
+        return gets.getAndSet(0);
     }
 
     /**

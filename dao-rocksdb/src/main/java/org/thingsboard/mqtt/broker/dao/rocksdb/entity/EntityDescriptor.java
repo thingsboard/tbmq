@@ -26,8 +26,8 @@ import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 
 /**
- * How {@link RocksEntityStore} keeps one domain type: its stored type, its id, its index values and the types removed
- * with it. The instances are the constants of {@link EntityDescriptors}.
+ * How {@link RocksEntityStore} keeps one domain type: its stored type, its id, its index values, the types removed
+ * with it and, for a paged type, its projection. The instances are the constants of {@link EntityDescriptors}.
  *
  * @param <T>  the domain type, stored as its JSON
  * @param <ID> {@link UUID} for a {@link StoredEntityType.IdKind#UUID} type, {@link String} for a
@@ -49,6 +49,7 @@ public final class EntityDescriptor<T, ID> {
     private final ObjLongConsumer<T> createdTimeSetter;
     private final Map<EntityIndex, Function<T, String>> indexes;
     private final List<Cascade> cascades;
+    private final Projection<T> projection;
 
     private EntityDescriptor(Builder<T, ID> builder) {
         this.type = builder.type;
@@ -58,6 +59,7 @@ public final class EntityDescriptor<T, ID> {
         this.createdTimeSetter = builder.createdTimeSetter;
         this.indexes = Collections.unmodifiableMap(new EnumMap<>(builder.indexes));
         this.cascades = List.copyOf(builder.cascades);
+        this.projection = builder.projection;
     }
 
     public static <T, ID> Builder<T, ID> builder(StoredEntityType type, Class<T> domainClass, Function<T, ID> id) {
@@ -103,6 +105,13 @@ public final class EntityDescriptor<T, ID> {
     }
 
     /**
+     * What the type keeps in memory for paging; {@code null} for a type that is never paged.
+     */
+    public Projection<T> projection() {
+        return projection;
+    }
+
+    /**
      * The id as it is written in the keys, see {@link EntityKeys}.
      */
     byte[] idBytes(ID entityId) {
@@ -121,6 +130,7 @@ public final class EntityDescriptor<T, ID> {
         private ObjLongConsumer<T> createdTimeSetter;
         private final Map<EntityIndex, Function<T, String>> indexes = new EnumMap<>(EntityIndex.class);
         private final List<Cascade> cascades = new ArrayList<>();
+        private Projection<T> projection;
 
         private Builder(StoredEntityType type, Class<T> domainClass, Function<T, ID> id) {
             this.type = type;
@@ -150,6 +160,11 @@ public final class EntityDescriptor<T, ID> {
                 throw new IllegalArgumentException(type + " cascades through " + childIndex + ", which " + child.type() + " does not have");
             }
             cascades.add(new Cascade(childIndex, child));
+            return this;
+        }
+
+        public Builder<T, ID> projection(Projection<T> projection) {
+            this.projection = projection;
             return this;
         }
 

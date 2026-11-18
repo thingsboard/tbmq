@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
@@ -37,6 +40,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -50,6 +54,10 @@ import java.util.function.Supplier;
  * then WEBSOCKET_SUBSCRIPTION), and every other call takes one lock, so no two calls wait for each other in a cycle.
  * Reads take no lock: each batch is atomic, and a document found through an index is returned only if it still has
  * the indexed value.
+ * <p>
+ * A type with a {@link Projection} keeps one in memory ({@link ProjectionIndex}), built by one scan of the type at
+ * startup and changed by every write, under the same locks, once its batch is written. Pages are filtered, searched and
+ * sorted there, and only the documents of the page are read.
  */
 @Component
 @StandaloneComponent
@@ -57,11 +65,39 @@ public class RocksEntityStore {
 
     private final RocksDbStore store;
     private final Map<StoredEntityType, ReentrantLock> locks = new EnumMap<>(StoredEntityType.class);
+    private final Map<StoredEntityType, ProjectionIndex<?>> projections = new EnumMap<>(StoredEntityType.class);
+
+    /**
+     * What a page filter sees of one document: its id, its created time ({@code 0} for a type without one), the values
+     * of its sort properties and filter fields by name, and its text-search value.
+     */
+    public record ProjectedEntity(Object id, long createdTime, Map<String, Comparable<?>> sortValues, String textSearch,
+                                  Map<String, Object> filterValues) {
+    }
 
     public RocksEntityStore(RocksDbStore store) {
         this.store = store;
         for (StoredEntityType type : StoredEntityType.values()) {
             locks.put(type, new ReentrantLock());
+        }
+        for (EntityDescriptor<?, ?> d : EntityDescriptors.ALL) {
+            if (d.projection() != null) {
+                projections.put(d.type(), new ProjectionIndex<>(d.projection()));
+            }
+        }
+    }
+
+    /**
+     * Fills the projections from the store, one scan per type. Runs once, after the store opened and before any write.
+     *
+     * @throws StoreException naming the type and id of a document that cannot be read
+     */
+    @PostConstruct
+    public void buildProjections() {
+        for (EntityDescriptor<?, ?> d : EntityDescriptors.ALL) {
+            if (d.projection() != null) {
+                withLocks(EnumSet.of(d.type()), () -> buildProjection(d));
+            }
         }
     }
 
@@ -77,7 +113,8 @@ public class RocksEntityStore {
 
     /**
      * {@link #removeById} of {@code removedId}, cascades included, and {@link #save} of {@code saved} in one batch.
-     * The unique values of the removed documents are free for {@code saved}.
+     * The unique values of the removed documents are free for {@code saved}. A {@code removedId} with no document is
+     * skipped, and {@code saved} is still saved.
      */
     public <T, ID> T removeAndSave(EntityDescriptor<T, ID> d, ID removedId, T saved) {
         return save(d, Objects.requireNonNull(removedId, "removedId"), saved);
@@ -95,6 +132,7 @@ public class RocksEntityStore {
                 return false;
             }
             store.write(StoreWriteClass.DELETE, changes::applyTo);
+            changes.removed().forEach(this::removeFromProjection);
             return true;
         });
     }
@@ -145,6 +183,35 @@ public class RocksEntityStore {
         return documents;
     }
 
+    /**
+     * One page of the documents that match the page link's text search and {@code filter}, sorted by its sort order
+     * (by id without one: for a UUID id the order of its 16 big-endian bytes, unsigned), with the totals of
+     * {@link PageData}. Only the documents of the page are read from the store; a document removed after the
+     * projection was read is left out of the page.
+     *
+     * @param filter on the projected fields of a document; {@code null} for none
+     * @throws IllegalArgumentException for a type without a projection or an unknown sort property
+     */
+    public <T, ID> PageData<T> findPage(EntityDescriptor<T, ID> d, PageLink pageLink, Predicate<ProjectedEntity> filter) {
+        ProjectionIndex.Slice slice = projection(d).find(pageLink, filter);
+        List<T> data = new ArrayList<>(slice.ids().size());
+        for (Object id : slice.ids()) {
+            T document = findDocument(d, idBytes(d, id));
+            if (document != null) {
+                data.add(document);
+            }
+        }
+        int totalPages = (int) ((slice.totalElements() + pageLink.getPageSize() - 1) / pageLink.getPageSize());
+        return new PageData<>(data, totalPages, slice.totalElements(), (long) pageLink.getPage() + 1 < totalPages);
+    }
+
+    /**
+     * The number of documents of a type with a projection.
+     */
+    public <T, ID> long count(EntityDescriptor<T, ID> d) {
+        return projection(d).size();
+    }
+
     public <T, ID> boolean existsByIndex(EntityDescriptor<T, ID> d, EntityIndex index, String value) {
         requireIndex(d, index);
         if (value == null) {
@@ -170,6 +237,8 @@ public class RocksEntityStore {
         byte[] id = d.idBytes(d.id().apply(document));
         byte[] value = StorageObjectMapper.write(document);
         Map<EntityIndex, String> newValues = indexValues(d, document);
+        ProjectionIndex<T> projection = projectionOrNull(d);
+        ProjectionIndex.Row row = projection == null ? null : projection.project(d.id().apply(document), document);
         EnumSet<StoredEntityType> lockedTypes = removedId == null ? EnumSet.of(d.type()) : lockedTypes(d);
         withLocks(lockedTypes, () -> {
             Changes changes = new Changes();
@@ -194,6 +263,10 @@ public class RocksEntityStore {
             newValues.forEach((index, indexed) -> changes.put(StoreColumnFamily.ENTITY_INDEX, indexKey(index, indexed, id), id));
             // new data even for an update: a management create or update is refused below the free-space watermark
             store.write(StoreWriteClass.NEW_DATA, changes::applyTo);
+            changes.removed().forEach(this::removeFromProjection);
+            if (row != null) {
+                projection.put(row);
+            }
             return null;
         });
         return document;
@@ -226,7 +299,7 @@ public class RocksEntityStore {
         if (document == null) {
             return false;
         }
-        changes.remove(key);
+        changes.remove(key, d.type(), d.id().apply(document));
         indexValues(d, document).forEach((index, value) -> changes.delete(StoreColumnFamily.ENTITY_INDEX, indexKey(index, value, id)));
         String idText = EntityKeys.idText(d.type(), id);
         for (EntityDescriptor.Cascade cascade : d.cascades()) {
@@ -260,6 +333,45 @@ public class RocksEntityStore {
             }
             return entries;
         });
+    }
+
+    private <T> Void buildProjection(EntityDescriptor<T, ?> d) {
+        ProjectionIndex<T> projection = projectionOrNull(d);
+        store.scan(StoreColumnFamily.ENTITY, EntityKeys.typeLower(d.type()), EntityKeys.typeUpper(d.type()), it -> {
+            for (; it.isValid(); it.next()) {
+                byte[] key = it.key();
+                T document = decode(d, Arrays.copyOfRange(key, 1, key.length), it.value());
+                projection.put(projection.project(d.id().apply(document), document));
+            }
+            return null;
+        });
+        return null;
+    }
+
+    private void removeFromProjection(Removed removed) {
+        ProjectionIndex<?> projection = projections.get(removed.type());
+        if (projection != null) {
+            projection.remove(removed.id());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> ProjectionIndex<T> projectionOrNull(EntityDescriptor<T, ?> d) {
+        return (ProjectionIndex<T>) projections.get(d.type());
+    }
+
+    private <T> ProjectionIndex<T> projection(EntityDescriptor<T, ?> d) {
+        ProjectionIndex<T> projection = projectionOrNull(d);
+        if (projection == null) {
+            throw new IllegalArgumentException(d.type() + " has no projection");
+        }
+        return projection;
+    }
+
+    // an id of the projection is one the descriptor returned for a document of its type
+    @SuppressWarnings("unchecked")
+    private static <ID> byte[] idBytes(EntityDescriptor<?, ID> d, Object id) {
+        return d.idBytes((ID) id);
     }
 
     private <T> T findIfIndexed(EntityDescriptor<T, ?> d, byte[] id, Function<T, String> indexValue, String value) {
@@ -344,13 +456,17 @@ public class RocksEntityStore {
     private record Write(StoreColumnFamily cf, byte[] key, byte[] value) {
     }
 
+    private record Removed(StoredEntityType type, Object id) {
+    }
+
     /**
-     * The puts and deletes of one batch, in order, and the entity keys it removes.
+     * The puts and deletes of one batch, in order, and the documents it removes.
      */
     private static final class Changes {
 
         private final List<Write> writes = new ArrayList<>();
         private final Set<ByteBuffer> removedKeys = new HashSet<>();
+        private final List<Removed> removed = new ArrayList<>();
 
         void put(StoreColumnFamily cf, byte[] key, byte[] value) {
             writes.add(new Write(cf, key, value));
@@ -360,9 +476,14 @@ public class RocksEntityStore {
             writes.add(new Write(cf, key, null));
         }
 
-        void remove(byte[] entityKey) {
+        void remove(byte[] entityKey, StoredEntityType type, Object id) {
             removedKeys.add(ByteBuffer.wrap(entityKey));
+            removed.add(new Removed(type, id));
             delete(StoreColumnFamily.ENTITY, entityKey);
+        }
+
+        List<Removed> removed() {
+            return removed;
         }
 
         boolean removes(byte[] entityKey) {
