@@ -348,7 +348,9 @@ class RocksEntityStorePagingTest {
         restart();
 
         assertThat(store.count(MQTT_CLIENT_CREDENTIALS)).isEqualTo(3);
-        assertThat(sortValues()).containsExactlyElementsOf(before);
+        assertThat(sortValues()).containsExactlyInAnyOrderElementsOf(before);
+        assertThat(store.findPage(MQTT_CLIENT_CREDENTIALS, new PageLink(10, 0, null, new SortOrder("name")), null).getData())
+                .extracting(MqttClientCredentials::getName).containsExactly("a", "b", "c");
     }
 
     @Test
@@ -370,6 +372,7 @@ class RocksEntityStorePagingTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("USER_CREDENTIALS");
     }
 
+    // the filter sees the documents in the projection's own order, which is unspecified, so compare them in any order
     private List<Map<String, Comparable<?>>> sortValues() {
         List<Map<String, Comparable<?>>> values = new ArrayList<>();
         PageData<MqttClientCredentials> page = store.findPage(MQTT_CLIENT_CREDENTIALS, new PageLink(10), projected -> {
