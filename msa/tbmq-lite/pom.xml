@@ -81,6 +81,10 @@
                         <id>ban-cluster-infrastructure</id>
                         <phase>validate</phase>
                     </execution>
+                    <execution>
+                        <id>ban-sql-infrastructure</id>
+                        <phase>validate</phase>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
