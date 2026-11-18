@@ -36,7 +36,8 @@
         Phase 1 skeleton: this module holds no code yet. It only proves, through the Enforcer
         rule below, that the application can be assembled without the cluster infrastructure.
         The image is added in Phase 4.
-        lite-tests takes its classpath from this module, so its dependencies are declared only here.
+        lite-tests takes its classpath from this module, so its dependencies are declared only here; the one exception is
+        dao-sql, which lite-tests adds back while the management data is still in PostgreSQL.
     -->
 
     <properties>
@@ -49,6 +50,10 @@
             <artifactId>application</artifactId>
             <version>${project.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.thingsboard.mqtt-broker</groupId>
+                    <artifactId>dao-sql</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.thingsboard.mqtt-broker.common</groupId>
                     <artifactId>queue-kafka</artifactId>
@@ -75,6 +80,10 @@
                     <execution>
                         <!-- the ban list is defined once, in the root pom's pluginManagement -->
                         <id>ban-cluster-infrastructure</id>
+                        <phase>validate</phase>
+                    </execution>
+                    <execution>
+                        <id>ban-sql-infrastructure</id>
                         <phase>validate</phase>
                     </execution>
                 </executions>

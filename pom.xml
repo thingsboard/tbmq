@@ -92,6 +92,7 @@
         <module>common</module>
         <module>netty-mqtt</module>
         <module>dao</module>
+        <module>dao-sql</module>
         <module>dao-rocksdb</module>
         <module>integration</module>
         <module>msa</module>
@@ -349,7 +350,7 @@
                                                 <directory>src/main/data</directory>
                                             </resource>
                                             <resource>
-                                                <directory>../dao/src/main/resources</directory>
+                                                <directory>../dao-sql/src/main/resources</directory>
                                                 <includes>
                                                     <include>**/*.cql</include>
                                                     <include>**/*.sql</include>
@@ -790,8 +791,7 @@
                         <!--
                             The cluster infrastructure banned from the standalone classpath. Not bound here: the
                             standalone modules (msa/tbmq-lite, lite-tests) bind it at validate by its id, so they share
-                            this one list. org.hibernate.orm:hibernate-core and org.postgresql:postgresql join it once
-                            the management data leaves PostgreSQL.
+                            this one list. The SQL infrastructure is banned by ban-sql-infrastructure.
                         -->
                         <execution>
                             <id>ban-cluster-infrastructure</id>
@@ -811,6 +811,31 @@
                                             <exclude>com.bucket4j:bucket4j_jdk17-redis-common</exclude>
                                         </excludes>
                                         <message>the standalone classpath must not pull in the cluster infrastructure (Kafka, Redis)</message>
+                                    </bannedDependencies>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <!--
+                            The SQL infrastructure banned from the standalone classpath. Not bound here: bound at
+                            validate by id in msa/tbmq-lite, dao and dao-rocksdb, which must never reach dao-sql.
+                        -->
+                        <execution>
+                            <id>ban-sql-infrastructure</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <excludes>
+                                            <exclude>org.thingsboard.mqtt-broker:dao-sql</exclude>
+                                            <exclude>org.hibernate.orm:hibernate-core</exclude>
+                                            <exclude>org.springframework.data:spring-data-jpa</exclude>
+                                            <exclude>com.zaxxer:HikariCP</exclude>
+                                            <exclude>org.postgresql:postgresql</exclude>
+                                        </excludes>
+                                        <message>this module must not pull in the SQL infrastructure (dao-sql, JPA, JDBC)</message>
                                     </bannedDependencies>
                                 </rules>
                             </configuration>
@@ -977,6 +1002,11 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>dao-rocksdb</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1005,6 +1035,21 @@
                 <artifactId>dao</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <classifier>lite-tests</classifier>
                 <scope>test</scope>
             </dependency>
             <dependency>

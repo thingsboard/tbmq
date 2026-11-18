@@ -30,7 +30,8 @@
 
     <!--
         Runs tests on a Lite classpath, taken from msa/tbmq-lite: the application and dao-rocksdb, without
-        queue-kafka and cache-redis. It holds no main code and is never installed or deployed.
+        queue-kafka and cache-redis, plus dao-sql, which tbmq-lite excludes (see below). It holds no main code
+        and is never installed or deployed.
     -->
 
     <properties>
@@ -41,6 +42,17 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <!--
+                Transitional: the management data is still in PostgreSQL, so the Lite tests still need the JPA side.
+                Runtime scope, because the child broker of the kill -9 test runs on the runtime classpath. Goes away,
+                together with the dao-sql test-jar below, once the management data leaves PostgreSQL.
+            -->
+            <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>dao-sql</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <!-- the classpath the standalone image ships: application without queue-kafka and cache-redis, plus dao-rocksdb -->
             <groupId>org.thingsboard.mqtt-broker.msa</groupId>
@@ -66,9 +78,18 @@
             </exclusions>
         </dependency>
         <dependency>
-            <!-- the shared DeviceMsgService contract suite and the PostgreSQL test-database setup, without dao's test configuration -->
+            <!-- the shared DeviceMsgService contract suite, without dao's test configuration -->
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <classifier>lite-tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- the PostgreSQL test-database setup, without dao-sql's test configuration -->
+            <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>dao-sql</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <classifier>lite-tests</classifier>

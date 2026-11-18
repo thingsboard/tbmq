@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LiteClasspathTest {
 
     private static final String RESTRICTED_DAO_TEST_JAR_SUFFIX = "-lite-tests.jar";
-    private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao-\\d[^/]*-tests\\.jar!/");
+    private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao(-sql)?-\\d[^/]*-tests\\.jar!/");
     // in the reactor the application's jars carry its final name, thingsboard-mqtt-broker; in a repository, its artifact id
     private static final Pattern APPLICATION_TEST_JAR = Pattern.compile("/(application|thingsboard-mqtt-broker)-\\d[^/]*-tests\\.jar!/");
 
@@ -65,9 +65,9 @@ class LiteClasspathTest {
     }
 
     /**
-     * lite-tests takes only the contract and the test-database setup from dao's tests; dao's test configuration
-     * would otherwise configure the Lite tests from another module. Checked over the whole classpath, so it also
-     * catches dao's full test-jar or its test-classes directory.
+     * lite-tests takes only the contract from dao's tests and the test-database setup from dao-sql's; their test
+     * configuration would otherwise configure the Lite tests from another module. Checked over the whole classpath,
+     * so it also catches either module's full test-jar or test-classes directory.
      */
     @ParameterizedTest
     @ValueSource(strings = {"logback.xml", "application-test.properties", "xss-policy.xml"})
@@ -79,7 +79,7 @@ class LiteClasspathTest {
     }
 
     /**
-     * The test database of {@code @DaoSqlTest} is dao's own, taken from the restricted jar rather than kept as a copy.
+     * The test database of {@code @DaoSqlTest} is dao-sql's own, taken from the restricted jar rather than kept as a copy.
      */
     @Test
     void theTestDatabaseSettingsComeFromTheRestrictedJar() throws IOException {
@@ -89,9 +89,10 @@ class LiteClasspathTest {
                 .satisfies(url -> assertThat(url).endsWith(RESTRICTED_DAO_TEST_JAR_SUFFIX + "!/sql-test.properties"));
     }
 
-    // dao's test-classes directory, or any of its test jars (dao-<version>-tests.jar, dao-<version>-lite-tests.jar)
+    // the test-classes directory of dao or dao-sql, or any of their test jars (<module>-<version>-tests.jar, <module>-<version>-lite-tests.jar)
     private static boolean isDaoTestOutput(String url) {
-        return url.contains("/dao/target/test-classes/") || DAO_TEST_JAR.matcher(url).find();
+        return url.contains("/dao/target/test-classes/") || url.contains("/dao-sql/target/test-classes/")
+                || DAO_TEST_JAR.matcher(url).find();
     }
 
     /**
