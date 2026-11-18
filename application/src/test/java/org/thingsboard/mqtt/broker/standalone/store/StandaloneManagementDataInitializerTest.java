@@ -58,6 +58,19 @@ class StandaloneManagementDataInitializerTest {
         verify(later, never()).apply();
     }
 
+    @Test
+    void givenAFailingStepWithoutAMessage_whenInit_thenTheMessageNamesTheExceptionClass() {
+        ManagementDataStep failing = () -> {
+            throw new IllegalArgumentException();
+        };
+
+        assertThatThrownBy(() -> new StandaloneManagementDataInitializer(List.of(failing)).init())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageEndingWith("failed: " + IllegalArgumentException.class.getName())
+                .hasMessageNotContaining("null")
+                .hasCauseInstanceOf(IllegalArgumentException.class);
+    }
+
     static class FailingStep implements ManagementDataStep {
         @Override
         public void apply() {

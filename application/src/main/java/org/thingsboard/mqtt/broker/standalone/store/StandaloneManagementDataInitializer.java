@@ -48,7 +48,8 @@ public class StandaloneManagementDataInitializer implements ManagementDataInitia
             try {
                 step.apply();
             } catch (RuntimeException e) {
-                throw new IllegalStateException("The management data step " + step.getClass().getName() + " failed: " + e.getMessage(), e);
+                throw new IllegalStateException("The management data step " + step.getClass().getName() + " failed: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()), e);
             }
         }
     }
