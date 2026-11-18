@@ -21,11 +21,11 @@ metadata:
   name: tbmq-https-loadbalancer
   annotations:
     appgw.ingress.kubernetes.io/use-regex: 'true'
-    kubernetes.io/ingress.class: azure/application-gateway
     appgw.ingress.kubernetes.io/request-timeout: "300"
     appgw.ingress.kubernetes.io/appgw-ssl-certificate: TBMQHTTPSCert
     appgw.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
+  ingressClassName: azure-application-gateway
   rules:
     - http:
         paths:

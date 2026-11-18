@@ -21,9 +21,9 @@ metadata:
   name: tbmq-http-loadbalancer
   annotations:
     appgw.ingress.kubernetes.io/use-regex: 'true'
-    kubernetes.io/ingress.class: azure/application-gateway
     appgw.ingress.kubernetes.io/request-timeout: "300"
 spec:
+  ingressClassName: azure-application-gateway
   rules:
     - http:
         paths:
