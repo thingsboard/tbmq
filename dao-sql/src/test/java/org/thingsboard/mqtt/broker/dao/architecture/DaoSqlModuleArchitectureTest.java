@@ -31,7 +31,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Keeps the SQL module apart from the RocksDB module: the two embedded and relational stores are alternatives,
+ * Keeps the SQL module apart from the RocksDB module: the embedded and the relational store are alternatives,
  * never both on one classpath.
  * ArchUnit fails a rule that matches no classes, so an empty import cannot pass silently.
  */

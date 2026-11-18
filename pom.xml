@@ -835,7 +835,7 @@
                                             <exclude>com.zaxxer:HikariCP</exclude>
                                             <exclude>org.postgresql:postgresql</exclude>
                                         </excludes>
-                                        <message>the standalone classpath must not pull in the SQL infrastructure</message>
+                                        <message>this module must not pull in the SQL infrastructure (dao-sql, JPA, JDBC)</message>
                                     </bannedDependencies>
                                 </rules>
                             </configuration>

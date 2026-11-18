@@ -155,7 +155,7 @@
                     <execution>
                         <!--
                             ProjectInfo, which the test context scans, needs a BuildProperties bean. Written under
-                            test-classes only: a build-info.properties in the module's jar would hide the application's.
+                            test-classes, so it stays out of the main jar; the test-jar carries it, and the application's own copy comes first on its classpath.
                             An execution of its own: the root pom's default ones stay skipped here.
                         -->
                         <id>test-build-info</id>

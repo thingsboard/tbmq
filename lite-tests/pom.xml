@@ -42,7 +42,7 @@
 
     <dependencies>
         <dependency>
-            <!-- kept on the runtime classpath until PR 8, so the child broker of the kill -9 test still has the JPA side -->
+            <!-- runtime scope: the child broker of the kill -9 test runs on the runtime classpath and still needs the JPA side -->
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao-sql</artifactId>
             <version>${project.version}</version>
