@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 public class InstallScripts {
 
     public static final String APP_DIR = "application";
-    public static final String DAO_DIR = "dao";
+    public static final String DAO_DIR = "dao-sql";
     public static final String SRC_DIR = "src";
     public static final String MAIN_DIR = "main";
     public static final String DATA_DIR = "data";

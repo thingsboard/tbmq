@@ -75,27 +75,8 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.dbunit</groupId>
-            <artifactId>dbunit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.springtestdbunit</groupId>
-            <artifactId>spring-test-dbunit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.takari.junit</groupId>
-            <artifactId>takari-cpsuite</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -126,26 +107,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <artifactId>spring-boot</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>jdbc</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -159,11 +125,6 @@
         <dependency>
             <groupId>org.thingsboard.mqtt-broker.common</groupId>
             <artifactId>cache</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.thingsboard.mqtt-broker.common</groupId>
-            <artifactId>cache-redis</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -195,7 +156,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>**/*TestSuite.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -211,9 +172,8 @@
                     </execution>
                     <execution>
                         <!--
-                            What lite-tests takes from dao's tests: the DeviceMsgService contract and the PostgreSQL
-                            test-database setup (with sql-test.properties, which @DaoSqlTest loads), without dao's
-                            test logback, its other property files and xss-policy.xml.
+                            What lite-tests takes from dao's tests: the DeviceMsgService contract, without dao's
+                            xss-policy.xml.
                             Packaged at process-test-classes, so a reactor build that stops at test already hands
                             lite-tests this jar rather than the whole test-classes directory.
                         -->
@@ -226,10 +186,6 @@
                             <classifier>lite-tests</classifier>
                             <includes>
                                 <include>org/thingsboard/mqtt/broker/dao/service/DeviceMsgServiceContract*.class</include>
-                                <include>org/thingsboard/mqtt/broker/dao/DaoSqlTest.class</include>
-                                <include>org/thingsboard/mqtt/broker/dao/PostgreSqlInitializer.class</include>
-                                <include>sql/**</include>
-                                <include>sql-test.properties</include>
                             </includes>
                         </configuration>
                     </execution>

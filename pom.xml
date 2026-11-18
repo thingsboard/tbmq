@@ -92,6 +92,7 @@
         <module>common</module>
         <module>netty-mqtt</module>
         <module>dao</module>
+        <module>dao-sql</module>
         <module>dao-rocksdb</module>
         <module>integration</module>
         <module>msa</module>
@@ -349,7 +350,7 @@
                                                 <directory>src/main/data</directory>
                                             </resource>
                                             <resource>
-                                                <directory>../dao/src/main/resources</directory>
+                                                <directory>../dao-sql/src/main/resources</directory>
                                                 <includes>
                                                     <include>**/*.cql</include>
                                                     <include>**/*.sql</include>
@@ -977,6 +978,11 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>dao-rocksdb</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1005,6 +1011,21 @@
                 <artifactId>dao</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker</groupId>
+                <artifactId>dao-sql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <classifier>lite-tests</classifier>
                 <scope>test</scope>
             </dependency>
             <dependency>
