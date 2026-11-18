@@ -35,7 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
+import org.thingsboard.mqtt.broker.dao.contract.AbstractContractTest;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
@@ -55,7 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DaoSqlTest
 public class IntegrationControllerTest extends AbstractControllerTest {
 
-    private final AbstractServiceTest.IdComparator<Integration> idComparator = new AbstractServiceTest.IdComparator<>();
+    private final AbstractContractTest.IdComparator<Integration> idComparator = new AbstractContractTest.IdComparator<>();
 
     @MockBean
     private IntegrationManagerService integrationManagerService;

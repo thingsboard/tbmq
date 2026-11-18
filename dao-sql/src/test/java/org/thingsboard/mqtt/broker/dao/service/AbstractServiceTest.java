@@ -25,12 +25,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.thingsboard.mqtt.broker.common.data.event.LifecycleEvent;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -43,13 +41,6 @@ import java.util.UUID;
 //@ComponentScan(basePackages = "org.thingsboard.mqtt.broker", excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "org\\.thingsboard\\.mqtt\\.broker\\.queue\\..*"))
 //@Import(DaoGlobalMockConfig.class)
 public abstract class AbstractServiceTest {
-
-    public static class IdComparator<D extends HasId> implements Comparator<D> {
-        @Override
-        public int compare(D o1, D o2) {
-            return o1.getId().compareTo(o2.getId());
-        }
-    }
 
     protected LifecycleEvent generateEvent(UUID entityId) throws IOException {
         return LifecycleEvent.builder()

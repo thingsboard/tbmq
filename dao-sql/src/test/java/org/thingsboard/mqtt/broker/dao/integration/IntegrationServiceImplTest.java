@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.contract.AbstractContractTest;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -42,7 +43,7 @@ public class IntegrationServiceImplTest extends AbstractServiceTest {
     @Autowired
     IntegrationService integrationService;
 
-    private final IdComparator<Integration> idComparator = new IdComparator<>();
+    private final AbstractContractTest.IdComparator<Integration> idComparator = new AbstractContractTest.IdComparator<>();
     private final List<Integration> savedIntegrations = new LinkedList<>();
 
     @Before

@@ -21,9 +21,12 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * The Spring context of the contract suite over PostgreSQL: the whole broker scanned, as every dao-sql service test does.
+ * Abstract like {@code AbstractServiceTest}, so that no component scan of another context (the application tests scan
+ * {@code org.thingsboard.mqtt.broker} with this test-jar on the classpath) instantiates it; the {@code Sql*ContractTest}
+ * classes name it in {@code @ContextConfiguration}.
  */
 @Configuration
 @EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration")
 @ComponentScan("org.thingsboard.mqtt.broker")
-public class SqlContractTestConfig {
+public abstract class SqlContractTestConfig {
 }

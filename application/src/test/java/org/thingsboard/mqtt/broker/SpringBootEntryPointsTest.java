@@ -22,15 +22,16 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.thingsboard.mqtt.broker.dao.JpaDaoConfig;
+import org.thingsboard.mqtt.broker.dao.contract.SqlContractTestConfig;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SpringBootEntryPointsTest {
 
-    // AbstractServiceTest is the dao test context; it cannot see the entry points, so it carries its own copy
+    // AbstractServiceTest and SqlContractTestConfig are the dao test contexts; they cannot see the entry points, so each carries its own copy
     @ParameterizedTest
-    @ValueSource(classes = {ThingsboardMqttBrokerApplication.class, ThingsboardMqttBrokerInstallApplication.class, AbstractServiceTest.class})
+    @ValueSource(classes = {ThingsboardMqttBrokerApplication.class, ThingsboardMqttBrokerInstallApplication.class, AbstractServiceTest.class, SqlContractTestConfig.class})
     void enablesAutoConfigurationWithoutRedis(Class<?> configuration) {
         EnableAutoConfiguration ann = AnnotatedElementUtils.findMergedAnnotation(configuration, EnableAutoConfiguration.class);
         assertThat(ann).isNotNull();
