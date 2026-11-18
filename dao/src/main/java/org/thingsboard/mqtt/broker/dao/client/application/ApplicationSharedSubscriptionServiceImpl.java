@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class ApplicationSharedSubscriptionServiceImpl implements ApplicationSharedSubscriptionService {

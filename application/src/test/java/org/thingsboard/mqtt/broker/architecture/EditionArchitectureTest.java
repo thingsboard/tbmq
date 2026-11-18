@@ -31,6 +31,9 @@ import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.JpaDaoConfig;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
+import org.thingsboard.mqtt.broker.dao.event.EventService;
+import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
@@ -92,6 +95,23 @@ class EditionArchitectureTest {
             .should().beAnnotatedWith(ClusterComponent.class)
             .as("classes that depend on a Kafka queue factory, provider or admin must be cluster-only");
 
+    private static final DescribedPredicate<JavaClass> DEPENDS_ON_INTEGRATION_EVENT_OR_APPLICATION_PERSISTENCE =
+            new DescribedPredicate<>("depend on an IntegrationService, an EventService or an ApplicationSessionCtxService") {
+                @Override
+                public boolean test(JavaClass type) {
+                    return type.getDirectDependenciesFromSelf().stream()
+                            .map(Dependency::getTargetClass)
+                            .anyMatch(target -> target.isEquivalentTo(IntegrationService.class)
+                                    || target.isEquivalentTo(EventService.class)
+                                    || target.isEquivalentTo(ApplicationSessionCtxService.class));
+                }
+            };
+
+    private static final ArchRule INTEGRATION_EVENT_AND_APPLICATION_PERSISTENCE_RULE = classes()
+            .that(DEPENDS_ON_INTEGRATION_EVENT_OR_APPLICATION_PERSISTENCE)
+            .should().beAnnotatedWith(ClusterComponent.class)
+            .as("classes that depend on the integration, event or application session context services must be cluster-only");
+
     @Test
     void applicationDependsOnNoInfrastructure() {
         APPLICATION_RULE.check(classesOf(ThingsboardMqttBrokerApplication.class));
@@ -136,6 +156,11 @@ class EditionArchitectureTest {
     void kafkaBackedBeansAreClusterOnly() {
         KAFKA_BACKED_BEANS_RULE.check(classesOf(ThingsboardMqttBrokerApplication.class));
         KAFKA_BACKED_BEANS_RULE.check(classesOf(IntegrationTopicServiceImpl.class));
+    }
+
+    @Test
+    void integrationEventAndApplicationPersistenceAreClusterOnly() {
+        INTEGRATION_EVENT_AND_APPLICATION_PERSISTENCE_RULE.check(classesOf(ThingsboardMqttBrokerApplication.class));
     }
 
     @Test

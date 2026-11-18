@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.event.LifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -39,6 +40,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class BaseEventService implements EventService {

@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
+import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.entity.integration.TbIntegrationService;
@@ -43,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.INTEGRATION_ID;
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
 
 @RestController
 @ClusterComponent
@@ -50,6 +52,7 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.INTEGRA
 @RequiredArgsConstructor
 public class IntegrationController extends BaseController {
 
+    private final IntegrationService integrationService;
     private final IntegrationManagerService integrationManagerService;
     private final TbIntegrationService tbIntegrationService;
 
@@ -124,6 +127,12 @@ public class IntegrationController extends BaseController {
         checkParameter(INTEGRATION_ID, strIntegrationId);
         Integration integration = checkIntegrationId(toUUID(strIntegrationId));
         tbIntegrationService.delete(integration, getCurrentUser());
+    }
+
+    private Integration checkIntegrationId(UUID integrationId) throws ThingsboardException {
+        validateId(integrationId, "Incorrect integrationId " + integrationId);
+        Integration integrationById = integrationService.findIntegrationById(integrationId);
+        return checkNotNull(integrationById);
     }
 
 }

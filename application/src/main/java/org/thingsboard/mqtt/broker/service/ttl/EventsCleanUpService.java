@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
+@ClusterComponent
 public class EventsCleanUpService extends AbstractServiceProvider {
 
     static final String RANDOM_DELAY_INTERVAL_MS_EXPRESSION =

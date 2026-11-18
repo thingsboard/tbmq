@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -38,6 +39,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class IntegrationServiceImpl implements IntegrationService {
