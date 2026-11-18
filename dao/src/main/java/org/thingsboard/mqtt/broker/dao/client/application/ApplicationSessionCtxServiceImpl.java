@@ -21,11 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Optional;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class ApplicationSessionCtxServiceImpl implements ApplicationSessionCtxService {

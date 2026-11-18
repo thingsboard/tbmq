@@ -48,7 +48,6 @@ public class LookupEndpointsControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenByKeyPaths_whenCalled_thenRoutedToDocumentedHandlers() throws Exception {
-        doGet("/api/app/shared/subs/by-topic?topic={v}", "t").andExpect(handler().methodName("getSharedSubscriptionByTopic"));
         doGet("/api/client-session/by-client-id?clientId={v}", "c").andExpect(handler().methodName("getDetailedClientSessionInfo"));
         doGet("/api/mqtt/client/credentials/by-name?name={v}", "n").andExpect(handler().methodName("getClientCredentialsByName"));
         doGet("/api/retained-msg/by-topic?topicName={v}", "t").andExpect(handler().methodName("getRetainedMessage"));
@@ -60,7 +59,6 @@ public class LookupEndpointsControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenLegacyQueryOnlyPaths_whenCalled_thenStillRoutedToLegacyHandlers() throws Exception {
-        doGet("/api/app/shared/subs?topic={v}", "t").andExpect(handler().methodName("getSharedSubscriptionByTopicLegacy"));
         doGet("/api/client-session?clientId={v}", "c").andExpect(handler().methodName("getDetailedClientSessionInfoLegacy"));
         doGet("/api/mqtt/client/credentials?name={v}", "n").andExpect(handler().methodName("getClientCredentialsByNameLegacy"));
         doGet("/api/retained-msg?topicName={v}", "t").andExpect(handler().methodName("getRetainedMessageLegacy"));
@@ -72,7 +70,6 @@ public class LookupEndpointsControllerTest extends AbstractControllerTest {
 
     @Test
     public void givenPagedPaths_whenCalled_thenRoutingUnchanged() throws Exception {
-        doGet("/api/app/shared/subs?pageSize=1&page=0").andExpect(handler().methodName("getSharedSubscriptions"));
         doGet("/api/client-session?pageSize=1&page=0").andExpect(handler().methodName("getShortClientSessionInfos"));
         doGet("/api/mqtt/client/credentials?pageSize=1&page=0").andExpect(handler().methodName("getCredentials"));
         doGet("/api/retained-msg?pageSize=1&page=0").andExpect(handler().methodName("getRetainedMessages"));
@@ -94,7 +91,7 @@ public class LookupEndpointsControllerTest extends AbstractControllerTest {
                 .filter(method -> method.getName().endsWith(LEGACY_SUFFIX))
                 .distinct()
                 .toList();
-        assertThat(legacyHandlers).hasSizeGreaterThanOrEqualTo(8);
+        assertThat(legacyHandlers).hasSizeGreaterThanOrEqualTo(7);
         assertThat(legacyTwinViolations(legacyHandlers)).isEmpty();
     }
 

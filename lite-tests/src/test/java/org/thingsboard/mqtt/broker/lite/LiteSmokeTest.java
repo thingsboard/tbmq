@@ -50,10 +50,15 @@ import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
+import org.thingsboard.mqtt.broker.dao.event.EventService;
+import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.standalone.application.NoOpApplicationSharedSubscriptionService;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -107,6 +112,14 @@ public class LiteSmokeTest {
         assertThat(context.getBean(TbmqEdition.class)).isEqualTo(TbmqEdition.LITE);
         assertThat(context.getBeansWithAnnotation(ClusterComponent.class)).isEmpty();
         assertThat(context.getBean(ServiceInfoProvider.class).getServiceId()).isEqualTo("tbmq-lite");
+    }
+
+    @Test
+    public void theContextHasNoIntegrationEventOrApplicationPersistenceService() {
+        assertThat(context.getBeanNamesForType(IntegrationService.class)).isEmpty();
+        assertThat(context.getBeanNamesForType(EventService.class)).isEmpty();
+        assertThat(context.getBeanNamesForType(ApplicationSessionCtxService.class)).isEmpty();
+        assertThat(context.getBean(ApplicationSharedSubscriptionService.class)).isInstanceOf(NoOpApplicationSharedSubscriptionService.class);
     }
 
     @Test

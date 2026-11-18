@@ -88,6 +88,15 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
     }
 
     @Test
+    public void givenTwoConnectionsWithOneNameForOneUser_whenSaveSecond_thenAlreadyRegistered() {
+        webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection("Same", savedUser.getId()));
+
+        DataValidationException e = Assert.assertThrows(DataValidationException.class,
+                () -> webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection("Same", savedUser.getId())));
+        Assert.assertEquals("Specified WebSocket connection is already registered!", e.getMessage());
+    }
+
+    @Test
     public void givenWebSocketConnectionWithSameNameDifferentUsers_whenExecuteSaveTwoTimes_thenSuccess() {
         final String wsConnectionName = "Test WS Connection";
 

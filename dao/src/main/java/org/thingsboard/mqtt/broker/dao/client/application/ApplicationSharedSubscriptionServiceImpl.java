@@ -18,14 +18,14 @@ package org.thingsboard.mqtt.broker.dao.client.application;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
-import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Optional;
@@ -34,6 +34,7 @@ import java.util.UUID;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
 @Service
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class ApplicationSharedSubscriptionServiceImpl implements ApplicationSharedSubscriptionService {
@@ -49,9 +50,7 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
         try {
             return applicationSharedSubscriptionDao.save(subscription);
         } catch (Exception t) {
-            ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
-            if (e != null && e.getConstraintName() != null
-                    && e.getConstraintName().equalsIgnoreCase("application_shared_subscription_topic_unq_key")) {
+            if (EntityConstraintViolationException.isViolationOf(t, "application_shared_subscription_topic_unq_key")) {
                 throw new DataValidationException("Specified shared subscription is already registered!");
             } else {
                 throw t;

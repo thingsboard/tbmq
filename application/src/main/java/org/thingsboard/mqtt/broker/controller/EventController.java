@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.service.entity.event.TbEventService;
 
@@ -41,6 +42,7 @@ import java.util.UUID;
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_ID;
 
 @RestController
+@ClusterComponent
 @RequestMapping("/api/events/{entityId}")
 @RequiredArgsConstructor
 public class EventController extends BaseController {

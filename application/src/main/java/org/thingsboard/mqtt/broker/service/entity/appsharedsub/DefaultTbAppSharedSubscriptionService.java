@@ -26,12 +26,14 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DefaultTbAppSharedSubscriptionService extends AbstractTbEntityService implements TbAppSharedSubscriptionService {
 

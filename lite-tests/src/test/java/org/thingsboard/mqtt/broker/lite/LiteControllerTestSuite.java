@@ -31,6 +31,8 @@ import org.junit.runner.RunWith;
         // Lite has neither integrations nor node drain
         "!.*IntegrationControllerTest",
         "!.*NodeDrainControllerTest",
+        // application shared subscriptions: Lite has none
+        "!.*AppSharedSubscriptionLookupControllerTest",
 })
 public class LiteControllerTestSuite {
 

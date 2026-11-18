@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.id.HasId;
-import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -55,7 +54,6 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
-import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.dao.service.ConstraintValidator;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
@@ -115,8 +113,6 @@ public abstract class BaseController {
     protected SystemSecurityService systemSecurityService;
     @Autowired
     protected UnauthorizedClientService unauthorizedClientService;
-    @Autowired
-    protected IntegrationService integrationService;
     @Autowired
     protected BlockedClientService blockedClientService;
     @Autowired
@@ -279,12 +275,6 @@ public abstract class BaseController {
         } catch (Exception e) {
             throw handleException(e, false);
         }
-    }
-
-    Integration checkIntegrationId(UUID integrationId) throws ThingsboardException {
-        validateId(integrationId, "Incorrect integrationId " + integrationId);
-        Integration integrationById = integrationService.findIntegrationById(integrationId);
-        return checkNotNull(integrationById);
     }
 
     MqttClientCredentials checkClientCredentialsId(UUID clientCredentialsId) throws ThingsboardException {

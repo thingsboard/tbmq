@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.dao.ws;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
@@ -35,12 +34,12 @@ import org.thingsboard.mqtt.broker.common.data.ws.SizeUnit;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsUtil;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
-import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.net.URI;
@@ -72,9 +71,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
         try {
             return webSocketConnectionDao.save(connection);
         } catch (Exception t) {
-            ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
-            if (e != null && e.getConstraintName() != null
-                    && e.getConstraintName().equalsIgnoreCase("name_unq_key")) {
+            if (EntityConstraintViolationException.isViolationOf(t, "name_unq_key")) {
                 throw new DataValidationException("Specified WebSocket connection is already registered!");
             } else {
                 throw t;

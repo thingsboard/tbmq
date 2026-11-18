@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.dao.client.generic;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
@@ -60,10 +59,6 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
         }
         try {
             genericClientSessionCtxDao.remove(clientId);
-        } catch (EmptyResultDataAccessException noDataException) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] No session for clientId.", clientId);
-            }
         } catch (Exception e) {
             log.warn("[{}] Failed to delete generic client session context.", clientId, e);
         }

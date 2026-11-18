@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.event.EventFilter;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.service.entity.AbstractTbEntityService;
 
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@ClusterComponent
 @RequiredArgsConstructor
 public class DefaultTbEventService extends AbstractTbEntityService implements TbEventService {
 

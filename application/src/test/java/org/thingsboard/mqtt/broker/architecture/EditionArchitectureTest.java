@@ -25,12 +25,17 @@ import com.tngtech.archunit.core.importer.Location;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
+import org.thingsboard.mqtt.broker.architecture.fixture.HibernateOrmImportingFixture;
+import org.thingsboard.mqtt.broker.architecture.fixture.HibernateValidatorImportingFixture;
 import org.thingsboard.mqtt.broker.architecture.fixture.KafkaImportingFixture;
 import org.thingsboard.mqtt.broker.cache.TBRedisCacheConfiguration;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.JpaDaoConfig;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
+import org.thingsboard.mqtt.broker.dao.event.EventService;
+import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
@@ -44,6 +49,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,6 +96,23 @@ class EditionArchitectureTest {
             .that(DEPENDS_ON_KAFKA_BACKED_TYPE)
             .should().beAnnotatedWith(ClusterComponent.class)
             .as("classes that depend on a Kafka queue factory, provider or admin must be cluster-only");
+
+    private static final DescribedPredicate<JavaClass> DEPENDS_ON_INTEGRATION_EVENT_OR_APPLICATION_PERSISTENCE =
+            new DescribedPredicate<>("depend on an IntegrationService, an EventService or an ApplicationSessionCtxService") {
+                @Override
+                public boolean test(JavaClass type) {
+                    return type.getDirectDependenciesFromSelf().stream()
+                            .map(Dependency::getTargetClass)
+                            .anyMatch(target -> target.isEquivalentTo(IntegrationService.class)
+                                    || target.isEquivalentTo(EventService.class)
+                                    || target.isEquivalentTo(ApplicationSessionCtxService.class));
+                }
+            };
+
+    private static final ArchRule INTEGRATION_EVENT_AND_APPLICATION_PERSISTENCE_RULE = classes()
+            .that(DEPENDS_ON_INTEGRATION_EVENT_OR_APPLICATION_PERSISTENCE)
+            .should().beAnnotatedWith(ClusterComponent.class)
+            .as("classes that depend on the integration, event or application session context services must be cluster-only");
 
     @Test
     void applicationDependsOnNoInfrastructure() {
@@ -137,6 +161,11 @@ class EditionArchitectureTest {
     }
 
     @Test
+    void integrationEventAndApplicationPersistenceAreClusterOnly() {
+        INTEGRATION_EVENT_AND_APPLICATION_PERSISTENCE_RULE.check(classesOf(ThingsboardMqttBrokerApplication.class));
+    }
+
+    @Test
     void theThreeIntegrationQueueProvidersInCommonQueueAreClusterOnly() {
         assertThat(List.of(TbmqIntegrationMsgQueueProvider.class, TbmqIntegrationDownlinkQueueProvider.class,
                 TbmqIntegrationUplinkQueueProvider.class))
@@ -165,6 +194,18 @@ class EditionArchitectureTest {
                 .hasMessageContaining("org.apache.kafka");
     }
 
+    @Test
+    void ruleCatchesAHibernateOrmImport() {
+        assertThatThrownBy(() -> APPLICATION_RULE.check(new ClassFileImporter().importClasses(HibernateOrmImportingFixture.class)))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("org.hibernate.exception");
+    }
+
+    @Test
+    void ruleAllowsAHibernateValidatorImport() {
+        APPLICATION_RULE.check(new ClassFileImporter().importClasses(HibernateValidatorImportingFixture.class));
+    }
+
     private static boolean isKafkaBackedType(JavaClass type) {
         return type.isAssignableTo(TbQueueAdmin.class)
                 || type.getPackageName().startsWith("org.thingsboard.mqtt.broker.queue.provider")
@@ -172,8 +213,9 @@ class EditionArchitectureTest {
     }
 
     private static ArchRule forbid(String[]... packageRoots) {
-        return noClasses().should().dependOnClassesThat()
-                .resideInAnyPackage(Stream.of(packageRoots).flatMap(Stream::of).toArray(String[]::new))
+        return noClasses().should().dependOnClassesThat(
+                        resideInAnyPackage(Stream.of(packageRoots).flatMap(Stream::of).toArray(String[]::new))
+                                .and(not(resideInAnyPackage("org.hibernate.validator.."))))
                 .as("classes must not depend on the forbidden infrastructure packages");
     }
 
