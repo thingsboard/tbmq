@@ -53,7 +53,7 @@ public class InstallScripts {
                 if (Files.exists(dataDirPath)) {
                     return dataDirPath.toString();
                 } else {
-                    throw new RuntimeException("Not valid working directory: " + workDir + ". Please use either root project directory, dao module directory or specify valid \"install.data_dir\" property to avoid automatic data directory lookup!");
+                    throw new RuntimeException("Not valid working directory: " + workDir + ". Please use either root project directory, " + DAO_DIR + " module directory or specify valid \"install.data_dir\" property to avoid automatic data directory lookup!");
                 }
             }
         }

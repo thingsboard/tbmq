@@ -30,7 +30,8 @@
 
     <!--
         Runs tests on a Lite classpath, taken from msa/tbmq-lite: the application and dao-rocksdb, without
-        queue-kafka and cache-redis. It holds no main code and is never installed or deployed.
+        queue-kafka and cache-redis, plus dao-sql, which tbmq-lite excludes (see below). It holds no main code
+        and is never installed or deployed.
     -->
 
     <properties>
@@ -42,7 +43,11 @@
 
     <dependencies>
         <dependency>
-            <!-- runtime scope: the child broker of the kill -9 test runs on the runtime classpath and still needs the JPA side -->
+            <!--
+                Transitional: the management data is still in PostgreSQL, so the Lite tests still need the JPA side.
+                Runtime scope, because the child broker of the kill -9 test runs on the runtime classpath. Goes away,
+                together with the dao-sql test-jar below, once the management data leaves PostgreSQL.
+            -->
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao-sql</artifactId>
             <version>${project.version}</version>
