@@ -15,11 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.provider;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -28,8 +27,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration.AuthStrategy;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
-import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Optional;
@@ -52,9 +51,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
         try {
             return mqttAuthProviderDao.save(authProvider);
         } catch (Exception e) {
-            ConstraintViolationException ex = DbExceptionUtil.extractConstraintViolationException(e).orElse(null);
-            if (ex != null && ex.getConstraintName() != null
-                    && ex.getConstraintName().equalsIgnoreCase("mqtt_auth_provider_type_key")) {
+            if (EntityConstraintViolationException.isViolationOf(e, "mqtt_auth_provider_type_key")) {
                 throw new DataValidationException("MQTT auth provider with such type already registered!");
             }
             throw e;

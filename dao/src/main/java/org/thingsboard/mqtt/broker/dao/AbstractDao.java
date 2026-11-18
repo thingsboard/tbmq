@@ -18,9 +18,12 @@ package org.thingsboard.mqtt.broker.dao;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.thingsboard.mqtt.broker.dao.model.BaseEntity;
+import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,13 +34,27 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
         extends JpaAbstractDaoListeningExecutorService
         implements Dao<D> {
 
+    private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+        this.transactionTemplate = transactionTemplate;
+    }
+
     protected abstract Class<E> getEntityClass();
 
     protected abstract CrudRepository<E, UUID> getCrudRepository();
 
     @Override
-    @Transactional
     public D save(D domain) {
+        try {
+            return transactionTemplate.execute(status -> doSave(domain));
+        } catch (DataIntegrityViolationException e) {
+            throw DbExceptionUtil.translate(e);
+        }
+    }
+
+    private D doSave(D domain) {
         E entity;
         try {
             entity = getEntityClass().getConstructor(domain.getClass()).newInstance(domain);
@@ -69,11 +86,16 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
     }
 
     @Override
-    @Transactional
     public boolean removeById(UUID id) {
-        getCrudRepository().deleteById(id);
-        log.debug("Remove request: {}", id);
-        return !getCrudRepository().existsById(id);
+        try {
+            return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+                getCrudRepository().deleteById(id);
+                log.debug("Remove request: {}", id);
+                return !getCrudRepository().existsById(id);
+            }));
+        } catch (DataIntegrityViolationException e) {
+            throw DbExceptionUtil.translate(e);
+        }
     }
 
     @Override

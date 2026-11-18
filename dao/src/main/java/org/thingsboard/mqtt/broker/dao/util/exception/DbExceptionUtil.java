@@ -16,19 +16,24 @@
 package org.thingsboard.mqtt.broker.dao.util.exception;
 
 import org.hibernate.exception.ConstraintViolationException;
-
-import java.util.Optional;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 
 public class DbExceptionUtil {
 
-    public static Optional<ConstraintViolationException> extractConstraintViolationException(Exception t) {
-        if (t instanceof ConstraintViolationException) {
-            return Optional.of((ConstraintViolationException) t);
-        } else if (t.getCause() instanceof ConstraintViolationException) {
-            return Optional.of((ConstraintViolationException) (t.getCause()));
-        } else {
-            return Optional.empty();
+    /**
+     * Translates a Hibernate constraint violation (found anywhere in the cause chain of {@code e}) to the
+     * persistence-neutral {@link EntityConstraintViolationException}. Returns {@code e} itself otherwise.
+     */
+    public static RuntimeException translate(RuntimeException e) {
+        for (Throwable current = e; current != null; current = current.getCause()) {
+            if (current instanceof ConstraintViolationException violation && violation.getConstraintName() != null) {
+                return new EntityConstraintViolationException(violation.getConstraintName(), e);
+            }
+            if (current.getCause() == current) {
+                break;
+            }
         }
+        return e;
     }
 
 }

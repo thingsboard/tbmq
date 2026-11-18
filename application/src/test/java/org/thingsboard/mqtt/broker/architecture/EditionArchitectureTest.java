@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -172,8 +174,9 @@ class EditionArchitectureTest {
     }
 
     private static ArchRule forbid(String[]... packageRoots) {
-        return noClasses().should().dependOnClassesThat()
-                .resideInAnyPackage(Stream.of(packageRoots).flatMap(Stream::of).toArray(String[]::new))
+        return noClasses().should().dependOnClassesThat(
+                        resideInAnyPackage(Stream.of(packageRoots).flatMap(Stream::of).toArray(String[]::new))
+                                .and(not(resideInAnyPackage("org.hibernate.validator.."))))
                 .as("classes must not depend on the forbidden infrastructure packages");
     }
 

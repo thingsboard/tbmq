@@ -31,6 +31,9 @@ public interface GenericClientSessionCtxDao {
 
     List<GenericClientSessionCtx> findAll();
 
+    /**
+     * Removing a client id that has no stored context does nothing and does not throw.
+     */
     void remove(String clientId);
 
     void saveAll(Collection<GenericClientSessionCtx> genericClientSessionContexts);

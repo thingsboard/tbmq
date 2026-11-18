@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.dao.client;
 import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
@@ -39,8 +38,8 @@ import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
-import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -86,9 +85,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             evictCache(mqttClientCredentials, currentCredentials);
             return savedMqttClientCredentials;
         } catch (Exception t) {
-            ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
-            if (e != null && e.getConstraintName() != null
-                    && e.getConstraintName().equalsIgnoreCase("mqtt_client_credentials_id_unq_key")) {
+            if (EntityConstraintViolationException.isViolationOf(t, "mqtt_client_credentials_id_unq_key")) {
                 throw new DataValidationException("Specified credentials are already registered!");
             } else {
                 throw t;
