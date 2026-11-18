@@ -25,6 +25,8 @@ import com.tngtech.archunit.core.importer.Location;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
+import org.thingsboard.mqtt.broker.architecture.fixture.HibernateOrmImportingFixture;
+import org.thingsboard.mqtt.broker.architecture.fixture.HibernateValidatorImportingFixture;
 import org.thingsboard.mqtt.broker.architecture.fixture.KafkaImportingFixture;
 import org.thingsboard.mqtt.broker.cache.TBRedisCacheConfiguration;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
@@ -190,6 +192,18 @@ class EditionArchitectureTest {
         assertThatThrownBy(() -> APPLICATION_RULE.check(new ClassFileImporter().importClasses(KafkaImportingFixture.class)))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("org.apache.kafka");
+    }
+
+    @Test
+    void ruleCatchesAHibernateOrmImport() {
+        assertThatThrownBy(() -> APPLICATION_RULE.check(new ClassFileImporter().importClasses(HibernateOrmImportingFixture.class)))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("org.hibernate.exception");
+    }
+
+    @Test
+    void ruleAllowsAHibernateValidatorImport() {
+        APPLICATION_RULE.check(new ClassFileImporter().importClasses(HibernateValidatorImportingFixture.class));
     }
 
     private static boolean isKafkaBackedType(JavaClass type) {

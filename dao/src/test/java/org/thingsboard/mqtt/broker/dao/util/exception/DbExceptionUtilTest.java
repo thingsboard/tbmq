@@ -31,6 +31,8 @@ public class DbExceptionUtilTest {
         var translated = DbExceptionUtil.translate(new DataIntegrityViolationException("dup", hibernate));
         assertThat(translated).isInstanceOf(EntityConstraintViolationException.class)
                 .extracting(e -> ((EntityConstraintViolationException) e).getConstraintName()).isEqualTo("name_unq_key");
+        // a helper that inspects only t and t.getCause() must still find the Hibernate violation
+        assertThat(translated.getCause()).isSameAs(hibernate);
     }
 
     @Test

@@ -22,12 +22,21 @@ import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @DaoSqlTest
 public class GenericClientSessionCtxServiceImplTest extends AbstractServiceTest {
 
     @Autowired
     private GenericClientSessionCtxService genericClientSessionCtxService;
+
+    @Autowired
+    private GenericClientSessionCtxDao genericClientSessionCtxDao;
+
+    @Test
+    public void givenNoContext_whenRemoveInDao_thenDoesNotThrow() {
+        assertThatCode(() -> genericClientSessionCtxDao.remove("missing")).doesNotThrowAnyException();
+    }
 
     @Test
     public void givenNoContext_whenDelete_thenNothingHappens() {

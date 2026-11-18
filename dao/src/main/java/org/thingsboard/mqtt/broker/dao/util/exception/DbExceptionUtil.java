@@ -27,7 +27,7 @@ public class DbExceptionUtil {
     public static RuntimeException translate(RuntimeException e) {
         for (Throwable current = e; current != null; current = current.getCause()) {
             if (current instanceof ConstraintViolationException violation && violation.getConstraintName() != null) {
-                return new EntityConstraintViolationException(violation.getConstraintName(), e);
+                return new EntityConstraintViolationException(violation.getConstraintName(), violation);
             }
             if (current.getCause() == current) {
                 break;
