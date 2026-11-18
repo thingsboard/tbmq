@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -57,6 +58,7 @@ import static org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderT
 
 @Slf4j
 @Service
+@DependsOn("managementDataInitializer")
 @RequiredArgsConstructor
 public class HttpMqttClientAuthProvider implements MqttClientAuthProvider<HttpMqttAuthProviderConfiguration> {
 

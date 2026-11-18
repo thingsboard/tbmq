@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
@@ -38,6 +39,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@DependsOn("managementDataInitializer")
 @RequiredArgsConstructor
 public class DefaultAuthorizationRoutingService implements AuthorizationRoutingService {
 

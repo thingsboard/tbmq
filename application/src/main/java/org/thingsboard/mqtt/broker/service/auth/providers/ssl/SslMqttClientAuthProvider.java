@@ -19,6 +19,7 @@ import io.netty.handler.ssl.SslHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
@@ -62,6 +63,7 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFail
 
 @Slf4j
 @Service
+@DependsOn("managementDataInitializer")
 @RequiredArgsConstructor
 public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqttAuthProviderConfiguration> {
 
