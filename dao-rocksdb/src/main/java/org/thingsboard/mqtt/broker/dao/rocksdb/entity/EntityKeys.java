@@ -44,6 +44,19 @@ public final class EntityKeys {
         return id.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * The id written as {@code idBytes} in a key of {@code type}, as text: the UUID in its canonical form, or the string.
+     */
+    static String idText(StoredEntityType type, byte[] idBytes) {
+        return switch (type.idKind()) {
+            case UUID -> {
+                ByteBuffer buffer = ByteBuffer.wrap(idBytes);
+                yield new UUID(buffer.getLong(), buffer.getLong()).toString();
+            }
+            case STRING -> new String(idBytes, StandardCharsets.UTF_8);
+        };
+    }
+
     static byte[] entityKey(StoredEntityType type, byte[] id) {
         return ByteBuffer.allocate(1 + id.length).put(type.code()).put(id).array();
     }
