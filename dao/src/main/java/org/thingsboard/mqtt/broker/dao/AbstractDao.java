@@ -48,13 +48,13 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
     @Override
     public D save(D domain) {
         try {
-            return transactionTemplate.execute(status -> doSave(domain));
+            return transactionTemplate.execute(status -> saveInTransaction(domain));
         } catch (DataIntegrityViolationException e) {
             throw DbExceptionUtil.translate(e);
         }
     }
 
-    private D doSave(D domain) {
+    private D saveInTransaction(D domain) {
         E entity;
         try {
             entity = getEntityClass().getConstructor(domain.getClass()).newInstance(domain);
