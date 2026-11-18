@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.service;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
@@ -46,8 +45,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ASC_ORDER;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER;
 
 @Slf4j
-@DaoSqlTest
-public class TimeseriesServiceTest extends AbstractServiceTest {
+public abstract class AbstractTimeseriesContractTest extends AbstractContractTest {
 
     private final int MAX_TIMEOUT = 30;
 
@@ -58,7 +56,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
     KvEntry longKvEntry = new LongDataEntry(LONG_KEY, Long.MAX_VALUE);
 
     @Autowired
-    private TimeseriesService tsService;
+    protected TimeseriesService tsService;
 
     @Test
     public void testFindAllLatest() throws Exception {

@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.ws;
+package org.thingsboard.mqtt.broker.dao.contract;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,9 +29,8 @@ import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.ws.LastWillMsg;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
@@ -40,15 +38,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@DaoSqlTest
-public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
+public abstract class AbstractWebSocketConnectionContractTest extends AbstractContractTest {
 
     private final IdComparator<WebSocketConnectionDto> idComparator = new IdComparator<>();
 
     @Autowired
-    private WebSocketConnectionService webSocketConnectionService;
+    protected WebSocketConnectionService webSocketConnectionService;
     @Autowired
-    private UserService userService;
+    protected UserService userService;
 
     User savedUser;
 
@@ -402,17 +399,14 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         Assert.assertFalse(webSocketConnectionById.isPresent());
     }
 
-    @NotNull
     private WebSocketConnection getWebSocketConnection() {
         return getWebSocketConnection("Test");
     }
 
-    @NotNull
     private WebSocketConnection getWebSocketConnection(String name) {
         return getWebSocketConnection(name, savedUser.getId());
     }
 
-    @NotNull
     private WebSocketConnection getWebSocketConnection(String name, UUID userId) {
         WebSocketConnection connection = new WebSocketConnection();
         connection.setName(name);
@@ -421,7 +415,6 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         return connection;
     }
 
-    @NotNull
     private WebSocketConnectionConfiguration getWebSocketConnectionConfiguration() {
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("testClientId");

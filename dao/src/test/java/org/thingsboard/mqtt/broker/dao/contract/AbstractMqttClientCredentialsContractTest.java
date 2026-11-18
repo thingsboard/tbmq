@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.service;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -39,7 +39,6 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -50,15 +49,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@DaoSqlTest
-public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
+public abstract class AbstractMqttClientCredentialsContractTest extends AbstractContractTest {
 
     private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
 
     @Autowired
-    private MqttClientCredentialsService mqttClientCredentialsService;
+    protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    private TbCacheOps tbCacheOps;
+    protected TbCacheOps tbCacheOps;
 
     Cache mqttClientCredentialsCache;
     Cache basicCredentialsPasswordCache;

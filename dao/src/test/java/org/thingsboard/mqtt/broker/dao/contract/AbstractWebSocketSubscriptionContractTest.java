@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.ws;
+package org.thingsboard.mqtt.broker.dao.contract;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,9 +28,9 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
@@ -39,17 +38,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@DaoSqlTest
-public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
+public abstract class AbstractWebSocketSubscriptionContractTest extends AbstractContractTest {
 
     private final IdComparator<WebSocketSubscription> idComparator = new IdComparator<>();
 
     @Autowired
-    private WebSocketSubscriptionService webSocketSubscriptionService;
+    protected WebSocketSubscriptionService webSocketSubscriptionService;
     @Autowired
-    private WebSocketConnectionService webSocketConnectionService;
+    protected WebSocketConnectionService webSocketConnectionService;
     @Autowired
-    private UserService userService;
+    protected UserService userService;
 
     User savedUser;
     WebSocketConnection savedWebSocketConnection;
@@ -222,22 +220,18 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         Assert.assertFalse(webSocketSubscriptionById.isPresent());
     }
 
-    @NotNull
     private WebSocketSubscription getWebSocketSubscription(String topicFilter) {
         return getWsSubscription(topicFilter);
     }
 
-    @NotNull
     private WebSocketSubscription getWebSocketSubscription() {
         return getWsSubscription("test/topic/+");
     }
 
-    @NotNull
     private WebSocketSubscription getWsSubscription(String topicFilter) {
         return getWsSubscription(topicFilter, savedWebSocketConnection.getId());
     }
 
-    @NotNull
     private WebSocketSubscription getWsSubscription(String topicFilter, UUID webSocketConnectionId) {
         WebSocketSubscription subscription = new WebSocketSubscription();
         subscription.setWebSocketConnectionId(webSocketConnectionId);
@@ -245,7 +239,6 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         return subscription;
     }
 
-    @NotNull
     private WebSocketSubscriptionConfiguration getWebSocketSubscriptionConfiguration(String topicFilter) {
         WebSocketSubscriptionConfiguration webSocketSubscriptionConfiguration = new WebSocketSubscriptionConfiguration();
         webSocketSubscriptionConfiguration.setTopicFilter(topicFilter);
