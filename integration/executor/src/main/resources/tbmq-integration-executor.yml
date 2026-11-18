@@ -123,6 +123,9 @@ queue:
       # Additional configs separated by semicolon for the Kafka stats consumer, merged with the consumer defaults —
       # TB_KAFKA_DEFAULT_CONSUMER_CONFIG (overriding them if keys conflict).
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
+    # Each topic section below sets the topic properties TBMQ applies when it creates the topic. When you add a topic or
+    # change these defaults, also update k8s/gcp/kafka/managed/tbmq-kafka-topics-configmap.yml (gcp/kafka/managed/ in
+    # tbmq-pe-k8s): it repeats them without segment.bytes for Google Cloud Managed Service for Apache Kafka.
     integration-downlink:
       # Prefix for topics used to send integration configurations and validation requests from TBMQ to integration executors.
       topic-prefix: "${TB_KAFKA_IE_DOWNLINK_TOPIC_PREFIX:tbmq.ie.downlink}"
