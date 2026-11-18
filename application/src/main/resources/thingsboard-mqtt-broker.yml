@@ -457,6 +457,9 @@ queue:
       consumer-config: "${TB_KAFKA_HOME_PAGE_CONSUMER_CONFIG:}"
       # Time to wait for home page requests to Kafka to finish (in ms).
       kafka-response-timeout-ms: "${TB_KAFKA_HOME_PAGE_RESPONSE_TIMEOUT_MS:30000}"
+    # Each topic section below sets the topic properties TBMQ applies when it creates the topic. When you add a topic or
+    # change these defaults, also update k8s/gcp/kafka/managed/tbmq-kafka-topics-configmap.yml (gcp/kafka/managed/ in
+    # tbmq-pe-k8s): it repeats them without segment.bytes for Google Cloud Managed Service for Apache Kafka.
     msg-all:
       # Topic for persisting incoming PUBLISH messages.
       topic: "${TB_KAFKA_MSG_ALL_TOPIC:tbmq.msg.all}"

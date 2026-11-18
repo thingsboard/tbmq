@@ -17,6 +17,12 @@
 # Kafka topic settings for Google Cloud Managed Service for Apache Kafka.
 # Managed Kafka keeps topic data in tiered storage, which rejects the segment.bytes override that TBMQ sets by default,
 # so every topic below keeps the service default for segment.bytes. Each topic is replicated to three brokers.
+#
+# The values mirror the topic-properties defaults in application/src/main/resources/thingsboard-mqtt-broker.yml and
+# integration/executor/src/main/resources/tbmq-integration-executor.yml, without segment.bytes and with
+# replication.factor 3. When a topic is added there or a default changes, update this file too: a topic missing here
+# falls back to the yml default, which Managed Kafka rejects. The same values are in gcp/kafka/managed/ of
+# tbmq-pe-k8s and in the GCP GKE Helm guide on tbmq.io.
 
 apiVersion: v1
 kind: ConfigMap
