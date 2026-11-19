@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
@@ -34,17 +35,21 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 public abstract class AbstractUnauthorizedClientContractTest extends AbstractContractTest {
+
+    private static final Set<String> ALL_FIXTURES = Set.of("Sensor-Alpha", "sensor-beta", "gateway-1");
 
     @Autowired
     protected UnauthorizedClientService unauthorizedClientService;
 
-    UnauthorizedClient savedUnauthorizedClient;
+    protected UnauthorizedClient savedUnauthorizedClient;
 
     @Before
     public void setUp() throws Exception {
@@ -293,6 +298,134 @@ public abstract class AbstractUnauthorizedClientContractTest extends AbstractCon
         query = UnauthorizedClientQuery.builder().pageLink(pageLink).username("username").build();
         pageData = unauthorizedClientService.findUnauthorizedClients(query);
         Assert.assertEquals(1, pageData.getData().size());
+    }
+
+    @Test
+    public void aSaveOfAnExistingClientIdReplacesIt() throws Exception {
+        String clientId = savedUnauthorizedClient.getClientId();
+        UnauthorizedClient replacement = client(clientId, "10.1.1.1", "replaced-user", true, true, "Client blocked",
+                savedUnauthorizedClient.getTs() + 1000);
+        unauthorizedClientService.save(replacement).get(5, TimeUnit.SECONDS);
+
+        Assert.assertEquals(Optional.of(replacement), unauthorizedClientService.findUnauthorizedClient(clientId));
+        Assert.assertEquals(1, unauthorizedClientService.findUnauthorizedClients(new PageLink(10)).getTotalElements());
+    }
+
+    @Test
+    public void eachQueryFilterMatchesAsTheSqlQueryDoes() throws Exception {
+        saveFilterFixtures();
+
+        Assert.assertEquals(Set.of("Sensor-Alpha", "sensor-beta"), clientIds(query().clientId("SENSOR")));
+        Assert.assertEquals(Set.of(), clientIds(query().clientId("absent")));
+        Assert.assertEquals(Set.of("sensor-beta", "gateway-1"), clientIds(query().ipAddress("192.168.")));
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().username(null)));
+        // an empty username is no restriction: it matches the clients without one too
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().username("")));
+        Assert.assertEquals(Set.of("sensor-beta"), clientIds(query().username("user")));
+        Assert.assertEquals(Set.of("gateway-1"), clientIds(query().username("OTHER")));
+        Assert.assertEquals(Set.of("Sensor-Alpha", "gateway-1"), clientIds(query().reason("bad")));
+        Assert.assertEquals(Set.of("sensor-beta", "gateway-1"), clientIds(query().passwordProvidedList(List.of(true))));
+        Assert.assertEquals(Set.of("Sensor-Alpha"), clientIds(query().passwordProvidedList(List.of(false))));
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().passwordProvidedList(List.of(true, false))));
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().passwordProvidedList(List.of())));
+        Assert.assertEquals(Set.of("gateway-1"), clientIds(query().tlsUsedList(List.of(true))));
+        Assert.assertEquals(Set.of("Sensor-Alpha", "sensor-beta"), clientIds(query().tlsUsedList(List.of(false))));
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().tlsUsedList(List.of())));
+        Assert.assertEquals(Set.of("sensor-beta"), clientIds(query().ipAddress("192.168").passwordProvidedList(List.of(true))
+                .tlsUsedList(List.of(false))));
+        Assert.assertEquals(Set.of("gateway-1"), clientIds(query().pageLink(new TimePageLink(10, 0, "GATE"))));
+        Assert.assertEquals(Set.of("Sensor-Alpha"), clientIds(query().pageLink(new TimePageLink(10, 0, "alpha")).reason("BAD")));
+    }
+
+    @Test
+    public void aQueryKeepsTheTimeRangeOfItsPageLinkBothEndsIncluded() throws Exception {
+        long base = saveFilterFixtures();
+
+        Assert.assertEquals(Set.of("sensor-beta", "gateway-1"), clientIds(query().pageLink(timeRange(base + 1000, base + 2000))));
+        Assert.assertEquals(Set.of("gateway-1"), clientIds(query().pageLink(timeRange(base + 1001, null))));
+        Assert.assertEquals(Set.of("Sensor-Alpha", "sensor-beta"), clientIds(query().pageLink(timeRange(null, base + 1000))));
+        Assert.assertEquals(Set.of("Sensor-Alpha"), clientIds(query().pageLink(timeRange(base, base))));
+        Assert.assertEquals(Set.of(), clientIds(query().pageLink(timeRange(base + 2001, null))));
+        Assert.assertEquals(ALL_FIXTURES, clientIds(query().pageLink(timeRange(null, null))));
+    }
+
+    @Test
+    public void aQueryIsSortedAndPagedByItsPageLink() throws Exception {
+        saveFilterFixtures();
+
+        TimePageLink firstPage = new TimePageLink(2, 0, null, new SortOrder("ts", SortOrder.Direction.DESC));
+        PageData<UnauthorizedClient> first = unauthorizedClientService.findUnauthorizedClients(query().pageLink(firstPage).build());
+        PageData<UnauthorizedClient> second = unauthorizedClientService.findUnauthorizedClients(query().pageLink(firstPage.nextPageLink()).build());
+
+        Assert.assertEquals(List.of("gateway-1", "sensor-beta"), first.getData().stream().map(UnauthorizedClient::getClientId).toList());
+        Assert.assertEquals(3, first.getTotalElements());
+        Assert.assertEquals(2, first.getTotalPages());
+        Assert.assertTrue(first.hasNext());
+        Assert.assertEquals(List.of("Sensor-Alpha"), second.getData().stream().map(UnauthorizedClient::getClientId).toList());
+        Assert.assertFalse(second.hasNext());
+    }
+
+    @Test
+    public void aPageLinkTextSearchMatchesThePartOfAClientIdIgnoringCase() throws Exception {
+        saveFilterFixtures();
+
+        PageData<UnauthorizedClient> page = unauthorizedClientService.findUnauthorizedClients(
+                new PageLink(10, 0, "ALPHA", new SortOrder("clientId", SortOrder.Direction.ASC)));
+
+        Assert.assertEquals(List.of("Sensor-Alpha"), page.getData().stream().map(UnauthorizedClient::getClientId).toList());
+        Assert.assertEquals(3, unauthorizedClientService.findUnauthorizedClients(new PageLink(10, 0, "")).getTotalElements());
+    }
+
+    @Test
+    public void aCleanupRemovesOnlyTheClientsOlderThanTheTtl() throws Exception {
+        UnauthorizedClient fresh = getUnauthorizedClient();
+        fresh.setTs(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10));
+        unauthorizedClientService.save(fresh).get(5, TimeUnit.SECONDS);
+
+        unauthorizedClientService.cleanupUnauthorizedClients(TimeUnit.HOURS.toSeconds(1));
+
+        Assert.assertFalse(unauthorizedClientService.findUnauthorizedClient(savedUnauthorizedClient.getClientId()).isPresent());
+        Assert.assertTrue(unauthorizedClientService.findUnauthorizedClient(fresh.getClientId()).isPresent());
+
+        unauthorizedClientService.cleanupUnauthorizedClients(TimeUnit.HOURS.toSeconds(3));
+
+        Assert.assertTrue(unauthorizedClientService.findUnauthorizedClient(fresh.getClientId()).isPresent());
+    }
+
+    /**
+     * Saves three clients a second apart in place of the client saved by {@link #setUp()}.
+     *
+     * @return the ts of the first one
+     */
+    private long saveFilterFixtures() throws Exception {
+        unauthorizedClientService.deleteUnauthorizedClient(savedUnauthorizedClient.getClientId());
+        long base = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(30);
+        Futures.allAsList(
+                unauthorizedClientService.save(client("Sensor-Alpha", "10.0.0.1", null, false, false, "Bad credentials", base)),
+                unauthorizedClientService.save(client("sensor-beta", "192.168.1.20", "Device-User", true, false, "Client blocked", base + 1000)),
+                unauthorizedClientService.save(client("gateway-1", "192.168.1.30", "other", true, true, "Bad credentials", base + 2000))
+        ).get(5, TimeUnit.SECONDS);
+        return base;
+    }
+
+    private static UnauthorizedClientQuery.UnauthorizedClientQueryBuilder query() {
+        return UnauthorizedClientQuery.builder().pageLink(new TimePageLink(10));
+    }
+
+    private static TimePageLink timeRange(Long startTime, Long endTime) {
+        return new TimePageLink(10, 0, null, null, startTime, endTime);
+    }
+
+    private Set<String> clientIds(UnauthorizedClientQuery.UnauthorizedClientQueryBuilder query) {
+        PageData<UnauthorizedClient> page = unauthorizedClientService.findUnauthorizedClients(query.build());
+        Assert.assertEquals(page.getData().size(), page.getTotalElements());
+        return page.getData().stream().map(UnauthorizedClient::getClientId).collect(Collectors.toSet());
+    }
+
+    private static UnauthorizedClient client(String clientId, String ipAddress, String username, boolean passwordProvided,
+                                             boolean tlsUsed, String reason, long ts) {
+        return UnauthorizedClient.builder().clientId(clientId).ipAddress(ipAddress).username(username)
+                .passwordProvided(passwordProvided).tlsUsed(tlsUsed).reason(reason).ts(ts).build();
     }
 
     private UnauthorizedClient getUnauthorizedClient() {

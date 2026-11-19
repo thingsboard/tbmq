@@ -1288,6 +1288,11 @@ standalone:
     # Must be above 0. The client session attribute caches (credentials name, MQTT version) are kept in the store
     # and do not count towards it.
     max-entries: "${STANDALONE_CACHE_MAX_ENTRIES:100000}"
+  unauthorized-clients:
+    # Maximum number of unauthorized clients kept in the store. When a client that is not kept yet is refused beyond it,
+    # the oldest clients by the time of their refused connection are removed (of equal times, the lowest client ID first).
+    # A new refusal of a kept client updates it and removes none. Must be above 0.
+    max: "${STANDALONE_UNAUTHORIZED_CLIENTS_MAX:10000}"
 
 # Statistics parameters
 stats:

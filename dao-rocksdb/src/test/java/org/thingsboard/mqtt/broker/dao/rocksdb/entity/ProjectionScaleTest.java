@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
+import org.thingsboard.mqtt.broker.dao.rocksdb.client.RocksDbUnauthorizedClientDao;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -41,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The projection of 100,000 credentials: built at startup in seconds, small enough for the heap budget, and paged
- * without reading the store beyond the page. The time bounds leave room for a loaded CI agent; the size bound is the
+ * without reading the store beyond the page; and that of the most unauthorized clients the store keeps. The time bounds leave room for a loaded CI agent; the size bound is the
  * real one. The size is the growth of the used heap across the build, each side measured after a full collection. It
  * is only meaningful with compressed references (the module's surefire argLine pins the heap for that): without them
  * every reference doubles and so does much of the size.
@@ -51,6 +53,10 @@ class ProjectionScaleTest {
     private static final int CREDENTIALS = 100_000;
     private static final int BATCH = 10_000;
     private static final long MAX_PROJECTION_BYTES = 40L << 20;
+    private static final int UNAUTHORIZED_CLIENTS = 10_000;
+    // measured: 18.4 MB of projection and 4.4 to 6.2 MB of age order (string deduplication makes the latter vary)
+    private static final long MAX_UNAUTHORIZED_PROJECTION_BYTES = 20L << 20;
+    private static final long MAX_UNAUTHORIZED_ORDER_BYTES = 8L << 20;
 
     @TempDir
     Path dir;
@@ -64,9 +70,7 @@ class ProjectionScaleTest {
 
     @Test
     void oneHundredThousandCredentialsBuildQuicklyAndStaySmall() {
-        assertThat(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption("UseCompressedOops").getValue())
-                .as("UseCompressedOops: the size bound assumes compressed references; keep -Xmx below 32g in the surefire argLine")
-                .isEqualTo("true");
+        assertCompressedOops();
         open();
         writeCredentials();
         rocksDbStore.close();
@@ -90,6 +94,61 @@ class ProjectionScaleTest {
         assertThat(buildMillis).as("projection build time, ms").isLessThan(30_000);
         assertThat(projectionBytes).as("retained projection size, bytes").isLessThan(MAX_PROJECTION_BYTES);
         assertThat(pageMillis).as("10-item page time, ms").isLessThan(1_000);
+    }
+
+    /**
+     * The count limit of unauthorized clients at its default, each of them as large as a refusal can make it: a client
+     * id and a username at the 255 characters {@code StringUtils.abbreviate} cuts them to, outside Latin-1 so that each
+     * character takes two bytes, the longest IPv6 text and a long reason. Measures the projection and, on top of it,
+     * the age order of the DAO.
+     */
+    @Test
+    void tenThousandWorstCaseUnauthorizedClientsStaySmall() {
+        assertCompressedOops();
+        open();
+        writeUnauthorizedClients();
+        rocksDbStore.close();
+        open();
+        RocksEntityStore store = new RocksEntityStore(rocksDbStore);
+
+        long heapBefore = usedHeapAfterFullGc();
+        store.buildProjections();
+        long projectionBytes = usedHeapAfterFullGc() - heapBefore;
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, UNAUTHORIZED_CLIENTS);
+        long daoBytes = usedHeapAfterFullGc() - heapBefore - projectionBytes;
+
+        assertThat(store.count(EntityDescriptors.UNAUTHORIZED_CLIENT)).isEqualTo(UNAUTHORIZED_CLIENTS);
+        assertThat(dao.findByClientId(unauthorizedClientId(0))).isNotNull();
+        assertThat(projectionBytes).as("retained projection size, bytes").isLessThan(MAX_UNAUTHORIZED_PROJECTION_BYTES);
+        assertThat(daoBytes).as("retained DAO age order size, bytes").isLessThan(MAX_UNAUTHORIZED_ORDER_BYTES);
+    }
+
+    private void writeUnauthorizedClients() {
+        rocksDbStore.write(StoreWriteClass.NEW_DATA, batch -> {
+            for (int i = 0; i < UNAUTHORIZED_CLIENTS; i++) {
+                UnauthorizedClient client = UnauthorizedClient.builder()
+                        .clientId(unauthorizedClientId(i))
+                        .username(String.format("%s%05d", "\u043a".repeat(250), i))
+                        .ipAddress("ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255")
+                        .ts(1_700_000_000_000L + i)
+                        .passwordProvided(true)
+                        .tlsUsed(true)
+                        .reason(String.format("%05d", i) + "r".repeat(507))
+                        .build();
+                batch.put(StoreColumnFamily.ENTITY, EntityKeys.entityKey(StoredEntityType.UNAUTHORIZED_CLIENT,
+                        EntityDescriptors.UNAUTHORIZED_CLIENT.idBytes(client.getClientId())), StorageObjectMapper.write(client));
+            }
+        });
+    }
+
+    private static String unauthorizedClientId(int i) {
+        return String.format("%s%05d", "\u0436".repeat(250), i);
+    }
+
+    private static void assertCompressedOops() {
+        assertThat(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption("UseCompressedOops").getValue())
+                .as("UseCompressedOops: the size bound assumes compressed references; keep -Xmx below 32g in the surefire argLine")
+                .isEqualTo("true");
     }
 
     // realistic MQTT_BASIC credentials: a user name and a client id, a hashed password and one rule each way
