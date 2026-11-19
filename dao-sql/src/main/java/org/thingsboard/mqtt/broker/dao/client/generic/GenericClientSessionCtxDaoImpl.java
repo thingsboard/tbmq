@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class GenericClientSessionCtxDaoImpl extends JpaAbstractDaoListeningExecutorService implements GenericClientSessionCtxDao {
 

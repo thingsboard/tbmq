@@ -67,6 +67,14 @@ public abstract class AbstractLiteSpecCase extends AbstractPubSubIntegrationTest
         return track(RawMqttClient.connectPersistent(mqttPort, clientId, MqttVersion.MQTT_5));
     }
 
+    /**
+     * Connects an MQTT 5 client with the session it had, if any, that expires {@code sessionExpiryIntervalSec} seconds
+     * after the connection closes.
+     */
+    RawMqttClient connectPersistent(String clientId, int sessionExpiryIntervalSec) throws IOException {
+        return track(RawMqttClient.connectPersistent(mqttPort, clientId, sessionExpiryIntervalSec));
+    }
+
     RawMqttClient connectClean(String clientId, MqttVersion version) throws IOException {
         return track(RawMqttClient.connectClean(mqttPort, clientId, version));
     }
