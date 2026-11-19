@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -88,10 +87,8 @@ public class RocksDbUserContractTest extends AbstractUserContractTest {
     public void aCrashInsideReplaceCannotLockTheSysadminOut() {
         User sysadmin = userService.findUserByEmail(SYSADMIN_EMAIL);
         UserCredentials old = userService.findUserCredentialsByUserId(sysadmin.getId());
-        AtomicInteger writes = new AtomicInteger();
         List<RecordedWrite> batch = new ArrayList<>();
         doAnswer(invocation -> {
-            writes.incrementAndGet();
             Consumer<StoreBatch> body = invocation.getArgument(1);
             body.accept(recordingBatch(batch));
             throw new StoreException("A crash inside the write");
@@ -103,7 +100,8 @@ public class RocksDbUserContractTest extends AbstractUserContractTest {
             Mockito.reset(rocksDbStore);
         }
 
-        assertThat(writes).hasValue(1);
+        // the delete and the put sit in the one recorded batch (the stub throws on the first write): that is the proof
+        // that the replace is a single write
         byte[] userIdKey = EntityKeys.uniqueIndexKey(EntityIndex.USER_CREDENTIALS_USER_ID, sysadmin.getId().toString());
         int oldDocumentDelete = indexOf(batch, w -> w.isDelete() && w.cf() == StoreColumnFamily.ENTITY && endsWith(w.key(), uuidBytes(old.getId())));
         int newDocumentPut = indexOf(batch, w -> !w.isDelete() && w.cf() == StoreColumnFamily.ENTITY

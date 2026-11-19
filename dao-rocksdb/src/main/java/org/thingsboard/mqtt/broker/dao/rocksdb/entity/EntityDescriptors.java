@@ -173,7 +173,14 @@ public final class EntityDescriptors {
 
     // the SQL unique key is (name, user_id)
     private static String userAndName(WebSocketConnection connection) {
-        return connection.getUserId() == null || connection.getName() == null ? null : connection.getUserId() + "\0" + connection.getName();
+        return connection.getUserId() == null || connection.getName() == null ? null : userAndName(connection.getUserId(), connection.getName());
+    }
+
+    /**
+     * The key of the unique index {@link EntityIndex#WS_CONNECTION_USER_NAME}.
+     */
+    public static String userAndName(UUID userId, String name) {
+        return userId + "\0" + name;
     }
 
     private static String text(Enum<?> value) {

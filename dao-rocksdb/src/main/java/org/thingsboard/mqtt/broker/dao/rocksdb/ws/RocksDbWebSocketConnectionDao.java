@@ -90,7 +90,7 @@ public class RocksDbWebSocketConnectionDao implements WebSocketConnectionDao {
         if (userId == null || name == null) {
             return null;
         }
-        return store.findByUnique(EntityDescriptors.WEBSOCKET_CONNECTION, EntityIndex.WS_CONNECTION_USER_NAME, userId + "\0" + name);
+        return store.findByUnique(EntityDescriptors.WEBSOCKET_CONNECTION, EntityIndex.WS_CONNECTION_USER_NAME, EntityDescriptors.userAndName(userId, name));
     }
 
     private record OfUser(UUID userId) implements Predicate<ProjectedEntity> {

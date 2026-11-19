@@ -261,6 +261,22 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
         assertThat(found.isEnabled()).isTrue();
     }
 
+    // the javadoc of UserCredentialsDao.replace: credentials that do not exist are skipped, the replacement is saved
+    @Test
+    public void replacingMissingCredentialsStillSavesTheReplacement() {
+        User user = saveNewUser();
+        UserCredentials initial = userService.findUserCredentialsByUserId(user.getId());
+        userCredentialsDao.removeById(initial.getId());
+        UserCredentials replacement = enabled(initial, StringUtils.randomAlphanumeric(10));
+        replacement.setId(null);
+
+        UserCredentials saved = userCredentialsDao.replace(UUID.randomUUID(), replacement);
+
+        assertThat(saved.getId()).isNotNull().isNotEqualTo(initial.getId());
+        assertThat(userCredentialsDao.findById(saved.getId()).getUserId()).isEqualTo(user.getId());
+        assertThat(userCredentialsDao.findByUserId(user.getId()).getId()).isEqualTo(saved.getId());
+    }
+
     @Test
     public void deletingAUserRemovesItsCredentials() {
         User user = saveNewUser();

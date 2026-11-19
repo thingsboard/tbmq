@@ -66,6 +66,7 @@ public class DefaultUserCredentialsDao extends AbstractDao<UserCredentialsEntity
     public UserCredentials replace(UUID removedId, UserCredentials replacement) {
         return inTransaction(() -> {
             removeById(removedId);
+            // a violation raised inside save is translated again by the outer inTransaction, harmlessly (same type and constraint name)
             return save(replacement);
         });
     }

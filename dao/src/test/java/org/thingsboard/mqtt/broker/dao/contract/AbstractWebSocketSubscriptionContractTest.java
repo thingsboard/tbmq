@@ -230,26 +230,29 @@ public abstract class AbstractWebSocketSubscriptionContractTest extends Abstract
     @Test
     public void subscriptionsArePagedPerConnection() {
         WebSocketConnection another = saveWebSocketConnection("Another connection");
-        for (String filter : List.of("a/1", "a/2", "a/3")) {
-            webSocketSubscriptionService.saveWebSocketSubscription(getWebSocketSubscription(filter));
+        try {
+            for (String filter : List.of("a/1", "a/2", "a/3")) {
+                webSocketSubscriptionService.saveWebSocketSubscription(getWebSocketSubscription(filter));
+            }
+            webSocketSubscriptionService.saveWebSocketSubscription(getWsSubscription("b/1", another.getId()));
+
+            PageData<WebSocketSubscription> first = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    savedWebSocketConnection.getId(), new PageLink(2, 0));
+            PageData<WebSocketSubscription> second = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    savedWebSocketConnection.getId(), new PageLink(2, 1));
+            PageData<WebSocketSubscription> others = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    another.getId(), new PageLink(10, 0));
+
+            assertThat(first.getData()).hasSize(2);
+            assertThat(first.getTotalElements()).isEqualTo(3);
+            assertThat(first.getTotalPages()).isEqualTo(2);
+            assertThat(first.hasNext()).isTrue();
+            assertThat(second.getData()).hasSize(1);
+            assertThat(second.hasNext()).isFalse();
+            assertThat(others.getData()).extracting(s -> s.getConfiguration().getTopicFilter()).containsExactly("b/1");
+        } finally {
+            webSocketConnectionService.deleteWebSocketConnection(another.getId());
         }
-        webSocketSubscriptionService.saveWebSocketSubscription(getWsSubscription("b/1", another.getId()));
-
-        PageData<WebSocketSubscription> first = webSocketSubscriptionService.getWebSocketSubscriptions(
-                savedWebSocketConnection.getId(), new PageLink(2, 0));
-        PageData<WebSocketSubscription> second = webSocketSubscriptionService.getWebSocketSubscriptions(
-                savedWebSocketConnection.getId(), new PageLink(2, 1));
-        PageData<WebSocketSubscription> others = webSocketSubscriptionService.getWebSocketSubscriptions(
-                another.getId(), new PageLink(10, 0));
-
-        assertThat(first.getData()).hasSize(2);
-        assertThat(first.getTotalElements()).isEqualTo(3);
-        assertThat(first.getTotalPages()).isEqualTo(2);
-        assertThat(first.hasNext()).isTrue();
-        assertThat(second.getData()).hasSize(1);
-        assertThat(second.hasNext()).isFalse();
-        assertThat(others.getData()).extracting(s -> s.getConfiguration().getTopicFilter()).containsExactly("b/1");
-        webSocketConnectionService.deleteWebSocketConnection(another.getId());
     }
 
     @Test
