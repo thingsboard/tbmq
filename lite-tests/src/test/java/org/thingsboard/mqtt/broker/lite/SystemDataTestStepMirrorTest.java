@@ -52,9 +52,10 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Keeps {@link SystemDataTestStep} a copy of {@code sql/system-data.sql}: in a fresh database that the SQL file
- * filled, each of the four tables the step covers holds exactly the rows the step saves into an empty backend, column
- * by column. A JSON column is compared as the domain object the SQL DAO reads from it, so formatting and key order do
- * not count. A column the comparison does not name fails the test, so a schema change reaches it too.
+ * filled, the SQL file fills only the four tables the step covers, and each holds exactly the rows the step saves into
+ * an empty backend, column by column. A JSON column is compared as the domain object the SQL DAO reads from it, so
+ * formatting and key order do not count. A column the comparison does not name fails the test, so a schema change
+ * reaches it too.
  */
 class SystemDataTestStepMirrorTest {
 
@@ -82,6 +83,9 @@ class SystemDataTestStepMirrorTest {
         new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao, true).apply();
 
         try (Connection connection = DriverManager.getConnection(db.jdbcUrl(), db.username(), db.password())) {
+            // the schema files insert nothing, so every filled table comes from the SQL file
+            assertThat(nonEmptyTables(connection)).as("tables the SQL file fills")
+                    .containsExactlyInAnyOrder("broker_user", "user_credentials", "admin_settings", "mqtt_auth_provider");
             assertSameRows(connection, "broker_user", saved(userDao, User.class), user -> row(
                     "id", user.getId(),
                     "created_time", user.getCreatedTime(),
@@ -145,6 +149,26 @@ class SystemDataTestStepMirrorTest {
         assertThat(rows).as("rows of %s", table).isNotEmpty();
         assertThat(new TreeSet<>(savedRows.getFirst().keySet())).as("columns of %s the test compares", table).isEqualTo(columns);
         assertThat(savedRows).as("rows of %s the step saves", table).containsExactlyInAnyOrderElementsOf(rows);
+    }
+
+    private static Set<String> nonEmptyTables(Connection connection) throws SQLException {
+        List<String> tables = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")) {
+            while (result.next()) {
+                tables.add(result.getString(1));
+            }
+        }
+        Set<String> nonEmpty = new TreeSet<>();
+        for (String table : tables) {
+            try (Statement statement = connection.createStatement();
+                 ResultSet result = statement.executeQuery("SELECT EXISTS (SELECT 1 FROM \"" + table + "\")")) {
+                if (result.next() && result.getBoolean(1)) {
+                    nonEmpty.add(table);
+                }
+            }
+        }
+        return nonEmpty;
     }
 
     private static <T> List<T> saved(Object dao, Class<T> type) {
