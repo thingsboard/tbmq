@@ -51,6 +51,14 @@ class EntityKeysTest {
     }
 
     @Test
+    void idBytesIsTheReverseOfIdText() {
+        UUID id = UUID.randomUUID();
+
+        assertThat(EntityKeys.idBytes(StoredEntityType.USER, id.toString())).containsExactly(EntityKeys.uuidBytes(id));
+        assertThat(EntityKeys.idBytes(StoredEntityType.UNAUTHORIZED_CLIENT, "cé")).containsExactly(EntityKeys.stringBytes("cé"));
+    }
+
+    @Test
     void theIdKindOfEachTypeDecidesItsEncoding() {
         for (StoredEntityType type : StoredEntityType.values()) {
             assertThat(type.idKind()).isEqualTo(type == StoredEntityType.UNAUTHORIZED_CLIENT

@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -27,7 +28,8 @@ import java.util.function.ObjLongConsumer;
 
 /**
  * How {@link RocksEntityStore} keeps one domain type: its stored type, its id, its index values, the types removed
- * with it and, for a paged type, its projection. The instances are the constants of {@link EntityDescriptors}.
+ * with it (each one the child of a SQL foreign key) and, for a paged type, its projection. The instances are the
+ * constants of {@link EntityDescriptors}.
  *
  * @param <T>  the domain type, stored as its JSON
  * @param <ID> {@link UUID} for a {@link StoredEntityType.IdKind#UUID} type, {@link String} for a
@@ -36,10 +38,12 @@ import java.util.function.ObjLongConsumer;
 public final class EntityDescriptor<T, ID> {
 
     /**
-     * Removing a document of the owning type removes every document of {@code child} whose {@code childIndex} value
-     * is the removed id as text, in the same batch.
+     * The SQL foreign key {@code constraintName} from {@code child} to the owning type, {@code ON DELETE CASCADE}:
+     * removing a document of the owning type removes every document of {@code child} whose {@code childIndex} value is
+     * the removed id as text, in the same batch, and a {@code child} document whose {@code childIndex} value names no
+     * document of the owning type is refused.
      */
-    public record Cascade(EntityIndex childIndex, EntityDescriptor<?, ?> child) {
+    public record Cascade(EntityIndex childIndex, EntityDescriptor<?, ?> child, String constraintName) {
     }
 
     private final StoredEntityType type;
@@ -155,11 +159,11 @@ public final class EntityDescriptor<T, ID> {
             return this;
         }
 
-        public Builder<T, ID> cascade(EntityIndex childIndex, EntityDescriptor<?, ?> child) {
+        public Builder<T, ID> cascade(EntityIndex childIndex, EntityDescriptor<?, ?> child, String constraintName) {
             if (!child.indexes().containsKey(childIndex)) {
                 throw new IllegalArgumentException(type + " cascades through " + childIndex + ", which " + child.type() + " does not have");
             }
-            cascades.add(new Cascade(childIndex, child));
+            cascades.add(new Cascade(childIndex, child, Objects.requireNonNull(constraintName, "constraintName")));
             return this;
         }
 

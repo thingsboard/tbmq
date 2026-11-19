@@ -203,8 +203,8 @@ class RocksEntityStorePagingTest {
 
     @Test
     void sortingByAUuidPropertyUsesTheUnsignedByteOrder() {
-        UUID low = new UUID(0x7FFF_FFFF_FFFF_FFFFL, 0);
-        UUID high = new UUID(0x8000_0000_0000_0000L, 0);
+        UUID low = savedUser(new UUID(0x7FFF_FFFF_FFFF_FFFFL, 0), "low@example.org");
+        UUID high = savedUser(new UUID(0x8000_0000_0000_0000L, 0), "high@example.org");
         store.save(WEBSOCKET_CONNECTION, connection(high, "high"));
         store.save(WEBSOCKET_CONNECTION, connection(low, "low"));
 
@@ -215,9 +215,9 @@ class RocksEntityStorePagingTest {
 
     @Test
     void theFilterSeesTheProjectedFields() {
-        UUID userId = UUID.randomUUID();
+        UUID userId = store.save(USER, user("mine@example.org")).getId();
         WebSocketConnection mine = store.save(WEBSOCKET_CONNECTION, connection(userId, "mine"));
-        store.save(WEBSOCKET_CONNECTION, connection(UUID.randomUUID(), "other"));
+        store.save(WEBSOCKET_CONNECTION, connection(store.save(USER, user("other@example.org")).getId(), "other"));
         List<RocksEntityStore.ProjectedEntity> seen = new ArrayList<>();
 
         PageData<WebSocketConnection> page = store.findPage(WEBSOCKET_CONNECTION, new PageLink(10), projected -> {
@@ -437,6 +437,14 @@ class RocksEntityStorePagingTest {
         User user = new User();
         user.setEmail(email);
         return user;
+    }
+
+    // a connection needs its user: the store refuses a child whose parent is missing, as the SQL foreign key does
+    private UUID savedUser(UUID id, String email) {
+        User user = user(email);
+        user.setId(id);
+        user.setCreatedTime(1L);
+        return store.save(USER, user).getId();
     }
 
     private static WebSocketConnection connection(UUID userId, String name) {

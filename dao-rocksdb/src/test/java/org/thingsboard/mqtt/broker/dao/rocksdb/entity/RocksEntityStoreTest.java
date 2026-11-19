@@ -250,15 +250,70 @@ class RocksEntityStoreTest {
 
     @Test
     void aConnectionNameIsUniquePerUser() {
-        UUID userId = UUID.randomUUID();
+        UUID userId = store.save(USER, user("a@example.org")).getId();
         store.save(WEBSOCKET_CONNECTION, connection(userId, "conn"));
-        store.save(WEBSOCKET_CONNECTION, connection(UUID.randomUUID(), "conn"));
+        store.save(WEBSOCKET_CONNECTION, connection(store.save(USER, user("b@example.org")).getId(), "conn"));
 
         assertThatThrownBy(() -> store.save(WEBSOCKET_CONNECTION, connection(userId, "conn")))
                 .isInstanceOf(EntityConstraintViolationException.class)
                 .extracting(e -> ((EntityConstraintViolationException) e).getConstraintName()).isEqualTo("name_unq_key");
         assertThat(store.findByUnique(WEBSOCKET_CONNECTION, EntityIndex.WS_CONNECTION_USER_NAME, userId + "\0conn").getUserId())
                 .isEqualTo(userId);
+    }
+
+    @Test
+    void aChildOfAMissingParentIsRefusedWithTheSqlForeignKeyName() {
+        assertThatThrownBy(() -> store.save(WEBSOCKET_CONNECTION, connection(UUID.randomUUID(), "conn")))
+                .isInstanceOf(EntityConstraintViolationException.class)
+                .extracting(e -> ((EntityConstraintViolationException) e).getConstraintName()).isEqualTo("fk_user_id");
+        assertThatThrownBy(() -> store.save(WEBSOCKET_SUBSCRIPTION, subscription(UUID.randomUUID())))
+                .isInstanceOf(EntityConstraintViolationException.class)
+                .extracting(e -> ((EntityConstraintViolationException) e).getConstraintName()).isEqualTo("fk_websocket_connection_id");
+
+        assertThat(store.findAll(WEBSOCKET_CONNECTION)).isEmpty();
+        assertThat(store.count(WEBSOCKET_CONNECTION)).isZero();
+        assertThat(store.findAll(WEBSOCKET_SUBSCRIPTION)).isEmpty();
+        assertThat(indexEntries(EntityIndex.WS_CONNECTION_USER_NAME, EntityIndex.WS_SUBSCRIPTION_CONNECTION)).isZero();
+    }
+
+    @Test
+    void aChildWithoutAParentIdIsNotChecked() {
+        WebSocketConnection saved = store.save(WEBSOCKET_CONNECTION, connection(null, "conn"));
+
+        assertThat(store.findById(WEBSOCKET_CONNECTION, saved.getId())).isNotNull();
+    }
+
+    @Test
+    void aConnectionSavedWhileItsUserIsRemovedIsNeverLeftBehind() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            for (int round = 0; round < 200; round++) {
+                User user = store.save(USER, user("user-" + round + "@example.org"));
+                CountDownLatch start = new CountDownLatch(1);
+                Future<?> removal = executor.submit(() -> {
+                    start.await();
+                    return store.removeById(USER, user.getId());
+                });
+                Future<?> save = executor.submit(() -> {
+                    start.await();
+                    try {
+                        store.save(WEBSOCKET_CONNECTION, connection(user.getId(), "conn"));
+                    } catch (EntityConstraintViolationException e) {
+                        assertThat(e.getConstraintName()).isEqualTo("fk_user_id");
+                    }
+                    return null;
+                });
+                start.countDown();
+                removal.get(10, TimeUnit.SECONDS);
+                save.get(10, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(store.findAll(USER)).isEmpty();
+        assertThat(store.findAll(WEBSOCKET_CONNECTION)).isEmpty();
+        assertThat(store.count(WEBSOCKET_CONNECTION)).isZero();
     }
 
     @Test

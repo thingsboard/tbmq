@@ -88,7 +88,7 @@ public final class EntityDescriptors {
     public static final EntityDescriptor<WebSocketConnection, UUID> WEBSOCKET_CONNECTION = baseData(StoredEntityType.WEBSOCKET_CONNECTION, WebSocketConnection.class)
             .index(EntityIndex.WS_CONNECTION_USER_NAME, EntityDescriptors::userAndName)
             .index(EntityIndex.WS_CONNECTION_USER, connection -> text(connection.getUserId()))
-            .cascade(EntityIndex.WS_SUBSCRIPTION_CONNECTION, WEBSOCKET_SUBSCRIPTION)
+            .cascade(EntityIndex.WS_SUBSCRIPTION_CONNECTION, WEBSOCKET_SUBSCRIPTION, "fk_websocket_connection_id")
             .projection(EntityDescriptors.<WebSocketConnection>baseDataProjection()
                     .sort("name", WebSocketConnection::getName)
                     .sortAndFilter("userId", WebSocketConnection::getUserId)
@@ -98,7 +98,7 @@ public final class EntityDescriptors {
 
     public static final EntityDescriptor<User, UUID> USER = baseData(StoredEntityType.USER, User.class)
             .index(EntityIndex.USER_EMAIL, User::getEmail)
-            .cascade(EntityIndex.WS_CONNECTION_USER, WEBSOCKET_CONNECTION)
+            .cascade(EntityIndex.WS_CONNECTION_USER, WEBSOCKET_CONNECTION, "fk_user_id")
             .projection(EntityDescriptors.<User>baseDataProjection()
                     .sort("authority", User::getAuthority)
                     .sort("email", User::getEmail)

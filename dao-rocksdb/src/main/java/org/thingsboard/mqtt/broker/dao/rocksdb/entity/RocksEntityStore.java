@@ -55,6 +55,10 @@ import java.util.function.Supplier;
  * Reads take no lock: each batch is atomic, and a document found through an index is returned only if it still has
  * the indexed value.
  * <p>
+ * A cascade is a SQL foreign key, and both of its sides hold: a removal removes the children, and a save of a child
+ * whose parent does not exist is refused with the foreign key's name. The parent check needs no lock of the parent's
+ * type: a removal of the parent cascades, so it takes the child type's lock, which the save holds.
+ * <p>
  * A type with a {@link Projection} keeps one in memory ({@link ProjectionIndex}), built by one scan of the type at
  * startup and changed by every write, under the same locks, once its batch is written. Pages are filtered, searched and
  * sorted there, and only the documents of the page are read.
@@ -66,6 +70,7 @@ public class RocksEntityStore {
     private final RocksDbStore store;
     private final Map<StoredEntityType, ReentrantLock> locks = new EnumMap<>(StoredEntityType.class);
     private final Map<StoredEntityType, ProjectionIndex<?>> projections = new EnumMap<>(StoredEntityType.class);
+    private final Map<StoredEntityType, List<ParentLink>> parents = new EnumMap<>(StoredEntityType.class);
 
     /**
      * What a page filter sees of one document: its id, its created time ({@code 0} for a type without one), the values
@@ -83,6 +88,10 @@ public class RocksEntityStore {
         for (EntityDescriptor<?, ?> d : EntityDescriptors.ALL) {
             if (d.projection() != null) {
                 projections.put(d.type(), new ProjectionIndex<>(d.projection()));
+            }
+            for (EntityDescriptor.Cascade cascade : d.cascades()) {
+                parents.computeIfAbsent(cascade.child().type(), type -> new ArrayList<>())
+                        .add(new ParentLink(d.type(), cascade.childIndex(), cascade.constraintName()));
             }
         }
     }
@@ -104,8 +113,8 @@ public class RocksEntityStore {
     /**
      * Inserts or replaces the document with the entity's id. A UUID type saved without an id gets a random one and the
      * current time as its created time. The argument is not modified; the result is the stored copy. Refused with
-     * {@link EntityConstraintViolationException} when a unique value belongs to another document, and then nothing is
-     * written.
+     * {@link EntityConstraintViolationException} when a unique value belongs to another document or the parent that a
+     * cascade's child index names does not exist, and then nothing is written.
      */
     public <T, ID> T save(EntityDescriptor<T, ID> d, T entity) {
         return save(d, null, entity);
@@ -253,6 +262,7 @@ public class RocksEntityStore {
                     oldValues = indexValues(d, old);
                 }
             }
+            checkParents(d, newValues, changes);
             checkUnique(d, id, newValues, changes);
             for (Map.Entry<EntityIndex, String> old : oldValues.entrySet()) {
                 if (!old.getValue().equals(newValues.get(old.getKey()))) {
@@ -270,6 +280,23 @@ public class RocksEntityStore {
             return null;
         });
         return document;
+    }
+
+    /**
+     * Refuses a document whose parent, named by the value of a cascade's child index, is missing or removed in the same
+     * batch. A child index without a value is not checked, as SQL lets a null foreign key through.
+     */
+    private void checkParents(EntityDescriptor<?, ?> d, Map<EntityIndex, String> values, Changes changes) {
+        for (ParentLink link : parents.getOrDefault(d.type(), List.of())) {
+            String parentId = values.get(link.childIndex());
+            if (parentId == null) {
+                continue;
+            }
+            byte[] parentKey = EntityKeys.entityKey(link.parentType(), EntityKeys.idBytes(link.parentType(), parentId));
+            if (changes.removes(parentKey) || store.get(StoreColumnFamily.ENTITY, parentKey) == null) {
+                throw new EntityConstraintViolationException(link.constraintName(), null);
+            }
+        }
     }
 
     private <T> void checkUnique(EntityDescriptor<T, ?> d, byte[] id, Map<EntityIndex, String> values, Changes changes) {
@@ -450,6 +477,13 @@ public class RocksEntityStore {
     }
 
     private record Entry(byte[] key, byte[] value) {
+    }
+
+    /**
+     * A cascade seen from its child type: the parent's type, the child index that holds the parent's id as text, and the
+     * name of the foreign key.
+     */
+    private record ParentLink(StoredEntityType parentType, EntityIndex childIndex, String constraintName) {
     }
 
     // a null value is a delete

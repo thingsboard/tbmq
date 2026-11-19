@@ -57,6 +57,16 @@ public final class EntityKeys {
         };
     }
 
+    /**
+     * The id bytes of {@code idText} in a key of {@code type}, the reverse of {@link #idText}.
+     */
+    static byte[] idBytes(StoredEntityType type, String idText) {
+        return switch (type.idKind()) {
+            case UUID -> uuidBytes(UUID.fromString(idText));
+            case STRING -> stringBytes(idText);
+        };
+    }
+
     static byte[] entityKey(StoredEntityType type, byte[] id) {
         return ByteBuffer.allocate(1 + id.length).put(type.code()).put(id).array();
     }
