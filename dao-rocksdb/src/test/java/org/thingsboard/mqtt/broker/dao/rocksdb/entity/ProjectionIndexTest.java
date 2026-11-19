@@ -62,7 +62,7 @@ class ProjectionIndexTest {
     }
 
     @Test
-    void latinOneAndOtherStringsSortTogetherInStringOrder() {
+    void latinOneAndOtherStringsSortTogether() {
         for (String name : List.of("клієнт", "b", "Ü", "a", "ab")) {
             put(credentials(name, ClientType.DEVICE));
         }
@@ -70,6 +70,30 @@ class ProjectionIndexTest {
         assertThat(names(sortedBy("name", SortOrder.Direction.ASC))).containsExactly("a", "ab", "b", "Ü", "клієнт");
         assertThat(index.find(new PageLink(10, 0, "КЛІ"), null).totalElements()).isEqualTo(1);
         assertThat(index.find(new PageLink(10, 0, "ü"), null).totalElements()).isEqualTo(1);
+    }
+
+    @Test
+    void stringsSortIgnoringCaseAndThenLowerCaseFirstAsPostgreSqlDoes() {
+        // the order the postgres:17 image gives with its default collation, en_US.utf8
+        for (String name : List.of("Banana", "AB", "apple", "aB", "Apple", "Ab", "banana", "ab", "test10", "Test9", "Test1")) {
+            put(credentials(name, ClientType.DEVICE));
+        }
+
+        assertThat(names(sortedBy("name", SortOrder.Direction.ASC)))
+                .containsExactly("ab", "aB", "Ab", "AB", "apple", "Apple", "banana", "Banana", "Test1", "test10", "Test9");
+        assertThat(names(sortedBy("name", SortOrder.Direction.DESC)))
+                .containsExactly("Test9", "test10", "Test1", "Banana", "banana", "Apple", "apple", "AB", "Ab", "aB", "ab");
+    }
+
+    @Test
+    void latinOneAndOtherStringsIgnoreCaseAlike() {
+        // kept as Latin-1 bytes and as strings, compared within and across the two forms
+        for (String name : List.of("Клієнт", "Über", "uber", "клієнт", "über", "Uber")) {
+            put(credentials(name, ClientType.DEVICE));
+        }
+
+        assertThat(names(sortedBy("name", SortOrder.Direction.ASC)))
+                .containsExactly("uber", "Uber", "über", "Über", "клієнт", "Клієнт");
     }
 
     @Test

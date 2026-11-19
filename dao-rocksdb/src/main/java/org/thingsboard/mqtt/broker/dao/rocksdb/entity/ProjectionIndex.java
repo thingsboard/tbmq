@@ -193,9 +193,8 @@ final class ProjectionIndex<T> {
 
     /**
      * Ascending order of kept values with {@code null} last, as PostgreSQL sorts by default; reversed, {@code null}
-     * comes first, as there. Strings compare as {@link String#compareTo} does (on Latin-1 bytes that is their unsigned
-     * order), an enum by its name (the SQL column holds the name) and a UUID by its unsigned big-endian bytes
-     * (PostgreSQL's {@code uuid} order).
+     * comes first, as there. Strings compare as {@link #compareText} does, an enum by its name (the SQL column holds the
+     * name) and a UUID by its unsigned big-endian bytes (PostgreSQL's {@code uuid} order).
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static int compareValues(Object a, Object b) {
@@ -203,10 +202,10 @@ final class ProjectionIndex<T> {
             return a == null ? (b == null ? 0 : 1) : -1;
         }
         if (a instanceof byte[] x && b instanceof byte[] y) {
-            return Arrays.compareUnsigned(x, y);
+            return compareText(x, y);
         }
-        if (a instanceof byte[] || b instanceof byte[]) {
-            return ((String) expand(a)).compareTo((String) expand(b));
+        if (a instanceof byte[] || b instanceof byte[] || a instanceof String) {
+            return compareText((String) expand(a), (String) expand(b));
         }
         if (a instanceof UUID x && b instanceof UUID y) {
             int high = Long.compareUnsigned(x.getMostSignificantBits(), y.getMostSignificantBits());
@@ -216,6 +215,65 @@ final class ProjectionIndex<T> {
             return x.name().compareTo(y.name());
         }
         return ((Comparable) a).compareTo(b);
+    }
+
+    /**
+     * The text order, close to the {@code en_US.utf8} collation that PostgreSQL gets by default in the images TBMQ
+     * ships with: characters compare ignoring case, and of two texts that differ only in case, the one with the
+     * lower-case character at the first such difference comes first ({@code ab, aB, Ab, AB, apple, Apple}). Accents
+     * and punctuation still compare by their code, where that collation weighs them less: {@code f} sorts before
+     * {@code éclair}, and {@code a-c} before {@code abc}.
+     */
+    private static int compareText(String x, String y) {
+        int common = Math.min(x.length(), y.length());
+        int caseOrder = 0;
+        for (int i = 0; i < common; i++) {
+            char a = x.charAt(i);
+            char b = y.charAt(i);
+            if (a != b) {
+                int folded = Integer.compare(fold(a), fold(b));
+                if (folded != 0) {
+                    return folded;
+                }
+                if (caseOrder == 0) {
+                    caseOrder = caseOrder(a, b);
+                }
+            }
+        }
+        return x.length() != y.length() ? Integer.compare(x.length(), y.length()) : caseOrder;
+    }
+
+    /**
+     * {@link #compareText(String, String)} of two kept Latin-1 strings, whose bytes are their characters.
+     */
+    private static int compareText(byte[] x, byte[] y) {
+        int common = Math.min(x.length, y.length);
+        int caseOrder = 0;
+        for (int i = 0; i < common; i++) {
+            if (x[i] != y[i]) {
+                char a = (char) (x[i] & 0xFF);
+                char b = (char) (y[i] & 0xFF);
+                int folded = Integer.compare(fold(a), fold(b));
+                if (folded != 0) {
+                    return folded;
+                }
+                if (caseOrder == 0) {
+                    caseOrder = caseOrder(a, b);
+                }
+            }
+        }
+        return x.length != y.length ? Integer.compare(x.length, y.length) : caseOrder;
+    }
+
+    // the case folding of String.CASE_INSENSITIVE_ORDER
+    private static int fold(char c) {
+        return Character.toLowerCase(Character.toUpperCase(c));
+    }
+
+    // two different characters that fold alike: the lower-case one first, else by code
+    private static int caseOrder(char a, char b) {
+        boolean lowerA = Character.isLowerCase(a);
+        return lowerA != Character.isLowerCase(b) ? (lowerA ? -1 : 1) : Character.compare(a, b);
     }
 
     /**
