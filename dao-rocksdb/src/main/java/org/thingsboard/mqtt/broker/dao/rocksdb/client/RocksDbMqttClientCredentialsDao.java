@@ -123,7 +123,7 @@ public class RocksDbMqttClientCredentialsDao implements MqttClientCredentialsDao
 
     @Override
     public PageData<MqttClientCredentials> findAllV2(ClientCredentialsQuery query) {
-        return store.findPage(EntityDescriptors.MQTT_CLIENT_CREDENTIALS, query.getPageLink(), new CredentialsQueryFilter(query));
+        return store.findPage(EntityDescriptors.MQTT_CLIENT_CREDENTIALS, query.getPageLink(), CredentialsQueryFilter.of(query));
     }
 
     @Override

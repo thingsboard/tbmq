@@ -55,12 +55,26 @@ final class CredentialsQueryFilter implements Predicate<ProjectedEntity> {
     private final String clientId;
     private final String certificateCn;
 
+    /**
+     * The filter of {@code query}, or {@code null} when it restricts nothing (no client types, no credentials types, no
+     * username, client id or certificate CN), so that the page is not tested row by row for nothing.
+     */
+    static CredentialsQueryFilter of(ClientCredentialsQuery query) {
+        CredentialsQueryFilter filter = new CredentialsQueryFilter(query);
+        return filter.restrictsNothing() ? null : filter;
+    }
+
     CredentialsQueryFilter(ClientCredentialsQuery query) {
         this.clientTypes = query.getClientTypeList();
         this.credentialsTypes = query.getCredentialsTypeList();
         this.username = lowerCaseOrNull(query.getUsername());
         this.clientId = lowerCaseOrNull(query.getClientId());
         this.certificateCn = lowerCaseOrNull(query.getCertificateCn());
+    }
+
+    private boolean restrictsNothing() {
+        return (clientTypes == null || clientTypes.isEmpty()) && (credentialsTypes == null || credentialsTypes.isEmpty())
+                && username == null && clientId == null && certificateCn == null;
     }
 
     @Override
