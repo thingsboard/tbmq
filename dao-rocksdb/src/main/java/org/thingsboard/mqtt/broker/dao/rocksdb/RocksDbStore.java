@@ -325,8 +325,7 @@ public class RocksDbStore {
      * throws, the exception propagates and nothing is written. Syncs the WAL only when {@code store.wal-sync} is
      * {@code always}. The body must not call {@link #close()}.
      * <p>
-     * {@code writeClass} says what the batch does to the amount of data; for a batch mixing several kinds it is the
-     * most restrictive one, see {@link StoreWriteClass}.
+     * {@code writeClass} says what the batch does to the amount of data, classed as {@link StoreWriteClass} states.
      */
     public void write(StoreWriteClass writeClass, Consumer<StoreBatch> body) {
         RocksDB database = acquire(OP_WRITE, null);

@@ -38,11 +38,13 @@ class RocksDbKeyValueStore implements KeyValueStore {
      */
     enum PutClass {
         /**
-         * Every put is new data: a retained message or a block is new data or a management write.
+         * Every put is new data, a replacement included: a retained message adds a payload and a block is a
+         * management write.
          */
         ALWAYS_NEW_DATA,
         /**
-         * Every put replaces a value of a key the store already knows.
+         * Every put is an update, the first put of a key included: a session attribute is small, is removed with its
+         * session and is written on every connect, so new data would refuse non-persistent connects on a full disk.
          */
         ALWAYS_UPDATE,
         /**
