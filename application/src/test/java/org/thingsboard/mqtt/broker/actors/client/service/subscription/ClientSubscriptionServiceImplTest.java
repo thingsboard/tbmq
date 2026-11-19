@@ -22,10 +22,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionWriteCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
@@ -58,7 +57,6 @@ public class ClientSubscriptionServiceImplTest {
     SharedSubscriptionProcessor sharedSubscriptionProcessor;
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
     StatsManager statsManager;
-    ServiceInfoProvider serviceInfoProvider;
     ClientMqttActorManager clientMqttActorManager;
     ClientSubscriptionServiceImpl clientSubscriptionService;
 
@@ -69,7 +67,6 @@ public class ClientSubscriptionServiceImplTest {
         sharedSubscriptionProcessor = mock(SharedSubscriptionProcessor.class);
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
         statsManager = mock(StatsManager.class);
-        serviceInfoProvider = mock(ServiceInfoProvider.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         clientSubscriptionService = spy(new ClientSubscriptionServiceImpl(
                 subscriptionPersistenceService,
@@ -77,7 +74,6 @@ public class ClientSubscriptionServiceImplTest {
                 sharedSubscriptionProcessor,
                 sharedSubscriptionCacheService,
                 statsManager,
-                serviceInfoProvider,
                 clientMqttActorManager));
 
         clientSubscriptionService.init(getClientTopicSubscriptions());
@@ -278,9 +274,9 @@ public class ClientSubscriptionServiceImplTest {
         Set<TopicSubscription> survivors = getAndVerifyClientSubscriptionsForClient(clientId, 1);
         assertTrue(survivors.contains(getTopicSubscription("topic11")));
 
-        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        ArgumentCaptor<SubscriptionWriteCallback> persistCallback = ArgumentCaptor.forClass(SubscriptionWriteCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), eq(survivors), persistCallback.capture());
-        persistCallback.getValue().onSuccess();
+        persistCallback.getValue().onSuccess(100);
 
         ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
         verify(callback).onSuccess(removedCaptor.capture());
@@ -295,9 +291,9 @@ public class ClientSubscriptionServiceImplTest {
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
         clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("$share/sharedGroup/topic11"), callback);
 
-        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        ArgumentCaptor<SubscriptionWriteCallback> persistCallback = ArgumentCaptor.forClass(SubscriptionWriteCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
-        persistCallback.getValue().onSuccess();
+        persistCallback.getValue().onSuccess(100);
 
         ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
         verify(callback).onSuccess(removedCaptor.capture());
@@ -314,9 +310,9 @@ public class ClientSubscriptionServiceImplTest {
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
         clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("never/subscribed"), callback);
 
-        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        ArgumentCaptor<SubscriptionWriteCallback> persistCallback = ArgumentCaptor.forClass(SubscriptionWriteCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
-        persistCallback.getValue().onSuccess();
+        persistCallback.getValue().onSuccess(100);
 
         ArgumentCaptor<List<TopicSubscription>> removedCaptor = ArgumentCaptor.forClass(List.class);
         verify(callback).onSuccess(removedCaptor.capture());
@@ -330,7 +326,7 @@ public class ClientSubscriptionServiceImplTest {
         UnsubscribeCallback callback = mock(UnsubscribeCallback.class);
         clientSubscriptionService.unsubscribeAndPersistReportingRemoved(clientId, Set.of("topic1"), callback);
 
-        ArgumentCaptor<BasicCallback> persistCallback = ArgumentCaptor.forClass(BasicCallback.class);
+        ArgumentCaptor<SubscriptionWriteCallback> persistCallback = ArgumentCaptor.forClass(SubscriptionWriteCallback.class);
         verify(subscriptionPersistenceService).persistClientSubscriptionsAsync(eq(clientId), any(), persistCallback.capture());
         RuntimeException failure = new RuntimeException("boom");
         persistCallback.getValue().onFailure(failure);

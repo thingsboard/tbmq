@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 
@@ -23,7 +22,7 @@ import java.util.Set;
 
 public interface SubscriptionPersistenceService {
 
-    void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, BasicCallback callback);
+    void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, SubscriptionWriteCallback callback);
 
     void persistClientSubscriptionsSync(String clientId, Set<TopicSubscription> clientSubscriptions) throws QueuePersistenceException;
 }

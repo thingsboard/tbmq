@@ -178,7 +178,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
             }
             String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
             Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue()).getSubscriptions();
-            boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
+            boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions, msg.getOffset());
             if (accepted) {
                 acceptedRecords++;
             } else {
