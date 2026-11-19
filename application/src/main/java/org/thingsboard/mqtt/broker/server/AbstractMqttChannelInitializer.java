@@ -67,9 +67,9 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
         pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient()));
-
         MqttSessionHandler handler = handlerFactory.create(sslHandler, getChannelInitializerName());
+        pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient(),
+                handlerFactory.getClientTraceRecorder(), handler.getSessionId()));
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

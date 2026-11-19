@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.service.limits.ThroughputQuotaService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.stats.ConnectionStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -98,7 +99,8 @@ public class MqttSessionHandlerTest {
                 mqttMessageGenerator,
                 throughputQuotaService,
                 tbMessageStatsReportClient,
-                statsManager);
+                statsManager,
+                mock(ClientTraceRecorder.class));
         handlerCtx.setMaxInFlightMsgs(1000);
         handler = new MqttSessionHandler(handlerCtx, null, BrokerConstants.TCP);
 

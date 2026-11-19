@@ -18,12 +18,15 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRecorder;
 
 public interface MqttHandlerFactory {
 
     MqttSessionHandler create(SslHandler sslHandler, String initializerName);
 
     TbMessageStatsReportClient getTbMessageStatsReportClient();
+
+    ClientTraceRecorder getClientTraceRecorder();
 
     MqttClientAuthType getClientAuthType();
 }

@@ -29,6 +29,7 @@ import { GettingStartedRoutingModule } from '@home/pages/getting-started/getting
 import { KafkaManagementRoutingModule } from '@home/pages/kafka-management/kafka-management-routing.module';
 import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routing.module';
 import { IntegrationRoutingModule } from '@home/pages/integration/integration-routing.module';
+import { ClientTraceRoutingModule } from '@home/pages/client-trace/client-trace-routing.module';
 
 @NgModule({
   exports: [
@@ -46,6 +47,7 @@ import { IntegrationRoutingModule } from '@home/pages/integration/integration-ro
     GettingStartedRoutingModule,
     MonitoringRoutingModule,
     IntegrationRoutingModule,
+    ClientTraceRoutingModule,
   ]
 })
 export class HomePagesRoutingModule {
