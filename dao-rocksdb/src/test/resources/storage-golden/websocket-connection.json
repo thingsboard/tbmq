@@ -1,0 +1,54 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000001e",
+  "createdTime" : 1700000000123,
+  "name" : "connection 1",
+  "userId" : "12345678-9abc-def0-0000-000000000001",
+  "configuration" : {
+    "url" : "wss://broker.example.org:8084/mqtt",
+    "rejectUnauthorized" : true,
+    "clientCredentialsId" : "12345678-9abc-def0-0000-000000000014",
+    "clientId" : "ws-client-1",
+    "username" : "ws-user",
+    "passwordRequired" : true,
+    "cleanStart" : true,
+    "keepAlive" : 60,
+    "keepAliveUnit" : "SECONDS",
+    "connectTimeout" : 30,
+    "connectTimeoutUnit" : "SECONDS",
+    "reconnectPeriod" : 2,
+    "reconnectPeriodUnit" : "MINUTES",
+    "mqttVersion" : 5,
+    "sessionExpiryInterval" : 3,
+    "sessionExpiryIntervalUnit" : "HOURS",
+    "maxPacketSize" : 4,
+    "maxPacketSizeUnit" : "KILOBYTE",
+    "topicAliasMax" : 5,
+    "receiveMax" : 6,
+    "requestResponseInfo" : true,
+    "requestProblemInfo" : true,
+    "lastWillMsg" : {
+      "topic" : "will/topic",
+      "qos" : 1,
+      "payloadType" : "JSON",
+      "payload" : "{\"gone\":true}",
+      "retain" : true,
+      "payloadFormatIndicator" : true,
+      "contentType" : "application/json",
+      "willDelayInterval" : 7,
+      "willDelayIntervalUnit" : "SECONDS",
+      "msgExpiryInterval" : 8,
+      "msgExpiryIntervalUnit" : "MINUTES",
+      "responseTopic" : "will/response",
+      "correlationData" : "correlation"
+    },
+    "userProperties" : {
+      "props" : [ {
+        "k" : "k1",
+        "v" : "v1"
+      }, {
+        "k" : "k2",
+        "v" : "v2"
+      } ]
+    }
+  }
+}

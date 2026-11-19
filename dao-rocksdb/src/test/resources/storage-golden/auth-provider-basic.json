@@ -1,0 +1,13 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000a",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "MQTT_BASIC",
+  "configuration" : {
+    "type" : "MQTT_BASIC",
+    "authStrategy" : "USERNAME"
+  },
+  "additionalInfo" : {
+    "description" : "MQTT_BASIC provider"
+  }
+}

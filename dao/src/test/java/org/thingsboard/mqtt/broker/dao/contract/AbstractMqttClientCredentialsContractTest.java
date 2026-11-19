@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.service;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -35,11 +35,11 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredent
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -50,15 +50,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@DaoSqlTest
-public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
+public abstract class AbstractMqttClientCredentialsContractTest extends AbstractContractTest {
 
     private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
 
     @Autowired
-    private MqttClientCredentialsService mqttClientCredentialsService;
+    protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    private TbCacheOps tbCacheOps;
+    protected TbCacheOps tbCacheOps;
 
     Cache mqttClientCredentialsCache;
     Cache basicCredentialsPasswordCache;
@@ -322,6 +321,25 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         pageData = mqttClientCredentialsService.getCredentials(pageLink);
         Assert.assertFalse(pageData.hasNext());
         Assert.assertTrue(pageData.getData().isEmpty());
+    }
+
+    @Test
+    public void givenNamesThatDifferInCase_whenSortedByName_thenCaseIsIgnoredFirstAndLowerCaseComesFirst() throws JsonProcessingException {
+        // the order of the default collation of the postgres:17 image, en_US.utf8; every backend gives the same
+        List<String> names = List.of("Banana fruit", "apple fruit", "banana fruit", "Apple fruit");
+        for (int i = 0; i < names.size(); i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(names.get(i), "fruitClient" + i, null, null));
+        }
+
+        PageData<ShortMqttClientCredentials> ascending = mqttClientCredentialsService.getCredentials(
+                new PageLink(10, 0, "fruit", new SortOrder("name", SortOrder.Direction.ASC)));
+        PageData<ShortMqttClientCredentials> descending = mqttClientCredentialsService.getCredentials(
+                new PageLink(10, 0, "fruit", new SortOrder("name", SortOrder.Direction.DESC)));
+
+        Assert.assertEquals(List.of("apple fruit", "Apple fruit", "banana fruit", "Banana fruit"),
+                ascending.getData().stream().map(ShortMqttClientCredentials::getName).toList());
+        Assert.assertEquals(List.of("Banana fruit", "banana fruit", "Apple fruit", "apple fruit"),
+                descending.getData().stream().map(ShortMqttClientCredentials::getName).toList());
     }
 
     @Test

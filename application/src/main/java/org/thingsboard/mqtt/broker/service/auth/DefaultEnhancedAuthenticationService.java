@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -54,6 +55,7 @@ import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFail
 
 @Slf4j
 @Service
+@DependsOn("managementDataInitializer")
 @RequiredArgsConstructor
 public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticationService {
 

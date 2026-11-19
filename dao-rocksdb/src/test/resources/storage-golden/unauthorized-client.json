@@ -1,0 +1,9 @@
+{
+  "clientId" : "unauthorized-1",
+  "ipAddress" : "10.0.0.7",
+  "ts" : 1700000000123,
+  "username" : "intruder",
+  "passwordProvided" : true,
+  "tlsUsed" : true,
+  "reason" : "bad password"
+}

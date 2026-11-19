@@ -35,7 +35,7 @@ class RocksDbKeyValueStoreTest {
     @TempDir
     Path dir;
 
-    private RocksDbStore store;
+    private RecordingRocksDbStore store;
 
     @AfterEach
     void closeStore() {
@@ -145,7 +145,7 @@ class RocksDbKeyValueStoreTest {
         sessions.put("a", bytes("3"));
         sessions.put("b", bytes("4"));
         sessions.put("c", bytes("5"));
-        store.put(StoreColumnFamily.CLIENT_SUBSCRIPTIONS, bytes("a"), bytes("other family"));
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SUBSCRIPTIONS, bytes("a"), bytes("other family"));
 
         int deleted = sessions.retainKeys(k -> k.startsWith("x"));
 
@@ -208,10 +208,95 @@ class RocksDbKeyValueStoreTest {
         assertThatThrownBy(() -> sessions.retainKeys(k -> false)).isInstanceOf(StoreException.class);
     }
 
+    @Test
+    void aSessionPutIsNewDataTheFirstTimeAndAnUpdateAfterwards() {
+        KeyValueStore sessions = open().clientSessions();
+
+        sessions.put("c1", bytes("1"));
+        sessions.put("c1", bytes("2"));
+        sessions.put("c2", bytes("3"));
+
+        assertThat(store.takeWriteClasses())
+                .containsExactly(StoreWriteClass.NEW_DATA, StoreWriteClass.UPDATE, StoreWriteClass.NEW_DATA);
+    }
+
+    @Test
+    void aSubscriptionsPutIsNewDataTheFirstTimeAndAnUpdateAfterwards() {
+        KeyValueStore subscriptions = open().clientSubscriptions();
+
+        subscriptions.put("c1", bytes("1"));
+        subscriptions.put("c1", bytes("2"));
+
+        assertThat(store.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA, StoreWriteClass.UPDATE);
+    }
+
+    @Test
+    void aSessionPutAfterADeleteIsNewDataAgain() {
+        KeyValueStore sessions = open().clientSessions();
+        sessions.put("c1", bytes("1"));
+        sessions.delete("c1");
+        store.takeWriteClasses();
+
+        sessions.put("c1", bytes("2"));
+
+        assertThat(store.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA);
+    }
+
+    @Test
+    void aSessionPutOfAKeyOfAnotherFamilyIsStillNewData() {
+        BrokerStateStores stores = open();
+        stores.clientSubscriptions().put("c1", bytes("subs"));
+        store.takeWriteClasses();
+
+        stores.clientSessions().put("c1", bytes("session"));
+
+        assertThat(store.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA);
+    }
+
+    @Test
+    void retainedAndBlockedPutsAreAlwaysNewData() {
+        BrokerStateStores stores = open();
+
+        stores.retainedMessages().put("t", bytes("1"));
+        stores.retainedMessages().put("t", bytes("2"));
+        stores.blockedClients().put("b", bytes("1"));
+        stores.blockedClients().put("b", bytes("2"));
+
+        assertThat(store.takeWriteClasses()).containsOnly(StoreWriteClass.NEW_DATA).hasSize(4);
+    }
+
+    @Test
+    void aSessionAttributePutIsAnUpdate() {
+        KeyValueStore attributes = open().clientSessionAttributes();
+
+        attributes.put("c1", bytes("1"));
+        attributes.put("c1", bytes("2"));
+
+        assertThat(store.takeWriteClasses()).containsExactly(StoreWriteClass.UPDATE, StoreWriteClass.UPDATE);
+    }
+
+    @Test
+    void everyDeleteAndRetainKeysIsDelete() {
+        BrokerStateStores stores = open();
+        stores.clientSessions().put("c1", bytes("1"));
+        stores.retainedMessages().put("t", bytes("1"));
+        stores.blockedClients().put("b", bytes("1"));
+        stores.clientSessions().put("c2", bytes("1"));
+        store.takeWriteClasses();
+
+        stores.clientSessions().delete("c1");
+        stores.retainedMessages().delete("t");
+        stores.blockedClients().delete("b");
+        stores.clientSessions().retainKeys(k -> false);
+
+        assertThat(store.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE, StoreWriteClass.DELETE,
+                StoreWriteClass.DELETE, StoreWriteClass.DELETE);
+    }
+
     private BrokerStateStores open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        store = new RecordingRocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
         store.open();
         return new RocksDbBrokerStateStores(store);
     }

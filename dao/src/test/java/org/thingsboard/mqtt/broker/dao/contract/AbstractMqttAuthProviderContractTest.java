@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.service;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -34,13 +33,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DaoSqlTest
-public class MqttAuthProviderServiceTest extends AbstractServiceTest {
+public abstract class AbstractMqttAuthProviderContractTest extends AbstractContractTest {
 
     private MqttAuthProvider basicAuthProvider;
 
     @Autowired
-    private MqttAuthProviderService mqttAuthProviderService;
+    protected MqttAuthProviderService mqttAuthProviderService;
 
     @Before
     public void setUp() {

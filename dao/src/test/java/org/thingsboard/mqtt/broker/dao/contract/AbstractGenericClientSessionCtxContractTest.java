@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.generic;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
+import org.thingsboard.mqtt.broker.dao.client.generic.GenericClientSessionCtxDao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-@DaoSqlTest
-public class GenericClientSessionCtxServiceImplTest extends AbstractServiceTest {
+public abstract class AbstractGenericClientSessionCtxContractTest extends AbstractContractTest {
 
     @Autowired
-    private GenericClientSessionCtxService genericClientSessionCtxService;
+    protected GenericClientSessionCtxService genericClientSessionCtxService;
 
     @Autowired
-    private GenericClientSessionCtxDao genericClientSessionCtxDao;
+    protected GenericClientSessionCtxDao genericClientSessionCtxDao;
 
     @Test
     public void givenNoContext_whenRemoveInDao_thenDoesNotThrow() {

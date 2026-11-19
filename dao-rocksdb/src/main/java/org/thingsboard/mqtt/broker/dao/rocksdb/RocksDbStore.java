@@ -324,8 +324,10 @@ public class RocksDbStore {
      * store's shared lock; the batch is closed afterwards and the {@link StoreBatch} stops working. When the body
      * throws, the exception propagates and nothing is written. Syncs the WAL only when {@code store.wal-sync} is
      * {@code always}. The body must not call {@link #close()}.
+     * <p>
+     * {@code writeClass} says what the batch does to the amount of data, classed as {@link StoreWriteClass} states.
      */
-    public void write(Consumer<StoreBatch> body) {
+    public void write(StoreWriteClass writeClass, Consumer<StoreBatch> body) {
         RocksDB database = acquire(OP_WRITE, null);
         try (WriteBatch writeBatch = new WriteBatch()) {
             StoreBatch batch = new StoreBatch(writeBatch, handles);
@@ -355,7 +357,7 @@ public class RocksDbStore {
         }
     }
 
-    public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+    public void put(StoreWriteClass writeClass, StoreColumnFamily cf, byte[] key, byte[] value) {
         RocksDB database = acquire(OP_PUT, cf);
         try {
             database.put(handles.get(cf), writeOptions, key, value);
@@ -366,7 +368,7 @@ public class RocksDbStore {
         }
     }
 
-    public void delete(StoreColumnFamily cf, byte[] key) {
+    public void delete(StoreWriteClass writeClass, StoreColumnFamily cf, byte[] key) {
         RocksDB database = acquire(OP_DELETE, cf);
         try {
             database.delete(handles.get(cf), writeOptions, key);

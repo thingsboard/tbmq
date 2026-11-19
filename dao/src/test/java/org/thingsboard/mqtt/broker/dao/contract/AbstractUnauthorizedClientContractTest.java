@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.unauthorized;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,9 +27,8 @@ import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedC
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
-import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
@@ -41,11 +39,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@DaoSqlTest
-public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
+public abstract class AbstractUnauthorizedClientContractTest extends AbstractContractTest {
 
     @Autowired
-    private UnauthorizedClientService unauthorizedClientService;
+    protected UnauthorizedClientService unauthorizedClientService;
 
     UnauthorizedClient savedUnauthorizedClient;
 
@@ -298,7 +295,6 @@ public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
         Assert.assertEquals(1, pageData.getData().size());
     }
 
-    @NotNull
     private UnauthorizedClient getUnauthorizedClient() {
         UnauthorizedClient client = new UnauthorizedClient();
         client.setClientId(UUID.randomUUID().toString());

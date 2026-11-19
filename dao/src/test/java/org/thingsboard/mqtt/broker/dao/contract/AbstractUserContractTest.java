@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.service;
+package org.thingsboard.mqtt.broker.dao.contract;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -25,18 +25,16 @@ import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.function.Function;
 
-@DaoSqlTest
-public class UserServiceTest extends AbstractServiceTest {
+public abstract class AbstractUserContractTest extends AbstractContractTest {
 
     @Autowired
-    private UserService userService;
+    protected UserService userService;
 
     @Test
     public void testFindUserByEmail() {

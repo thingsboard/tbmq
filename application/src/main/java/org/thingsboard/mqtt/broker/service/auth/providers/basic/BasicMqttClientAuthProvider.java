@@ -20,6 +20,7 @@ import com.google.common.hash.Hashing;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
@@ -50,6 +51,7 @@ import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS
 
 @Slf4j
 @Service
+@DependsOn("managementDataInitializer")
 @RequiredArgsConstructor
 public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicMqttAuthProviderConfiguration> {
 

@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreBatch;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
+import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.charset.StandardCharsets;
@@ -54,6 +55,10 @@ import java.util.stream.IntStream;
  * metas in one atomic batch. A queue is dense when it has no holes ({@code count == lastSequence - firstSequence + 1});
  * trimming and advancing the head of a dense queue use arithmetic and point operations only, a queue with holes (out of
  * order acknowledgements) uses one bounded scan from its first sequence.
+ * <p>
+ * Write classes: an append and its trim are {@link StoreWriteClass#NEW_DATA}; marking entries sent or PUBREL, moving a
+ * queue and resetting the packet id are {@link StoreWriteClass#UPDATE}; an acknowledgement, a queue removal and every
+ * expiry delete are {@link StoreWriteClass#DELETE}.
  * <p>
  * An entry is sent when its sequence is at most {@code sentUpTo} or it is a PUBREL. An entry expires when its TTL has
  * passed, or when it is unsent and its message expiry time has passed: a sent entry never expires by its message
@@ -119,7 +124,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             List<PendingAppend> changed = queues.values().stream().filter(PendingAppend::hasEntries).toList();
             changed.forEach(queue -> queue.planTrim(now));
             if (!changed.isEmpty()) {
-                store.write(batch -> changed.forEach(queue -> queue.writeTo(batch)));
+                store.write(StoreWriteClass.NEW_DATA, batch -> changed.forEach(queue -> queue.writeTo(batch)));
                 changed.forEach(queue -> {
                     expiredEntries.addAndGet(queue.expired);
                     trimmedEntries.addAndGet(queue.trimmed());
@@ -196,7 +201,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
                 long earliest = fromHead && reachedEnd ? bound.value() : meta.earliestExpiryMs();
                 deleteExpired(queueKey, marked, expired, first, earliest);
             } else if (sentUpTo != meta.sentUpTo()) {
-                store.put(METAS, DeviceMsgKeys.metaKey(queueKey), marked.toBytes());
+                store.put(StoreWriteClass.UPDATE, METAS, DeviceMsgKeys.metaKey(queueKey), marked.toBytes());
             }
             return page;
         } finally {
@@ -223,7 +228,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             }
             DeviceQueueMeta updated = new DeviceQueueMeta(first, meta.lastSequence(), meta.lastPacketId(), count,
                     meta.sentUpTo(), count == 0 ? 0 : meta.earliestExpiryMs());
-            store.write(batch -> {
+            store.write(StoreWriteClass.DELETE, batch -> {
                 batch.delete(ENTRIES, entry.key());
                 batch.put(METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
             });
@@ -242,7 +247,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             if (entry == null) {
                 return false;
             }
-            store.put(ENTRIES, entry.key(), DeviceMsgEntryCodec.withPacketType(entry.value(), PersistedPacketType.PUBREL));
+            store.put(StoreWriteClass.UPDATE, ENTRIES, entry.key(), DeviceMsgEntryCodec.withPacketType(entry.value(), PersistedPacketType.PUBREL));
             return true;
         } finally {
             lock.unlock();
@@ -254,7 +259,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         ReentrantLock lock = lockFor(queueKey);
         lock.lock();
         try {
-            store.write(batch -> {
+            store.write(StoreWriteClass.DELETE, batch -> {
                 batch.deleteRange(ENTRIES, DeviceMsgKeys.queuePrefix(queueKey), DeviceMsgKeys.queueEnd(queueKey));
                 batch.delete(METAS, DeviceMsgKeys.metaKey(queueKey));
             });
@@ -314,7 +319,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             }
             DeviceQueueMeta emptied = new DeviceQueueMeta(from.lastSequence() + 1, from.lastSequence(),
                     from.lastPacketId(), 0, from.sentUpTo(), 0);
-            store.write(batch -> {
+            store.write(StoreWriteClass.UPDATE, batch -> {
                 batch.deleteRange(ENTRIES, DeviceMsgKeys.queuePrefix(fromQueueKey),
                         DeviceMsgKeys.queueEnd(fromQueueKey));
                 batch.put(METAS, DeviceMsgKeys.metaKey(fromQueueKey), emptied.toBytes());
@@ -344,7 +349,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
             }
             DeviceQueueMeta updated = new DeviceQueueMeta(meta.firstSequence(), meta.lastSequence(), lastPacketId, 0,
                     meta.sentUpTo(), meta.earliestExpiryMs());
-            store.put(METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
+            store.put(StoreWriteClass.UPDATE, METAS, DeviceMsgKeys.metaKey(queueKey), updated.toBytes());
             return true;
         } finally {
             lock.unlock();
@@ -493,7 +498,7 @@ public class RocksDbDeviceMsgQueueStore implements DeviceMsgQueueStore {
         int count = meta.count() - expired.size();
         DeviceQueueMeta updated = new DeviceQueueMeta(count == 0 ? meta.lastSequence() + 1 : firstSequence,
                 meta.lastSequence(), meta.lastPacketId(), count, meta.sentUpTo(), count == 0 ? 0 : earliestExpiryMs);
-        store.write(batch -> {
+        store.write(StoreWriteClass.DELETE, batch -> {
             for (long sequence : expired) {
                 batch.delete(ENTRIES, DeviceMsgKeys.entryKey(queueKey, sequence));
             }

@@ -43,7 +43,7 @@ public class EntityConstraintViolationExceptionTest {
     @Test
     public void messageIsTheCausesMessageOrADefaultWithoutCause() {
         assertThat(new EntityConstraintViolationException("x", new RuntimeException("dup"))).hasMessage("dup");
-        assertThat(new EntityConstraintViolationException("x", null)).hasMessage("Unique constraint violated: x");
+        assertThat(new EntityConstraintViolationException("x", null)).hasMessage("Constraint violated: x");
     }
 
 }

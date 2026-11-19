@@ -16,10 +16,10 @@
 package org.thingsboard.mqtt.broker.lite.durability;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.testsupport.lite.SystemDataTestStep;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * A Lite broker in a JVM of its own, started on the classpath the standalone image ships
@@ -248,25 +249,47 @@ public final class LiteBrokerProcess {
     }
 
     /**
-     * Copies the one class file of the launcher, so the launcher must stay a single class, without nested, anonymous
-     * or local classes.
+     * Copies the class file of the launcher, which must stay a single class without nested, anonymous or local classes,
+     * and the class files of {@link SystemDataTestStep} and its nested classes, which give the broker, started without
+     * the test classpath, the management data that the in-process Lite tests get from that step.
      *
-     * @return a directory holding the launcher class and nothing else
+     * @return a directory holding those classes and nothing else
      */
     private static Path launcherDir(Path targetDir) {
-        String classFile = LiteBrokerLauncher.class.getName().replace('.', '/') + ".class";
         Path dir = targetDir.resolve(LAUNCHER_DIR);
-        Path copy = dir.resolve(classFile);
-        try (InputStream in = LiteBrokerLauncher.class.getClassLoader().getResourceAsStream(classFile)) {
-            if (in == null) {
-                throw new IllegalStateException(classFile + " is not on the test classpath");
-            }
-            Files.createDirectories(copy.getParent());
-            Files.copy(in, copy, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to copy the launcher to " + dir, e);
-        }
+        copyClassFiles(LiteBrokerLauncher.class, false, dir);
+        copyClassFiles(SystemDataTestStep.class, true, dir);
         return dir;
+    }
+
+    private static void copyClassFiles(Class<?> type, boolean withNestedClasses, Path dir) {
+        String simpleName = type.getSimpleName();
+        Path source;
+        try {
+            source = Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    .resolve(type.getPackageName().replace('.', '/'));
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("Cannot locate " + type.getName(), e);
+        }
+        Path destination = dir.resolve(type.getPackageName().replace('.', '/'));
+        try (Stream<Path> files = Files.list(source)) {
+            Files.createDirectories(destination);
+            List<Path> classFiles = files
+                    .filter(file -> {
+                        String name = file.getFileName().toString();
+                        return name.equals(simpleName + ".class")
+                                || withNestedClasses && name.startsWith(simpleName + "$") && name.endsWith(".class");
+                    })
+                    .toList();
+            if (classFiles.isEmpty()) {
+                throw new IllegalStateException(simpleName + ".class is not in " + source);
+            }
+            for (Path file : classFiles) {
+                Files.copy(file, destination.resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to copy " + simpleName + " to " + dir, e);
+        }
     }
 
 }

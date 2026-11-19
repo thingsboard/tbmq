@@ -1,0 +1,32 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000c",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "JWT",
+  "configuration" : {
+    "type" : "JWT",
+    "defaultClientType" : "APPLICATION",
+    "jwtVerifierConfiguration" : {
+      "jwtVerifierType" : "ALGORITHM_BASED",
+      "jwtSignAlgorithmConfiguration" : {
+        "algorithm" : "HMAC_BASED",
+        "secret" : "hmac-secret-hmac-secret-hmac-secret-32"
+      }
+    },
+    "authClaims" : {
+      "sub" : "${username}"
+    },
+    "clientTypeClaims" : {
+      "kind" : "APPLICATION"
+    },
+    "authRules" : {
+      "pubAuthRulePatterns" : [ "pub/.*" ],
+      "subAuthRulePatterns" : [ "sub/.*", "shared/.*" ]
+    },
+    "pubAuthRuleClaim" : "pubRules",
+    "subAuthRuleClaim" : "subRules"
+  },
+  "additionalInfo" : {
+    "description" : "JWT provider"
+  }
+}

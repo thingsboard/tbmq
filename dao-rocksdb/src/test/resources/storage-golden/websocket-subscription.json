@@ -1,0 +1,16 @@
+{
+  "id" : "12345678-9abc-def0-0000-000000000028",
+  "createdTime" : 1700000000123,
+  "webSocketConnectionId" : "12345678-9abc-def0-0000-00000000001e",
+  "configuration" : {
+    "topicFilter" : "sensors/#",
+    "qos" : 2,
+    "color" : "#ff0000",
+    "options" : {
+      "noLocal" : true,
+      "retainAsPublish" : true,
+      "retainHandling" : 2
+    },
+    "subscriptionId" : 77
+  }
+}

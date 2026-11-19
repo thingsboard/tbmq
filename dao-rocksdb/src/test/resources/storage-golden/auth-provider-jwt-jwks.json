@@ -1,0 +1,38 @@
+{
+  "id" : "12345678-9abc-def0-0000-00000000000c",
+  "createdTime" : 1700000000123,
+  "enabled" : true,
+  "type" : "JWT",
+  "configuration" : {
+    "type" : "JWT",
+    "defaultClientType" : "APPLICATION",
+    "jwtVerifierConfiguration" : {
+      "jwtVerifierType" : "JWKS",
+      "endpoint" : "https://idp.example.org/jwks",
+      "headers" : {
+        "X-Api" : "jwks-header"
+      },
+      "refreshInterval" : 600,
+      "credentials" : {
+        "type" : "basic",
+        "username" : "http-user",
+        "password" : "http-password-secret"
+      }
+    },
+    "authClaims" : {
+      "sub" : "${username}"
+    },
+    "clientTypeClaims" : {
+      "kind" : "APPLICATION"
+    },
+    "authRules" : {
+      "pubAuthRulePatterns" : [ "pub/.*" ],
+      "subAuthRulePatterns" : [ "sub/.*", "shared/.*" ]
+    },
+    "pubAuthRuleClaim" : "pubRules",
+    "subAuthRuleClaim" : "subRules"
+  },
+  "additionalInfo" : {
+    "description" : "JWT provider"
+  }
+}
