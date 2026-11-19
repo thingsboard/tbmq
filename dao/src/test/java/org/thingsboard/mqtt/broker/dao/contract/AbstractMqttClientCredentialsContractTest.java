@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -562,6 +563,40 @@ public abstract class AbstractMqttClientCredentialsContractTest extends Abstract
         assertThat(byName.getData()).extracting(ShortMqttClientCredentials::getName).containsExactlyInAnyOrder("alpha-1", "Alpha-2");
         assertThat(byName.getTotalElements()).isEqualTo(2);
         assertThat(byNameAndUsername.getData()).extracting(ShortMqttClientCredentials::getName).containsExactly("Alpha-2");
+    }
+
+    @Test
+    public void anUnknownSortPropertyIsRejectedAsAnInvalidApiUsage() throws Exception {
+        saveBasic("sortable", "c-sort", "u-sort");
+        PageLink unknownSort = new PageLink(10, 0, null, new SortOrder("noSuchProperty", SortOrder.Direction.ASC));
+
+        assertThatThrownBy(() -> mqttClientCredentialsService.getCredentials(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+        assertThatThrownBy(() -> mqttClientCredentialsDao.findAll(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+        assertThatThrownBy(() -> mqttClientCredentialsService.getCredentialsV2(
+                new ClientCredentialsQuery(unknownSort, null, null, null, null, null)))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+    }
+
+    @Test
+    public void nonAsciiNamesAreFoundByATextSearchOfAnotherCase() throws Exception {
+        saveBasic("\u00DCbung Test", "c-uml", "u-uml");
+        saveBasic("Stra\u00DFe Test", "c-sz", "u-sz");
+        saveBasic("\u0414\u043E\u043C Test", "c-cyr", "u-cyr");
+        saveBasic("plain Test", "c-plain", "u-plain");
+
+        assertThat(searchNames("\u00FCbung")).containsExactly("\u00DCbung Test");
+        assertThat(searchNames("\u00DCBUNG")).containsExactly("\u00DCbung Test");
+        assertThat(searchNames("stra\u00DFe")).containsExactly("Stra\u00DFe Test");
+        assertThat(searchNames("\u0434\u043E\u043C")).containsExactly("\u0414\u043E\u043C Test");
+        assertThat(searchNames("\u0414\u041E\u041C")).containsExactly("\u0414\u043E\u043C Test");
+        assertThat(searchNames("test")).hasSize(4);
+    }
+
+    private List<String> searchNames(String search) {
+        return mqttClientCredentialsService.getCredentials(new PageLink(10, 0, search)).getData().stream()
+                .map(ShortMqttClientCredentials::getName).toList();
     }
 
     @Test

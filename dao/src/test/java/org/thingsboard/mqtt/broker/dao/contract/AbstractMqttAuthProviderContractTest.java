@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -341,6 +342,16 @@ public abstract class AbstractMqttAuthProviderContractTest extends AbstractContr
         List<MqttAuthProviderType> descending = types(mqttAuthProviderDao.findAll(
                 new PageLink(100, 0, null, new SortOrder("type", SortOrder.Direction.DESC))));
         assertThat(descending).isSortedAccordingTo(Comparator.comparing(MqttAuthProviderType::name).reversed());
+    }
+
+    @Test
+    public void anUnknownSortPropertyIsRejectedAsAnInvalidApiUsage() {
+        PageLink unknownSort = new PageLink(10, 0, null, new SortOrder("noSuchProperty", SortOrder.Direction.ASC));
+
+        assertThatThrownBy(() -> mqttAuthProviderDao.findAll(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+        assertThatThrownBy(() -> mqttAuthProviderDao.findAllEnabled(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
     }
 
     @Test

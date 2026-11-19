@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
@@ -60,6 +61,7 @@ final class ProjectionIndex<T> {
 
     private static final Comparator<Object> VALUE_ORDER = ProjectionIndex::compareValues;
 
+    private final StoredEntityType type;
     private final Projection<T> projection;
     private final Map<Object, Row> rows = new ConcurrentHashMap<>();
     private final String[] sortNames;
@@ -68,7 +70,8 @@ final class ProjectionIndex<T> {
     private final int[] filterSlots;
     private final int createdTimeSlot;
 
-    ProjectionIndex(Projection<T> projection) {
+    ProjectionIndex(StoredEntityType type, Projection<T> projection) {
+        this.type = type;
         this.projection = projection;
         this.sortNames = projection.sortSlots().keySet().toArray(String[]::new);
         this.sortSlots = projection.sortSlots().values().stream().mapToInt(Integer::intValue).toArray();
@@ -105,8 +108,8 @@ final class ProjectionIndex<T> {
      * slices {@code [page * pageSize, page * pageSize + pageSize)}. Among equal sort keys the order is unspecified.
      *
      * @param filter {@code null} for none
-     * @throws IllegalArgumentException for an unknown sort property, a page size below one or a negative page, as
-     *                                  SQL paging refuses them
+     * @throws InvalidDataAccessApiUsageException for an unknown sort property, as the SQL DAO's paging refuses it
+     * @throws IllegalArgumentException            for a page size below one or a negative page, as SQL paging refuses them
      */
     Slice find(PageLink pageLink, Predicate<RocksEntityStore.ProjectedEntity> filter) {
         if (pageLink.getPageSize() < 1) {
@@ -146,7 +149,7 @@ final class ProjectionIndex<T> {
         }
         Integer slot = projection.sortSlots().get(sortOrder.getProperty());
         if (slot == null) {
-            throw new IllegalArgumentException("Unknown sort property: " + sortOrder.getProperty());
+            throw new InvalidDataAccessApiUsageException("Unknown sort property '" + sortOrder.getProperty() + "' of " + type);
         }
         Comparator<Row> ascending = Comparator.comparing(row -> row.values()[slot], VALUE_ORDER);
         return sortOrder.getDirection() == SortOrder.Direction.DESC ? ascending.reversed() : ascending;

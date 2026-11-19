@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -39,7 +40,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class ProjectionIndexTest {
 
-    private final ProjectionIndex<MqttClientCredentials> index = new ProjectionIndex<>(EntityDescriptors.MQTT_CLIENT_CREDENTIALS.projection());
+    private final ProjectionIndex<MqttClientCredentials> index = new ProjectionIndex<>(EntityDescriptors.MQTT_CLIENT_CREDENTIALS.type(), EntityDescriptors.MQTT_CLIENT_CREDENTIALS.projection());
     private final Map<Object, String> namesById = new HashMap<>();
 
     @Test
@@ -122,7 +123,7 @@ class ProjectionIndexTest {
 
     @Test
     void aTypeWithoutTextSearchIgnoresTheSearch() {
-        ProjectionIndex<WebSocketSubscription> subscriptions = new ProjectionIndex<>(EntityDescriptors.WEBSOCKET_SUBSCRIPTION.projection());
+        ProjectionIndex<WebSocketSubscription> subscriptions = new ProjectionIndex<>(EntityDescriptors.WEBSOCKET_SUBSCRIPTION.type(), EntityDescriptors.WEBSOCKET_SUBSCRIPTION.projection());
         WebSocketSubscription subscription = new WebSocketSubscription();
         subscription.setId(UUID.randomUUID());
         subscriptions.put(subscriptions.project(subscription.getId(), subscription));
@@ -168,7 +169,8 @@ class ProjectionIndexTest {
         assertThatThrownBy(() -> index.find(new PageLink(0), null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> index.find(new PageLink(10, -1), null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> index.find(new PageLink(10, 0, null, new SortOrder("credentialsValue")), null))
-                .isInstanceOf(IllegalArgumentException.class).hasMessage("Unknown sort property: credentialsValue");
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasMessage("Unknown sort property 'credentialsValue' of " + EntityDescriptors.MQTT_CLIENT_CREDENTIALS.type());
     }
 
     @Test

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -182,9 +183,10 @@ class RocksEntityStorePagingTest {
         save("a");
 
         assertThatThrownBy(() -> store.findPage(MQTT_CLIENT_CREDENTIALS, new PageLink(10, 0, null, new SortOrder("nope")), null))
-                .isInstanceOf(IllegalArgumentException.class).hasMessage("Unknown sort property: nope");
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasMessage("Unknown sort property 'nope' of " + MQTT_CLIENT_CREDENTIALS.type());
         assertThatThrownBy(() -> store.findPage(MQTT_CLIENT_CREDENTIALS, new PageLink(10, 0, null, new SortOrder("additionalInfo")), null))
-                .as("a JSON column is not sortable").isInstanceOf(IllegalArgumentException.class);
+                .as("a JSON column is not sortable").isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
     }
 
     @Test

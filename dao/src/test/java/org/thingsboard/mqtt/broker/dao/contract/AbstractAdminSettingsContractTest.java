@@ -87,12 +87,16 @@ public abstract class AbstractAdminSettingsContractTest extends AbstractContract
     public void anUpdateKeepsTheIdAndTheCreatedTime() {
         AdminSettings saved = saveNew(newSettings(uniqueKey(), "{\"a\":1}"));
 
+        assertThat(saved.getCreatedTime()).isPositive();
         AdminSettings update = new AdminSettings(saved.getId());
+        update.setCreatedTime(saved.getCreatedTime());
         update.setKey(saved.getKey());
         update.setJsonValue(JacksonUtil.toJsonNode("{\"a\":2}"));
         AdminSettings updated = adminSettingsService.saveAdminSettings(update);
 
         assertThat(updated.getId()).isEqualTo(saved.getId());
+        assertThat(updated.getCreatedTime()).isEqualTo(saved.getCreatedTime());
+        assertThat(adminSettingsService.findAdminSettingsByKey(saved.getKey()).getCreatedTime()).isEqualTo(saved.getCreatedTime());
         assertThat(adminSettingsService.findAdminSettingsByKey(saved.getKey()).getJsonValue())
                 .isEqualTo(JacksonUtil.toJsonNode("{\"a\":2}"));
         assertThat(adminSettingsDao.find().stream().filter(s -> s.getKey().equals(saved.getKey()))).hasSize(1);
