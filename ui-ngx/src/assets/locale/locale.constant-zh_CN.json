@@ -9,6 +9,7 @@
         "account": "账户"
     },
     "action": {
+        "search": "搜索",
         "save": "保存",
         "skip": "跳过",
         "cancel": "取消",
@@ -1320,6 +1321,84 @@
         "topic-filter": "Topic Filter",
         "topic-filter-duplicate": "Topic filter 必须唯一",
         "topic-filter-required": "Topic filter 必填。"
+    },
+    "topic-tree": {
+        "topic-tree": "主题树",
+        "topic-details": "主题详情",
+        "filter": "筛选主题",
+        "open-in-shared": "在共享订阅中打开",
+        "open-in-integrations": "在集成中打开",
+        "copy-topic": "复制主题",
+        "topic-copied": "主题已复制到剪贴板",
+        "columns": "列",
+        "reset-columns": "恢复默认",
+        "show-more": "显示另外 {{count}} 个",
+        "root": "所有主题",
+        "no-topics": "暂无订阅",
+        "no-data": "没有可显示的内容",
+        "wildcard": "通配符",
+        "filter-panel": {
+            "title": "筛选",
+            "topic": "主题",
+            "prefix": "前缀",
+            "matches-topic": "接收主题",
+            "matches-topic-hint": "显示会接收发布到此主题的消息的订阅过滤器",
+            "matches-topic-placeholder": "例如 sensors/room1/temperature",
+            "matches-topic-invalid": "请输入不含 + 或 # 的主题名称",
+            "has": "包含",
+            "wildcards": "通配符",
+            "wildcards-only": "仅通配符过滤器（+ 和 #）"
+        },
+        "topic-gone": "此主题已不再有订阅或保留消息。它在主题树加载后被移除。",
+        "topic-not-found": "未找到主题 {{path}}",
+        "refresh-tree": "刷新主题树",
+        "subtopics-count": "{ count, plural, =0 {无子主题} =1 {1 个子主题} other {# 个子主题} }",
+        "row": {
+            "subscriptions": "此主题 {{exact}} 个，子主题 {{nested}} 个",
+            "clients": "没有客户端订阅",
+            "connected": "{{count}} 个已连接",
+            "disconnected": "{{count}} 个已断开",
+            "shared": "{ count, plural, =0 {无共享订阅} =1 {1 个共享订阅} other {# 个共享订阅} }",
+            "integrations": "订阅了此主题或其子主题的集成",
+            "retained": "为新订阅者保留的消息"
+        },
+        "column": {
+            "topic": "主题",
+            "subscriptions": "订阅",
+            "clients": "客户端",
+            "retained": "保留消息",
+            "online": "在线 / 离线",
+            "shared": "共享组",
+            "integrations": "集成"
+        },
+        "tab": {
+            "subscriptions": "订阅",
+            "clients": "客户端",
+            "shared": "共享",
+            "integrations": "集成",
+            "retained": "保留消息"
+        },
+        "entity": {
+            "client-id": "客户端 ID",
+            "topic-filter": "主题过滤器",
+            "topic": "主题",
+            "qos": "QoS",
+            "status": "状态",
+            "client-type": "客户端类型",
+            "subscriptions": "订阅",
+            "group": "组",
+            "payload": "负载",
+            "type": "类型",
+            "type-client": "客户端",
+            "type-shared": "共享",
+            "type-integration": "集成",
+            "name": "名称",
+            "id": "ID",
+            "integration-not-found": "未找到集成",
+            "open-session": "打开会话",
+            "open-group": "在共享订阅中显示",
+            "open-integration": "打开集成"
+        }
     },
     "unauthorized-client": {
         "details": "未授权客户端详情",

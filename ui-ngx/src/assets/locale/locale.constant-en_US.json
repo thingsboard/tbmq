@@ -9,6 +9,7 @@
         "account": "Account"
     },
     "action": {
+        "search": "Search",
         "save": "Save",
         "skip": "Skip",
         "cancel": "Cancel",
@@ -1444,6 +1445,84 @@
         "topic-filter": "Topic Filter",
         "topic-filter-duplicate": "Topic filter must be unique",
         "topic-filter-required": "Topic filter is required."
+    },
+    "topic-tree": {
+        "topic-tree": "Topic tree",
+        "topic-details": "Topic details",
+        "filter": "Filter topics",
+        "open-in-shared": "Open in Shared subscriptions",
+        "open-in-integrations": "Open in Integrations",
+        "copy-topic": "Copy topic",
+        "topic-copied": "Topic has been copied to clipboard",
+        "columns": "Columns",
+        "reset-columns": "Reset to default",
+        "show-more": "Show {{count}} more",
+        "root": "All topics",
+        "no-topics": "No subscriptions yet",
+        "no-data": "Nothing to show",
+        "wildcard": "Wildcard",
+        "filter-panel": {
+            "title": "Filter",
+            "topic": "Topic",
+            "prefix": "Prefix",
+            "matches-topic": "Receives topic",
+            "matches-topic-hint": "Show the subscription filters that would receive a message published to this topic",
+            "matches-topic-placeholder": "e.g. sensors/room1/temperature",
+            "matches-topic-invalid": "Enter a topic name without + or #",
+            "has": "Has",
+            "wildcards": "Wildcards",
+            "wildcards-only": "Only wildcard filters (+ and #)"
+        },
+        "topic-gone": "This topic no longer has subscriptions or retained messages. It was removed after the tree was loaded.",
+        "topic-not-found": "Topic {{path}} was not found",
+        "refresh-tree": "Refresh tree",
+        "subtopics-count": "{ count, plural, =0 {No subtopics} =1 {1 subtopic} other {# subtopics} }",
+        "row": {
+            "subscriptions": "{{exact}} on this topic, {{nested}} in subtopics",
+            "clients": "No clients subscribed",
+            "connected": "{{count}} connected",
+            "disconnected": "{{count}} disconnected",
+            "shared": "{ count, plural, =0 {No shared subscriptions} =1 {1 shared subscription} other {# shared subscriptions} }",
+            "integrations": "Integrations subscribed to this topic or its subtopics",
+            "retained": "Messages kept for new subscribers"
+        },
+        "column": {
+            "topic": "Topic",
+            "subscriptions": "Subscriptions",
+            "clients": "Clients",
+            "retained": "Retained",
+            "online": "Online / offline",
+            "shared": "Shared groups",
+            "integrations": "Integrations"
+        },
+        "tab": {
+            "subscriptions": "Subscriptions",
+            "clients": "Clients",
+            "shared": "Shared",
+            "integrations": "Integrations",
+            "retained": "Retained"
+        },
+        "entity": {
+            "client-id": "Client ID",
+            "topic-filter": "Topic filter",
+            "topic": "Topic",
+            "qos": "QoS",
+            "status": "Status",
+            "client-type": "Client type",
+            "subscriptions": "Subscriptions",
+            "group": "Group",
+            "payload": "Payload",
+            "type": "Type",
+            "type-client": "Client",
+            "type-shared": "Shared",
+            "type-integration": "Integration",
+            "name": "Name",
+            "id": "ID",
+            "integration-not-found": "Integration not found",
+            "open-session": "Open session",
+            "open-group": "Show in shared subscriptions",
+            "open-integration": "Open integration"
+        }
     },
     "unauthorized-client": {
         "details": "Unauthorized client details",

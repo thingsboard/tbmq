@@ -34,6 +34,7 @@
         <main.dir>${basedir}/..</main.dir>
         <pkg.type>java</pkg.type>
         <pkg.disabled>false</pkg.disabled>
+        <test.excluded.groups>performance</test.excluded.groups>
         <pkg.process-resources.phase>process-resources</pkg.process-resources.phase>
         <pkg.package.phase>package</pkg.package.phase>
         <pkg.name>thingsboard-mqtt-broker</pkg.name>
@@ -311,6 +312,7 @@
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
                         <tbmq.openapi.spec.path>${project.basedir}/../api/openapi.json</tbmq.openapi.spec.path>
                     </systemPropertyVariables>
+                    <excludedGroups>${test.excluded.groups}</excludedGroups>
                     <excludes>
                         <exclude>**/sql/*Test.java</exclude>
                     </excludes>

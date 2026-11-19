@@ -21,6 +21,8 @@ import lombok.Getter;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Getter
 public class PageData<T> {
@@ -59,6 +61,10 @@ public class PageData<T> {
 
     public PageData<T> copyWithNewData(List<T> updatedData) {
         return new PageData<>(updatedData, getTotalPages(), getTotalElements(), hasNext());
+    }
+
+    public <D> PageData<D> mapData(Function<T, D> mapper) {
+        return new PageData<>(getData().stream().map(mapper).collect(Collectors.toList()), getTotalPages(), getTotalElements(), hasNext());
     }
 
     @JsonProperty("hasNext")
