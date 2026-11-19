@@ -659,22 +659,19 @@ public class DefaultEnhancedAuthenticationServiceTest {
         enhancedAuthenticationService.disable();
 
         // THEN
-        Boolean enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
-        assertThat(enabled).isFalse();
+        assertThat(enhancedAuthenticationService.isEnabled()).isFalse();
     }
 
     @Test
     public void whenEnable_thenEnabledIsTrue() {
         // GIVEN
-        Boolean enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
-        assertThat(enabled).isFalse();
+        assertThat(enhancedAuthenticationService.isEnabled()).isFalse();
 
         // WHEN
         enhancedAuthenticationService.enable();
 
         // THEN
-        enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
-        assertThat(enabled).isTrue();
+        assertThat(enhancedAuthenticationService.isEnabled()).isTrue();
     }
 
     private AuthRulePatterns getAuthRulePatterns() {
