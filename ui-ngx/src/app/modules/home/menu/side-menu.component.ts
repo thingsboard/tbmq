@@ -14,9 +14,8 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
-import { MenuSection } from '@core/services/menu.models';
 import { AsyncPipe } from '@angular/common';
 import { MenuLinkComponent } from './menu-link.component';
 import { MenuToggleComponent } from './menu-toggle.component';
@@ -30,12 +29,10 @@ import { MenuToggleComponent } from './menu-toggle.component';
 })
 export class SideMenuComponent {
 
+  readonly collapsed = input(false, { transform: booleanAttribute });
+
   menuSections$ = this.menuService.menuSections();
 
   constructor(private menuService: MenuService) {
-  }
-
-  trackByMenuSection(index: number, section: MenuSection){
-    return section.id;
   }
 }
