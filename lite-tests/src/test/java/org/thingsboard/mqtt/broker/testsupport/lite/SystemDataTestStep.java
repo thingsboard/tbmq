@@ -42,6 +42,7 @@ import java.util.UUID;
  * as the one {@code PostgreSqlInitializer} inserts while a DAO group is on PostgreSQL, is left as it is.
  * <p>
  * The constants below mirror that SQL file: the ids, the created times, the password hash and the JSON values.
+ * {@code SystemDataTestStepMirrorTest} compares what the step saves with the rows the SQL file inserts.
  * <p>
  * With {@code lite.test.system-data.enabled=false} the step does nothing, for the tests that start from the real
  * defaults. The broker of the kill -9 test runs without the test classpath, so {@code LiteBrokerProcess} copies this
