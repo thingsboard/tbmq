@@ -98,16 +98,28 @@ public final class EntityKeys {
     }
 
     /**
-     * The first key after the non-unique index entries of {@code value}: the lower bound with its last byte that is
-     * not {@code 0xFF} incremented and the bytes after it dropped.
+     * The first key after the non-unique index entries of {@code value}.
      */
     static byte[] nonUniqueUpper(EntityIndex index, String value) {
-        byte[] bound = uniqueIndexKey(index, value);
-        int last = bound.length - 1;
-        while (bound[last] == (byte) 0xFF) {
+        return upperBound(uniqueIndexKey(index, value));
+    }
+
+    /**
+     * The first key after every key that starts with {@code prefix}: the prefix with its last byte that is not
+     * {@code 0xFF} incremented and the bytes after it dropped. An index key never ends in {@code 0xFF} (UTF-8 has no
+     * such byte, and an empty value ends in its zero length), so the carry only keeps the bound right for any prefix.
+     *
+     * @throws IllegalArgumentException for a prefix of {@code 0xFF} bytes only, which has no upper bound
+     */
+    static byte[] upperBound(byte[] prefix) {
+        int last = prefix.length - 1;
+        while (last >= 0 && prefix[last] == (byte) 0xFF) {
             last--;
         }
-        byte[] upper = Arrays.copyOf(bound, last + 1);
+        if (last < 0) {
+            throw new IllegalArgumentException("A prefix of 0xFF bytes only has no upper bound");
+        }
+        byte[] upper = Arrays.copyOf(prefix, last + 1);
         upper[last]++;
         return upper;
     }

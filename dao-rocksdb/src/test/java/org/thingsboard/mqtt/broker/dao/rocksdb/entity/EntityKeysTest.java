@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EntityKeysTest {
 
@@ -116,15 +117,26 @@ class EntityKeysTest {
     }
 
     @Test
-    void theUpperBoundCarriesOverAFullByte() {
-        // a value whose encoded form ends in 0xFF: the bound must still be above every key of the value
-        byte[] value = new byte[]{(byte) 0xFF};
-        String ff = new String(value, StandardCharsets.ISO_8859_1);
-        byte[] lower = EntityKeys.nonUniqueLower(EntityIndex.CREDENTIALS_NAME, ff);
-        byte[] upper = EntityKeys.nonUniqueUpper(EntityIndex.CREDENTIALS_NAME, ff);
+    void theUpperBoundIncrementsTheLastByte() {
+        assertThat(EntityKeys.upperBound(new byte[]{4, 0, 0, 0, 2, 'a', 'b'})).containsExactly(4, 0, 0, 0, 2, 'a', 'c');
+        assertThat(EntityKeys.upperBound(new byte[]{4, 0, 0, 0, 0})).containsExactly(4, 0, 0, 0, 1);
+    }
 
-        assertThat(Arrays.compareUnsigned(lower, upper)).isNegative();
-        assertThat(upper).isNotEmpty();
+    @Test
+    void theUpperBoundCarriesOverFullBytes() {
+        byte[] prefix = {4, 0x7F, (byte) 0xFF, (byte) 0xFF};
+        byte[] upper = EntityKeys.upperBound(prefix);
+
+        assertThat(upper).containsExactly(4, 0x80);
+        assertThat(inRange(prefix, prefix, upper)).isTrue();
+        assertThat(inRange(new byte[]{4, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, 1}, prefix, upper)).isTrue();
+        assertThat(inRange(new byte[]{4, (byte) 0x80}, prefix, upper)).isFalse();
+    }
+
+    @Test
+    void aPrefixOfFullBytesOnlyHasNoUpperBound() {
+        assertThatThrownBy(() -> EntityKeys.upperBound(new byte[]{(byte) 0xFF, (byte) 0xFF}))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
