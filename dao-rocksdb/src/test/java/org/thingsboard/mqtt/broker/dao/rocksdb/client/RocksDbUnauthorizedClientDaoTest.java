@@ -105,8 +105,9 @@ class RocksDbUnauthorizedClientDaoTest {
     }
 
     @Test
-    void aClosedStoreFailsTheFuturesOfSaveAndRemove() {
+    void aClosedStoreFailsTheFuturesOfSaveAndRemove() throws Exception {
         RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 10);
+        dao.save(client("a", 1)).get();
         rocksDbStore.close();
 
         AtomicReference<ListenableFuture<Void>> save = new AtomicReference<>();
@@ -118,6 +119,56 @@ class RocksDbUnauthorizedClientDaoTest {
 
         assertThatThrownBy(() -> save.get().get()).isInstanceOf(ExecutionException.class).hasCauseInstanceOf(StoreException.class);
         assertThatThrownBy(() -> remove.get().get()).isInstanceOf(ExecutionException.class).hasCauseInstanceOf(StoreException.class);
+    }
+
+    @Test
+    void aRemovalOfAClientIdNotKeptDoesNotTouchTheStore() throws Exception {
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 10);
+        dao.save(client("a", 1)).get();
+        rocksDbStore.takeWriteClasses();
+        rocksDbStore.takeGets();
+
+        assertThat(dao.remove(client("accepted", 1))).succeedsWithin(0, TimeUnit.SECONDS);
+        dao.deleteById("accepted");
+
+        assertThat(rocksDbStore.takeWriteClasses()).isEmpty();
+        assertThat(rocksDbStore.takeGets()).isZero();
+        assertThat(clientIds()).containsExactly("a");
+    }
+
+    @Test
+    void aLongReasonIsStoredCutAndTheCallersClientIsLeftAsItIs() throws Exception {
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 10);
+        String reason = "Failed to authenticate client with id " + "x".repeat(65_000);
+        UnauthorizedClient refused = client("a", 1).toBuilder().reason(reason).build();
+        UnauthorizedClient exact = client("b", 2).toBuilder().reason("y".repeat(RocksDbUnauthorizedClientDao.MAX_REASON_LENGTH)).build();
+
+        dao.save(refused).get();
+        dao.save(exact).get();
+
+        String stored = dao.findByClientId("a").getReason();
+        assertThat(stored).hasSize(RocksDbUnauthorizedClientDao.MAX_REASON_LENGTH).endsWith("...")
+                .startsWith("Failed to authenticate client with id xxx");
+        assertThat(refused.getReason()).isSameAs(reason);
+        assertThat(dao.findByClientId("b")).isEqualTo(exact);
+    }
+
+    @Test
+    void theOrderIsRebuiltFromTheProjectionAfterARestart() throws Exception {
+        RocksDbUnauthorizedClientDao before = new RocksDbUnauthorizedClientDao(store, 3);
+        before.save(client("b", 10)).get();
+        before.save(client("a", 10)).get();
+        before.save(client("c", 5)).get();
+        rocksDbStore.close();
+        open();
+
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 3);
+        dao.save(client("d", 20)).get();
+        assertThat(clientIds()).containsExactlyInAnyOrder("a", "b", "d");
+        dao.save(client("e", 20)).get();
+        assertThat(clientIds()).containsExactlyInAnyOrder("b", "d", "e");
+        dao.deleteAll();
+        assertThat(clientIds()).isEmpty();
     }
 
     @Test

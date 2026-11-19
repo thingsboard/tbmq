@@ -55,10 +55,10 @@ class ProjectionScaleTest {
     private static final int BATCH = 10_000;
     private static final long MAX_PROJECTION_BYTES = 40L << 20;
     private static final int UNAUTHORIZED_CLIENTS = 10_000;
-    // measured 18.4 MB; the bound leaves about 35% for another JDK or GC
-    private static final long MAX_UNAUTHORIZED_PROJECTION_BYTES = 24L << 20;
-    // measured 4.4 to 6.2 MB: string deduplication shares the client ids at a varying time
-    private static final long MAX_UNAUTHORIZED_ORDER_BYTES = 8L << 20;
+    // measured 34.1 to 34.2 MB; the bound (44.0 MB) leaves about 29% for another JDK or GC
+    private static final long MAX_UNAUTHORIZED_PROJECTION_BYTES = 42L << 20;
+    // measured 1.03 MB: the order shares the client ids of the projection; the bound (1.31 MB) leaves about 27%
+    private static final long MAX_UNAUTHORIZED_ORDER_BYTES = (5L << 20) / 4;
 
     @TempDir
     Path dir;
@@ -100,9 +100,9 @@ class ProjectionScaleTest {
 
     /**
      * The count limit of unauthorized clients at its default, each of them as large as a refusal can make it: a client
-     * id and a username at the 255 characters {@code StringUtils.abbreviate} cuts them to, outside Latin-1 so that each
-     * character takes two bytes, the longest IPv6 text and a long reason. Measures the projection and, on top of it,
-     * the age order of the DAO.
+     * id and a username at the 255 characters {@code StringUtils.abbreviate} cuts them to, a reason at the 1024 characters
+     * the DAO cuts it to, all three outside Latin-1 so that each character takes two bytes, and the longest IPv6 text.
+     * Measures the projection and, on top of it, the age order of the DAO.
      */
     @Test
     void tenThousandWorstCaseUnauthorizedClientsStaySmall() {
@@ -135,7 +135,7 @@ class ProjectionScaleTest {
                         .ts(1_700_000_000_000L + i)
                         .passwordProvided(true)
                         .tlsUsed(true)
-                        .reason(String.format("%05d", i) + "r".repeat(507))
+                        .reason(String.format("%05d", i) + "\u0440".repeat(1019))
                         .build();
                 batch.put(StoreColumnFamily.ENTITY, EntityKeys.entityKey(StoredEntityType.UNAUTHORIZED_CLIENT,
                         EntityDescriptors.UNAUTHORIZED_CLIENT.idBytes(client.getClientId())), StorageObjectMapper.write(client));

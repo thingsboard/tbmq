@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedC
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.EntityDescriptors;
@@ -52,14 +53,22 @@ import java.util.function.Predicate;
  * client itself is not kept when it is the oldest. A save of a client id already kept replaces it and never evicts.
  * <p>
  * To find the oldest without sorting the projection on every save, the DAO keeps every client id it holds ordered by
- * age, read from the store when it is created and changed by every write of this DAO, under its lock and after the
- * write succeeded. It is the only writer of the type.
+ * age, read from the projection when it is created and changed by every write of this DAO, under its lock and after
+ * the write succeeded. It is the only writer of the type, so a removal of a client id the order does not hold, such as
+ * the one every accepted CONNECT asks for, returns without touching the store.
+ * <p>
+ * Every field of a client is in the projection, on the heap. The reason is cut to {@value #MAX_REASON_LENGTH}
+ * characters before it is saved: it has no length limit of its own, and an authentication failure can quote the raw
+ * client id and username of a CONNECT, up to its full size, so a flood of refusals could otherwise fill the heap. The
+ * other fields are bounded where they are made: the client id and username are cut to 255 characters by the caller,
+ * and the IP address is the text of a 4 or 16 byte address.
  */
 @Component
 @StandaloneComponent
 public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
 
     static final String MAX_PROPERTY = "standalone.unauthorized-clients.max";
+    static final int MAX_REASON_LENGTH = 1024;
 
     private static final Comparator<Age> AGE_ORDER = Comparator.comparingLong(Age::ts).thenComparing(Age::clientId);
 
@@ -79,9 +88,8 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
         }
         this.store = store;
         this.max = max;
-        for (UnauthorizedClient client : store.findAll(EntityDescriptors.UNAUTHORIZED_CLIENT)) {
-            track(Age.of(client));
-        }
+        store.forEachProjected(EntityDescriptors.UNAUTHORIZED_CLIENT,
+                client -> track(Age.of((String) client.id(), (Long) client.sortValues().get("ts"))));
     }
 
     @Override
@@ -109,7 +117,7 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
     @Override
     public void deleteById(String clientId) {
         synchronized (writeLock) {
-            if (store.removeById(EntityDescriptors.UNAUTHORIZED_CLIENT, clientId)) {
+            if (ages.containsKey(clientId) && store.removeById(EntityDescriptors.UNAUTHORIZED_CLIENT, clientId)) {
                 untrack(clientId);
             }
         }
@@ -155,6 +163,10 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
     private void saveLocked(UnauthorizedClient client) {
         if (client.getClientId() == null) {
             throw new IllegalArgumentException("Cannot save an unauthorized client without a client id");
+        }
+        if (client.getReason() != null && client.getReason().length() > MAX_REASON_LENGTH) {
+            // a copy: the caller's client is left as it is
+            client = client.toBuilder().reason(StringUtils.abbreviate(client.getReason(), MAX_REASON_LENGTH)).build();
         }
         Age age = Age.of(client);
         Age old = ages.get(client.getClientId());
@@ -225,7 +237,11 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
     private record Age(long ts, String clientId) {
 
         static Age of(UnauthorizedClient client) {
-            return new Age(client.getTs() == null ? Long.MIN_VALUE : client.getTs(), client.getClientId());
+            return of(client.getClientId(), client.getTs());
+        }
+
+        static Age of(String clientId, Long ts) {
+            return new Age(ts == null ? Long.MIN_VALUE : ts, clientId);
         }
 
     }

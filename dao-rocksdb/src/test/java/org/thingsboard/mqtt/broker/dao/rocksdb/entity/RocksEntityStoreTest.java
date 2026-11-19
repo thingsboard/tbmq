@@ -37,7 +37,9 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -433,6 +435,21 @@ class RocksEntityStoreTest {
 
         assertThat(store.findAll(UNAUTHORIZED_CLIENT)).hasSize(2);
         assertThat(store.count(UNAUTHORIZED_CLIENT)).isEqualTo(2);
+    }
+
+    @Test
+    void forEachProjectedSeesEveryDocumentWithoutReadingTheStore() {
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("a", "r").toBuilder().ts(10L).build());
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("b", "r").toBuilder().ts(20L).build());
+        rocksDbStore.takeGets();
+        Map<Object, Object> seen = new HashMap<>();
+
+        store.forEachProjected(UNAUTHORIZED_CLIENT, projected -> seen.put(projected.id(), projected.sortValues().get("ts")));
+
+        assertThat(seen).containsOnly(Map.entry("a", 10L), Map.entry("b", 20L));
+        assertThat(rocksDbStore.takeGets()).isZero();
+        assertThatThrownBy(() -> store.forEachProjected(USER_CREDENTIALS, projected -> {
+        })).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

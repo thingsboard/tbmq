@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -252,6 +253,17 @@ public class RocksEntityStore {
         }
         int totalPages = (int) ((slice.totalElements() + pageLink.getPageSize() - 1) / pageLink.getPageSize());
         return new PageData<>(data, totalPages, slice.totalElements(), (long) pageLink.getPage() + 1 < totalPages);
+    }
+
+    /**
+     * Calls {@code action} with every document of a type with a projection as a page filter sees it, in no particular
+     * order, without reading the store. Takes no lock, as the other reads: a document written alongside is seen before
+     * or after the write.
+     *
+     * @throws IllegalArgumentException for a type without a projection
+     */
+    public <T, ID> void forEachProjected(EntityDescriptor<T, ID> d, Consumer<ProjectedEntity> action) {
+        projection(d).forEach(action);
     }
 
     /**
