@@ -48,7 +48,10 @@ import java.nio.file.Path;
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                         classes = {StoreProperties.class, StoreMemoryBudget.class}),
                 @ComponentScan.Filter(type = FilterType.REGEX,
-                        pattern = "org\\.thingsboard\\.mqtt\\.broker\\.dao\\.rocksdb\\.devicemsg\\..*")
+                        pattern = "org\\.thingsboard\\.mqtt\\.broker\\.dao\\.rocksdb\\.devicemsg\\..*"),
+                // the nested configurations of the subclasses belong to their own context only
+                @ComponentScan.Filter(type = FilterType.REGEX,
+                        pattern = "org\\.thingsboard\\.mqtt\\.broker\\.dao\\.rocksdb\\.contract\\..*")
         })
 public class RocksDbContractTestConfig {
 

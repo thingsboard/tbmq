@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -87,7 +88,7 @@ public class RocksEntityStore {
         }
         for (EntityDescriptor<?, ?> d : EntityDescriptors.ALL) {
             if (d.projection() != null) {
-                projections.put(d.type(), new ProjectionIndex<>(d.projection()));
+                projections.put(d.type(), new ProjectionIndex<>(d.type(), d.projection()));
             }
             for (EntityDescriptor.Cascade cascade : d.cascades()) {
                 parents.computeIfAbsent(cascade.child().type(), type -> new ArrayList<>())
@@ -199,7 +200,9 @@ public class RocksEntityStore {
      * projection was read is left out of the page.
      *
      * @param filter on the projected fields of a document; {@code null} for none
-     * @throws IllegalArgumentException for a type without a projection or an unknown sort property
+     * @throws IllegalArgumentException           for a type without a projection
+     * @throws InvalidDataAccessApiUsageException for an unknown sort property, the exception class that the SQL DAO
+     *                                            throws for it; the message names the property and the type
      */
     public <T, ID> PageData<T> findPage(EntityDescriptor<T, ID> d, PageLink pageLink, Predicate<ProjectedEntity> filter) {
         ProjectionIndex.Slice slice = projection(d).find(pageLink, filter);

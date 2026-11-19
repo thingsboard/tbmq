@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttAuthProviderEntity;
@@ -32,6 +33,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 @Slf4j
 public class DefaultMqttAuthProviderDao extends AbstractDao<MqttAuthProviderEntity, MqttAuthProvider>

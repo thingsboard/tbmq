@@ -21,6 +21,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.sql.AdminSettingsEntity;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import java.util.UUID;
 
 @Component
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultAdminSettingsDao extends AbstractDao<AdminSettingsEntity, AdminSettings> implements AdminSettingsDao {

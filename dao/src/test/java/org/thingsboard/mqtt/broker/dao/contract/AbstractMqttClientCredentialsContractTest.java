@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.TbCacheOps;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -40,7 +41,9 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -48,7 +51,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public abstract class AbstractMqttClientCredentialsContractTest extends AbstractContractTest {
 
@@ -56,6 +63,8 @@ public abstract class AbstractMqttClientCredentialsContractTest extends Abstract
 
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttClientCredentialsDao mqttClientCredentialsDao;
     @Autowired
     protected TbCacheOps tbCacheOps;
 
@@ -499,6 +508,218 @@ public abstract class AbstractMqttClientCredentialsContractTest extends Abstract
         ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, searchString, null, searchString);
         PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
         Assert.assertEquals(0, pageData.getData().size());
+    }
+
+    @Test
+    public void findAllV2FiltersByTypesAndCredentialFields() throws Exception {
+        saveBasic("basic one", "c-1", "dev-1");
+        saveBasic("basic two", null, "dev-2");
+        saveX509("x509 one", "cn=node-7");
+        saveScram("scram one", "scram-user");
+
+        assertThat(countV2(null, List.of(ClientCredentialsType.MQTT_BASIC), null, null, null)).isEqualTo(2);
+        assertThat(countV2(null, List.of(ClientCredentialsType.SCRAM), null, null, null)).isEqualTo(1);
+        assertThat(countV2(List.of(ClientType.DEVICE), null, null, null, null)).isEqualTo(4);
+        assertThat(countV2(List.of(ClientType.APPLICATION), null, null, null, null)).isZero();
+        assertThat(countV2(List.of(ClientType.DEVICE, ClientType.APPLICATION), List.of(), null, null, null)).isEqualTo(4);
+        // none of the filters: no restriction
+        assertThat(countV2(null, null, null, null, null)).isEqualTo(4);
+        // an empty string counts as an absent filter
+        assertThat(countV2(null, null, "", "", "")).isEqualTo(4);
+
+        // username alone: MQTT_BASIC or SCRAM credentials, matched without regard to case. The SQL query matches anything
+        // after "userName" in the value, which for SCRAM includes the random Base64 keys: a search term with a '-' can never
+        // match those, so these cases hold on every run
+        assertThat(countV2(null, null, "DEV-1", null, null)).isEqualTo(1);
+        assertThat(countV2(null, null, "dev-", null, null)).isEqualTo(2);
+        assertThat(countV2(null, null, "scram", null, null)).isEqualTo(1);
+        assertThat(countV2(null, List.of(ClientCredentialsType.X_509), "dev", null, null)).isZero();
+        assertThat(countV2(null, List.of(ClientCredentialsType.SCRAM), "dev-", null, null)).isZero();
+        // client id alone: MQTT_BASIC credentials only
+        assertThat(countV2(null, null, null, "C-1", null)).isEqualTo(1);
+        assertThat(countV2(null, null, null, "c-2", null)).isZero();
+        // certificate CN alone: X_509 credentials only
+        assertThat(countV2(null, null, null, null, "NODE")).isEqualTo(1);
+        assertThat(countV2(null, null, null, null, "dev")).isZero();
+        // username and client id: MQTT_BASIC credentials that match both
+        assertThat(countV2(null, null, "dev-1", "c-1", null)).isEqualTo(1);
+        assertThat(countV2(null, null, "dev-2", "c-1", null)).isZero();
+        assertThat(countV2(null, null, "scram", "c-1", null)).isZero();
+        // a certificate CN together with a username or a client id: nothing
+        assertThat(countV2(null, null, "dev", null, "node")).isZero();
+        assertThat(countV2(null, null, null, "c-1", "node")).isZero();
+        assertThat(countV2(null, null, "dev-1", "c-1", "node")).isZero();
+    }
+
+    @Test
+    public void findAllV2TextSearchesTheName() throws Exception {
+        saveBasic("alpha-1", "ca-1", "ua-1");
+        saveBasic("Alpha-2", "ca-2", "ua-2");
+        saveBasic("beta", "cb-1", "ub-1");
+
+        PageData<ShortMqttClientCredentials> byName = mqttClientCredentialsService.getCredentialsV2(new ClientCredentialsQuery(
+                new PageLink(10, 0, "ALPHA"), null, null, null, null, null));
+        PageData<ShortMqttClientCredentials> byNameAndUsername = mqttClientCredentialsService.getCredentialsV2(new ClientCredentialsQuery(
+                new PageLink(10, 0, "alpha"), null, null, "ua-2", null, null));
+
+        assertThat(byName.getData()).extracting(ShortMqttClientCredentials::getName).containsExactlyInAnyOrder("alpha-1", "Alpha-2");
+        assertThat(byName.getTotalElements()).isEqualTo(2);
+        assertThat(byNameAndUsername.getData()).extracting(ShortMqttClientCredentials::getName).containsExactly("Alpha-2");
+    }
+
+    @Test
+    public void anUnknownSortPropertyIsRejectedAsAnInvalidApiUsage() throws Exception {
+        saveBasic("sortable", "c-sort", "u-sort");
+        PageLink unknownSort = new PageLink(10, 0, null, new SortOrder("noSuchProperty", SortOrder.Direction.ASC));
+
+        assertThatThrownBy(() -> mqttClientCredentialsService.getCredentials(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+        assertThatThrownBy(() -> mqttClientCredentialsDao.findAll(unknownSort))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+        assertThatThrownBy(() -> mqttClientCredentialsService.getCredentialsV2(
+                new ClientCredentialsQuery(unknownSort, null, null, null, null, null)))
+                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class);
+    }
+
+    @Test
+    public void nonAsciiNamesAreFoundByATextSearchOfAnotherCase() throws Exception {
+        saveBasic("\u00DCbung Test", "c-uml", "u-uml");
+        saveBasic("Stra\u00DFe Test", "c-sz", "u-sz");
+        saveBasic("\u0414\u043E\u043C Test", "c-cyr", "u-cyr");
+        saveBasic("plain Test", "c-plain", "u-plain");
+
+        assertThat(searchNames("\u00FCbung")).containsExactly("\u00DCbung Test");
+        assertThat(searchNames("\u00DCBUNG")).containsExactly("\u00DCbung Test");
+        assertThat(searchNames("stra\u00DFe")).containsExactly("Stra\u00DFe Test");
+        assertThat(searchNames("\u0434\u043E\u043C")).containsExactly("\u0414\u043E\u043C Test");
+        assertThat(searchNames("\u0414\u041E\u041C")).containsExactly("\u0414\u043E\u043C Test");
+        assertThat(searchNames("test")).hasSize(4);
+    }
+
+    private List<String> searchNames(String search) {
+        return mqttClientCredentialsService.getCredentials(new PageLink(10, 0, search)).getData().stream()
+                .map(ShortMqttClientCredentials::getName).toList();
+    }
+
+    @Test
+    public void findAllV2PagesAndSortsTheMatches() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            saveBasic("page-" + i, "cp-" + i, "up-" + i);
+        }
+        saveBasic("other", "co-1", "uo-1");
+
+        PageLink first = new PageLink(2, 0, "page-", new SortOrder("name", SortOrder.Direction.DESC));
+        PageData<ShortMqttClientCredentials> page = mqttClientCredentialsService.getCredentialsV2(
+                new ClientCredentialsQuery(first, null, List.of(ClientCredentialsType.MQTT_BASIC), null, null, null));
+        PageData<ShortMqttClientCredentials> last = mqttClientCredentialsService.getCredentialsV2(
+                new ClientCredentialsQuery(first.nextPageLink().nextPageLink(), null, null, null, null, null));
+
+        assertThat(page.getData()).extracting(ShortMqttClientCredentials::getName).containsExactly("page-4", "page-3");
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getTotalPages()).isEqualTo(3);
+        assertThat(page.hasNext()).isTrue();
+        assertThat(last.getData()).extracting(ShortMqttClientCredentials::getName).containsExactly("page-0");
+        assertThat(last.hasNext()).isFalse();
+    }
+
+    @Test
+    public void theSystemWebSocketCredentialIsFoundByItsName() {
+        assertThat(mqttClientCredentialsDao.findSystemWebSocketCredentials()).isNull();
+
+        MqttClientCredentials saved = mqttClientCredentialsService.saveSystemWebSocketCredentials();
+
+        assertThat(mqttClientCredentialsDao.findSystemWebSocketCredentials()).isEqualTo(saved);
+        assertThat(mqttClientCredentialsDao.findCredentialsByName(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME)).isEqualTo(saved);
+        assertThat(mqttClientCredentialsService.findSystemWebSocketCredentials()).isEqualTo(saved);
+    }
+
+    @Test
+    public void findCredentialsByNameMatchesTheWholeNameCaseSensitively() throws Exception {
+        MqttClientCredentials saved = saveBasic("Exact Name", "c-name", "u-name");
+
+        assertThat(mqttClientCredentialsDao.findCredentialsByName("Exact Name")).isEqualTo(saved);
+        assertThat(mqttClientCredentialsDao.findCredentialsByName("exact name")).isNull();
+        assertThat(mqttClientCredentialsDao.findCredentialsByName("Exact")).isNull();
+        assertThat(mqttClientCredentialsDao.findCredentialsByName("missing")).isNull();
+    }
+
+    @Test
+    public void existsAndFindByCredentialsType() throws Exception {
+        MqttClientCredentials basic = saveBasic("basic", "c-1", "u-1");
+        MqttClientCredentials scram = saveScram("scram", "scram-user");
+
+        assertThat(mqttClientCredentialsDao.existsByCredentialsType(ClientCredentialsType.MQTT_BASIC)).isTrue();
+        assertThat(mqttClientCredentialsDao.existsByCredentialsType(ClientCredentialsType.SCRAM)).isTrue();
+        assertThat(mqttClientCredentialsDao.existsByCredentialsType(ClientCredentialsType.X_509)).isFalse();
+        assertThat(mqttClientCredentialsDao.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).containsExactly(basic);
+        assertThat(mqttClientCredentialsDao.findByCredentialsType(ClientCredentialsType.SCRAM)).containsExactly(scram);
+        assertThat(mqttClientCredentialsDao.findByCredentialsType(ClientCredentialsType.X_509)).isEmpty();
+
+        mqttClientCredentialsService.deleteCredentials(basic.getId());
+
+        assertThat(mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.MQTT_BASIC)).isFalse();
+        assertThat(mqttClientCredentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).isEmpty();
+    }
+
+    @Test
+    public void findByCredentialsIdAndByCredentialsIds() throws Exception {
+        MqttClientCredentials first = saveBasic("first", "c-1", null);
+        MqttClientCredentials second = saveBasic("second", null, "u-2");
+
+        assertThat(mqttClientCredentialsDao.findByCredentialsId(first.getCredentialsId())).isEqualTo(first);
+        assertThat(mqttClientCredentialsDao.findByCredentialsId("missing")).isNull();
+        assertThat(mqttClientCredentialsDao.findAllByCredentialsIds(
+                List.of(first.getCredentialsId(), "missing", second.getCredentialsId(), first.getCredentialsId())))
+                .containsExactlyInAnyOrder(first, second);
+        assertThat(mqttClientCredentialsDao.findAllByCredentialsIds(List.of("missing"))).isEmpty();
+        assertThat(mqttClientCredentialsDao.findAllByCredentialsIds(List.of())).isEmpty();
+    }
+
+    @Test
+    public void aCredentialsIdSharedByTwoCredentialsIsRefused() throws Exception {
+        MqttClientCredentials first = saveBasic("first", "c-1", "u-1");
+        MqttClientCredentials second = validMqttClientCredentials("second", "c-2", "u-2", null);
+        second.setCredentialsId(first.getCredentialsId());
+
+        // the service refuses it by its own check; the DAO by the unique key of the credentials id
+        assertThatThrownBy(() -> mqttClientCredentialsDao.save(second))
+                .isInstanceOf(EntityConstraintViolationException.class)
+                .satisfies(e -> assertThat(EntityConstraintViolationException.isViolationOf(e, "mqtt_client_credentials_id_unq_key")).isTrue());
+        assertThat(mqttClientCredentialsDao.findAllByCredentialsIds(List.of(first.getCredentialsId()))).containsExactly(first);
+    }
+
+    @Test
+    public void removeByIdAnswersTrueWhetherOrNotTheCredentialsExisted() throws Exception {
+        MqttClientCredentials saved = saveBasic("to remove", "c-1", "u-1");
+
+        assertThat(mqttClientCredentialsDao.removeById(saved.getId())).isTrue();
+        assertThat(mqttClientCredentialsDao.findById(saved.getId())).isNull();
+        assertThat(mqttClientCredentialsDao.removeById(saved.getId())).isTrue();
+        assertThat(mqttClientCredentialsDao.removeById(UUID.randomUUID())).isTrue();
+    }
+
+    protected MqttClientCredentials saveBasic(String name, String clientId, String username) throws JsonProcessingException {
+        return mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(name, clientId, username, null));
+    }
+
+    protected MqttClientCredentials saveX509(String name, String certCnPattern) throws JsonProcessingException {
+        MqttClientCredentials credentials = validMqttSslClientCredentials(certCnPattern);
+        credentials.setName(name);
+        return mqttClientCredentialsService.saveCredentials(credentials);
+    }
+
+    protected MqttClientCredentials saveScram(String name, String username) throws Exception {
+        MqttClientCredentials credentials = new MqttClientCredentials();
+        credentials.setName(name);
+        credentials.setCredentialsType(ClientCredentialsType.SCRAM);
+        credentials.setCredentialsValue(JacksonUtil.toString(ScramMqttCredentials.newInstance(username, "password", ScramAlgorithm.SHA_512, null)));
+        return mqttClientCredentialsService.saveCredentials(credentials);
+    }
+
+    private long countV2(List<ClientType> clientTypes, List<ClientCredentialsType> credentialsTypes,
+                         String username, String clientId, String certificateCn) {
+        return mqttClientCredentialsService.getCredentialsV2(new ClientCredentialsQuery(
+                new PageLink(100), clientTypes, credentialsTypes, username, clientId, certificateCn)).getTotalElements();
     }
 
     // Commented out to allow independent testing without running it in every build
