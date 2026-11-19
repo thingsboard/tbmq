@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
@@ -37,6 +38,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 @Slf4j
 public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCredentialsEntity, MqttClientCredentials>
