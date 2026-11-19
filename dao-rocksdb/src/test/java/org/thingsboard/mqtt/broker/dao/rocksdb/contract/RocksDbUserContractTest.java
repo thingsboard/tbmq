@@ -19,10 +19,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.thingsboard.mqtt.broker.common.data.User;
@@ -36,7 +35,6 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.entity.EntityIndex;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.EntityKeys;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.StorageObjectMapper;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
-import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -53,17 +51,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-@ContextConfiguration(classes = {RocksDbContractTestConfig.class, RocksDbUserContractTest.Services.class},
+@ContextConfiguration(classes = {RocksDbContractTestConfig.class, RocksDbWebSocketServices.class},
         loader = AnnotationConfigContextLoader.class)
+@TestPropertySource(properties = RocksDbWebSocketServices.TOPIC_PROPERTIES)
 public class RocksDbUserContractTest extends AbstractUserContractTest {
 
     private static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
     private static final String SYSADMIN_PASSWORD = "sysadmin";
-
-    @Configuration
-    @Import(UserServiceImpl.class)
-    static class Services {
-    }
 
     // real calls, except where a case stubs a write
     @MockitoSpyBean

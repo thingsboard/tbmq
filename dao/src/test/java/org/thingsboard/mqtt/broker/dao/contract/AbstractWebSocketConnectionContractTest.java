@@ -20,17 +20,24 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.ws.LastWillMsg;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
@@ -38,12 +45,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public abstract class AbstractWebSocketConnectionContractTest extends AbstractContractTest {
 
     private final IdComparator<WebSocketConnectionDto> idComparator = new IdComparator<>();
 
     @Autowired
     protected WebSocketConnectionService webSocketConnectionService;
+    @Autowired
+    protected WebSocketConnectionDao webSocketConnectionDao;
+    @Autowired
+    protected WebSocketSubscriptionService webSocketSubscriptionService;
+    @Autowired
+    protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
     protected UserService userService;
 
@@ -397,6 +413,98 @@ public abstract class AbstractWebSocketConnectionContractTest extends AbstractCo
 
         Optional<WebSocketConnection> webSocketConnectionById = webSocketConnectionService.getWebSocketConnectionById(savedWebSocketConnection.getId());
         Assert.assertFalse(webSocketConnectionById.isPresent());
+    }
+
+    @Test
+    public void connectionsArePagedAndSearchedPerUser() {
+        for (String name : List.of("Alpha-1", "Alpha-2", "Beta")) {
+            webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection(name));
+        }
+        User anotherUser = saveUser("another-paged@.gmail.com");
+        try {
+            webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection("Alpha-other", anotherUser.getId()));
+
+            PageData<WebSocketConnectionDto> own = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), new PageLink(10));
+            PageData<WebSocketConnectionDto> searched = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), new PageLink(10, 0, "ALPHA"));
+            PageData<WebSocketConnectionDto> firstPage = webSocketConnectionService.getWebSocketConnections(savedUser.getId(),
+                    new PageLink(1, 0, "alpha", new SortOrder("name", SortOrder.Direction.ASC)));
+            PageData<WebSocketConnectionDto> secondPage = webSocketConnectionService.getWebSocketConnections(savedUser.getId(),
+                    new PageLink(1, 1, "alpha", new SortOrder("name", SortOrder.Direction.ASC)));
+            PageData<WebSocketConnectionDto> others = webSocketConnectionService.getWebSocketConnections(anotherUser.getId(), new PageLink(10));
+
+            assertThat(own.getData()).extracting(WebSocketConnectionDto::getName).containsExactlyInAnyOrder("Alpha-1", "Alpha-2", "Beta");
+            assertThat(own.getTotalElements()).isEqualTo(3);
+            assertThat(searched.getData()).extracting(WebSocketConnectionDto::getName).containsExactlyInAnyOrder("Alpha-1", "Alpha-2");
+            assertThat(searched.getTotalElements()).isEqualTo(2);
+            assertThat(firstPage.getData()).extracting(WebSocketConnectionDto::getName).containsExactly("Alpha-1");
+            assertThat(firstPage.getTotalPages()).isEqualTo(2);
+            assertThat(firstPage.hasNext()).isTrue();
+            assertThat(secondPage.getData()).extracting(WebSocketConnectionDto::getName).containsExactly("Alpha-2");
+            assertThat(secondPage.hasNext()).isFalse();
+            assertThat(others.getData()).extracting(WebSocketConnectionDto::getName).containsExactly("Alpha-other");
+        } finally {
+            userService.deleteUser(anotherUser.getId());
+        }
+    }
+
+    @Test
+    public void aConnectionIsFoundByNameForItsOwnUserOnly() {
+        WebSocketConnection own = webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection("Shared name"));
+        User anotherUser = saveUser("another-by-name@.gmail.com");
+        try {
+            WebSocketConnection others = webSocketConnectionService.saveWebSocketConnection(getWebSocketConnection("Shared name", anotherUser.getId()));
+
+            assertThat(webSocketConnectionService.findWebSocketConnectionByName(savedUser.getId(), "Shared name")).isEqualTo(own);
+            assertThat(webSocketConnectionService.findWebSocketConnectionByName(anotherUser.getId(), "Shared name")).isEqualTo(others);
+            assertThat(webSocketConnectionService.findWebSocketConnectionByName(anotherUser.getId(), "Test")).isNull();
+        } finally {
+            userService.deleteUser(anotherUser.getId());
+        }
+    }
+
+    @Test
+    public void theDefaultConnectionComesWithItsDefaultSubscription() throws Exception {
+        MqttClientCredentials systemCredentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
+        boolean createdHere = systemCredentials == null;
+        if (createdHere) {
+            systemCredentials = mqttClientCredentialsService.saveSystemWebSocketCredentials();
+        }
+        try {
+            WebSocketConnection saved = webSocketConnectionService.saveDefaultWebSocketConnection(savedUser.getId(), null);
+
+            assertThat(saved.getId()).isNotNull();
+            assertThat(saved.getName()).isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME);
+            assertThat(saved.getUserId()).isEqualTo(savedUser.getId());
+            assertThat(saved.getConfiguration().getClientCredentialsId()).isEqualTo(systemCredentials.getId());
+            assertThat(webSocketConnectionService.findWebSocketConnectionByName(savedUser.getId(), BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME))
+                    .isEqualTo(saved);
+            PageData<WebSocketSubscription> subscriptions = webSocketSubscriptionService.getWebSocketSubscriptions(saved.getId(), new PageLink(10));
+            assertThat(subscriptions.getData()).hasSize(1);
+            assertThat(subscriptions.getData().get(0).getConfiguration().getTopicFilter())
+                    .isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER);
+            assertThat(subscriptions.getData().get(0).getConfiguration().getQos()).isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS);
+            assertThat(subscriptions.getData().get(0).getConfiguration().getColor()).isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR);
+        } finally {
+            if (createdHere) {
+                mqttClientCredentialsService.deleteCredentials(systemCredentials.getId());
+            }
+        }
+    }
+
+    @Test
+    public void removingAMissingIdAnswersTrue() {
+        assertThat(webSocketConnectionDao.removeById(UUID.randomUUID())).isTrue();
+    }
+
+    // the service refuses an unknown user first: only a caller of the DAO reaches the foreign key
+    @Test
+    public void aConnectionOfAMissingUserIsRefusedByTheForeignKey() {
+        String name = "orphan-" + UUID.randomUUID();
+        WebSocketConnection orphan = getWebSocketConnection(name, UUID.randomUUID());
+
+        assertThatThrownBy(() -> webSocketConnectionDao.save(orphan))
+                .satisfies(e -> assertThat(EntityConstraintViolationException.isViolationOf(e, "fk_user_id")).isTrue());
+        assertThat(webSocketConnectionDao.find()).extracting(WebSocketConnection::getName).doesNotContain(name);
     }
 
     private WebSocketConnection getWebSocketConnection() {

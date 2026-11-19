@@ -22,14 +22,21 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
@@ -50,6 +57,10 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
     protected UserDao userDao;
     @Autowired
     protected UserCredentialsDao userCredentialsDao;
+    @Autowired
+    protected WebSocketConnectionService webSocketConnectionService;
+    @Autowired
+    protected WebSocketSubscriptionService webSocketSubscriptionService;
 
     @After
     public void removeCreatedUsers() {
@@ -317,6 +328,29 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
         assertThat(userCredentialsDao.removeById(UUID.randomUUID())).isTrue();
     }
 
+    @Test
+    public void deletingAUserRemovesItsWebSocketConnections() {
+        User user = saveNewUser();
+        User bystander = saveNewUser();
+        WebSocketConnection first = saveWebSocketConnection(user, "first");
+        WebSocketConnection second = saveWebSocketConnection(user, "second");
+        WebSocketConnection others = saveWebSocketConnection(bystander, "first");
+        WebSocketSubscription firstSubscription = saveWebSocketSubscription(first);
+        WebSocketSubscription secondSubscription = saveWebSocketSubscription(second);
+        WebSocketSubscription othersSubscription = saveWebSocketSubscription(others);
+
+        userService.deleteUser(user.getId());
+
+        assertThat(webSocketConnectionService.getWebSocketConnectionById(first.getId())).isEmpty();
+        assertThat(webSocketConnectionService.getWebSocketConnectionById(second.getId())).isEmpty();
+        assertThat(webSocketConnectionService.findWebSocketConnectionByName(user.getId(), "first")).isNull();
+        assertThat(webSocketSubscriptionService.getWebSocketSubscriptionById(firstSubscription.getId())).isEmpty();
+        assertThat(webSocketSubscriptionService.getWebSocketSubscriptionById(secondSubscription.getId())).isEmpty();
+        assertThat(webSocketConnectionService.getWebSocketConnections(user.getId(), new PageLink(10)).getData()).isEmpty();
+        assertThat(webSocketConnectionService.getWebSocketConnectionById(others.getId())).isPresent();
+        assertThat(webSocketSubscriptionService.getWebSocketSubscriptionById(othersSubscription.getId())).isPresent();
+    }
+
     protected User saveNewUser() {
         User user = new User();
         user.setAuthority(Authority.SYS_ADMIN);
@@ -324,6 +358,26 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
         User saved = userService.saveUser(user);
         createdUserIds.add(saved.getId());
         return saved;
+    }
+
+    private WebSocketConnection saveWebSocketConnection(User user, String name) {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName(name);
+        connection.setUserId(user.getId());
+        WebSocketConnectionConfiguration configuration = new WebSocketConnectionConfiguration();
+        configuration.setClientId("clientId");
+        configuration.setUrl("ws://localhost:8084/mqtt");
+        connection.setConfiguration(configuration);
+        return webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    private WebSocketSubscription saveWebSocketSubscription(WebSocketConnection connection) {
+        WebSocketSubscription subscription = new WebSocketSubscription();
+        subscription.setWebSocketConnectionId(connection.getId());
+        WebSocketSubscriptionConfiguration configuration = new WebSocketSubscriptionConfiguration();
+        configuration.setTopicFilter("test/#");
+        subscription.setConfiguration(configuration);
+        return webSocketSubscriptionService.saveWebSocketSubscription(subscription);
     }
 
     /**
