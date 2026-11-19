@@ -36,6 +36,8 @@ import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SCRAM_ONLY_AUTH_ENABLED_MSG;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
     private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
     private final HttpMqttClientAuthProvider httpMqttClientAuthProvider;
+    private final EnhancedAuthenticationService enhancedAuthenticationService;
 
     private final AdminSettingsService adminSettingsService;
 
@@ -72,6 +75,9 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
         log.trace("[{}] Authenticating client", authContext.getClientId());
 
         if (!defaultProvidersEnabled()) {
+            if (enhancedAuthenticationService.isEnabled()) {
+                return getFinalFailureAuthResponse(authContext, List.of(SCRAM_ONLY_AUTH_ENABLED_MSG));
+            }
             return AuthResponse.defaultAuthResponse();
         }
 
