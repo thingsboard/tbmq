@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.contract;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,16 +26,40 @@ import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
+import org.thingsboard.mqtt.broker.dao.user.UserDao;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public abstract class AbstractUserContractTest extends AbstractContractTest {
 
+    private final List<UUID> createdUserIds = new ArrayList<>();
+
     @Autowired
     protected UserService userService;
+    @Autowired
+    protected UserDao userDao;
+    @Autowired
+    protected UserCredentialsDao userCredentialsDao;
+
+    @After
+    public void removeCreatedUsers() {
+        for (UUID userId : createdUserIds) {
+            if (userService.findUserById(userId) != null) {
+                userService.deleteUser(userId);
+            }
+        }
+        createdUserIds.clear();
+    }
 
     @Test
     public void testFindUserByEmail() {
@@ -204,5 +229,112 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
         Assert.assertEquals(1, currentUserPasswordHistory.size());
 
         userService.deleteUser(savedUser.getId());
+    }
+
+    @Test
+    public void replaceLeavesExactlyOneCredentialsWithTheNewId() {
+        User user = saveNewUser();
+        UserCredentials initial = userService.findUserCredentialsByUserId(user.getId());
+        String password = StringUtils.randomAlphanumeric(10);
+
+        UserCredentials replaced = userService.replaceUserCredentials(enabled(initial, password));
+
+        assertThat(replaced.getId()).isNotNull().isNotEqualTo(initial.getId());
+        assertThat(userCredentialsDao.findById(initial.getId())).isNull();
+        assertThat(userCredentialsDao.findByActivateToken(initial.getActivateToken())).isNull();
+        assertThat(userCredentialsDao.find().stream().filter(c -> user.getId().equals(c.getUserId())))
+                .extracting(UserCredentials::getId).containsExactly(replaced.getId());
+        UserCredentials found = userService.findUserCredentialsByUserId(user.getId());
+        assertThat(found.getId()).isEqualTo(replaced.getId());
+        assertThat(found.getPassword()).isEqualTo(password);
+        assertThat(found.isEnabled()).isTrue();
+    }
+
+    @Test
+    public void deletingAUserRemovesItsCredentials() {
+        User user = saveNewUser();
+        UserCredentials credentials = userService.findUserCredentialsByUserId(user.getId());
+
+        userService.deleteUser(user.getId());
+
+        assertThat(userService.findUserById(user.getId())).isNull();
+        assertThat(userService.findUserCredentialsByUserId(user.getId())).isNull();
+        assertThat(userCredentialsDao.findById(credentials.getId())).isNull();
+        assertThat(userCredentialsDao.findByActivateToken(credentials.getActivateToken())).isNull();
+    }
+
+    // what a stop between the two writes of a new user leaves: the user without credentials
+    @Test
+    public void aUserWithoutCredentialsCanBeDeleted() {
+        User user = saveNewUser();
+        UserCredentials credentials = userService.findUserCredentialsByUserId(user.getId());
+        userCredentialsDao.removeById(credentials.getId());
+
+        userService.deleteUser(user.getId());
+
+        assertThat(userService.findUserById(user.getId())).isNull();
+        assertThat(userService.findUserByEmail(user.getEmail())).isNull();
+    }
+
+    @Test
+    public void emailsAreUnique() {
+        User first = saveNewUser();
+        User second = new User();
+        second.setAuthority(Authority.SYS_ADMIN);
+        second.setEmail(first.getEmail());
+
+        assertThatThrownBy(() -> userService.saveUser(second))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("User with email '" + first.getEmail() + "'  already present in database!");
+        assertThat(userService.findUserByEmail(first.getEmail()).getId()).isEqualTo(first.getId());
+    }
+
+    @Test
+    public void findByActivateAndResetToken() {
+        User user = saveNewUser();
+        UserCredentials credentials = userService.findUserCredentialsByUserId(user.getId());
+        String activateToken = credentials.getActivateToken();
+
+        assertThat(userCredentialsDao.findByActivateToken(activateToken).getId()).isEqualTo(credentials.getId());
+
+        UserCredentials activated = enabled(credentials, StringUtils.randomAlphanumeric(10));
+        userService.saveUserCredentials(activated);
+
+        assertThat(userCredentialsDao.findByActivateToken(activateToken)).isNull();
+
+        String resetToken = userService.requestPasswordReset(user.getEmail()).getResetToken();
+
+        assertThat(resetToken).isNotEmpty();
+        assertThat(userService.findUserCredentialsByResetToken(resetToken).getId()).isEqualTo(credentials.getId());
+        assertThat(userCredentialsDao.findByResetToken(resetToken).getUserId()).isEqualTo(user.getId());
+        assertThat(userCredentialsDao.findByResetToken(StringUtils.randomAlphanumeric(30))).isNull();
+        assertThat(userCredentialsDao.findByActivateToken(StringUtils.randomAlphanumeric(30))).isNull();
+    }
+
+    @Test
+    public void removingAMissingIdAnswersTrue() {
+        assertThat(userDao.removeById(UUID.randomUUID())).isTrue();
+        assertThat(userCredentialsDao.removeById(UUID.randomUUID())).isTrue();
+    }
+
+    protected User saveNewUser() {
+        User user = new User();
+        user.setAuthority(Authority.SYS_ADMIN);
+        user.setEmail("user-" + UUID.randomUUID() + "@thingsboard.org");
+        User saved = userService.saveUser(user);
+        createdUserIds.add(saved.getId());
+        return saved;
+    }
+
+    /**
+     * Enabled credentials with the id and user of {@code credentials}, the given password and no activate token.
+     */
+    protected static UserCredentials enabled(UserCredentials credentials, String password) {
+        UserCredentials enabled = new UserCredentials();
+        enabled.setId(credentials.getId());
+        enabled.setUserId(credentials.getUserId());
+        enabled.setEnabled(true);
+        enabled.setPassword(password);
+        return enabled;
     }
 }

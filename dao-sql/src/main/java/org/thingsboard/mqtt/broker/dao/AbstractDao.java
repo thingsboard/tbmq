@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @Slf4j
 public abstract class AbstractDao<E extends BaseEntity<D>, D>
@@ -47,8 +48,16 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
 
     @Override
     public D save(D domain) {
+        return inTransaction(() -> saveInTransaction(domain));
+    }
+
+    /**
+     * Runs {@code body} in a transaction of this DAO's {@link TransactionTemplate} (joining the caller's, if any) and
+     * translates a constraint violation, also one raised at the commit, as {@link #save} does.
+     */
+    protected <T> T inTransaction(Supplier<T> body) {
         try {
-            return transactionTemplate.execute(status -> saveInTransaction(domain));
+            return transactionTemplate.execute(status -> body.get());
         } catch (DataIntegrityViolationException e) {
             throw DbExceptionUtil.translate(e);
         }
@@ -87,15 +96,11 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
 
     @Override
     public boolean removeById(UUID id) {
-        try {
-            return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
-                getCrudRepository().deleteById(id);
-                log.debug("Remove request: {}", id);
-                return !getCrudRepository().existsById(id);
-            }));
-        } catch (DataIntegrityViolationException e) {
-            throw DbExceptionUtil.translate(e);
-        }
+        return Boolean.TRUE.equals(inTransaction(() -> {
+            getCrudRepository().deleteById(id);
+            log.debug("Remove request: {}", id);
+            return !getCrudRepository().existsById(id);
+        }));
     }
 
     @Override

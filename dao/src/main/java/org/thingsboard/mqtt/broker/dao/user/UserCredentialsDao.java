@@ -26,4 +26,12 @@ public interface UserCredentialsDao extends Dao<UserCredentials> {
     UserCredentials findByActivateToken(String activateToken);
 
     UserCredentials findByResetToken(String resetToken);
+
+    /**
+     * Removes the credentials {@code removedId} and saves {@code replacement} in one atomic write, so that a stop in
+     * between cannot leave the user without credentials. Credentials {@code removedId} that do not exist are skipped.
+     *
+     * @return the saved replacement
+     */
+    UserCredentials replace(UUID removedId, UserCredentials replacement);
 }
