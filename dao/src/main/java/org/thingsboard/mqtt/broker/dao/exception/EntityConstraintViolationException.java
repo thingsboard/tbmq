@@ -33,7 +33,7 @@ public class EntityConstraintViolationException extends DataIntegrityViolationEx
     private final String constraintName;
 
     public EntityConstraintViolationException(String constraintName, Throwable cause) {
-        super(cause != null && cause.getMessage() != null ? cause.getMessage() : "Unique constraint violated: " + constraintName, cause);
+        super(cause != null && cause.getMessage() != null ? cause.getMessage() : "Constraint violated: " + constraintName, cause);
         this.constraintName = constraintName;
     }
 
