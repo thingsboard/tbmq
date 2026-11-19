@@ -89,6 +89,8 @@ public class Qos2SessionContextLiteTest extends AbstractLiteSpecCase {
         Optional<GenericClientSessionCtx> stored = genericClientSessionCtxService.findGenericClientSessionCtx(publisherId);
         assertThat(stored).isPresent();
         assertThat(stored.get().getQos2PublishPacketIds()).containsExactly(PACKET_ID);
+        // in the embedded store, under the client id
+        assertThat(rocksDbStore.get(StoreColumnFamily.SESSION_CTX, publisherId.getBytes(StandardCharsets.UTF_8))).isNotNull();
 
         RawMqttClient reconnected = connectPersistent(publisherId);
         assertThat(reconnected.sessionPresent()).isTrue();
@@ -119,10 +121,10 @@ public class Qos2SessionContextLiteTest extends AbstractLiteSpecCase {
         byte[] key = clientId.getBytes(StandardCharsets.UTF_8);
         assertThat(rocksDbStore.get(StoreColumnFamily.SESSION_CTX, key)).isNotNull();
 
-        // the scheduled cleanup removes the session once its expiry interval has passed
-        await("session of " + clientId + " expired").atMost(TIMEOUT).until(() -> {
+        // the scheduled cleanup removes the session once its expiry interval has passed; it may do so before this wait
+        await("session of " + clientId + " expired or removed").atMost(TIMEOUT).until(() -> {
             ClientSessionInfo session = clientSessionCache.getClientSessionInfo(clientId);
-            return session != null && session.isExpired(System.currentTimeMillis(), ClientSessionInfo.NO_TTL);
+            return session == null || session.isExpired(System.currentTimeMillis(), ClientSessionInfo.NO_TTL);
         });
         clientSessionCleanUpService.cleanUp();
 
