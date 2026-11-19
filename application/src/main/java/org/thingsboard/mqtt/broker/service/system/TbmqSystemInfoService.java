@@ -41,15 +41,19 @@ import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.gen.queue.SystemInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.system.ServiceInfoIds.RegistryEntry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.thingsboard.mqtt.broker.cache.CacheConstants.SERVICE_REGISTRY_KEY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_COUNT;
@@ -60,7 +64,6 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_IN
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_INFO_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_DISK_SPACE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_MEMORY;
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 import static org.thingsboard.mqtt.broker.common.util.DonAsynchron.withCallback;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuCount;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuUsage;
@@ -78,6 +81,8 @@ public class TbmqSystemInfoService implements SystemInfoService {
     private final TimeseriesService timeseriesService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final CacheProperties cacheProperties;
+
+    private static final Set<String> USAGE_PERCENT_KEYS = Set.of(CPU_USAGE, MEMORY_USAGE, DISK_USAGE);
 
     private ScheduledExecutorService scheduler;
     @Setter
@@ -117,8 +122,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
         getCpuCount().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, (long) value))));
         getTotalDiskSpace().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, value))));
 
-        withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
-        }, throwable -> log.warn("Failed to process TBMQ service info {}", serviceInfo, throwable));
+        processServiceInfoSample(serviceInfo.getServiceId(), serviceInfo.getServiceType(), tsList);
     }
 
     @Override
@@ -152,36 +156,54 @@ public class TbmqSystemInfoService implements SystemInfoService {
             tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, systemInfo.getTotalDiskSpace())));
         }
 
-        withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
-        }, throwable -> log.warn("Failed to process IE service info {}", serviceInfo, throwable));
+        processServiceInfoSample(serviceInfo.getServiceId(), serviceInfo.getServiceType(), tsList);
+    }
+
+    /**
+     * Stores one sample of a node's system info.
+     */
+    private void processServiceInfoSample(String serviceId, String serviceType, List<TsKvEntry> tsList) {
+        if (tsList.isEmpty()) {
+            return;
+        }
+        String entityId = ServiceInfoIds.timeseriesEntityId(serviceId, serviceType);
+        // Only the usage percents are charted, so only they are kept as history; capacity values stay latest-only.
+        Map<Boolean, List<TsKvEntry>> entriesByHistory = tsList.stream()
+                .collect(Collectors.partitioningBy(entry -> USAGE_PERCENT_KEYS.contains(entry.getKey())));
+        List<TsKvEntry> usageEntries = entriesByHistory.get(true);
+        List<TsKvEntry> capacityEntries = entriesByHistory.get(false);
+        if (!capacityEntries.isEmpty()) {
+            withCallback(timeseriesService.saveLatest(entityId, capacityEntries), __ -> {
+            }, throwable -> log.warn("[{}] Failed to save service info {}", entityId, capacityEntries, throwable));
+        }
+        if (!usageEntries.isEmpty()) {
+            withCallback(timeseriesService.save(entityId, usageEntries), __ -> {
+            }, throwable -> log.warn("[{}] Failed to save service usage {}", entityId, usageEntries, throwable));
+        }
     }
 
     @Override
     public ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
-        Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(serviceRegistryKey);
-        if (CollectionUtils.isEmpty(serviceMap)) {
+        List<RegistryEntry> services = readServiceRegistry();
+        if (services.isEmpty()) {
             throw new ThingsboardException("Could not find all service ids", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
 
-        List<ListenableFuture<List<TsKvEntry>>> futures = new ArrayList<>(serviceMap.size());
-        List<String> serviceIds = new ArrayList<>(serviceMap.size());
+        List<String> entityIds = services.stream()
+                .map(service -> ServiceInfoIds.timeseriesEntityId(service.serviceId(), service.serviceType()))
+                .toList();
 
-        for (Map.Entry<Object, Object> entry : serviceMap.entrySet()) {
-            String serviceId = String.valueOf(entry.getKey());
-            serviceIds.add(serviceId);
-            futures.add(timeseriesService.findLatest(serviceId, SERVICE_INFO_KEYS));
-        }
+        return Futures.transform(timeseriesService.findLatestByEntityIds(entityIds, SERVICE_INFO_KEYS), latestByEntityId -> {
+            List<ServiceInfoDto> response = new ArrayList<>(services.size());
 
-        return Futures.transform(Futures.allAsList(futures), allMetrics -> {
-            List<ServiceInfoDto> response = new ArrayList<>(serviceMap.size());
-
-            for (int i = 0; i < serviceIds.size(); i++) {
-                String serviceId = serviceIds.get(i);
-                List<TsKvEntry> entries = allMetrics.get(i);
+            for (int i = 0; i < services.size(); i++) {
+                RegistryEntry service = services.get(i);
+                List<TsKvEntry> entries = latestByEntityId.getOrDefault(entityIds.get(i), List.of());
 
                 ServiceInfoDto dto = new ServiceInfoDto();
-                dto.setServiceId(serviceId);
-                dto.setServiceType(Optional.ofNullable(serviceMap.get(serviceId)).map(Object::toString).orElse(UNKNOWN));
+                dto.setServiceId(service.serviceId());
+                dto.setServiceType(service.serviceType());
+                dto.setLastUpdateTime(0L);
                 for (TsKvEntry entry : entries) {
                     switch (entry.getKey()) {
                         case CPU_USAGE -> dto.setCpuUsage(entry.getLongValue().orElse(null));
@@ -191,7 +213,9 @@ public class TbmqSystemInfoService implements SystemInfoService {
                         case DISK_USAGE -> dto.setDiskUsage(entry.getLongValue().orElse(null));
                         case TOTAL_DISK_SPACE -> dto.setTotalDiskSpace(entry.getLongValue().orElse(null));
                     }
-                    dto.setLastUpdateTime(dto.isDataPresent() ? entry.getTs() : 0L);
+                    if (entry.getLongValue().isPresent()) {
+                        dto.setLastUpdateTime(Math.max(dto.getLastUpdateTime(), entry.getTs()));
+                    }
                 }
                 dto.setStatus(ServiceStatus.fromLastUpdateTime(dto.getLastUpdateTime()));
                 response.add(dto);
@@ -202,24 +226,62 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public void removeServiceInfo(String serviceId) throws ThingsboardException {
-        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, serviceId);
+    public void removeServiceInfo(String serviceId, ServiceType serviceType) throws ThingsboardException {
+        Long delete = redisTemplate.opsForHash().delete(serviceRegistryKey, registryFieldsFor(serviceId, serviceType));
         if (delete == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
     }
 
+    private Object[] registryFieldsFor(String serviceId, ServiceType serviceType) {
+        if (serviceType == null) {
+            Stream<String> typedFields = Arrays.stream(ServiceType.values()).map(type -> ServiceInfoIds.registryField(serviceId, type.name()));
+            return Stream.concat(Stream.of(serviceId), typedFields)
+                    .distinct()
+                    .toArray();
+        }
+        String field = ServiceInfoIds.registryField(serviceId, serviceType.name());
+        if (hasLegacyField(serviceId, serviceType.name())) {
+            return new Object[]{field, serviceId};
+        }
+        return new Object[]{field};
+    }
+
     @Override
     public List<String> getTbmqServiceIds() {
-        return redisTemplate.opsForHash().entries(serviceRegistryKey)
-                .entrySet().stream()
-                .filter(entry -> ServiceType.TBMQ.equals(ServiceType.valueOf(String.valueOf(entry.getValue()))))
-                .map(entry -> String.valueOf(entry.getKey()))
+        return readServiceRegistry().stream()
+                .filter(entry -> ServiceType.TBMQ.name().equals(entry.serviceType()))
+                .map(RegistryEntry::serviceId)
                 .toList();
     }
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {
         log.debug("Updating service registry: {}", serviceInfo);
-        redisTemplate.opsForHash().put(serviceRegistryKey, serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        String field = ServiceInfoIds.registryField(serviceInfo.getServiceId(), serviceInfo.getServiceType());
+        redisTemplate.opsForHash().put(serviceRegistryKey, field, serviceInfo.getServiceType());
+        if (hasLegacyField(serviceInfo.getServiceId(), serviceInfo.getServiceType())) {
+            redisTemplate.opsForHash().delete(serviceRegistryKey, serviceInfo.getServiceId());
+        }
+    }
+
+    /**
+     * Whether a non-broker service still has its pre-upgrade entry under the bare {@code serviceId} field. A bare
+     * field holding another type (a broker that shares the id) must be kept.
+     * TODO: remove after 2.5, once every executor has re-registered under its typed field.
+     */
+    private boolean hasLegacyField(String serviceId, String serviceType) {
+        return !ServiceType.TBMQ.name().equals(serviceType)
+                && serviceType.equals(redisTemplate.opsForHash().get(serviceRegistryKey, serviceId));
+    }
+
+    private List<RegistryEntry> readServiceRegistry() {
+        Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(serviceRegistryKey);
+        if (CollectionUtils.isEmpty(serviceMap)) {
+            return List.of();
+        }
+        return serviceMap.entrySet().stream()
+                .map(entry -> ServiceInfoIds.parseRegistryField(String.valueOf(entry.getKey()), entry.getValue() == null ? null : String.valueOf(entry.getValue())))
+                .distinct()
+                .toList();
     }
 }

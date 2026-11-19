@@ -1,0 +1,248 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+$tb-neutral: rgba(0, 0, 0, 0.54);
+
+:host {
+  display: block;
+}
+
+// Scales to whatever box the page gives it; the default preserveAspectRatio keeps the map centred.
+.tb-cluster-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tb-column-caption {
+  font-size: 12px;
+  font-weight: 600;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+.tb-edge {
+  fill: none;
+  stroke: var(--tb-primary-500);
+  transition: stroke-width 0.5s ease, stroke-opacity 0.5s ease;
+}
+
+// Wide invisible twin of the edge so the browser tooltip does not need a pixel-perfect hover.
+.tb-edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+
+.tb-particle {
+  fill: #fff;
+  stroke: var(--tb-primary-700);
+  stroke-width: 1.4;
+}
+
+.tb-disc-clients {
+  stroke-dasharray: none;
+}
+
+.tb-client-type {
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.6);
+
+  &.tb-client-type-idle {
+    fill: rgba(0, 0, 0, 0.32);
+  }
+}
+
+.tb-kafka-halo {
+  stroke-width: 2;
+}
+
+.tb-kafka-hex {
+  fill: #f4f6f5;
+  stroke: $tb-neutral;
+  stroke-width: 1.4;
+}
+
+// Three states, weakest to strongest: hover is a faint dashed halo, a press fills it, selection is a solid ring.
+.tb-node {
+  cursor: pointer;
+  outline: none;
+
+  .tb-halo {
+    fill: var(--tb-primary-500);
+    fill-opacity: 0;
+    stroke: var(--tb-primary-500);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+    opacity: 0;
+    transition: opacity 0.16s ease, fill-opacity 0.16s ease;
+  }
+
+  &:hover .tb-halo,
+  &:focus-visible .tb-halo {
+    opacity: 0.6;
+  }
+
+  &:active .tb-halo {
+    opacity: 1;
+    fill-opacity: 0.12;
+  }
+
+  &.tb-node-selected .tb-halo {
+    opacity: 1;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+
+  &.tb-node-selected .tb-disc {
+    fill: var(--tb-primary-100);
+  }
+}
+
+.tb-ring-track {
+  fill: #fff;
+  stroke: rgba(0, 0, 0, 0.09);
+  stroke-width: 3.6;
+
+  // Node is dropping messages right now (STATUS_COLOR.INACTIVE red at low alpha, under the CPU arc).
+  &.tb-ring-track-drops {
+    fill: var(--tb-usage-crit-tint);
+    stroke: color-mix(in srgb, var(--tb-usage-crit) 40%, transparent);
+  }
+}
+
+.tb-ring-arc {
+  fill: none;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+
+  &.tb-ok {
+    stroke: var(--tb-usage-ok);
+  }
+
+  &.tb-warn {
+    stroke: var(--tb-usage-warn);
+  }
+
+  &.tb-crit {
+    stroke: var(--tb-usage-crit);
+  }
+}
+
+// Disc outline follows the service status the way every status pill in the app does.
+.tb-disc {
+  fill: var(--tb-primary-50);
+  stroke: var(--tb-primary-300);
+  stroke-width: 1;
+  transition: r 0.5s ease;
+
+  &.tb-status-OUTDATED {
+    stroke: var(--tb-usage-crit);
+    stroke-width: 1.6;
+  }
+
+  &.tb-status-INACTIVE {
+    stroke: $tb-neutral;
+    stroke-dasharray: 3 2;
+  }
+
+  &.tb-status-STALE {
+    fill: var(--tb-usage-warn-tint);
+    stroke: var(--tb-usage-warn);
+    stroke-dasharray: 3 2;
+  }
+}
+
+.tb-node-count {
+  font-size: 13px;
+  font-weight: 700;
+  fill: rgba(0, 0, 0, 0.87);
+  pointer-events: none;
+}
+
+.tb-node-id {
+  font-size: 11px;
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.tb-node-sub {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  fill: rgba(0, 0, 0, 0.6);
+
+  &.tb-stale {
+    fill: var(--tb-usage-warn);
+    font-weight: 700;
+  }
+
+  &.tb-ok {
+    fill: var(--tb-usage-ok);
+  }
+
+  &.tb-warn {
+    fill: var(--tb-usage-warn);
+  }
+
+  &.tb-crit {
+    fill: var(--tb-usage-crit);
+  }
+}
+
+.tb-node-hint {
+  font-size: 9.5px;
+  fill: rgba(0, 0, 0, 0.42);
+}
+
+.tb-alert-badge {
+  circle {
+    stroke: #fff;
+    stroke-width: 1.5;
+  }
+
+  text {
+    font-size: 10px;
+    font-weight: 700;
+    fill: #fff;
+  }
+
+  &.tb-alert-warning circle {
+    fill: var(--tb-usage-warn);
+  }
+
+  &.tb-alert-critical circle {
+    fill: var(--tb-usage-crit);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-particle {
+    display: none;
+  }
+
+  .tb-edge {
+    stroke-dasharray: 5 6;
+  }
+}
+
+// After the reduced-motion rule: an edge to a node that is down stays dotted grey in every mode.
+.tb-edge.tb-edge-offline {
+  stroke: rgba(0, 0, 0, 0.38);
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+}

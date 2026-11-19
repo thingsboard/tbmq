@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 
 import java.time.LocalDateTime;
@@ -73,6 +74,7 @@ public class HistoricalStatsTotalConsumer {
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgService;
+    private final ClientSessionPageInfos clientSessionPageInfos;
     private final TimeseriesService timeseriesService;
     private final HistoricalDataReportProperties historicalDataReportProperties;
 
@@ -152,6 +154,18 @@ public class HistoricalStatsTotalConsumer {
         DonAsynchron.withCallback(savedTsFuture,
                 unused -> log.trace("[{}] Successfully saved timeseries entries {}", ENTITY_ID_TOTAL, entries),
                 throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
+        saveNodeSessionsCount(ts);
+    }
+
+    // Per-node session history backs the per-broker trend on the cluster map; each node writes only its own count.
+    // Package-private for the same-package unit test, like the other test seams in this class.
+    void saveNodeSessionsCount(long ts) {
+        String serviceId = serviceInfoProvider.getServiceId();
+        long count = clientSessionPageInfos.countSessionsOnNode(serviceId);
+        List<TsKvEntry> entries = List.of(new BasicTsKvEntry(ts, new LongDataEntry(SESSIONS, count)));
+        DonAsynchron.withCallback(timeseriesService.save(serviceId, entries),
+                unused -> log.trace("[{}] Successfully saved node sessions count {}", serviceId, count),
+                throwable -> log.error("[{}] Failed to save node sessions count", serviceId, throwable));
     }
 
     // Package-private (not private) so the same-package unit test can invoke it directly, like the other

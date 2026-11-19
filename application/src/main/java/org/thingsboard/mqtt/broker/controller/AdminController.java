@@ -77,6 +77,9 @@ public class AdminController extends BaseController {
     @GetMapping(value = "/settings/{key}")
     public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         checkParameter("key", key);
+        if (SysAdminSettingType.RESOURCE_USAGE_ALERTS.getKey().equals(key)) {
+            return tbAdminService.getResourceUsageAlertSettings();
+        }
         AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
         if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
             ((ObjectNode) adminSettings.getJsonValue()).remove("password");

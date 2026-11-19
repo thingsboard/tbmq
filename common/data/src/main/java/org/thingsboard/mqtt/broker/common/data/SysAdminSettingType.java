@@ -28,7 +28,8 @@ public enum SysAdminSettingType {
     CONNECTIVITY("connectivity"),
     WEBSOCKET("websocket"),
     SECURITY_SETTINGS("securitySettings"),
-    MQTT_AUTHORIZATION("mqttAuthorization");
+    MQTT_AUTHORIZATION("mqttAuthorization"),
+    RESOURCE_USAGE_ALERTS("resourceUsageAlerts");
 
     SysAdminSettingType(String key) {
         this.key = key;

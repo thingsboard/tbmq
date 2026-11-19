@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
+import org.thingsboard.mqtt.broker.dto.ClientSessionNodeStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
@@ -46,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscripti
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.UNKNOWN;
@@ -139,6 +141,12 @@ public class ClientSessionController extends BaseController {
     @GetMapping(value = "/client-session/info")
     public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
         return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session/info/by-node")
+    public Map<String, ClientSessionNodeStatsInfoDto> getClientSessionsStatsInfoByNode() throws ThingsboardException {
+        return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfoByNode());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

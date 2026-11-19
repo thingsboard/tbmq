@@ -1,0 +1,217 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+@if (node(); as n) {
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-kind">{{ (n.kind === 'broker' ? 'monitoring.cluster.kind-broker' : 'monitoring.cluster.kind-executor') | translate }}</div>
+      <div class="tb-inspector-id">{{ n.id }}</div>
+      <div class="tb-inspector-meta">
+        @if (n.stale) {
+          <span class="tb-status-pill tb-status-pill-stale" [matTooltip]="'monitoring.cluster.no-heartbeat' | translate: {seconds: staleSeconds()}">
+            {{ 'monitoring.cluster.stale' | translate }}
+          </span>
+        } @else {
+          <span class="tb-status-pill" [style.color]="statusStyle()?.content" [style.background]="statusStyle()?.background">
+            {{ statusLabel() | translate }}
+          </span>
+          @if (n.status !== activeStatus) {
+            <mat-icon class="tb-status-info" [matTooltip]="statusHint() | translate" tabindex="0"
+                      [attr.aria-label]="statusHint() | translate">info_outline</mat-icon>
+          }
+        }
+      </div>
+    </div>
+  </div>
+  <ng-container *ngTemplateOutlet="alertsList"/>
+
+  @if (n.kind === 'broker') {
+    <div class="tb-stat">
+      <span class="tb-stat-label">{{ 'monitoring.cluster.sessions-on-node' | translate }}</span>
+      <span class="tb-stat-value">{{ n.sessions ? formatLargeNumber(n.sessions.totalCount) : '—' }}</span>
+      @if (n.sessions) {
+        <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(n.sessions.connectedCount)} }}</span>
+      }
+    </div>
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/sessions" [queryParams]="{nodeIdList: n.id}">
+      {{ 'monitoring.cluster.open-in-sessions' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </a>
+  } @else {
+    <div class="tb-stat">
+      <span class="tb-stat-label">{{ 'monitoring.cluster.integrations-on-executor' | translate }}</span>
+      <span class="tb-stat-value">{{ n.integrations ? n.integrations.total : '—' }}</span>
+      @if (n.integrations) {
+        <span class="tb-stat-sub" [class.tb-stat-sub-failed]="n.integrations.failed > 0">
+          {{ 'monitoring.cluster.integrations-failed' | translate: {count: n.integrations.failed} }}
+        </span>
+      }
+    </div>
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/integrations">
+      {{ 'monitoring.cluster.open-integrations' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </a>
+  }
+
+  <div class="tb-divider"></div>
+
+  <div class="tb-meters">
+    @for (meter of meters(); track meter.label) {
+      <div class="tb-meter-row">
+        <span class="tb-meter-name">{{ meter.label | translate }}</span>
+        <div class="tb-meter-track">
+          @if (meter.value !== null) {
+            <div [class]="'tb-meter-fill tb-' + meter.level" [style.width.%]="meter.value"></div>
+          }
+        </div>
+        <span class="tb-meter-value">{{ meter.value !== null ? meter.value + '%' : '—' }}</span>
+      </div>
+    }
+  </div>
+} @else if (kafka(); as k) {
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-kind">{{ 'monitoring.cluster.kafka' | translate }}</div>
+      <div class="tb-inspector-id">
+        {{ (k.brokerCount === 1 ? 'monitoring.cluster.kafka-broker' : 'monitoring.cluster.kafka-brokers') | translate: {count: k.brokerCount ?? '—'} }}
+      </div>
+      <div class="tb-inspector-meta">
+        <span class="tb-inspector-type">{{ 'monitoring.cluster.consumer-groups' | translate: {count: k.groupCount ?? '—'} }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tb-stat">
+    <span class="tb-stat-label">{{ 'monitoring.cluster.consumer-lag' | translate }}</span>
+    <span class="tb-stat-value">{{ k.totalLag !== null ? formatLargeNumber(k.totalLag) : '—' }}</span>
+  </div>
+
+  @if (k.brokers.length) {
+    <div class="tb-divider"></div>
+    <span class="tb-stat-label">{{ 'monitoring.cluster.brokers-list' | translate }}</span>
+    <ul class="tb-inspector-list">
+      @for (broker of k.brokers; track broker.brokerId) {
+        <li class="tb-inspector-list-row">
+          <span class="tb-inspector-list-key">{{ broker.brokerId }}</span>
+          <span class="tb-inspector-list-value">{{ broker.address }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (k.topGroups.length) {
+    <div class="tb-divider"></div>
+    <span class="tb-stat-label">{{ 'monitoring.cluster.top-groups-by-lag' | translate }}</span>
+    <ul class="tb-inspector-list">
+      @for (group of k.topGroups; track group.groupId) {
+        <li class="tb-inspector-list-row">
+          <span class="tb-inspector-list-key" [tbTruncateWithTooltip]="group.groupId">{{ group.groupId }}</span>
+          <span class="tb-inspector-list-value">{{ compactNumber(group.lag) }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="tb-inspector-links">
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/kafka/brokers">
+      {{ 'monitoring.cluster.open-kafka-brokers' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </a>
+    <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/kafka/consumer-groups">
+      {{ 'monitoring.cluster.open-consumer-groups' | translate }}
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </a>
+  </div>
+} @else {
+  @let t = total();
+  <div class="tb-inspector-head">
+    <div class="tb-inspector-title">
+      <div class="tb-inspector-kind">{{ 'monitoring.cluster.cluster' | translate }}</div>
+      <div class="tb-inspector-id">{{ 'monitoring.cluster.all-nodes' | translate }}</div>
+      <div class="tb-inspector-meta">
+        <span class="tb-inspector-type">
+          {{ 'monitoring.cluster.brokers' | translate }}: {{ t.brokerCount }}
+          · {{ 'monitoring.cluster.integration-executors' | translate }}: {{ t.executorCount }}
+        </span>
+      </div>
+    </div>
+  </div>
+  <ng-container *ngTemplateOutlet="alertsList"/>
+
+  <div class="tb-stat">
+    <span class="tb-stat-label">{{ 'monitoring.cluster.sessions-in-cluster' | translate }}</span>
+    <span class="tb-stat-value">{{ t.hasSessionStats ? formatLargeNumber(t.totalSessions) : '—' }}</span>
+    @if (t.hasSessionStats) {
+      <span class="tb-stat-sub">{{ 'monitoring.cluster.connected' | translate: {count: formatLargeNumber(t.connectedSessions)} }}</span>
+    }
+  </div>
+  <a mat-stroked-button color="primary" class="tb-inspector-link" routerLink="/sessions">
+    {{ 'monitoring.cluster.open-in-sessions' | translate }}
+    <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+  </a>
+}
+
+@if (showChart()) {
+  <div class="tb-divider"></div>
+  <tb-toggle-select class="tb-unit-select" appearance="fill" disablePagination role="group"
+                    [options]="unitOptions()" [ngModel]="activeUnit()" (ngModelChange)="unit.set($event)"
+                    [attr.aria-label]="'monitoring.cluster.chart-unit' | translate"></tb-toggle-select>
+  <tb-rate-chart [series]="chartSeries()" [windowLabel]="chartWindowLabel()"></tb-rate-chart>
+  <div class="tb-spark-foot">
+    <tb-toggle-select appearance="stroked" disablePagination role="group"
+                      [options]="historyWindowOptions()" [ngModel]="historyWindow()" (ngModelChange)="historyWindowChange.emit($event)"
+                      [attr.aria-label]="'monitoring.cluster.history-window' | translate"></tb-toggle-select>
+  </div>
+}
+
+<ng-template #alertsList>
+  @if (visibleAlerts().length) {
+    <ul class="tb-alerts" tabindex="0" [attr.aria-label]="'monitoring.cluster.alerts' | translate">
+      @for (alert of visibleAlerts(); track alert.id) {
+        <li>
+          @if (!node() && alert.nodeKey) {
+            <button type="button" [class]="'tb-alert tb-alert-button tb-alert-' + alert.level" (click)="alertNodeSelected.emit(alert.nodeKey)">
+              <ng-container *ngTemplateOutlet="alertContent; context: {$implicit: alert}"/>
+            </button>
+          } @else {
+            <div [class]="'tb-alert tb-alert-' + alert.level">
+              <ng-container *ngTemplateOutlet="alertContent; context: {$implicit: alert}"/>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+    @if (unlistedAlertCount()) {
+      <div class="tb-alerts-more">{{ 'monitoring.cluster.alerts-more' | translate: {count: unlistedAlertCount()} }}</div>
+    }
+  }
+</ng-template>
+
+<ng-template #alertContent let-alert>
+  <mat-icon class="tb-alert-icon">{{ alert.level === 'critical' ? 'error' : 'warning' }}</mat-icon>
+  <span class="tb-alert-body">
+    <span class="tb-alert-message">
+      @if (!node() && alert.nodeId) {
+        <span class="tb-alert-node">{{ alert.nodeId }}</span>
+      }
+      {{ alert.messageKey | translate: alert.params }}
+    </span>
+    @if (alert.detail) {
+      <span class="tb-alert-detail" [tbTruncateWithTooltip]="alert.detail">{{ alert.detail }}</span>
+    }
+  </span>
+</ng-template>

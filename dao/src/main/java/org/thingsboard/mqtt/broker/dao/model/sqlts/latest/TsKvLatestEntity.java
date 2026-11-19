@@ -57,6 +57,18 @@ import org.thingsboard.mqtt.broker.dao.sqlts.latest.SearchTsKvLatestRepository;
                 query = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_ID_QUERY,
                 resultSetMapping = "tsKvLatestFindMapping",
                 resultClass = TsKvLatestEntity.class
+        ),
+        @NamedNativeQuery(
+                name = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_IDS,
+                query = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_IDS_QUERY,
+                resultSetMapping = "tsKvLatestFindMapping",
+                resultClass = TsKvLatestEntity.class
+        ),
+        @NamedNativeQuery(
+                name = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_IDS_AND_KEYS,
+                query = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_IDS_AND_KEYS_QUERY,
+                resultSetMapping = "tsKvLatestFindMapping",
+                resultClass = TsKvLatestEntity.class
         )
 })
 public final class TsKvLatestEntity extends AbstractTsKvEntity {

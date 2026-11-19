@@ -20,7 +20,9 @@ import org.thingsboard.mqtt.broker.common.data.kv.DeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface TimeseriesLatestDao {
@@ -38,6 +40,12 @@ public interface TimeseriesLatestDao {
     ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
 
     ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId);
+
+    /**
+     * Latest values of several entities in one query, by entity id; entities without values are left out.
+     * {@code keys} null means every key.
+     */
+    ListenableFuture<Map<String, List<TsKvEntry>>> findLatestByEntityIds(Collection<String> entityIds, Collection<String> keys);
 
     ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForNode(String entityId);
 
