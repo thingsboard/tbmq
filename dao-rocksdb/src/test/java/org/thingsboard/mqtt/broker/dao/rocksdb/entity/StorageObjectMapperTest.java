@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -63,7 +67,39 @@ class StorageObjectMapperTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("everyStoredDomainType")
     void theFixturesFillEveryDeclaredField(String name, Object filled) throws IllegalAccessException {
-        assertFilled(filled, name);
+        assertFilled(filled, name, new HashSet<>());
+    }
+
+    @Test
+    void everyEntityTypeHasADescriptorAndAFixture() {
+        assertThat(EntityDescriptors.ALL).extracting(EntityDescriptor::type).containsExactly(StoredEntityType.values());
+        Set<Class<?>> fixtureClasses = new HashSet<>();
+        StorageFixtures.everyStoredDomainType().values().forEach(filled -> fixtureClasses.add(filled.getClass()));
+        for (EntityDescriptor<?, ?> d : EntityDescriptors.ALL) {
+            assertThat(fixtureClasses).as("a fixture of %s", d.type()).contains(d.domainClass());
+        }
+    }
+
+    @Test
+    void theFixturesHoldEverySubtypeOfTheirPolymorphicTypes() throws IllegalAccessException {
+        Set<Class<?>> reached = new HashSet<>();
+        for (Map.Entry<String, Object> fixture : StorageFixtures.everyStoredDomainType().entrySet()) {
+            assertFilled(fixture.getValue(), fixture.getKey(), reached);
+        }
+        Set<Class<?>> declared = new HashSet<>();
+        for (Class<?> type : reached) {
+            for (Class<?> supertype : supertypes(type)) {
+                JsonSubTypes subTypes = supertype.getAnnotation(JsonSubTypes.class);
+                if (subTypes != null) {
+                    for (JsonSubTypes.Type subType : subTypes.value()) {
+                        declared.add(subType.value());
+                    }
+                }
+            }
+        }
+
+        assertThat(declared).isNotEmpty();
+        assertThat(reached).as("classes the fixtures hold").containsAll(declared);
     }
 
     @Test
@@ -186,9 +222,11 @@ class StorageObjectMapperTest {
 
     /**
      * Every non-static field of the object and of its superclasses is neither null nor a default, and so is every
-     * field of the domain objects, collections and maps it holds.
+     * field of the domain objects, collections and maps it holds. Adds the class of each domain object to
+     * {@code reached}.
      */
-    private static void assertFilled(Object object, String path) throws IllegalAccessException {
+    private static void assertFilled(Object object, String path, Set<Class<?>> reached) throws IllegalAccessException {
+        reached.add(object.getClass());
         for (Class<?> type = object.getClass(); type != Object.class; type = type.getSuperclass()) {
             for (Field field : type.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
@@ -198,23 +236,41 @@ class StorageObjectMapperTest {
                 Object value = field.get(object);
                 String fieldPath = path + "." + type.getSimpleName() + "." + field.getName();
                 assertThat(isFilled(value)).as("%s is %s", fieldPath, value).isTrue();
-                descend(value, fieldPath);
+                descend(value, fieldPath, reached);
             }
         }
     }
 
-    private static void descend(Object value, String path) throws IllegalAccessException {
+    private static void descend(Object value, String path, Set<Class<?>> reached) throws IllegalAccessException {
         if (value instanceof Collection<?> collection) {
             for (Object element : collection) {
-                descend(element, path + "[]");
+                descend(element, path + "[]", reached);
             }
         } else if (value instanceof Map<?, ?> map) {
             for (Object element : map.values()) {
-                descend(element, path + "{}");
+                descend(element, path + "{}", reached);
             }
         } else if (isDomainObject(value)) {
-            assertFilled(value, path);
+            assertFilled(value, path, reached);
         }
+    }
+
+    /**
+     * The type, its superclasses and every interface any of them implements.
+     */
+    private static List<Class<?>> supertypes(Class<?> type) {
+        List<Class<?>> all = new ArrayList<>();
+        List<Class<?>> pending = new ArrayList<>(List.of(type));
+        while (!pending.isEmpty()) {
+            Class<?> next = pending.removeLast();
+            if (next == null || next == Object.class || all.contains(next)) {
+                continue;
+            }
+            all.add(next);
+            pending.add(next.getSuperclass());
+            pending.addAll(List.of(next.getInterfaces()));
+        }
+        return all;
     }
 
     private static boolean isDomainObject(Object value) {

@@ -67,7 +67,8 @@ import java.util.concurrent.TimeUnit;
  * One filled instance of every type the entity store keeps, and of every polymorphic subtype the stored JSON holds.
  * The keys are the names of the golden files under {@code storage-golden}. Every declared field is set to a value
  * that is neither null nor a default, secrets included; {@link StorageObjectMapperTest} fails when a field is added to
- * a type and not filled here.
+ * a type and not filled here, and when an entity descriptor or a {@code @JsonSubTypes} subtype of a type held here has
+ * no fixture. A stored type outside the entity descriptors (the session context) must be added by hand.
  */
 final class StorageFixtures {
 
