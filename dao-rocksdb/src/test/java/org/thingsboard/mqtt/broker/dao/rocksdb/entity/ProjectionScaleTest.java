@@ -43,10 +43,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The projection of 100,000 credentials: built at startup in seconds, small enough for the heap budget, and paged
- * without reading the store beyond the page; and that of the most unauthorized clients the store keeps. The time bounds leave room for a loaded CI agent; the size bound is the
- * real one. The size is the growth of the used heap across the build, each side measured after a full collection. It
- * is only meaningful with compressed references (the module's surefire argLine pins the heap for that): without them
- * every reference doubles and so does much of the size.
+ * without reading the store beyond the page. The projection of the most unauthorized clients the store keeps: small
+ * enough for the heap budget too. The time bounds leave room for a loaded CI agent; the size bounds are the real ones.
+ * A size is the growth of the used heap across the build, each side measured after a full collection. It is only
+ * meaningful with compressed references (the module's surefire argLine pins the heap for that): without them every
+ * reference doubles and so does much of the size.
  */
 class ProjectionScaleTest {
 
@@ -54,8 +55,9 @@ class ProjectionScaleTest {
     private static final int BATCH = 10_000;
     private static final long MAX_PROJECTION_BYTES = 40L << 20;
     private static final int UNAUTHORIZED_CLIENTS = 10_000;
-    // measured: 18.4 MB of projection and 4.4 to 6.2 MB of age order (string deduplication makes the latter vary)
-    private static final long MAX_UNAUTHORIZED_PROJECTION_BYTES = 20L << 20;
+    // measured 18.4 MB; the bound leaves about 35% for another JDK or GC
+    private static final long MAX_UNAUTHORIZED_PROJECTION_BYTES = 24L << 20;
+    // measured 4.4 to 6.2 MB: string deduplication shares the client ids at a varying time
     private static final long MAX_UNAUTHORIZED_ORDER_BYTES = 8L << 20;
 
     @TempDir
