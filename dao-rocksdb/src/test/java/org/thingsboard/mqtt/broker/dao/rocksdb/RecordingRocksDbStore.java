@@ -19,16 +19,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
- * A {@link RocksDbStore} that records the {@link StoreWriteClass} of every put, delete and batch it runs, and counts
- * its point reads.
+ * A {@link RocksDbStore} that records the {@link StoreWriteClass} of every put, delete and batch it runs, counts
+ * its point reads, and can fail its next batch.
  */
 public class RecordingRocksDbStore extends RocksDbStore {
 
     private final List<StoreWriteClass> writeClasses = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger gets = new AtomicInteger();
+    private final AtomicReference<RuntimeException> nextWriteFailure = new AtomicReference<>();
 
     public RecordingRocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
         super(properties, memoryBudget);
@@ -37,7 +39,18 @@ public class RecordingRocksDbStore extends RocksDbStore {
     @Override
     public void write(StoreWriteClass writeClass, Consumer<StoreBatch> body) {
         writeClasses.add(writeClass);
+        RuntimeException failure = nextWriteFailure.getAndSet(null);
+        if (failure != null) {
+            throw failure;
+        }
         super.write(writeClass, body);
+    }
+
+    /**
+     * Makes the next {@link #write} throw {@code failure} without writing anything, as a refused or failed batch does.
+     */
+    public void failNextWrite(RuntimeException failure) {
+        nextWriteFailure.set(failure);
     }
 
     @Override
