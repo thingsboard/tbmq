@@ -42,6 +42,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * The standalone edition fills admin settings and auth providers in its management data initializer. A bean that reads
  * them while it is created must be created after it, or it sees an empty store.
+ * <p>
+ * The scan guard has blind spots: it sees only {@code @PostConstruct} methods and the fields and constructor
+ * parameters declared on the class itself, not inherited fields, {@code InitializingBean}, {@code @EventListener},
+ * {@code SmartLifecycle} or an indirect read through another service.
  */
 class ManagementDataInitializerDependsOnTest {
 
