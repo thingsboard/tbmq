@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -53,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * table's rows ordered by id, with every column of the row, a JSON column as a JSON tree, and the provider
  * configuration as the SQL DAO reads it, that is, through {@link MqttAuthProviderConfiguration}. After an intended
  * change of the SQL file or the schema, {@code -DsystemDataRows.regenerate=true} rewrites the golden file from the
- * database; that run only writes the file and compares nothing.
+ * database; that run only writes the file, compares nothing and is reported as skipped.
  */
 class SystemDataSqlRowsTest {
 
@@ -105,7 +106,7 @@ class SystemDataSqlRowsTest {
         if (Boolean.getBoolean(REGENERATE)) {
             Files.writeString(GOLDEN_FILE, JacksonUtil.OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(actual) + "\n",
                     StandardCharsets.UTF_8);
-            return;
+            Assumptions.abort("golden file regenerated");
         }
 
         JsonNode golden = golden();

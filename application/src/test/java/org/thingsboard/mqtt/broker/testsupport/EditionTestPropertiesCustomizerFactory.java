@@ -30,9 +30,9 @@ import java.util.Map;
 
 /**
  * Gives the Spring context of an {@link EditionTest} class the {@link EditionTestInfrastructure#contextProperties()} of
- * the edition on the test classpath, as a property source named {@value #PROPERTY_SOURCE_NAME}. It ranks as a
- * {@code @TestPropertySource} file listed after {@code application-test.properties} would: above that file, below the
- * inlined test properties.
+ * the edition on the test classpath, as a property source named {@value #PROPERTY_SOURCE_NAME}. It ranks above
+ * every {@code @TestPropertySource} file, {@code application-test.properties} included, and below the inlined test
+ * properties.
  * <p>
  * The customizer is part of the context cache key and compares by the properties, so the classes with equal properties
  * still share their cached contexts. Registered in {@code META-INF/spring.factories}.
