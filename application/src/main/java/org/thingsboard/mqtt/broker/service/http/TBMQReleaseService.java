@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -36,6 +37,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.LATEST_VERSION_AVAILABLE_TOPIC_NAME;
@@ -46,22 +48,51 @@ public class TBMQReleaseService extends AbstractServiceProvider {
 
     private static final String TBMQ_GITHUB_API_URL = "https://api.github.com/repos/thingsboard/tbmq/releases/latest";
     private static final int VERSION_CHECK_INTERVAL = 3 * 60 * 60;
+    private static final long BASE_WAIT_MS = TimeUnit.SECONDS.toMillis(VERSION_CHECK_INTERVAL);
+    private static final long MAX_WAIT_MS = TimeUnit.HOURS.toMillis(24);
+    // The scheduler may fire a little earlier than the recorded attempt time plus the wait; do not skip a run for that.
+    private static final long SCHEDULE_JITTER_MS = TimeUnit.MINUTES.toMillis(1);
 
     private final RetainedMsgListenerService retainedMsgListenerService;
+    private final boolean enabled;
+    private final LongSupplier clock;
 
     private HttpClient client;
     private HttpRequest request;
 
+    // Touched only by the single scheduler thread (the method is never invoked concurrently with itself).
+    private long waitMs = BASE_WAIT_MS;
+    private long nextAttemptAtMs;
+
     @Autowired
     public TBMQReleaseService(SystemInfoService systemInfoService,
                               ServiceInfoProvider serviceInfoProvider,
-                              RetainedMsgListenerService retainedMsgListenerService) {
+                              RetainedMsgListenerService retainedMsgListenerService,
+                              @Value("${app.version-check.enabled:true}") boolean enabled) {
+        this(systemInfoService, serviceInfoProvider, retainedMsgListenerService, enabled, System::currentTimeMillis);
+    }
+
+    TBMQReleaseService(SystemInfoService systemInfoService,
+                       ServiceInfoProvider serviceInfoProvider,
+                       RetainedMsgListenerService retainedMsgListenerService,
+                       boolean enabled,
+                       LongSupplier clock) {
         super(systemInfoService, serviceInfoProvider);
         this.retainedMsgListenerService = retainedMsgListenerService;
+        this.enabled = enabled;
+        this.clock = clock;
+    }
+
+    void setHttpClient(HttpClient client) {
+        this.client = client;
     }
 
     @PostConstruct
     public void init() {
+        if (!enabled) {
+            log.info("The check for the latest TBMQ release is disabled (app.version-check.enabled=false).");
+            return;
+        }
         client = HttpClient.newHttpClient();
         request = HttpRequest.newBuilder()
                 .uri(URI.create(TBMQ_GITHUB_API_URL))
@@ -72,11 +103,18 @@ public class TBMQReleaseService extends AbstractServiceProvider {
 
     @Scheduled(initialDelay = 5, fixedRate = VERSION_CHECK_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void scheduleVersionCheck() {
+        if (!enabled) {
+            return;
+        }
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
                 return;
             }
             if (!retainedMsgListenerService.isInitialized()) {
+                return;
+            }
+            long now = clock.getAsLong();
+            if (now + SCHEDULE_JITTER_MS < nextAttemptAtMs) {
                 return;
             }
             log.info("Executing get latest version of TBMQ release from GitHub.");
@@ -86,12 +124,24 @@ public class TBMQReleaseService extends AbstractServiceProvider {
                 retainedMsgListenerService.cacheRetainedMsgAndPersist(LATEST_VERSION_AVAILABLE_TOPIC_NAME, newRetainedMsg(version));
 
                 log.info("Got latest version of TBMQ release from GitHub: {}", version);
+                waitMs = BASE_WAIT_MS;
+                nextAttemptAtMs = now + waitMs;
             } else {
-                log.error("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
+                log.debug("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
+                backOff(now);
             }
-        } catch (IOException | InterruptedException e) {
-            log.error("Failed to get the latest release version", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.debug("Interrupted while getting the latest release version", e);
+        } catch (IOException e) {
+            log.debug("Failed to get the latest release version", e);
+            backOff(clock.getAsLong());
         }
+    }
+
+    private void backOff(long now) {
+        waitMs = Math.min(waitMs * 2, MAX_WAIT_MS);
+        nextAttemptAtMs = now + waitMs;
     }
 
     private String getVersion(HttpResponse<String> response) {

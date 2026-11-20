@@ -1415,6 +1415,10 @@ swagger:
 app:
   # Application version.
   version: "@project.version@"
+  version-check:
+    # Enables or disables the periodic check for the latest TBMQ release on GitHub (api.github.com), done every 3 hours by one node.
+    # Failed checks are logged at DEBUG and retried with a growing wait (6, 12, then 24 hours); a success resets the wait to 3 hours.
+    enabled: "${TBMQ_VERSION_CHECK_ENABLED:true}"
 
 # Analysis parameters
 analysis:
