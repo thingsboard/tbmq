@@ -97,9 +97,13 @@ public final class LiteBrokerProcess {
         properties.put("listener.ws.enabled", "false");
         properties.put("listener.ssl.enabled", "false");
         properties.put("listener.wss.enabled", "false");
+        // The overrides below mirror lite-tests/src/test/resources/application-test.properties, which the child does
+        // not load: an override added to one must be added to the other.
         // no free-space watermark: the broker must not refuse writes because the build host's disk is nearly full
         properties.put("store.disk.min-free-percent", "0");
         properties.put("store.disk.min-free-bytes", "0");
+        // no release check: it would call api.github.com from every forked broker
+        properties.put("app.version-check.enabled", "false");
         properties.putAll(extraProperties);
 
         List<String> command = new ArrayList<>();
