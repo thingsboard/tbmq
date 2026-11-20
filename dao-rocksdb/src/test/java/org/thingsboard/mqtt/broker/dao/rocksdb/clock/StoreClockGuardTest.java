@@ -59,6 +59,7 @@ import static org.mockito.Mockito.verify;
 class StoreClockGuardTest {
 
     private static final byte[] CLOCK_KEY = "clock".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] POSTPONED_KEY = "clock-postponed".getBytes(StandardCharsets.UTF_8);
     private static final long T0 = 1_700_000_000_000L;
     private static final long HOUR_MS = TimeUnit.HOURS.toMillis(1);
     private static final long DAY_MS = TimeUnit.DAYS.toMillis(1);
@@ -112,9 +113,11 @@ class StoreClockGuardTest {
         guard.record();
         assertThat(guard.cleanupAllowed()).isFalse();
         assertThat(readRecord()).isEqualTo(T0 + HOUR_MS);           // not moved back while postponed
+        assertThat(store.get(StoreColumnFamily.META, POSTPONED_KEY)).isNotNull();
 
         advance(1);
         assertThat(guard.cleanupAllowed()).isTrue();
+        assertThat(store.get(StoreColumnFamily.META, POSTPONED_KEY)).isNull();
         advance(-HOUR_MS);
         assertThat(guard.cleanupAllowed()).isTrue();                // once allowed, allowed until the next start
     }
@@ -175,6 +178,84 @@ class StoreClockGuardTest {
 
         assertThat(readRecord()).isEqualTo(clock.millis());
         assertThat(guard.cleanupAllowed()).isTrue();
+    }
+
+    @Test
+    void theCapCountsTheUptimeSpentPostponingAcrossRestarts() {
+        writeRecord(T0 + 10 * DAY_MS);
+        StoreClockGuard first = start();
+        for (int hour = 0; hour < 20; hour++) {
+            advance(HOUR_MS);
+            first.record();
+        }
+        assertThat(first.cleanupAllowed()).isFalse();
+        first.stop();
+
+        uptimeNanos.set(0);                                         // a new boot: its uptime starts again
+        StoreClockGuard second = start();
+
+        assertThat(second.cleanupAllowed()).isFalse();
+        assertThat(warnings()).last().satisfies(message -> assertThat(message).contains(String.valueOf(20 * HOUR_MS)));
+        advance(4 * HOUR_MS - 1);
+        assertThat(second.cleanupAllowed()).isFalse();
+        int warningsBefore = warnings().size();
+
+        advance(1);
+        assertThat(second.cleanupAllowed()).isTrue();
+        assertThat(readRecord()).isEqualTo(clock.millis());
+        assertThat(warnings()).hasSize(warningsBefore + 1);
+        assertThat(store.get(StoreColumnFamily.META, POSTPONED_KEY)).isNull();
+        second.record();
+        assertThat(warnings()).hasSize(warningsBefore + 1);         // the record is overwritten once
+    }
+
+    @Test
+    void theUptimeSpentPostponingIsEightBigEndianBytesUnderItsKey() {
+        writeRecord(T0 + 10 * DAY_MS);
+        StoreClockGuard guard = start();
+
+        advance(HOUR_MS);
+        guard.record();
+
+        assertThat(store.get(StoreColumnFamily.META, POSTPONED_KEY))
+                .containsExactly(0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0xEE, 0x80);
+    }
+
+    @Test
+    void stopRecordsTheUptimeSpentPostponingSinceTheLastRecording() {
+        writeRecord(T0 + 10 * DAY_MS);
+        StoreClockGuard guard = start();
+        advance(HOUR_MS);
+        guard.record();
+
+        advance(TimeUnit.MINUTES.toMillis(30));
+        guard.stop();
+
+        assertThat(Longs.fromByteArray(store.get(StoreColumnFamily.META, POSTPONED_KEY)))
+                .isEqualTo(HOUR_MS + TimeUnit.MINUTES.toMillis(30));
+    }
+
+    @Test
+    void aStartThatIsNotPostponedRemovesALeftoverUptimeSpentPostponing() {
+        writeRecord(T0 - HOUR_MS);
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, POSTPONED_KEY, Longs.toByteArray(5 * HOUR_MS));
+
+        StoreClockGuard guard = start();
+
+        assertThat(guard.cleanupAllowed()).isTrue();
+        assertThat(store.get(StoreColumnFamily.META, POSTPONED_KEY)).isNull();
+    }
+
+    @Test
+    void anUptimeSpentPostponingOfTheWrongLengthCountsAsNoneAndIsLogged() {
+        writeRecord(T0 + 10 * DAY_MS);
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, POSTPONED_KEY, new byte[]{1, 2, 3});
+
+        StoreClockGuard guard = start();
+        advance(DAY_MS - 1);
+
+        assertThat(guard.cleanupAllowed()).isFalse();
+        assertThat(warnings()).anySatisfy(message -> assertThat(message).contains("clock-postponed").contains("3 bytes"));
     }
 
     @Test

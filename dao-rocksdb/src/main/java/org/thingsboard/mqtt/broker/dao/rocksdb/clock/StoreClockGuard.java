@@ -40,13 +40,20 @@ import java.util.function.LongSupplier;
  * Records the wall-clock time in the store's meta every {@code store.clock.record-interval-ms} on a daemon thread, never
  * moving the record backwards, and postpones the age-based cleanups after a start with the clock behind that record:
  * ages computed from such a clock are wrong. The postponement ends when the clock passes the record, or at the latest
- * after {@code store.clock.max-postpone-ms} of uptime, since the record itself can be wrong (written by a boot with a
- * clock far in the future). At that cap the guard accepts the current clock and overwrites the record with it, the one
- * case where the record moves backwards; otherwise a node restarting more often than the cap would postpone its
- * cleanups on every boot until that future date.
+ * after {@code store.clock.max-postpone-ms} of uptime spent postponing, since the record itself can be wrong (written
+ * by a boot with a clock far in the future). At that cap the guard accepts the current clock and overwrites the record
+ * with it, the one case where the record moves backwards; otherwise the cleanups would wait until that future date.
  * <p>
- * The record is the meta entry {@code clock}: the epoch milliseconds as 8 big-endian bytes, written as an
- * {@link StoreWriteClass#UPDATE}, so a full disk never refuses it.
+ * The cap counts the uptime spent postponing across restarts, not only the uptime of this boot: nothing else is written
+ * while the cleanups are postponed, so a node restarting more often than the cap would otherwise start counting from
+ * zero on every boot, never reach it, and never run its age-based cleanups. The uptime spent so far is written on every
+ * recording while postponed and once more at {@link #stop()}; a boot that crashes before its first recording, within
+ * one record interval, adds nothing to it. It is removed when the postponement ends, and at a start that is not
+ * postponed.
+ * <p>
+ * The record is the meta entry {@code clock}: the epoch milliseconds as 8 big-endian bytes. The uptime spent postponing
+ * is the meta entry {@code clock-postponed}: milliseconds as 8 big-endian bytes. Both are written as an
+ * {@link StoreWriteClass#UPDATE}, so a full disk never refuses them.
  * <p>
  * Depends on the store, so Spring destroys it first: {@link #stop()} ends the thread before the store closes.
  */
@@ -56,6 +63,7 @@ import java.util.function.LongSupplier;
 public class StoreClockGuard implements CleanupClockGuard {
 
     static final byte[] CLOCK_KEY = "clock".getBytes(StandardCharsets.UTF_8);
+    static final byte[] POSTPONED_KEY = "clock-postponed".getBytes(StandardCharsets.UTF_8);
 
     private static final String THREAD_NAME = "store-clock-recorder";
     private static final long STOP_TIMEOUT_MS = 5000;
@@ -69,6 +77,8 @@ public class StoreClockGuard implements CleanupClockGuard {
     private volatile boolean allowed;
     // everything below is guarded by this
     private long startNanos;
+    // the uptime earlier boots spent postponing, read from the store at a postponed start; never negative
+    private long spentMs;
     // the latest time recorded, or read from the store at start; Long.MIN_VALUE when there is none
     private long recordedMs = Long.MIN_VALUE;
     private ScheduledExecutorService executor;
@@ -102,11 +112,14 @@ public class StoreClockGuard implements CleanupClockGuard {
         long nowMs = clock.millis();
         if (nowMs < recordedMs) {
             allowed = false;
+            spentMs = readSpent();
             log.warn("The clock ({}) is behind the time last recorded in the store ({}): the age-based cleanups are postponed " +
-                            "until the clock passes it, for at most {} ms", Instant.ofEpochMilli(nowMs), Instant.ofEpochMilli(recordedMs),
-                    settings.getMaxPostponeMs());
+                            "until the clock passes it, for at most {} ms of uptime, of which earlier boots already spent {} ms",
+                    Instant.ofEpochMilli(nowMs), Instant.ofEpochMilli(recordedMs), settings.getMaxPostponeMs(), spentMs);
         } else {
             allowed = true;
+            spentMs = 0;
+            removeSpentSafely();
             recordSafely();
         }
         executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -137,6 +150,15 @@ public class StoreClockGuard implements CleanupClockGuard {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        synchronized (this) {
+            if (!allowed) {
+                try {
+                    writeSpent();
+                } catch (Throwable t) {
+                    log.warn("Failed to record the uptime spent postponing the age-based cleanups in the store: {}", t.toString());
+                }
+            }
+        }
     }
 
     @Override
@@ -150,10 +172,12 @@ public class StoreClockGuard implements CleanupClockGuard {
     }
 
     /**
-     * One recording: ends a postponement that is over, then writes the clock if it is ahead of the record.
+     * One recording: ends a postponement that is over, then writes the clock if it is ahead of the record. While the
+     * postponement goes on, writes the uptime spent postponing instead.
      */
     synchronized void record() {
         if (!checkPostponement()) {
+            writeSpent();
             return;
         }
         long nowMs = clock.millis();
@@ -181,15 +205,16 @@ public class StoreClockGuard implements CleanupClockGuard {
             log.info("The clock ({}) has passed the time last recorded in the store: the age-based cleanups resume",
                     Instant.ofEpochMilli(nowMs));
             allowed = true;
+            removeSpentSafely();
             return true;
         }
-        long uptimeMs = TimeUnit.NANOSECONDS.toMillis(nanoClock.getAsLong() - startNanos);
-        if (uptimeMs < settings.getMaxPostponeMs()) {
+        long postponedMs = postponedMs();
+        if (postponedMs < settings.getMaxPostponeMs()) {
             return false;
         }
-        log.warn("The clock ({}) is still behind the time last recorded in the store ({}) after {} ms of uptime: accepting the " +
-                        "clock, overwriting the record with it and resuming the age-based cleanups",
-                Instant.ofEpochMilli(nowMs), Instant.ofEpochMilli(recordedMs), uptimeMs);
+        log.warn("The clock ({}) is still behind the time last recorded in the store ({}) after {} ms of uptime spent " +
+                        "postponing across restarts: accepting the clock, overwriting the record with it and resuming the " +
+                        "age-based cleanups", Instant.ofEpochMilli(nowMs), Instant.ofEpochMilli(recordedMs), postponedMs);
         allowed = true;
         try {
             writeRecord(nowMs);
@@ -198,7 +223,47 @@ public class StoreClockGuard implements CleanupClockGuard {
             log.warn("Failed to overwrite the clock record in the store: {}", t.toString());
             recordedMs = nowMs - 1;
         }
+        removeSpentSafely();
         return true;
+    }
+
+    // under the monitor: the uptime spent postponing by the earlier boots and this one, saturated at Long.MAX_VALUE
+    private long postponedMs() {
+        long uptimeMs = TimeUnit.NANOSECONDS.toMillis(nanoClock.getAsLong() - startNanos);
+        return uptimeMs > Long.MAX_VALUE - spentMs ? Long.MAX_VALUE : spentMs + uptimeMs;
+    }
+
+    // under the monitor
+    private void writeSpent() {
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, POSTPONED_KEY, Longs.toByteArray(postponedMs()));
+    }
+
+    // under the monitor; reads first, so that a start that is not postponed does not write a tombstone every time
+    private void removeSpentSafely() {
+        try {
+            if (store.get(StoreColumnFamily.META, POSTPONED_KEY) != null) {
+                store.delete(StoreWriteClass.DELETE, StoreColumnFamily.META, POSTPONED_KEY);
+            }
+        } catch (Throwable t) {
+            log.warn("Failed to remove the uptime spent postponing the age-based cleanups from the store: {}", t.toString());
+        }
+    }
+
+    private long readSpent() {
+        byte[] bytes = store.get(StoreColumnFamily.META, POSTPONED_KEY);
+        if (bytes == null) {
+            return 0;
+        }
+        if (bytes.length != Long.BYTES) {
+            log.warn("The clock-postponed entry in the store has {} bytes instead of {}: ignoring it", bytes.length, Long.BYTES);
+            return 0;
+        }
+        long spent = Longs.fromByteArray(bytes);
+        if (spent < 0) {
+            log.warn("The clock-postponed entry in the store is negative ({}): ignoring it", spent);
+            return 0;
+        }
+        return spent;
     }
 
     // under the monitor
