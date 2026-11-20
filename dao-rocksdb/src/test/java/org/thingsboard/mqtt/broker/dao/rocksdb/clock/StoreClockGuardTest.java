@@ -86,12 +86,14 @@ class StoreClockGuardTest {
         logged = new ListAppender<>();
         logged.start();
         guardLogger.addAppender(logged);
+        guardLogger.setAdditive(false);
     }
 
     @AfterEach
     void close() {
         guards.forEach(StoreClockGuard::stop);
         guardLogger.detachAppender(logged);
+        guardLogger.setAdditive(true);
         store.close();
     }
 

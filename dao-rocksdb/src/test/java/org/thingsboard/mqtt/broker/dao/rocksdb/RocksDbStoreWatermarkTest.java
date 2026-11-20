@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.rocksdb.BackgroundErrorReason;
 import org.rocksdb.RocksDB;
 import org.rocksdb.Status;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
 import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
@@ -48,9 +52,17 @@ class RocksDbStoreWatermarkTest {
     private final AtomicReference<FreeSpaceProbe.Space> space = new AtomicReference<>(ROOMY);
     private DiskSpaceMonitor monitor;
     private RocksDbStore store;
+    private Logger monitorLogger;
+    private ListAppender<ILoggingEvent> monitorLogs;
 
     @BeforeEach
     void open() {
+        // the monitor warns on every full disk these tests make; keep it off the console
+        monitorLogger = (Logger) LoggerFactory.getLogger(DiskSpaceMonitor.class);
+        monitorLogs = new ListAppender<>();
+        monitorLogs.start();
+        monitorLogger.addAppender(monitorLogs);
+        monitorLogger.setAdditive(false);
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         monitor = new DiskSpaceMonitor(properties, path -> space.get());
@@ -61,6 +73,8 @@ class RocksDbStoreWatermarkTest {
     @AfterEach
     void close() {
         store.close();
+        monitorLogger.detachAppender(monitorLogs);
+        monitorLogger.setAdditive(true);
     }
 
     @Test

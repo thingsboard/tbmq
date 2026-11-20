@@ -15,16 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.disk;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,13 +47,31 @@ class DiskSpaceMonitorTest {
 
     private final AtomicReference<FreeSpaceProbe.Space> space =
             new AtomicReference<>(new FreeSpaceProbe.Space(50 * GIB, 100 * GIB));
+    private static final long MINUTE_MS = TimeUnit.MINUTES.toMillis(1);
+
+    private final AtomicLong nowMs = new AtomicLong(1_000_000L);
     private DiskSpaceMonitor monitor;
+    private Logger monitorLogger;
+    private ListAppender<ILoggingEvent> logged;
+
+    @BeforeEach
+    void captureLogs() {
+        monitorLogger = (Logger) LoggerFactory.getLogger(DiskSpaceMonitor.class);
+        logged = new ListAppender<>();
+        logged.start();
+        monitorLogger.addAppender(logged);
+        monitorLogger.setAdditive(false);
+        monitorLogger.setLevel(Level.DEBUG);
+    }
 
     @AfterEach
     void stop() {
         if (monitor != null) {
             monitor.stop();
         }
+        monitorLogger.detachAppender(logged);
+        monitorLogger.setAdditive(true);
+        monitorLogger.setLevel(null);
     }
 
     @Test
@@ -98,7 +124,7 @@ class DiskSpaceMonitorTest {
     @Test
     void aBackgroundErrorDegradesUntilACheckSeesSpaceAndTheRecoveryCallbackSucceeds() {
         monitor = monitor(properties());
-        Deque<Boolean> results = new ArrayDeque<>(java.util.List.of(false, true));
+        Deque<Boolean> results = new ArrayDeque<>(List.of(false, true));
         AtomicInteger calls = new AtomicInteger();
         monitor.onRecovery(() -> {
             calls.incrementAndGet();
@@ -176,6 +202,83 @@ class DiskSpaceMonitorTest {
     }
 
     @Test
+    void whileBelowTheWatermarkTheWarningRepeatsEveryTenMinutesAndTheRecoveryIsLoggedOnce() {
+        monitor = monitor(properties());
+        space.set(new FreeSpaceProbe.Space(MIB, 100 * GIB));
+
+        monitor.check();
+        assertThat(messages(Level.WARN)).singleElement().asString().contains("is below the watermark");
+
+        nowMs.addAndGet(10 * MINUTE_MS - 1);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(1);
+
+        nowMs.addAndGet(1);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+        assertThat(messages(Level.WARN).get(1)).isEqualTo("The store at " + PATH + " is still degraded: Not enough free disk space for the store at "
+                + PATH + ": " + MIB + " bytes free, watermark " + 5 * GIB + " bytes");
+
+        nowMs.addAndGet(5 * MINUTE_MS);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+
+        space.set(new FreeSpaceProbe.Space(50 * GIB, 100 * GIB));
+        monitor.check();
+        nowMs.addAndGet(30 * MINUTE_MS);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+        assertThat(messages(Level.INFO)).singleElement().asString().contains("is back above the watermark");
+    }
+
+    @Test
+    void whileABackgroundErrorStaysTheWarningRepeatsEveryTenMinutes() {
+        monitor = monitor(properties());
+        Deque<Boolean> results = new ArrayDeque<>(List.of(false, false, false, true));
+        monitor.onRecovery(results::removeFirst);
+
+        monitor.reportBackgroundError("FLUSH: IOError(NoSpace)");
+        monitor.check();
+        nowMs.addAndGet(9 * MINUTE_MS);
+        monitor.check();
+        assertThat(messages(Level.WARN)).singleElement().asString().contains("reported a background error: FLUSH: IOError(NoSpace)");
+
+        nowMs.addAndGet(MINUTE_MS);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+        assertThat(messages(Level.WARN).get(1))
+                .isEqualTo("The store at " + PATH + " is still degraded: The store reported a background error: FLUSH: IOError(NoSpace)");
+
+        nowMs.addAndGet(10 * MINUTE_MS);
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+        assertThat(messages(Level.INFO)).singleElement().asString().contains("recovered from the background error");
+    }
+
+    @Test
+    void aFailingProbeWarnsOnceAndLogsAtDebugUntilItSucceedsAgain() {
+        AtomicReference<IOException> failure = new AtomicReference<>(new IOException("Permission denied"));
+        monitor = new DiskSpaceMonitor(properties(), path -> {
+            if (failure.get() != null) {
+                throw failure.get();
+            }
+            return space.get();
+        }, nowMs::get);
+
+        monitor.check();
+        monitor.check();
+        monitor.check();
+        assertThat(messages(Level.WARN)).singleElement().asString().contains("Permission denied");
+        assertThat(messages(Level.DEBUG)).hasSize(2).allSatisfy(message -> assertThat(message).contains("Permission denied"));
+
+        failure.set(null);
+        monitor.check();
+        failure.set(new IOException("Permission denied"));
+        monitor.check();
+        assertThat(messages(Level.WARN)).hasSize(2);
+    }
+
+    @Test
     void theProbeGetsTheStorePath() {
         AtomicReference<String> probed = new AtomicReference<>();
         monitor = new DiskSpaceMonitor(properties(), path -> {
@@ -244,7 +347,11 @@ class DiskSpaceMonitorTest {
     }
 
     private DiskSpaceMonitor monitor(StoreProperties properties) {
-        return new DiskSpaceMonitor(properties, path -> space.get());
+        return new DiskSpaceMonitor(properties, path -> space.get(), nowMs::get);
+    }
+
+    private List<String> messages(Level level) {
+        return logged.list.stream().filter(event -> event.getLevel() == level).map(ILoggingEvent::getFormattedMessage).toList();
     }
 
     private static StoreProperties properties() {
