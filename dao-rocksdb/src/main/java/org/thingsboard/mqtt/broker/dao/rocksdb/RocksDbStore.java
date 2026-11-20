@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -78,6 +79,8 @@ public class RocksDbStore {
     static final byte[] META_SCHEMA_VERSION_KEY = "schema_version".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
+    static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
+    static final int JWT_SIGNING_KEY_BYTES = 64;
 
     private static final long SLOW_CLOSE_MS = 1000;
     private static final int MAX_OPEN_FILES = 256;
@@ -199,6 +202,23 @@ public class RocksDbStore {
         }
         otherHandles.addAll(opened.subList(known, opened.size()));
         meta = loadOrInitMeta(path);
+        ensureJwtSigningKey();
+    }
+
+    /**
+     * Writes the per-install JWT signing key, once: a store that has one keeps it, so tokens survive restarts and a
+     * restored backup brings its key with it. The key is never logged.
+     */
+    private void ensureJwtSigningKey() throws RocksDBException {
+        ColumnFamilyHandle metaHandle = handles.get(StoreColumnFamily.META);
+        if (db.get(metaHandle, META_JWT_SIGNING_KEY) != null) {
+            return;
+        }
+        byte[] key = new byte[JWT_SIGNING_KEY_BYTES];
+        new SecureRandom().nextBytes(key);
+        try (WriteOptions synced = new WriteOptions().setSync(true)) {
+            db.put(metaHandle, synced, META_JWT_SIGNING_KEY, key);
+        }
     }
 
     /**

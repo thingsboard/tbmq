@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.config;
 
 import lombok.Data;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtToken;
@@ -37,6 +38,7 @@ public class JwtSettings {
     /**
      * Key is used to sign {@link JwtToken}.
      */
+    @ToString.Exclude
     private String tokenSigningKey;
 
     /**
