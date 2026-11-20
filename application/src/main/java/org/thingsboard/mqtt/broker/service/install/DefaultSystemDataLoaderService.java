@@ -44,6 +44,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
+    public static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
+
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
@@ -55,7 +57,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createAdmin() throws ThingsboardException {
-        AdminDto adminDto = AdminDto.fromEmail("sysadmin@thingsboard.org");
+        AdminDto adminDto = AdminDto.fromEmail(SYSADMIN_EMAIL);
         sysadmin = adminService.createAdmin(adminDto, false);
     }
 

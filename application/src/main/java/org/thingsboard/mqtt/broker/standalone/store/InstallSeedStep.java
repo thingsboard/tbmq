@@ -22,10 +22,12 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
@@ -33,6 +35,7 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.install.DefaultSystemDataLoaderService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
@@ -53,7 +56,7 @@ import java.util.UUID;
 @Order(0)
 public class InstallSeedStep implements ManagementDataStep {
 
-    static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
+    private static final String SYSADMIN_EMAIL = DefaultSystemDataLoaderService.SYSADMIN_EMAIL;
 
     private final StoreSeedState seedState;
     private final AdminSettingsService adminSettingsService;
@@ -62,11 +65,13 @@ public class InstallSeedStep implements ManagementDataStep {
     private final AdminService adminService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final WebSocketConnectionService webSocketConnectionService;
+    private final WebSocketSubscriptionService webSocketSubscriptionService;
 
     public InstallSeedStep(StoreSeedState seedState, AdminSettingsService adminSettingsService,
                            MqttAuthProviderService mqttAuthProviderService, UserService userService, AdminService adminService,
                            MqttClientCredentialsService mqttClientCredentialsService,
-                           WebSocketConnectionService webSocketConnectionService) {
+                           WebSocketConnectionService webSocketConnectionService,
+                           WebSocketSubscriptionService webSocketSubscriptionService) {
         this.seedState = seedState;
         this.adminSettingsService = adminSettingsService;
         this.mqttAuthProviderService = mqttAuthProviderService;
@@ -74,6 +79,7 @@ public class InstallSeedStep implements ManagementDataStep {
         this.adminService = adminService;
         this.mqttClientCredentialsService = mqttClientCredentialsService;
         this.webSocketConnectionService = webSocketConnectionService;
+        this.webSocketSubscriptionService = webSocketSubscriptionService;
     }
 
     @Override
@@ -93,7 +99,11 @@ public class InstallSeedStep implements ManagementDataStep {
     private void seedAdminSettings() {
         for (AdminSettings settings : DefaultSystemDataLoaderService.defaultAdminSettings()) {
             if (adminSettingsService.findAdminSettingsByKey(settings.getKey()) == null) {
-                adminSettingsService.saveAdminSettings(settings);
+                try {
+                    adminSettingsService.saveAdminSettings(settings);
+                } catch (RuntimeException e) {
+                    throw new IllegalStateException("Failed to seed the admin settings '" + settings.getKey() + "': " + e.getMessage(), e);
+                }
             } else {
                 log.debug("The admin settings {} exist, skipping them", settings.getKey());
             }
@@ -103,7 +113,11 @@ public class InstallSeedStep implements ManagementDataStep {
     private void seedAuthProviders() {
         for (MqttAuthProvider provider : DefaultSystemDataLoaderService.defaultAuthProviders()) {
             if (mqttAuthProviderService.getAuthProviderByType(provider.getType()).isEmpty()) {
-                mqttAuthProviderService.saveAuthProvider(provider);
+                try {
+                    mqttAuthProviderService.saveAuthProvider(provider);
+                } catch (RuntimeException e) {
+                    throw new IllegalStateException("Failed to seed the " + provider.getType() + " auth provider: " + e.getMessage(), e);
+                }
             } else {
                 log.debug("The auth provider {} exists, skipping it", provider.getType());
             }
@@ -133,20 +147,37 @@ public class InstallSeedStep implements ManagementDataStep {
 
     private MqttClientCredentials seedSystemWebSocketCredentials() {
         MqttClientCredentials credentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
-        return credentials != null ? credentials : mqttClientCredentialsService.saveSystemWebSocketCredentials();
+        if (credentials != null) {
+            return credentials;
+        }
+        try {
+            return mqttClientCredentialsService.saveSystemWebSocketCredentials();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Failed to seed the system WebSocket client credentials: " + e.getMessage(), e);
+        }
     }
 
     private void seedDefaultWebSocketConnection(User sysadmin, MqttClientCredentials systemCredentials) {
         UUID sysadminId = sysadmin.getId();
-        if (webSocketConnectionService.findWebSocketConnectionByName(sysadminId, BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME) != null) {
-            return;
-        }
+        WebSocketConnection connection = webSocketConnectionService.findWebSocketConnectionByName(
+                sysadminId, BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME);
         try {
-            webSocketConnectionService.saveDefaultWebSocketConnection(sysadminId, systemCredentials.getId());
-        } catch (ThingsboardException e) {
+            if (connection == null) {
+                webSocketConnectionService.saveDefaultWebSocketConnection(sysadminId, systemCredentials.getId());
+            } else if (hasNoSubscriptions(connection)) {
+                log.warn("The {} of the sysadmin {} has no subscription, creating the default one",
+                        BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME, SYSADMIN_EMAIL);
+                webSocketSubscriptionService.saveDefaultWebSocketSubscription(connection.getId());
+            }
+        } catch (ThingsboardException | RuntimeException e) {
             throw new IllegalStateException("Failed to create the " + BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME
                     + " of the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
         }
+    }
+
+    private boolean hasNoSubscriptions(WebSocketConnection connection) {
+        return webSocketSubscriptionService.getWebSocketSubscriptions(connection.getId(), new PageLink(1))
+                .getData().isEmpty();
     }
 
 }

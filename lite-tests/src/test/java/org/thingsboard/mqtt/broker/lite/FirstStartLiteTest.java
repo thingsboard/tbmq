@@ -25,6 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -34,6 +35,7 @@ import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionDao;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
@@ -61,6 +63,8 @@ public class FirstStartLiteTest extends AbstractControllerTest {
     private MqttClientCredentialsDao mqttClientCredentialsDao;
     @Autowired
     private WebSocketConnectionDao webSocketConnectionDao;
+    @Autowired
+    private WebSocketSubscriptionDao webSocketSubscriptionDao;
 
     /**
      * The base class disables every auth provider before each test; these tests check the providers as seeded.
@@ -83,6 +87,10 @@ public class FirstStartLiteTest extends AbstractControllerTest {
         assertThat(webSocketConnectionDao.find()).singleElement().satisfies(connection -> {
             assertThat(connection.getName()).isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME);
             assertThat(connection.getUserId()).isEqualTo(users.get(0).getId());
+            assertThat(webSocketSubscriptionDao.findAllByWebSocketConnectionId(connection.getId(), new PageLink(10)).getData())
+                    .singleElement()
+                    .satisfies(subscription -> assertThat(subscription.getConfiguration().getTopicFilter())
+                            .isEqualTo(BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER));
         });
     }
 

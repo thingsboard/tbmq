@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -35,15 +37,19 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.install.DefaultSystemDataLoaderService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -65,7 +71,7 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class InstallSeedStepTest {
 
-    private static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
+    private static final String SYSADMIN_EMAIL = DefaultSystemDataLoaderService.SYSADMIN_EMAIL;
 
     @Mock
     private StoreSeedState seedState;
@@ -81,6 +87,8 @@ class InstallSeedStepTest {
     private MqttClientCredentialsService mqttClientCredentialsService;
     @Mock
     private WebSocketConnectionService webSocketConnectionService;
+    @Mock
+    private WebSocketSubscriptionService webSocketSubscriptionService;
 
     private InstallSeedStep step;
 
@@ -90,7 +98,7 @@ class InstallSeedStepTest {
     @BeforeEach
     void setUp() {
         step = new InstallSeedStep(seedState, adminSettingsService, mqttAuthProviderService, userService, adminService,
-                mqttClientCredentialsService, webSocketConnectionService);
+                mqttClientCredentialsService, webSocketConnectionService, webSocketSubscriptionService);
         when(mqttAuthProviderService.getAuthProviderByType(any())).thenReturn(Optional.empty());
     }
 
@@ -157,16 +165,21 @@ class InstallSeedStepTest {
 
     @Test
     void aSeedInterruptedBeforeTheMarkerOnlyWritesTheMarker() throws ThingsboardException {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setId(UUID.randomUUID());
         when(adminSettingsService.findAdminSettingsByKey(anyString())).thenReturn(new AdminSettings());
         when(mqttAuthProviderService.getAuthProviderByType(any())).thenReturn(Optional.of(new MqttAuthProvider()));
         when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
         when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(activeCredentials(sysadmin.getId()));
         when(mqttClientCredentialsService.findSystemWebSocketCredentials()).thenReturn(systemCredentials);
         when(webSocketConnectionService.findWebSocketConnectionByName(sysadmin.getId(), BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME))
-                .thenReturn(new WebSocketConnection());
+                .thenReturn(connection);
+        when(webSocketSubscriptionService.getWebSocketSubscriptions(eq(connection.getId()), any(PageLink.class)))
+                .thenReturn(new PageData<>(List.of(new WebSocketSubscription()), 1, 1, false));
 
         step.apply();
 
+        verify(webSocketSubscriptionService, never()).saveDefaultWebSocketSubscription(any());
         verify(adminSettingsService, never()).saveAdminSettings(any());
         verify(mqttAuthProviderService, never()).saveAuthProvider(any());
         verify(adminService, never()).createAdmin(any(), anyBoolean());
@@ -233,6 +246,70 @@ class InstallSeedStepTest {
 
         verify(mqttClientCredentialsService, never()).saveSystemWebSocketCredentials();
         verify(webSocketConnectionService).saveDefaultWebSocketConnection(sysadmin.getId(), systemCredentials.getId());
+    }
+
+    @Test
+    void aDefaultConnectionWithoutItsSubscriptionGetsTheSubscription() throws ThingsboardException {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setId(UUID.randomUUID());
+        sysadminWithActiveCredentialsAndSystemCredentials();
+        when(webSocketConnectionService.findWebSocketConnectionByName(sysadmin.getId(), BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME))
+                .thenReturn(connection);
+        when(webSocketSubscriptionService.getWebSocketSubscriptions(eq(connection.getId()), any(PageLink.class)))
+                .thenReturn(new PageData<>(List.of(), 0, 0, false));
+
+        step.apply();
+
+        InOrder order = inOrder(webSocketSubscriptionService, seedState);
+        order.verify(webSocketSubscriptionService).saveDefaultWebSocketSubscription(connection.getId());
+        order.verify(seedState).markSeeded();
+        verify(webSocketConnectionService, never()).saveDefaultWebSocketConnection(any(), any());
+    }
+
+    @Test
+    void aFailedSettingsSaveNamesTheKeyAndKeepsTheCause() {
+        RuntimeException cause = new RuntimeException("disk full");
+        when(adminSettingsService.saveAdminSettings(any())).thenThrow(cause);
+
+        assertThatThrownBy(() -> step.apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("'general'")
+                .hasMessageContaining("disk full")
+                .hasCause(cause);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aFailedProviderSaveNamesTheTypeAndKeepsTheCause() {
+        RuntimeException cause = new RuntimeException("disk full");
+        when(mqttAuthProviderService.saveAuthProvider(any())).thenThrow(cause);
+
+        assertThatThrownBy(() -> step.apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(MqttAuthProviderType.MQTT_BASIC.name())
+                .hasMessageContaining("disk full")
+                .hasCause(cause);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aFailedSystemCredentialsSaveNamesWhatFailedAndKeepsTheCause() throws ThingsboardException {
+        RuntimeException cause = new RuntimeException("disk full");
+        when(adminService.createAdmin(any(), anyBoolean())).thenReturn(sysadmin);
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenThrow(cause);
+
+        assertThatThrownBy(() -> step.apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("system WebSocket")
+                .hasMessageContaining("disk full")
+                .hasCause(cause);
+        verify(seedState, never()).markSeeded();
+    }
+
+    private void sysadminWithActiveCredentialsAndSystemCredentials() {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(activeCredentials(sysadmin.getId()));
+        when(mqttClientCredentialsService.findSystemWebSocketCredentials()).thenReturn(systemCredentials);
     }
 
     @Test
