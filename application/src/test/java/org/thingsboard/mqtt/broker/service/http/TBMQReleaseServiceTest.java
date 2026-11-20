@@ -185,6 +185,16 @@ class TBMQReleaseServiceTest {
     }
 
     @Test
+    void givenA200WithAnHtmlBody_whenScheduled_thenItIsAFailedCheckThatBacksOff() throws Exception {
+        assertA200WithoutAReleaseIsAFailedCheck("<html><body>Sign in to the network</body></html>");
+    }
+
+    @Test
+    void givenA200WithoutATagName_whenScheduled_thenItIsAFailedCheckThatBacksOff() throws Exception {
+        assertA200WithoutAReleaseIsAFailedCheck("{}");
+    }
+
+    @Test
     void givenSuccess_whenScheduled_thenLogsAsBefore() throws Exception {
         TBMQReleaseService service = newService(true);
         stubResponses(response(200, "{\"tag_name\":\"v2.9.9\"}"));
@@ -196,6 +206,28 @@ class TBMQReleaseServiceTest {
         assertThat(infos).containsExactly(
                 "Executing get latest version of TBMQ release from GitHub.",
                 "Got latest version of TBMQ release from GitHub: 2.9.9");
+    }
+
+    private void assertA200WithoutAReleaseIsAFailedCheck(String body) throws Exception {
+        TBMQReleaseService service = newService(true);
+        stubResponses(response(200, body));
+        long start = now.get();
+
+        service.scheduleVersionCheck();
+        now.set(start + 3 * HOUR_MS);
+        service.scheduleVersionCheck();
+        // backed off as after a non-200 answer: the next attempt is 6 h after the first
+        assertThat(sendCount()).isEqualTo(1);
+        now.set(start + 6 * HOUR_MS);
+        service.scheduleVersionCheck();
+        assertThat(sendCount()).isEqualTo(2);
+
+        verify(retainedMsgListenerService, never()).cacheRetainedMsgAndPersist(anyString(), any());
+        assertThat(appender.list).noneMatch(e -> e.getLevel().isGreaterOrEqual(Level.WARN));
+        assertThat(appender.list).filteredOn(e -> e.getLevel() == Level.DEBUG).hasSize(2).allSatisfy(e -> {
+            assertThat(e.getFormattedMessage()).contains("200");
+            assertThat(e.getThrowableProxy()).isNull();
+        });
     }
 
     private TBMQReleaseService newService(boolean enabled) {

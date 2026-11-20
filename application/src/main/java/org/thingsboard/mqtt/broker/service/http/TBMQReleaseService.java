@@ -122,6 +122,10 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             HttpResponse<String> response = sendRequest();
             if (response.statusCode() == 200) {
                 String version = getVersion(response);
+                if (version == null) {
+                    backOff(now);
+                    return;
+                }
                 retainedMsgListenerService.cacheRetainedMsgAndPersist(LATEST_VERSION_AVAILABLE_TOPIC_NAME, newRetainedMsg(version));
 
                 log.info("Got latest version of TBMQ release from GitHub: {}", version);
@@ -145,9 +149,25 @@ public class TBMQReleaseService extends AbstractServiceProvider {
         nextAttemptAtMs = now + waitMs;
     }
 
+    /**
+     * The version in a release body, or null when the body is not one (for example the HTML page of a proxy or a
+     * captive portal answering 200): a failed check, logged at debug here.
+     */
     private String getVersion(HttpResponse<String> response) {
-        JsonNode jsonNode = JacksonUtil.toJsonNode(response.body());
-        return jsonNode.get("tag_name").asText().replaceAll("v", "");
+        JsonNode jsonNode;
+        try {
+            jsonNode = JacksonUtil.toJsonNode(response.body());
+        } catch (IllegalArgumentException e) {
+            log.debug("Failed to get the latest release version, reason: {} with a body that is not JSON", response.statusCode());
+            return null;
+        }
+        JsonNode tagName = jsonNode == null ? null : jsonNode.get("tag_name");
+        if (tagName == null || !tagName.isTextual() || tagName.asText().isBlank()) {
+            log.debug("Failed to get the latest release version, reason: {} with a body without a textual tag_name",
+                    response.statusCode());
+            return null;
+        }
+        return tagName.asText().replaceAll("v", "");
     }
 
     private HttpResponse<String> sendRequest() throws IOException, InterruptedException {
