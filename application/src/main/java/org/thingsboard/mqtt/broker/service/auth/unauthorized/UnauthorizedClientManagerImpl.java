@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.UnauthorizedClientsProperties;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -98,7 +99,17 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
                 .build();
         DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
                 v -> log.debug("[{}] Unauthorized Client saved successfully! {}", unauthorizedClient.getClientId(), unauthorizedClient),
-                throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable));
+                throwable -> logPersistFailure(unauthorizedClient, throwable));
+    }
+
+    private void logPersistFailure(UnauthorizedClient unauthorizedClient, Throwable throwable) {
+        if (throwable instanceof StoreFullException) {
+            // the standalone store's disk is full, which any refused CONNECT can hit: the disk monitor warned once when
+            // the store went below the watermark; the cluster edition never fails with it
+            log.debug("[{}] Unauthorized client not persisted: {}", unauthorizedClient.getClientId(), throwable.getMessage());
+        } else {
+            log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable);
+        }
     }
 
     @Override
