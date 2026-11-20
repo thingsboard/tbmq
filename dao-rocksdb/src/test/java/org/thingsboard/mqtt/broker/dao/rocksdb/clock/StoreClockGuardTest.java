@@ -20,6 +20,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -48,13 +50,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class StoreClockGuardTest {
 
@@ -325,6 +330,35 @@ class StoreClockGuardTest {
         assertThat(thread.get().getName()).isEqualTo("store-clock-recorder");
         assertThat(thread.get().isDaemon()).isTrue();
         assertThat(guard.cleanupAllowed()).isTrue();
+    }
+
+    @Test
+    void stopDoesNotWaitForARecorderStuckInTheStore() throws InterruptedException {
+        RocksDbStore stuckStore = mock(RocksDbStore.class);
+        when(stuckStore.get(StoreColumnFamily.META, CLOCK_KEY)).thenReturn(Longs.toByteArray(T0 + DAY_MS));
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        // the postponed recording holds the guard's monitor in a put that ignores the interrupt
+        doAnswer(invocation -> {
+            entered.countDown();
+            Uninterruptibles.awaitUninterruptibly(release);
+            return null;
+        }).when(stuckStore).put(eq(StoreWriteClass.UPDATE), eq(StoreColumnFamily.META), eq(POSTPONED_KEY), any());
+        properties.getClock().setRecordIntervalMs(20);
+        StoreClockGuard guard = new StoreClockGuard(stuckStore, properties, clock, uptimeNanos::get);
+        guards.add(guard);
+        guard.start();
+        assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
+
+        try {
+            // the stop timeout is 5 s
+            assertTimeoutPreemptively(Duration.ofSeconds(10), guard::stop);
+        } finally {
+            release.countDown();
+        }
+
+        verify(stuckStore, times(1)).put(eq(StoreWriteClass.UPDATE), eq(StoreColumnFamily.META), eq(POSTPONED_KEY), any());
+        assertThat(warnings()).anySatisfy(message -> assertThat(message).contains("did not stop"));
     }
 
     @Test

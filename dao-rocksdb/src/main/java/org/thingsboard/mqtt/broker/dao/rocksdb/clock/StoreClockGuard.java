@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
 /**
@@ -47,9 +48,9 @@ import java.util.function.LongSupplier;
  * The cap counts the uptime spent postponing across restarts, not only the uptime of this boot: nothing else is written
  * while the cleanups are postponed, so a node restarting more often than the cap would otherwise start counting from
  * zero on every boot, never reach it, and never run its age-based cleanups. The uptime spent so far is written on every
- * recording while postponed and once more at {@link #stop()}; a boot that crashes before its first recording, within
- * one record interval, adds nothing to it. It is removed when the postponement ends, and at a start that is not
- * postponed.
+ * recording while postponed and once more at {@link #stop()}, unless the recorder thread does not stop in time; a boot
+ * that crashes before its first recording, within one record interval, adds nothing to it. It is removed when the
+ * postponement ends, and at a start that is not postponed.
  * <p>
  * The record is the meta entry {@code clock}: the epoch milliseconds as 8 big-endian bytes. The uptime spent postponing
  * is the meta entry {@code clock-postponed}: milliseconds as 8 big-endian bytes. Both are written as an
@@ -75,13 +76,14 @@ public class StoreClockGuard implements CleanupClockGuard {
 
     // set once the cleanups may run; never cleared until the next start
     private volatile boolean allowed;
+    // not guarded by this, so that stop() takes it even from a recording stuck in the store
+    private final AtomicReference<ScheduledExecutorService> executor = new AtomicReference<>();
     // everything below is guarded by this
     private long startNanos;
     // the uptime earlier boots spent postponing, read from the store at a postponed start; never negative
     private long spentMs;
     // the latest time recorded, or read from the store at start; Long.MIN_VALUE when there is none
     private long recordedMs = Long.MIN_VALUE;
-    private ScheduledExecutorService executor;
 
     @Autowired
     public StoreClockGuard(RocksDbStore store, StoreProperties properties) {
@@ -104,7 +106,7 @@ public class StoreClockGuard implements CleanupClockGuard {
         if (settings.getMaxPostponeMs() < 0) {
             throw new IllegalStateException("store.clock.max-postpone-ms must not be negative, got " + settings.getMaxPostponeMs());
         }
-        if (executor != null) {
+        if (executor.get() != null) {
             return;
         }
         startNanos = nanoClock.getAsLong();
@@ -122,33 +124,41 @@ public class StoreClockGuard implements CleanupClockGuard {
             removeSpentSafely();
             recordSafely();
         }
-        executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        ScheduledExecutorService recorder = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable, THREAD_NAME);
             thread.setDaemon(true);
             return thread;
         });
-        executor.scheduleWithFixedDelay(this::recordSafely, settings.getRecordIntervalMs(), settings.getRecordIntervalMs(),
+        recorder.scheduleWithFixedDelay(this::recordSafely, settings.getRecordIntervalMs(), settings.getRecordIntervalMs(),
                 TimeUnit.MILLISECONDS);
+        executor.set(recorder);
     }
 
     @PreDestroy
     public void stop() {
-        ScheduledExecutorService toStop;
-        synchronized (this) {
-            toStop = executor;
-            executor = null;
-        }
+        ScheduledExecutorService toStop = executor.getAndSet(null);
         if (toStop == null) {
             return;
         }
         // outside the monitor: a recording in progress holds it
         toStop.shutdownNow();
+        boolean terminated;
         try {
-            if (!toStop.awaitTermination(STOP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                log.warn("The store clock recorder thread did not stop within {} ms", STOP_TIMEOUT_MS);
-            }
+            terminated = toStop.awaitTermination(STOP_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            terminated = toStop.isTerminated();
+        }
+        if (!terminated) {
+            // a recording stuck in the store may hold the monitor: do not wait for it. The next boot misses at most
+            // the uptime of this one since its last recording
+            if (allowed) {
+                log.warn("The store clock recorder thread did not stop within {} ms", STOP_TIMEOUT_MS);
+            } else {
+                log.warn("The store clock recorder thread did not stop within {} ms: the uptime spent postponing the " +
+                        "age-based cleanups since its last recording is not recorded", STOP_TIMEOUT_MS);
+            }
+            return;
         }
         synchronized (this) {
             if (!allowed) {
