@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -36,7 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -40,7 +41,6 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
-import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

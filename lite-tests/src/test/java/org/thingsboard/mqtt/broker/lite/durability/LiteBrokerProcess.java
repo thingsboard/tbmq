@@ -97,6 +97,9 @@ public final class LiteBrokerProcess {
         properties.put("listener.ws.enabled", "false");
         properties.put("listener.ssl.enabled", "false");
         properties.put("listener.wss.enabled", "false");
+        // no free-space watermark: the broker must not refuse writes because the build host's disk is nearly full
+        properties.put("store.disk.min-free-percent", "0");
+        properties.put("store.disk.min-free-bytes", "0");
         properties.putAll(extraProperties);
 
         List<String> command = new ArrayList<>();

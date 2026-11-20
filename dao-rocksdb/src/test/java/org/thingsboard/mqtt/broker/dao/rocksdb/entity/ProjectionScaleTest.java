@@ -32,13 +32,13 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
 import org.thingsboard.mqtt.broker.dao.rocksdb.client.RocksDbUnauthorizedClientDao;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
