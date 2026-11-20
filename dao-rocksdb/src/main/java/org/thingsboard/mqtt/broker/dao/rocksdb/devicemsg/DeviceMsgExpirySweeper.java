@@ -20,6 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 
 import java.util.concurrent.Executors;
@@ -29,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Deletes the expired entries of the DEVICE queues every {@code store.device-msg.sweep-interval-ms} on a daemon
  * thread, so the queues of clients that never read again do not keep them until the TTL. A failed sweep is logged
- * and the next one runs on schedule.
+ * and the next one runs on schedule. While the {@link CleanupClockGuard} postpones the age-based cleanups, every sweep
+ * is skipped.
  * <p>
  * Depends on the store, so Spring destroys it first: {@link #stop()} ends the thread before the store closes.
  */
@@ -41,14 +43,17 @@ public class DeviceMsgExpirySweeper {
     private static final long STOP_TIMEOUT_MS = 5000;
 
     private final DeviceMsgQueueStore store;
+    private final CleanupClockGuard cleanupClockGuard;
     private final long sweepIntervalMs;
 
     private volatile boolean stopping;
     private ScheduledExecutorService executor;
 
     public DeviceMsgExpirySweeper(DeviceMsgQueueStore store,
+                                  CleanupClockGuard cleanupClockGuard,
                                   @Value("${store.device-msg.sweep-interval-ms:600000}") long sweepIntervalMs) {
         this.store = store;
+        this.cleanupClockGuard = cleanupClockGuard;
         this.sweepIntervalMs = sweepIntervalMs;
     }
 
@@ -71,6 +76,10 @@ public class DeviceMsgExpirySweeper {
 
     private void sweepOnce() {
         try {
+            if (!cleanupClockGuard.cleanupAllowed()) {
+                log.debug("The device queue sweep is postponed: the clock is behind its last record");
+                return;
+            }
             int removed = store.sweepExpired();
             log.debug("Swept {} expired entries from the device queues", removed);
         } catch (Throwable t) {

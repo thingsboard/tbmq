@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
@@ -54,6 +55,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     private final BlockedClientProducerService blockedClientProducerService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final CleanupClockGuard cleanupClockGuard;
     private final Map<BlockedClientType, Map<String, BlockedClient>> blockedClientMap;
 
     @Getter
@@ -62,9 +64,11 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     private int blockedClientCleanupTtl;
 
     public BlockedClientServiceImpl(BlockedClientProducerService blockedClientProducerService,
-                                    ServiceInfoProvider serviceInfoProvider) {
+                                    ServiceInfoProvider serviceInfoProvider,
+                                    CleanupClockGuard cleanupClockGuard) {
         this.blockedClientProducerService = blockedClientProducerService;
         this.serviceInfoProvider = serviceInfoProvider;
+        this.cleanupClockGuard = cleanupClockGuard;
 
         EnumMap<BlockedClientType, Map<String, BlockedClient>> temp = new EnumMap<>(BlockedClientType.class);
         for (var type : BlockedClientType.values()) {
@@ -242,6 +246,10 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     @Scheduled(fixedRateString = "${mqtt.blocked-client.cleanup.period}", timeUnit = TimeUnit.MINUTES)
     public void cleanUp() {
+        if (!cleanupClockGuard.cleanupAllowed()) {
+            log.debug("Cleaning up expired blocked clients is postponed: the clock is behind its last record");
+            return;
+        }
         log.info("Starting cleaning up expired blocked clients");
         for (BlockedClientType type : BlockedClientType.values()) {
             blockedClientMap.get(type).values().forEach(value -> {

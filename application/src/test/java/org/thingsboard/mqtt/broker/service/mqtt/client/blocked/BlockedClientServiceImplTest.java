@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -55,12 +56,14 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class BlockedClientServiceImplTest {
 
     private BlockedClientProducerService producerService;
     private BlockedClientServiceImpl service;
+    private CleanupClockGuard cleanupClockGuard;
 
     private static final String CLIENT_ID = "clientId";
     private static final String USERNAME = "username";
@@ -72,7 +75,10 @@ class BlockedClientServiceImplTest {
         ServiceInfoProvider serviceInfoProvider = mock(ServiceInfoProvider.class);
         when(serviceInfoProvider.getServiceId()).thenReturn("test-service");
 
-        service = new BlockedClientServiceImpl(producerService, serviceInfoProvider);
+        cleanupClockGuard = mock(CleanupClockGuard.class);
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(true);
+
+        service = new BlockedClientServiceImpl(producerService, serviceInfoProvider, cleanupClockGuard);
     }
 
     @Test
@@ -459,6 +465,19 @@ class BlockedClientServiceImplTest {
         service.cleanUp();
 
         assertNull(service.getBlockedClient(BlockedClientType.CLIENT_ID, expired.getKey()));
+    }
+
+    @Test
+    void testCleanupIsPostponedByTheClockGuard() {
+        BlockedClient expired = new ClientIdBlockedClient(System.currentTimeMillis() - 70000, null, CLIENT_ID);
+        service.addBlockedClient(expired);
+        service.setBlockedClientCleanupTtl(1);
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(false);
+
+        service.cleanUp();
+
+        assertNotNull(service.getBlockedClient(BlockedClientType.CLIENT_ID, expired.getKey()));
+        verifyNoInteractions(producerService);
     }
 
     @Test

@@ -35,6 +35,7 @@ public class StoreProperties {
     private long walSyncIntervalMs = 1000;
     private Memory memory = new Memory();
     private Disk disk = new Disk();
+    private ClockGuard clock = new ClockGuard();
 
     @Data
     public static class Memory {
@@ -65,6 +66,21 @@ public class StoreProperties {
          * Watermark floor (in bytes).
          */
         private long minFreeBytes = 268435456L;
+
+    }
+
+    @Data
+    public static class ClockGuard {
+
+        /**
+         * Interval between recordings of the wall-clock time in the store (in ms).
+         */
+        private long recordIntervalMs = 60000;
+        /**
+         * Longest postponement of the age-based cleanups after a start with the clock behind the record (in ms of
+         * uptime).
+         */
+        private long maxPostponeMs = 86400000L;
 
     }
 

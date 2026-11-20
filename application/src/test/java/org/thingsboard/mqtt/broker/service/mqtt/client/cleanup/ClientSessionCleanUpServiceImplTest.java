@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -41,6 +43,7 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,9 +74,31 @@ public class ClientSessionCleanUpServiceImplTest {
     DisconnectClientCommandService disconnectClientCommandService;
     @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
+    @MockitoBean
+    CleanupClockGuard cleanupClockGuard;
 
     @MockitoSpyBean
     ClientSessionCleanUpServiceImpl clientSessionCleanUpService;
+
+    @Before
+    public void allowCleanups() {
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(true);
+    }
+
+    @Test
+    public void givenAPostponingClockGuard_whenRunCleanup_thenNoSessionIsRead() {
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(false);
+        when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
+        when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of("pastTtl",
+                getClientSessionInfo(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttlSeconds + 5), false, 0)));
+        // the scheduled runs go on in the background: forget any that started before the guard said no
+        clearInvocations(clientSessionCache, clientSessionEventService);
+
+        clientSessionCleanUpService.cleanUp();
+
+        verify(clientSessionCache, never()).getAllClientSessions();
+        verify(clientSessionEventService, never()).requestClientSessionCleanup(any(), any());
+    }
 
     @Test
     public void givenDisconnectedSessionsAndOneOutdated_whenRunCleanup_thenSessionRemoved() {
