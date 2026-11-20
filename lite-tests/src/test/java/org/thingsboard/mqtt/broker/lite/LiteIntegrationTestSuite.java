@@ -43,6 +43,10 @@ import org.junit.runner.RunWith;
         // needs Valkey: it reads the rate-limit buckets in Valkey, or stops Valkey
         "!.*RateLimitBucketConfigurationIntegrationTestCase",
         "!.*TotalThroughputQuotaRedisOutageIntegrationTestCase",
+        // SQL partitions; the store has none
+        "!.*TimeseriesDaysIntegrationTestCase",
+        "!.*TimeseriesMonthsIntegrationTestCase",
+        "!.*TimeseriesYearsIntegrationTestCase",
 })
 public class LiteIntegrationTestSuite {
 
