@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
 import org.thingsboard.mqtt.broker.dao.rocksdb.client.RocksDbUnauthorizedClientDao;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -190,7 +191,7 @@ class ProjectionScaleTest {
     private void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDbStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        rocksDbStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         rocksDbStore.open();
     }
 

@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
@@ -369,6 +370,66 @@ class RestPublishServiceImplTest {
         verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
         verify(tbMessageStatsReportClient).reportDroppedMsgs();
         verify(restPublishStats).increment(RestPublishOutcome.FAILED);
+    }
+
+    @Test
+    void givenRetainedStoreFailure_whenPublish_thenWarnsWithTheTraceAsBefore() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        when(retainedMsgProcessor.process(any())).thenThrow(new StoreException("disk"));
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setRetain(true);
+        Logger logger = (Logger) LoggerFactory.getLogger(RestPublishServiceImpl.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        try {
+            service.publish(request);
+
+            assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.WARN).singleElement().satisfies(event -> {
+                assertThat(event.getFormattedMessage()).isEqualTo("[" + TOPIC + "] Failed to store the retained REST publish, payload size: 5");
+                assertThat(event.getThrowableProxy().getMessage()).isEqualTo("disk");
+            });
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+            appender.stop();
+        }
+    }
+
+    @Test
+    void givenRetainedStoreFull_whenPublish_thenCountedAsQuotaExceededAndLoggedAtDebugWithoutATrace() {
+        when(throughputQuotaService.tryConsumeIncoming()).thenReturn(true);
+        StoreFullException full = new StoreFullException("Not enough free disk space");
+        when(retainedMsgProcessor.process(any())).thenThrow(full);
+        RestPublishRequest request = request("hello", PayloadEncoding.TEXT);
+        request.setRetain(true);
+        Logger logger = (Logger) LoggerFactory.getLogger(RestPublishServiceImpl.class);
+        Level levelBefore = logger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setAdditive(false);
+        logger.setLevel(Level.DEBUG);
+        try {
+            ListenableFuture<RestPublishResponse> future = service.publish(request);
+
+            assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class).hasCause(full);
+            verify(msgDispatcherService, never()).persistPublishMsg(anyString(), any(), any());
+            verify(tbMessageStatsReportClient).reportDroppedMsgs();
+            verify(restPublishStats).increment(RestPublishOutcome.QUOTA_EXCEEDED);
+            verify(restPublishStats, never()).increment(RestPublishOutcome.FAILED);
+            assertThat(appender.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.INFO));
+            assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.DEBUG).singleElement().satisfies(event -> {
+                assertThat(event.getFormattedMessage()).endsWith("Not enough free disk space");
+                assertThat(event.getThrowableProxy()).isNull();
+            });
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+            logger.setLevel(levelBefore);
+            appender.stop();
+        }
     }
 
     @Test

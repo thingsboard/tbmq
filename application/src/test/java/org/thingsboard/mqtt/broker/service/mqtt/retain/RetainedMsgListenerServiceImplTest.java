@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -35,6 +37,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class RetainedMsgListenerServiceImplTest {
 
@@ -43,13 +47,36 @@ class RetainedMsgListenerServiceImplTest {
     private final RetainedMsgService retainedMsgService = mock(RetainedMsgService.class);
     private final RetainedMsgPersistenceService persistenceService = mock(RetainedMsgPersistenceService.class);
     private final BasicCallback callback = mock(BasicCallback.class);
+    private final CleanupClockGuard cleanupClockGuard = mock(CleanupClockGuard.class);
 
     private RetainedMsgListenerServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new RetainedMsgListenerServiceImpl(retainedMsgService, persistenceService, mock(ServiceInfoProvider.class), mock(StatsManager.class));
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(true);
+        service = new RetainedMsgListenerServiceImpl(retainedMsgService, persistenceService, mock(ServiceInfoProvider.class),
+                mock(StatsManager.class), cleanupClockGuard);
         service.init(Map.of());
+    }
+
+    @Test
+    void givenAnExpiredRetainedMsg_whenTheExpiryRuns_thenItIsCleared() {
+        service.init(Map.of(TOPIC, expiredRetainedMsg()));
+
+        service.clearRetainedMessagesByMessageExpiryIntervals();
+
+        verify(persistenceService).persistRetainedMsgAsync(eq(TOPIC), any(), any());
+    }
+
+    @Test
+    void givenAPostponingClockGuard_whenTheExpiryRuns_thenNothingIsCleared() {
+        service.init(Map.of(TOPIC, expiredRetainedMsg()));
+        when(cleanupClockGuard.cleanupAllowed()).thenReturn(false);
+
+        service.clearRetainedMessagesByMessageExpiryIntervals();
+
+        verifyNoInteractions(persistenceService);
+        verify(retainedMsgService, never()).clearRetainedMsg(anyString());
     }
 
     @Test
@@ -123,6 +150,12 @@ class RetainedMsgListenerServiceImplTest {
             invocation.<BasicCallback>getArgument(2).onSuccess();
             return null;
         }).when(persistenceService).persistRetainedMsgAsync(anyString(), any(), any());
+    }
+
+    private static RetainedMsg expiredRetainedMsg() {
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 1));
+        return new RetainedMsg(TOPIC, "old".getBytes(StandardCharsets.UTF_8), 1, properties, System.currentTimeMillis() - 60_000);
     }
 
     private static RetainedMsg retainedMsg(String payload) {

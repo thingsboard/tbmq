@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
@@ -104,6 +105,12 @@ public class RestPublishServiceImpl implements RestPublishService {
             }
             try {
                 publishMsg = retainedMsgProcessor.process(publishMsg);
+            } catch (StoreFullException e) {
+                // the standalone store has no room for it, like a non-retained publish refused by the store
+                log.debug("[{}] REST publish refused by the store, payload size: {}: {}", publishMsg.getTopicName(), publishMsg.getPayload().length, e.getMessage());
+                tbMessageStatsReportClient.reportDroppedMsgs();
+                stats.increment(RestPublishOutcome.QUOTA_EXCEEDED);
+                return Futures.immediateFailedFuture(e);
             } catch (StoreException e) {
                 log.warn("[{}] Failed to store the retained REST publish, payload size: {}", publishMsg.getTopicName(), publishMsg.getPayload().length, e);
                 tbMessageStatsReportClient.reportDroppedMsgs();

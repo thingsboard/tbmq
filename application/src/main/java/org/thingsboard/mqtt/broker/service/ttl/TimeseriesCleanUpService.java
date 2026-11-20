@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
@@ -34,16 +35,23 @@ public class TimeseriesCleanUpService extends AbstractServiceProvider {
     private boolean ttlTaskExecutionEnabled;
 
     private final TimeseriesService timeseriesService;
+    private final CleanupClockGuard cleanupClockGuard;
 
     public TimeseriesCleanUpService(SystemInfoService systemInfoService,
                                     ServiceInfoProvider serviceInfoProvider,
-                                    TimeseriesService timeseriesService) {
+                                    TimeseriesService timeseriesService,
+                                    CleanupClockGuard cleanupClockGuard) {
         super(systemInfoService, serviceInfoProvider);
         this.timeseriesService = timeseriesService;
+        this.cleanupClockGuard = cleanupClockGuard;
     }
 
     @Scheduled(initialDelayString = "${sql.ttl.ts.execution_interval_ms}", fixedDelayString = "${sql.ttl.ts.execution_interval_ms}")
     public void cleanUp() {
+        if (!cleanupClockGuard.cleanupAllowed()) {
+            log.debug("Timeseries clean up is postponed: the clock is behind its last record");
+            return;
+        }
         if (ttlTaskExecutionEnabled && isCurrentNodeShouldCleanUp()) {
             log.info("Starting timeseries clean up!");
             timeseriesService.cleanUp(systemTtl);

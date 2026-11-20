@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb;
 
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +35,7 @@ public class RecordingRocksDbStore extends RocksDbStore {
     private final AtomicReference<RuntimeException> nextWriteFailure = new AtomicReference<>();
 
     public RecordingRocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
-        super(properties, memoryBudget);
+        super(properties, memoryBudget, TestDiskSpaceMonitors.roomy(properties));
     }
 
     @Override

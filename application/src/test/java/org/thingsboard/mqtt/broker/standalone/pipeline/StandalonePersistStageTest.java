@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
 import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -119,6 +120,7 @@ class StandalonePersistStageTest {
         consumer.destroy();
         consumerLogger.detachAppender(consumerLog);
         consumerLogger.setAdditive(true);
+        consumerLogger.setLevel(null);
         consumerLog.stop();
     }
 
@@ -256,6 +258,27 @@ class StandalonePersistStageTest {
         assertThat(consumerLog.list).singleElement().satisfies(event -> {
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
             assertThat(event.getThrowableProxy().getMessage()).isEqualTo("disk");
+        });
+    }
+
+    @Test
+    void aFullDiskFailsTheBatchWithADebugLineWithoutTheTrace() {
+        // the disk monitor warns once when the store goes below the watermark; a line per batch would flood the log
+        consumerLogger.setLevel(Level.DEBUG);
+        givenSession("c1", true);
+        StoreFullException full = new StoreFullException("Not enough free disk space for the store");
+        doThrow(full).when(store).append(any());
+        submit("c1", msg("m1"), cb1);
+        submit("c2", msg("m2"), cb2);
+
+        runBatch();
+
+        verify(cb1).onFailure(full);
+        verify(cb2).onFailure(full);
+        assertThat(consumerLog.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.DEBUG);
+            assertThat(event.getThrowableProxy()).isNull();
+            assertThat(event.getFormattedMessage()).contains("Not enough free disk space for the store");
         });
     }
 

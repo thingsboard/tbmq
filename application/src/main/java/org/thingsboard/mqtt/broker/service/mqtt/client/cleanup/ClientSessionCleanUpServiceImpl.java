@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -46,6 +47,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final CleanupClockGuard cleanupClockGuard;
 
     @Value("${mqtt.client-session-expiry.ttl:0}")
     private int ttl;
@@ -98,6 +100,11 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Scheduled(cron = "${mqtt.client-session-expiry.cron}", zone = "${mqtt.client-session-expiry.zone}")
     public void cleanUp() {
+        // only the expiry is age-based: ghost sessions are repaired while it is postponed
+        boolean expiryAllowed = cleanupClockGuard.cleanupAllowed();
+        if (!expiryAllowed) {
+            log.debug("Cleaning up expired ClientSessions is postponed: the clock is behind its last record");
+        }
         log.info("Starting cleaning up expired ClientSessions.");
 
         long now = System.currentTimeMillis();
@@ -118,7 +125,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
                 if (stateFixed) {
                     fixedGhostCount++;
                 }
-            } else if (tryCleanupDisconnectedSession(info, now)) {
+            } else if (expiryAllowed && tryCleanupDisconnectedSession(info, now)) {
                 removedCount++;
             }
         }

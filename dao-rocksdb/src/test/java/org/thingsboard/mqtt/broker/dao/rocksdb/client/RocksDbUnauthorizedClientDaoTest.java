@@ -24,9 +24,12 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RecordingRocksDbStore;
+import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.EntityDescriptors;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.RocksEntityStore;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
@@ -88,6 +91,35 @@ class RocksDbUnauthorizedClientDaoTest {
         // the order was left as it was: the client fits after the failure, and the limit still holds
         assertThat(dao.save(client("a", 1))).succeedsWithin(0, TimeUnit.SECONDS);
         assertThat(store.count(EntityDescriptors.UNAUTHORIZED_CLIENT)).isEqualTo(1);
+    }
+
+    @Test
+    void belowTheWatermarkASaveIsAFailedFutureWithStoreFullNotAThrow() {
+        long gib = 1L << 30;
+        AtomicReference<FreeSpaceProbe.Space> space = new AtomicReference<>(new FreeSpaceProbe.Space(50 * gib, 100 * gib));
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(dir.resolve("watermark").toString());
+        DiskSpaceMonitor monitor = new DiskSpaceMonitor(properties, path -> space.get());
+        RocksDbStore watermarkedStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor);
+        watermarkedStore.open();
+        try {
+            RocksEntityStore entityStore = new RocksEntityStore(watermarkedStore);
+            entityStore.buildProjections();
+            RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(entityStore, 10);
+            space.set(new FreeSpaceProbe.Space(gib / 1024, 100 * gib));
+            monitor.check();
+
+            AtomicReference<ListenableFuture<Void>> save = new AtomicReference<>();
+            assertThatCode(() -> save.set(dao.save(client("refused", 1)))).doesNotThrowAnyException();
+
+            assertThat(save.get()).isDone();
+            assertThatThrownBy(() -> save.get().get()).isInstanceOf(ExecutionException.class)
+                    .hasCauseInstanceOf(StoreFullException.class);
+            assertThat(dao.findByClientId("refused")).isNull();
+            assertThat(entityStore.count(EntityDescriptors.UNAUTHORIZED_CLIENT)).isZero();
+        } finally {
+            watermarkedStore.close();
+        }
     }
 
     @Test

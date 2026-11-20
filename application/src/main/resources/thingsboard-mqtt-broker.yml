@@ -1225,6 +1225,23 @@ store:
     block-cache-bytes: "${STORE_MEMORY_BLOCK_CACHE_BYTES:0}"
     # Memory budget of the memtables (in bytes). Defaults to 0, which derives it as 25% of the block cache.
     write-buffer-bytes: "${STORE_MEMORY_WRITE_BUFFER_BYTES:0}"
+  disk:
+    # Interval between checks of the free space on the volume of the store (in ms).
+    check-interval-ms: "${STORE_DISK_CHECK_INTERVAL_MS:10000}"
+    # Free-space watermark as a percentage of the volume size. The watermark is the larger of this and STORE_DISK_MIN_FREE_BYTES.
+    # Below it the store refuses new data (new persistent sessions, persisted messages, retained messages, management changes),
+    # while updates and deletes go on, and the health endpoint reports the store as degraded.
+    min-free-percent: "${STORE_DISK_MIN_FREE_PERCENT:5}"
+    # Minimum free space on the volume of the store (in bytes). Defaults to 256 MB.
+    min-free-bytes: "${STORE_DISK_MIN_FREE_BYTES:268435456}"
+  clock:
+    # Interval between recordings of the wall-clock time in the store (in ms). The recorded time never moves backwards.
+    # A start with the clock behind it postpones the age-based cleanups (expired client sessions, retained messages,
+    # blocked and unauthorized clients, timeseries, DEVICE queue messages) until the clock passes it.
+    record-interval-ms: "${STORE_CLOCK_RECORD_INTERVAL_MS:60000}"
+    # Maximum time (in ms of uptime) the age-based cleanups stay postponed by a clock behind the recorded time. When it ends,
+    # the current clock is accepted and overwrites the recorded time. Defaults to 24 hours.
+    max-postpone-ms: "${STORE_CLOCK_MAX_POSTPONE_MS:86400000}"
   device-msg:
     # Maximum number of messages read from a persisted DEVICE client queue in one page.
     read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"
@@ -1403,6 +1420,10 @@ swagger:
 app:
   # Application version.
   version: "@project.version@"
+  version-check:
+    # Enables or disables the periodic check for the latest TBMQ release on GitHub (api.github.com), done every 3 hours by one node.
+    # Failed checks are logged at DEBUG and retried with a growing wait (6, 12, then 24 hours); a success resets the wait to 3 hours.
+    enabled: "${TBMQ_VERSION_CHECK_ENABLED:true}"
 
 # Analysis parameters
 analysis:
