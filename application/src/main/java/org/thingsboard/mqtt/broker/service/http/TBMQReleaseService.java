@@ -48,39 +48,44 @@ public class TBMQReleaseService extends AbstractServiceProvider {
 
     private static final String TBMQ_GITHUB_API_URL = "https://api.github.com/repos/thingsboard/tbmq/releases/latest";
     private static final int VERSION_CHECK_INTERVAL = 3 * 60 * 60;
-    private static final long BASE_WAIT_MS = TimeUnit.SECONDS.toMillis(VERSION_CHECK_INTERVAL);
-    private static final long MAX_WAIT_MS = TimeUnit.HOURS.toMillis(24);
-    // The scheduler may fire a little earlier than the recorded attempt time plus the wait; do not skip a run for that.
-    private static final long SCHEDULE_JITTER_MS = TimeUnit.MINUTES.toMillis(1);
+    private static final long BASE_WAIT_NANOS = TimeUnit.SECONDS.toNanos(VERSION_CHECK_INTERVAL);
+    private static final long MAX_WAIT_NANOS = TimeUnit.HOURS.toNanos(24);
+    // An attempt due within this much is made now. The ticks come BASE_WAIT apart at a fixed rate and nothing fires in
+    // between, so half a period absorbs an attempt or a tick that starts up to half a period late, and a backoff, a
+    // whole number of periods, is never cut short by a period.
+    private static final long SCHEDULE_SLACK_NANOS = BASE_WAIT_NANOS / 2;
 
     private final RetainedMsgListenerService retainedMsgListenerService;
     private final boolean enabled;
-    private final LongSupplier clock;
+    // monotonic: a step of the wall clock neither stops nor hurries the check
+    private final LongSupplier nanoClock;
 
     private HttpClient client;
     private HttpRequest request;
 
     // Touched only by the single scheduler thread (the method is never invoked concurrently with itself).
-    private long waitMs = BASE_WAIT_MS;
-    private long nextAttemptAtMs;
+    private long waitNanos = BASE_WAIT_NANOS;
+    private long nextAttemptAtNanos;
+    // false until the first attempt is done: nextAttemptAtNanos means nothing before it
+    private boolean attempted;
 
     @Autowired
     public TBMQReleaseService(SystemInfoService systemInfoService,
                               ServiceInfoProvider serviceInfoProvider,
                               RetainedMsgListenerService retainedMsgListenerService,
                               @Value("${app.version-check.enabled:true}") boolean enabled) {
-        this(systemInfoService, serviceInfoProvider, retainedMsgListenerService, enabled, System::currentTimeMillis);
+        this(systemInfoService, serviceInfoProvider, retainedMsgListenerService, enabled, System::nanoTime);
     }
 
     TBMQReleaseService(SystemInfoService systemInfoService,
                        ServiceInfoProvider serviceInfoProvider,
                        RetainedMsgListenerService retainedMsgListenerService,
                        boolean enabled,
-                       LongSupplier clock) {
+                       LongSupplier nanoClock) {
         super(systemInfoService, serviceInfoProvider);
         this.retainedMsgListenerService = retainedMsgListenerService;
         this.enabled = enabled;
-        this.clock = clock;
+        this.nanoClock = nanoClock;
     }
 
     void setHttpClient(HttpClient client) {
@@ -107,7 +112,7 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             return;
         }
         // read once, before the request: a failure backs off from the attempt, however long the request took
-        long now = clock.getAsLong();
+        long now = nanoClock.getAsLong();
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
                 return;
@@ -115,7 +120,8 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             if (!retainedMsgListenerService.isInitialized()) {
                 return;
             }
-            if (now + SCHEDULE_JITTER_MS < nextAttemptAtMs) {
+            // overflow-safe: nano times are compared only by their difference
+            if (attempted && nextAttemptAtNanos - now > SCHEDULE_SLACK_NANOS) {
                 return;
             }
             log.info("Executing get latest version of TBMQ release from GitHub.");
@@ -129,8 +135,8 @@ public class TBMQReleaseService extends AbstractServiceProvider {
                 retainedMsgListenerService.cacheRetainedMsgAndPersist(LATEST_VERSION_AVAILABLE_TOPIC_NAME, newRetainedMsg(version));
 
                 log.info("Got latest version of TBMQ release from GitHub: {}", version);
-                waitMs = BASE_WAIT_MS;
-                nextAttemptAtMs = now + waitMs;
+                waitNanos = BASE_WAIT_NANOS;
+                scheduleNextAttempt(now);
             } else {
                 log.debug("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
                 backOff(now);
@@ -145,8 +151,13 @@ public class TBMQReleaseService extends AbstractServiceProvider {
     }
 
     private void backOff(long now) {
-        waitMs = Math.min(waitMs * 2, MAX_WAIT_MS);
-        nextAttemptAtMs = now + waitMs;
+        waitNanos = Math.min(waitNanos * 2, MAX_WAIT_NANOS);
+        scheduleNextAttempt(now);
+    }
+
+    private void scheduleNextAttempt(long now) {
+        nextAttemptAtNanos = now + waitNanos;
+        attempted = true;
     }
 
     /**

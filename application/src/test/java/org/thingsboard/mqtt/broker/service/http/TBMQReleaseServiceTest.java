@@ -49,9 +49,11 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.LATEST_VER
 
 class TBMQReleaseServiceTest {
 
-    private static final long HOUR_MS = Duration.ofHours(1).toMillis();
+    private static final long HOUR = Duration.ofHours(1).toNanos();
 
-    private final AtomicLong now = new AtomicLong(1_000_000L);
+    // the nano clock's origin is arbitrary: start where a few hours later it overflows, so that every schedule below
+    // also pins the overflow-safe comparison
+    private final AtomicLong nanos = new AtomicLong(Long.MAX_VALUE - HOUR);
 
     private SystemInfoService systemInfoService;
     private ServiceInfoProvider serviceInfoProvider;
@@ -93,7 +95,7 @@ class TBMQReleaseServiceTest {
         TBMQReleaseService service = newService(false);
 
         service.scheduleVersionCheck();
-        now.addAndGet(3 * HOUR_MS);
+        nanos.addAndGet(3 * HOUR);
         service.scheduleVersionCheck();
 
         verify(httpClient, never()).send(any(), any());
@@ -108,10 +110,10 @@ class TBMQReleaseServiceTest {
         // failures: non-200, exception, non-200
         stubResponses(response(500, "boom"), new IOException("down"), response(503, "later"));
 
-        long start = now.get();
+        long start = nanos.get();
         List<Long> attemptHours = new java.util.ArrayList<>();
         for (int hour = 0; hour <= 21; hour += 3) {
-            now.set(start + hour * HOUR_MS);
+            nanos.set(start + hour * HOUR);
             int before = sendCount();
             service.scheduleVersionCheck();
             if (sendCount() > before) {
@@ -127,15 +129,15 @@ class TBMQReleaseServiceTest {
     @Test
     void givenASlowExceptionalFailure_whenScheduled_thenTheBackoffCountsFromTheAttemptNotFromTheFailure() throws Exception {
         TBMQReleaseService service = newService(true);
-        long start = now.get();
+        long start = nanos.get();
         // the request takes ten minutes before it fails
         when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenAnswer(invocation -> {
-            now.addAndGet(10 * Duration.ofMinutes(1).toMillis());
+            nanos.addAndGet(10 * Duration.ofMinutes(1).toNanos());
             throw new IOException("timed out");
         });
 
         service.scheduleVersionCheck();
-        now.set(start + 6 * HOUR_MS);
+        nanos.set(start + 6 * HOUR);
         service.scheduleVersionCheck();
 
         // 6 h after the first attempt started, as after a non-200 answer
@@ -147,10 +149,10 @@ class TBMQReleaseServiceTest {
         TBMQReleaseService service = newService(true);
         stubResponses(response(500, "x"));
 
-        long start = now.get();
+        long start = nanos.get();
         List<Long> attemptHours = new java.util.ArrayList<>();
         for (int hour = 0; hour <= 72; hour += 3) {
-            now.set(start + hour * HOUR_MS);
+            nanos.set(start + hour * HOUR);
             int before = sendCount();
             service.scheduleVersionCheck();
             if (sendCount() > before) {
@@ -167,10 +169,10 @@ class TBMQReleaseServiceTest {
         TBMQReleaseService service = newService(true);
         stubResponses(response(500, "x"), response(200, "{\"tag_name\":\"v2.9.9\"}"), response(500, "x"));
 
-        long start = now.get();
+        long start = nanos.get();
         List<Long> attemptHours = new java.util.ArrayList<>();
         for (int hour = 0; hour <= 15; hour += 3) {
-            now.set(start + hour * HOUR_MS);
+            nanos.set(start + hour * HOUR);
             int before = sendCount();
             service.scheduleVersionCheck();
             if (sendCount() > before) {
@@ -182,6 +184,53 @@ class TBMQReleaseServiceTest {
         assertThat(attemptHours).containsExactly(0L, 6L, 9L, 15L);
         verify(retainedMsgListenerService, times(1)).cacheRetainedMsgAndPersist(eq(LATEST_VERSION_AVAILABLE_TOPIC_NAME), any());
         assertThat(appender.list).noneMatch(e -> e.getLevel().isGreaterOrEqual(Level.WARN));
+    }
+
+    @Test
+    void givenAnAttemptThatStartedAnHourLate_whenScheduled_thenTheNextOnTimeTickAttempts() throws Exception {
+        TBMQReleaseService service = newService(true);
+        stubResponses(response(200, "{\"tag_name\":\"v2.9.9\"}"));
+
+        // the ticks are due at T0, T0 + 3 h, T0 + 6 h; the first one starts an hour late
+        long t0 = nanos.get();
+        List<Long> attemptHours = new java.util.ArrayList<>();
+        for (int hour : new int[]{1, 3, 6}) {
+            nanos.set(t0 + hour * HOUR);
+            int before = sendCount();
+            service.scheduleVersionCheck();
+            if (sendCount() > before) {
+                attemptHours.add((long) hour);
+            }
+        }
+
+        assertThat(attemptHours).containsExactly(1L, 3L, 6L);
+    }
+
+    @Test
+    void givenAFailureAtT0_whenScheduled_thenTheTickThreeHoursLaterIsStillSkipped() throws Exception {
+        TBMQReleaseService service = newService(true);
+        stubResponses(response(500, "x"));
+
+        long t0 = nanos.get();
+        service.scheduleVersionCheck();
+        nanos.set(t0 + 3 * HOUR);
+        service.scheduleVersionCheck();
+        // the 6 h backoff is not cut short by the slack
+        assertThat(sendCount()).isEqualTo(1);
+        nanos.set(t0 + 6 * HOUR);
+        service.scheduleVersionCheck();
+        assertThat(sendCount()).isEqualTo(2);
+    }
+
+    @Test
+    void givenANegativeNanoClock_whenFirstScheduled_thenItAttempts() throws Exception {
+        nanos.set(Long.MIN_VALUE + HOUR);
+        TBMQReleaseService service = newService(true);
+        stubResponses(response(200, "{\"tag_name\":\"v2.9.9\"}"));
+
+        service.scheduleVersionCheck();
+
+        assertThat(sendCount()).isEqualTo(1);
     }
 
     @Test
@@ -211,14 +260,14 @@ class TBMQReleaseServiceTest {
     private void assertA200WithoutAReleaseIsAFailedCheck(String body) throws Exception {
         TBMQReleaseService service = newService(true);
         stubResponses(response(200, body));
-        long start = now.get();
+        long start = nanos.get();
 
         service.scheduleVersionCheck();
-        now.set(start + 3 * HOUR_MS);
+        nanos.set(start + 3 * HOUR);
         service.scheduleVersionCheck();
         // backed off as after a non-200 answer: the next attempt is 6 h after the first
         assertThat(sendCount()).isEqualTo(1);
-        now.set(start + 6 * HOUR_MS);
+        nanos.set(start + 6 * HOUR);
         service.scheduleVersionCheck();
         assertThat(sendCount()).isEqualTo(2);
 
@@ -232,7 +281,7 @@ class TBMQReleaseServiceTest {
 
     private TBMQReleaseService newService(boolean enabled) {
         TBMQReleaseService service = new TBMQReleaseService(systemInfoService, serviceInfoProvider,
-                retainedMsgListenerService, enabled, now::get);
+                retainedMsgListenerService, enabled, nanos::get);
         service.init();
         service.setHttpClient(httpClient);
         return service;
