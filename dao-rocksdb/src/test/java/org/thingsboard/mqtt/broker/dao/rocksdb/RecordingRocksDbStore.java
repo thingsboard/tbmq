@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 /**
  * A {@link RocksDbStore} that records the {@link StoreWriteClass} of every put, delete and batch it runs, counts
@@ -33,7 +34,7 @@ public class RecordingRocksDbStore extends RocksDbStore {
     private final AtomicReference<RuntimeException> nextWriteFailure = new AtomicReference<>();
 
     public RecordingRocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
-        super(properties, memoryBudget);
+        super(properties, memoryBudget, TestDiskSpaceMonitors.roomy(properties));
     }
 
     @Override

@@ -34,6 +34,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +51,8 @@ class StandaloneDeviceMsgServiceTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)));
         rocksDb.open();
         service = new StandaloneDeviceMsgService(new RocksDbDeviceMsgQueueStore(rocksDb, 10, 600, Clock.systemUTC()));
     }

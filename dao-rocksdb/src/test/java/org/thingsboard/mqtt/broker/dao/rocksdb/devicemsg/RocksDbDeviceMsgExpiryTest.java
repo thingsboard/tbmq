@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.charset.StandardCharsets;
@@ -66,7 +67,7 @@ class RocksDbDeviceMsgExpiryTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         rocksDb.open();
         store = new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, TTL_SECONDS, clock);
     }

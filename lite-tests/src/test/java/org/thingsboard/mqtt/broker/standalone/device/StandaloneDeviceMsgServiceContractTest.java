@@ -21,6 +21,8 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.devicemsg.RocksDbDeviceMsgQueueStore;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
 import org.thingsboard.mqtt.broker.dao.service.DeviceMsgServiceContract;
 
 import java.nio.file.Path;
@@ -40,7 +42,8 @@ class StandaloneDeviceMsgServiceContractTest {
     void theStoreBackedServicePassesTheContract() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        RocksDbStore rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        RocksDbStore rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)));
         rocksDb.open();
         try {
             var service = new StandaloneDeviceMsgService(new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, 600, Clock.systemUTC()));

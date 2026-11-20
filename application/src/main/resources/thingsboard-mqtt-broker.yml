@@ -1225,6 +1225,15 @@ store:
     block-cache-bytes: "${STORE_MEMORY_BLOCK_CACHE_BYTES:0}"
     # Memory budget of the memtables (in bytes). Defaults to 0, which derives it as 25% of the block cache.
     write-buffer-bytes: "${STORE_MEMORY_WRITE_BUFFER_BYTES:0}"
+  disk:
+    # Interval between checks of the free space on the volume of the store (in ms).
+    check-interval-ms: "${STORE_DISK_CHECK_INTERVAL_MS:10000}"
+    # Free-space watermark as a percentage of the volume size. The watermark is the larger of this and STORE_DISK_MIN_FREE_BYTES.
+    # Below it the store refuses new data (new persistent sessions, persisted messages, retained messages, management changes),
+    # while updates and deletes go on, and the health endpoint reports the store as degraded.
+    min-free-percent: "${STORE_DISK_MIN_FREE_PERCENT:5}"
+    # Minimum free space on the volume of the store (in bytes). Defaults to 256 MB.
+    min-free-bytes: "${STORE_DISK_MIN_FREE_BYTES:268435456}"
   device-msg:
     # Maximum number of messages read from a persisted DEVICE client queue in one page.
     read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"
