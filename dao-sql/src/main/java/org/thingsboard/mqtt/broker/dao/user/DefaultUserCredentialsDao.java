@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.UserCredentialsEntity;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.model.UserCredentialsEntity;
 import java.util.UUID;
 
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class DefaultUserCredentialsDao extends AbstractDao<UserCredentialsEntity, UserCredentials> implements UserCredentialsDao {
 
@@ -54,5 +56,18 @@ public class DefaultUserCredentialsDao extends AbstractDao<UserCredentialsEntity
     @Override
     public UserCredentials findByResetToken(String resetToken) {
         return DaoUtil.getData(userCredentialsRepository.findByResetToken(resetToken));
+    }
+
+    /**
+     * One transaction. The unique user id holds: the existence check of {@link #removeById} flushes the delete before
+     * the insert of the replacement is queued.
+     */
+    @Override
+    public UserCredentials replace(UUID removedId, UserCredentials replacement) {
+        return inTransaction(() -> {
+            removeById(removedId);
+            // a violation raised inside save is translated again by the outer inTransaction, harmlessly (same type and constraint name)
+            return save(replacement);
+        });
     }
 }

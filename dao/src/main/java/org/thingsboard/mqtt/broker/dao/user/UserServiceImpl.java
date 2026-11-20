@@ -125,9 +125,12 @@ public class UserServiceImpl implements UserService {
     public UserCredentials replaceUserCredentials(UserCredentials userCredentials) {
         log.trace("Executing replaceUserCredentials [{}]", userCredentials);
         userCredentialsValidator.validate(userCredentials);
-        userCredentialsDao.removeById(userCredentials.getId());
+        UUID removedId = userCredentials.getId();
         userCredentials.setId(null);
-        return saveUserCredentialsAndPasswordHistory(userCredentials);
+        // one write, so that a stop cannot leave the user without credentials; the password history is a later write
+        UserCredentials result = userCredentialsDao.replace(removedId, userCredentials);
+        updatePasswordHistory(userCredentials);
+        return result;
     }
 
     @Override
@@ -137,9 +140,11 @@ public class UserServiceImpl implements UserService {
         validateId(userId, INCORRECT_USER_ID + userId);
         UserCredentials userCredentials = userCredentialsDao.findByUserId(userId);
         if (userCredentials == null) {
-            throw new IncorrectParameterException("Cannot find user credentials!");
+            // what a stop between the two writes of a new user, or of a user delete, leaves behind
+            log.warn("[{}] Deleting the user that has no credentials", userId);
+        } else {
+            userCredentialsDao.removeById(userCredentials.getId());
         }
-        userCredentialsDao.removeById(userCredentials.getId());
         userDao.removeById(userId);
     }
 
@@ -202,11 +207,15 @@ public class UserServiceImpl implements UserService {
 
     private UserCredentials saveUserCredentialsAndPasswordHistory(UserCredentials userCredentials) {
         UserCredentials result = userCredentialsDao.save(userCredentials);
+        updatePasswordHistory(userCredentials);
+        return result;
+    }
+
+    private void updatePasswordHistory(UserCredentials userCredentials) {
         User user = findUserById(userCredentials.getUserId());
         if (userCredentials.getPassword() != null) {
             updatePasswordHistory(user, userCredentials);
         }
-        return result;
     }
 
     private void updatePasswordHistory(User user, UserCredentials userCredentials) {

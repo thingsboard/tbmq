@@ -28,7 +28,9 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
+import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -38,12 +40,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public abstract class AbstractWebSocketSubscriptionContractTest extends AbstractContractTest {
 
     private final IdComparator<WebSocketSubscription> idComparator = new IdComparator<>();
 
     @Autowired
     protected WebSocketSubscriptionService webSocketSubscriptionService;
+    @Autowired
+    protected WebSocketSubscriptionDao webSocketSubscriptionDao;
     @Autowired
     protected WebSocketConnectionService webSocketConnectionService;
     @Autowired
@@ -218,6 +225,50 @@ public abstract class AbstractWebSocketSubscriptionContractTest extends Abstract
 
         Optional<WebSocketSubscription> webSocketSubscriptionById = webSocketSubscriptionService.getWebSocketSubscriptionById(savedWebSocketSubscription.getId());
         Assert.assertFalse(webSocketSubscriptionById.isPresent());
+    }
+
+    @Test
+    public void subscriptionsArePagedPerConnection() {
+        WebSocketConnection another = saveWebSocketConnection("Another connection");
+        try {
+            for (String filter : List.of("a/1", "a/2", "a/3")) {
+                webSocketSubscriptionService.saveWebSocketSubscription(getWebSocketSubscription(filter));
+            }
+            webSocketSubscriptionService.saveWebSocketSubscription(getWsSubscription("b/1", another.getId()));
+
+            PageData<WebSocketSubscription> first = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    savedWebSocketConnection.getId(), new PageLink(2, 0));
+            PageData<WebSocketSubscription> second = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    savedWebSocketConnection.getId(), new PageLink(2, 1));
+            PageData<WebSocketSubscription> others = webSocketSubscriptionService.getWebSocketSubscriptions(
+                    another.getId(), new PageLink(10, 0));
+
+            assertThat(first.getData()).hasSize(2);
+            assertThat(first.getTotalElements()).isEqualTo(3);
+            assertThat(first.getTotalPages()).isEqualTo(2);
+            assertThat(first.hasNext()).isTrue();
+            assertThat(second.getData()).hasSize(1);
+            assertThat(second.hasNext()).isFalse();
+            assertThat(others.getData()).extracting(s -> s.getConfiguration().getTopicFilter()).containsExactly("b/1");
+        } finally {
+            webSocketConnectionService.deleteWebSocketConnection(another.getId());
+        }
+    }
+
+    @Test
+    public void removingAMissingIdAnswersTrue() {
+        assertThat(webSocketSubscriptionDao.removeById(UUID.randomUUID())).isTrue();
+    }
+
+    // the service refuses an unknown connection first: only a caller of the DAO reaches the foreign key
+    @Test
+    public void aSubscriptionOfAMissingConnectionIsRefusedByTheForeignKey() {
+        WebSocketSubscription orphan = getWsSubscription("orphan/" + UUID.randomUUID(), UUID.randomUUID());
+
+        assertThatThrownBy(() -> webSocketSubscriptionDao.save(orphan))
+                .satisfies(e -> assertThat(EntityConstraintViolationException.isViolationOf(e, "fk_websocket_connection_id")).isTrue());
+        assertThat(webSocketSubscriptionDao.find()).extracting(s -> s.getConfiguration().getTopicFilter())
+                .doesNotContain(orphan.getConfiguration().getTopicFilter());
     }
 
     private WebSocketSubscription getWebSocketSubscription(String topicFilter) {
