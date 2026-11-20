@@ -90,11 +90,14 @@ class StatsWriteSkipperTest {
         dictionary.getOrSaveKeyId(CPU_KEY);
         logged.start();
         logger.addAppender(logged);
+        // the expected warnings go to the list only, not to the console
+        logger.setAdditive(false);
     }
 
     @AfterEach
     void close() {
         logger.detachAppender(logged);
+        logger.setAdditive(true);
         logged.stop();
         buffer.destroy();
         store.close();
@@ -111,6 +114,25 @@ class StatsWriteSkipperTest {
         // one WARN for two skips within a minute
         assertThat(warnings()).singleElement().satisfies(event -> assertThat(event.getFormattedMessage()).contains("full"));
         assertThat(latestDao.findLatestOpt(NODE, CPU_KEY).get()).isEmpty();
+    }
+
+    @Test
+    void aClientKeySavedOnAFullStoreStaysBufferedAndReadableWhileANodeKeyIsSkipped() throws Exception {
+        String clientId = "client-1";
+        String clientKey = BrokerConstants.SENT_PUBLISH_MSGS;
+        dictionary.getOrSaveKeyId(clientKey);
+        storeIsFull();
+
+        latestDao.saveLatest(clientId, entry(clientKey, 100, 5)).get();
+        latestDao.saveLatest(clientId, entry(NODE_KEY, 100, 6)).get();
+        buffer.flush();
+
+        // the node key and the flush were skipped, one each
+        assertThat(skipped()).isEqualTo(2);
+        assertThat(buffer.get(clientId, clientKey)).contains(entry(clientKey, 100, 5));
+        assertThat(latestDao.findLatest(clientId, clientKey).get()).isEqualTo(entry(clientKey, 100, 5));
+        assertThat(latestDao.findAllLatest(clientId).get()).containsExactly(entry(clientKey, 100, 5));
+        assertThat(latestDao.findLatestOpt(clientId, NODE_KEY).get()).isEmpty();
     }
 
     @Test
@@ -141,6 +163,7 @@ class StatsWriteSkipperTest {
 
     private void storeIsFull() {
         doThrow(new StoreFullException("full")).when(store).put(any(), any(), any(), any());
+        doThrow(new StoreFullException("full")).when(store).write(any(), any());
     }
 
     private double skipped() {

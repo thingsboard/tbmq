@@ -49,8 +49,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * the stored value until then. A flush that fails keeps its entries for the next one. An entry replaced while a flush
  * writes it stays as well: only the entry the flush wrote is dropped.
  * <p>
- * The newest entry of each key is kept in memory, so the memory holds at most one entry per (client, key) that changed
- * since the last flush.
+ * The last entry put of each key is kept, whatever its timestamp, as the SQL upsert keeps it: a clock that steps back
+ * does not freeze the stats of a client. The memory holds at most one entry per (client, key) that changed since the
+ * last flush.
  */
 @Slf4j
 @Component
@@ -65,7 +66,7 @@ public class ClientLatestStatsBuffer implements BufferedStoreWrites {
     private final StatsWriteSkipper skipper;
     private final long intervalMs;
 
-    // entity id -> key -> the newest entry not flushed yet; an entity is written only inside a compute of its own
+    // entity id -> key -> the last entry put and not flushed yet; an entity is written only inside a compute of its own
     private final ConcurrentMap<String, ConcurrentMap<String, TsKvEntry>> pending = new ConcurrentHashMap<>();
     // one flush at a time, and no removal while a flush writes, so a flush cannot write back a removed entry
     private final ReentrantLock flushLock = new ReentrantLock();
@@ -113,13 +114,12 @@ public class ClientLatestStatsBuffer implements BufferedStoreWrites {
     }
 
     /**
-     * Keeps the entry unless the entity has a newer one of its key. Of two entries with the same timestamp, the one
-     * put last is kept.
+     * Replaces the entry of its key, whatever their timestamps.
      */
     public void put(String entityId, TsKvEntry entry) {
         pending.compute(entityId, (id, entries) -> {
             ConcurrentMap<String, TsKvEntry> result = entries != null ? entries : new ConcurrentHashMap<>();
-            result.merge(entry.getKey(), entry, (current, added) -> added.getTs() >= current.getTs() ? added : current);
+            result.put(entry.getKey(), entry);
             return result;
         });
     }

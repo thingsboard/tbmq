@@ -51,8 +51,7 @@ import java.util.TreeMap;
  * later, and the reads take the buffered value over the stored one. A save of any other key replaces the entry at once
  * ({@link StoreWriteClass#NEW_DATA}) whatever its timestamp, as the SQL upsert does. A save the full store refuses is
  * skipped and counted ({@link StatsWriteSkipper}). The answers are the SQL DAO's ({@code SqlTimeseriesLatestDao});
- * every future is complete when the call returns, unless a removal rewrites the latest value, and another failure of
- * the store is a failed future.
+ * every future is complete when the call returns, and another failure of the store is a failed future.
  */
 @Component
 @StandaloneComponent
@@ -100,7 +99,10 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
         return Futures.submit(() -> {
-            // read before the store: an entry a flush writes in between is then in the store, or in this list as well
+            // Read before the store. The buffer only holds puts not flushed yet, so a buffered entry is newer than the
+            // stored one and wins. A key the buffer had nothing for is read from the store, which then holds every put
+            // flushed before the scan. A put that lands between the two reads may be missed, as by a read made just
+            // before it.
             List<TsKvEntry> buffered = clientStatsBuffer.getAll(entityId);
             TreeMap<Integer, TsKvEntry> byKeyId = store.scan(FAMILY, TsKeys.latestEntityLower(entityId),
                     TsKeys.latestEntityUpper(entityId), iterator -> {
@@ -115,9 +117,8 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
                         return entries;
                     });
             for (TsKvEntry entry : buffered) {
-                // saveLatest gives the key an id before it buffers the entry; a newer value flushed meanwhile is kept
-                byKeyId.merge(keyDictionaryDao.getKeyId(entry.getKey()), entry,
-                        (stored, inMemory) -> inMemory.getTs() >= stored.getTs() ? inMemory : stored);
+                // saveLatest gives the key an id before it buffers the entry
+                byKeyId.put(keyDictionaryDao.getKeyId(entry.getKey()), entry);
             }
             return new ArrayList<>(byKeyId.values());
         }, MoreExecutors.directExecutor());

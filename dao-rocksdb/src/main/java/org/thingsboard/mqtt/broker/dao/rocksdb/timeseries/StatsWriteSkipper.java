@@ -30,8 +30,9 @@ import java.util.function.LongSupplier;
 
 /**
  * Skips the stats writes that a full store refuses: a stats write must not fail because the disk is full. Each skipped
- * write is counted in {@code diskFullSkippedStatsWrites} and logged at WARN at most once a minute. Any other failure of
- * the write is thrown as it is.
+ * write is counted once in {@code diskFullSkippedStatsWrites}, whatever its size: a skipped flush of the
+ * {@link ClientLatestStatsBuffer} counts 1, and its entries stay buffered for the next flush. A skip is logged at WARN
+ * at most once a minute. Any other failure of the write is thrown as it is.
  */
 @Slf4j
 @Component

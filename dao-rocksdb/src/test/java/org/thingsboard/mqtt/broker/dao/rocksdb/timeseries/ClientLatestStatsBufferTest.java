@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -80,14 +81,19 @@ class ClientLatestStatsBufferTest {
         dictionary = new RocksDbKeyDictionaryDao(store);
         buffer = newBuffer(HOUR_MS);
         logged.start();
-        skipperLogger.addAppender(logged);
-        bufferLogger.addAppender(logged);
+        // the expected warnings go to the list only, not to the console
+        for (Logger logger : List.of(skipperLogger, bufferLogger)) {
+            logger.addAppender(logged);
+            logger.setAdditive(false);
+        }
     }
 
     @AfterEach
     void close() {
-        skipperLogger.detachAppender(logged);
-        bufferLogger.detachAppender(logged);
+        for (Logger logger : List.of(skipperLogger, bufferLogger)) {
+            logger.detachAppender(logged);
+            logger.setAdditive(true);
+        }
         logged.stop();
         buffer.destroy();
         store.close();
@@ -130,17 +136,18 @@ class ClientLatestStatsBufferTest {
     }
 
     @Test
-    void theNewestTimestampWins() {
+    void theLastPutWinsWhateverItsTimestamp() {
         buffer.put(CLIENT, entry(SENT, 200, 2));
+        // a clock that stepped back does not freeze the stats
         buffer.put(CLIENT, entry(SENT, 100, 1));
 
-        assertThat(buffer.get(CLIENT, SENT)).contains(entry(SENT, 200, 2));
+        assertThat(buffer.get(CLIENT, SENT)).contains(entry(SENT, 100, 1));
 
-        buffer.put(CLIENT, entry(SENT, 300, 3));
-        assertThat(buffer.get(CLIENT, SENT)).contains(entry(SENT, 300, 3));
+        buffer.put(CLIENT, entry(SENT, 100, 3));
+        assertThat(buffer.get(CLIENT, SENT)).contains(entry(SENT, 100, 3));
 
         buffer.flush();
-        assertThat(stored(CLIENT, SENT)).isEqualTo(entry(SENT, 300, 3));
+        assertThat(stored(CLIENT, SENT)).isEqualTo(entry(SENT, 100, 3));
     }
 
     @Test
@@ -217,6 +224,38 @@ class ClientLatestStatsBufferTest {
         buffer.flush();
         assertThat(stored(CLIENT, SENT)).isNull();
         assertThat(stored(CLIENT, RECEIVED)).isEqualTo(entry(RECEIVED, 100, 2));
+    }
+
+    @Test
+    void aRemovalDuringAFlushIsNotUndoneByIt() throws Exception {
+        RocksDbTimeseriesLatestDao latestDao = new RocksDbTimeseriesLatestDao(store, dictionary,
+                new RocksDbAggregationTimeseriesDao(store, dictionary), buffer, new StatsWriteSkipper(new DefaultStatsFactory(registry)));
+        buffer.put(CLIENT, entry(SENT, 100, 1));
+        resolveKeyIds();
+        CountDownLatch writing = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            writing.countDown();
+            release.await(10, TimeUnit.SECONDS);
+            return invocation.callRealMethod();
+        }).when(store).write(eq(StoreWriteClass.NEW_DATA), any());
+        Thread flusher = new Thread(buffer::flush, "test-flusher");
+        flusher.start();
+        assertThat(writing.await(10, TimeUnit.SECONDS)).isTrue();
+
+        // the flush holds the entry it is writing; the removal waits for it
+        Thread remover = new Thread(() -> latestDao.removeLatest(CLIENT, SENT), "test-remover");
+        remover.start();
+        remover.join(200);
+        assertThat(remover.isAlive()).isTrue();
+        release.countDown();
+        flusher.join(10_000);
+        remover.join(10_000);
+
+        assertThat(flusher.isAlive()).isFalse();
+        assertThat(remover.isAlive()).isFalse();
+        assertThat(buffer.get(CLIENT, SENT)).isEmpty();
+        assertThat(stored(CLIENT, SENT)).isNull();
     }
 
     @Test
