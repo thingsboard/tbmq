@@ -33,14 +33,14 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = ClientMqttVersionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class ClientMqttVersionIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

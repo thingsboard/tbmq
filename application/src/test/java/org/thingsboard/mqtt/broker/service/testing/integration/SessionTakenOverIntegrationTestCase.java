@@ -38,9 +38,9 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeoutException;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = SessionTakenOverIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

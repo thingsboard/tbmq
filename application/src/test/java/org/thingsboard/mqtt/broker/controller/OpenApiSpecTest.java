@@ -26,7 +26,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Regenerate with: mvn test -pl application -Dtest=OpenApiSpecTest -Dtbmq.openapi.update=true
  */
 @Slf4j
-@DaoSqlTest
+@EditionTest
 @TestPropertySource(properties = "springdoc.api-docs.enabled=true")
 public class OpenApiSpecTest extends AbstractControllerTest {
 

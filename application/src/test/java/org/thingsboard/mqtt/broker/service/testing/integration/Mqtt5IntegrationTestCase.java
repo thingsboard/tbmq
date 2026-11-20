@@ -33,7 +33,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Mqtt5IntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
 

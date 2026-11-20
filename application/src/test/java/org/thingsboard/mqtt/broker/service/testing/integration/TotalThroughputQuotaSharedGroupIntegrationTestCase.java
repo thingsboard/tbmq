@@ -33,11 +33,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +65,7 @@ import static org.junit.Assert.assertEquals;
         "mqtt.rate-limits.total.config=30:600",
         "mqtt.rate-limits.total.block-size=4"
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaSharedGroupIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

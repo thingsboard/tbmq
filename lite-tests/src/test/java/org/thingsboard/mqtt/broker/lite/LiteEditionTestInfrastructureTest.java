@@ -19,13 +19,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure;
 import org.thingsboard.mqtt.broker.testsupport.lite.LiteEditionTestInfrastructure;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +41,17 @@ class LiteEditionTestInfrastructureTest {
     void exactlyTheLiteInfrastructureIsOnTheLiteTestClasspath() {
         assertThat(ServiceLoader.load(EditionTestInfrastructure.class).stream().map(ServiceLoader.Provider::type))
                 .containsExactly(LiteEditionTestInfrastructure.class);
+    }
+
+    @Test
+    void theLiteContextPropertiesAreTheEntriesOfSqlTestProperties() throws IOException {
+        // dao-sql and its datasource auto-configuration are still on the Lite test classpath
+        Properties sqlTestProperties = PropertiesLoaderUtils.loadProperties(new ClassPathResource("sql-test.properties"));
+
+        assertThat(EditionTestInfrastructure.load().contextProperties())
+                .isNotEmpty()
+                .containsExactlyInAnyOrderEntriesOf(sqlTestProperties.entrySet().stream()
+                        .collect(Collectors.toMap(entry -> (String) entry.getKey(), Map.Entry::getValue)));
     }
 
     @Test

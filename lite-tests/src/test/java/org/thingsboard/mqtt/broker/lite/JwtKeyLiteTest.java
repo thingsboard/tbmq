@@ -22,9 +22,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.FileSystemUtils;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = JwtKeyLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class JwtKeyLiteTest extends AbstractControllerTest {
 

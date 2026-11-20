@@ -34,11 +34,11 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.contract.AbstractContractTest;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DaoSqlTest
+@EditionTest
 public class IntegrationControllerTest extends AbstractControllerTest {
 
     private final AbstractContractTest.IdComparator<Integration> idComparator = new AbstractContractTest.IdComparator<>();

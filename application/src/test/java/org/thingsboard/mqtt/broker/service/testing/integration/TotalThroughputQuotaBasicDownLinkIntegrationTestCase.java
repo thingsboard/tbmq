@@ -27,8 +27,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertTrue;
         "mqtt.rate-limits.total.config=100:600",
         "mqtt.rate-limits.total.block-size=4"
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaBasicDownLinkIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

@@ -35,8 +35,8 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "listener.write_buffer_high_water_mark=64",
         "listener.write_buffer_low_water_mark=32"
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class DeviceBackpressureIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

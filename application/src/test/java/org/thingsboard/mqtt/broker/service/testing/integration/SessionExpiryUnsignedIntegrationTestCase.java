@@ -31,7 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
         "mqtt.client-session-expiry.cron=0 0 0 29 2 ?", // effectively never: midnight on Feb 29th
         "mqtt.client-session-expiry.max-expiry-interval=" + SessionExpiryUnsignedIntegrationTestCase.MAX_EXPIRY_SEC
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class SessionExpiryUnsignedIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

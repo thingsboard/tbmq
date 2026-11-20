@@ -23,10 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -44,7 +44,7 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = ResendAfterReconnectLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class ResendAfterReconnectLiteTest extends AbstractLiteSpecCase {
 

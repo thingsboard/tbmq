@@ -16,9 +16,17 @@
 package org.thingsboard.mqtt.broker.testsupport;
 
 import org.junit.rules.TestRule;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * The edition-specific part of the shared integration-test base: the external services (and the system properties
@@ -36,9 +44,37 @@ public interface EditionTestInfrastructure {
     TestRule classRule();
 
     /**
-     * Exactly one provider must be on the test classpath ({@link ServiceLoader}); fails with the list otherwise.
+     * @return the properties the Spring context of an {@link EditionTest} class gets on top of the shared
+     * {@code application-test.properties}; empty by default
+     */
+    default Map<String, Object> contextProperties() {
+        return Map.of();
+    }
+
+    /**
+     * @return the entries of a properties file on the test classpath, e.g. for {@link #contextProperties()}
+     */
+    static Map<String, Object> classpathProperties(String resource) {
+        try {
+            Properties properties = PropertiesLoaderUtils.loadProperties(new ClassPathResource(resource));
+            return properties.stringPropertyNames().stream()
+                    .collect(Collectors.toUnmodifiableMap(Function.identity(), properties::getProperty));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read " + resource + " from the test classpath", e);
+        }
+    }
+
+    /**
+     * @return the class-level rule of the provider found by {@link #load()}
      */
     static TestRule loadClassRule() {
+        return load().classRule();
+    }
+
+    /**
+     * Exactly one provider must be on the test classpath ({@link ServiceLoader}); fails with the list otherwise.
+     */
+    static EditionTestInfrastructure load() {
         List<ServiceLoader.Provider<EditionTestInfrastructure>> providers =
                 ServiceLoader.load(EditionTestInfrastructure.class).stream().toList();
         if (providers.size() != 1) {
@@ -46,7 +82,7 @@ public interface EditionTestInfrastructure {
                     + " provider must be on the test classpath, but found " + providers.size() + ": "
                     + providers.stream().map(provider -> provider.type().getName()).toList());
         }
-        return providers.get(0).get().classRule();
+        return providers.get(0).get();
     }
 
 }

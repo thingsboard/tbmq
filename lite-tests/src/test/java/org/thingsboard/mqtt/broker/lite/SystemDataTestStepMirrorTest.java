@@ -25,10 +25,13 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
+import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.lite.durability.LiteTestDatabase;
 import org.thingsboard.mqtt.broker.testsupport.lite.SystemDataTestStep;
 
@@ -65,6 +68,8 @@ class SystemDataTestStepMirrorTest {
     private final UserCredentialsDao userCredentialsDao = mock(UserCredentialsDao.class);
     private final AdminSettingsDao adminSettingsDao = mock(AdminSettingsDao.class);
     private final MqttAuthProviderDao mqttAuthProviderDao = mock(MqttAuthProviderDao.class);
+    // seededInThisStart() is false: the insert pass alone
+    private final StoreSeedState storeSeedState = mock(StoreSeedState.class);
 
     @BeforeAll
     static void startDatabase() {
@@ -80,7 +85,8 @@ class SystemDataTestStepMirrorTest {
 
     @Test
     void givenAnEmptyBackend_whenApply_thenTheSavedRowsAreThoseOfTheSqlFile() throws SQLException {
-        new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao, true).apply();
+        new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao,
+                mock(MqttClientCredentialsService.class), mock(WebSocketConnectionDao.class), storeSeedState, true).apply();
 
         try (Connection connection = DriverManager.getConnection(db.jdbcUrl(), db.username(), db.password())) {
             // the schema files insert nothing, so every filled table comes from the SQL file

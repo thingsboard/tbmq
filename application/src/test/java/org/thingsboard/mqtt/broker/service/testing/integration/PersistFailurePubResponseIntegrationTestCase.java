@@ -46,7 +46,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,7 +70,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "queue.kafka.msg-all.additional-producer-config=max.request.size:20000"
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class PersistFailurePubResponseIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

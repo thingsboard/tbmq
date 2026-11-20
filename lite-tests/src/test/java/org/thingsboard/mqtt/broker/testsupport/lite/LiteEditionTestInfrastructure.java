@@ -19,11 +19,22 @@ import org.junit.rules.TestRule;
 import org.thingsboard.mqtt.broker.lite.TempStorePathRule;
 import org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure;
 
+import java.util.Map;
+
 /**
  * The Lite edition needs no external infrastructure, only a store directory of its own for each test class. The rule
  * wraps the whole class, so a class that restarts its context reopens the same store.
  */
 public class LiteEditionTestInfrastructure implements EditionTestInfrastructure {
+
+    /**
+     * @return the entries of dao-sql's {@code sql-test.properties}, as in the cluster edition: dao-sql and its datasource
+     * auto-configuration are still on the Lite test classpath
+     */
+    @Override
+    public Map<String, Object> contextProperties() {
+        return EditionTestInfrastructure.classpathProperties("sql-test.properties");
+    }
 
     @Override
     public TestRule classRule() {

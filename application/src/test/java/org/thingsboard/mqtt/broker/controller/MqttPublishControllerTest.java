@@ -31,7 +31,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.thingsboard.mqtt.broker.config.RestPublishRequestSizeInterceptor;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
 import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
@@ -41,6 +40,7 @@ import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -61,7 +61,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DaoSqlTest
+@EditionTest
 @TestPropertySource(properties = {
         "server.rest_publish.max_payload_size=" + MqttPublishControllerTest.MAX_PAYLOAD_SIZE,
         "server.rest_publish.timeout_ms=500",

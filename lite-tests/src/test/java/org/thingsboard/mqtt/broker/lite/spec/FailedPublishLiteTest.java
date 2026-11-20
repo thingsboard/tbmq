@@ -24,10 +24,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.verify;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = FailedPublishLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class FailedPublishLiteTest extends AbstractLiteSpecCase {
 

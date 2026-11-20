@@ -39,12 +39,12 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = RestartIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
+@EditionTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

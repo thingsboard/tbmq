@@ -17,17 +17,23 @@ package org.thingsboard.mqtt.broker.lite;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
+import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.testsupport.lite.SystemDataTestStep;
 
 import java.util.List;
@@ -35,6 +41,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -52,9 +59,14 @@ class SystemDataTestStepWritesTest {
     private final UserCredentialsDao userCredentialsDao = mock(UserCredentialsDao.class);
     private final AdminSettingsDao adminSettingsDao = mock(AdminSettingsDao.class);
     private final MqttAuthProviderDao mqttAuthProviderDao = mock(MqttAuthProviderDao.class);
+    private final MqttClientCredentialsService mqttClientCredentialsService = mock(MqttClientCredentialsService.class);
+    private final WebSocketConnectionDao webSocketConnectionDao = mock(WebSocketConnectionDao.class);
+    // seededInThisStart() is false unless a test says otherwise: the insert pass alone
+    private final StoreSeedState storeSeedState = mock(StoreSeedState.class);
 
     private SystemDataTestStep step(boolean enabled) {
-        return new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao, enabled);
+        return new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao,
+                mqttClientCredentialsService, webSocketConnectionDao, storeSeedState, enabled);
     }
 
     @Test
@@ -93,7 +105,7 @@ class SystemDataTestStepWritesTest {
 
     @Test
     void givenEveryRowPresent_whenApply_thenNothingIsSaved() {
-        when(userDao.findByEmail("sysadmin@thingsboard.org")).thenReturn(new User());
+        when(userDao.findByEmail("sysadmin@thingsboard.org")).thenReturn(new User(UUID.fromString("5a797660-4612-11e7-a919-92ebcb67fe33")));
         when(userCredentialsDao.findByUserId(UUID.fromString("5a797660-4612-11e7-a919-92ebcb67fe33"))).thenReturn(new UserCredentials());
         for (String key : List.of("general", "mail", "mqttAuthorization")) {
             when(adminSettingsDao.findByKey(key)).thenReturn(new AdminSettings());
@@ -111,10 +123,66 @@ class SystemDataTestStepWritesTest {
     }
 
     @Test
+    void givenASysadminWithAnotherIdAndNoCredentials_whenApply_thenTheCredentialsAreForThatSysadmin() {
+        UUID seededId = UUID.randomUUID();
+        when(userDao.findByEmail("sysadmin@thingsboard.org")).thenReturn(new User(seededId));
+
+        step(true).apply();
+
+        verify(userDao, never()).save(any());
+        ArgumentCaptor<UserCredentials> credentials = ArgumentCaptor.forClass(UserCredentials.class);
+        verify(userCredentialsDao).save(credentials.capture());
+        assertThat(credentials.getValue().getUserId()).isEqualTo(seededId);
+    }
+
+    @Test
+    void givenAStoreSeededInThisStart_whenApply_thenTheSeedBeyondTheSysadminIsRemovedBeforeTheInsertPass() {
+        when(storeSeedState.seededInThisStart()).thenReturn(true);
+        UUID sysadminId = UUID.randomUUID();
+        when(userDao.findByEmail("sysadmin@thingsboard.org")).thenReturn(new User(sysadminId));
+        when(userCredentialsDao.findByUserId(sysadminId)).thenReturn(new UserCredentials());
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setId(UUID.randomUUID());
+        when(webSocketConnectionDao.findByUserIdAndName(sysadminId, "WebSocket Default Connection")).thenReturn(connection);
+        MqttClientCredentials systemCredentials = new MqttClientCredentials();
+        systemCredentials.setId(UUID.randomUUID());
+        when(mqttClientCredentialsService.findSystemWebSocketCredentials()).thenReturn(systemCredentials);
+        UUID basicId = UUID.randomUUID();
+        MqttAuthProvider basic = new MqttAuthProvider();
+        basic.setId(basicId);
+        // found by the removal, gone for the insert pass
+        when(mqttAuthProviderDao.findByType(MqttAuthProviderType.MQTT_BASIC)).thenReturn(basic, (MqttAuthProvider) null);
+
+        step(true).apply();
+
+        InOrder inOrder = inOrder(webSocketConnectionDao, mqttClientCredentialsService, adminSettingsDao, mqttAuthProviderDao);
+        inOrder.verify(webSocketConnectionDao).removeById(connection.getId());
+        inOrder.verify(mqttClientCredentialsService).deleteCredentials(systemCredentials);
+        for (String key : List.of("general", "mail", "connectivity", "websocket", "mqttAuthorization")) {
+            inOrder.verify(adminSettingsDao).removeByKey(key);
+        }
+        inOrder.verify(mqttAuthProviderDao).removeById(basicId);
+        inOrder.verify(adminSettingsDao, times(3)).save(any());
+        inOrder.verify(mqttAuthProviderDao, times(5)).save(any());
+        verify(userDao, never()).save(any());
+        verify(userCredentialsDao, never()).save(any());
+    }
+
+    @Test
+    void givenAStoreSeededBefore_whenApply_thenNothingIsRemoved() {
+        step(true).apply();
+
+        verifyNoInteractions(webSocketConnectionDao, mqttClientCredentialsService);
+        verify(adminSettingsDao, never()).removeByKey(any());
+        verify(mqttAuthProviderDao, never()).removeById(any());
+    }
+
+    @Test
     void givenTheStepIsDisabled_whenApply_thenTheDaosAreNotTouched() {
         step(false).apply();
 
-        verifyNoInteractions(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao);
+        verifyNoInteractions(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao, mqttClientCredentialsService,
+                webSocketConnectionDao, storeSeedState);
     }
 
 }

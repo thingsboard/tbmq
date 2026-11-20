@@ -33,10 +33,10 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.PostgreSqlInitializer;
 import org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -55,7 +55,7 @@ import java.util.concurrent.TimeUnit;
         "sql.ts_key_value_partitioning=YEARS",
         "historical-data-report.enabled=false"
 })
-@DaoSqlTest
+@EditionTest
 @RunWith(SpringRunner.class)
 public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

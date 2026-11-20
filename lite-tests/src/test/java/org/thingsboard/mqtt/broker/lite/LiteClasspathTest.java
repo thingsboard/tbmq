@@ -79,7 +79,7 @@ class LiteClasspathTest {
     }
 
     /**
-     * The test database of {@code @DaoSqlTest} is dao-sql's own, taken from the restricted jar rather than kept as a copy.
+     * The test database of the {@code @EditionTest} contexts is dao-sql's own, taken from the restricted jar rather than kept as a copy.
      */
     @Test
     void theTestDatabaseSettingsComeFromTheRestrictedJar() throws IOException {

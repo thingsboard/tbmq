@@ -48,11 +48,11 @@ import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 import org.thingsboard.mqtt.broker.actors.client.service.handlers.MqttPublishHandler;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.standalone.pipeline.PipelineBudget;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneDeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishMsgQueue;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -112,7 +112,7 @@ import static org.mockito.Mockito.doAnswer;
         "mqtt.keep-alive.monitoring-delay-ms=200"
 })
 @ActiveProfiles("test")
-@DaoSqlTest
+@EditionTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OverloadLiteTest {
 
