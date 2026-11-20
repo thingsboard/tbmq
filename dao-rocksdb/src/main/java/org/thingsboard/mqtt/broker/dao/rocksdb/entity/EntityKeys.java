@@ -137,10 +137,11 @@ public final class EntityKeys {
      * The first key after every key that starts with {@code prefix}: the prefix with its last byte that is not
      * {@code 0xFF} incremented and the bytes after it dropped. An index key never ends in {@code 0xFF} (UTF-8 has no
      * such byte, and an empty value ends in its zero length), so the carry only keeps the bound right for any prefix.
+     * Public for the time series keys, whose key ids can end in {@code 0xFF}.
      *
      * @throws IllegalArgumentException for a prefix of {@code 0xFF} bytes only, which has no upper bound
      */
-    static byte[] upperBound(byte[] prefix) {
+    public static byte[] upperBound(byte[] prefix) {
         int last = prefix.length - 1;
         while (last >= 0 && prefix[last] == (byte) 0xFF) {
             last--;

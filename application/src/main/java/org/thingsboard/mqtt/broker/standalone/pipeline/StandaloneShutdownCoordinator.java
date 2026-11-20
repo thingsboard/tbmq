@@ -25,6 +25,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
+import org.thingsboard.mqtt.broker.dao.store.BufferedStoreWrites;
 import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
@@ -64,8 +65,12 @@ import java.util.concurrent.TimeoutException;
  * <p>
  * A publish that was not dispatched in time was never acknowledged. One that reaches a drained stage fails with
  * {@link PipelineClosedException}: it is not acknowledged either, and its client stays connected until the server
- * closes the connections; a will that reaches a drained stage is dropped and counted. The final WAL sync and the close
- * of the store stay with the store, which Spring closes last because every store user depends on it.
+ * closes the connections; a will that reaches a drained stage is dropped and counted.
+ * <p>
+ * After the drain, the writes the store keeps in memory ({@link BufferedStoreWrites}, the per-client latest stats) are
+ * flushed, always, even once the deadline has passed: each flush is one batch. A shutdown cut short before it loses
+ * them as a kill does, at most one flush interval. The final WAL sync and the close of the store stay with the store,
+ * which Spring closes after every bean has stopped, and last of the beans because every store user depends on it.
  */
 @Slf4j
 @Component
@@ -83,6 +88,7 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     private final StandaloneDeviceMsgQueueConsumer persistStage;
     private final PipelineProperties properties;
     private final StandaloneConnectionAdmission admission;
+    private final List<BufferedStoreWrites> bufferedWrites;
 
     private volatile boolean running;
 
@@ -97,10 +103,10 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
     @Override
     public void stop() {
         running = false;
+        long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(properties.getShutdown().getDrainTimeoutMs());
         try {
             admission.close();
             budget.stopResuming();
-            long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(properties.getShutdown().getDrainTimeoutMs());
             awaitConnectsInProgress(deadlineNanos);
             Set<EventLoop> eventLoops = pauseReading();
             awaitReadsInProgress(eventLoops, deadlineNanos);
@@ -109,6 +115,7 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
         } catch (Throwable t) {
             log.error("Failed to drain the publish pipeline on shutdown", t);
         }
+        flushBufferedWrites(deadlineNanos);
     }
 
     @Override
@@ -308,6 +315,26 @@ public class StandaloneShutdownCoordinator implements SmartLifecycle {
             log.warn("The publish pipeline did not drain within {} ms. Dispatch stage: {}. Persist stage: {}. "
                             + "The publishes it still held were never acknowledged",
                     timeoutMs, stageState(dispatchDrained, dispatch), stageState(persistDrained, persist));
+        }
+    }
+
+    /**
+     * Never throws: a flush that fails is logged and the next one still runs.
+     */
+    private void flushBufferedWrites(long deadlineNanos) {
+        for (BufferedStoreWrites writes : bufferedWrites) {
+            String name = writes.getClass().getSimpleName();
+            try {
+                long startNanos = System.nanoTime();
+                writes.flush();
+                long endNanos = System.nanoTime();
+                if (endNanos - deadlineNanos > 0) {
+                    log.warn("The flush of {} on shutdown took {} ms and ended {} ms after the drain deadline", name,
+                            TimeUnit.NANOSECONDS.toMillis(endNanos - startNanos), TimeUnit.NANOSECONDS.toMillis(endNanos - deadlineNanos));
+                }
+            } catch (Throwable t) {
+                log.error("Failed to flush {} on shutdown", name, t);
+            }
         }
     }
 

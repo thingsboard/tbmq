@@ -20,14 +20,20 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
+import org.thingsboard.mqtt.broker.common.data.kv.BaseDeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
+import org.thingsboard.mqtt.broker.common.data.kv.DoubleDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
+import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesLatestDao;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
@@ -38,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -57,6 +64,9 @@ public abstract class AbstractTimeseriesContractTest extends AbstractContractTes
 
     @Autowired
     protected TimeseriesService tsService;
+
+    @Autowired
+    protected TimeseriesLatestDao timeseriesLatestDao;
 
     @Test
     public void testFindAllLatest() throws Exception {
@@ -457,6 +467,192 @@ public abstract class AbstractTimeseriesContractTest extends AbstractContractTes
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0L,
                 8000000L, 200000, 3, Aggregation.NONE))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
         assertEquals(3, list.size());
+    }
+
+    @Test
+    public void aLimitedReadReturnsTheOldestAscendingAndTheNewestDescending() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        save(entityId, 10, 1);
+        save(entityId, 20, 2);
+        save(entityId, 30, 3);
+
+        assertThat(findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 10, 31, 0, 2, Aggregation.NONE, ASC_ORDER)))
+                .containsExactly(longEntry(10, 1), longEntry(20, 2));
+        assertThat(findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 10, 31, 0, 2, Aggregation.NONE, DESC_ORDER)))
+                .containsExactly(longEntry(30, 3), longEntry(20, 2));
+        // the end of the range is excluded
+        assertThat(findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 10, 30, 0, 5, Aggregation.NONE, DESC_ORDER)))
+                .containsExactly(longEntry(20, 2), longEntry(10, 1));
+        assertThat(findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 11, 20, 0, 5, Aggregation.NONE, ASC_ORDER))).isEmpty();
+    }
+
+    @Test
+    public void anAggregationSkipsAnEmptyBucketAndKeepsTheValueTypes() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        // buckets [0, 20000), [20000, 40000) left empty, and the shorter [40000, 50000)
+        save(entityId, 5000, 100);
+        save(entityId, 15000, 201);
+        save(entityId, 45000, 7);
+        save(entityId, 50000, 1000);
+
+        assertThat(aggregate(entityId, Aggregation.AVG, ASC_ORDER))
+                .containsExactly(doubleEntry(10000, 150.5), doubleEntry(45000, 7.0));
+        assertThat(aggregate(entityId, Aggregation.SUM, ASC_ORDER))
+                .containsExactly(longEntry(10000, 301), longEntry(45000, 7));
+        assertThat(aggregate(entityId, Aggregation.MIN, ASC_ORDER))
+                .containsExactly(longEntry(10000, 100), longEntry(45000, 7));
+        assertThat(aggregate(entityId, Aggregation.MAX, ASC_ORDER))
+                .containsExactly(longEntry(10000, 201), longEntry(45000, 7));
+        assertThat(aggregate(entityId, Aggregation.COUNT, ASC_ORDER))
+                .containsExactly(longEntry(10000, 2), longEntry(45000, 1));
+        assertThat(aggregate(entityId, Aggregation.COUNT, DESC_ORDER))
+                .containsExactly(longEntry(45000, 1), longEntry(10000, 2));
+        assertThat(aggregate(RandomStringUtils.randomAlphabetic(20), Aggregation.AVG, ASC_ORDER)).isEmpty();
+    }
+
+    @Test
+    public void aRemovalDeletesItsRangeWithTheEndExcluded() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        save(entityId, 10000, 1);
+        save(entityId, 20000, 2);
+        save(entityId, 30000, 3);
+        save(entityId, 40000, 4);
+
+        tsService.remove(entityId, List.of(new BaseTsKvQuery(LONG_KEY, 20000, 40000))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        assertThat(findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 0, 50000, 0, 10, Aggregation.NONE, ASC_ORDER)))
+                .containsExactly(longEntry(10000, 1), longEntry(40000, 4));
+    }
+
+    @Test
+    public void aCleanUpRemovesOnlyTheEntriesOlderThanTheTtl() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        String otherEntityId = RandomStringUtils.randomAlphabetic(20);
+        long now = System.currentTimeMillis();
+        long old = now - TimeUnit.HOURS.toMillis(2);
+        long recent = now - TimeUnit.MINUTES.toMillis(1);
+        save(entityId, old, 1);
+        save(entityId, recent, 2);
+        save(otherEntityId, old, 3);
+
+        CleanUpResult result = tsService.cleanUp(TimeUnit.HOURS.toSeconds(1));
+
+        // the SQL DAO may drop the partition of an old entry rather than delete its row
+        assertThat(result.getDeletedRows() + result.getDeletedPartitions()).isPositive();
+        ReadTsKvQuery all = new BaseReadTsKvQuery(LONG_KEY, 0, now + 1, 0, 10, Aggregation.NONE, ASC_ORDER);
+        assertThat(findAll(entityId, all)).containsExactly(longEntry(recent, 2));
+        assertThat(findAll(otherEntityId, all)).isEmpty();
+        // the latest values are kept
+        assertThat(timeseriesLatestDao.findLatestOpt(otherEntityId, LONG_KEY).get(MAX_TIMEOUT, TimeUnit.SECONDS))
+                .contains(longEntry(old, 3));
+    }
+
+    @Test
+    public void theLatestValueOfAKeyIsTheOneSavedLast() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        save(entityId, 100, 1);
+        save(entityId, 200, 2);
+
+        assertThat(tsService.findLatest(entityId, List.of(LONG_KEY)).get(MAX_TIMEOUT, TimeUnit.SECONDS))
+                .containsExactly(longEntry(200, 2));
+        assertThat(timeseriesLatestDao.findLatestOpt(entityId, LONG_KEY).get(MAX_TIMEOUT, TimeUnit.SECONDS))
+                .contains(longEntry(200, 2));
+
+        String keyWithoutValue = RandomStringUtils.randomAlphabetic(10);
+        assertThat(timeseriesLatestDao.findLatestOpt(entityId, keyWithoutValue).get(MAX_TIMEOUT, TimeUnit.SECONDS)).isEmpty();
+        TsKvEntry none = timeseriesLatestDao.findLatest(entityId, keyWithoutValue).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(none.getKey()).isEqualTo(keyWithoutValue);
+        assertThat(none.getValue()).isNull();
+        assertThat(none.getTs() % TimeUnit.MINUTES.toMillis(1)).isZero();
+    }
+
+    @Test
+    public void theLatestValuesOfANodeAndOfAClientAreReadInTheOrderOfTheirKeys() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        String nodeKey = BrokerConstants.HISTORICAL_KEYS.get(1);
+        String clientKey = BrokerConstants.CLIENT_SESSION_METRIC_KEYS.get(2);
+        save(entityId, nodeKey, 100, 5);
+        save(entityId, clientKey, 100, 7);
+
+        List<Optional<TsKvEntry>> node = timeseriesLatestDao.findAllLatestForNode(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(node).hasSize(BrokerConstants.HISTORICAL_KEYS.size());
+        for (int i = 0; i < node.size(); i++) {
+            assertThat(node.get(i)).isEqualTo(i == 1 ? Optional.of(entry(nodeKey, 100, 5)) : Optional.empty());
+        }
+        List<Optional<TsKvEntry>> client = timeseriesLatestDao.findAllLatestForClient(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(client).hasSize(BrokerConstants.CLIENT_SESSION_METRIC_KEYS.size());
+        for (int i = 0; i < client.size(); i++) {
+            assertThat(client.get(i)).isEqualTo(i == 2 ? Optional.of(entry(clientKey, 100, 7)) : Optional.empty());
+        }
+
+        assertThat(tsService.removeAllLatestForClient(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS)).containsExactly(clientKey);
+        assertThat(tsService.findAllLatest(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS)).containsExactly(entry(nodeKey, 100, 5));
+    }
+
+    @Test
+    public void aLatestRemovalReportsWhatItRemoved() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+        save(entityId, TS - 10, 1);
+        save(entityId, TS - 5, 2);
+        save(entityId, TS, 3);
+
+        // out of the range of the query: kept
+        TsKvLatestRemovingResult kept = timeseriesLatestDao.removeLatest(entityId,
+                new BaseDeleteTsKvQuery(LONG_KEY, TS + 1, TS + 100, true)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(kept).isEqualTo(new TsKvLatestRemovingResult(LONG_KEY, false));
+        assertThat(latest(entityId)).contains(longEntry(TS, 3));
+
+        // removed and rewritten from the time series older than the range
+        TsKvLatestRemovingResult rewritten = timeseriesLatestDao.removeLatest(entityId,
+                new BaseDeleteTsKvQuery(LONG_KEY, TS, TS + 1, true)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(rewritten).isEqualTo(new TsKvLatestRemovingResult(longEntry(TS - 5, 2)));
+        assertThat(latest(entityId)).contains(longEntry(TS - 5, 2));
+
+        // removed without a rewrite
+        TsKvLatestRemovingResult removed = timeseriesLatestDao.removeLatest(entityId,
+                new BaseDeleteTsKvQuery(LONG_KEY, 0, TS, false)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertThat(removed).isEqualTo(new TsKvLatestRemovingResult(LONG_KEY, true));
+        assertThat(latest(entityId)).isEmpty();
+        // and nothing left to remove
+        assertThat(timeseriesLatestDao.removeLatest(entityId, new BaseDeleteTsKvQuery(LONG_KEY, 0, TS, false))
+                .get(MAX_TIMEOUT, TimeUnit.SECONDS)).isEqualTo(new TsKvLatestRemovingResult(LONG_KEY, false));
+
+        // by key
+        save(entityId, TS + 1, 4);
+        assertThat(timeseriesLatestDao.removeLatest(entityId, LONG_KEY).get(MAX_TIMEOUT, TimeUnit.SECONDS))
+                .isEqualTo(new TsKvLatestRemovingResult(LONG_KEY, true));
+        assertThat(latest(entityId)).isEmpty();
+        String neverSaved = RandomStringUtils.randomAlphabetic(20);
+        assertThat(timeseriesLatestDao.removeLatest(entityId, neverSaved).get(MAX_TIMEOUT, TimeUnit.SECONDS))
+                .isEqualTo(new TsKvLatestRemovingResult(neverSaved, false));
+    }
+
+    private List<TsKvEntry> findAll(String entityId, ReadTsKvQuery query) throws Exception {
+        return tsService.findAll(entityId, List.of(query)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    private List<TsKvEntry> aggregate(String entityId, Aggregation aggregation, String order) throws Exception {
+        return findAll(entityId, new BaseReadTsKvQuery(LONG_KEY, 0, 50000, 20000, 1, aggregation, order));
+    }
+
+    private Optional<TsKvEntry> latest(String entityId) throws Exception {
+        return timeseriesLatestDao.findLatestOpt(entityId, LONG_KEY).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    private void save(String entityId, String key, long ts, long value) throws Exception {
+        tsService.save(entityId, entry(key, ts, value)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    private TsKvEntry longEntry(long ts, long value) {
+        return entry(LONG_KEY, ts, value);
+    }
+
+    private static TsKvEntry entry(String key, long ts, long value) {
+        return new BasicTsKvEntry(ts, new LongDataEntry(key, value));
+    }
+
+    private TsKvEntry doubleEntry(long ts, double value) {
+        return new BasicTsKvEntry(ts, new DoubleDataEntry(LONG_KEY, value));
     }
 
     private void save(String entityId, long ts, long value) throws Exception {

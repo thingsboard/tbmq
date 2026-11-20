@@ -32,12 +32,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.dao.store.BufferedStoreWrites;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -71,6 +73,7 @@ class StandaloneShutdownCoordinatorTest {
     private final PipelineProperties properties = new PipelineProperties();
     private final PipelineBudget budget = mock(PipelineBudget.class);
     private final StandaloneConnectionAdmission admission = new StandaloneConnectionAdmission();
+    private final List<BufferedStoreWrites> bufferedWrites = new ArrayList<>();
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(StandaloneShutdownCoordinator.class);
     private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
@@ -635,8 +638,77 @@ class StandaloneShutdownCoordinatorTest {
         assertThat(coordinator.isRunning()).isFalse();
     }
 
+    @Test
+    void theStatsAreFlushedAfterTheDrain() {
+        BufferedStoreWrites stats = mock(BufferedStoreWrites.class);
+        bufferedWrites.add(stats);
+        PartitionedWorkers<?> dispatch = drained();
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        InOrder order = inOrder(dispatch, persist, stats);
+        order.verify(dispatch).drain(anyLong());
+        order.verify(persist).drain(anyLong());
+        order.verify(stats).flush();
+        assertThat(warnings()).isEmpty();
+    }
+
+    @Test
+    void givenAFlushThatThrows_whenStop_thenTheOtherBufferedWritesAreStillFlushed() {
+        BufferedStoreWrites failing = mock(BufferedStoreWrites.class);
+        doThrow(new IllegalStateException("boom")).when(failing).flush();
+        BufferedStoreWrites healthy = mock(BufferedStoreWrites.class);
+        bufferedWrites.add(failing);
+        bufferedWrites.add(healthy);
+        PartitionedWorkers<?> idle = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) idle);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) idle);
+
+        coordinator().stop();
+
+        verify(healthy).flush();
+        assertThat(warnings()).singleElement().satisfies(event -> assertThat(event.getLevel()).isEqualTo(Level.ERROR));
+    }
+
+    @Test
+    void givenADrainThatUsesUpTheDeadline_whenStop_thenTheStatsAreStillFlushedAndTheLateFlushIsLogged() {
+        properties.getShutdown().setDrainTimeoutMs(100);
+        BufferedStoreWrites stats = mock(BufferedStoreWrites.class);
+        bufferedWrites.add(stats);
+        PartitionedWorkers<?> dispatch = drained();
+        when(dispatch.drain(anyLong())).thenAnswer(invocation -> {
+            Thread.sleep(200);
+            return false;
+        });
+        PartitionedWorkers<?> persist = drained();
+        when(dispatchStage.workers()).thenReturn((PartitionedWorkers) dispatch);
+        when(persistStage.workers()).thenReturn((PartitionedWorkers) persist);
+
+        coordinator().stop();
+
+        verify(stats).flush();
+        assertThat(warnings()).anySatisfy(event -> assertThat(event.getFormattedMessage())
+                .contains("after the drain deadline")
+                .contains(stats.getClass().getSimpleName()));
+    }
+
+    @Test
+    void givenAPipelineStepThatThrows_whenStop_thenTheStatsAreStillFlushed() {
+        BufferedStoreWrites stats = mock(BufferedStoreWrites.class);
+        bufferedWrites.add(stats);
+        when(dispatchStage.workers()).thenThrow(new IllegalStateException("boom"));
+
+        coordinator().stop();
+
+        verify(stats).flush();
+    }
+
     private StandaloneShutdownCoordinator coordinator() {
-        return new StandaloneShutdownCoordinator(sessions, actors, lastWills, budget, dispatchStage, persistStage, properties, admission);
+        return new StandaloneShutdownCoordinator(sessions, actors, lastWills, budget, dispatchStage, persistStage, properties, admission,
+                bufferedWrites);
     }
 
     /**

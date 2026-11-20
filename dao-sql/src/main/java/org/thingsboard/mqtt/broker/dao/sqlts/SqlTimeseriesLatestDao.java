@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
@@ -60,6 +61,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER
 
 @Slf4j
 @Component
+@ClusterComponent
 public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao implements TimeseriesLatestDao {
 
     @Autowired

@@ -27,6 +27,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
 import org.thingsboard.mqtt.broker.dao.sqlts.AbstractChunkedAggregationTimeseriesDao;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Component
+@ClusterComponent
 @Slf4j
 @RequiredArgsConstructor
 public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao {

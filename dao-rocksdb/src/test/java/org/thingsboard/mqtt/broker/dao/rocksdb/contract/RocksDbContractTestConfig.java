@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.contract;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.FileSystemUtils;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
+import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 
@@ -88,6 +91,11 @@ public class RocksDbContractTestConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public StatsFactory statsFactory() {
+        return new DefaultStatsFactory(new SimpleMeterRegistry());
     }
 
     public record StoreDirectory(Path path) implements AutoCloseable {
