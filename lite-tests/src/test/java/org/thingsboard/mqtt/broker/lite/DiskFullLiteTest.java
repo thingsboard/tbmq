@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.lite;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.After;
@@ -28,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -35,12 +37,16 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractWebTest;
+import org.thingsboard.mqtt.broker.controller.MqttPublishController;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
+import org.thingsboard.mqtt.broker.dto.PayloadEncoding;
+import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.lite.spec.RawMqttClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -60,11 +66,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * (non-persistent traffic, a returning persistent subscriber draining its queue, a sysadmin login, an authentication
  * refusal). The test replaces the free-space probe with one it fills and empties, and checks the monitor after each
  * change, so the store, the connect check and the health all see the same disk. Every case ends with the disk empty
- * again, before the base class logs in after it.
+ * again, before the base class logs in after it. The watermark is the default one (the other Lite test contexts turn
+ * it off), so the full and the roomy disk of the probe fall on either side of it.
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = DiskFullLiteTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
+@TestPropertySource(properties = {
+        "store.disk.min-free-percent=5",
+        "store.disk.min-free-bytes=268435456"
+})
 @RunWith(SpringRunner.class)
 public class DiskFullLiteTest extends AbstractWebTest {
 
@@ -83,6 +94,8 @@ public class DiskFullLiteTest extends AbstractWebTest {
     private ClientSessionCache clientSessionCache;
     @Autowired
     private UnauthorizedClientService unauthorizedClientService;
+    @Autowired
+    private RetainedMsgListenerService retainedMsgListenerService;
 
     private final List<RawMqttClient> clients = new ArrayList<>();
 
@@ -127,6 +140,31 @@ public class DiskFullLiteTest extends AbstractWebTest {
         publisher.publish("disk-full/311", 1, 1, "refused", null);
 
         assertThatThrownBy(() -> publisher.next(TIMEOUT)).isInstanceOf(EOFException.class);
+    }
+
+    @Test
+    public void aRetainedQos1PublishIsRefusedWithQuotaExceededOnMqtt5() throws Exception {
+        RawMqttClient publisher = track(RawMqttClient.connectClean(mqttPort, "disk-full-retain-pub", MqttVersion.MQTT_5));
+        setDiskFull(true);
+
+        assertThat(publisher.publishRetainedQos1("disk-full/retained", 1, "refused")).as("PUBACK reason code").isEqualTo(QUOTA_EXCEEDED);
+        assertThat(retainedMsgListenerService.getRetainedMsgForTopic("disk-full/retained")).isNull();
+    }
+
+    @Test
+    public void aRestPublishToAPersistentSubscriberAndARetainedRestPublishAreRefusedWith507() throws Exception {
+        offlinePersistentSubscriber("disk-full-rest-sub", "disk-full/rest");
+        setDiskFull(true);
+        loginSysAdmin();
+
+        for (RestPublishRequest request : List.of(restRequest("disk-full/rest", false), restRequest("disk-full/rest-retained", true))) {
+            JsonNode error = readResponse(doPostAsync(MqttPublishController.PUBLISH_PATH, request, TIMEOUT.toMillis())
+                    .andExpect(status().isInsufficientStorage()), JsonNode.class);
+
+            assertThat(error.get("status").asInt()).as(request.getTopic()).isEqualTo(507);
+            assertThat(error.get("message").asText()).as(request.getTopic()).startsWith("Not enough free disk space for the store at ");
+        }
+        assertThat(retainedMsgListenerService.getRetainedMsgForTopic("disk-full/rest-retained")).isNull();
     }
 
     @Test
@@ -244,6 +282,16 @@ public class DiskFullLiteTest extends AbstractWebTest {
             ClientSessionInfo session = clientSessionCache.getClientSessionInfo(clientId);
             return session != null && !session.isConnected();
         });
+    }
+
+    private static RestPublishRequest restRequest(String topic, boolean retain) {
+        RestPublishRequest request = new RestPublishRequest();
+        request.setTopic(topic);
+        request.setPayload(new TextNode("refused"));
+        request.setPayloadEncoding(PayloadEncoding.TEXT);
+        request.setQos(1);
+        request.setRetain(retain);
+        return request;
     }
 
     private static MqttClientCredentials basicCredentials(String name, String username, String password) {

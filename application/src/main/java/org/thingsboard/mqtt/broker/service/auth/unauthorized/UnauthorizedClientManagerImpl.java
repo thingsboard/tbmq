@@ -104,8 +104,8 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
 
     private void logPersistFailure(UnauthorizedClient unauthorizedClient, Throwable throwable) {
         if (throwable instanceof StoreFullException) {
-            // the standalone store's disk is full, which any refused CONNECT can hit: the disk monitor warned once when
-            // the store went below the watermark; the cluster edition never fails with it
+            // the standalone store's disk is full, which any refused CONNECT can hit: the disk monitor warns about it
+            // while the store is below the watermark; the cluster edition never fails with it
             log.debug("[{}] Unauthorized client not persisted: {}", unauthorizedClient.getClientId(), throwable.getMessage());
         } else {
             log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable);

@@ -182,6 +182,10 @@ public final class RawMqttClient implements AutoCloseable {
      * @param msgExpiryInterval the Message Expiry Interval in seconds, or {@code null} to send none
      */
     public void publish(String topic, int qos, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+        publish(topic, qos, packetId, payload, msgExpiryInterval, false);
+    }
+
+    private void publish(String topic, int qos, int packetId, String payload, Integer msgExpiryInterval, boolean retained) throws IOException {
         MqttProperties properties = new MqttProperties();
         if (msgExpiryInterval != null) {
             properties.add(new MqttProperties.IntegerProperty(
@@ -191,7 +195,7 @@ public final class RawMqttClient implements AutoCloseable {
                 .topicName(topic)
                 .qos(MqttQoS.valueOf(qos))
                 .messageId(packetId)
-                .retained(false)
+                .retained(retained)
                 .payload(Unpooled.copiedBuffer(payload, StandardCharsets.UTF_8))
                 .properties(properties)
                 .build());
@@ -202,6 +206,14 @@ public final class RawMqttClient implements AutoCloseable {
      */
     public int publishQos1(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
         publish(topic, 1, packetId, payload, msgExpiryInterval);
+        return expect(MqttMessageType.PUBACK, packetId).reasonCode();
+    }
+
+    /**
+     * Publishes a retained message at QoS 1 and returns the PUBACK's reason code.
+     */
+    public int publishRetainedQos1(String topic, int packetId, String payload) throws IOException {
+        publish(topic, 1, packetId, payload, null, true);
         return expect(MqttMessageType.PUBACK, packetId).reasonCode();
     }
 

@@ -143,7 +143,7 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
         } catch (Throwable t) {
             toStore.forEach(copy -> fail(copy, t));
             if (t instanceof StoreFullException) {
-                // expected while the disk is full: the disk monitor warned once when the store went below the watermark
+                // expected while the disk is full: the disk monitor warns about it while the store is below the watermark
                 log.debug("Failed to store {} messages for {} DEVICE clients: {}", toStore.size(), queues.size(), t.getMessage());
             } else {
                 log.error("Failed to store {} messages for {} DEVICE clients", toStore.size(), queues.size(), t);

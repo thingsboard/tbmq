@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
@@ -56,7 +57,14 @@ public class StandaloneSubscriptionPersistenceService implements SubscriptionPer
         StoreStateSupport.writeThenCallback(
                 () -> write(clientId, clientSubscriptions),
                 callback,
-                e -> log.error("[{}] Failed to store client subscriptions", clientId, e));
+                e -> {
+                    if (e instanceof StoreFullException) {
+                        // expected while the disk is full: the disk monitor warns about it
+                        log.debug("[{}] Failed to store client subscriptions: {}", clientId, e.getMessage());
+                    } else {
+                        log.error("[{}] Failed to store client subscriptions", clientId, e);
+                    }
+                });
     }
 
     @Override
