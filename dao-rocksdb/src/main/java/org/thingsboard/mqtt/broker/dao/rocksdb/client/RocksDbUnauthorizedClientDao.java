@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.entity.EntityDescriptors;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.RocksEntityStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.entity.RocksEntityStore.ProjectedEntity;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -44,7 +45,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- * The unauthorized clients of the standalone edition, on the entity store, keyed by client id. A save is written at
+ * The unauthorized clients of the standalone edition, on the entity store, keyed by client id, a lone surrogate in it
+ * written as {@code ?} (see {@link #storedClientId}). A save is written at
  * once, in one batch, and its future is complete when the call returns; it never throws: a failure of the store, a
  * full disk included, is a failed future, so the CONNECT refusal that saved the client still goes out.
  * <p>
@@ -116,6 +118,7 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
 
     @Override
     public void deleteById(String clientId) {
+        clientId = storedClientId(clientId);
         synchronized (writeLock) {
             if (ages.containsKey(clientId) && store.removeById(EntityDescriptors.UNAUTHORIZED_CLIENT, clientId)) {
                 untrack(clientId);
@@ -125,7 +128,7 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
 
     @Override
     public UnauthorizedClient findByClientId(String clientId) {
-        return store.findById(EntityDescriptors.UNAUTHORIZED_CLIENT, clientId);
+        return store.findById(EntityDescriptors.UNAUTHORIZED_CLIENT, storedClientId(clientId));
     }
 
     @Override
@@ -163,6 +166,11 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
     private void saveLocked(UnauthorizedClient client) {
         if (client.getClientId() == null) {
             throw new IllegalArgumentException("Cannot save an unauthorized client without a client id");
+        }
+        String clientId = storedClientId(client.getClientId());
+        if (!clientId.equals(client.getClientId())) {
+            // a copy: the caller's client is left as it is
+            client = client.toBuilder().clientId(clientId).build();
         }
         if (client.getReason() != null && client.getReason().length() > MAX_REASON_LENGTH) {
             // a copy: the caller's client is left as it is
@@ -222,6 +230,19 @@ public class RocksDbUnauthorizedClientDao implements UnauthorizedClientDao {
         if (age != null) {
             byAge.remove(age);
         }
+    }
+
+    /**
+     * The client id as the store keeps it: a lone surrogate, such as the half of an emoji left by cutting a long client
+     * id, becomes {@code ?}, as UTF-8 writes it (and as the SQL DAO stores it). Ids that differ only there are one
+     * client, under one key and one entry of the order.
+     */
+    static String storedClientId(String clientId) {
+        if (clientId == null) {
+            return null;
+        }
+        String stored = new String(clientId.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        return stored.equals(clientId) ? clientId : stored;
     }
 
     private static List<String> clientIds(List<Age> ages) {

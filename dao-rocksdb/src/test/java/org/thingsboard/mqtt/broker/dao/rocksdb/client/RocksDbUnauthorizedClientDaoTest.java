@@ -153,6 +153,49 @@ class RocksDbUnauthorizedClientDaoTest {
         assertThat(dao.findByClientId("b")).isEqualTo(exact);
     }
 
+    // a client id cut by the caller through an emoji ends in half of it
+    @Test
+    void clientIdsThatDifferOnlyByALoneSurrogateAreOneClient() throws Exception {
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 3);
+        String prefix = "x".repeat(251);
+        String high = prefix + "\uD83D...";
+        String otherHigh = prefix + "\uD83E...";
+        String stored = prefix + "?...";
+        UnauthorizedClient first = client(high, 1);
+
+        dao.save(first).get();
+        dao.save(client(otherHigh, 2)).get();
+
+        assertThat(first.getClientId()).isEqualTo(high);
+        assertThat(clientIds()).containsExactly(stored);
+        assertThat(store.count(EntityDescriptors.UNAUTHORIZED_CLIENT)).isEqualTo(1);
+        assertThat(dao.findByClientId(high).getClientId()).isEqualTo(stored);
+        assertThat(dao.findByClientId(high).getTs()).isEqualTo(2);
+
+        dao.deleteById(otherHigh);
+
+        assertThat(store.count(EntityDescriptors.UNAUTHORIZED_CLIENT)).isZero();
+        assertThat(dao.findByClientId(stored)).isNull();
+        // the order holds no client the store lost: the limit still keeps three
+        for (int i = 0; i < 4; i++) {
+            dao.save(client("c" + i, 10 + i)).get();
+        }
+        assertThat(clientIds()).containsExactlyInAnyOrder("c1", "c2", "c3");
+    }
+
+    // only ids are keys: a lone surrogate elsewhere is written and read back as it is
+    @Test
+    void aReasonCutThroughAnEmojiIsStoredAsItIs() throws Exception {
+        RocksDbUnauthorizedClientDao dao = new RocksDbUnauthorizedClientDao(store, 3);
+        String reason = "Bad credentials for \uD83D";
+
+        dao.save(client("a", 1).toBuilder().reason(reason).username("u\uDE00").build()).get();
+
+        UnauthorizedClient found = dao.findByClientId("a");
+        assertThat(found.getReason()).isEqualTo(reason);
+        assertThat(found.getUsername()).isEqualTo("u\uDE00");
+    }
+
     @Test
     void theOrderIsRebuiltFromTheProjectionAfterARestart() throws Exception {
         RocksDbUnauthorizedClientDao before = new RocksDbUnauthorizedClientDao(store, 3);
