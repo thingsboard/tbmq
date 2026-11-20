@@ -36,10 +36,12 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.dao.store.StoreCapacity;
 import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -53,6 +55,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientConnectInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
@@ -77,6 +80,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.QUOTA_EXCEEDED;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.SERVER_UNAVAILABLE;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason.USE_ANOTHER_SERVER;
 
@@ -103,6 +107,8 @@ public class ConnectServiceImpl implements ConnectService {
     private final IntegrationLifecycleEventPublisher integrationLifecycleEventPublisher;
     private final NodeDrainService nodeDrainService;
     private final ConnectionAdmission connectionAdmission;
+    private final StoreCapacity storeCapacity;
+    private final ClientSessionCache clientSessionCache;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -153,6 +159,12 @@ public class ConnectServiceImpl implements ConnectService {
 
         if (nodeDrainService.isDraining()) {
             refuseConnection(sessionCtx, sessionInfo, USE_ANOTHER_SERVER, null);
+            return;
+        }
+
+        if (isNewPersistentSessionOnAFullStore(sessionInfo)) {
+            // refused before the session info is set, so the session is never stored, as on a node drain
+            refuseConnection(sessionCtx, sessionInfo, QUOTA_EXCEEDED, null);
             return;
         }
 
@@ -262,6 +274,21 @@ public class ConnectServiceImpl implements ConnectService {
     private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
         MqttConnAckMessage mqttConnAckMsg = mqttMessageGenerator.createMqttConnAckMsg(actorState, msg);
         actorState.getCurrentSessionCtx().getChannel().writeAndFlush(mqttConnAckMsg);
+    }
+
+    /**
+     * Whether the connect asks for a persistent session the store does not hold yet while the store refuses new data
+     * (the standalone store's volume is below its free-space watermark). A returning persistent client goes on: its
+     * session is rewritten, not added. The cluster store is never below the watermark, so the session is looked up
+     * only on a full standalone disk.
+     */
+    private boolean isNewPersistentSessionOnAFullStore(SessionInfo sessionInfo) {
+        if (!sessionInfo.isPersistent() || !storeCapacity.belowWatermark()) {
+            return false;
+        }
+        // the store holds persistent sessions only: a clean session known to the cache is not in it
+        ClientSessionInfo stored = clientSessionCache.getClientSessionInfo(sessionInfo.getClientId());
+        return stored == null || !stored.isPersistent();
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, ClientSessionFailureReason reason, Throwable t) {
