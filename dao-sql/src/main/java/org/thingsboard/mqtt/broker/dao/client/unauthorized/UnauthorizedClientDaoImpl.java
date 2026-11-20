@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
 import org.thingsboard.mqtt.broker.dao.model.UnauthorizedClientEntity;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
+@ClusterComponent
 @RequiredArgsConstructor
 public class UnauthorizedClientDaoImpl extends JpaAbstractDaoListeningExecutorService implements UnauthorizedClientDao {
 

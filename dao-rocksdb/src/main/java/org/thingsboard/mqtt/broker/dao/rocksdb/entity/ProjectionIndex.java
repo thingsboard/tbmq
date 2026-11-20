@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -101,6 +102,16 @@ final class ProjectionIndex<T> {
 
     int size() {
         return rows.size();
+    }
+
+    /**
+     * Calls {@code action} with every row as a page filter sees it, in no particular order. A row written alongside is
+     * seen before or after the write.
+     */
+    void forEach(Consumer<RocksEntityStore.ProjectedEntity> action) {
+        for (Row row : rows.values()) {
+            action.accept(projected(row));
+        }
     }
 
     /**

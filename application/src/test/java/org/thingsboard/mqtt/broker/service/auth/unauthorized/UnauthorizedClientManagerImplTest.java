@@ -27,11 +27,13 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.config.UnauthorizedClientsProperties;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -112,6 +114,16 @@ class UnauthorizedClientManagerImplTest {
         when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateVoidFuture());
 
         unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, username, true, reason);
+
+        verify(unauthorizedClientService, times(1)).save(any(UnauthorizedClient.class));
+    }
+
+    @Test
+    void aFailedSaveFutureDoesNotPropagateOutOfTheRefusalPath() {
+        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFailedFuture(new StoreFullException("no room")));
+
+        assertThatCode(() -> unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, username, true, reason))
+                .doesNotThrowAnyException();
 
         verify(unauthorizedClientService, times(1)).save(any(UnauthorizedClient.class));
     }

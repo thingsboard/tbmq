@@ -83,23 +83,31 @@ final class RawMqttClient implements AutoCloseable {
      * so the session outlives the connection.
      */
     static RawMqttClient connectPersistent(int port, String clientId, MqttVersion version) throws IOException {
-        return connect(port, clientId, version, false);
+        return connect(port, clientId, version, false, SESSION_EXPIRY_INTERVAL_SEC);
+    }
+
+    /**
+     * Connects an MQTT 5 client with Clean Start 0 and the given Session Expiry Interval in seconds.
+     */
+    static RawMqttClient connectPersistent(int port, String clientId, int sessionExpiryIntervalSec) throws IOException {
+        return connect(port, clientId, MqttVersion.MQTT_5, false, sessionExpiryIntervalSec);
     }
 
     /**
      * Connects with Clean Start 1 and no session after the connection.
      */
     static RawMqttClient connectClean(int port, String clientId, MqttVersion version) throws IOException {
-        return connect(port, clientId, version, true);
+        return connect(port, clientId, version, true, 0);
     }
 
-    private static RawMqttClient connect(int port, String clientId, MqttVersion version, boolean cleanStart) throws IOException {
+    private static RawMqttClient connect(int port, String clientId, MqttVersion version, boolean cleanStart,
+                                         int sessionExpiryIntervalSec) throws IOException {
         RawMqttClient client = new RawMqttClient(clientId, port);
         try {
             MqttProperties properties = new MqttProperties();
             if (version == MqttVersion.MQTT_5 && !cleanStart) {
                 properties.add(new MqttProperties.IntegerProperty(
-                        MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), SESSION_EXPIRY_INTERVAL_SEC));
+                        MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), sessionExpiryIntervalSec));
             }
             client.send(MqttMessageBuilders.connect()
                     .clientId(clientId)

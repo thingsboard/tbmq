@@ -43,6 +43,17 @@ class EntityKeysTest {
     }
 
     @Test
+    void aStringIdIsItsUtf8BytesAndAnIdWithALoneSurrogateIsRefused() {
+        String emoji = "c\uD83D\uDE00";
+        assertThat(EntityKeys.stringBytes(emoji)).containsExactly(emoji.getBytes(StandardCharsets.UTF_8));
+
+        // getBytes would write both as "c?", one key for two ids
+        assertThatThrownBy(() -> EntityKeys.stringBytes("c\uD83D")).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("lone surrogate");
+        assertThatThrownBy(() -> EntityKeys.stringBytes("c\uDE00")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void idTextDecodesTheIdBytesOfEitherKind() {
         UUID id = UUID.randomUUID();
 

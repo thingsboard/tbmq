@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
@@ -36,7 +37,9 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -356,6 +359,97 @@ class RocksEntityStoreTest {
                 .isInstanceOf(EntityConstraintViolationException.class)
                 .extracting(e -> ((EntityConstraintViolationException) e).getConstraintName()).isEqualTo("user_credentials_activate_token_key");
         assertThat(store.findById(USER_CREDENTIALS, old.getId())).isNotNull();
+    }
+
+    @Test
+    void removeAndSaveOfSeveralIdsIsOneBatch() {
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("a", "r"));
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("b", "r"));
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("c", "r"));
+        rocksDbStore.takeWriteClasses();
+
+        store.removeAndSave(UNAUTHORIZED_CLIENT, List.of("a", "missing", "b"), unauthorized("d", "r"));
+
+        assertThat(rocksDbStore.takeWriteClasses()).containsExactly(StoreWriteClass.NEW_DATA);
+        assertThat(store.findAll(UNAUTHORIZED_CLIENT)).extracting(UnauthorizedClient::getClientId).containsExactlyInAnyOrder("c", "d");
+        assertThat(store.count(UNAUTHORIZED_CLIENT)).isEqualTo(2);
+    }
+
+    @Test
+    void removeAllByIdIsOneDeleteBatchThatSkipsMissingAndRepeatedIds() {
+        for (String clientId : List.of("a", "b", "c", "d")) {
+            store.save(UNAUTHORIZED_CLIENT, unauthorized(clientId, "r"));
+        }
+        rocksDbStore.takeWriteClasses();
+
+        assertThat(store.removeAllById(UNAUTHORIZED_CLIENT, List.of("a", "missing", "c", "a"))).isEqualTo(2);
+
+        assertThat(rocksDbStore.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
+        assertThat(store.findAll(UNAUTHORIZED_CLIENT)).extracting(UnauthorizedClient::getClientId).containsExactly("b", "d");
+        assertThat(store.count(UNAUTHORIZED_CLIENT)).isEqualTo(2);
+        assertThat(store.findPage(UNAUTHORIZED_CLIENT, new PageLink(10), null).getData())
+                .extracting(UnauthorizedClient::getClientId).containsExactly("b", "d");
+    }
+
+    @Test
+    void removeAllByIdOfOnlyMissingIdsWritesNothing() {
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("a", "r"));
+        rocksDbStore.takeWriteClasses();
+
+        assertThat(store.removeAllById(UNAUTHORIZED_CLIENT, List.of("x", "y"))).isZero();
+        assertThat(store.removeAllById(UNAUTHORIZED_CLIENT, List.of())).isZero();
+
+        assertThat(rocksDbStore.takeWriteClasses()).isEmpty();
+        assertThat(store.count(UNAUTHORIZED_CLIENT)).isEqualTo(1);
+    }
+
+    @Test
+    void removeAllByIdCascadesAsRemoveByIdDoes() {
+        User first = store.save(USER, user("a@example.org"));
+        User second = store.save(USER, user("b@example.org"));
+        User kept = store.save(USER, user("c@example.org"));
+        for (User user : List.of(first, second, kept)) {
+            WebSocketConnection connection = store.save(WEBSOCKET_CONNECTION, connection(user.getId(), "conn"));
+            store.save(WEBSOCKET_SUBSCRIPTION, subscription(connection.getId()));
+        }
+        rocksDbStore.takeWriteClasses();
+
+        assertThat(store.removeAllById(USER, List.of(first.getId(), second.getId()))).isEqualTo(2);
+
+        assertThat(rocksDbStore.takeWriteClasses()).containsExactly(StoreWriteClass.DELETE);
+        assertThat(store.findAll(USER)).extracting(User::getId).containsExactly(kept.getId());
+        assertThat(store.findAll(WEBSOCKET_CONNECTION)).extracting(WebSocketConnection::getUserId).containsExactly(kept.getId());
+        assertThat(store.count(WEBSOCKET_CONNECTION)).isEqualTo(1);
+        assertThat(store.count(WEBSOCKET_SUBSCRIPTION)).isEqualTo(1);
+        assertThat(indexEntries(EntityIndex.WS_CONNECTION_USER_NAME, EntityIndex.WS_SUBSCRIPTION_CONNECTION)).isEqualTo(3);
+    }
+
+    @Test
+    void aFailedRemoveAllByIdRemovesNothing() {
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("a", "r"));
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("b", "r"));
+        rocksDbStore.failNextWrite(new StoreException("injected"));
+
+        assertThatThrownBy(() -> store.removeAllById(UNAUTHORIZED_CLIENT, List.of("a", "b")))
+                .isInstanceOf(StoreException.class).hasMessage("injected");
+
+        assertThat(store.findAll(UNAUTHORIZED_CLIENT)).hasSize(2);
+        assertThat(store.count(UNAUTHORIZED_CLIENT)).isEqualTo(2);
+    }
+
+    @Test
+    void forEachProjectedSeesEveryDocumentWithoutReadingTheStore() {
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("a", "r").toBuilder().ts(10L).build());
+        store.save(UNAUTHORIZED_CLIENT, unauthorized("b", "r").toBuilder().ts(20L).build());
+        rocksDbStore.takeGets();
+        Map<Object, Object> seen = new HashMap<>();
+
+        store.forEachProjected(UNAUTHORIZED_CLIENT, projected -> seen.put(projected.id(), projected.sortValues().get("ts")));
+
+        assertThat(seen).containsOnly(Map.entry("a", 10L), Map.entry("b", 20L));
+        assertThat(rocksDbStore.takeGets()).isZero();
+        assertThatThrownBy(() -> store.forEachProjected(USER_CREDENTIALS, projected -> {
+        })).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

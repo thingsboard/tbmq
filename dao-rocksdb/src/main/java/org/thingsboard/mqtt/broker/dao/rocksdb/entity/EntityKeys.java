@@ -16,6 +16,9 @@
 package org.thingsboard.mqtt.broker.dao.rocksdb.entity;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.UUID;
@@ -40,8 +43,24 @@ public final class EntityKeys {
         return ByteBuffer.allocate(Long.BYTES * 2).putLong(id.getMostSignificantBits()).putLong(id.getLeastSignificantBits()).array();
     }
 
+    /**
+     * The UTF-8 bytes of a string id. An id that UTF-8 cannot encode (a lone surrogate) is refused: {@code getBytes}
+     * would write it as {@code ?}, so two ids that differ as strings would share one key while the projection keeps
+     * them apart.
+     *
+     * @throws IllegalArgumentException for an id with a lone surrogate
+     */
     static byte[] stringBytes(String id) {
-        return id.getBytes(StandardCharsets.UTF_8);
+        try {
+            ByteBuffer encoded = StandardCharsets.UTF_8.newEncoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .encode(CharBuffer.wrap(id));
+            return Arrays.copyOfRange(encoded.array(), encoded.arrayOffset() + encoded.position(),
+                    encoded.arrayOffset() + encoded.limit());
+        } catch (CharacterCodingException e) {
+            throw new IllegalArgumentException("The id " + id + " is not valid UTF-16: it has a lone surrogate", e);
+        }
     }
 
     /**

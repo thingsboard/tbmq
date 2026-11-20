@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -118,7 +120,7 @@ public class RocksEntityStore {
      * cascade's child index names does not exist, and then nothing is written.
      */
     public <T, ID> T save(EntityDescriptor<T, ID> d, T entity) {
-        return save(d, null, entity);
+        return save(d, List.of(), entity);
     }
 
     /**
@@ -127,7 +129,16 @@ public class RocksEntityStore {
      * skipped, and {@code saved} is still saved.
      */
     public <T, ID> T removeAndSave(EntityDescriptor<T, ID> d, ID removedId, T saved) {
-        return save(d, Objects.requireNonNull(removedId, "removedId"), saved);
+        return save(d, List.of(Objects.requireNonNull(removedId, "removedId")), saved);
+    }
+
+    /**
+     * {@link #removeAndSave(EntityDescriptor, Object, Object)} of several removed ids: their removals, cascades
+     * included, and the save of {@code saved} in one batch. An id with no document is skipped.
+     */
+    public <T, ID> T removeAndSave(EntityDescriptor<T, ID> d, Collection<ID> removedIds, T saved) {
+        removedIds.forEach(id -> Objects.requireNonNull(id, "removedId"));
+        return save(d, removedIds, saved);
     }
 
     /**
@@ -144,6 +155,33 @@ public class RocksEntityStore {
             store.write(StoreWriteClass.DELETE, changes::applyTo);
             changes.removed().forEach(this::removeFromProjection);
             return true;
+        });
+    }
+
+    /**
+     * {@link #removeById} of every id, under one lock and in one batch: all of them are removed, or none when the
+     * batch fails. An id with no document, or given twice, is skipped.
+     *
+     * @return the number of documents of {@code d}'s type that were removed, cascaded children not counted
+     */
+    public <T, ID> int removeAllById(EntityDescriptor<T, ID> d, Collection<ID> ids) {
+        if (ids.isEmpty()) {
+            return 0;
+        }
+        return withLocks(lockedTypes(d), () -> {
+            Changes changes = new Changes();
+            int removed = 0;
+            for (ID id : ids) {
+                byte[] idBytes = d.idBytes(id);
+                if (!changes.removes(EntityKeys.entityKey(d.type(), idBytes)) && collectRemoval(d, idBytes, changes)) {
+                    removed++;
+                }
+            }
+            if (removed > 0) {
+                store.write(StoreWriteClass.DELETE, changes::applyTo);
+                changes.removed().forEach(this::removeFromProjection);
+            }
+            return removed;
         });
     }
 
@@ -218,6 +256,17 @@ public class RocksEntityStore {
     }
 
     /**
+     * Calls {@code action} with every document of a type with a projection as a page filter sees it, in no particular
+     * order, without reading the store. Takes no lock, as the other reads: a document written alongside is seen before
+     * or after the write.
+     *
+     * @throws IllegalArgumentException for a type without a projection
+     */
+    public <T, ID> void forEachProjected(EntityDescriptor<T, ID> d, Consumer<ProjectedEntity> action) {
+        projection(d).forEach(action);
+    }
+
+    /**
      * The number of documents of a type with a projection.
      */
     public <T, ID> long count(EntityDescriptor<T, ID> d) {
@@ -236,7 +285,7 @@ public class RocksEntityStore {
                 EntityKeys.nonUniqueUpper(index, value), it -> it.isValid());
     }
 
-    private <T, ID> T save(EntityDescriptor<T, ID> d, ID removedId, T entity) {
+    private <T, ID> T save(EntityDescriptor<T, ID> d, Collection<ID> removedIds, T entity) {
         // a copy, so the argument is not modified and the caller cannot change the result through it
         T document = StorageObjectMapper.read(StorageObjectMapper.write(entity), d.domainClass());
         if (d.id().apply(document) == null) {
@@ -251,10 +300,10 @@ public class RocksEntityStore {
         Map<EntityIndex, String> newValues = indexValues(d, document);
         ProjectionIndex<T> projection = projectionOrNull(d);
         ProjectionIndex.Row row = projection == null ? null : projection.project(d.id().apply(document), document);
-        EnumSet<StoredEntityType> lockedTypes = removedId == null ? EnumSet.of(d.type()) : lockedTypes(d);
+        EnumSet<StoredEntityType> lockedTypes = removedIds.isEmpty() ? EnumSet.of(d.type()) : lockedTypes(d);
         withLocks(lockedTypes, () -> {
             Changes changes = new Changes();
-            if (removedId != null) {
+            for (ID removedId : removedIds) {
                 collectRemoval(d, d.idBytes(removedId), changes);
             }
             byte[] key = EntityKeys.entityKey(d.type(), id);
