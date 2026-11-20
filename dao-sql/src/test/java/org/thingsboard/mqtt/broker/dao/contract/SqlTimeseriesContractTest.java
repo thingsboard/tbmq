@@ -15,11 +15,25 @@
  */
 package org.thingsboard.mqtt.broker.dao.contract;
 
+import org.junit.After;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao;
 
 @DaoSqlTest
 @ContextConfiguration(classes = SqlContractTestConfig.class, loader = AnnotationConfigContextLoader.class)
 public class SqlTimeseriesContractTest extends AbstractTimeseriesContractTest {
+
+    @Autowired
+    private JpaSqlTimeseriesDao jpaSqlTimeseriesDao;
+
+    // A clean-up drops the partitions older than the TTL, which the DAO still has cached: a later save into one of them
+    // would find no partition. Forget them, as the SQL time series integration tests do.
+    @After
+    public void clearPartitionsCache() {
+        jpaSqlTimeseriesDao.clearPartitionsCache();
+    }
+
 }
