@@ -40,9 +40,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * The time series of the standalone edition, in {@code ts}: one entry per (entity, key, timestamp), keyed as
  * {@link TsKeys} lays out, its value as {@link TsValueCodec} encodes it. A save writes its entry at once
- * ({@link StoreWriteClass#NEW_DATA}) and replaces an entry of the same timestamp, as the SQL upsert does. The reads are
- * {@link RocksDbAggregationTimeseriesDao}'s. Every future is complete when the call returns; a failure of the store is
- * a failed future. The SQL partitioning settings do not apply: the store has no partitions.
+ * ({@link StoreWriteClass#NEW_DATA}) and replaces an entry of the same timestamp, as the SQL upsert does; a save the
+ * full store refuses is skipped and counted ({@link StatsWriteSkipper}). The reads are
+ * {@link RocksDbAggregationTimeseriesDao}'s. Every future is complete when the call returns; another failure of the
+ * store is a failed future. The SQL partitioning settings do not apply: the store has no partitions.
  */
 @Slf4j
 @Component
@@ -56,11 +57,14 @@ public class RocksDbTimeseriesDao implements TimeseriesDao {
     private final RocksDbStore store;
     private final KeyDictionaryDao keyDictionaryDao;
     private final RocksDbAggregationTimeseriesDao aggregationDao;
+    private final StatsWriteSkipper skipper;
 
-    public RocksDbTimeseriesDao(RocksDbStore store, KeyDictionaryDao keyDictionaryDao, RocksDbAggregationTimeseriesDao aggregationDao) {
+    public RocksDbTimeseriesDao(RocksDbStore store, KeyDictionaryDao keyDictionaryDao, RocksDbAggregationTimeseriesDao aggregationDao,
+                                StatsWriteSkipper skipper) {
         this.store = store;
         this.keyDictionaryDao = keyDictionaryDao;
         this.aggregationDao = aggregationDao;
+        this.skipper = skipper;
     }
 
     /**
@@ -80,8 +84,10 @@ public class RocksDbTimeseriesDao implements TimeseriesDao {
     @Override
     public ListenableFuture<Void> save(String entityId, TsKvEntry tsKvEntry) {
         return Futures.submit(() -> {
-            int keyId = keyDictionaryDao.getOrSaveKeyId(tsKvEntry.getKey());
-            store.put(StoreWriteClass.NEW_DATA, FAMILY, TsKeys.tsKey(entityId, keyId, tsKvEntry.getTs()), TsValueCodec.encode(tsKvEntry));
+            skipper.write(() -> {
+                int keyId = keyDictionaryDao.getOrSaveKeyId(tsKvEntry.getKey());
+                store.put(StoreWriteClass.NEW_DATA, FAMILY, TsKeys.tsKey(entityId, keyId, tsKvEntry.getTs()), TsValueCodec.encode(tsKvEntry));
+            });
         }, MoreExecutors.directExecutor());
     }
 

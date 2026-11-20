@@ -15,35 +15,45 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.contract;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.dao.contract.AbstractTimeseriesContractTest;
+import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.ClientLatestStatsBuffer;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbAggregationTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbKeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbTimeseriesLatestDao;
+import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.StatsWriteSkipper;
 import org.thingsboard.mqtt.broker.dao.timeseries.BaseTimeseriesService;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +68,73 @@ public class RocksDbTimeseriesContractTest extends AbstractTimeseriesContractTes
     @Configuration
     @Import(BaseTimeseriesService.class)
     static class Services {
+    }
+
+    private static final String SENT = BrokerConstants.SENT_PUBLISH_MSGS;
+    private static final String RECEIVED = BrokerConstants.RECEIVED_PUBLISH_MSGS;
+
+    @Autowired
+    private ClientLatestStatsBuffer clientLatestStatsBuffer;
+    @Autowired
+    private KeyDictionaryDao keyDictionaryDao;
+
+    // SQL has no buffer: a client's latest stats are kept in memory until the flush, and read from there before it.
+    @Test
+    public void aClientsLatestStatsAreReadFromMemoryBeforeTheFlush() throws Exception {
+        String clientId = RandomStringUtils.randomAlphabetic(20);
+        timeseriesLatestDao.saveLatest(clientId, entry(SENT, 100, 3)).get();
+        clientLatestStatsBuffer.flush();
+        timeseriesLatestDao.saveLatest(clientId, entry(SENT, 200, 5)).get();
+        timeseriesLatestDao.saveLatest(clientId, entry(RECEIVED, 200, 7)).get();
+
+        assertThat(clientLatestStatsBuffer.getAll(clientId)).containsExactlyInAnyOrder(entry(SENT, 200, 5), entry(RECEIVED, 200, 7));
+        // the memory value is read over the stored one, in the order of the key ids
+        assertThat(tsService.findAllLatest(clientId).get())
+                .containsExactlyInAnyOrder(entry(SENT, 200, 5), entry(RECEIVED, 200, 7))
+                .isSortedAccordingTo(Comparator.comparing(entry -> keyDictionaryDao.getKeyId(entry.getKey())));
+        assertThat(timeseriesLatestDao.findLatestOpt(clientId, SENT).get()).contains(entry(SENT, 200, 5));
+        assertThat(timeseriesLatestDao.findLatest(clientId, RECEIVED).get()).isEqualTo(entry(RECEIVED, 200, 7));
+        List<Optional<TsKvEntry>> client = timeseriesLatestDao.findAllLatestForClient(clientId).get();
+        assertThat(client.get(BrokerConstants.CLIENT_SESSION_METRIC_KEYS.indexOf(SENT))).contains(entry(SENT, 200, 5));
+        assertThat(client.get(BrokerConstants.CLIENT_SESSION_METRIC_KEYS.indexOf(RECEIVED))).contains(entry(RECEIVED, 200, 7));
+
+        clientLatestStatsBuffer.flush();
+
+        assertThat(clientLatestStatsBuffer.getAll(clientId)).isEmpty();
+        assertThat(tsService.findAllLatest(clientId).get()).containsExactlyInAnyOrder(entry(SENT, 200, 5), entry(RECEIVED, 200, 7));
+    }
+
+    @Test
+    public void nodeAndServiceInfoKeysAreWrittenAtOnce() throws Exception {
+        String serviceId = RandomStringUtils.randomAlphabetic(20);
+        String nodeKey = BrokerConstants.HISTORICAL_KEYS.get(0);
+        String serviceInfoKey = BrokerConstants.SERVICE_INFO_KEYS.get(0);
+
+        timeseriesLatestDao.saveLatest(serviceId, entry(nodeKey, 100, 1)).get();
+        timeseriesLatestDao.saveLatest(serviceId, entry(serviceInfoKey, 100, 2)).get();
+
+        assertThat(clientLatestStatsBuffer.getAll(serviceId)).isEmpty();
+        assertThat(timeseriesLatestDao.findLatestOpt(serviceId, nodeKey).get()).contains(entry(nodeKey, 100, 1));
+        assertThat(timeseriesLatestDao.findLatestOpt(serviceId, serviceInfoKey).get()).contains(entry(serviceInfoKey, 100, 2));
+    }
+
+    @Test
+    public void removeAllLatestForClientRemovesMemoryAndStore() throws Exception {
+        String clientId = RandomStringUtils.randomAlphabetic(20);
+        String nodeKey = BrokerConstants.HISTORICAL_KEYS.get(0);
+        timeseriesLatestDao.saveLatest(clientId, entry(SENT, 100, 1)).get();
+        clientLatestStatsBuffer.flush();
+        // one key both stored and newer in memory, one in memory only, and a key that is not a client key
+        timeseriesLatestDao.saveLatest(clientId, entry(SENT, 200, 2)).get();
+        timeseriesLatestDao.saveLatest(clientId, entry(RECEIVED, 200, 3)).get();
+        timeseriesLatestDao.saveLatest(clientId, entry(nodeKey, 200, 4)).get();
+
+        assertThat(tsService.removeAllLatestForClient(clientId).get()).containsExactly(RECEIVED, SENT);
+
+        assertThat(clientLatestStatsBuffer.getAll(clientId)).isEmpty();
+        assertThat(tsService.findAllLatest(clientId).get()).containsExactly(entry(nodeKey, 200, 4));
+        clientLatestStatsBuffer.flush();
+        assertThat(tsService.findAllLatest(clientId).get()).containsExactly(entry(nodeKey, 200, 4));
     }
 
     // The cases below run on a store of their own, so the ids and counts they check do not depend on the other cases.
@@ -119,8 +196,10 @@ public class RocksDbTimeseriesContractTest extends AbstractTimeseriesContractTes
         try {
             RocksDbKeyDictionaryDao dictionary = new RocksDbKeyDictionaryDao(store);
             RocksDbAggregationTimeseriesDao aggregation = new RocksDbAggregationTimeseriesDao(store, dictionary);
-            RocksDbTimeseriesDao dao = new RocksDbTimeseriesDao(store, dictionary, aggregation);
-            RocksDbTimeseriesLatestDao latestDao = new RocksDbTimeseriesLatestDao(store, dictionary, aggregation);
+            StatsWriteSkipper skipper = new StatsWriteSkipper(new DefaultStatsFactory(new SimpleMeterRegistry()));
+            RocksDbTimeseriesDao dao = new RocksDbTimeseriesDao(store, dictionary, aggregation, skipper);
+            ClientLatestStatsBuffer buffer = new ClientLatestStatsBuffer(store, dictionary, skipper, TimeUnit.HOURS.toMillis(1));
+            RocksDbTimeseriesLatestDao latestDao = new RocksDbTimeseriesLatestDao(store, dictionary, aggregation, buffer, skipper);
             long now = System.currentTimeMillis();
             long old = now - TimeUnit.HOURS.toMillis(2);
             long recent = now - TimeUnit.MINUTES.toMillis(1);

@@ -41,29 +41,40 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * The latest time series values of the standalone edition, in {@code ts_latest}: one entry per (entity, key), keyed by
- * {@link TsKeys#latestKey}, its value as {@link TsValueCodec#encodeLatest} encodes it. A save replaces the entry at
- * once ({@link StoreWriteClass#NEW_DATA}) whatever its timestamp, as the SQL upsert does. The answers are the SQL DAO's
- * ({@code SqlTimeseriesLatestDao}); every future is complete when the call returns, unless a removal rewrites the
- * latest value, and a failure of the store is a failed future.
+ * {@link TsKeys#latestKey}, its value as {@link TsValueCodec#encodeLatest} encodes it. A save of a per-client stats key
+ * ({@link BrokerConstants#CLIENT_SESSION_METRIC_KEYS}) goes to the {@link ClientLatestStatsBuffer}, which writes it
+ * later, and the reads take the buffered value over the stored one. A save of any other key replaces the entry at once
+ * ({@link StoreWriteClass#NEW_DATA}) whatever its timestamp, as the SQL upsert does. A save the full store refuses is
+ * skipped and counted ({@link StatsWriteSkipper}). The answers are the SQL DAO's ({@code SqlTimeseriesLatestDao});
+ * every future is complete when the call returns, unless a removal rewrites the latest value, and another failure of
+ * the store is a failed future.
  */
 @Component
 @StandaloneComponent
 public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
 
     private static final StoreColumnFamily FAMILY = StoreColumnFamily.TS_LATEST;
+    private static final Set<String> CLIENT_KEYS = Set.copyOf(BrokerConstants.CLIENT_SESSION_METRIC_KEYS);
 
     private final RocksDbStore store;
     private final KeyDictionaryDao keyDictionaryDao;
     private final AggregationTimeseriesDao aggregationTimeseriesDao;
+    private final ClientLatestStatsBuffer clientStatsBuffer;
+    private final StatsWriteSkipper skipper;
 
     public RocksDbTimeseriesLatestDao(RocksDbStore store, KeyDictionaryDao keyDictionaryDao,
-                                      AggregationTimeseriesDao aggregationTimeseriesDao) {
+                                      AggregationTimeseriesDao aggregationTimeseriesDao,
+                                      ClientLatestStatsBuffer clientStatsBuffer, StatsWriteSkipper skipper) {
         this.store = store;
         this.keyDictionaryDao = keyDictionaryDao;
         this.aggregationTimeseriesDao = aggregationTimeseriesDao;
+        this.clientStatsBuffer = clientStatsBuffer;
+        this.skipper = skipper;
     }
 
     @Override
@@ -83,21 +94,33 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
     }
 
     /**
-     * The latest values of the entity, in the order of their key ids. A value whose key id has no dictionary entry is
-     * left out, as the SQL join with the dictionary leaves it out.
+     * The latest values of the entity, buffered over stored, in the order of their key ids. A stored value whose key id
+     * has no dictionary entry is left out, as the SQL join with the dictionary leaves it out.
      */
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
-        return Futures.submit(() -> store.scan(FAMILY, TsKeys.latestEntityLower(entityId), TsKeys.latestEntityUpper(entityId), iterator -> {
-            List<TsKvEntry> entries = new ArrayList<>();
-            for (; iterator.isValid(); iterator.next()) {
-                String key = keyDictionaryDao.getKey(TsKeys.keyIdOfLatest(iterator.key()));
-                if (key != null) {
-                    entries.add(TsValueCodec.decodeLatest(key, iterator.value()));
-                }
+        return Futures.submit(() -> {
+            // read before the store: an entry a flush writes in between is then in the store, or in this list as well
+            List<TsKvEntry> buffered = clientStatsBuffer.getAll(entityId);
+            TreeMap<Integer, TsKvEntry> byKeyId = store.scan(FAMILY, TsKeys.latestEntityLower(entityId),
+                    TsKeys.latestEntityUpper(entityId), iterator -> {
+                        TreeMap<Integer, TsKvEntry> entries = new TreeMap<>();
+                        for (; iterator.isValid(); iterator.next()) {
+                            int keyId = TsKeys.keyIdOfLatest(iterator.key());
+                            String key = keyDictionaryDao.getKey(keyId);
+                            if (key != null) {
+                                entries.put(keyId, TsValueCodec.decodeLatest(key, iterator.value()));
+                            }
+                        }
+                        return entries;
+                    });
+            for (TsKvEntry entry : buffered) {
+                // saveLatest gives the key an id before it buffers the entry; a newer value flushed meanwhile is kept
+                byKeyId.merge(keyDictionaryDao.getKeyId(entry.getKey()), entry,
+                        (stored, inMemory) -> inMemory.getTs() >= stored.getTs() ? inMemory : stored);
             }
-            return entries;
-        }), MoreExecutors.directExecutor());
+            return new ArrayList<>(byKeyId.values());
+        }, MoreExecutors.directExecutor());
     }
 
     @Override
@@ -116,8 +139,8 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
     }
 
     /**
-     * Removes the latest value of the key. As in SQL, the result says it is removed whenever the key has a dictionary
-     * entry, whether or not the entity had a value of it.
+     * Removes the latest value of the key, buffered and stored. As in SQL, the result says it is removed whenever the
+     * key has a dictionary entry, whether or not the entity had a value of it.
      */
     @Override
     public ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key) {
@@ -126,7 +149,7 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
             if (keyId == null) {
                 return new TsKvLatestRemovingResult(key, false);
             }
-            store.delete(StoreWriteClass.DELETE, FAMILY, TsKeys.latestKey(entityId, keyId));
+            delete(entityId, key, keyId);
             return new TsKvLatestRemovingResult(key, true);
         }, MoreExecutors.directExecutor());
     }
@@ -148,7 +171,7 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
             if (ts < query.getStartTs() || ts >= query.getEndTs()) {
                 return Futures.immediateFuture(new TsKvLatestRemovingResult(key, false));
             }
-            store.delete(StoreWriteClass.DELETE, FAMILY, TsKeys.latestKey(entityId, keyDictionaryDao.getOrSaveKeyId(key)));
+            delete(entityId, key, keyDictionaryDao.getOrSaveKeyId(key));
             if (!query.getRewriteLatestIfDeleted()) {
                 return Futures.immediateFuture(new TsKvLatestRemovingResult(key, true));
             }
@@ -182,6 +205,10 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
     }
 
     private TsKvEntry doFindLatest(String entityId, String key) {
+        Optional<TsKvEntry> buffered = clientStatsBuffer.get(entityId, key);
+        if (buffered.isPresent()) {
+            return buffered.get();
+        }
         Integer keyId = keyDictionaryDao.getKeyId(key);
         if (keyId == null) {
             return null;
@@ -190,9 +217,24 @@ public class RocksDbTimeseriesLatestDao implements TimeseriesLatestDao {
         return value == null ? null : TsValueCodec.decodeLatest(key, value);
     }
 
+    /**
+     * The key gets its id here even when the entry is buffered, so the reads can order a buffered entry by it.
+     */
     private void doSaveLatest(String entityId, TsKvEntry tsKvEntry) {
-        int keyId = keyDictionaryDao.getOrSaveKeyId(tsKvEntry.getKey());
-        store.put(StoreWriteClass.NEW_DATA, FAMILY, TsKeys.latestKey(entityId, keyId), TsValueCodec.encodeLatest(tsKvEntry));
+        skipper.write(() -> {
+            int keyId = keyDictionaryDao.getOrSaveKeyId(tsKvEntry.getKey());
+            if (CLIENT_KEYS.contains(tsKvEntry.getKey())) {
+                clientStatsBuffer.put(entityId, tsKvEntry);
+            } else {
+                store.put(StoreWriteClass.NEW_DATA, FAMILY, TsKeys.latestKey(entityId, keyId), TsValueCodec.encodeLatest(tsKvEntry));
+            }
+        });
+    }
+
+    // the buffered entry first: the buffer waits for a flush in progress, so the stored value deleted is the last one
+    private void delete(String entityId, String key, int keyId) {
+        clientStatsBuffer.remove(entityId, key);
+        store.delete(StoreWriteClass.DELETE, FAMILY, TsKeys.latestKey(entityId, keyId));
     }
 
     private static long startOfCurrentMinute() {

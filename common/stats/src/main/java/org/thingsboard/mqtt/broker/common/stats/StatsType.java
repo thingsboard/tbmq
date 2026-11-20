@@ -87,6 +87,7 @@ public enum StatsType {
     APPLICATION_CLIENTS_MAPPED_TO_DEVICE("applicationClientsMappedToDevice"),
     PUBLISH_PAUSES("publishPauses"),
     PAUSED_CONNECTIONS("pausedConnections"),
+    DISK_FULL_SKIPPED_STATS_WRITES("diskFullSkippedStatsWrites"),
     ;
 
     private final String printName;

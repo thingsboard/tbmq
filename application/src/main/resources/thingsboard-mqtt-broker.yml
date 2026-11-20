@@ -1293,6 +1293,11 @@ standalone:
     # the oldest clients by the time of their refused connection are removed (of equal times, the lowest client ID first).
     # A new refusal of a kept client updates it and removes none. Must be above 0.
     max: "${STANDALONE_UNAUTHORIZED_CLIENTS_MAX:10000}"
+  stats:
+    # Interval (in ms) at which the latest per-client stats, the publish counters of the session details, are written
+    # from memory to the store in one batch. They are also written on a graceful shutdown, so a broker that is killed
+    # loses at most one interval of them. Must be above 0. Defaults to 10 min (600000 ms).
+    client-latest-flush-interval-ms: "${STANDALONE_STATS_CLIENT_LATEST_FLUSH_INTERVAL_MS:600000}"
 
 # Statistics parameters
 stats:
