@@ -25,7 +25,10 @@ import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class AdminServiceImplTest {
@@ -49,6 +52,30 @@ class AdminServiceImplTest {
         assertThat(saved.getValue().isEnabled()).isTrue();
         assertThat(saved.getValue().getActivateToken()).isNull();
         assertThat(passwordEncoder.matches(AdminServiceImpl.SYSADMIN_PASSWORD, saved.getValue().getPassword())).isTrue();
+    }
+
+    @Test
+    void enabledCredentialsAreRefused() {
+        UserCredentials credentials = new UserCredentials();
+        credentials.setUserId(UUID.randomUUID());
+        credentials.setEnabled(true);
+
+        assertThatThrownBy(() -> adminService.activateAdminCredentials(credentials))
+                .isInstanceOf(IllegalStateException.class);
+        verify(userService, never()).saveUserCredentials(any());
+    }
+
+    @Test
+    void credentialsThatAlreadyHaveAPasswordAreRefused() {
+        UserCredentials credentials = new UserCredentials();
+        credentials.setUserId(UUID.randomUUID());
+        credentials.setEnabled(false);
+        credentials.setPassword("$2a$10$hash");
+
+        assertThatThrownBy(() -> adminService.activateAdminCredentials(credentials))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(credentials.getPassword()).isEqualTo("$2a$10$hash");
+        verify(userService, never()).saveUserCredentials(any());
     }
 
 }

@@ -27,6 +27,8 @@ public interface AdminService {
     /**
      * Activates the disabled credentials of an existing admin with the default password, as {@link #createAdmin} does
      * for a new admin created without a password.
+     *
+     * @throws IllegalStateException if the credentials are enabled or already have a password
      */
     void activateAdminCredentials(UserCredentials userCredentials);
 
