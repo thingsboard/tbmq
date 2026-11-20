@@ -26,9 +26,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,8 +58,8 @@ import static org.awaitility.Awaitility.await;
  * The crash guarantee: a broker killed with {@code SIGKILL} under QoS 1 and QoS 2 load loses no acknowledged message
  * for persistent DEVICE subscribers, and only messages in flight at a kill may reach them twice.
  * <p>
- * The broker runs in a JVM of its own ({@link LiteBrokerProcess}) on a store directory and a PostgreSQL container the
- * test owns, and is started again on the same store after each kill. Every client uses MQTT 3.1.1 with a persistent
+ * The broker runs in a JVM of its own ({@link LiteBrokerProcess}) on a store directory the test owns, with no external
+ * service, and is started again on the same store after each kill. Every client uses MQTT 3.1.1 with a persistent
  * session and keeps its Paho client across the kills, so a reconnect resends what was in flight.
  * <ul>
  * <li>A publisher counts an id as acknowledged when its publish completes: at PUBACK for QoS 1, and for QoS 2 at
@@ -122,8 +120,6 @@ class KillNineDurabilityLiteTest {
     private static final Pattern STORE_LOG_CUT_OFF_WAL_TAIL = Pattern.compile("/(\\d+)\\.log: dropping \\d+ bytes; Corruption: "
             + "(truncated header|truncated record body|error reading trailing data due to encountering EOF)$");
 
-    private static LiteTestDatabase db;
-
     @TempDir
     Path tempDir;
 
@@ -133,18 +129,6 @@ class KillNineDurabilityLiteTest {
     private final List<Publisher> publishers = new ArrayList<>();
     private final List<Subscriber> subscribers = new ArrayList<>();
     private LiteBrokerProcess broker;
-
-    @BeforeAll
-    static void startDatabase() {
-        db = LiteTestDatabase.start();
-    }
-
-    @AfterAll
-    static void stopDatabase() {
-        if (db != null) {
-            db.close();
-        }
-    }
 
     @AfterEach
     void stopEverything() throws InterruptedException {
@@ -283,7 +267,7 @@ class KillNineDurabilityLiteTest {
     }
 
     private void startBroker(Path store) {
-        broker = LiteBrokerProcess.start(store, db, mqttPort, BROKER_PROPERTIES);
+        broker = LiteBrokerProcess.start(store, mqttPort, BROKER_PROPERTIES);
         long startNanos = System.nanoTime();
         broker.awaitMqttPort(BROKER_START_TIMEOUT);
         log.info("The broker opened the MQTT port in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos));

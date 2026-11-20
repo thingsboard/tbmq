@@ -1,0 +1,132 @@
+{
+  "admin_settings" : [ {
+    "created_time" : 1592576748000,
+    "id" : "6a2266e4-4612-11e7-a919-92ebcb67fe33",
+    "json_value" : {
+      "baseUrl" : "http://localhost:8083"
+    },
+    "key" : "general"
+  }, {
+    "created_time" : 1592576748000,
+    "id" : "6eaaefa6-4612-11e7-a919-92ebcb67fe33",
+    "json_value" : {
+      "mailFrom" : "Thingsboard <sysadmin@localhost.localdomain>",
+      "smtpProtocol" : "smtp",
+      "smtpHost" : "localhost",
+      "smtpPort" : "25",
+      "timeout" : "10000",
+      "enableTls" : false,
+      "tlsVersion" : "TLSv1.2",
+      "username" : "",
+      "password" : ""
+    },
+    "key" : "mail"
+  }, {
+    "created_time" : 1748975222000,
+    "id" : "7ca448f2-780e-4b38-ac15-c064a8f20bb5",
+    "json_value" : {
+      "priorities" : [ "MQTT_BASIC", "X_509", "JWT" ]
+    },
+    "key" : "mqttAuthorization"
+  } ],
+  "broker_user" : [ {
+    "additional_info" : null,
+    "authority" : "SYS_ADMIN",
+    "created_time" : 1592576748000,
+    "email" : "sysadmin@thingsboard.org",
+    "first_name" : null,
+    "id" : "5a797660-4612-11e7-a919-92ebcb67fe33",
+    "last_name" : null
+  } ],
+  "mqtt_auth_provider" : [ {
+    "additional_info" : { },
+    "configuration" : {
+      "type" : "SCRAM"
+    },
+    "created_time" : 1748975222000,
+    "enabled" : false,
+    "id" : "3a7ffd44-eb9c-4334-951d-a8bb3cb4804f",
+    "type" : "SCRAM"
+  }, {
+    "additional_info" : { },
+    "configuration" : {
+      "type" : "JWT",
+      "defaultClientType" : "DEVICE",
+      "jwtVerifierConfiguration" : {
+        "jwtVerifierType" : "ALGORITHM_BASED",
+        "jwtSignAlgorithmConfiguration" : {
+          "algorithm" : "HMAC_BASED",
+          "secret" : "please-change-this-32-char-jwt-secret"
+        }
+      },
+      "authClaims" : { },
+      "clientTypeClaims" : { },
+      "authRules" : {
+        "pubAuthRulePatterns" : null,
+        "subAuthRulePatterns" : null
+      },
+      "pubAuthRuleClaim" : null,
+      "subAuthRuleClaim" : null
+    },
+    "created_time" : 1748975222000,
+    "enabled" : false,
+    "id" : "5590d101-628f-414c-9960-5966a9c42c31",
+    "type" : "JWT"
+  }, {
+    "additional_info" : { },
+    "configuration" : {
+      "type" : "HTTP",
+      "restEndpointUrl" : "http://localhost:8080/auth",
+      "requestMethod" : "POST",
+      "credentials" : {
+        "type" : "anonymous"
+      },
+      "headers" : {
+        "Content-Type" : "application/json"
+      },
+      "requestBody" : "{\n  \"clientId\": \"${clientId}\",\n  \"username\": \"${username}\",\n  \"password\": \"${password}\"\n}",
+      "readTimeoutMs" : 5000,
+      "maxParallelRequestsCount" : 100,
+      "maxInMemoryBufferSizeInKb" : 256,
+      "defaultClientType" : "DEVICE",
+      "authRules" : {
+        "pubAuthRulePatterns" : [ ],
+        "subAuthRulePatterns" : [ ]
+      }
+    },
+    "created_time" : 1748975222000,
+    "enabled" : false,
+    "id" : "7d5b83a2-9f31-4e4b-8e1c-5d9f0c2a4b6e",
+    "type" : "HTTP"
+  }, {
+    "additional_info" : { },
+    "configuration" : {
+      "type" : "MQTT_BASIC",
+      "authStrategy" : "CLIENT_ID_AND_USERNAME"
+    },
+    "created_time" : 1748975222000,
+    "enabled" : false,
+    "id" : "bc0a90bf-de56-4953-92ca-7ef7b159c2fd",
+    "type" : "MQTT_BASIC"
+  }, {
+    "additional_info" : { },
+    "configuration" : {
+      "type" : "X_509",
+      "skipValidityCheckForClientCert" : false,
+      "clientAuthType" : null
+    },
+    "created_time" : 1748975222000,
+    "enabled" : false,
+    "id" : "e5b71665-0a22-4398-8f93-5c7c3c145a7d",
+    "type" : "X_509"
+  } ],
+  "user_credentials" : [ {
+    "activate_token" : null,
+    "created_time" : 1592576748000,
+    "enabled" : true,
+    "id" : "61441950-4612-11e7-a919-92ebcb67fe33",
+    "password" : "$2a$10$5JTB8/hxWc9WAy62nCGSxeefl3KWmipA9nFpVdDa0/xfIseeBB4Bu",
+    "reset_token" : null,
+    "user_id" : "5a797660-4612-11e7-a919-92ebcb67fe33"
+  } ]
+}

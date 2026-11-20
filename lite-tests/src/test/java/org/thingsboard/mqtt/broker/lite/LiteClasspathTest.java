@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LiteClasspathTest {
 
     private static final String RESTRICTED_DAO_TEST_JAR_SUFFIX = "-lite-tests.jar";
-    private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao(-sql)?-\\d[^/]*-tests\\.jar!/");
+    private static final Pattern DAO_TEST_JAR = Pattern.compile("/dao-\\d[^/]*-tests\\.jar!/");
     // in the reactor the application's jars carry its final name, thingsboard-mqtt-broker; in a repository, its artifact id
     private static final Pattern APPLICATION_TEST_JAR = Pattern.compile("/(application|thingsboard-mqtt-broker)-\\d[^/]*-tests\\.jar!/");
 
@@ -58,6 +58,18 @@ class LiteClasspathTest {
         assertThatThrownBy(() -> Class.forName(className)).isInstanceOf(ClassNotFoundException.class);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "org.hibernate.Session",
+            "org.springframework.data.jpa.repository.JpaRepository",
+            "com.zaxxer.hikari.HikariDataSource",
+            "org.postgresql.Driver",
+            "org.thingsboard.mqtt.broker.dao.JpaDaoConfig",
+            "org.thingsboard.mqtt.broker.dao.PostgreSqlInitializer"})
+    void noSqlInfrastructureClassCanBeLoaded(String className) {
+        assertThatThrownBy(() -> Class.forName(className)).isInstanceOf(ClassNotFoundException.class);
+    }
+
     @Test
     void daosTestClassesComeFromTheRestrictedJar() {
         assertThat(DeviceMsgServiceContract.class.getProtectionDomain().getCodeSource().getLocation().getPath())
@@ -65,9 +77,9 @@ class LiteClasspathTest {
     }
 
     /**
-     * lite-tests takes only the contract from dao's tests and the test-database setup from dao-sql's; their test
-     * configuration would otherwise configure the Lite tests from another module. Checked over the whole classpath,
-     * so it also catches either module's full test-jar or test-classes directory.
+     * lite-tests takes only the contract from dao's tests; their test configuration would otherwise configure the
+     * Lite tests from another module. Checked over the whole classpath, so it also catches dao's full test-jar or
+     * test-classes directory.
      */
     @ParameterizedTest
     @ValueSource(strings = {"logback.xml", "application-test.properties", "xss-policy.xml"})
@@ -79,20 +91,16 @@ class LiteClasspathTest {
     }
 
     /**
-     * The test database of the {@code @EditionTest} contexts is dao-sql's own, taken from the restricted jar rather than kept as a copy.
+     * The test-database settings belong to the SQL module's tests, which are not on this classpath.
      */
     @Test
-    void theTestDatabaseSettingsComeFromTheRestrictedJar() throws IOException {
-        assertThat(Collections.list(getClass().getClassLoader().getResources("sql-test.properties")))
-                .map(URL::toString)
-                .singleElement()
-                .satisfies(url -> assertThat(url).endsWith(RESTRICTED_DAO_TEST_JAR_SUFFIX + "!/sql-test.properties"));
+    void noTestDatabaseSettingsAreOnTheClasspath() throws IOException {
+        assertThat(Collections.list(getClass().getClassLoader().getResources("sql-test.properties"))).isEmpty();
     }
 
-    // the test-classes directory of dao or dao-sql, or any of their test jars (<module>-<version>-tests.jar, <module>-<version>-lite-tests.jar)
+    // the test-classes directory of dao, or any of its test jars (dao-<version>-tests.jar, dao-<version>-lite-tests.jar)
     private static boolean isDaoTestOutput(String url) {
-        return url.contains("/dao/target/test-classes/") || url.contains("/dao-sql/target/test-classes/")
-                || DAO_TEST_JAR.matcher(url).find();
+        return url.contains("/dao/target/test-classes/") || DAO_TEST_JAR.matcher(url).find();
     }
 
     /**

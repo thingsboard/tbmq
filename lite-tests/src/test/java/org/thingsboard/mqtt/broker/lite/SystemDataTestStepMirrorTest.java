@@ -15,14 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.lite;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -32,149 +32,113 @@ import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
-import org.thingsboard.mqtt.broker.lite.durability.LiteTestDatabase;
 import org.thingsboard.mqtt.broker.testsupport.lite.SystemDataTestStep;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * Keeps {@link SystemDataTestStep} a copy of {@code sql/system-data.sql}: in a fresh database that the SQL file
- * filled, the SQL file fills only the four tables the step covers, and each holds exactly the rows the step saves into
- * an empty backend, column by column. A JSON column is compared as the domain object the SQL DAO reads from it, so
- * formatting and key order do not count. A column the comparison does not name fails the test, so a schema change
- * reaches it too.
+ * Keeps {@link SystemDataTestStep} a copy of {@code sql/system-data.sql}, through the golden file that the dao-sql module
+ * pins to that SQL file ({@code system-data-rows.json}, read from the sibling module's directory, with no class path
+ * between the modules). The step saves into an empty backend exactly the rows of the golden file, and only for the
+ * four tables the file names, column by column. A JSON column is compared as a JSON tree, and the provider
+ * configuration as the SQL DAO reads it, so formatting and key order do not count. A column that the golden file does
+ * not name, or the test does not write, fails the test, so a schema change reaches it too.
  */
 class SystemDataTestStepMirrorTest {
 
-    private static LiteTestDatabase db;
+    // relative to the module directory, which is the working directory of the tests
+    private static final String GOLDEN_FILE = "../dao-sql/src/test/resources/sql/system-data-rows.json";
 
     private final UserDao userDao = mock(UserDao.class);
     private final UserCredentialsDao userCredentialsDao = mock(UserCredentialsDao.class);
     private final AdminSettingsDao adminSettingsDao = mock(AdminSettingsDao.class);
     private final MqttAuthProviderDao mqttAuthProviderDao = mock(MqttAuthProviderDao.class);
+    private final MqttClientCredentialsService mqttClientCredentialsService = mock(MqttClientCredentialsService.class);
+    private final WebSocketConnectionDao webSocketConnectionDao = mock(WebSocketConnectionDao.class);
     // seededInThisStart() is false: the insert pass alone
     private final StoreSeedState storeSeedState = mock(StoreSeedState.class);
 
-    @BeforeAll
-    static void startDatabase() {
-        db = LiteTestDatabase.start();
-    }
-
-    @AfterAll
-    static void stopDatabase() {
-        if (db != null) {
-            db.close();
-        }
-    }
-
     @Test
-    void givenAnEmptyBackend_whenApply_thenTheSavedRowsAreThoseOfTheSqlFile() throws SQLException {
-        new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao,
-                mock(MqttClientCredentialsService.class), mock(WebSocketConnectionDao.class), storeSeedState, true).apply();
+    void givenAnEmptyBackend_whenApply_thenTheSavedRowsAreThoseOfTheGoldenFile() throws IOException {
+        JsonNode golden = golden();
 
-        try (Connection connection = DriverManager.getConnection(db.jdbcUrl(), db.username(), db.password())) {
-            // the schema files insert nothing, so every filled table comes from the SQL file
-            assertThat(nonEmptyTables(connection)).as("tables the SQL file fills")
-                    .containsExactlyInAnyOrder("broker_user", "user_credentials", "admin_settings", "mqtt_auth_provider");
-            assertSameRows(connection, "broker_user", saved(userDao, User.class), user -> row(
-                    "id", user.getId(),
-                    "created_time", user.getCreatedTime(),
-                    "email", user.getEmail(),
-                    "authority", user.getAuthority() == null ? null : user.getAuthority().name(),
-                    "first_name", user.getFirstName(),
-                    "last_name", user.getLastName(),
-                    "additional_info", user.getAdditionalInfo()),
-                    Map.of("additional_info", SystemDataTestStepMirrorTest::json));
-            assertSameRows(connection, "user_credentials", saved(userCredentialsDao, UserCredentials.class), credentials -> row(
-                    "id", credentials.getId(),
-                    "created_time", credentials.getCreatedTime(),
-                    "user_id", credentials.getUserId(),
-                    "enabled", credentials.isEnabled(),
-                    "password", credentials.getPassword(),
-                    "activate_token", credentials.getActivateToken(),
-                    "reset_token", credentials.getResetToken()),
-                    Map.of());
-            assertSameRows(connection, "admin_settings", saved(adminSettingsDao, AdminSettings.class), settings -> row(
-                    "id", settings.getId(),
-                    "created_time", settings.getCreatedTime(),
-                    "key", settings.getKey(),
-                    "json_value", settings.getJsonValue()),
-                    Map.of("json_value", SystemDataTestStepMirrorTest::json));
-            assertSameRows(connection, "mqtt_auth_provider", saved(mqttAuthProviderDao, MqttAuthProvider.class), provider -> row(
-                    "id", provider.getId(),
-                    "created_time", provider.getCreatedTime(),
-                    "enabled", provider.isEnabled(),
-                    "type", provider.getType() == null ? null : provider.getType().name(),
-                    "configuration", JacksonUtil.valueToTree(provider.getConfiguration()),
-                    "additional_info", provider.getAdditionalInfo()),
-                    Map.of("configuration", SystemDataTestStepMirrorTest::providerConfiguration,
-                            "additional_info", SystemDataTestStepMirrorTest::json));
-        }
+        new SystemDataTestStep(userDao, userCredentialsDao, adminSettingsDao, mqttAuthProviderDao,
+                mqttClientCredentialsService, webSocketConnectionDao, storeSeedState, true).apply();
+
+        assertThat(golden.fieldNames()).toIterable().as("tables of the golden file")
+                .containsExactlyInAnyOrder("broker_user", "user_credentials", "admin_settings", "mqtt_auth_provider");
+        assertSameRows(golden, "broker_user", saved(userDao, User.class), user -> row(
+                "id", user.getId(),
+                "created_time", user.getCreatedTime(),
+                "email", user.getEmail(),
+                "authority", user.getAuthority() == null ? null : user.getAuthority().name(),
+                "first_name", user.getFirstName(),
+                "last_name", user.getLastName(),
+                "additional_info", user.getAdditionalInfo()));
+        assertSameRows(golden, "user_credentials", saved(userCredentialsDao, UserCredentials.class), credentials -> row(
+                "id", credentials.getId(),
+                "created_time", credentials.getCreatedTime(),
+                "user_id", credentials.getUserId(),
+                "enabled", credentials.isEnabled(),
+                "password", credentials.getPassword(),
+                "activate_token", credentials.getActivateToken(),
+                "reset_token", credentials.getResetToken()));
+        assertSameRows(golden, "admin_settings", saved(adminSettingsDao, AdminSettings.class), settings -> row(
+                "id", settings.getId(),
+                "created_time", settings.getCreatedTime(),
+                "key", settings.getKey(),
+                "json_value", settings.getJsonValue()));
+        assertSameRows(golden, "mqtt_auth_provider", saved(mqttAuthProviderDao, MqttAuthProvider.class), provider -> row(
+                "id", provider.getId(),
+                "created_time", provider.getCreatedTime(),
+                "enabled", provider.isEnabled(),
+                "type", provider.getType() == null ? null : provider.getType().name(),
+                "configuration", provider.getConfiguration(),
+                "additional_info", provider.getAdditionalInfo()));
     }
 
     /**
-     * The rows of {@code table} equal the saved entities as {@code toRow} writes them, after {@code readers} turned the
-     * text of the named columns into what the entities hold.
+     * The rows of {@code table} in the golden file equal the saved entities as {@code toRow} writes them, ordered by id
+     * as the golden file is.
      */
-    private static <T> void assertSameRows(Connection connection, String table, List<T> saved, Function<T, Map<String, Object>> toRow,
-                                           Map<String, UnaryOperator<Object>> readers) throws SQLException {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        Set<String> columns = new TreeSet<>();
-        try (Statement statement = connection.createStatement(); ResultSet result = statement.executeQuery("SELECT * FROM " + table)) {
-            ResultSetMetaData meta = result.getMetaData();
-            for (int i = 1; i <= meta.getColumnCount(); i++) {
-                columns.add(meta.getColumnName(i));
-            }
-            while (result.next()) {
-                Map<String, Object> row = new HashMap<>();
-                for (String column : columns) {
-                    Object value = readers.containsKey(column) ? readers.get(column).apply(result.getString(column)) : result.getObject(column);
-                    row.put(column, value);
-                }
-                rows.add(row);
-            }
-        }
-        List<Map<String, Object>> savedRows = saved.stream().map(toRow).toList();
+    private static <T> void assertSameRows(JsonNode golden, String table, List<T> saved, Function<T, ObjectNode> toRow) {
+        JsonNode expected = golden.get(table);
+        assertThat(expected).as("rows of %s in the golden file", table).isNotNull();
+        assertThat(saved).as("entities the step saves into %s", table).isNotEmpty();
+        List<ObjectNode> rows = saved.stream().map(toRow)
+                .sorted(Comparator.comparing(row -> row.get("id").asText()))
+                .toList();
+        ArrayNode actual = JacksonUtil.newArrayNode();
+        rows.forEach(actual::add);
 
-        assertThat(rows).as("rows of %s", table).isNotEmpty();
-        assertThat(new TreeSet<>(savedRows.getFirst().keySet())).as("columns of %s the test compares", table).isEqualTo(columns);
-        assertThat(savedRows).as("rows of %s the step saves", table).containsExactlyInAnyOrderElementsOf(rows);
+        assertThat(columns(actual)).as("columns of %s the test compares", table).isEqualTo(columns(expected));
+        // the entity's JSON written and read once, so that a number has the type that a parsed file gives it
+        assertThat(JacksonUtil.toJsonNode(JacksonUtil.toString(actual))).as("rows of %s the step saves", table).isEqualTo(expected);
     }
 
-    private static Set<String> nonEmptyTables(Connection connection) throws SQLException {
-        List<String> tables = new ArrayList<>();
-        try (Statement statement = connection.createStatement();
-             ResultSet result = statement.executeQuery("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")) {
-            while (result.next()) {
-                tables.add(result.getString(1));
-            }
-        }
-        Set<String> nonEmpty = new TreeSet<>();
-        for (String table : tables) {
-            try (Statement statement = connection.createStatement();
-                 ResultSet result = statement.executeQuery("SELECT EXISTS (SELECT 1 FROM \"" + table + "\")")) {
-                if (result.next() && result.getBoolean(1)) {
-                    nonEmpty.add(table);
-                }
-            }
-        }
-        return nonEmpty;
+    private static Set<String> columns(JsonNode rows) {
+        Set<String> columns = new TreeSet<>();
+        rows.forEach(row -> row.fieldNames().forEachRemaining(columns::add));
+        return columns;
+    }
+
+    private static JsonNode golden() throws IOException {
+        Path basedir = Path.of(System.getProperty("basedir", System.getProperty("user.dir")));
+        Path file = basedir.resolve(GOLDEN_FILE).normalize();
+        assertThat(file).as("the golden file of the system data, which the dao-sql module holds; this test reads it by path "
+                + "from the lite-tests module directory (%s)", basedir).isRegularFile();
+        return JacksonUtil.toJsonNode(Files.readString(file));
     }
 
     private static <T> List<T> saved(Object dao, Class<T> type) {
@@ -184,24 +148,23 @@ class SystemDataTestStepMirrorTest {
                 .toList();
     }
 
-    private static Map<String, Object> row(Object... namesAndValues) {
-        Map<String, Object> row = new HashMap<>();
+    private static ObjectNode row(Object... namesAndValues) {
+        ObjectNode row = JacksonUtil.newObjectNode();
         for (int i = 0; i < namesAndValues.length; i += 2) {
-            row.put((String) namesAndValues[i], namesAndValues[i + 1]);
+            row.set((String) namesAndValues[i], node(namesAndValues[i + 1]));
         }
         return row;
     }
 
-    private static Object json(Object text) {
-        return text == null ? null : JacksonUtil.toJsonNode((String) text);
-    }
-
-    // as the SQL DAO reads it: into the configuration type, here back to a tree so both sides compare alike
-    private static Object providerConfiguration(Object text) {
-        if (text == null) {
-            return null;
-        }
-        return JacksonUtil.valueToTree(JacksonUtil.fromString((String) text, MqttAuthProviderConfiguration.class));
+    // a column value in the form of the golden file: ids as text, JSON as a tree, a null as a JSON null
+    private static JsonNode node(Object value) {
+        return switch (value) {
+            case null -> JacksonUtil.OBJECT_MAPPER.nullNode();
+            case UUID uuid -> JacksonUtil.OBJECT_MAPPER.getNodeFactory().textNode(uuid.toString());
+            case JsonNode json -> json;
+            // a scalar, or the provider configuration as the SQL DAO reads it from its column: the configuration type, as a tree
+            default -> JacksonUtil.valueToTree(value);
+        };
     }
 
 }

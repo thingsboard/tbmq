@@ -50,8 +50,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * What the step writes into an empty backend, which the Spring test cannot show while the DAOs are on PostgreSQL and
- * the rows are already there.
+ * What the step writes into an empty backend, which the Spring test cannot show: its store is seeded before the step runs.
  */
 class SystemDataTestStepWritesTest {
 

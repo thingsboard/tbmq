@@ -44,13 +44,14 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Gives a test context the management data of {@code sql/system-data.sql} (module {@code dao-sql}, test resources):
+ * Gives a test context the management data of {@code sql/system-data.sql} (module {@code dao-sql}, test resources, which
+ * the golden file {@code sql/system-data-rows.json} next to it pins to what the SQL file inserts):
  * the system administrator and its credentials, the three settings and the five auth providers, all disabled. The rows
  * are written through the DAO beans, so each lands in whichever backend its DAO uses; a row that its DAO already finds,
- * as the one {@code PostgreSqlInitializer} inserts while a DAO group is on PostgreSQL, is left as it is.
+ * as after a restart over the same store, is left as it is.
  * <p>
  * The constants below mirror that SQL file: the ids, the created times, the password hash and the JSON values.
- * {@code SystemDataTestStepMirrorTest} compares what the step saves with the rows the SQL file inserts.
+ * {@code SystemDataTestStepMirrorTest} compares what the step saves with that golden file.
  * <p>
  * The step runs after the install seed. When this start seeded the store ({@link StoreSeedState#seededInThisStart()}),
  * the step first removes the seeded rows that the file does not hold, or holds with other values: the sysadmin's default
