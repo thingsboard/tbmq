@@ -100,9 +100,10 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Scheduled(cron = "${mqtt.client-session-expiry.cron}", zone = "${mqtt.client-session-expiry.zone}")
     public void cleanUp() {
-        if (!cleanupClockGuard.cleanupAllowed()) {
+        // only the expiry is age-based: ghost sessions are repaired while it is postponed
+        boolean expiryAllowed = cleanupClockGuard.cleanupAllowed();
+        if (!expiryAllowed) {
             log.debug("Cleaning up expired ClientSessions is postponed: the clock is behind its last record");
-            return;
         }
         log.info("Starting cleaning up expired ClientSessions.");
 
@@ -124,7 +125,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
                 if (stateFixed) {
                     fixedGhostCount++;
                 }
-            } else if (tryCleanupDisconnectedSession(info, now)) {
+            } else if (expiryAllowed && tryCleanupDisconnectedSession(info, now)) {
                 removedCount++;
             }
         }

@@ -25,6 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
@@ -39,11 +40,12 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,18 +88,32 @@ public class ClientSessionCleanUpServiceImplTest {
     }
 
     @Test
-    public void givenAPostponingClockGuard_whenRunCleanup_thenNoSessionIsRead() {
-        when(cleanupClockGuard.cleanupAllowed()).thenReturn(false);
-        when(serviceInfoProvider.getServiceId()).thenReturn(SERVICE_ID);
-        when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of("pastTtl",
-                getClientSessionInfo(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttlSeconds + 5), false, 0)));
-        // the scheduled runs go on in the background: forget any that started before the guard said no
-        clearInvocations(clientSessionCache, clientSessionEventService);
+    public void givenAPostponingClockGuard_whenRunCleanup_thenGhostSessionIsRepairedButExpiredSessionIsNotCleaned() {
+        // a service with mocks of its own: the context's bean runs every second on the same mocks, and a run that
+        // started while the guard still said yes would clean the expired session
+        ClientSessionCache cache = mock(ClientSessionCache.class);
+        ClientSessionCtxService ctxService = mock(ClientSessionCtxService.class);
+        ClientSessionEventService eventService = mock(ClientSessionEventService.class);
+        ServiceInfoProvider infoProvider = mock(ServiceInfoProvider.class);
+        CleanupClockGuard guard = mock(CleanupClockGuard.class);
+        ClientSessionCleanUpServiceImpl service = new ClientSessionCleanUpServiceImpl(cache, ctxService, eventService,
+                mock(DisconnectClientCommandService.class), infoProvider, guard);
+        ReflectionTestUtils.setField(service, "ttl", ttlSeconds);
 
-        clientSessionCleanUpService.cleanUp();
+        long now = System.currentTimeMillis();
+        ClientSessionInfo ghost = getClientSessionInfo(false, 10).toBuilder().connected(true).clientId("ghostClient").build();
+        ClientSessionInfo pastTtl = getClientSessionInfo(now - TimeUnit.SECONDS.toMillis(ttlSeconds + 5), false, 0);
+        assertThat(pastTtl.isExpired(now, ttlSeconds)).isTrue();
+        when(guard.cleanupAllowed()).thenReturn(false);
+        when(infoProvider.getServiceId()).thenReturn(SERVICE_ID);
+        when(cache.getAllClientSessions()).thenReturn(Map.of("ghostClient", ghost, "pastTtl", pastTtl));
+        when(ctxService.hasSession(eq("ghostClient"))).thenReturn(false);
 
-        verify(clientSessionCache, never()).getAllClientSessions();
-        verify(clientSessionEventService, never()).requestClientSessionCleanup(any(), any());
+        service.cleanUp();
+
+        verify(eventService).notifyClientDisconnected(
+                eq(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(ghost)), eq(ON_ADMINISTRATIVE_ACTION), eq(null));
+        verify(eventService, never()).requestClientSessionCleanup(any(), any());
     }
 
     @Test
@@ -121,7 +137,7 @@ public class ClientSessionCleanUpServiceImplTest {
                 .atMost(3, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(clientSessionCleanUpService, atLeast(1)).cleanUp());
 
-        verify(clientSessionEventService).requestClientSessionCleanup(eq(clientSessionInfo2), eq(ClientCleanupInfo.GRACEFUL));
+        verify(clientSessionEventService, atLeast(1)).requestClientSessionCleanup(eq(clientSessionInfo2), eq(ClientCleanupInfo.GRACEFUL));
     }
 
     @Test
@@ -136,7 +152,8 @@ public class ClientSessionCleanUpServiceImplTest {
 
         clientSessionCleanUpService.cleanUp();
 
-        verify(clientSessionEventService).notifyClientDisconnected(eq(sessionInfo), eq(ON_ADMINISTRATIVE_ACTION), eq(null));
+        // at least once: the context's bean also runs every second on the same mocks
+        verify(clientSessionEventService, atLeast(1)).notifyClientDisconnected(eq(sessionInfo), eq(ON_ADMINISTRATIVE_ACTION), eq(null));
     }
 
     @Test
@@ -164,7 +181,7 @@ public class ClientSessionCleanUpServiceImplTest {
 
         clientSessionCleanUpService.cleanUp();
 
-        verify(clientSessionEventService).requestClientSessionCleanup(eq(pastTtl), eq(ClientCleanupInfo.GRACEFUL));
+        verify(clientSessionEventService, atLeast(1)).requestClientSessionCleanup(eq(pastTtl), eq(ClientCleanupInfo.GRACEFUL));
         verify(clientSessionEventService, never()).requestClientSessionCleanup(eq(insideTtl), any());
     }
 
