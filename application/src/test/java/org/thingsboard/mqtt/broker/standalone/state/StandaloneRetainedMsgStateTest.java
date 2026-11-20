@@ -151,17 +151,13 @@ class StandaloneRetainedMsgStateTest {
     }
 
     @Test
-    void aFullStoreIsLoggedAtDebugWithoutATrace() {
+    void aFullStoreFailsTheCallbackWithoutAnErrorOrAWarning() {
         doThrow(new StoreFullException("Not enough free disk space")).when(storeSpy).put(eq("t"), any());
 
         persistence.persistRetainedMsgAsync("t", proto(retained("t", 1)), callback);
 
         verify(callback).onFailure(any(StoreFullException.class));
-        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.INFO));
-        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.DEBUG).singleElement().satisfies(event -> {
-            assertThat(event.getFormattedMessage()).startsWith("[t] Failed to store retained msg: ").endsWith("Not enough free disk space");
-            assertThat(event.getThrowableProxy()).isNull();
-        });
+        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
     }
 
     @Test

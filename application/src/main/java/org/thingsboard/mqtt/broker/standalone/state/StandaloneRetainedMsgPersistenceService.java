@@ -21,7 +21,6 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
-import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgPersistenceService;
@@ -66,14 +65,7 @@ public class StandaloneRetainedMsgPersistenceService implements RetainedMsgPersi
         StoreStateSupport.writeThenCallback(
                 () -> write(topic, retainedMsgProto, messageExpiryInterval),
                 callback,
-                e -> {
-                    if (e instanceof StoreFullException) {
-                        // expected while the disk is full: the disk monitor warns about it
-                        log.debug("[{}] Failed to store retained msg: {}", topic, e.getMessage());
-                    } else {
-                        log.error("[{}] Failed to store retained msg", topic, e);
-                    }
-                });
+                e -> log.error("[{}] Failed to store retained msg", topic, e));
     }
 
     private void write(String topic, RetainedMsgProto retainedMsgProto, Integer messageExpiryInterval) {
