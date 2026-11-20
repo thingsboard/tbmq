@@ -106,6 +106,8 @@ public class TBMQReleaseService extends AbstractServiceProvider {
         if (!enabled) {
             return;
         }
+        // read once, before the request: a failure backs off from the attempt, however long the request took
+        long now = clock.getAsLong();
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
                 return;
@@ -113,7 +115,6 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             if (!retainedMsgListenerService.isInitialized()) {
                 return;
             }
-            long now = clock.getAsLong();
             if (now + SCHEDULE_JITTER_MS < nextAttemptAtMs) {
                 return;
             }
@@ -135,7 +136,7 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             log.debug("Interrupted while getting the latest release version", e);
         } catch (IOException e) {
             log.debug("Failed to get the latest release version", e);
-            backOff(clock.getAsLong());
+            backOff(now);
         }
     }
 

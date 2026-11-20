@@ -125,6 +125,24 @@ class TBMQReleaseServiceTest {
     }
 
     @Test
+    void givenASlowExceptionalFailure_whenScheduled_thenTheBackoffCountsFromTheAttemptNotFromTheFailure() throws Exception {
+        TBMQReleaseService service = newService(true);
+        long start = now.get();
+        // the request takes ten minutes before it fails
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenAnswer(invocation -> {
+            now.addAndGet(10 * Duration.ofMinutes(1).toMillis());
+            throw new IOException("timed out");
+        });
+
+        service.scheduleVersionCheck();
+        now.set(start + 6 * HOUR_MS);
+        service.scheduleVersionCheck();
+
+        // 6 h after the first attempt started, as after a non-200 answer
+        assertThat(sendCount()).isEqualTo(2);
+    }
+
+    @Test
     void givenFailuresKeepGoing_whenScheduled_thenWaitIsCappedAt24Hours() throws Exception {
         TBMQReleaseService service = newService(true);
         stubResponses(response(500, "x"));
