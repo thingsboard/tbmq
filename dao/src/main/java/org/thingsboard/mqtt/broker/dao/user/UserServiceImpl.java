@@ -98,13 +98,30 @@ public class UserServiceImpl implements UserService {
         }
         User savedUser = userDao.save(user);
         if (user.getId() == null) {
-            UserCredentials userCredentials = new UserCredentials();
-            userCredentials.setEnabled(false);
-            userCredentials.setActivateToken(generateSafeToken(DEFAULT_TOKEN_LENGTH));
-            userCredentials.setUserId(savedUser.getId());
-            saveUserCredentialsAndPasswordHistory(userCredentials);
+            saveDisabledUserCredentials(savedUser.getId());
         }
         return savedUser;
+    }
+
+    @Override
+    public UserCredentials createUserCredentials(UUID userId) {
+        log.trace("Executing createUserCredentials [{}]", userId);
+        validateId(userId, INCORRECT_USER_ID + userId);
+        if (userDao.findById(userId) == null) {
+            throw new DataValidationException("Can't create user credentials for non-existent user!");
+        }
+        if (userCredentialsDao.findByUserId(userId) != null) {
+            throw new DataValidationException("User credentials already exist!");
+        }
+        return saveDisabledUserCredentials(userId);
+    }
+
+    private UserCredentials saveDisabledUserCredentials(UUID userId) {
+        UserCredentials userCredentials = new UserCredentials();
+        userCredentials.setEnabled(false);
+        userCredentials.setActivateToken(generateSafeToken(DEFAULT_TOKEN_LENGTH));
+        userCredentials.setUserId(userId);
+        return saveUserCredentialsAndPasswordHistory(userCredentials);
     }
 
     @Override

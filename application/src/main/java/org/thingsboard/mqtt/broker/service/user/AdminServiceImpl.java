@@ -45,6 +45,11 @@ public class AdminServiceImpl implements AdminService {
         return createAdmin(adminDto, password, saveDefaultWsConnection);
     }
 
+    @Override
+    public void activateAdminCredentials(UserCredentials userCredentials) {
+        updateUserCredentials(userCredentials, SYSADMIN_PASSWORD);
+    }
+
     private User createAdmin(AdminDto adminDto, String sysadminPassword, boolean saveDefaultWsConnection) throws ThingsboardException {
         User user = userService.saveUser(toUser(adminDto));
         UserCredentials userCredentials = userService.findUserCredentialsByUserId(user.getId());

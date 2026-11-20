@@ -392,6 +392,17 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class).hasMessageContaining("scan meta");
         assertThatThrownBy(store::syncWal).isInstanceOf(StoreException.class);
         assertThatThrownBy(store::meta).isInstanceOf(StoreException.class);
+        assertThatThrownBy(() -> store.putMetaSynced(bytes("k"), bytes("v")))
+                .isInstanceOf(StoreException.class).hasMessageContaining("put to meta");
+    }
+
+    @Test
+    void aSyncedMetaPutIsReadableAfterCloseAndReopen() {
+        RocksDbStore store = open(dir);
+        store.putMetaSynced(bytes("marker"), new byte[]{1});
+        closeAll();
+
+        assertThat(open(dir).get(StoreColumnFamily.META, bytes("marker"))).isEqualTo(new byte[]{1});
     }
 
     @Test

@@ -17,10 +17,17 @@ package org.thingsboard.mqtt.broker.service.user;
 
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 
 public interface AdminService {
 
     User createAdmin(AdminDto adminDto, boolean saveDefaultWsConnection) throws ThingsboardException;
+
+    /**
+     * Activates the disabled credentials of an existing admin with the default password, as {@link #createAdmin} does
+     * for a new admin created without a password.
+     */
+    void activateAdminCredentials(UserCredentials userCredentials);
 
 }

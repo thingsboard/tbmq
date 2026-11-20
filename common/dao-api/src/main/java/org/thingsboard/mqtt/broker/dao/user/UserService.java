@@ -36,6 +36,12 @@ public interface UserService {
 
     UserCredentials saveUserCredentials(UserCredentials userCredentials);
 
+    /**
+     * Creates the disabled credentials, with an activate token, of an existing user that has none, as {@link #saveUser}
+     * does for a new user.
+     */
+    UserCredentials createUserCredentials(UUID userId);
+
     UserCredentials requestPasswordReset(String email);
 
     UserCredentials requestExpiredPasswordReset(UUID userCredentialsId);

@@ -368,6 +368,22 @@ public class RocksDbStore {
         }
     }
 
+    /**
+     * Puts a key of the {@code meta} column family with a WAL sync, whatever {@code store.wal-sync} says: a meta key
+     * records a state that must survive a crash right after it is written.
+     */
+    void putMetaSynced(byte[] key, byte[] value) {
+        StoreColumnFamily cf = StoreColumnFamily.META;
+        RocksDB database = acquire(OP_PUT, cf);
+        try (WriteOptions synced = new WriteOptions().setSync(true)) {
+            database.put(handles.get(cf), synced, key, value);
+        } catch (RocksDBException e) {
+            throw failure(OP_PUT, cf, e);
+        } finally {
+            release();
+        }
+    }
+
     public void delete(StoreWriteClass writeClass, StoreColumnFamily cf, byte[] key) {
         RocksDB database = acquire(OP_DELETE, cf);
         try {

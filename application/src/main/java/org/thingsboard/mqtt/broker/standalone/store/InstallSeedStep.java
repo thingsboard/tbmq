@@ -1,0 +1,152 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.standalone.store;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
+import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.install.DefaultSystemDataLoaderService;
+import org.thingsboard.mqtt.broker.service.user.AdminService;
+
+import java.util.UUID;
+
+/**
+ * Seeds the management defaults of the cluster install into a store that has no seed marker: the admin settings, the
+ * auth providers with Basic enabled, the sysadmin, the system WebSocket credentials and the sysadmin's default
+ * WebSocket connection, through the same services and the same defaults as {@link DefaultSystemDataLoaderService}.
+ * <p>
+ * Each step skips what the store already holds and the marker is written last, so a seed that stops halfway is
+ * finished on the next start without duplicates.
+ */
+@Slf4j
+@Component
+@StandaloneComponent
+@Order(0)
+public class InstallSeedStep implements ManagementDataStep {
+
+    static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
+
+    private final StoreSeedState seedState;
+    private final AdminSettingsService adminSettingsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
+    private final UserService userService;
+    private final AdminService adminService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final WebSocketConnectionService webSocketConnectionService;
+
+    public InstallSeedStep(StoreSeedState seedState, AdminSettingsService adminSettingsService,
+                           MqttAuthProviderService mqttAuthProviderService, UserService userService, AdminService adminService,
+                           MqttClientCredentialsService mqttClientCredentialsService,
+                           WebSocketConnectionService webSocketConnectionService) {
+        this.seedState = seedState;
+        this.adminSettingsService = adminSettingsService;
+        this.mqttAuthProviderService = mqttAuthProviderService;
+        this.userService = userService;
+        this.adminService = adminService;
+        this.mqttClientCredentialsService = mqttClientCredentialsService;
+        this.webSocketConnectionService = webSocketConnectionService;
+    }
+
+    @Override
+    public void apply() {
+        if (seedState.isSeeded()) {
+            return;
+        }
+        log.info("Seeding the management defaults into a store that has not been seeded yet");
+        seedAdminSettings();
+        seedAuthProviders();
+        User sysadmin = seedSysadmin();
+        MqttClientCredentials systemCredentials = seedSystemWebSocketCredentials();
+        seedDefaultWebSocketConnection(sysadmin, systemCredentials);
+        seedState.markSeeded();
+    }
+
+    private void seedAdminSettings() {
+        for (AdminSettings settings : DefaultSystemDataLoaderService.defaultAdminSettings()) {
+            if (adminSettingsService.findAdminSettingsByKey(settings.getKey()) == null) {
+                adminSettingsService.saveAdminSettings(settings);
+            } else {
+                log.debug("The admin settings {} exist, skipping them", settings.getKey());
+            }
+        }
+    }
+
+    private void seedAuthProviders() {
+        for (MqttAuthProvider provider : DefaultSystemDataLoaderService.defaultAuthProviders()) {
+            if (mqttAuthProviderService.getAuthProviderByType(provider.getType()).isEmpty()) {
+                mqttAuthProviderService.saveAuthProvider(provider);
+            } else {
+                log.debug("The auth provider {} exists, skipping it", provider.getType());
+            }
+        }
+    }
+
+    private User seedSysadmin() {
+        User sysadmin = userService.findUserByEmail(SYSADMIN_EMAIL);
+        if (sysadmin == null) {
+            try {
+                return adminService.createAdmin(AdminDto.fromEmail(SYSADMIN_EMAIL), false);
+            } catch (ThingsboardException e) {
+                throw new IllegalStateException("Failed to create the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
+            }
+        }
+        UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
+        if (credentials == null) {
+            log.warn("The sysadmin {} has no credentials, creating them with the default password", SYSADMIN_EMAIL);
+            adminService.activateAdminCredentials(userService.createUserCredentials(sysadmin.getId()));
+        } else if (!credentials.isEnabled() && StringUtils.isEmpty(credentials.getPassword())) {
+            log.warn("The sysadmin {} has inactive credentials without a password, activating them with the default password",
+                    SYSADMIN_EMAIL);
+            adminService.activateAdminCredentials(credentials);
+        }
+        return sysadmin;
+    }
+
+    private MqttClientCredentials seedSystemWebSocketCredentials() {
+        MqttClientCredentials credentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
+        return credentials != null ? credentials : mqttClientCredentialsService.saveSystemWebSocketCredentials();
+    }
+
+    private void seedDefaultWebSocketConnection(User sysadmin, MqttClientCredentials systemCredentials) {
+        UUID sysadminId = sysadmin.getId();
+        if (webSocketConnectionService.findWebSocketConnectionByName(sysadminId, BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME) != null) {
+            return;
+        }
+        try {
+            webSocketConnectionService.saveDefaultWebSocketConnection(sysadminId, systemCredentials.getId());
+        } catch (ThingsboardException e) {
+            throw new IllegalStateException("Failed to create the " + BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME
+                    + " of the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
+        }
+    }
+
+}
