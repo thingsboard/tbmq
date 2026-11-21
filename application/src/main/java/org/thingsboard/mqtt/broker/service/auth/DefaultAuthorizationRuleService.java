@@ -98,6 +98,15 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                 applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName, clientId));
     }
 
+    @Override
+    public AuthRulePatterns parseAuthorizationRule(PubSubAuthorizationRules authRules, String clientCommonName,
+                                                   String clientId) throws AuthenticationException {
+        if (authRules == null) {
+            throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
+        }
+        return newAuthRulePatterns(authRules, clientCommonName, clientId);
+    }
+
     private void validateClientIdPlaceholder(PubSubAuthorizationRules authRules, String clientId) throws AuthenticationException {
         if (clientId == null || !containsMqttTopicSyntax(clientId)) {
             return;

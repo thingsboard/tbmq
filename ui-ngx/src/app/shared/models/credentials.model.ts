@@ -70,8 +70,15 @@ export interface ClientCredentials extends BaseData {
   name: string;
   clientType: ClientType;
   credentialsType: CredentialsType;
+  authorizationPolicyId?: string;
   credentialsValue: string;
   additionalInfo?: CredentialsAdditionalInfo;
+}
+
+export interface AuthorizationPolicy extends BaseData {
+  name: string;
+  authorizationRules: AuthRules;
+  additionalInfo?: { description?: string };
 }
 
 export interface SslMqttCredentials extends SslAuthRulesMapping {

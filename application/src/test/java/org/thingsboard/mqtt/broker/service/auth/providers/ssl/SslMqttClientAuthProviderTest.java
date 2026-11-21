@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.auth.AuthorizationPolicyService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
@@ -77,6 +78,8 @@ public class SslMqttClientAuthProviderTest {
     @Mock
     private MqttClientCredentialsService clientCredentialsService;
     @Mock
+    private AuthorizationPolicyService authorizationPolicyService;
+    @Mock
     private AuthorizationRuleService authorizationRuleService;
     @Mock
     private MqttAuthProviderService mqttAuthProviderService;
@@ -108,7 +111,7 @@ public class SslMqttClientAuthProviderTest {
 
     @Before
     public void setUp() throws Exception {
-        provider = new SslMqttClientAuthProvider(clientCredentialsService, authorizationRuleService,
+        provider = new SslMqttClientAuthProvider(clientCredentialsService, authorizationPolicyService, authorizationRuleService,
                 mqttAuthProviderService, mqttHandlerCtx, cacheOps);
         ReflectionTestUtils.setField(provider, "enabled", true);
         ReflectionTestUtils.setField(provider, "configuration", new SslMqttAuthProviderConfiguration());
