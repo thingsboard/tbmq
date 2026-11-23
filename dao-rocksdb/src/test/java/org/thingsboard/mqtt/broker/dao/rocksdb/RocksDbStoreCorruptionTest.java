@@ -98,7 +98,7 @@ class RocksDbStoreCorruptionTest {
                 .contains("To restore a backup: stop the broker, replace " + path + " with the backup's db directory, start the broker.")
                 .contains("A pre-upgrade checkpoint can be restored the same way: stop the broker, replace " + path
                         + " with a copy of the checkpoint directory, start the broker (it upgrades again on start). The checkpoint itself stays untouched. Copying")
-                .endsWith("Copying /data while the broker runs does not give a usable backup.")
+                .endsWith("Copying " + path + " while the broker runs does not give a usable backup.")
                 .doesNotContain("\n");
         // the checkpoint of the list is the way back
         Path restored = copyDir(checkpoint, dir.resolve("restored"));

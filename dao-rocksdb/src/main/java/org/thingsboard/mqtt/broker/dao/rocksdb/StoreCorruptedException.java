@@ -43,7 +43,7 @@ import java.util.Set;
  * with the original checkpoint under {@code store.backups.path} and takes no new one. The upgrade writes only to the
  * copy; resuming with the checkpoint and the retention of old checkpoints never change or delete it (retention
  * protects the checkpoint and the origin of the upgrade). The checkpoint stays as it was and can be copied again.
- * Copying {@code /data} while the broker runs does not give a usable backup.
+ * Copying the store directory while the broker runs does not give a usable backup.
  */
 public class StoreCorruptedException extends StoreException {
 
@@ -95,7 +95,7 @@ public class StoreCorruptedException extends StoreException {
                 .append(" A pre-upgrade checkpoint can be restored the same way: stop the broker, replace ").append(path)
                 .append(" with a copy of the checkpoint directory, start the broker (it upgrades again on start).")
                 .append(" The checkpoint itself stays untouched.")
-                .append(" Copying /data while the broker runs does not give a usable backup.");
+                .append(" Copying ").append(path).append(" while the broker runs does not give a usable backup.");
         return new StoreCorruptedException(message.toString(), cause);
     }
 
