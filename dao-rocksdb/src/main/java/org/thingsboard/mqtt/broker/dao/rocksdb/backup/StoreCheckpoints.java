@@ -113,12 +113,29 @@ public final class StoreCheckpoints {
      * clock that was behind when it was taken or a modification time of an older one moved forward.
      */
     public static void retainNewest(Path backupsPath, int keep, Path protect) {
-        List<CheckpointInfo> others = new ArrayList<>(list(backupsPath));
+        retainNewest(backupsPath, keep, protect, null);
+    }
+
+    /**
+     * Deletes all but {@code keep} checkpoint directories of {@code backupsPath}: {@code protect} and the directory
+     * that is or holds {@code storePath}, when they are among them, and the newest of the others. Neither is ever
+     * deleted: the checkpoint just taken survives a clock that was behind when it was taken or a modification time of
+     * an older one moved forward, and a store started from a checkpoint directory keeps running from it.
+     */
+    public static void retainNewest(Path backupsPath, int keep, Path protect, Path storePath) {
+        List<CheckpointInfo> others = new ArrayList<>();
         int kept = Math.max(keep, 0);
-        if (protect != null && others.removeIf(checkpoint -> isSameDir(checkpoint.path(), protect))) {
-            kept = Math.max(kept - 1, 0);
+        for (CheckpointInfo checkpoint : list(backupsPath)) {
+            if (protect != null && isSameDir(checkpoint.path(), protect)) {
+                kept--;
+            } else if (storePath != null && holds(checkpoint.path(), storePath)) {
+                log.warn("Kept the checkpoint {} because the store at {} runs from it", checkpoint.path(), storePath);
+                kept--;
+            } else {
+                others.add(checkpoint);
+            }
         }
-        kept = Math.min(kept, others.size());
+        kept = Math.min(Math.max(kept, 0), others.size());
         for (CheckpointInfo checkpoint : others.subList(kept, others.size())) {
             deleteRecursively(checkpoint.path());
             log.info("Deleted the old checkpoint {}", checkpoint.path());
@@ -127,6 +144,21 @@ public final class StoreCheckpoints {
 
     private static boolean isSameDir(Path a, Path b) {
         return a.toAbsolutePath().normalize().equals(b.toAbsolutePath().normalize());
+    }
+
+    /**
+     * Whether {@code path} is {@code dir} or lies inside it, by the normalized absolute paths or, when both exist, by
+     * the real paths, so that a symbolic link to the directory counts as well.
+     */
+    private static boolean holds(Path dir, Path path) {
+        if (path.toAbsolutePath().normalize().startsWith(dir.toAbsolutePath().normalize())) {
+            return true;
+        }
+        try {
+            return path.toRealPath().startsWith(dir.toRealPath());
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     private static CheckpointInfo describe(Path path) {

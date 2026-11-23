@@ -299,6 +299,66 @@ class StoreCheckpointsTest {
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::name).containsExactly("pre-upgrade-2-3");
     }
 
+    @Test
+    void retainNewestNeverDeletesTheCheckpointTheStoreRunsFrom() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        // the store was started from a restored checkpoint and upgraded again
+        Path running = checkpointDir(backups, "pre-upgrade-1-2", 500);
+        Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
+        Path other = checkpointDir(backups, "pre-upgrade-2-3", 2000);
+
+        StoreCheckpoints.retainNewest(backups, 1, current, dir.resolve("backups/../backups/pre-upgrade-1-2"));
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
+        assertThat(other).doesNotExist();
+    }
+
+    @Test
+    void retainNewestNeverDeletesACheckpointThatHoldsTheStore() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path holding = checkpointDir(backups, "pre-upgrade-1-2", 500);
+        Path store = Files.createDirectories(holding.resolve("db"));
+        Files.setLastModifiedTime(holding, FileTime.from(Instant.ofEpochSecond(500)));
+        Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
+        checkpointDir(backups, "pre-upgrade-2-3", 2000);
+
+        StoreCheckpoints.retainNewest(backups, 1, current, store);
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, holding);
+    }
+
+    @Test
+    void retainNewestKeepsTheCheckpointTheStoreRunsFromThroughASymbolicLink() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path running = checkpointDir(backups, "pre-upgrade-1-2", 500);
+        Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
+        Path link;
+        try {
+            link = Files.createSymbolicLink(dir.resolve("store"), running);
+        } catch (UnsupportedOperationException | IOException e) {
+            assumeFalse(true, "no symbolic links: " + e);
+            return;
+        }
+
+        StoreCheckpoints.retainNewest(backups, 1, current, link);
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
+    }
+
+    @Test
+    void retainNewestStillKeepsTheNewestWhenTheStoreRunsFromElsewhere() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path current = checkpointDir(backups, "pre-upgrade-1-2", 500);
+        Path newest = checkpointDir(backups, "pre-upgrade-0-1", 2000);
+        checkpointDir(backups, "pre-upgrade-2-3", 1000);
+        // a sibling whose name starts with a checkpoint's name is not inside it
+        Path store = Files.createDirectories(dir.resolve("backups").resolve("pre-upgrade-2-3-db"));
+
+        StoreCheckpoints.retainNewest(backups, 2, current, store);
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(newest, current);
+    }
+
     private static Path checkpointDir(Path backups, String name, long modifiedEpochSecond) throws IOException {
         Path path = Files.createDirectories(backups.resolve(name));
         Files.setLastModifiedTime(path, FileTime.from(Instant.ofEpochSecond(modifiedEpochSecond)));

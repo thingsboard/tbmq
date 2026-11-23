@@ -32,8 +32,8 @@ import java.util.TreeMap;
  * any step runs, and the name of that checkpoint is recorded in the store's meta; then each step runs in version order
  * and the stored version is bumped after each, so a store from several versions back runs every step and a crash
  * before a bump reruns only that step. The last bump removes the recorded name in the same write. After it the oldest
- * checkpoints beyond {@code store.backups.keep} are deleted; the checkpoint of this run and a checkpoint the store runs
- * from are always kept.
+ * checkpoints beyond {@code store.backups.keep} are deleted; the checkpoint of this run and a checkpoint directory the
+ * store runs from are always kept.
  * <p>
  * An upgrade that failed or crashed leaves the recorded name behind, and the next open resumes with that checkpoint
  * instead of taking a new one: the store may already hold some of a step's writes by then, so only the first
@@ -148,7 +148,7 @@ public class StoreMigrationRunner {
             log.info("Migrated the store at {} from schema {} to {}", target.path(), version, version + 1);
         }
         try {
-            StoreCheckpoints.retainNewest(backups, keep, checkpoint);
+            StoreCheckpoints.retainNewest(backups, keep, checkpoint, Path.of(target.path()));
         } catch (RuntimeException e) {
             log.warn("The store at {} is migrated to schema {}, but the old checkpoints in {} (store.backups.path) "
                     + "could not be deleted", target.path(), targetVersion, backups, e);

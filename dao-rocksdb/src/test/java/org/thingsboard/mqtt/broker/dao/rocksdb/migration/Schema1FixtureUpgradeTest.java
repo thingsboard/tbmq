@@ -192,6 +192,23 @@ class Schema1FixtureUpgradeTest {
         }
     }
 
+    @Test
+    void aStoreStartedFromACheckpointDirectoryIsNotDeletedByTheRetentionOfItsOwnUpgrade() throws IOException, URISyntaxException {
+        // restored by pointing store.path at a checkpoint of a schema 1 store, with store.backups.keep=1
+        Path running = copy(fixturePath(), backups.resolve("pre-upgrade-1-2"));
+
+        RocksDbStore opened = open(running, 1, List.of(new Schema1To2Step()));
+
+        assertThat(opened.meta().schemaVersion()).isEqualTo(2);
+        List<CheckpointInfo> checkpoints = StoreCheckpoints.list(backups);
+        assertThat(checkpoints).extracting(CheckpointInfo::path).contains(running).hasSize(2);
+        assertThat(checkpoints).extracting(CheckpointInfo::name).anyMatch(name -> name.startsWith("pre-upgrade-1-2-"));
+        opened.close();
+        store = null;
+        BROKER_STATE.keySet().forEach(cf -> assertThat(readOnly(running).get(cf.columnFamilyName()))
+                .as(cf.columnFamilyName()).isEqualTo(readOnly(pristine).get(cf.columnFamilyName())));
+    }
+
     /**
      * The store keeps absolute expiry times, so a fixture written with the default TTLs would expire a week later and
      * fail the upgrade tests for a reason that has nothing to do with the upgrade. This test names the entry instead.
@@ -277,9 +294,14 @@ class Schema1FixtureUpgradeTest {
     }
 
     private RocksDbStore open(List<StoreMigrationStep> steps) {
+        return open(upgraded, 3, steps);
+    }
+
+    private RocksDbStore open(Path path, int keep, List<StoreMigrationStep> steps) {
         StoreProperties properties = new StoreProperties();
-        properties.setPath(upgraded.toString());
+        properties.setPath(path.toString());
         properties.getBackups().setPath(backups.toString());
+        properties.getBackups().setKeep(keep);
         store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
                 TestDiskSpaceMonitors.roomy(properties), steps);
         store.open();
