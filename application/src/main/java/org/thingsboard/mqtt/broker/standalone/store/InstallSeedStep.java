@@ -125,24 +125,24 @@ public class InstallSeedStep implements ManagementDataStep {
     }
 
     private User seedSysadmin() {
-        User sysadmin = userService.findUserByEmail(SYSADMIN_EMAIL);
-        if (sysadmin == null) {
-            try {
+        try {
+            User sysadmin = userService.findUserByEmail(SYSADMIN_EMAIL);
+            if (sysadmin == null) {
                 return adminService.createAdmin(AdminDto.fromEmail(SYSADMIN_EMAIL), false);
-            } catch (ThingsboardException e) {
-                throw new IllegalStateException("Failed to create the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
             }
+            UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
+            if (credentials == null) {
+                log.warn("The sysadmin {} has no credentials, creating them with the default password", SYSADMIN_EMAIL);
+                adminService.activateAdminCredentials(userService.createUserCredentials(sysadmin.getId()));
+            } else if (!credentials.isEnabled() && StringUtils.isEmpty(credentials.getPassword())) {
+                log.warn("The sysadmin {} has inactive credentials without a password, activating them with the default password",
+                        SYSADMIN_EMAIL);
+                adminService.activateAdminCredentials(credentials);
+            }
+            return sysadmin;
+        } catch (ThingsboardException | RuntimeException e) {
+            throw new IllegalStateException("Failed to seed the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
         }
-        UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
-        if (credentials == null) {
-            log.warn("The sysadmin {} has no credentials, creating them with the default password", SYSADMIN_EMAIL);
-            adminService.activateAdminCredentials(userService.createUserCredentials(sysadmin.getId()));
-        } else if (!credentials.isEnabled() && StringUtils.isEmpty(credentials.getPassword())) {
-            log.warn("The sysadmin {} has inactive credentials without a password, activating them with the default password",
-                    SYSADMIN_EMAIL);
-            adminService.activateAdminCredentials(credentials);
-        }
-        return sysadmin;
     }
 
     private MqttClientCredentials seedSystemWebSocketCredentials() {

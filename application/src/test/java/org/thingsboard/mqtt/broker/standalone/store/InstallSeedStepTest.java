@@ -28,9 +28,9 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
@@ -60,6 +61,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -314,13 +316,44 @@ class InstallSeedStepTest {
 
     @Test
     void aFailedSysadminCreationNamesWhatFailedAndLeavesTheMarkerUnwritten() throws ThingsboardException {
-        when(adminService.createAdmin(any(), anyBoolean()))
-                .thenThrow(new ThingsboardException("boom", ThingsboardErrorCode.GENERAL));
+        StoreFullException full = new StoreFullException("the store is full");
+        when(adminService.createAdmin(any(), anyBoolean())).thenThrow(full);
 
         assertThatThrownBy(() -> step.apply())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining(SYSADMIN_EMAIL)
-                .hasCauseInstanceOf(ThingsboardException.class);
+                .hasMessageContaining("sysadmin " + SYSADMIN_EMAIL)
+                .hasMessageContaining("the store is full")
+                .hasCause(full);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aFailedSysadminRepairNamesWhatFailedAndLeavesTheMarkerUnwritten() {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(null);
+        StoreFullException full = new StoreFullException("the store is full");
+        when(userService.createUserCredentials(sysadmin.getId())).thenThrow(full);
+
+        assertThatThrownBy(() -> step.apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sysadmin " + SYSADMIN_EMAIL)
+                .hasCause(full);
+        verify(adminService, never()).activateAdminCredentials(any());
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aFailedSysadminActivationNamesWhatFailedAndLeavesTheMarkerUnwritten() {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        UserCredentials disabled = disabledCredentials(sysadmin.getId());
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(disabled);
+        StoreFullException full = new StoreFullException("the store is full");
+        doThrow(full).when(adminService).activateAdminCredentials(disabled);
+
+        assertThatThrownBy(() -> step.apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sysadmin " + SYSADMIN_EMAIL)
+                .hasCause(full);
         verify(seedState, never()).markSeeded();
     }
 
