@@ -153,7 +153,7 @@ public final class StoreCheckpoints {
      * Whether {@code path} is {@code dir} or lies inside it, by the normalized absolute paths or, when both exist, by
      * the real paths, so that a symbolic link to the directory counts as well.
      */
-    private static boolean holds(Path dir, Path path) {
+    public static boolean holds(Path dir, Path path) {
         if (path.toAbsolutePath().normalize().startsWith(dir.toAbsolutePath().normalize())) {
             return true;
         }

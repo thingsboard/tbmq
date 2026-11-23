@@ -366,6 +366,21 @@ class StoreMigrationRunnerTest {
     }
 
     @Test
+    void aFirstCheckpointTheStoreRunsFromIsNotCarriedAsTheOrigin() throws Exception {
+        Path running = Files.createDirectories(backups().resolve("pre-upgrade-1-2"));
+        Path resume = Files.createDirectories(backups().resolve("pre-upgrade-1-2-20260101-000000"));
+        FakeStore store = new FakeStore(1);
+        store.path = running.toString();
+        store.recordUpgradeCheckpoint(resume.getFileName().toString(), running.getFileName().toString());
+        store.events.clear();
+
+        assertThatThrownBy(() -> runner(List.of(new FailingOnceStep(1, store)), 2).run(store)).isInstanceOf(StoreException.class);
+
+        // resumed, and recorded again with the resumed checkpoint as the origin
+        assertThat(store.events).containsExactly("step 1", "mark " + resume.getFileName());
+    }
+
+    @Test
     void aStepThatThrowsAnErrorRecordsTheUpgradeAgainAndTheNextStartResumes() {
         FakeStore store = new FakeStore(1);
         AssertionError error = new AssertionError("boom");
@@ -856,6 +871,7 @@ class StoreMigrationRunnerTest {
         private final Map<String, byte[]> data = new HashMap<>();
         private int version;
         private long sequence;
+        private String path = dir.resolve("store").toString();
         private boolean dead;
         private CheckpointKill killAtCheckpoint;
         private RuntimeException checkpointFailure;
@@ -874,7 +890,7 @@ class StoreMigrationRunnerTest {
 
         @Override
         public String path() {
-            return dir.resolve("store").toString();
+            return path;
         }
 
         @Override

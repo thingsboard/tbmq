@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -222,6 +223,44 @@ class RocksDbStoreTest {
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                 .singleElement()
                 .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade"));
+    }
+
+    @Test
+    void aStoreStartedFromACheckpointWhoseRecordNamesItselfTakesANewCheckpointBeforeMigrating() throws Exception {
+        Path running = Files.createDirectories(backups()).resolve("pre-upgrade-1-2");
+        createWithFamilies(running, Stream.of(StoreColumnFamily.values()).map(StoreColumnFamily::columnFamilyName).toList());
+        // the record a start that could not resume leaves in its new checkpoint: itself as the checkpoint and the
+        // origin, at the checkpoint's own sequence number
+        withRawMeta(running, (db, meta) -> db.put(meta, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY,
+                new StoreMigrationRunner.UpgradeRecord(db.getLatestSequenceNumber() + 1, "pre-upgrade-1-2", "pre-upgrade-1-2").encode()));
+        ListAppender<ILoggingEvent> runnerLog = captureLog(StoreMigrationRunner.class);
+        ListAppender<ILoggingEvent> retentionLog = captureLog(StoreCheckpoints.class);
+        RocksDbStore store;
+        try {
+            store = openMigrating(running, 1, List.of(new Schema1To2Step()));
+        } finally {
+            releaseLog(StoreMigrationRunner.class, runnerLog);
+            releaseLog(StoreCheckpoints.class, retentionLog);
+        }
+
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        List<Path> checkpoints = StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::path).toList();
+        assertThat(checkpoints).hasSize(2).contains(running);
+        Path fresh = checkpoints.stream().filter(checkpoint -> !checkpoint.equals(running)).findFirst().orElseThrow();
+        // the store before the migration, and the origin of the upgrade
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY)).isEqualTo(new byte[]{0, 0, 0, 1});
+        long freshSequence = withReadOnly(fresh, (db, handles) -> db.getLatestSequenceNumber());
+        String freshName = fresh.getFileName().toString();
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY))
+                .isEqualTo(new StoreMigrationRunner.UpgradeRecord(freshSequence, freshName, freshName).encode());
+        assertThat(runnerLog.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("runs from " + running)
+                        .contains("is the directory the store runs from"));
+        // the directory the store runs from stays
+        assertThat(retentionLog.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("Kept the checkpoint " + running));
     }
 
     @Test
