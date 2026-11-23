@@ -69,6 +69,10 @@ public final class StoreBackupCommand {
     // the lock RocksDB takes on <store>/LOCK is a file lock; a second open fails with an IO error that names the file
     // as "<store>/LOCK: <reason>"
     private static final String LOCK_FILE = "LOCK";
+    /** RocksDB's message when another process holds the lock. */
+    private static final String LOCK_CONTENDED = "While lock file:";
+    /** RocksDB's message when another open in this process holds the lock. */
+    private static final String LOCK_HELD_IN_PROCESS = "lock hold by current process";
     private static final String NO_MIGRATION_STEP = "no migration step from schema";
 
     private StoreBackupCommand() {
@@ -194,16 +198,19 @@ public final class StoreBackupCommand {
     }
 
     /**
-     * RocksDB refuses to open a store another process, or another open in this process, holds: an IO error whose
-     * message names the store's lock file, {@code <storePath>/LOCK:}. Anything else, such as a corrupt store or an IO
-     * error on another file, is not "in use".
+     * RocksDB refuses to open a store another process, or another open in this process, holds: an IO error that
+     * names the store's lock file, {@code <storePath>/LOCK:}, and reports the contention, {@code While lock file:}
+     * from another process or {@code lock hold by current process} from this one. Anything else is not "in use": a
+     * corrupt store, an IO error on another file, or a failure to open the lock file itself ({@code while open a file
+     * for lock: <storePath>/LOCK: Permission denied}), which needs no running broker.
      */
     static boolean isLocked(Throwable failure, Path storePath) {
         String lockFile = storePath.resolve(LOCK_FILE) + ":";
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof RocksDBException rocks && rocks.getStatus() != null
                     && rocks.getStatus().getCode() == Status.Code.IOError
-                    && rocks.getMessage() != null && rocks.getMessage().contains(lockFile)) {
+                    && rocks.getMessage() != null && rocks.getMessage().contains(lockFile)
+                    && (rocks.getMessage().contains(LOCK_CONTENDED) || rocks.getMessage().contains(LOCK_HELD_IN_PROCESS))) {
                 return true;
             }
             if (cause.getCause() == cause) {

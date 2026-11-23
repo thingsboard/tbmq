@@ -37,6 +37,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class StoreBackupCommandTest {
 
@@ -122,6 +124,23 @@ class StoreBackupCommandTest {
     }
 
     @Test
+    void aLockFileTheCommandCannotOpenIsNotAStoreInUse() throws IOException {
+        Path storePath = dir.resolve("db");
+        open(storePath).close();
+        Path lock = storePath.resolve("LOCK");
+        Files.setPosixFilePermissions(lock, PosixFilePermissions.fromString("r--r--r--"));
+        // root opens it anyway
+        assumeFalse(Files.isWritable(lock));
+        Path out = dir.resolve("backup.tar.gz");
+
+        int exit = StoreBackupCommand.run(new String[]{"--store-path", storePath.toString(), "--out", out.toString()}, err);
+
+        assertThat(exit).isEqualTo(1);
+        assertThat(err()).doesNotContain("in use by a running broker").contains(lock.toString());
+        assertThat(out).doesNotExist();
+    }
+
+    @Test
     void onlyAnIoErrorOnTheStoresLockFileMeansInUse() {
         Path storePath = Path.of("/data/blocks/db");
         // what RocksDB reports for the lock, from another process and from another open in this process
@@ -133,6 +152,9 @@ class StoreBackupCommandTest {
 
         // an IO error on another file of a path that holds "lock" is no lock
         assertThat(StoreBackupCommand.isLocked(ioError("While open a file for appending: /data/blocks/db/000012.log: No space left on device"),
+                storePath)).isFalse();
+        // a failure to open the lock file needs no running broker
+        assertThat(StoreBackupCommand.isLocked(ioError("while open a file for lock: /data/blocks/db/LOCK: Permission denied"),
                 storePath)).isFalse();
         // the lock file of another store, and a lock message without the IO error code
         assertThat(StoreBackupCommand.isLocked(ioError("While lock file: /other/db/LOCK: Resource temporarily unavailable"),
