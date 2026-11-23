@@ -87,6 +87,10 @@ class Schema1BrokerStateReadersTest {
     private static final String SERVICE_ID = "tbmq-lite";
     // what the fixture clients asked for, 50 years
     private static final int FIXTURE_EXPIRY_INTERVAL_SEC = 1576800000;
+    // the created times of the retained messages and the Message Expiry time of b2 (2076-11-10) the fixture stores
+    private static final long R1_CREATED_TIME_MS = 1795428998713L;
+    private static final long R2_CREATED_TIME_MS = 1795428998716L;
+    private static final long B2_EXPIRES_AT_MS = 3372228997477L;
     private static final int SUBSCRIPTION_ID = 7;
     private static final int TTL_SEC = 2000000000;
 
@@ -212,13 +216,13 @@ class Schema1BrokerStateReadersTest {
         assertThat(utf8(r1.getPayload())).isEqualTo("r1");
         assertThat(r1.getQos()).isEqualTo(1);
         assertThat(msgExpiryInterval(r1.getProperties())).as("Message Expiry Interval of fx/r/1").isNull();
-        assertThat(r1.getCreatedTime()).isPositive();
+        assertThat(r1.getCreatedTime()).as("created time of fx/r/1").isEqualTo(R1_CREATED_TIME_MS);
         RetainedMsg r2 = retained.get("fx/r/2");
         assertThat(r2.getTopic()).isEqualTo("fx/r/2");
         assertThat(utf8(r2.getPayload())).isEqualTo("r2");
         assertThat(r2.getQos()).isEqualTo(1);
         assertThat(msgExpiryInterval(r2.getProperties())).as("Message Expiry Interval of fx/r/2").isEqualTo(FIXTURE_EXPIRY_INTERVAL_SEC);
-        assertThat(r2.getCreatedTime()).isPositive();
+        assertThat(r2.getCreatedTime()).as("created time of fx/r/2").isEqualTo(R2_CREATED_TIME_MS);
     }
 
     @Test
@@ -264,7 +268,7 @@ class Schema1BrokerStateReadersTest {
         assertMsg(msgs.get(4), "fx-dev-1", 6, "fx/a/1", "a5", 1, null, List.of(SUBSCRIPTION_ID), Map.of());
         assertMsg(msgs.get(5), "fx-dev-1", 7, "fx/b", "b2", 2, FIXTURE_EXPIRY_INTERVAL_SEC, List.of(), Map.of("k", "v"));
         assertThat(msgs.get(2).getPacketType()).isEqualTo(PersistedPacketType.PUBREL);
-        assertThat(entries.get(5).msgExpiresAtMs()).as("message expiry time of b2 for fx-dev-1").isPositive();
+        assertThat(entries.get(5).msgExpiresAtMs()).as("message expiry time of b2 for fx-dev-1").isEqualTo(B2_EXPIRES_AT_MS);
         assertThat(entries.subList(0, 5)).extracting(StoredDeviceMsg::msgExpiresAtMs).containsOnly(0L);
     }
 
@@ -281,6 +285,8 @@ class Schema1BrokerStateReadersTest {
         assertThat(entries).extracting(StoredDeviceMsg::sequence).containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L);
         assertThat(entries).extracting(StoredDeviceMsg::packetType).containsOnly(PersistedPacketType.PUBLISH);
         assertThat(entries).extracting(StoredDeviceMsg::sent).containsOnly(false);
+        assertThat(entries.get(6).msgExpiresAtMs()).as("message expiry time of b2 for fx-dev-2").isEqualTo(B2_EXPIRES_AT_MS);
+        assertThat(entries.subList(0, 6)).extracting(StoredDeviceMsg::msgExpiresAtMs).containsOnly(0L);
         assertThat(msgs).hasSize(7);
         assertMsg(msgs.get(0), "fx-dev-2", 1, "fx/a/1", "a1", 1, null, List.of(), Map.of());
         assertMsg(msgs.get(1), "fx-dev-2", 2, "fx/a/1", "a2", 1, null, List.of(), Map.of());

@@ -19,6 +19,15 @@ and every Session Expiry Interval and Message Expiry Interval set to 1576800000 
 earliest DEVICE entry TTL time is 2090-04-09, the Message Expiry time of `fx/r/2` and of the `b2` entries is
 2076-11-10.
 
+The stored times the upgrade tests pin, in epoch milliseconds:
+
+| Entry | Stored time |
+|---|---|
+| `fx/r/1` created time | 1795428998713 |
+| `fx/r/2` created time | 1795428998716 (Message Expiry time 3372228998716) |
+| `b2` created time | 1795428997477 |
+| `b2` `msgExpiresAtMs`, both queues | 3372228997477 |
+
 ## meta
 
 | Key | Value |

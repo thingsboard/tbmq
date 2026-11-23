@@ -63,7 +63,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The broker started on a copy of the schema 1 store fixture of dao-rocksdb (its README lists the content): the store
  * is migrated to schema 2, the management defaults are seeded, and the broker state the old code wrote serves the
  * clients as before. Every expiry in the fixture is decades away and the session expiry TTL is the one the fixture was
- * written with, so no assertion depends on the day the test runs.
+ * written with, so no assertion depends on the day the test runs, other than the Message Expiry Interval left, which is
+ * checked against the expiry time the fixture stores.
  */
 @TestPropertySource(properties = {
         "lite.test.system-data.enabled=false",
@@ -86,6 +87,12 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
     private static final UUID FIXTURE_INSTALL_ID = UUID.fromString("f61b7502-608d-4b6a-a5c0-3ad396336e04");
     // what the fixture clients asked for, 50 years
     private static final int FIXTURE_EXPIRY_INTERVAL_SEC = 1576800000;
+    // the Message Expiry times the fixture stores (2076-11-10): fx/r/2 its created time 1795428998716 plus the interval,
+    // b2 the msgExpiresAtMs of its device_msg entries, the created time 1795428997477 plus the interval
+    private static final long R2_EXPIRES_AT_MS = 3372228998716L;
+    private static final long B2_EXPIRES_AT_MS = 3372228997477L;
+    // the broker rounds the time left to whole seconds and the packet travels between the two clock reads
+    private static final long EXPIRY_TOLERANCE_SEC = 5;
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Duration QUIET = Duration.ofSeconds(1);
 
@@ -169,7 +176,7 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
         assertPublish(dev1.next(TIMEOUT), 6, false, 1, "fx/a/1", "a5");
         RawMqttClient.Packet b2 = dev1.next(TIMEOUT);
         assertPublish(b2, 7, false, 2, "fx/b", "b2");
-        assertThat(b2.msgExpiryInterval()).as("Message Expiry Interval left of b2").isPositive().isLessThan(FIXTURE_EXPIRY_INTERVAL_SEC);
+        assertExpiryLeft(b2, B2_EXPIRES_AT_MS);
         assertThat(dev1.poll(QUIET)).as("a packet after the queue of fx-dev-1").isEmpty();
 
         // fx-dev-2 (MQTT 3.1.1) was offline for all seven
@@ -204,7 +211,7 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
         assertThat(r2.type()).isEqualTo(MqttMessageType.PUBLISH);
         assertThat(r2.payload()).isEqualTo("r2");
         assertThat(r2.qos()).isEqualTo(1);
-        assertThat(r2.msgExpiryInterval()).as("Message Expiry Interval left of fx/r/2").isPositive().isLessThan(FIXTURE_EXPIRY_INTERVAL_SEC);
+        assertExpiryLeft(r2, R2_EXPIRES_AT_MS);
     }
 
     @Test
@@ -229,6 +236,17 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
         await("a client without credentials accepted").atMost(TIMEOUT).until(() ->
                 RawMqttClient.connectForReturnCode(mqttPort, "fx-probe", MqttVersion.MQTT_5, true, 0, null, null)
                         == MqttConnectReturnCode.CONNECTION_ACCEPTED);
+    }
+
+    /**
+     * The Message Expiry Interval of {@code packet} is the time left until the expiry time the fixture stores: an
+     * upgrade or a load that restarted the expiry clock would send almost the full interval instead.
+     */
+    private static void assertExpiryLeft(RawMqttClient.Packet packet, long storedExpiresAtMs) {
+        long expected = (storedExpiresAtMs - System.currentTimeMillis()) / 1000;
+        assertThat(packet.msgExpiryInterval()).as("Message Expiry Interval left of %s", packet)
+                .isNotNull()
+                .satisfies(left -> assertThat(left.longValue()).isBetween(expected - EXPIRY_TOLERANCE_SEC, expected + EXPIRY_TOLERANCE_SEC));
     }
 
     private static void assertPublish(RawMqttClient.Packet packet, int packetId, boolean dup, int qos, String topic, String payload) {
