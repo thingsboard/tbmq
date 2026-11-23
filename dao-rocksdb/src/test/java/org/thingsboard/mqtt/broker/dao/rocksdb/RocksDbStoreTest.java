@@ -150,6 +150,9 @@ class RocksDbStoreTest {
         assertThatThrownBy(() -> openMigrating(path, List.of(failing)))
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("Migration from schema 1 to 2 failed: boom");
+        byte[][] storedVersion = new byte[1][];
+        withRawMeta(path, (db, meta) -> storedVersion[0] = db.get(meta, RocksDbStore.META_SCHEMA_VERSION_KEY));
+        assertThat(storedVersion[0]).isEqualTo(new byte[]{0, 0, 0, 1});
 
         RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
         assertThat(store.meta().schemaVersion()).isEqualTo(2);
@@ -225,24 +228,32 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreOfAnotherProductIsRefused() {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        Path path = dir.resolve("store");
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        // an older schema too: the refusal comes before any migration
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
         closeAll();
 
-        assertThatThrownBy(() -> open(dir))
+        assertThatThrownBy(() -> openMigrating(path, List.of(new Schema1To2Step())))
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("product 'X'")
-                .hasMessageContaining(dir.toString());
+                .hasMessageContaining(path.toString());
+        assertThat(dir.resolve("backups")).doesNotExist();
     }
 
     @Test
     void aStoreWithAHigherSchemaVersionIsRefused() {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
+        Path path = dir.resolve("store");
+        openMigrating(path, List.of(new Schema1To2Step()))
+                .put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
         closeAll();
 
-        assertThatThrownBy(() -> open(dir))
+        assertThatThrownBy(() -> openMigrating(path, List.of(new Schema1To2Step())))
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("schema version 3")
-                .hasMessageContaining(dir.toString());
+                .hasMessageContaining(path.toString());
+        assertThat(dir.resolve("backups")).doesNotExist();
     }
 
     @Test

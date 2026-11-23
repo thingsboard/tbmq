@@ -32,7 +32,7 @@ import java.util.TreeMap;
  * several versions back runs every step and a crash before a bump reruns only that step. After the last bump the
  * oldest checkpoints beyond {@code store.backups.keep} are deleted.
  * <p>
- * A missing step, a missing backups path, a failed checkpoint and a failed step stop the open; the store stays at the
+ * A step outside the schemas this build migrates, two steps from one schema, a missing step, a missing backups path, a failed checkpoint and a failed step stop the open; the store stays at the
  * last version reached. A failed deletion of old checkpoints is only logged: the store is migrated by then.
  */
 @Slf4j
@@ -125,6 +125,12 @@ public class StoreMigrationRunner {
     private Map<Integer, StoreMigrationStep> stepsByVersion(Target target) {
         Map<Integer, StoreMigrationStep> byVersion = new TreeMap<>();
         for (StoreMigrationStep step : steps) {
+            // a step from the current schema or later means a new step without a new schema version
+            if (step.fromVersion() < 1 || step.fromVersion() >= targetVersion) {
+                throw new StoreException("Cannot open the store at " + target.path() + ": the migration step "
+                        + step.getClass().getName() + " is from schema " + step.fromVersion() + ", but the schema of this build is "
+                        + targetVersion + ", so its steps are from schemas 1 to " + (targetVersion - 1));
+            }
             StoreMigrationStep other = byVersion.putIfAbsent(step.fromVersion(), step);
             if (other != null) {
                 throw new StoreException("Cannot open the store at " + target.path() + ": two migration steps from schema "

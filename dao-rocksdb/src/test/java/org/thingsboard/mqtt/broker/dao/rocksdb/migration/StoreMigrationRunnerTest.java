@@ -19,11 +19,14 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.rocksdb.RocksIterator;
 import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.file.Files;
@@ -46,10 +49,33 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class StoreMigrationRunnerTest {
 
+    private static final List<Class<?>> LOGGED = List.of(StoreMigrationRunner.class, StoreCheckpoints.class);
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-11-23T10:15:30Z"), ZoneOffset.UTC);
 
     @TempDir
     Path dir;
+
+    // the runner's log and the checkpoint retention's, kept out of the build output
+    private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+
+    @BeforeEach
+    void captureLog() {
+        logged.start();
+        for (Class<?> source : LOGGED) {
+            Logger logger = (Logger) LoggerFactory.getLogger(source);
+            logger.addAppender(logged);
+            logger.setAdditive(false);
+        }
+    }
+
+    @AfterEach
+    void releaseLog() {
+        for (Class<?> source : LOGGED) {
+            Logger logger = (Logger) LoggerFactory.getLogger(source);
+            logger.detachAppender(logged);
+            logger.setAdditive(true);
+        }
+    }
 
     @Test
     void aStoreTwoVersionsBackRunsBothStepsInOrderAndBumpsAfterEach() {
@@ -141,6 +167,29 @@ class StoreMigrationRunnerTest {
     }
 
     @Test
+    void aStepFromTheCurrentSchemaOrLaterFailsStartupEvenOnACurrentStore() {
+        for (int fromVersion : new int[]{2, 3}) {
+            FakeStore store = new FakeStore(2);
+
+            assertThatThrownBy(() -> runner(List.of(new RecordingStep(1, store), new RecordingStep(fromVersion, store)), 2).run(store))
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining(RecordingStep.class.getName())
+                    .hasMessageContaining("from schema " + fromVersion);
+            assertThat(store.events).isEmpty();
+        }
+    }
+
+    @Test
+    void aStepFromBelowSchemaOneFailsStartup() {
+        FakeStore store = new FakeStore(1);
+
+        assertThatThrownBy(() -> runner(List.of(new RecordingStep(0, store), new RecordingStep(1, store)), 2).run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("from schema 0");
+        assertThat(store.events).isEmpty();
+    }
+
+    @Test
     void aMigrationWithoutABackupsPathFailsNamingTheSetting() {
         for (String backupsPath : new String[]{null, " "}) {
             FakeStore store = new FakeStore(1);
@@ -185,7 +234,6 @@ class StoreMigrationRunnerTest {
         Files.writeString(locked.resolve("CURRENT"), "x");
         Files.setLastModifiedTime(old, FileTime.from(Instant.parse("2026-01-01T00:00:00Z")));
         assertThat(locked.toFile().setWritable(false)).isTrue();
-        ListAppender<ILoggingEvent> logged = captureRunnerLog();
         try {
             assumeFalse(Files.isWritable(locked), "running as a user that ignores directory permissions");
             FakeStore store = new FakeStore(1);
@@ -198,7 +246,6 @@ class StoreMigrationRunnerTest {
                     .singleElement()
                     .satisfies(event -> assertThat(event.getFormattedMessage()).contains(backups().toString()));
         } finally {
-            releaseRunnerLog(logged);
             locked.toFile().setWritable(true);
         }
     }
@@ -206,14 +253,11 @@ class StoreMigrationRunnerTest {
     @Test
     void theStartTheCheckpointAndEveryStepAreLoggedAtInfo() {
         FakeStore store = new FakeStore(1);
-        ListAppender<ILoggingEvent> logged = captureRunnerLog();
-        try {
-            runner(List.of(new RecordingStep(1, store), new RecordingStep(2, store)), 3).run(store);
-        } finally {
-            releaseRunnerLog(logged);
-        }
 
-        List<String> info = logged.list.stream().filter(event -> event.getLevel() == Level.INFO)
+        runner(List.of(new RecordingStep(1, store), new RecordingStep(2, store)), 3).run(store);
+
+        List<String> info = logged.list.stream()
+                .filter(event -> event.getLevel() == Level.INFO && event.getLoggerName().equals(StoreMigrationRunner.class.getName()))
                 .map(ILoggingEvent::getFormattedMessage).toList();
         assertThat(info).anySatisfy(message -> assertThat(message).contains(store.path()).contains("schema 1").contains("schema 3"));
         assertThat(info).anySatisfy(message -> assertThat(message).contains(backups().resolve("pre-upgrade-1-3").toString()));
@@ -227,18 +271,6 @@ class StoreMigrationRunnerTest {
 
     private Path backups() {
         return dir.resolve("backups");
-    }
-
-    private static ListAppender<ILoggingEvent> captureRunnerLog() {
-        Logger logger = (Logger) LoggerFactory.getLogger(StoreMigrationRunner.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
-        return appender;
-    }
-
-    private static void releaseRunnerLog(ListAppender<ILoggingEvent> appender) {
-        ((Logger) LoggerFactory.getLogger(StoreMigrationRunner.class)).detachAppender(appender);
     }
 
     private static String key(StoreColumnFamily cf, byte[] key) {
