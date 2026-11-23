@@ -219,6 +219,69 @@ class RocksDbStoreCorruptionTest {
     }
 
     @Test
+    void aStoreWithoutCurrentButWithItsWalIsRefusedOnEveryOpenAndNotTouched() throws Exception {
+        Path path = dir.resolve("store");
+        writeSome(open(path, List.of()));
+        closeAll();
+        // the writes are still in the WAL: with it RocksDB's own open fails once, after writing a new CURRENT
+        assertThat(fileNames(path)).anyMatch(name -> name.matches("\\d+\\.log"));
+        Files.delete(path.resolve("CURRENT"));
+
+        assertRefusedTwiceUntouched(path);
+    }
+
+    @Test
+    void aStoreWithoutCurrentAndWithoutAWalIsRefusedOnEveryOpenAndNotTouched() throws Exception {
+        Path path = dir.resolve("store");
+        writeSome(open(path, List.of()));
+        closeAll();
+        flushAll(path);
+        // without a WAL RocksDB's own open succeeds on an empty store and purges the old files
+        for (String name : fileNames(path)) {
+            if (name.endsWith(".log") && !name.startsWith("LOG")) {
+                Files.delete(path.resolve(name));
+            }
+        }
+        assertThat(fileNames(path)).anyMatch(name -> name.endsWith(".sst")).noneMatch(name -> name.matches("\\d+\\.log"));
+        Files.delete(path.resolve("CURRENT"));
+
+        assertRefusedTwiceUntouched(path);
+    }
+
+    @Test
+    void anEmptyDirectoryStillBecomesANewStore() throws Exception {
+        Path path = Files.createDirectories(dir.resolve("store"));
+
+        RocksDbStore store = open(path, List.of());
+
+        assertThat(store.meta().schemaVersion()).isEqualTo(RocksDbStore.SCHEMA_VERSION);
+        assertThat(path.resolve("CURRENT")).isRegularFile();
+    }
+
+    private void assertRefusedTwiceUntouched(Path path) throws IOException {
+        Map<String, ByteBuffer> before = snapshot(path);
+
+        // a broker with restart: always opens again right after the refusal
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            Throwable thrown = catchThrowable(() -> open(path, List.of()));
+
+            assertThat(thrown).as("open %d", attempt).isInstanceOf(StoreCorruptedException.class);
+            assertThat(thrown.getMessage()).as("open %d", attempt)
+                    .startsWith("The store at " + path + " is corrupted: CURRENT is missing but the directory holds the store's files (")
+                    .contains("MANIFEST-")
+                    .contains("No pre-upgrade checkpoint under " + backups() + ".")
+                    .contains("To restore a backup: stop the broker, replace " + path + " with the backup's db directory, start the broker.");
+            assertThat(snapshot(path)).as("open %d", attempt).isEqualTo(before);
+        }
+    }
+
+    private static List<String> fileNames(Path path) throws IOException {
+        try (Stream<Path> entries = Files.list(path)) {
+            return entries.map(entry -> entry.getFileName().toString()).sorted().toList();
+        }
+    }
+
+    @Test
     void aSecondOpenOfAnOpenStoreIsAPlainLockFailure() {
         Path path = dir.resolve("store");
         open(path, List.of());

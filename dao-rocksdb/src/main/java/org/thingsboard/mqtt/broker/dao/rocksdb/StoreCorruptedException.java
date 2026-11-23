@@ -30,7 +30,9 @@ import java.util.Set;
 
 /**
  * Thrown when the store cannot open because RocksDB reports its files as corrupted (a damaged MANIFEST, CURRENT or SST
- * file). A lock, permission or I/O failure is a plain {@link StoreException}, not this one.
+ * file), or because the store directory holds the files of a store but no CURRENT file, which RocksDB would take for
+ * no store and replace with an empty one. A lock, permission or I/O failure is a plain {@link StoreException}, not this
+ * one.
  * <p>
  * The message names the store, the RocksDB message, the pre-upgrade checkpoints under {@code store.backups.path}
  * (newest first) and how to restore. To restore a backup: stop the broker, replace the store directory with the
@@ -44,6 +46,8 @@ import java.util.Set;
  * Copying {@code /data} while the broker runs does not give a usable backup.
  */
 public class StoreCorruptedException extends StoreException {
+
+    private static final int SHOWN_FILES = 5;
 
     StoreCorruptedException(String message, Throwable cause) {
         super(message, cause);
@@ -69,8 +73,22 @@ public class StoreCorruptedException extends StoreException {
      * failure to list them is appended and never hides the corruption.
      */
     static StoreCorruptedException of(String path, String backupsPath, RocksDBException corruption, Throwable cause) {
+        return of(path, backupsPath, sentence(corruption.getMessage()), cause);
+    }
+
+    /**
+     * The exception for the store at {@code path} whose CURRENT file is missing while the directory holds the files
+     * {@code storeFiles} of a store.
+     */
+    static StoreCorruptedException missingCurrent(String path, String backupsPath, List<String> storeFiles) {
+        String shown = String.join(", ", storeFiles.subList(0, Math.min(storeFiles.size(), SHOWN_FILES)))
+                + (storeFiles.size() > SHOWN_FILES ? ", ..." : "");
+        return of(path, backupsPath, "CURRENT is missing but the directory holds the store's files (" + shown + ")", null);
+    }
+
+    private static StoreCorruptedException of(String path, String backupsPath, String detail, Throwable cause) {
         StringBuilder message = new StringBuilder("The store at ").append(path).append(" is corrupted: ")
-                .append(sentence(corruption.getMessage())).append(". ");
+                .append(detail).append(". ");
         appendCheckpoints(message, backupsPath);
         message.append(" To restore a backup: stop the broker, replace ").append(path)
                 .append(" with the backup's db directory, start the broker.")

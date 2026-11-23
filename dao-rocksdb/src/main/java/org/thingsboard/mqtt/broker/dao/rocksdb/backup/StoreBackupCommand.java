@@ -82,9 +82,15 @@ public final class StoreBackupCommand {
         Path backups = options.containsKey(BACKUPS_PATH)
                 ? Path.of(options.get(BACKUPS_PATH)).toAbsolutePath().normalize()
                 : storePath.resolveSibling("backups").normalize();
-        // RocksDbStore.open creates a store where there is none
-        if (!Files.isRegularFile(storePath.resolve("CURRENT"))) {
-            err.println("No store at " + storePath);
+        // RocksDbStore.open creates a store where there is none; a directory that holds a store's files without its
+        // CURRENT file is a damaged store, which the open refuses as corrupted without touching it
+        try {
+            if (!Files.isRegularFile(storePath.resolve("CURRENT")) && RocksDbStore.storeFilesWithoutCurrent(storePath).isEmpty()) {
+                err.println("No store at " + storePath);
+                return EXIT_FAILURE;
+            }
+        } catch (StoreException e) {
+            err.println("Error: " + e.getMessage());
             return EXIT_FAILURE;
         }
         if (Files.exists(out)) {

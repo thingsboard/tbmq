@@ -172,6 +172,27 @@ class StoreBackupCommandTest {
     }
 
     @Test
+    void aStoreWithoutItsCurrentFileIsReportedAsCorrupted() throws IOException {
+        Path storePath = dir.resolve("db");
+        RocksDbStore store = open(storePath);
+        store.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes("k"), bytes("v"));
+        store.close();
+        Files.delete(storePath.resolve("CURRENT"));
+        Map<String, byte[]> before = allFiles(storePath);
+
+        int exit = StoreBackupCommand.run(new String[]{"--store-path", storePath.toString(),
+                "--out", dir.resolve("o.tar.gz").toString()}, err);
+
+        assertThat(exit).isEqualTo(1);
+        assertThat(err()).doesNotContain("No store at")
+                .contains("The store at " + storePath + " is corrupted: CURRENT is missing but the directory holds the store's files");
+        Map<String, byte[]> after = allFiles(storePath);
+        assertThat(after).containsOnlyKeys(before.keySet());
+        before.forEach((name, content) -> assertThat(after.get(name)).as(name).isEqualTo(content));
+        assertThat(names(dir)).containsExactly("db");
+    }
+
+    @Test
     void anExistingOutIsNeverOverwritten() throws IOException {
         Path storePath = dir.resolve("db");
         open(storePath).close();
@@ -254,6 +275,16 @@ class StoreBackupCommandTest {
         Map<String, byte[]> files = new TreeMap<>();
         try (Stream<Path> entries = Files.list(storePath)) {
             for (Path file : entries.filter(path -> path.getFileName().toString().endsWith(".sst")).toList()) {
+                files.put(file.getFileName().toString(), Files.readAllBytes(file));
+            }
+        }
+        return files;
+    }
+
+    private static Map<String, byte[]> allFiles(Path storePath) throws IOException {
+        Map<String, byte[]> files = new TreeMap<>();
+        try (Stream<Path> entries = Files.list(storePath)) {
+            for (Path file : entries.toList()) {
                 files.put(file.getFileName().toString(), Files.readAllBytes(file));
             }
         }
