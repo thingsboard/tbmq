@@ -31,9 +31,12 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.CheckpointInfo;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
 import org.thingsboard.mqtt.broker.dao.rocksdb.migration.Schema1To2Step;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationRunner;
 import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
@@ -172,6 +175,105 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("store.backups.path")
                 .hasMessageContaining(dir.toString());
+    }
+
+    @Test
+    void aFailedStepResumesWithItsCheckpointOnAnUnchangedStore() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        assertThatThrownBy(() -> openMigrating(path, List.of(writingThenFailingStep()))).hasMessageContaining("boom");
+
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        assertThat(store.get(StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
+        assertThat(StoreCheckpoints.list(backups())).extracting(CheckpointInfo::name).containsExactly("pre-upgrade-1-2");
+    }
+
+    @Test
+    void aStoreWrittenAfterAFailedUpgradeGetsANewCheckpointThatHoldsTheWrite() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        assertThatThrownBy(() -> openMigrating(path, List.of(writingThenFailingStep()))).hasMessageContaining("boom");
+        // the rolled-back older build ignores the record of the upgrade and takes writes
+        withRawFamily(path, StoreColumnFamily.CLIENT_SESSION, (db, cf) -> db.put(cf, bytes("c1"), bytes("by the older build")));
+        ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
+        try {
+            openMigrating(path, List.of(new Schema1To2Step()));
+        } finally {
+            releaseLog(StoreMigrationRunner.class, logged);
+        }
+
+        Path first = backups().resolve("pre-upgrade-1-2");
+        List<Path> checkpoints = StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::path).toList();
+        assertThat(checkpoints).hasSize(2).contains(first);
+        Path fresh = checkpoints.stream().filter(checkpoint -> !checkpoint.equals(first)).findFirst().orElseThrow();
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isEqualTo(bytes("by the older build"));
+        assertThat(readOnlyGet(first, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isNull();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade"));
+    }
+
+    @Test
+    void aCurrentStoreWithARecordLeftByALaterBuildOpensWithTheRecordRemoved() throws RocksDBException {
+        open(dir);
+        closeAll();
+        // a later build's unfinished upgrade, then a rollback to this build
+        putMetaKey(dir, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY,
+                new StoreMigrationRunner.UpgradeRecord(7, "pre-upgrade-2-3").encode());
+        ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
+        RocksDbStore store;
+        try {
+            store = open(dir);
+        } finally {
+            releaseLog(StoreMigrationRunner.class, logged);
+        }
+
+        assertThat(store.get(StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("Removed the record").contains("pre-upgrade-2-3"));
+    }
+
+    private static StoreMigrationStep writingThenFailingStep() {
+        return new StoreMigrationStep() {
+            @Override
+            public int fromVersion() {
+                return 1;
+            }
+
+            @Override
+            public void apply(MigrationContext ctx) {
+                ctx.put(StoreColumnFamily.ENTITY, bytes("written"), bytes("by the step"));
+                throw new IllegalStateException("boom");
+            }
+        };
+    }
+
+    private Path backups() {
+        return dir.resolve("backups");
+    }
+
+    /**
+     * The value of {@code key} in the family {@code cf} of the store or checkpoint at {@code path}, opened read-only.
+     */
+    private static byte[] readOnlyGet(Path path, StoreColumnFamily cf, byte[] key) throws RocksDBException {
+        try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
+            List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
+            descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
+            for (StoreColumnFamily family : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(family.columnFamilyName()), options));
+            }
+            List<ColumnFamilyHandle> handles = new ArrayList<>();
+            try (RocksDB raw = RocksDB.openReadOnly(dbOptions, path.toString(), descriptors, handles)) {
+                try {
+                    return raw.get(handles.get(cf.ordinal() + 1), key);
+                } finally {
+                    handles.forEach(ColumnFamilyHandle::close);
+                }
+            }
+        }
     }
 
     private RocksDbStore openMigrating(Path path, List<StoreMigrationStep> steps) {
@@ -522,20 +624,24 @@ class RocksDbStoreTest {
         withRawMeta(path, (db, meta) -> db.put(meta, key, value));
     }
 
-    private interface RawMetaAction {
-        void run(RocksDB db, ColumnFamilyHandle meta) throws RocksDBException;
+    private interface RawFamilyAction {
+        void run(RocksDB db, ColumnFamilyHandle cf) throws RocksDBException;
     }
 
-    private static void withRawMeta(Path path, RawMetaAction action) throws RocksDBException {
+    private static void withRawMeta(Path path, RawFamilyAction action) throws RocksDBException {
+        withRawFamily(path, StoreColumnFamily.META, action);
+    }
+
+    private static void withRawFamily(Path path, StoreColumnFamily cf, RawFamilyAction action) throws RocksDBException {
         try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
             List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
             descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
-            for (StoreColumnFamily cf : StoreColumnFamily.values()) {
-                descriptors.add(new ColumnFamilyDescriptor(bytes(cf.columnFamilyName()), options));
+            for (StoreColumnFamily family : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(family.columnFamilyName()), options));
             }
             List<ColumnFamilyHandle> handles = new ArrayList<>();
             try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors, handles)) {
-                action.run(raw, handles.get(StoreColumnFamily.META.ordinal() + 1));
+                action.run(raw, handles.get(cf.ordinal() + 1));
                 handles.forEach(ColumnFamilyHandle::close);
             }
         }
@@ -695,7 +801,15 @@ class RocksDbStoreTest {
     }
 
     private ListAppender<ILoggingEvent> captureStoreLog() {
-        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+        return captureLog(RocksDbStore.class);
+    }
+
+    private void releaseStoreLog(ListAppender<ILoggingEvent> appender) {
+        releaseLog(RocksDbStore.class, appender);
+    }
+
+    private static ListAppender<ILoggingEvent> captureLog(Class<?> source) {
+        Logger logger = (Logger) LoggerFactory.getLogger(source);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
@@ -703,8 +817,8 @@ class RocksDbStoreTest {
         return appender;
     }
 
-    private void releaseStoreLog(ListAppender<ILoggingEvent> appender) {
-        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+    private static void releaseLog(Class<?> source, ListAppender<ILoggingEvent> appender) {
+        Logger logger = (Logger) LoggerFactory.getLogger(source);
         logger.detachAppender(appender);
         logger.setAdditive(true);
     }

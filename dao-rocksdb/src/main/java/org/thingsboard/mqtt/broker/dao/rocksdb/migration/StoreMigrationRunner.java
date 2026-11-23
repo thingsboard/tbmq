@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -28,17 +30,23 @@ import java.util.TreeMap;
 
 /**
  * Brings a store from its stored schema version up to the version of this build. A store already at that version is
- * left alone. An older one gets one checkpoint {@code pre-upgrade-<from>-<to>} under {@code store.backups.path} before
- * any step runs, and the name of that checkpoint is recorded in the store's meta; then each step runs in version order
- * and the stored version is bumped after each, so a store from several versions back runs every step and a crash
- * before a bump reruns only that step. The last bump removes the recorded name in the same write. After it the oldest
- * checkpoints beyond {@code store.backups.keep} are deleted; the checkpoint of this run and a checkpoint directory the
- * store runs from are always kept.
+ * left alone, but for a record of an unfinished upgrade to a later schema, which is removed. An older one gets one
+ * checkpoint {@code pre-upgrade-<from>-<to>} under {@code store.backups.path} before any step runs, and the name of that
+ * checkpoint is recorded in the store's meta; then each step runs in version order and the stored version is bumped
+ * after each, so a store from several versions back runs every step and a crash before a bump reruns only that step.
+ * The last bump removes the record in the same write. After it the oldest checkpoints beyond {@code store.backups.keep}
+ * are deleted; the checkpoint of this run and a checkpoint directory the store runs from are always kept.
  * <p>
- * An upgrade that failed or crashed leaves the recorded name behind, and the next open resumes with that checkpoint
+ * An upgrade that failed or crashed leaves the record behind, and the next open resumes with the recorded checkpoint
  * instead of taking a new one: the store may already hold some of a step's writes by then, so only the first
- * checkpoint is a copy of the store before the upgrade, and repeated failed starts add no checkpoints. When the
- * recorded checkpoint is gone, a new one is taken.
+ * checkpoint is a copy of the store before the upgrade, and repeated failed starts add no checkpoints. It resumes only
+ * when the store is provably unchanged since the record was last written: the record carries the latest sequence
+ * number of the store, which every write advances, as of its own write (right after the checkpoint, with every
+ * intermediate bump, and when a step throws), and the store must still be at it. So a step that throws resumes with
+ * the first checkpoint on the next start, while a process killed in the middle of a step takes a new checkpoint on the
+ * next start: it cannot prove the store unchanged. A new checkpoint is also taken when another build wrote to the store
+ * since (an older build ignores the record), when the recorded checkpoint is gone and when the record is malformed; an
+ * earlier checkpoint stays as an ordinary checkpoint.
  * <p>
  * A step outside the schemas this build migrates, two steps from one schema, a missing step, a missing backups path,
  * a failed checkpoint and a failed step stop the open; the store stays at the last version reached. A failed deletion
@@ -60,26 +68,34 @@ public class StoreMigrationRunner {
         int schemaVersion();
 
         /**
-         * Writes {@code version} as the stored schema version, with a WAL sync.
+         * The latest sequence number of the store: every write advances it, so an equal number means an unchanged
+         * store.
          */
-        void bumpSchemaVersion(int version);
+        long latestSequenceNumber();
 
         /**
-         * Writes {@code version} as the stored schema version and removes the recorded upgrade checkpoint, in one write
-         * with a WAL sync.
+         * Writes {@code version} as the stored schema version and records {@code checkpoint} as the checkpoint of the
+         * upgrade in progress, as {@link #recordUpgradeCheckpoint} does, in one write with a WAL sync.
+         */
+        void bumpSchemaVersion(int version, String checkpoint);
+
+        /**
+         * Writes {@code version} as the stored schema version and removes the record of the upgrade, in one write with
+         * a WAL sync.
          */
         void finishUpgrade(int version);
 
         /**
-         * The name of the checkpoint an unfinished upgrade recorded, or {@code null}.
+         * The stored record of an unfinished upgrade, as {@link UpgradeRecord#encode()} lays it out, or {@code null}.
          */
-        String upgradeCheckpoint();
+        byte[] upgradeRecord();
 
         /**
-         * Records {@code name} as the checkpoint of the upgrade in progress, or removes the record when it is
-         * {@code null}, with a WAL sync.
+         * Records {@code checkpoint} as the checkpoint of the upgrade in progress, with the latest sequence number of
+         * the store right after this write, with a WAL sync; removes the record when {@code checkpoint} is
+         * {@code null}.
          */
-        void recordUpgradeCheckpoint(String name);
+        void recordUpgradeCheckpoint(String checkpoint);
 
         /**
          * Writes a checkpoint of the store into {@code dir}, which does not exist.
@@ -87,6 +103,33 @@ public class StoreMigrationRunner {
         void checkpoint(Path dir);
 
         MigrationContext context();
+
+    }
+
+    /**
+     * The record of an unfinished upgrade: the latest sequence number of the store right after the record was written,
+     * and the directory name of the upgrade's pre-upgrade checkpoint. Stored as the 8-byte big-endian sequence number
+     * followed by the UTF-8 name.
+     */
+    public record UpgradeRecord(long sequenceNumber, String checkpoint) {
+
+        public byte[] encode() {
+            byte[] name = checkpoint.getBytes(StandardCharsets.UTF_8);
+            return ByteBuffer.allocate(Long.BYTES + name.length).putLong(sequenceNumber).put(name).array();
+        }
+
+        /**
+         * The record stored as {@code value}, or {@code null} when it is too short to hold a sequence number and a name.
+         */
+        public static UpgradeRecord decode(byte[] value) {
+            if (value.length <= Long.BYTES) {
+                return null;
+            }
+            ByteBuffer buffer = ByteBuffer.wrap(value);
+            long sequenceNumber = buffer.getLong();
+            return new UpgradeRecord(sequenceNumber,
+                    new String(value, Long.BYTES, value.length - Long.BYTES, StandardCharsets.UTF_8));
+        }
 
     }
 
@@ -111,6 +154,7 @@ public class StoreMigrationRunner {
         Map<Integer, StoreMigrationStep> byVersion = stepsByVersion(target);
         int from = target.schemaVersion();
         if (from >= targetVersion) {
+            removeLeftoverRecord(target, from);
             return from;
         }
         for (int version = from; version < targetVersion; version++) {
@@ -132,16 +176,16 @@ public class StoreMigrationRunner {
             target.recordUpgradeCheckpoint(checkpoint.getFileName().toString());
             log.info("Took the pre-upgrade checkpoint {}", checkpoint);
         }
+        String checkpointName = checkpoint.getFileName().toString();
         MigrationContext context = target.context();
         for (int version = from; version < targetVersion; version++) {
             try {
                 byVersion.get(version).apply(context);
             } catch (RuntimeException e) {
-                throw new StoreException("Migration from schema " + version + " to " + (version + 1) + " failed: "
-                        + e.getMessage(), e);
+                throw stepFailure(target, checkpointName, version, e);
             }
             if (version + 1 < targetVersion) {
-                target.bumpSchemaVersion(version + 1);
+                target.bumpSchemaVersion(version + 1, checkpointName);
             } else {
                 target.finishUpgrade(version + 1);
             }
@@ -157,26 +201,73 @@ public class StoreMigrationRunner {
     }
 
     /**
-     * The checkpoint an unfinished upgrade of {@code target} took, when it is still there; otherwise {@code null}, and
-     * a record left behind is removed, so that the new checkpoint does not hold it.
+     * The failure of the step from {@code version}. Records {@code checkpoint} again first, with the sequence number
+     * after the step's writes, so that the next start resumes with it; a failure of that write is added as suppressed,
+     * and the next start then takes a new checkpoint.
+     */
+    private static StoreException stepFailure(Target target, String checkpoint, int version, RuntimeException cause) {
+        StoreException failure = new StoreException("Migration from schema " + version + " to " + (version + 1)
+                + " failed: " + cause.getMessage(), cause);
+        try {
+            target.recordUpgradeCheckpoint(checkpoint);
+        } catch (RuntimeException e) {
+            failure.addSuppressed(e);
+        }
+        return failure;
+    }
+
+    /**
+     * Removes the record that an unfinished upgrade to a later schema left in a store at schema {@code version}, which
+     * this build runs: this build writes to the store, so the later build must not resume with that checkpoint. The
+     * checkpoint itself stays as an ordinary checkpoint.
+     */
+    private static void removeLeftoverRecord(Target target, int version) {
+        byte[] stored = target.upgradeRecord();
+        if (stored == null) {
+            return;
+        }
+        UpgradeRecord record = UpgradeRecord.decode(stored);
+        target.recordUpgradeCheckpoint(null);
+        log.info("Removed the record of an unfinished upgrade of the store at {} to a later schema (pre-upgrade "
+                        + "checkpoint {}): the store is at schema {}; the checkpoint stays as an ordinary checkpoint",
+                target.path(), record == null ? "unknown" : record.checkpoint(), version);
+    }
+
+    /**
+     * The checkpoint an unfinished upgrade of {@code target} took, when it is still there and the store is at the
+     * sequence number the record carries; otherwise {@code null}, and a record left behind is removed, so that the new
+     * checkpoint does not hold it.
      */
     private static Path resumedCheckpoint(Target target, Path backups) {
-        String name = target.upgradeCheckpoint();
-        if (name == null) {
+        byte[] stored = target.upgradeRecord();
+        if (stored == null) {
             return null;
         }
-        if (!StoreCheckpoints.isCheckpointName(name)) {
+        UpgradeRecord record = UpgradeRecord.decode(stored);
+        if (record == null) {
+            log.warn("The record of the unfinished upgrade of the store at {} is malformed ({} bytes); taking a new "
+                    + "checkpoint, which may hold writes of the failed upgrade", target.path(), stored.length);
+        } else if (!StoreCheckpoints.isCheckpointName(record.checkpoint())) {
             log.warn("The unfinished upgrade of the store at {} recorded {} as its pre-upgrade checkpoint, which is not "
-                    + "a checkpoint name; taking a new checkpoint, which may hold writes of the failed upgrade", target.path(), name);
-        } else if (Files.isDirectory(backups.resolve(name))) {
-            Path checkpoint = backups.resolve(name);
-            log.info("Resuming the unfinished upgrade of the store at {} with its pre-upgrade checkpoint {}",
-                    target.path(), checkpoint);
-            return checkpoint;
-        } else {
+                    + "a checkpoint name; taking a new checkpoint, which may hold writes of the failed upgrade",
+                    target.path(), record.checkpoint());
+        } else if (!Files.isDirectory(backups.resolve(record.checkpoint()))) {
             log.warn("The pre-upgrade checkpoint {} of the unfinished upgrade of the store at {} is gone from {} "
                     + "(store.backups.path); taking a new checkpoint, which may hold writes of the failed upgrade",
-                    name, target.path(), backups);
+                    record.checkpoint(), target.path(), backups);
+        } else {
+            Path checkpoint = backups.resolve(record.checkpoint());
+            long latest = target.latestSequenceNumber();
+            if (latest == record.sequenceNumber()) {
+                log.info("Resuming the unfinished upgrade of the store at {} with its pre-upgrade checkpoint {}",
+                        target.path(), checkpoint);
+                return checkpoint;
+            }
+            log.warn("The store at {} was written since its unfinished upgrade (another build ran on it, or the upgrade "
+                    + "was interrupted mid-step): it is at sequence number {}, the record of the upgrade at {}; "
+                    + "taking a new checkpoint, which holds those writes and may hold writes of the failed upgrade; "
+                    + "the pre-upgrade checkpoint {} stays as an ordinary checkpoint",
+                    target.path(), latest, record.sequenceNumber(), checkpoint);
         }
         target.recordUpgradeCheckpoint(null);
         return null;

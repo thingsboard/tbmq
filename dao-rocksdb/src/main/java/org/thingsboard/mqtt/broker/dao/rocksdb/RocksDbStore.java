@@ -89,7 +89,9 @@ public class RocksDbStore {
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
     static final int JWT_SIGNING_KEY_BYTES = 64;
-    // the directory name (UTF-8) of the pre-upgrade checkpoint while an upgrade is unfinished; removed by its last bump
+    // while an upgrade is unfinished: the 8-byte big-endian latest sequence number of the store right after the last
+    // write of this key, then the directory name (UTF-8) of the pre-upgrade checkpoint; removed by the last bump, and by
+    // a build that opens the store at its own schema
     static final byte[] META_UPGRADE_CHECKPOINT_KEY = "upgrade_checkpoint".getBytes(StandardCharsets.UTF_8);
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
@@ -263,8 +265,18 @@ public class RocksDbStore {
         }
 
         @Override
-        public void bumpSchemaVersion(int version) {
-            put(StoreColumnFamily.META, META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+        public long latestSequenceNumber() {
+            return db.getLatestSequenceNumber();
+        }
+
+        @Override
+        public void bumpSchemaVersion(int version, String checkpoint) {
+            try (WriteBatch batch = new WriteBatch()) {
+                batch.put(handles.get(StoreColumnFamily.META), META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+                writeWithUpgradeRecord(batch, checkpoint);
+            } catch (RocksDBException e) {
+                throw failure(OP_WRITE, StoreColumnFamily.META, e);
+            }
         }
 
         @Override
@@ -279,17 +291,40 @@ public class RocksDbStore {
         }
 
         @Override
-        public String upgradeCheckpoint() {
-            byte[] name = get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
-            return name == null ? null : new String(name, StandardCharsets.UTF_8);
+        public byte[] upgradeRecord() {
+            return get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
         }
 
         @Override
-        public void recordUpgradeCheckpoint(String name) {
-            if (name == null) {
+        public void recordUpgradeCheckpoint(String checkpoint) {
+            if (checkpoint == null) {
                 delete(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
-            } else {
-                put(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY, name.getBytes(StandardCharsets.UTF_8));
+                return;
+            }
+            try (WriteBatch batch = new WriteBatch()) {
+                writeWithUpgradeRecord(batch, checkpoint);
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, StoreColumnFamily.META, e);
+            }
+        }
+
+        /**
+         * Adds the record of the upgrade with {@code checkpoint} to {@code batch} and writes the batch with a WAL sync.
+         * The record carries the sequence number the store is at right after this write: RocksDB gives every entry of a
+         * batch one sequence number, and nothing else writes while the open holds the write lock. A different number
+         * afterwards is only logged: the next open then finds the store changed and takes a new checkpoint.
+         */
+        private void writeWithUpgradeRecord(WriteBatch batch, String checkpoint) throws RocksDBException {
+            long expected = db.getLatestSequenceNumber() + batch.count() + 1;
+            batch.put(handles.get(StoreColumnFamily.META), META_UPGRADE_CHECKPOINT_KEY,
+                    new StoreMigrationRunner.UpgradeRecord(expected, checkpoint).encode());
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.write(synced, batch);
+            }
+            long latest = db.getLatestSequenceNumber();
+            if (latest != expected) {
+                log.debug("The store at {} is at sequence number {} after recording the upgrade checkpoint {} with {}; "
+                        + "the next start will take a new checkpoint", path, latest, checkpoint, expected);
             }
         }
 

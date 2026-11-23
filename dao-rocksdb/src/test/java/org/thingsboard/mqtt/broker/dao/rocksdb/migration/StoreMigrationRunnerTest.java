@@ -29,7 +29,6 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -89,7 +88,7 @@ class StoreMigrationRunnerTest {
         assertThat(store.version).isEqualTo(3);
         assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3", "mark pre-upgrade-1-3", "step 1", "bump 2",
                 "step 2", "finish 3");
-        assertThat(store.upgradeCheckpoint()).isNull();
+        assertThat(store.recordedCheckpoint()).isNull();
     }
 
     @Test
@@ -112,16 +111,18 @@ class StoreMigrationRunnerTest {
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("Migration from schema 1 to 2 failed: boom");
         assertThat(store.version).isEqualTo(1);
-        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3", "mark pre-upgrade-1-3", "step 1");
+        // the failed step records the checkpoint again, with the sequence number after its writes
+        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3", "mark pre-upgrade-1-3", "step 1",
+                "mark pre-upgrade-1-3");
         assertThat(store.get(StoreColumnFamily.META, RawStores.bytes("step-1-wrote"))).isEqualTo(new byte[]{1});
-        assertThat(store.upgradeCheckpoint()).isEqualTo("pre-upgrade-1-3");
+        assertThat(store.recordedCheckpoint()).isEqualTo("pre-upgrade-1-3");
         store.events.clear();
 
         assertThat(runner.run(store)).isEqualTo(3);
 
         // the rerun resumes with the checkpoint of the failed run
         assertThat(store.events).containsExactly("step 1", "bump 2", "step 2", "finish 3");
-        assertThat(store.upgradeCheckpoint()).isNull();
+        assertThat(store.recordedCheckpoint()).isNull();
     }
 
     @Test
@@ -142,7 +143,7 @@ class StoreMigrationRunnerTest {
         StoreMigrationRunner runner = runner(List.of(failingThrice), 2);
         for (int start = 0; start < 3; start++) {
             assertThatThrownBy(() -> runner.run(store)).isInstanceOf(StoreException.class);
-            assertThat(store.upgradeCheckpoint()).isEqualTo("pre-upgrade-1-2");
+            assertThat(store.recordedCheckpoint()).isEqualTo("pre-upgrade-1-2");
         }
 
         assertThat(runner.run(store)).isEqualTo(2);
@@ -154,7 +155,7 @@ class StoreMigrationRunnerTest {
         // the data before any step and no record of the upgrade
         assertThat(checkpoint.data()).containsOnlyKeys(key(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("c1")));
         assertThat(StoreCheckpoints.list(backups())).extracting(info -> info.path()).containsExactly(checkpoint.dir());
-        assertThat(store.upgradeCheckpoint()).isNull();
+        assertThat(store.recordedCheckpoint()).isNull();
         assertThat(store.version).isEqualTo(2);
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO
                         && event.getFormattedMessage().contains("Resuming the unfinished upgrade"))
@@ -176,11 +177,166 @@ class StoreMigrationRunnerTest {
             assertThat(store.events).containsExactly("unmark", "checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "finish 2");
             // the new checkpoint does not hold the stale record
             assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> assertThat(checkpoint.data()).isEmpty());
-            assertThat(store.upgradeCheckpoint()).isNull();
+            assertThat(store.recordedCheckpoint()).isNull();
             assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                     .singleElement()
                     .satisfies(event -> assertThat(event.getFormattedMessage()).contains(recorded).contains(store.path()));
             assertThat(taken).isDirectory();
+            StoreCheckpoints.list(backups()).forEach(info -> deleteDir(info.path()));
+        }
+    }
+
+    @Test
+    void aStoreWrittenByAnotherBuildSinceTheFailedUpgradeGetsANewCheckpoint() {
+        FakeStore store = new FakeStore(1);
+        StoreMigrationRunner runner = runner(List.of(new FailingOnceStep(1, store)), 2);
+        assertThatThrownBy(() -> runner.run(store)).isInstanceOf(StoreException.class);
+        // the rolled-back older build ignores the record and takes writes
+        store.put(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("by-the-older-build"), new byte[]{1});
+        store.events.clear();
+        logged.list.clear();
+
+        assertThat(runner.run(store)).isEqualTo(2);
+
+        Path first = backups().resolve("pre-upgrade-1-2");
+        Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
+        assertThat(store.events).containsExactly("unmark", "checkpoint " + fresh.getFileName(), "mark " + fresh.getFileName(),
+                "step 1", "finish 2");
+        assertThat(store.checkpoints).extracting(Checkpoint::dir).containsExactly(first, fresh);
+        // the new checkpoint holds the older build's write and no record of the upgrade
+        assertThat(store.checkpoints.get(1).data()).containsKey(key(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("by-the-older-build")))
+                .doesNotContainKey(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
+        assertThat(first).isDirectory();
+        assertThat(store.recordedCheckpoint()).isNull();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade")
+                        .contains(store.path()).contains(first.toString()));
+    }
+
+    @Test
+    void aProcessKilledInTheMiddleOfAStepTakesANewCheckpointOnTheNextStart() {
+        FakeStore store = new FakeStore(1);
+        AtomicInteger runs = new AtomicInteger();
+        StoreMigrationStep killedOnce = new RecordingStep(1, store) {
+            @Override
+            public void apply(MigrationContext ctx) {
+                super.apply(ctx);
+                if (runs.incrementAndGet() == 1) {
+                    throw new Killed();
+                }
+            }
+        };
+        StoreMigrationRunner runner = runner(List.of(killedOnce), 2);
+        // the step wrote, and the record was not written again
+        assertThatThrownBy(() -> runner.run(store)).isInstanceOf(Killed.class);
+        assertThat(store.recordedCheckpoint()).isEqualTo("pre-upgrade-1-2");
+        store.events.clear();
+        logged.list.clear();
+
+        assertThat(runner.run(store)).isEqualTo(2);
+
+        Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
+        assertThat(store.events).containsExactly("unmark", "checkpoint " + fresh.getFileName(), "mark " + fresh.getFileName(),
+                "step 1", "finish 2");
+        assertThat(store.checkpoints).extracting(Checkpoint::dir).containsExactly(backups().resolve("pre-upgrade-1-2"), fresh);
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("interrupted mid-step"));
+    }
+
+    @Test
+    void aFailedRecordAfterAFailedStepIsSuppressedAndTheNextStartTakesANewCheckpoint() {
+        FakeStore store = new FakeStore(1);
+        StoreException recordFailure = new StoreException("disk full");
+        AtomicInteger runs = new AtomicInteger();
+        StoreMigrationStep failingOnce = new RecordingStep(1, store) {
+            @Override
+            public void apply(MigrationContext ctx) {
+                super.apply(ctx);
+                if (runs.incrementAndGet() == 1) {
+                    store.recordFailure = recordFailure;
+                    throw new IllegalStateException("boom");
+                }
+            }
+        };
+        StoreMigrationRunner runner = runner(List.of(failingOnce), 2);
+
+        assertThatThrownBy(() -> runner.run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("Migration from schema 1 to 2 failed: boom")
+                .satisfies(e -> assertThat(e.getSuppressed()).containsExactly(recordFailure));
+        store.recordFailure = null;
+        store.events.clear();
+        logged.list.clear();
+
+        assertThat(runner.run(store)).isEqualTo(2);
+
+        assertThat(store.checkpoints).hasSize(2);
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade"));
+    }
+
+    @Test
+    void aStartAfterAnIntermediateBumpResumesWithTheCheckpoint() {
+        FakeStore store = new FakeStore(1);
+        AtomicInteger runs = new AtomicInteger();
+        StoreMigrationStep killedBeforeWriting = new RecordingStep(2, store) {
+            @Override
+            public void apply(MigrationContext ctx) {
+                if (runs.incrementAndGet() == 1) {
+                    throw new Killed();
+                }
+                super.apply(ctx);
+            }
+        };
+        StoreMigrationRunner runner = runner(List.of(new RecordingStep(1, store), killedBeforeWriting), 3);
+        assertThatThrownBy(() -> runner.run(store)).isInstanceOf(Killed.class);
+        assertThat(store.version).isEqualTo(2);
+        store.events.clear();
+
+        assertThat(runner.run(store)).isEqualTo(3);
+
+        // the bump recorded the checkpoint with its own sequence number
+        assertThat(store.events).containsExactly("step 2", "finish 3");
+        assertThat(store.checkpoints).extracting(Checkpoint::dir).containsExactly(backups().resolve("pre-upgrade-1-3"));
+    }
+
+    @Test
+    void aRecordLeftOnACurrentStoreIsRemovedWithoutACheckpoint() {
+        FakeStore store = new FakeStore(2);
+        // a later build's unfinished upgrade, then a rollback to this build
+        store.recordUpgradeCheckpoint("pre-upgrade-2-3");
+        store.events.clear();
+
+        int version = new StoreMigrationRunner(List.of(new RecordingStep(1, store)), 2, null, 3, CLOCK).run(store);
+
+        assertThat(version).isEqualTo(2);
+        assertThat(store.events).containsExactly("unmark");
+        assertThat(store.upgradeRecord()).isNull();
+        assertThat(store.checkpoints).isEmpty();
+        assertThat(logged.list).filteredOn(event -> event.getLevel().isGreaterOrEqual(Level.WARN)).isEmpty();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("Removed the record")
+                        .contains(store.path()).contains("pre-upgrade-2-3"));
+    }
+
+    @Test
+    void aMalformedRecordIsReplacedByANewCheckpointWithAWarning() {
+        for (byte[] recorded : List.of(new byte[0], new byte[Long.BYTES], RawStores.bytes("short"))) {
+            logged.list.clear();
+            FakeStore store = new FakeStore(1);
+            store.put(StoreColumnFamily.META, UPGRADE_CHECKPOINT, recorded);
+
+            runner(List.of(new RecordingStep(1, store)), 2).run(store);
+
+            assertThat(store.events).containsExactly("unmark", "checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "finish 2");
+            assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> assertThat(checkpoint.data()).isEmpty());
+            assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                    .singleElement()
+                    .satisfies(event -> assertThat(event.getFormattedMessage()).contains("malformed").contains(store.path()));
             StoreCheckpoints.list(backups()).forEach(info -> deleteDir(info.path()));
         }
     }
@@ -392,11 +548,39 @@ class StoreMigrationRunnerTest {
 
     }
 
+    /**
+     * A recording step that writes and then throws on its first run.
+     */
+    private static class FailingOnceStep extends RecordingStep {
+
+        private final AtomicInteger runs = new AtomicInteger();
+
+        FailingOnceStep(int fromVersion, FakeStore store) {
+            super(fromVersion, store);
+        }
+
+        @Override
+        public void apply(MigrationContext ctx) {
+            super.apply(ctx);
+            if (runs.incrementAndGet() == 1) {
+                throw new IllegalStateException("boom");
+            }
+        }
+
+    }
+
+    /**
+     * The process stopping in the middle of a step: the runner does not see it.
+     */
+    private static class Killed extends Error {
+    }
+
     private record Checkpoint(Path dir, int version, Map<String, byte[]> data) {
     }
 
     /**
-     * A store in memory: its version, its data, a log of the runner's calls and a copy of the data at each checkpoint.
+     * A store in memory: its version, its data, a sequence number that every write advances, a log of the runner's
+     * calls and a copy of the data at each checkpoint.
      */
     private class FakeStore implements StoreMigrationRunner.Target, MigrationContext {
 
@@ -404,7 +588,9 @@ class StoreMigrationRunnerTest {
         private final List<Checkpoint> checkpoints = new ArrayList<>();
         private final Map<String, byte[]> data = new HashMap<>();
         private int version;
+        private long sequence;
         private RuntimeException checkpointFailure;
+        private RuntimeException recordFailure;
 
         FakeStore(int version) {
             this.version = version;
@@ -421,33 +607,50 @@ class StoreMigrationRunnerTest {
         }
 
         @Override
-        public void bumpSchemaVersion(int version) {
+        public long latestSequenceNumber() {
+            return sequence;
+        }
+
+        @Override
+        public void bumpSchemaVersion(int version, String checkpoint) {
             events.add("bump " + version);
             this.version = version;
+            sequence += 2;
+            data.put(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT), new StoreMigrationRunner.UpgradeRecord(sequence, checkpoint).encode());
         }
 
         @Override
         public void finishUpgrade(int version) {
             events.add("finish " + version);
             this.version = version;
+            sequence += 2;
             data.remove(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
         }
 
         @Override
-        public String upgradeCheckpoint() {
-            byte[] name = data.get(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
-            return name == null ? null : new String(name, StandardCharsets.UTF_8);
+        public byte[] upgradeRecord() {
+            return data.get(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
         }
 
         @Override
-        public void recordUpgradeCheckpoint(String name) {
-            if (name == null) {
+        public void recordUpgradeCheckpoint(String checkpoint) {
+            if (checkpoint == null) {
                 events.add("unmark");
+                sequence++;
                 data.remove(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
-            } else {
-                events.add("mark " + name);
-                data.put(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT), name.getBytes(StandardCharsets.UTF_8));
+                return;
             }
+            if (recordFailure != null) {
+                throw recordFailure;
+            }
+            events.add("mark " + checkpoint);
+            sequence++;
+            data.put(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT), new StoreMigrationRunner.UpgradeRecord(sequence, checkpoint).encode());
+        }
+
+        String recordedCheckpoint() {
+            byte[] record = upgradeRecord();
+            return record == null ? null : StoreMigrationRunner.UpgradeRecord.decode(record).checkpoint();
         }
 
         @Override
@@ -476,11 +679,13 @@ class StoreMigrationRunnerTest {
 
         @Override
         public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+            sequence++;
             data.put(key(cf, key), value);
         }
 
         @Override
         public void delete(StoreColumnFamily cf, byte[] key) {
+            sequence++;
             data.remove(key(cf, key));
         }
 
