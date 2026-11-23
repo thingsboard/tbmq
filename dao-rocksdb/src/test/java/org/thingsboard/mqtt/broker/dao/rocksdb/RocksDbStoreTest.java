@@ -652,6 +652,21 @@ class RocksDbStoreTest {
         return store;
     }
 
+    @Test
+    void aNonPositiveBackupsKeepFailsTheOpenNamingTheSetting() {
+        for (int keep : new int[]{0, -1}) {
+            StoreProperties properties = new StoreProperties();
+            properties.setPath(dir.toString());
+            properties.getBackups().setKeep(keep);
+            RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                    TestDiskSpaceMonitors.roomy(properties));
+
+            assertThatThrownBy(store::open)
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining("store.backups.keep");
+        }
+    }
+
     private RocksDbStore open(Path path) {
         return open(path, "periodic");
     }

@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
+import org.rocksdb.Checkpoint;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -99,6 +100,7 @@ public class RocksDbStore {
     private static final String OP_WRITE = "write a batch";
     private static final String OP_SYNC_WAL = "sync the WAL";
     private static final String OP_META = "read the meta";
+    private static final String OP_CHECKPOINT = "create a checkpoint";
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
@@ -152,6 +154,10 @@ public class RocksDbStore {
             throw new StoreException("The store at " + path + " is already open");
         }
         WalSyncMode walSyncMode = WalSyncMode.parse(properties.getWalSync());
+        int keep = properties.getBackups().getKeep();
+        if (keep <= 0) {
+            throw new StoreException("Cannot open the store at " + path + ": store.backups.keep must be positive, but is " + keep);
+        }
         try {
             Files.createDirectories(Path.of(path));
         } catch (IOException e) {
@@ -496,6 +502,43 @@ public class RocksDbStore {
             throw failure(OP_SYNC_WAL, null, e);
         } finally {
             release();
+        }
+    }
+
+    /**
+     * Writes a consistent point-in-time copy of the store into {@code target}, which must not exist; its parent
+     * directories are created. On the volume of the store a checkpoint is made of hard links and costs no extra space
+     * until the store compacts the linked files away. The directory opens as a store.
+     */
+    public void createCheckpoint(Path target) {
+        RocksDB database = acquire(OP_CHECKPOINT, null);
+        try {
+            checkpoint(database, target);
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Takes the checkpoint of an open {@code database}; the caller holds the lock. Takes the raw handle, so that a
+     * caller that is still opening the store can use it before the store is published as open.
+     */
+    private void checkpoint(RocksDB database, Path target) {
+        if (Files.exists(target)) {
+            throw new StoreException("Cannot create a checkpoint of the store at " + properties.getPath()
+                    + ": the target " + target + " already exists");
+        }
+        try {
+            Path parent = target.toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            try (Checkpoint checkpoint = Checkpoint.create(database)) {
+                checkpoint.createCheckpoint(target.toAbsolutePath().toString());
+            }
+        } catch (RocksDBException | IOException e) {
+            throw new StoreException("Failed to create a checkpoint of the store at " + properties.getPath()
+                    + " in " + target + ": " + e.getMessage(), e);
         }
     }
 
