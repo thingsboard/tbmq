@@ -43,10 +43,11 @@ import java.util.TreeMap;
  * checkpoint is a copy of the store before the upgrade, and repeated failed starts add no checkpoints. It resumes only
  * when the store is provably unchanged since the record was last written: the record carries the latest sequence
  * number of the store, which every write advances, as of its own write (right after the checkpoint, with every
- * intermediate bump, and when a step throws), and the store must still be at it. So a step that throws resumes with
- * the first checkpoint on the next start, while a process killed in the middle of a step takes a new checkpoint on the
- * next start: it cannot prove the store unchanged. A new checkpoint is also taken when another build wrote to the store
- * since (an older build ignores the record), when the recorded checkpoint is gone and when the record is malformed.
+ * intermediate bump, and when a step throws, an {@link Error} included), and the store must still be at it. So a step
+ * that throws resumes with the first checkpoint on the next start, while a process killed in the middle of a step takes
+ * a new checkpoint on the next start: it cannot prove the store unchanged. A new checkpoint is also taken when another
+ * build wrote to the store since (an older build ignores the record), when the recorded checkpoint is gone and when the
+ * record is malformed.
  * <p>
  * The record also names the origin of the upgrade, its first pre-upgrade checkpoint, and a start that takes a new
  * checkpoint carries the origin forward while it is still there. Retention keeps the origin and the checkpoint of the
@@ -222,6 +223,10 @@ public class StoreMigrationRunner {
                         + " failed: " + e.getMessage(), e);
                 recordAgain(target, checkpointName, originName, failure);
                 throw failure;
+            } catch (Error e) {
+                // passes unchanged; the record is written again all the same, so the next start resumes
+                recordAgain(target, checkpointName, originName, e);
+                throw e;
             }
             if (version + 1 < targetVersion) {
                 target.bumpSchemaVersion(version + 1, checkpointName, originName);
@@ -247,8 +252,11 @@ public class StoreMigrationRunner {
     private static void recordAgain(Target target, String checkpoint, String origin, Throwable failure) {
         try {
             target.recordUpgradeCheckpoint(checkpoint, origin);
-        } catch (RuntimeException e) {
-            failure.addSuppressed(e);
+        } catch (RuntimeException | Error e) {
+            // a JVM can throw one preallocated OutOfMemoryError again, and a throwable cannot suppress itself
+            if (e != failure) {
+                failure.addSuppressed(e);
+            }
         }
     }
 

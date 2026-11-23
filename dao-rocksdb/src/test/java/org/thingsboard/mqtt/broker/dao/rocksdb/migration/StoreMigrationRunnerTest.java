@@ -311,6 +311,62 @@ class StoreMigrationRunnerTest {
     }
 
     @Test
+    void aStepThatThrowsAnErrorRecordsTheUpgradeAgainAndTheNextStartResumes() {
+        FakeStore store = new FakeStore(1);
+        AssertionError error = new AssertionError("boom");
+        AtomicInteger runs = new AtomicInteger();
+        StoreMigrationStep failingOnce = new RecordingStep(1, store) {
+            @Override
+            public void apply(MigrationContext ctx) {
+                super.apply(ctx);
+                if (runs.incrementAndGet() == 1) {
+                    throw error;
+                }
+            }
+        };
+        StoreMigrationRunner runner = runner(List.of(failingOnce), 2);
+
+        assertThatThrownBy(() -> runner.run(store)).isSameAs(error);
+
+        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "mark pre-upgrade-1-2");
+        store.events.clear();
+
+        assertThat(runner.run(store)).isEqualTo(2);
+
+        assertThat(store.events).containsExactly("step 1", "finish 2");
+        assertThat(store.checkpoints).extracting(Checkpoint::dir).containsExactly(backups().resolve("pre-upgrade-1-2"));
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO
+                && event.getFormattedMessage().contains("Resuming the unfinished upgrade")).hasSize(1);
+    }
+
+    @Test
+    void anErrorStaysTheSameInstanceWhenRecordingAgainFails() {
+        AssertionError error = new AssertionError("boom");
+        StoreException other = new StoreException("disk full");
+        // a JVM can throw one preallocated OutOfMemoryError again, and a throwable cannot suppress itself
+        for (Throwable recordFailure : List.<Throwable>of(error, other)) {
+            FakeStore store = new FakeStore(1);
+            StoreMigrationStep failing = new RecordingStep(1, store) {
+                @Override
+                public void apply(MigrationContext ctx) {
+                    super.apply(ctx);
+                    store.recordFailure = recordFailure;
+                    throw error;
+                }
+            };
+
+            assertThatThrownBy(() -> runner(List.of(failing), 2).run(store)).isSameAs(error);
+
+            if (recordFailure == error) {
+                assertThat(error.getSuppressed()).isEmpty();
+            } else {
+                assertThat(error.getSuppressed()).containsExactly(other);
+            }
+            StoreCheckpoints.list(backups()).forEach(info -> deleteDir(info.path()));
+        }
+    }
+
+    @Test
     void aFailedRecordAfterAFailedStepIsSuppressedAndTheNextStartTakesANewCheckpoint() {
         FakeStore store = new FakeStore(1);
         StoreException recordFailure = new StoreException("disk full");
@@ -720,7 +776,7 @@ class StoreMigrationRunnerTest {
         private long sequence;
         private boolean dead;
         private RuntimeException checkpointFailure;
-        private RuntimeException recordFailure;
+        private Throwable recordFailure;
 
         FakeStore(int version) {
             this.version = version;
@@ -781,8 +837,11 @@ class StoreMigrationRunnerTest {
             if (dead) {
                 return;
             }
-            if (recordFailure != null) {
-                throw recordFailure;
+            if (recordFailure instanceof RuntimeException e) {
+                throw e;
+            }
+            if (recordFailure instanceof Error e) {
+                throw e;
             }
             events.add("mark " + checkpoint + (origin.equals(checkpoint) ? "" : " from " + origin));
             sequence++;
