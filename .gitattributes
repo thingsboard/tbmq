@@ -1,1 +1,3 @@
 api/openapi.json text eol=lf
+# a binary store fixture: never convert line endings
+dao-rocksdb/src/test/resources/fixtures/** -text
