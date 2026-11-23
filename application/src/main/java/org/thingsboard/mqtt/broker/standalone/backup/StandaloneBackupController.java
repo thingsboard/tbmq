@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.standalone.backup;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,7 +38,9 @@ import org.thingsboard.mqtt.broker.controller.BaseController;
 import org.thingsboard.mqtt.broker.dao.store.BackupInProgressException;
 import org.thingsboard.mqtt.broker.dao.store.StoreBackup;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -50,7 +54,8 @@ import java.util.concurrent.Callable;
  * The single backup slot and the checkpoint of the store are taken in the handler, so a second download while one runs
  * (409) or a checkpoint that cannot be taken (500, e.g. on a full disk) fails before the response starts. The archive is
  * streamed afterwards on the async executor, without the async request timeout; the slot is released and the
- * checkpoint deleted when the stream ends or, when it never starts, when the request ends.
+ * checkpoint deleted when the stream ends or, when it never starts, when the request ends. A failure of the broker
+ * after the archive started to go out aborts the connection (see {@link #handleBackupStreamException}).
  */
 @Slf4j
 @RestController
@@ -84,12 +89,20 @@ public class StandaloneBackupController extends BaseController {
             throw e;
         }
         StreamingResponseBody body = out -> {
+            ClientOutputStream client = new ClientOutputStream(out);
             try (reservation) {
-                reservation.writeTo(out);
+                reservation.writeTo(client);
             } catch (IOException e) {
-                // most often the client went away; the exception still ends the request
-                log.warn("The backup download ended early: {}", e.toString());
-                throw e;
+                if (client.failed()) {
+                    // the client went away; the exception still ends the request
+                    log.warn("The backup download ended early: {}", e.toString());
+                    throw e;
+                }
+                log.error("The backup download failed", e);
+                throw new BackupStreamException(e);
+            } catch (RuntimeException e) {
+                log.error("The backup download failed", e);
+                throw new BackupStreamException(e);
             }
         };
         String fileName = "tbmq-lite-backup-" + FILE_TIMESTAMP.format(Instant.now()) + ".tar.gz";
@@ -99,6 +112,85 @@ public class StandaloneBackupController extends BaseController {
                 // the name the UI's download helper reads
                 .header(FILENAME_HEADER, fileName)
                 .body(body);
+    }
+
+    /**
+     * A failure of the broker while it streams the archive. Before the response is committed it gets the error
+     * response of any other failure. Once part of the archive went out under 200, the exception escapes to the servlet
+     * container, which aborts the connection: the response never ends with its final chunk, so a client such as
+     * {@code curl -f} fails instead of taking the cut archive for a whole one.
+     */
+    @ExceptionHandler(BackupStreamException.class)
+    public void handleBackupStreamException(BackupStreamException e, HttpServletResponse response) {
+        if (response.isCommitted()) {
+            throw e;
+        }
+        // drops the gzip headers, the attachment name and the part of the archive still in the buffer
+        response.reset();
+        handleControllerException((Exception) e.getCause(), response);
+    }
+
+    /**
+     * Thrown by the body for a failure of the broker, never for a failure of the client's connection.
+     */
+    static final class BackupStreamException extends RuntimeException {
+
+        BackupStreamException(Exception cause) {
+            super("The backup download failed: " + cause.getMessage(), cause);
+        }
+
+    }
+
+    /**
+     * Records whether a write to the client failed, which tells a client that went away from a failure of the broker.
+     */
+    private static final class ClientOutputStream extends FilterOutputStream {
+
+        private volatile boolean failed;
+
+        ClientOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        boolean failed() {
+            return failed;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            try {
+                out.write(b);
+            } catch (IOException e) {
+                failed = true;
+                throw e;
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            try {
+                out.write(b, off, len);
+            } catch (IOException e) {
+                failed = true;
+                throw e;
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            try {
+                out.flush();
+            } catch (IOException e) {
+                failed = true;
+                throw e;
+            }
+        }
+
+        @Override
+        public void close() {
+            // the container owns the response stream
+        }
+
     }
 
     /**
