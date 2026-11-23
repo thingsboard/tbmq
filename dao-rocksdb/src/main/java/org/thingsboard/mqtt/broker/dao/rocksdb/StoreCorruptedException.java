@@ -23,7 +23,10 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.file.Path;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Thrown when the store cannot open because RocksDB reports its files as corrupted (a damaged MANIFEST, CURRENT or SST
@@ -33,9 +36,12 @@ import java.util.List;
  * (newest first) and how to restore. To restore a backup: stop the broker, replace the store directory with the
  * backup's {@code db} directory, start the broker. A pre-upgrade checkpoint is restored the same way, from a copy of
  * the checkpoint directory; the broker upgrades it again on start. Copying a checkpoint into the store path is safe
- * even when the checkpoint holds the record of an unfinished upgrade: that record names the checkpoint itself, so the
- * start takes a new checkpoint before it migrates and the checkpoint directory under {@code store.backups.path} stays
- * untouched. Copying {@code /data} while the broker runs does not give a usable backup.
+ * even when the checkpoint holds the record of an unfinished upgrade. Such a record names the checkpoint itself, at
+ * the sequence number of the copy, but the copy is not in the checkpoint directory, so the start resumes the upgrade
+ * with the original checkpoint under {@code store.backups.path} and takes no new one. The upgrade writes only to the
+ * copy; resuming with the checkpoint and the retention of old checkpoints never change or delete it (retention
+ * protects the checkpoint and the origin of the upgrade). The checkpoint stays as it was and can be copied again.
+ * Copying {@code /data} while the broker runs does not give a usable backup.
  */
 public class StoreCorruptedException extends StoreException {
 
@@ -48,12 +54,10 @@ public class StoreCorruptedException extends StoreException {
      * {@code null} when there is none.
      */
     static RocksDBException corruptionIn(Throwable failure) {
-        for (Throwable t = failure; t != null; t = t.getCause()) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable t = failure; t != null && seen.add(t); t = t.getCause()) {
             if (t instanceof RocksDBException e && e.getStatus() != null && e.getStatus().getCode() == Status.Code.Corruption) {
                 return e;
-            }
-            if (t.getCause() == t) {
-                break;
             }
         }
         return null;
@@ -72,6 +76,7 @@ public class StoreCorruptedException extends StoreException {
                 .append(" with the backup's db directory, start the broker.")
                 .append(" A pre-upgrade checkpoint can be restored the same way: stop the broker, replace ").append(path)
                 .append(" with a copy of the checkpoint directory, start the broker (it upgrades again on start).")
+                .append(" The checkpoint itself stays untouched.")
                 .append(" Copying /data while the broker runs does not give a usable backup.");
         return new StoreCorruptedException(message.toString(), cause);
     }
@@ -101,11 +106,26 @@ public class StoreCorruptedException extends StoreException {
     }
 
     /**
-     * {@code text} on one line, without the full stop it ends with.
+     * {@code text} on one line, without the full stop it ends with; its line breaks and runs of spaces (how RocksDB joins its parts) become ". " (or just a space after
+     * a line that already ends with a full stop, colon or comma).
      */
     private static String sentence(String text) {
-        String line = text == null ? "no details" : text.strip().replaceAll("\\s+", " ");
-        return line.endsWith(".") ? line.substring(0, line.length() - 1) : line;
+        if (text == null || text.isBlank()) {
+            return "no details";
+        }
+        StringBuilder line = new StringBuilder();
+        for (String part : text.strip().split("\\R|\\s{2,}")) {
+            String segment = part.strip().replaceAll("\\s+", " ");
+            if (segment.isEmpty()) {
+                continue;
+            }
+            if (!line.isEmpty()) {
+                char last = line.charAt(line.length() - 1);
+                line.append(last == '.' || last == ':' || last == ',' ? " " : ". ");
+            }
+            line.append(segment);
+        }
+        return line.length() > 0 && line.charAt(line.length() - 1) == '.' ? line.substring(0, line.length() - 1) : line.toString();
     }
 
 }

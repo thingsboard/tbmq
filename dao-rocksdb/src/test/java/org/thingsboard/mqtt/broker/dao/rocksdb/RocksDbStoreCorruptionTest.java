@@ -40,9 +40,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +56,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class RocksDbStoreCorruptionTest {
@@ -89,16 +92,38 @@ class RocksDbStoreCorruptionTest {
         String time = Files.getLastModifiedTime(checkpoint).toInstant().truncatedTo(ChronoUnit.SECONDS).toString();
         assertThat(thrown.getMessage())
                 .startsWith("The store at " + path + " is corrupted: ")
-                .contains("may be corrupted")
+                .contains("checksum mismatch. The file ")
+                .contains(" may be corrupted. Pre-upgrade")
                 .contains("Pre-upgrade checkpoints under " + backups() + ": pre-upgrade-1-2 (" + time + ").")
                 .contains("To restore a backup: stop the broker, replace " + path + " with the backup's db directory, start the broker.")
                 .contains("A pre-upgrade checkpoint can be restored the same way: stop the broker, replace " + path
-                        + " with a copy of the checkpoint directory, start the broker (it upgrades again on start).")
+                        + " with a copy of the checkpoint directory, start the broker (it upgrades again on start). The checkpoint itself stays untouched. Copying")
                 .endsWith("Copying /data while the broker runs does not give a usable backup.")
                 .doesNotContain("\n");
         // the checkpoint of the list is the way back
         Path restored = copyDir(checkpoint, dir.resolve("restored"));
         assertThat(open(restored, List.of()).meta().schemaVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void theCheckpointsAreListedNewestFirstSeparatedByCommas() throws Exception {
+        Path path = dir.resolve("store");
+        RocksDbStore store = open(path, List.of());
+        writeSome(store);
+        Path older = backups().resolve("pre-upgrade-1-2");
+        Path newer = backups().resolve("pre-upgrade-2-3");
+        store.createCheckpoint(older);
+        store.createCheckpoint(newer);
+        store.close();
+        flushAll(path);
+        Files.setLastModifiedTime(older, FileTime.from(Instant.parse("2026-01-01T10:00:00Z")));
+        Files.setLastModifiedTime(newer, FileTime.from(Instant.parse("2026-02-02T12:30:45Z")));
+        damageManifest(path);
+
+        assertThatThrownBy(() -> open(path, List.of()))
+                .isInstanceOf(StoreCorruptedException.class)
+                .hasMessageContaining("Pre-upgrade checkpoints under " + backups()
+                        + ": pre-upgrade-2-3 (2026-02-02T12:30:45Z), pre-upgrade-1-2 (2026-01-01T10:00:00Z). To restore");
     }
 
     @Test
@@ -242,6 +267,7 @@ class RocksDbStoreCorruptionTest {
                 .isEqualTo(new StoreMigrationRunner.UpgradeRecord(freshSequence, fresh.getFileName().toString(),
                         "pre-upgrade-1-2").encode());
         Map<String, ByteBuffer> before = snapshot(fresh);
+        List<String> checkpointsBefore = StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::name).sorted().toList();
 
         // the restore of the message: stop the broker, replace the store with a copy of the checkpoint, start
         Path restored = copyDir(fresh, dir.resolve("restored"));
@@ -251,6 +277,9 @@ class RocksDbStoreCorruptionTest {
         assertThat(store.get(StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
         assertThat(store.get(StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isEqualTo(bytes("by the older build"));
         closeAll();
+        // the copy is not in the checkpoint directory: the start resumed with the checkpoint and took no new one
+        assertThat(StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::name).sorted().toList())
+                .isEqualTo(checkpointsBefore);
         // the checkpoint directory is untouched and still opens at its old schema
         assertThat(fresh).isDirectory();
         assertThat(snapshot(fresh)).isEqualTo(before);
@@ -344,15 +373,6 @@ class RocksDbStoreCorruptionTest {
         return files;
     }
 
-    private static Throwable catchThrowable(Runnable action) {
-        try {
-            action.run();
-        } catch (Throwable t) {
-            return t;
-        }
-        throw new AssertionError("expected the action to fail");
-    }
-
     private static StoreMigrationStep writingThenFailingStep() {
         return new StoreMigrationStep() {
             @Override
@@ -426,8 +446,11 @@ class RocksDbStoreCorruptionTest {
         try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
             List<ColumnFamilyHandle> handles = new ArrayList<>();
             try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors(options), handles)) {
-                action.run(raw, handles.get(cf.ordinal() + 1));
-                handles.forEach(ColumnFamilyHandle::close);
+                try {
+                    action.run(raw, handles.get(cf.ordinal() + 1));
+                } finally {
+                    handles.forEach(ColumnFamilyHandle::close);
+                }
             }
         }
     }
@@ -449,8 +472,11 @@ class RocksDbStoreCorruptionTest {
              FlushOptions flushOptions = new FlushOptions().setWaitForFlush(true)) {
             List<ColumnFamilyHandle> handles = new ArrayList<>();
             try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors(options), handles)) {
-                raw.flush(flushOptions, handles);
-                handles.forEach(ColumnFamilyHandle::close);
+                try {
+                    raw.flush(flushOptions, handles);
+                } finally {
+                    handles.forEach(ColumnFamilyHandle::close);
+                }
             }
         }
     }
@@ -463,10 +489,13 @@ class RocksDbStoreCorruptionTest {
         try (DBOptions options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
              RocksDB db = RocksDB.open(options, path.toString(), descriptors, handles)) {
             // the meta of a store that Phase 2 had opened once
-            db.put(handles.get(1), RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
-            db.put(handles.get(1), RocksDbStore.META_PRODUCT_KEY, bytes("LITE"));
-            db.put(handles.get(1), RocksDbStore.META_INSTALL_ID_KEY, bytes(UUID.randomUUID().toString()));
-            handles.forEach(ColumnFamilyHandle::close);
+            try {
+                db.put(handles.get(1), RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
+                db.put(handles.get(1), RocksDbStore.META_PRODUCT_KEY, bytes("LITE"));
+                db.put(handles.get(1), RocksDbStore.META_INSTALL_ID_KEY, bytes(UUID.randomUUID().toString()));
+            } finally {
+                handles.forEach(ColumnFamilyHandle::close);
+            }
         }
     }
 
