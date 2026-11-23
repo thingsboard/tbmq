@@ -15,9 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.backup;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
@@ -49,11 +55,28 @@ class StoreCheckpointsTest {
     Path dir;
 
     private final List<RocksDbStore> opened = new ArrayList<>();
+    // the retention's log, kept out of the build output
+    private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+
+    @BeforeEach
+    void captureLog() {
+        logged.start();
+        Logger logger = (Logger) LoggerFactory.getLogger(StoreCheckpoints.class);
+        logger.addAppender(logged);
+        logger.setAdditive(false);
+    }
 
     @AfterEach
     void closeAll() {
         opened.forEach(RocksDbStore::close);
         opened.clear();
+    }
+
+    @AfterEach
+    void releaseLog() {
+        Logger logger = (Logger) LoggerFactory.getLogger(StoreCheckpoints.class);
+        logger.detachAppender(logged);
+        logger.setAdditive(true);
     }
 
     @Test
@@ -307,10 +330,12 @@ class StoreCheckpointsTest {
         Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
         Path other = checkpointDir(backups, "pre-upgrade-2-3", 2000);
 
-        StoreCheckpoints.retainNewest(backups, 1, current, dir.resolve("backups/../backups/pre-upgrade-1-2"));
+        Path store = dir.resolve("backups/../backups/pre-upgrade-1-2");
+        StoreCheckpoints.retainNewest(backups, 1, current, store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
         assertThat(other).doesNotExist();
+        assertKeptWithAWarning(running, store);
     }
 
     @Test
@@ -325,6 +350,7 @@ class StoreCheckpointsTest {
         StoreCheckpoints.retainNewest(backups, 1, current, store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, holding);
+        assertKeptWithAWarning(holding, store);
     }
 
     @Test
@@ -343,6 +369,7 @@ class StoreCheckpointsTest {
         StoreCheckpoints.retainNewest(backups, 1, current, link);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
+        assertKeptWithAWarning(running, link);
     }
 
     @Test
@@ -357,6 +384,18 @@ class StoreCheckpointsTest {
         StoreCheckpoints.retainNewest(backups, 2, current, store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(newest, current);
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN).isEmpty();
+    }
+
+    /**
+     * The retention logged once, at WARN, that it kept {@code checkpoint} because the store at {@code store} runs
+     * from it.
+     */
+    private void assertKeptWithAWarning(Path checkpoint, Path store) {
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage())
+                        .isEqualTo("Kept the checkpoint " + checkpoint + " because the store at " + store + " runs from it"));
     }
 
     private static Path checkpointDir(Path backups, String name, long modifiedEpochSecond) throws IOException {

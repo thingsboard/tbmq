@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.rocksdb.migration;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.WireFormat;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +33,7 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
@@ -90,6 +95,23 @@ class Schema1FixtureUpgradeTest {
     private Path upgraded;
     private Path backups;
     private RocksDbStore store;
+    // the checkpoint retention's log, kept out of the build output
+    private final ListAppender<ILoggingEvent> retentionLog = new ListAppender<>();
+
+    @BeforeEach
+    void captureTheRetentionLog() {
+        retentionLog.start();
+        Logger logger = (Logger) LoggerFactory.getLogger(StoreCheckpoints.class);
+        logger.addAppender(retentionLog);
+        logger.setAdditive(false);
+    }
+
+    @AfterEach
+    void releaseTheRetentionLog() {
+        Logger logger = (Logger) LoggerFactory.getLogger(StoreCheckpoints.class);
+        logger.detachAppender(retentionLog);
+        logger.setAdditive(true);
+    }
 
     @BeforeEach
     void copyTheFixture() throws IOException, URISyntaxException {
@@ -207,6 +229,10 @@ class Schema1FixtureUpgradeTest {
         List<CheckpointInfo> checkpoints = StoreCheckpoints.list(backups);
         assertThat(checkpoints).extracting(CheckpointInfo::path).contains(running).hasSize(2);
         assertThat(checkpoints).extracting(CheckpointInfo::name).anyMatch(name -> name.startsWith("pre-upgrade-1-2-"));
+        assertThat(retentionLog.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage())
+                        .isEqualTo("Kept the checkpoint " + running + " because the store at " + running + " runs from it"));
         opened.close();
         store = null;
         BROKER_STATE.keySet().forEach(cf -> assertThat(readOnly(running).get(cf.columnFamilyName()))
