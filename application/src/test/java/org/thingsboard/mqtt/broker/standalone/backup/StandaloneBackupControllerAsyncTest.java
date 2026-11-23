@@ -28,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.annotation.AnnotationConfigUtils;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.http.HttpHeaders;
@@ -49,7 +48,7 @@ import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.DispatcherServlet;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.DelegatingWebMvcConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBodyReturnValueHandler;
 import org.thingsboard.mqtt.broker.dao.store.BackupInProgressException;
@@ -316,7 +315,9 @@ class StandaloneBackupControllerAsyncTest {
     private Tomcat startTomcat() throws Exception {
         GenericWebApplicationContext web = new GenericWebApplicationContext();
         AnnotationConfigUtils.registerAnnotationConfigProcessors(web);
-        web.registerBean(MvcConfig.class);
+        // registered here, not as a nested @Configuration: the broker's test contexts scan this package, and an
+        // @EnableWebMvc class there switches Spring Boot's MVC auto-configuration off in all of them
+        web.registerBean(DelegatingWebMvcConfiguration.class);
         web.getBeanFactory().registerSingleton("standaloneBackupController", controller);
         Tomcat tomcat = new Tomcat();
         tomcat.setBaseDir(Files.createDirectories(backups.resolve("tomcat")).toString());
@@ -332,11 +333,6 @@ class StandaloneBackupControllerAsyncTest {
         context.addErrorPage(errorPage);
         tomcat.start();
         return tomcat;
-    }
-
-    @Configuration
-    @EnableWebMvc
-    static class MvcConfig {
     }
 
     /**
