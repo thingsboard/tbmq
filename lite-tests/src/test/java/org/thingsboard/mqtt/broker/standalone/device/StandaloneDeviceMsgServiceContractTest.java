@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.service.DeviceMsgServiceContract;
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.List;
 
 /**
  * Runs the checks the Valkey implementation passes in DeviceMsgServiceTest against the store-backed service.
@@ -43,7 +44,7 @@ class StandaloneDeviceMsgServiceContractTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         RocksDbStore rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
-                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)));
+                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)), List.of());
         rocksDb.open();
         try {
             var service = new StandaloneDeviceMsgService(new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, 600, Clock.systemUTC()));

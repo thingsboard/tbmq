@@ -35,7 +35,7 @@ public class RecordingRocksDbStore extends RocksDbStore {
     private final AtomicReference<RuntimeException> nextWriteFailure = new AtomicReference<>();
 
     public RecordingRocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
-        super(properties, memoryBudget, TestDiskSpaceMonitors.roomy(properties));
+        super(properties, memoryBudget, TestDiskSpaceMonitors.roomy(properties), List.of());
     }
 
     @Override

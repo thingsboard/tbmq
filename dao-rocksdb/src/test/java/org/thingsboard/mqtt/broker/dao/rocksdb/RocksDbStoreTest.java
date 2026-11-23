@@ -32,6 +32,9 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.Schema1To2Step;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -79,7 +82,7 @@ class RocksDbStoreTest {
         UUID id = open(dir).meta().installId();
         closeAll();
 
-        assertThat(open(dir).meta()).isEqualTo(new StoreMeta(1, "LITE", id));
+        assertThat(open(dir).meta()).isEqualTo(new StoreMeta(2, "LITE", id));
     }
 
     @Test
@@ -113,9 +116,10 @@ class RocksDbStoreTest {
     void aStoreCreatedWithOnlyTheEightPhaseTwoFamiliesOpensAndGainsTheNewOnes() throws RocksDBException {
         List<String> phaseTwo = List.of("meta", "client_session", "client_subscriptions", "retained_msg", "blocked_client",
                 "client_session_attr", "device_msg", "device_msg_meta");
-        createWithFamilies(dir, phaseTwo);
+        Path path = dir.resolve("store");
+        createWithFamilies(path, phaseTwo);
 
-        RocksDbStore store = open(dir);
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
 
         for (StoreColumnFamily cf : List.of(StoreColumnFamily.ENTITY, StoreColumnFamily.ENTITY_INDEX,
                 StoreColumnFamily.SESSION_CTX, StoreColumnFamily.TS, StoreColumnFamily.TS_LATEST)) {
@@ -123,7 +127,59 @@ class RocksDbStoreTest {
             store.put(StoreWriteClass.NEW_DATA, cf, bytes("k"), bytes("v-" + cf.name()));
             assertThat(store.get(cf, bytes("k"))).isEqualTo(bytes("v-" + cf.name()));
         }
-        assertThat(store.meta().schemaVersion()).isEqualTo(1);
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void aFailedMigrationStepStopsTheOpenLeavesTheVersionAndReleasesTheStore() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        StoreMigrationStep failing = new StoreMigrationStep() {
+            @Override
+            public int fromVersion() {
+                return 1;
+            }
+
+            @Override
+            public void apply(MigrationContext ctx) {
+                ctx.put(StoreColumnFamily.ENTITY, bytes("written"), bytes("by the step"));
+                throw new IllegalStateException("boom");
+            }
+        };
+
+        assertThatThrownBy(() -> openMigrating(path, List.of(failing)))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("Migration from schema 1 to 2 failed: boom");
+
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        // the step's write was synced before it failed
+        assertThat(store.get(StoreColumnFamily.ENTITY, bytes("written"))).isEqualTo(bytes("by the step"));
+    }
+
+    @Test
+    void aStoreThatNeedsAMigrationWithoutABackupsPathIsRefusedNamingTheSetting() throws RocksDBException {
+        createWithFamilies(dir, List.of("meta"));
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(dir.toString());
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                TestDiskSpaceMonitors.roomy(properties), List.of(new Schema1To2Step()));
+
+        assertThatThrownBy(store::open)
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("store.backups.path")
+                .hasMessageContaining(dir.toString());
+    }
+
+    private RocksDbStore openMigrating(Path path, List<StoreMigrationStep> steps) {
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(path.toString());
+        properties.getBackups().setPath(dir.resolve("backups").toString());
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                TestDiskSpaceMonitors.roomy(properties), steps);
+        opened.add(store);
+        store.open();
+        return store;
     }
 
     private static void createWithFamilies(Path path, List<String> families) throws RocksDBException {
@@ -180,12 +236,12 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreWithAHigherSchemaVersionIsRefused() {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
         closeAll();
 
         assertThatThrownBy(() -> open(dir))
                 .isInstanceOf(StoreException.class)
-                .hasMessageContaining("schema version 2")
+                .hasMessageContaining("schema version 3")
                 .hasMessageContaining(dir.toString());
     }
 
@@ -353,13 +409,13 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreWithAnUnknownColumnFamilyAndALaterSchemaIsRefusedWithTheSchemaMessage() throws RocksDBException {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
         closeAll();
         addColumnFamily(dir, "future_cf");
 
         assertThatThrownBy(() -> open(dir))
                 .isInstanceOf(StoreException.class)
-                .hasMessageContaining("schema version 2")
+                .hasMessageContaining("schema version 3")
                 .hasMessageContaining(dir.toString());
     }
 
@@ -646,7 +702,7 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync("periodic");
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), nanoClock);
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of(), nanoClock);
         opened.add(store);
         store.open();
         return store;
@@ -659,7 +715,7 @@ class RocksDbStoreTest {
             properties.setPath(dir.toString());
             properties.getBackups().setKeep(keep);
             RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
-                    TestDiskSpaceMonitors.roomy(properties));
+                    TestDiskSpaceMonitors.roomy(properties), List.of());
 
             assertThatThrownBy(store::open)
                     .isInstanceOf(StoreException.class)
@@ -675,7 +731,7 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync(walSync);
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         opened.add(store);
         store.open();
         return store;

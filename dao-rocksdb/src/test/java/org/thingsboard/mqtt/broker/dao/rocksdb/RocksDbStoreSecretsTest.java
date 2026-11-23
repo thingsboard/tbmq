@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,7 +43,7 @@ class RocksDbStoreSecretsTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         properties.setWalSync("periodic");
-        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         store.open();
         RocksDbStoreSecrets secrets = new RocksDbStoreSecrets(store);
 

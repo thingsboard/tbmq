@@ -66,7 +66,7 @@ class RocksDbStoreWatermarkTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         monitor = new DiskSpaceMonitor(properties, path -> space.get());
-        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor);
+        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor, List.of());
         store.open();
     }
 

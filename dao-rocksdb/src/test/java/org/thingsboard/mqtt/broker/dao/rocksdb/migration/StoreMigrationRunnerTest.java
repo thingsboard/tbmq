@@ -1,0 +1,354 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.dao.rocksdb.migration;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.rocksdb.RocksIterator;
+import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
+class StoreMigrationRunnerTest {
+
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-11-23T10:15:30Z"), ZoneOffset.UTC);
+
+    @TempDir
+    Path dir;
+
+    @Test
+    void aStoreTwoVersionsBackRunsBothStepsInOrderAndBumpsAfterEach() {
+        FakeStore store = new FakeStore(1);
+
+        int version = runner(List.of(new RecordingStep(2, store), new RecordingStep(1, store)), 3).run(store);
+
+        assertThat(version).isEqualTo(3);
+        assertThat(store.version).isEqualTo(3);
+        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3", "step 1", "bump 2", "step 2", "bump 3");
+    }
+
+    @Test
+    void aCrashAfterAStepAndBeforeItsBumpRerunsTheStep() {
+        FakeStore store = new FakeStore(1);
+        AtomicInteger runs = new AtomicInteger();
+        StoreMigrationStep crashingOnce = new RecordingStep(1, store) {
+            @Override
+            public void apply(MigrationContext ctx) {
+                super.apply(ctx);
+                ctx.put(StoreColumnFamily.META, RawStores.bytes("step-1-wrote"), new byte[]{1});
+                if (runs.incrementAndGet() == 1) {
+                    throw new IllegalStateException("boom");
+                }
+            }
+        };
+        StoreMigrationRunner runner = runner(List.of(crashingOnce, new RecordingStep(2, store)), 3);
+
+        assertThatThrownBy(() -> runner.run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("Migration from schema 1 to 2 failed: boom");
+        assertThat(store.version).isEqualTo(1);
+        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3", "step 1");
+        assertThat(store.get(StoreColumnFamily.META, RawStores.bytes("step-1-wrote"))).isEqualTo(new byte[]{1});
+        store.events.clear();
+
+        assertThat(runner.run(store)).isEqualTo(3);
+
+        assertThat(store.events).containsExactly("checkpoint pre-upgrade-1-3-20261123-101530", "step 1", "bump 2", "step 2", "bump 3");
+    }
+
+    @Test
+    void oneCheckpointIsTakenBeforeTheFirstStep() {
+        FakeStore store = new FakeStore(1);
+        store.put(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("c1"), RawStores.bytes("session"));
+
+        runner(List.of(new RecordingStep(1, store), new RecordingStep(2, store)), 3).run(store);
+
+        assertThat(store.checkpoints).hasSize(1);
+        Checkpoint checkpoint = store.checkpoints.get(0);
+        assertThat(checkpoint.dir()).isEqualTo(backups().resolve("pre-upgrade-1-3")).isDirectory();
+        assertThat(checkpoint.version()).isEqualTo(1);
+        // the version-1 data and none of the steps' writes
+        assertThat(checkpoint.data()).containsOnlyKeys(key(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("c1")));
+        assertThat(store.data).containsKeys(key(StoreColumnFamily.META, RawStores.bytes("step-1")),
+                key(StoreColumnFamily.META, RawStores.bytes("step-2")));
+    }
+
+    @Test
+    void aMissingStepFailsStartupNamingTheVersion() {
+        FakeStore store = new FakeStore(1);
+
+        assertThatThrownBy(() -> runner(List.of(new RecordingStep(1, store)), 3).run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("no migration step from schema 2");
+        assertThat(store.events).isEmpty();
+        assertThat(store.version).isEqualTo(1);
+    }
+
+    @Test
+    void aCurrentStoreTakesNoCheckpoint() {
+        FakeStore store = new FakeStore(3);
+
+        int version = new StoreMigrationRunner(List.of(new RecordingStep(1, store), new RecordingStep(2, store)), 3, null, 3, CLOCK)
+                .run(store);
+
+        assertThat(version).isEqualTo(3);
+        assertThat(store.events).isEmpty();
+    }
+
+    @Test
+    void twoStepsFromOneVersionFailStartup() {
+        FakeStore store = new FakeStore(1);
+
+        assertThatThrownBy(() -> runner(List.of(new RecordingStep(1, store), new RecordingStep(1, store)), 2).run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("from schema 1");
+        assertThat(store.events).isEmpty();
+    }
+
+    @Test
+    void aMigrationWithoutABackupsPathFailsNamingTheSetting() {
+        for (String backupsPath : new String[]{null, " "}) {
+            FakeStore store = new FakeStore(1);
+
+            assertThatThrownBy(() -> new StoreMigrationRunner(List.of(new RecordingStep(1, store)), 2, backupsPath, 3, CLOCK).run(store))
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining("store.backups.path")
+                    .hasMessageContaining(store.path());
+            assertThat(store.events).isEmpty();
+            assertThat(store.version).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void aFailedCheckpointFailsStartupBeforeAnyStep() {
+        FakeStore store = new FakeStore(1);
+        store.checkpointFailure = new StoreException("disk full");
+
+        assertThatThrownBy(() -> runner(List.of(new RecordingStep(1, store)), 2).run(store))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("disk full");
+        assertThat(store.events).isEmpty();
+        assertThat(store.version).isEqualTo(1);
+    }
+
+    @Test
+    void theOldestCheckpointsBeyondKeepAreDeletedAfterTheLastBump() throws Exception {
+        Path old = Files.createDirectories(backups().resolve("pre-upgrade-0-1"));
+        Files.setLastModifiedTime(old, FileTime.from(Instant.parse("2026-01-01T00:00:00Z")));
+        FakeStore store = new FakeStore(1);
+
+        new StoreMigrationRunner(List.of(new RecordingStep(1, store)), 2, backups().toString(), 1, CLOCK).run(store);
+
+        assertThat(old).doesNotExist();
+        assertThat(backups().resolve("pre-upgrade-1-2")).isDirectory();
+    }
+
+    @Test
+    void aFailedRetentionAfterTheLastBumpIsLoggedAndStartupContinues() throws Exception {
+        Path old = Files.createDirectories(backups().resolve("pre-upgrade-0-1"));
+        Path locked = Files.createDirectories(old.resolve("locked"));
+        Files.writeString(locked.resolve("CURRENT"), "x");
+        Files.setLastModifiedTime(old, FileTime.from(Instant.parse("2026-01-01T00:00:00Z")));
+        assertThat(locked.toFile().setWritable(false)).isTrue();
+        ListAppender<ILoggingEvent> logged = captureRunnerLog();
+        try {
+            assumeFalse(Files.isWritable(locked), "running as a user that ignores directory permissions");
+            FakeStore store = new FakeStore(1);
+
+            int version = new StoreMigrationRunner(List.of(new RecordingStep(1, store)), 2, backups().toString(), 1, CLOCK).run(store);
+
+            assertThat(version).isEqualTo(2);
+            assertThat(store.version).isEqualTo(2);
+            assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                    .singleElement()
+                    .satisfies(event -> assertThat(event.getFormattedMessage()).contains(backups().toString()));
+        } finally {
+            releaseRunnerLog(logged);
+            locked.toFile().setWritable(true);
+        }
+    }
+
+    @Test
+    void theStartTheCheckpointAndEveryStepAreLoggedAtInfo() {
+        FakeStore store = new FakeStore(1);
+        ListAppender<ILoggingEvent> logged = captureRunnerLog();
+        try {
+            runner(List.of(new RecordingStep(1, store), new RecordingStep(2, store)), 3).run(store);
+        } finally {
+            releaseRunnerLog(logged);
+        }
+
+        List<String> info = logged.list.stream().filter(event -> event.getLevel() == Level.INFO)
+                .map(ILoggingEvent::getFormattedMessage).toList();
+        assertThat(info).anySatisfy(message -> assertThat(message).contains(store.path()).contains("schema 1").contains("schema 3"));
+        assertThat(info).anySatisfy(message -> assertThat(message).contains(backups().resolve("pre-upgrade-1-3").toString()));
+        assertThat(info).anySatisfy(message -> assertThat(message).contains("schema 1 to 2"));
+        assertThat(info).anySatisfy(message -> assertThat(message).contains("schema 2 to 3"));
+    }
+
+    private StoreMigrationRunner runner(List<StoreMigrationStep> steps, int targetVersion) {
+        return new StoreMigrationRunner(steps, targetVersion, backups().toString(), 3, CLOCK);
+    }
+
+    private Path backups() {
+        return dir.resolve("backups");
+    }
+
+    private static ListAppender<ILoggingEvent> captureRunnerLog() {
+        Logger logger = (Logger) LoggerFactory.getLogger(StoreMigrationRunner.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
+    }
+
+    private static void releaseRunnerLog(ListAppender<ILoggingEvent> appender) {
+        ((Logger) LoggerFactory.getLogger(StoreMigrationRunner.class)).detachAppender(appender);
+    }
+
+    private static String key(StoreColumnFamily cf, byte[] key) {
+        return cf.columnFamilyName() + "/" + HexFormat.of().formatHex(key);
+    }
+
+    /**
+     * A step that records its run in the store's event log and writes a {@code step-<from>} key to {@code meta}.
+     */
+    private static class RecordingStep implements StoreMigrationStep {
+
+        private final int fromVersion;
+        private final FakeStore store;
+
+        RecordingStep(int fromVersion, FakeStore store) {
+            this.fromVersion = fromVersion;
+            this.store = store;
+        }
+
+        @Override
+        public int fromVersion() {
+            return fromVersion;
+        }
+
+        @Override
+        public void apply(MigrationContext ctx) {
+            store.events.add("step " + fromVersion);
+            ctx.put(StoreColumnFamily.META, RawStores.bytes("step-" + fromVersion), new byte[]{1});
+        }
+
+    }
+
+    private record Checkpoint(Path dir, int version, Map<String, byte[]> data) {
+    }
+
+    /**
+     * A store in memory: its version, its data, a log of the runner's calls and a copy of the data at each checkpoint.
+     */
+    private class FakeStore implements StoreMigrationRunner.Target, MigrationContext {
+
+        private final List<String> events = new ArrayList<>();
+        private final List<Checkpoint> checkpoints = new ArrayList<>();
+        private final Map<String, byte[]> data = new HashMap<>();
+        private int version;
+        private RuntimeException checkpointFailure;
+
+        FakeStore(int version) {
+            this.version = version;
+        }
+
+        @Override
+        public String path() {
+            return dir.resolve("store").toString();
+        }
+
+        @Override
+        public int schemaVersion() {
+            return version;
+        }
+
+        @Override
+        public void bumpSchemaVersion(int version) {
+            events.add("bump " + version);
+            this.version = version;
+        }
+
+        @Override
+        public void checkpoint(Path target) {
+            if (checkpointFailure != null) {
+                throw checkpointFailure;
+            }
+            try {
+                Files.createDirectories(target);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            events.add("checkpoint " + target.getFileName());
+            checkpoints.add(new Checkpoint(target, version, new HashMap<>(data)));
+        }
+
+        @Override
+        public MigrationContext context() {
+            return this;
+        }
+
+        @Override
+        public byte[] get(StoreColumnFamily cf, byte[] key) {
+            return data.get(key(cf, key));
+        }
+
+        @Override
+        public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+            data.put(key(cf, key), value);
+        }
+
+        @Override
+        public void delete(StoreColumnFamily cf, byte[] key) {
+            data.remove(key(cf, key));
+        }
+
+        @Override
+        public <T> T scan(StoreColumnFamily cf, byte[] lo, byte[] hi, Function<RocksIterator, T> reader) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void ensureJwtSigningKey() {
+            events.add("ensure key");
+        }
+
+    }
+
+}

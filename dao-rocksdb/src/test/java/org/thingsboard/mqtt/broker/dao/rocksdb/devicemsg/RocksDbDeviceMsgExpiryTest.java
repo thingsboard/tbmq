@@ -70,7 +70,7 @@ class RocksDbDeviceMsgExpiryTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         rocksDb.open();
         store = new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, TTL_SECONDS, clock);
     }

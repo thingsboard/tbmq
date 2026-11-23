@@ -42,6 +42,9 @@ import org.rocksdb.WriteOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationRunner;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -49,6 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -77,7 +81,7 @@ import java.util.function.LongSupplier;
 @Component
 public class RocksDbStore {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     public static final String PRODUCT = "LITE";
 
     static final byte[] META_SCHEMA_VERSION_KEY = "schema_version".getBytes(StandardCharsets.UTF_8);
@@ -105,6 +109,7 @@ public class RocksDbStore {
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
     private final DiskSpaceMonitor diskSpaceMonitor;
+    private final List<StoreMigrationStep> migrationSteps;
     private final LongSupplier nanoClock;
 
     private final Map<StoreColumnFamily, ColumnFamilyHandle> handles = new EnumMap<>(StoreColumnFamily.class);
@@ -121,16 +126,18 @@ public class RocksDbStore {
     private boolean open;
 
     @Autowired
-    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor) {
-        this(properties, memoryBudget, diskSpaceMonitor, System::nanoTime);
+    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor,
+                        List<StoreMigrationStep> migrationSteps) {
+        this(properties, memoryBudget, diskSpaceMonitor, migrationSteps, System::nanoTime);
     }
 
     // the clock is a seam for the test of the slow-close warning
     RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor,
-                 LongSupplier nanoClock) {
+                 List<StoreMigrationStep> migrationSteps, LongSupplier nanoClock) {
         this.properties = properties;
         this.memoryBudget = memoryBudget;
         this.diskSpaceMonitor = diskSpaceMonitor;
+        this.migrationSteps = List.copyOf(migrationSteps);
         this.nanoClock = nanoClock;
     }
 
@@ -223,7 +230,96 @@ public class RocksDbStore {
         }
         otherHandles.addAll(opened.subList(known, opened.size()));
         meta = loadOrInitMeta(path);
+        StoreProperties.Backups backups = properties.getBackups();
+        int schemaVersion = new StoreMigrationRunner(migrationSteps, SCHEMA_VERSION, backups.getPath(), backups.getKeep(),
+                Clock.systemUTC()).run(new OpeningStore(path));
+        meta = new StoreMeta(schemaVersion, meta.product(), meta.installId());
+        // after the migrations: also covers a crash between the first meta write and the key
         ensureJwtSigningKey();
+    }
+
+    /**
+     * The store while {@link #doOpen} holds the write lock and before it is published as open: the migrations work on
+     * the raw database, every write synced.
+     */
+    private final class OpeningStore implements StoreMigrationRunner.Target, MigrationContext {
+
+        private final String path;
+
+        private OpeningStore(String path) {
+            this.path = path;
+        }
+
+        @Override
+        public String path() {
+            return path;
+        }
+
+        @Override
+        public int schemaVersion() {
+            return meta.schemaVersion();
+        }
+
+        @Override
+        public void bumpSchemaVersion(int version) {
+            put(StoreColumnFamily.META, META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+        }
+
+        @Override
+        public void checkpoint(Path dir) {
+            RocksDbStore.this.checkpoint(db, dir);
+        }
+
+        @Override
+        public MigrationContext context() {
+            return this;
+        }
+
+        @Override
+        public byte[] get(StoreColumnFamily cf, byte[] key) {
+            try {
+                return db.get(handles.get(cf), key);
+            } catch (RocksDBException e) {
+                throw failure(OP_GET, cf, e);
+            }
+        }
+
+        @Override
+        public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.put(handles.get(cf), synced, key, value);
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, cf, e);
+            }
+        }
+
+        @Override
+        public void delete(StoreColumnFamily cf, byte[] key) {
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.delete(handles.get(cf), synced, key);
+            } catch (RocksDBException e) {
+                throw failure(OP_DELETE, cf, e);
+            }
+        }
+
+        @Override
+        public <T> T scan(StoreColumnFamily cf, byte[] lo, byte[] hi, Function<RocksIterator, T> reader) {
+            try {
+                return scanRaw(db, cf, lo, hi, reader);
+            } catch (RocksDBException e) {
+                throw failure(OP_SCAN, cf, e);
+            }
+        }
+
+        @Override
+        public void ensureJwtSigningKey() {
+            try {
+                RocksDbStore.this.ensureJwtSigningKey();
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, StoreColumnFamily.META, e);
+            }
+        }
+
     }
 
     /**
@@ -453,6 +549,17 @@ public class RocksDbStore {
      */
     public <T> T scan(StoreColumnFamily cf, byte[] lowerInclusive, byte[] upperExclusive, Function<RocksIterator, T> reader) {
         RocksDB database = acquire(OP_SCAN, cf);
+        try {
+            return scanRaw(database, cf, lowerInclusive, upperExclusive, reader);
+        } catch (RocksDBException e) {
+            throw failure(OP_SCAN, cf, e);
+        } finally {
+            release();
+        }
+    }
+
+    private <T> T scanRaw(RocksDB database, StoreColumnFamily cf, byte[] lowerInclusive, byte[] upperExclusive,
+                          Function<RocksIterator, T> reader) throws RocksDBException {
         try (Slice lower = lowerInclusive == null ? null : new Slice(lowerInclusive);
              Slice upper = upperExclusive == null ? null : new Slice(upperExclusive);
              ReadOptions readOptions = scanOptions(cf, lower, upper, lowerInclusive, upperExclusive);
@@ -466,10 +573,6 @@ public class RocksDbStore {
             // an iterator that hits a read error just becomes invalid, which looks like the end of the range
             iterator.status();
             return result;
-        } catch (RocksDBException e) {
-            throw failure(OP_SCAN, cf, e);
-        } finally {
-            release();
         }
     }
 

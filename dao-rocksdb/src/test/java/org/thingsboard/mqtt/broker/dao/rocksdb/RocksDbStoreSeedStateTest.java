@@ -88,7 +88,7 @@ class RocksDbStoreSeedStateTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         properties.setWalSync("periodic");
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         opened.add(store);
         store.open();
         return store;

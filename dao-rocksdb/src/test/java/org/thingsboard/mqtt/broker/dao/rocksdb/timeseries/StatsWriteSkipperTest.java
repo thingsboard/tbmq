@@ -88,7 +88,7 @@ class StatsWriteSkipperTest {
         properties.setPath(dir.toString());
         monitor = new DiskSpaceMonitor(properties, path -> diskFull.get() ? FULL : ROOMY);
         // a spy only for the failure that is not a full store; the others meet the store's own refusal
-        store = spy(new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor));
+        store = spy(new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor, List.of()));
         store.open();
         dictionary = new RocksDbKeyDictionaryDao(store);
         skipper = new StatsWriteSkipper(new DefaultStatsFactory(registry), nanos::get);

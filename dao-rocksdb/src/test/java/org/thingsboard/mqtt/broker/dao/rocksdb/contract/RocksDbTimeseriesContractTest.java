@@ -239,7 +239,7 @@ public class RocksDbTimeseriesContractTest extends AbstractTimeseriesContractTes
     private static RocksDbStore openStore(String path) {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path);
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         store.open();
         return store;
     }

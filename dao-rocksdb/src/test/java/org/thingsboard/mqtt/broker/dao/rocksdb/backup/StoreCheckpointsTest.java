@@ -211,7 +211,7 @@ class StoreCheckpointsTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
-                TestDiskSpaceMonitors.roomy(properties));
+                TestDiskSpaceMonitors.roomy(properties), List.of());
         opened.add(store);
         store.open();
         return store;
