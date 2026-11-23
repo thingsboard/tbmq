@@ -191,7 +191,7 @@ class RocksDbStoreTest {
     }
 
     @Test
-    void aStoreWrittenAfterAFailedUpgradeGetsANewCheckpointThatHoldsTheWrite() throws RocksDBException {
+    void aStoreWrittenAfterAFailedUpgradeGetsANewCheckpointThatHoldsTheWriteAndKeepsTheFirst() throws RocksDBException {
         Path path = dir.resolve("store");
         createWithFamilies(path, List.of("meta"));
         assertThatThrownBy(() -> openMigrating(path, List.of(writingThenFailingStep()))).hasMessageContaining("boom");
@@ -199,7 +199,8 @@ class RocksDbStoreTest {
         withRawFamily(path, StoreColumnFamily.CLIENT_SESSION, (db, cf) -> db.put(cf, bytes("c1"), bytes("by the older build")));
         ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
         try {
-            openMigrating(path, List.of(new Schema1To2Step()));
+            // with store.backups.keep=1 the first checkpoint stays as well
+            openMigrating(path, 1, List.of(new Schema1To2Step()));
         } finally {
             releaseLog(StoreMigrationRunner.class, logged);
         }
@@ -221,7 +222,7 @@ class RocksDbStoreTest {
         closeAll();
         // a later build's unfinished upgrade, then a rollback to this build
         putMetaKey(dir, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY,
-                new StoreMigrationRunner.UpgradeRecord(7, "pre-upgrade-2-3").encode());
+                new StoreMigrationRunner.UpgradeRecord(7, "pre-upgrade-2-3", "pre-upgrade-2-3").encode());
         ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
         RocksDbStore store;
         try {
@@ -277,9 +278,14 @@ class RocksDbStoreTest {
     }
 
     private RocksDbStore openMigrating(Path path, List<StoreMigrationStep> steps) {
+        return openMigrating(path, 3, steps);
+    }
+
+    private RocksDbStore openMigrating(Path path, int keep, List<StoreMigrationStep> steps) {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.getBackups().setPath(dir.resolve("backups").toString());
+        properties.getBackups().setKeep(keep);
         RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
                 TestDiskSpaceMonitors.roomy(properties), steps);
         opened.add(store);

@@ -90,8 +90,9 @@ public class RocksDbStore {
     static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
     static final int JWT_SIGNING_KEY_BYTES = 64;
     // while an upgrade is unfinished: the 8-byte big-endian latest sequence number of the store right after the last
-    // write of this key, then the directory name (UTF-8) of the pre-upgrade checkpoint; removed by the last bump, and by
-    // a build that opens the store at its own schema
+    // write of this key, the directory name (UTF-8) of the checkpoint to resume with, one 0x00 byte and the directory
+    // name (UTF-8) of the upgrade's first pre-upgrade checkpoint; removed by the last bump, and by a build that opens the
+    // store at its own schema
     static final byte[] META_UPGRADE_CHECKPOINT_KEY = "upgrade_checkpoint".getBytes(StandardCharsets.UTF_8);
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
@@ -270,10 +271,10 @@ public class RocksDbStore {
         }
 
         @Override
-        public void bumpSchemaVersion(int version, String checkpoint) {
+        public void bumpSchemaVersion(int version, String checkpoint, String origin) {
             try (WriteBatch batch = new WriteBatch()) {
                 batch.put(handles.get(StoreColumnFamily.META), META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
-                writeWithUpgradeRecord(batch, checkpoint);
+                writeWithUpgradeRecord(batch, checkpoint, origin);
             } catch (RocksDBException e) {
                 throw failure(OP_WRITE, StoreColumnFamily.META, e);
             }
@@ -296,28 +297,30 @@ public class RocksDbStore {
         }
 
         @Override
-        public void recordUpgradeCheckpoint(String checkpoint) {
-            if (checkpoint == null) {
-                delete(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
-                return;
-            }
+        public void recordUpgradeCheckpoint(String checkpoint, String origin) {
             try (WriteBatch batch = new WriteBatch()) {
-                writeWithUpgradeRecord(batch, checkpoint);
+                writeWithUpgradeRecord(batch, checkpoint, origin);
             } catch (RocksDBException e) {
                 throw failure(OP_PUT, StoreColumnFamily.META, e);
             }
         }
 
+        @Override
+        public void removeUpgradeRecord() {
+            delete(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+        }
+
         /**
-         * Adds the record of the upgrade with {@code checkpoint} to {@code batch} and writes the batch with a WAL sync.
-         * The record carries the sequence number the store is at right after this write: RocksDB gives every entry of a
-         * batch one sequence number, and nothing else writes while the open holds the write lock. A different number
-         * afterwards is only logged: the next open then finds the store changed and takes a new checkpoint.
+         * Adds the record of the upgrade with {@code checkpoint} and {@code origin} to {@code batch} and writes the batch
+         * with a WAL sync. The record carries the sequence number the store is at right after this write: RocksDB gives
+         * every entry of a batch one sequence number, and nothing else writes while the open holds the write lock. A
+         * different number afterwards is only logged: the next open then finds the store changed and takes a new
+         * checkpoint.
          */
-        private void writeWithUpgradeRecord(WriteBatch batch, String checkpoint) throws RocksDBException {
+        private void writeWithUpgradeRecord(WriteBatch batch, String checkpoint, String origin) throws RocksDBException {
             long expected = db.getLatestSequenceNumber() + batch.count() + 1;
             batch.put(handles.get(StoreColumnFamily.META), META_UPGRADE_CHECKPOINT_KEY,
-                    new StoreMigrationRunner.UpgradeRecord(expected, checkpoint).encode());
+                    new StoreMigrationRunner.UpgradeRecord(expected, checkpoint, origin).encode());
             try (WriteOptions synced = new WriteOptions().setSync(true)) {
                 db.write(synced, batch);
             }

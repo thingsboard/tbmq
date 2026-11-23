@@ -323,6 +323,25 @@ class StoreCheckpointsTest {
     }
 
     @Test
+    void retainNewestKeepsEveryProtectedCheckpointAndFillsUpToKeepWithTheNewestOthers() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path first = checkpointDir(backups, "pre-upgrade-1-2", 500);
+        Path older = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
+        Path newer = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509-2", 1500);
+        Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509-3", 2000);
+
+        StoreCheckpoints.retainNewest(backups, 3, List.of(current, first), null);
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, newer, first);
+        assertThat(older).doesNotExist();
+
+        StoreCheckpoints.retainNewest(backups, 1, List.of(current, first), null);
+
+        // beyond keep: a protected checkpoint is never deleted
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, first);
+    }
+
+    @Test
     void retainNewestNeverDeletesTheCheckpointTheStoreRunsFrom() throws IOException {
         Path backups = Files.createDirectories(dir.resolve("backups"));
         // the store was started from a restored checkpoint and upgraded again
@@ -331,7 +350,7 @@ class StoreCheckpointsTest {
         Path other = checkpointDir(backups, "pre-upgrade-2-3", 2000);
 
         Path store = dir.resolve("backups/../backups/pre-upgrade-1-2");
-        StoreCheckpoints.retainNewest(backups, 1, current, store);
+        StoreCheckpoints.retainNewest(backups, 1, List.of(current), store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
         assertThat(other).doesNotExist();
@@ -347,7 +366,7 @@ class StoreCheckpointsTest {
         Path current = checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 1000);
         checkpointDir(backups, "pre-upgrade-2-3", 2000);
 
-        StoreCheckpoints.retainNewest(backups, 1, current, store);
+        StoreCheckpoints.retainNewest(backups, 1, List.of(current), store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, holding);
         assertKeptWithAWarning(holding, store);
@@ -366,7 +385,7 @@ class StoreCheckpointsTest {
             return;
         }
 
-        StoreCheckpoints.retainNewest(backups, 1, current, link);
+        StoreCheckpoints.retainNewest(backups, 1, List.of(current), link);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current, running);
         assertKeptWithAWarning(running, link);
@@ -381,7 +400,7 @@ class StoreCheckpointsTest {
         // a sibling whose name starts with a checkpoint's name is not inside it
         Path store = Files.createDirectories(dir.resolve("backups").resolve("pre-upgrade-2-3-db"));
 
-        StoreCheckpoints.retainNewest(backups, 2, current, store);
+        StoreCheckpoints.retainNewest(backups, 2, List.of(current), store);
 
         assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(newest, current);
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN).isEmpty();

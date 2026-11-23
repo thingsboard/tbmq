@@ -178,12 +178,13 @@ class Schema1FixtureUpgradeTest {
                     .isInstanceOf(StoreException.class)
                     .hasMessageContaining("boom");
             store = null;
-            // the 8-byte big-endian latest sequence number of the store, written again by the failed step, then the
-            // directory name of the checkpoint in UTF-8
+            // the 8-byte big-endian latest sequence number of the store, written again by the failed step, the directory
+            // name of the checkpoint to resume with in UTF-8, one 0x00 byte, and the directory name of the first
+            // checkpoint of the upgrade in UTF-8, the same one here
             long latest = withReadOnly(upgraded, (db, handles) -> db.getLatestSequenceNumber());
             byte[] name = utf8("pre-upgrade-1-2");
-            assertThat(meta(upgraded, "upgrade_checkpoint"))
-                    .isEqualTo(ByteBuffer.allocate(Long.BYTES + name.length).putLong(latest).put(name).array());
+            assertThat(meta(upgraded, "upgrade_checkpoint")).isEqualTo(ByteBuffer.allocate(Long.BYTES + 2 * name.length + 1)
+                    .putLong(latest).put(name).put((byte) 0).put(name).array());
             assertThat(meta(upgraded, "schema_version")).isEqualTo(new byte[]{0, 0, 0, 1});
         }
 

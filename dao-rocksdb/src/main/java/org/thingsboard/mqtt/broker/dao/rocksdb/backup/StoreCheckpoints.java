@@ -28,6 +28,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -113,20 +114,22 @@ public final class StoreCheckpoints {
      * clock that was behind when it was taken or a modification time of an older one moved forward.
      */
     public static void retainNewest(Path backupsPath, int keep, Path protect) {
-        retainNewest(backupsPath, keep, protect, null);
+        retainNewest(backupsPath, keep, protect == null ? List.of() : List.of(protect), null);
     }
 
     /**
-     * Deletes all but {@code keep} checkpoint directories of {@code backupsPath}: {@code protect} and the directory
-     * that is or holds {@code storePath}, when they are among them, and the newest of the others. Neither is ever
-     * deleted: the checkpoint just taken survives a clock that was behind when it was taken or a modification time of
-     * an older one moved forward, and a store started from a checkpoint directory keeps running from it.
+     * Deletes all but {@code keep} checkpoint directories of {@code backupsPath}: every directory of {@code protect}
+     * and the directory that is or holds {@code storePath}, when they are among them, and the newest of the others up
+     * to {@code keep} in all. None of those is ever deleted, even beyond {@code keep}: the checkpoint just taken
+     * survives a clock that was behind when it was taken or a modification time of an older one moved forward, the
+     * first checkpoint of an upgrade survives the checkpoints of the starts that could not resume with it, and a store
+     * started from a checkpoint directory keeps running from it.
      */
-    public static void retainNewest(Path backupsPath, int keep, Path protect, Path storePath) {
+    public static void retainNewest(Path backupsPath, int keep, Collection<Path> protect, Path storePath) {
         List<CheckpointInfo> others = new ArrayList<>();
         int kept = Math.max(keep, 0);
         for (CheckpointInfo checkpoint : list(backupsPath)) {
-            if (protect != null && isSameDir(checkpoint.path(), protect)) {
+            if (protect.stream().anyMatch(path -> isSameDir(checkpoint.path(), path))) {
                 kept--;
             } else if (storePath != null && holds(checkpoint.path(), storePath)) {
                 log.warn("Kept the checkpoint {} because the store at {} runs from it", checkpoint.path(), storePath);
