@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.testsupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TestRule;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.thingsboard.mqtt.broker.testsupport.cluster.ClusterEditionTestInfrastructure;
 
 import java.io.IOException;
@@ -28,7 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +47,16 @@ class EditionTestInfrastructureTest {
         assertThat(ServiceLoader.load(EditionTestInfrastructure.class).stream().map(ServiceLoader.Provider::type))
                 .containsExactly(ClusterEditionTestInfrastructure.class);
         assertThat(EditionTestInfrastructure.loadClassRule()).isNotNull();
+    }
+
+    @Test
+    void theClusterContextPropertiesAreTheEntriesOfSqlTestProperties() throws IOException {
+        Properties sqlTestProperties = PropertiesLoaderUtils.loadProperties(new ClassPathResource("sql-test.properties"));
+
+        assertThat(EditionTestInfrastructure.load().contextProperties())
+                .isNotEmpty()
+                .containsExactlyInAnyOrderEntriesOf(sqlTestProperties.entrySet().stream()
+                        .collect(Collectors.toMap(entry -> (String) entry.getKey(), Map.Entry::getValue)));
     }
 
     @Test

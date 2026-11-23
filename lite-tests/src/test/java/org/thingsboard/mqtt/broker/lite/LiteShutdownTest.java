@@ -55,12 +55,12 @@ import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 import org.thingsboard.mqtt.broker.actors.client.service.handlers.MqttPublishHandler;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.will.DefaultLastWillService;
 import org.thingsboard.mqtt.broker.standalone.pipeline.PartitionedWorkers;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneDeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandalonePublishMsgQueue;
 import org.thingsboard.mqtt.broker.standalone.pipeline.StandaloneShutdownCoordinator;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -92,7 +92,7 @@ import static org.awaitility.Awaitility.await;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 @ActiveProfiles("test")
-@DaoSqlTest
+@EditionTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, DirtiesContextTestExecutionListener.class})
 public class LiteShutdownTest {

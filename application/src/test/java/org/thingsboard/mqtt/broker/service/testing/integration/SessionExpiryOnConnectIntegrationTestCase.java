@@ -40,7 +40,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -59,7 +58,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @TestPropertySource(properties = {
         "mqtt.client-session-expiry.cron=0 0 0 29 2 ?" // effectively never: midnight on Feb 29th
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class SessionExpiryOnConnectIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

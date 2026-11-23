@@ -25,7 +25,6 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractRequestResponseIntegrationTestCase;
 
@@ -38,7 +37,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppRequestResponseIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppRequestResponseIntegrationTestCase extends AbstractRequestResponseIntegrationTestCase {
 

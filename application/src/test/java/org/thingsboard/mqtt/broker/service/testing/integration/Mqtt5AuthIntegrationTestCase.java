@@ -51,7 +51,6 @@ import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient.Mechanism;
@@ -74,7 +73,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Mqtt5AuthIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

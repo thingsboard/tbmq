@@ -35,7 +35,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
@@ -48,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 @TestPropertySource(properties = {
         "mqtt.client-session-expiry.cron=* * * ? * *" // every second
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

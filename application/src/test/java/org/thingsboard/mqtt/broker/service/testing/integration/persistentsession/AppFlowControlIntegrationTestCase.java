@@ -25,7 +25,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractFlowControlIntegrationTestCase;
 
@@ -36,7 +35,6 @@ import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractFl
         "mqtt.max-in-flight-msgs=500",
         "queue.kafka.application-persisted-msg.additional-consumer-config=fetch.min.bytes:1000"
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppFlowControlIntegrationTestCase extends AbstractFlowControlIntegrationTestCase {
 

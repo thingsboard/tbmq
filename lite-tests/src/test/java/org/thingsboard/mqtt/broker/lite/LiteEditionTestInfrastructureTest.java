@@ -22,6 +22,7 @@ import org.junit.runners.model.Statement;
 import org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure;
 import org.thingsboard.mqtt.broker.testsupport.lite.LiteEditionTestInfrastructure;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ServiceLoader;
@@ -35,6 +36,11 @@ class LiteEditionTestInfrastructureTest {
     void exactlyTheLiteInfrastructureIsOnTheLiteTestClasspath() {
         assertThat(ServiceLoader.load(EditionTestInfrastructure.class).stream().map(ServiceLoader.Provider::type))
                 .containsExactly(LiteEditionTestInfrastructure.class);
+    }
+
+    @Test
+    void theLiteContextPropertiesAreEmpty() {
+        assertThat(EditionTestInfrastructure.load().contextProperties()).isEmpty();
     }
 
     @Test

@@ -64,7 +64,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
 
 import javax.security.auth.x500.X500Principal;
@@ -89,7 +88,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = JwtJwksMtlsAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
 
-@DaoSqlTest
 public class LookupEndpointsControllerTest extends AbstractControllerTest {
 
     private static final String LEGACY_SUFFIX = "Legacy";

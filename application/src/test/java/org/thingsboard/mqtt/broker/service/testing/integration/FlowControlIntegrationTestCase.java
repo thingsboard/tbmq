@@ -31,7 +31,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractFlowControlIntegrationTestCase;
 
 import java.util.concurrent.CountDownLatch;
@@ -43,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 @TestPropertySource(properties = {
         "mqtt.max-in-flight-msgs=500",
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class FlowControlIntegrationTestCase extends AbstractFlowControlIntegrationTestCase {
 

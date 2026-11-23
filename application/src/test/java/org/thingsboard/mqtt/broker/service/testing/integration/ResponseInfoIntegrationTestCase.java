@@ -30,7 +30,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 @TestPropertySource(properties = {
         "mqtt.response-info=test/"
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class ResponseInfoIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

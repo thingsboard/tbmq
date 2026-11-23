@@ -1046,14 +1046,6 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker</groupId>
-                <artifactId>dao-sql</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-                <classifier>lite-tests</classifier>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>application</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>

@@ -41,7 +41,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -67,7 +66,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Qos0PublishDisconnectRaceIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class Qos0PublishDisconnectRaceIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

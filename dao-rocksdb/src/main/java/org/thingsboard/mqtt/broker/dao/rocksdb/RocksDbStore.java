@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -81,6 +82,8 @@ public class RocksDbStore {
     static final byte[] META_SCHEMA_VERSION_KEY = "schema_version".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
+    static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
+    static final int JWT_SIGNING_KEY_BYTES = 64;
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
 
@@ -214,6 +217,23 @@ public class RocksDbStore {
         }
         otherHandles.addAll(opened.subList(known, opened.size()));
         meta = loadOrInitMeta(path);
+        ensureJwtSigningKey();
+    }
+
+    /**
+     * Writes the per-install JWT signing key, once: a store that has one keeps it, so tokens survive restarts and a
+     * restored backup brings its key with it. The key is never logged.
+     */
+    private void ensureJwtSigningKey() throws RocksDBException {
+        ColumnFamilyHandle metaHandle = handles.get(StoreColumnFamily.META);
+        if (db.get(metaHandle, META_JWT_SIGNING_KEY) != null) {
+            return;
+        }
+        byte[] key = new byte[JWT_SIGNING_KEY_BYTES];
+        new SecureRandom().nextBytes(key);
+        try (WriteOptions synced = new WriteOptions().setSync(true)) {
+            db.put(metaHandle, synced, META_JWT_SIGNING_KEY, key);
+        }
     }
 
     /**
@@ -380,6 +400,22 @@ public class RocksDbStore {
         RocksDB database = acquire(OP_PUT, cf);
         try {
             database.put(handles.get(cf), writeOptions, key, value);
+        } catch (RocksDBException e) {
+            throw failure(OP_PUT, cf, e);
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Puts a key of the {@code meta} column family with a WAL sync, whatever {@code store.wal-sync} says: a meta key
+     * records a state that must survive a crash right after it is written.
+     */
+    void putMetaSynced(byte[] key, byte[] value) {
+        StoreColumnFamily cf = StoreColumnFamily.META;
+        RocksDB database = acquire(OP_PUT, cf);
+        try (WriteOptions synced = new WriteOptions().setSync(true)) {
+            database.put(handles.get(cf), synced, key, value);
         } catch (RocksDBException e) {
             throw failure(OP_PUT, cf, e);
         } finally {

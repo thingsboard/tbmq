@@ -393,6 +393,85 @@ class RocksDbStoreTest {
                 .isInstanceOf(StoreException.class).hasMessageContaining("scan meta");
         assertThatThrownBy(store::syncWal).isInstanceOf(StoreException.class);
         assertThatThrownBy(store::meta).isInstanceOf(StoreException.class);
+        assertThatThrownBy(() -> store.putMetaSynced(bytes("k"), bytes("v")))
+                .isInstanceOf(StoreException.class).hasMessageContaining("put to meta");
+    }
+
+    @Test
+    void aSyncedMetaPutIsReadableAfterCloseAndReopen() {
+        RocksDbStore store = open(dir);
+        store.putMetaSynced(bytes("marker"), new byte[]{1});
+        closeAll();
+
+        assertThat(open(dir).get(StoreColumnFamily.META, bytes("marker"))).isEqualTo(new byte[]{1});
+    }
+
+    @Test
+    void aNewStoreGetsA64ByteKeyThatSurvivesReopen() {
+        byte[] key = open(dir).get(StoreColumnFamily.META, bytes("jwt_signing_key"));
+
+        // the meta key name is on-disk schema: a rename gives every existing install a new key
+        assertThat(key).hasSize(64);
+        assertThat(key).isNotEqualTo(new byte[64]);
+        closeAll();
+
+        assertThat(open(dir).get(StoreColumnFamily.META, bytes("jwt_signing_key"))).isEqualTo(key);
+    }
+
+    @Test
+    void twoNewStoresGetDifferentKeys(@TempDir Path other) {
+        byte[] first = open(dir).get(StoreColumnFamily.META, bytes("jwt_signing_key"));
+        byte[] second = open(other).get(StoreColumnFamily.META, bytes("jwt_signing_key"));
+
+        assertThat(first).isNotEqualTo(second);
+    }
+
+    @Test
+    void aStoreWithoutAKeyGetsOneOnOpen() throws RocksDBException {
+        open(dir);
+        closeAll();
+        deleteMetaKey(dir, bytes("jwt_signing_key"));
+
+        RocksDbStore store = open(dir);
+
+        assertThat(store.get(StoreColumnFamily.META, bytes("jwt_signing_key"))).hasSize(64);
+    }
+
+    @Test
+    void anExistingKeyIsNeverReplacedOnOpen() throws RocksDBException {
+        open(dir);
+        closeAll();
+        byte[] chosen = new byte[]{1, 2, 3};
+        putMetaKey(dir, bytes("jwt_signing_key"), chosen);
+
+        assertThat(open(dir).get(StoreColumnFamily.META, bytes("jwt_signing_key"))).isEqualTo(chosen);
+    }
+
+    private static void deleteMetaKey(Path path, byte[] key) throws RocksDBException {
+        withRawMeta(path, (db, meta) -> db.delete(meta, key));
+    }
+
+    private static void putMetaKey(Path path, byte[] key, byte[] value) throws RocksDBException {
+        withRawMeta(path, (db, meta) -> db.put(meta, key, value));
+    }
+
+    private interface RawMetaAction {
+        void run(RocksDB db, ColumnFamilyHandle meta) throws RocksDBException;
+    }
+
+    private static void withRawMeta(Path path, RawMetaAction action) throws RocksDBException {
+        try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
+            List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
+            descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
+            for (StoreColumnFamily cf : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(cf.columnFamilyName()), options));
+            }
+            List<ColumnFamilyHandle> handles = new ArrayList<>();
+            try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors, handles)) {
+                action.run(raw, handles.get(StoreColumnFamily.META.ordinal() + 1));
+                handles.forEach(ColumnFamilyHandle::close);
+            }
+        }
     }
 
     @Test

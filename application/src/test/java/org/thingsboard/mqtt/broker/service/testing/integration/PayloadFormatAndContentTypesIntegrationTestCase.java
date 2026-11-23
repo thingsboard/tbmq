@@ -29,7 +29,6 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractPayloadFormatAndContentTypesIntegrationTestCase;
@@ -46,7 +45,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = PayloadFormatAndContentTypesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPayloadFormatAndContentTypesIntegrationTestCase {
 

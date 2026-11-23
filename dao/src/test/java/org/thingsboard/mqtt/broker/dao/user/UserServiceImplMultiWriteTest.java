@@ -25,11 +25,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -105,6 +107,46 @@ class UserServiceImplMultiWriteTest {
         InOrder order = inOrder(userCredentialsDao, userDao);
         order.verify(userCredentialsDao).removeById(credentialsId);
         order.verify(userDao).removeById(userId);
+    }
+
+    @Test
+    void aUserWithoutCredentialsGetsDisabledOnesWithAnActivateToken() {
+        UUID userId = UUID.randomUUID();
+        when(userDao.findById(userId)).thenReturn(user(userId));
+        when(userCredentialsDao.findByUserId(userId)).thenReturn(null);
+        when(userCredentialsDao.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserCredentials created = userService.createUserCredentials(userId);
+
+        ArgumentCaptor<UserCredentials> saved = ArgumentCaptor.forClass(UserCredentials.class);
+        verify(userCredentialsDao).save(saved.capture());
+        assertThat(saved.getValue().getId()).isNull();
+        assertThat(saved.getValue().getUserId()).isEqualTo(userId);
+        assertThat(saved.getValue().isEnabled()).isFalse();
+        assertThat(saved.getValue().getActivateToken()).isNotEmpty();
+        assertThat(saved.getValue().getPassword()).isNull();
+        assertThat(created).isSameAs(saved.getValue());
+    }
+
+    @Test
+    void aUserThatHasCredentialsGetsNoSecondOnes() {
+        UUID userId = UUID.randomUUID();
+        when(userDao.findById(userId)).thenReturn(user(userId));
+        when(userCredentialsDao.findByUserId(userId)).thenReturn(credentials(UUID.randomUUID(), userId));
+
+        assertThatThrownBy(() -> userService.createUserCredentials(userId)).isInstanceOf(DataValidationException.class);
+
+        verify(userCredentialsDao, never()).save(any());
+    }
+
+    @Test
+    void aMissingUserGetsNoCredentials() {
+        UUID userId = UUID.randomUUID();
+        when(userDao.findById(userId)).thenReturn(null);
+
+        assertThatThrownBy(() -> userService.createUserCredentials(userId)).isInstanceOf(DataValidationException.class);
+
+        verify(userCredentialsDao, never()).save(any());
     }
 
     private static User user(UUID id) {

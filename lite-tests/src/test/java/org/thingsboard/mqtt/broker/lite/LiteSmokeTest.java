@@ -48,7 +48,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -59,6 +58,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.standalone.application.NoOpApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -76,7 +76,7 @@ import static org.awaitility.Awaitility.await;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 @ActiveProfiles("test")
-@DaoSqlTest
+@EditionTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class LiteSmokeTest {
 

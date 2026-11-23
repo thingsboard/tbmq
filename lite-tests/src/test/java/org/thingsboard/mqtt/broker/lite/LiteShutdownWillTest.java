@@ -46,9 +46,9 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -76,7 +76,7 @@ import static org.mockito.Mockito.doAnswer;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 @ActiveProfiles("test")
-@DaoSqlTest
+@EditionTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, DirtiesContextTestExecutionListener.class})
 public class LiteShutdownWillTest {

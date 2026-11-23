@@ -30,7 +30,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -57,7 +56,6 @@ import static org.junit.Assert.assertEquals;
         "mqtt.rate-limits.total.config=100:600",
         "mqtt.rate-limits.total.block-size=4"
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaAppPersistedIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

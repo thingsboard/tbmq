@@ -27,7 +27,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,7 +41,6 @@ import static org.junit.Assert.assertTrue;
         "mqtt.rate-limits.total.config=5:600",
         "mqtt.rate-limits.total.block-size=1"
 })
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaRefusalIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

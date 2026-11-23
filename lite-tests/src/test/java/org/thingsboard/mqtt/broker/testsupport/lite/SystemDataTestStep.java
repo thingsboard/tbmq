@@ -20,29 +20,44 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
+import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.standalone.store.ManagementDataStep;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Gives a test context the management data of {@code sql/system-data.sql} (module {@code dao-sql}, test resources):
+ * Gives a test context the management data of {@code sql/system-data.sql} (module {@code dao-sql}, test resources, which
+ * the golden file {@code sql/system-data-rows.json} next to it pins to what the SQL file inserts):
  * the system administrator and its credentials, the three settings and the five auth providers, all disabled. The rows
  * are written through the DAO beans, so each lands in whichever backend its DAO uses; a row that its DAO already finds,
- * as the one {@code PostgreSqlInitializer} inserts while a DAO group is on PostgreSQL, is left as it is.
+ * as after a restart over the same store, is left as it is.
  * <p>
  * The constants below mirror that SQL file: the ids, the created times, the password hash and the JSON values.
- * {@code SystemDataTestStepMirrorTest} compares what the step saves with the rows the SQL file inserts.
+ * {@code SystemDataTestStepMirrorTest} compares what the step saves with that golden file.
+ * <p>
+ * The step runs after the install seed. When this start seeded the store ({@link StoreSeedState#seededInThisStart()}),
+ * the step first removes the seeded rows that the file does not hold, or holds with other values: the sysadmin's default
+ * WebSocket connection, the system WebSocket credentials, the five admin settings and the five auth providers; the
+ * insert pass then writes the file's settings and providers. The seeded sysadmin is kept: it has the file's email and
+ * password, under an id of its own. On a start over a store seeded before, only the insert pass runs.
  * <p>
  * With {@code lite.test.system-data.enabled=false} the step does nothing, for the tests that start from the real
  * defaults. The broker of the kill -9 test runs without the test classpath, so {@code LiteBrokerProcess} copies this
@@ -137,19 +152,30 @@ public class SystemDataTestStep implements ManagementDataStep {
               }
             }""";
 
+    // the settings the install seed writes
+    private static final List<String> SEEDED_SETTINGS_KEYS = List.of(GENERAL_SETTINGS_KEY, MAIL_SETTINGS_KEY,
+            SysAdminSettingType.CONNECTIVITY.getKey(), SysAdminSettingType.WEBSOCKET.getKey(), MQTT_AUTHORIZATION_SETTINGS_KEY);
+
     private final UserDao userDao;
     private final UserCredentialsDao userCredentialsDao;
     private final AdminSettingsDao adminSettingsDao;
     private final MqttAuthProviderDao mqttAuthProviderDao;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final WebSocketConnectionDao webSocketConnectionDao;
+    private final StoreSeedState storeSeedState;
     private final boolean enabled;
 
     public SystemDataTestStep(UserDao userDao, UserCredentialsDao userCredentialsDao, AdminSettingsDao adminSettingsDao,
-                              MqttAuthProviderDao mqttAuthProviderDao,
+                              MqttAuthProviderDao mqttAuthProviderDao, MqttClientCredentialsService mqttClientCredentialsService,
+                              WebSocketConnectionDao webSocketConnectionDao, StoreSeedState storeSeedState,
                               @Value("${lite.test.system-data.enabled:true}") boolean enabled) {
         this.userDao = userDao;
         this.userCredentialsDao = userCredentialsDao;
         this.adminSettingsDao = adminSettingsDao;
         this.mqttAuthProviderDao = mqttAuthProviderDao;
+        this.mqttClientCredentialsService = mqttClientCredentialsService;
+        this.webSocketConnectionDao = webSocketConnectionDao;
+        this.storeSeedState = storeSeedState;
         this.enabled = enabled;
     }
 
@@ -157,6 +183,9 @@ public class SystemDataTestStep implements ManagementDataStep {
     public void apply() {
         if (!enabled) {
             return;
+        }
+        if (storeSeedState.seededInThisStart()) {
+            removeTheInstallSeedBeyondTheSysadmin();
         }
         insertSysadmin();
         insertSettings(GENERAL_SETTINGS_ID, GENERAL_SETTINGS_KEY, GENERAL_SETTINGS_JSON, SYSTEM_CREATED_TIME);
@@ -169,19 +198,47 @@ public class SystemDataTestStep implements ManagementDataStep {
         insertAuthProvider(HTTP_PROVIDER_ID, MqttAuthProviderType.HTTP, HTTP_PROVIDER_JSON);
     }
 
+    /**
+     * The default WebSocket connection goes before the system WebSocket credentials it refers to.
+     */
+    private void removeTheInstallSeedBeyondTheSysadmin() {
+        User sysadmin = userDao.findByEmail(SYSADMIN_EMAIL);
+        if (sysadmin != null) {
+            WebSocketConnection connection = webSocketConnectionDao.findByUserIdAndName(sysadmin.getId(),
+                    BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME);
+            if (connection != null) {
+                webSocketConnectionDao.removeById(connection.getId());
+            }
+        }
+        MqttClientCredentials systemCredentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
+        if (systemCredentials != null) {
+            mqttClientCredentialsService.deleteCredentials(systemCredentials);
+        }
+        SEEDED_SETTINGS_KEYS.forEach(adminSettingsDao::removeByKey);
+        for (MqttAuthProviderType type : MqttAuthProviderType.values()) {
+            MqttAuthProvider provider = mqttAuthProviderDao.findByType(type);
+            if (provider != null) {
+                mqttAuthProviderDao.removeById(provider.getId());
+            }
+        }
+    }
+
     private void insertSysadmin() {
-        if (userDao.findByEmail(SYSADMIN_EMAIL) == null) {
-            User sysadmin = new User(SYSADMIN_ID);
+        User sysadmin = userDao.findByEmail(SYSADMIN_EMAIL);
+        if (sysadmin == null) {
+            sysadmin = new User(SYSADMIN_ID);
             sysadmin.setCreatedTime(SYSTEM_CREATED_TIME);
             sysadmin.setEmail(SYSADMIN_EMAIL);
             sysadmin.setAuthority(Authority.SYS_ADMIN);
             userDao.save(sysadmin);
         }
-        if (userCredentialsDao.findByUserId(SYSADMIN_ID) == null) {
+        // the sysadmin of a seeded store has an id of its own
+        UUID sysadminId = sysadmin.getId();
+        if (userCredentialsDao.findByUserId(sysadminId) == null) {
             UserCredentials credentials = new UserCredentials();
             credentials.setId(SYSADMIN_CREDENTIALS_ID);
             credentials.setCreatedTime(SYSTEM_CREATED_TIME);
-            credentials.setUserId(SYSADMIN_ID);
+            credentials.setUserId(sysadminId);
             credentials.setEnabled(true);
             credentials.setPassword(SYSADMIN_PASSWORD_HASH);
             userCredentialsDao.save(credentials);

@@ -29,7 +29,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.ClientLatestStatsBuffer;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClientImpl;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
@@ -49,7 +48,6 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = ClientStatsLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class ClientStatsLiteTest extends AbstractControllerTest {
 

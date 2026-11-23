@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
@@ -30,7 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The application shared subscription endpoints of {@link LookupEndpointsControllerTest}: Lite has no application
  * shared subscriptions, so these are kept out of the suite that runs there.
  */
-@DaoSqlTest
 public class AppSharedSubscriptionLookupControllerTest extends AbstractControllerTest {
 
     @Autowired

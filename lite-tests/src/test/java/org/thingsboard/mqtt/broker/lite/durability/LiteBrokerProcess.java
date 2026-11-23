@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -46,8 +47,8 @@ import java.util.stream.Stream;
  * ({@code target/lite-runtime-classpath.txt}, written by the build) with its output in {@code target/lite-broker-<n>.log}.
  * <p>
  * The ports are system properties, which win over the {@code LISTENER_*} variables a developer or a build agent may
- * have set: the MQTT port the caller chose, a free HTTP port, and no WebSocket, SSL or WSS listener. PostgreSQL is the
- * caller's {@link LiteTestDatabase}.
+ * have set: the MQTT port the caller chose, a free HTTP port, and no WebSocket, SSL or WSS listener. The broker needs no
+ * external service: it starts on the store directory the caller gives it, which may be empty.
  * <p>
  * No broker outlives the tests: a shutdown hook kills the ones still running when the test JVM exits, and
  * {@link LiteBrokerLauncher} halts a broker whose test JVM was killed.
@@ -59,6 +60,7 @@ public final class LiteBrokerProcess {
     private static final String LAUNCHER_DIR = "lite-broker-launcher";
     // without it, the heap would default to a quarter of the build agent's memory
     private static final String MAX_HEAP = "1g";
+    private static final String SYSTEM_DATA_ENABLED = "lite.test.system-data.enabled";
     private static final String HOST = "127.0.0.1";
     private static final Duration EXIT_TIMEOUT = Duration.ofSeconds(30);
     private static final long PORT_POLL_INTERVAL_MS = 200;
@@ -84,27 +86,9 @@ public final class LiteBrokerProcess {
     /**
      * @param extraProperties further system properties of the broker, which win over the ones this method sets
      */
-    public static LiteBrokerProcess start(Path storePath, LiteTestDatabase db, int mqttPort, Map<String, String> extraProperties) {
+    public static LiteBrokerProcess start(Path storePath, int mqttPort, Map<String, String> extraProperties) {
         Path targetDir = targetDir();
-        Map<String, String> properties = new LinkedHashMap<>();
-        properties.put("store.path", storePath.toString());
-        properties.put("spring.datasource.url", db.jdbcUrl());
-        properties.put("spring.datasource.username", db.username());
-        properties.put("spring.datasource.password", db.password());
-        properties.put("spring.datasource.driverClassName", "org.postgresql.Driver");
-        properties.put("listener.tcp.bind_port", String.valueOf(mqttPort));
-        properties.put("server.port", String.valueOf(freePort()));
-        properties.put("listener.ws.enabled", "false");
-        properties.put("listener.ssl.enabled", "false");
-        properties.put("listener.wss.enabled", "false");
-        // The overrides below mirror lite-tests/src/test/resources/application-test.properties, which the child does
-        // not load: an override added to one must be added to the other.
-        // no free-space watermark: the broker must not refuse writes because the build host's disk is nearly full
-        properties.put("store.disk.min-free-percent", "0");
-        properties.put("store.disk.min-free-bytes", "0");
-        // no release check: it would call api.github.com from every forked broker
-        properties.put("app.version-check.enabled", "false");
-        properties.putAll(extraProperties);
+        Map<String, String> properties = brokerProperties(storePath, mqttPort, freePort(), extraProperties, System::getProperty);
 
         List<String> command = new ArrayList<>();
         command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
@@ -126,6 +110,36 @@ public final class LiteBrokerProcess {
         RUNNING.add(process);
         log.info("Started a broker (pid {}) on MQTT port {} and store {}, output in {}", process.pid(), mqttPort, storePath, logFile);
         return new LiteBrokerProcess(process, mqttPort, logFile);
+    }
+
+    /**
+     * The system properties of the broker's JVM. {@value #SYSTEM_DATA_ENABLED}, which switches the management data of
+     * {@link SystemDataTestStep} off, is passed on when the test JVM has it set; the broker then sees what the test sees.
+     *
+     * @param systemProperty reads a system property of the test JVM, {@code null} for one that is not set
+     */
+    static Map<String, String> brokerProperties(Path storePath, int mqttPort, int httpPort, Map<String, String> extraProperties,
+                                                Function<String, String> systemProperty) {
+        Map<String, String> properties = new LinkedHashMap<>();
+        properties.put("store.path", storePath.toString());
+        properties.put("listener.tcp.bind_port", String.valueOf(mqttPort));
+        properties.put("server.port", String.valueOf(httpPort));
+        properties.put("listener.ws.enabled", "false");
+        properties.put("listener.ssl.enabled", "false");
+        properties.put("listener.wss.enabled", "false");
+        // The overrides below mirror lite-tests/src/test/resources/application-test.properties, which the child does
+        // not load: an override added to one must be added to the other.
+        // no free-space watermark: the broker must not refuse writes because the build host's disk is nearly full
+        properties.put("store.disk.min-free-percent", "0");
+        properties.put("store.disk.min-free-bytes", "0");
+        // no release check: it would call api.github.com from every forked broker
+        properties.put("app.version-check.enabled", "false");
+        String systemDataEnabled = systemProperty.apply(SYSTEM_DATA_ENABLED);
+        if (systemDataEnabled != null) {
+            properties.put(SYSTEM_DATA_ENABLED, systemDataEnabled);
+        }
+        properties.putAll(extraProperties);
+        return properties;
     }
 
     /**

@@ -30,8 +30,7 @@
 
     <!--
         Runs tests on a Lite classpath, taken from msa/tbmq-lite: the application and dao-rocksdb, without
-        queue-kafka and cache-redis, plus dao-sql, which tbmq-lite excludes (see below). It holds no main code
-        and is never installed or deployed.
+        queue-kafka, cache-redis and the SQL infrastructure. It holds no main code and is never installed or deployed.
     -->
 
     <properties>
@@ -42,17 +41,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <!--
-                Transitional: the management data is still in PostgreSQL, so the Lite tests still need the JPA side.
-                Runtime scope, because the child broker of the kill -9 test runs on the runtime classpath. Goes away,
-                together with the dao-sql test-jar below, once the management data leaves PostgreSQL.
-            -->
-            <groupId>org.thingsboard.mqtt-broker</groupId>
-            <artifactId>dao-sql</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
         <dependency>
             <!-- the classpath the standalone image ships: application without queue-kafka and cache-redis, plus dao-rocksdb -->
             <groupId>org.thingsboard.mqtt-broker.msa</groupId>
@@ -86,15 +74,6 @@
             <classifier>lite-tests</classifier>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <!-- the PostgreSQL test-database setup, without dao-sql's test configuration -->
-            <groupId>org.thingsboard.mqtt-broker</groupId>
-            <artifactId>dao-sql</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <classifier>lite-tests</classifier>
-            <scope>test</scope>
-        </dependency>
         <!-- the application's test dependencies, except Kafka's test container -->
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -104,16 +83,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.dbunit</groupId>
-            <artifactId>dbunit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.springtestdbunit</groupId>
-            <artifactId>spring-test-dbunit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -139,16 +108,6 @@
         <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>jdbc</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -208,6 +167,11 @@
                         <id>ban-cluster-infrastructure</id>
                         <phase>validate</phase>
                     </execution>
+                    <execution>
+                        <!-- test scope included: no SQL class may reach a Lite test either -->
+                        <id>ban-sql-infrastructure</id>
+                        <phase>validate</phase>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -218,20 +182,6 @@
                         <!-- inherited from the root pom for the modules that compile protos: this one has none -->
                         <id>copy-protoc</id>
                         <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <!-- with target/test-classes, the classpath of LiteTestDatabase.main, which prepares a database for the capacity runs -->
-                        <id>lite-test-classpath</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>build-classpath</goal>
-                        </goals>
-                        <configuration>
-                            <includeScope>test</includeScope>
-                            <!-- the tbmq-lite pom brings dependencies, not classes -->
-                            <excludeTypes>pom</excludeTypes>
-                            <outputFile>${project.build.directory}/lite-test-classpath.txt</outputFile>
-                        </configuration>
                     </execution>
                     <execution>
                         <!--

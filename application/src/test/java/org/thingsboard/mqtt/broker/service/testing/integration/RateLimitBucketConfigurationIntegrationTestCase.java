@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.cache.CacheProperties;
 import org.thingsboard.mqtt.broker.config.ClientsLimitProperties;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitRedisCacheServiceImpl;
 
 import java.time.Duration;
@@ -46,7 +45,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = RateLimitBucketConfigurationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class RateLimitBucketConfigurationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -35,11 +36,15 @@ import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
+import java.util.List;
+
 @Service
 @Profile("install")
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
+
+    public static final String SYSADMIN_EMAIL = "sysadmin@thingsboard.org";
 
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
@@ -52,17 +57,13 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createAdmin() throws ThingsboardException {
-        AdminDto adminDto = AdminDto.fromEmail("sysadmin@thingsboard.org");
+        AdminDto adminDto = AdminDto.fromEmail(SYSADMIN_EMAIL);
         sysadmin = adminService.createAdmin(adminDto, false);
     }
 
     @Override
     public void createAdminSettings() {
-        adminSettingsService.saveAdminSettings(GeneralSettings.createDefaults());
-        adminSettingsService.saveAdminSettings(MailSettings.createDefaults());
-        adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
-        adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
-        adminSettingsService.saveAdminSettings(MqttAuthSettings.createDefaults());
+        defaultAdminSettings().forEach(adminSettingsService::saveAdminSettings);
     }
 
     @Override
@@ -77,11 +78,32 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createMqttAuthProviders() {
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider(true));
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultSslAuthProvider(false));
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultJwtAuthProvider(false));
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultScramAuthProvider(false));
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultHttpAuthProvider(false));
+        defaultAuthProviders().forEach(mqttAuthProviderService::saveAuthProvider);
+    }
+
+    /**
+     * The admin settings of a new installation, in the order they are saved. Each call creates new objects.
+     */
+    public static List<AdminSettings> defaultAdminSettings() {
+        return List.of(
+                GeneralSettings.createDefaults(),
+                MailSettings.createDefaults(),
+                ConnectivitySettings.createConnectivitySettings(),
+                WebSocketClientSettings.createWsClientSettings(),
+                MqttAuthSettings.createDefaults());
+    }
+
+    /**
+     * The auth providers of a new installation, in the order they are saved: Basic enabled, the others disabled. Each
+     * call creates new objects.
+     */
+    public static List<MqttAuthProvider> defaultAuthProviders() {
+        return List.of(
+                MqttAuthProvider.defaultBasicAuthProvider(true),
+                MqttAuthProvider.defaultSslAuthProvider(false),
+                MqttAuthProvider.defaultJwtAuthProvider(false),
+                MqttAuthProvider.defaultScramAuthProvider(false),
+                MqttAuthProvider.defaultHttpAuthProvider(false));
     }
 
 }

@@ -25,7 +25,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
@@ -49,7 +48,6 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Qos2SessionContextLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class Qos2SessionContextLiteTest extends AbstractLiteSpecCase {
 

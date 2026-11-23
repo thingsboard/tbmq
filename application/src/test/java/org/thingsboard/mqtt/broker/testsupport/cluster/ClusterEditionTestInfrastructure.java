@@ -25,6 +25,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * The cluster edition's test infrastructure: Kafka and Valkey in Testcontainers, started and stopped per test class.
@@ -54,6 +55,14 @@ public class ClusterEditionTestInfrastructure implements EditionTestInfrastructu
      */
     public static GenericContainer<?> valkey() {
         return VALKEY;
+    }
+
+    /**
+     * @return the entries of dao-sql's {@code sql-test.properties}: the PostgreSQL test database and JPA settings
+     */
+    @Override
+    public Map<String, Object> contextProperties() {
+        return EditionTestInfrastructure.classpathProperties("sql-test.properties");
     }
 
     @Override

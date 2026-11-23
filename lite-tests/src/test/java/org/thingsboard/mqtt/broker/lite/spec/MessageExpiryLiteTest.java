@@ -25,7 +25,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -40,7 +39,6 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = MessageExpiryLiteTest.class, loader = SpringBootContextLoader.class)
-@DaoSqlTest
 @RunWith(SpringRunner.class)
 public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
 
