@@ -25,14 +25,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class TarGzWriterTest {
 
@@ -125,6 +129,42 @@ class TarGzWriterTest {
     }
 
     @Test
+    void anEntryKeepsTheModeAndTheNumericOwnerOfItsSourceFile() throws IOException {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("unix"), "no unix file attributes");
+        Path file = Files.write(dir.resolve("000008.sst"), bytes("sst"));
+        Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("rw-------"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try (TarGzWriter tar = new TarGzWriter(out)) {
+            tar.addFile("db/000008.sst", file);
+            tar.addBytes("manifest.json", bytes("{}"));
+            tar.finish();
+        }
+
+        byte[] archive;
+        try (InputStream in = new GZIPInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+            archive = in.readAllBytes();
+        }
+        assertThat(octal(archive, 100, 8)).as("mode").isEqualTo(0600);
+        assertThat(octal(archive, 108, 8)).as("uid").isEqualTo(((Number) Files.getAttribute(file, "unix:uid")).longValue());
+        assertThat(octal(archive, 116, 8)).as("gid").isEqualTo(((Number) Files.getAttribute(file, "unix:gid")).longValue());
+        // empty owner and group names: tar -x as root takes the numeric ids
+        assertThat(Arrays.copyOfRange(archive, 265, 265 + 64)).containsOnly(0);
+        // an entry from bytes: 0644 and 0:0; it starts after the header and the padded 3 bytes of the file
+        assertThat(octal(archive, 1024 + 100, 8)).isEqualTo(0644);
+        assertThat(octal(archive, 1024 + 108, 8)).isZero();
+    }
+
+    @Test
+    void anIdBeyondTheOctalFieldIsWrittenInBase256() {
+        byte[] header = TarGzWriter.header("x", 0, 0, 0644, 3_000_000L, 7);
+
+        assertThat(header[108] & 0xff).isEqualTo(0x80);
+        assertThat(((header[113] & 0xff) << 16) | ((header[114] & 0xff) << 8) | (header[115] & 0xff)).isEqualTo(3_000_000);
+        assertThat(octal(header, 116, 8)).isEqualTo(7);
+    }
+
+    @Test
     void anArchiveClosedWithoutFinishIsTruncated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -162,6 +202,11 @@ class TarGzWriterTest {
 
         assertThatThrownBy(() -> tar.addFile("sub", subdir)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("not a regular file");
+    }
+
+    private static long octal(byte[] block, int offset, int length) {
+        String digits = new String(block, offset, length, StandardCharsets.US_ASCII).replace("\0", "").trim();
+        return Long.parseLong(digits, 8);
     }
 
     private static void readAll(InputStream in) throws IOException {

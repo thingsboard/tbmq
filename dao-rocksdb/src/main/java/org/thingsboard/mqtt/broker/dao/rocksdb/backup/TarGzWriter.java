@@ -26,12 +26,16 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 /**
  * Streams a gzip-compressed POSIX ustar archive of regular files to an output stream, through a fixed buffer, so an
- * archive of any size never sits in memory. Each entry is a regular file with mode 0644 and owner 0:0.
+ * archive of any size never sits in memory. Each entry is a regular file. A file added from disk keeps its permission
+ * bits and its numeric owner and group, with empty owner and group names, so {@code tar -x} as root restores the owner
+ * of the source and as another user gives the files to that user; where the file system has no unix attributes the
+ * entry gets mode 0644 and owner 0:0, as does an entry added from bytes.
  * <p>
  * An entry name of up to 100 bytes (UTF-8) goes into the name field; a longer one is split at a {@code /} into the
  * prefix field (up to 155 bytes) and the name field, and one that cannot be split so is refused. A size up to
@@ -48,7 +52,8 @@ public final class TarGzWriter implements Closeable {
     private static final int NAME_LENGTH = 100;
     private static final int PREFIX_LENGTH = 155;
     private static final int BUFFER_SIZE = 64 * 1024;
-    private static final int FILE_MODE = 0644;
+    private static final int DEFAULT_MODE = 0644;
+    private static final int PERMISSION_BITS = 07777;
 
     private static final int NAME_OFFSET = 0;
     private static final int MODE_OFFSET = 100;
@@ -94,7 +99,8 @@ public final class TarGzWriter implements Closeable {
             throw new IllegalArgumentException("Cannot add " + file + " to the archive: not a regular file");
         }
         long size = attributes.size();
-        gzip.write(header(name, size, attributes.lastModifiedTime().to(TimeUnit.SECONDS)));
+        Owner owner = Owner.of(file);
+        gzip.write(header(name, size, attributes.lastModifiedTime().to(TimeUnit.SECONDS), owner.mode(), owner.uid(), owner.gid()));
         long copied = 0;
         try (InputStream in = Files.newInputStream(file)) {
             while (copied < size) {
@@ -117,7 +123,7 @@ public final class TarGzWriter implements Closeable {
      */
     public void addBytes(String name, byte[] content) throws IOException {
         ensureWritable();
-        gzip.write(header(name, content.length, Instant.now().getEpochSecond()));
+        gzip.write(header(name, content.length, Instant.now().getEpochSecond(), DEFAULT_MODE, 0, 0));
         gzip.write(content);
         pad(content.length);
     }
@@ -165,25 +171,19 @@ public final class TarGzWriter implements Closeable {
      * The ustar header block of a regular file.
      */
     static byte[] header(String name, long size, long mtimeEpochSecond) {
+        return header(name, size, mtimeEpochSecond, DEFAULT_MODE, 0, 0);
+    }
+
+    static byte[] header(String name, long size, long mtimeEpochSecond, int mode, long uid, long gid) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative size " + size + " of the archive entry " + name);
         }
         byte[] header = new byte[BLOCK];
         putName(header, name);
-        putOctal(header, MODE_OFFSET, 8, FILE_MODE);
-        putOctal(header, UID_OFFSET, 8, 0);
-        putOctal(header, GID_OFFSET, 8, 0);
-        if (size <= MAX_OCTAL_SIZE) {
-            putOctal(header, SIZE_OFFSET, SIZE_LENGTH, size);
-        } else {
-            // base-256: the high bit of the first byte marks it, the rest is the size big-endian
-            header[SIZE_OFFSET] = (byte) 0x80;
-            long value = size;
-            for (int i = SIZE_OFFSET + SIZE_LENGTH - 1; i > SIZE_OFFSET; i--) {
-                header[i] = (byte) value;
-                value >>>= 8;
-            }
-        }
+        putOctal(header, MODE_OFFSET, 8, mode & PERMISSION_BITS);
+        putNumber(header, UID_OFFSET, 8, uid);
+        putNumber(header, GID_OFFSET, 8, gid);
+        putNumber(header, SIZE_OFFSET, SIZE_LENGTH, size);
         putOctal(header, MTIME_OFFSET, 12, Math.max(mtimeEpochSecond, 0));
         header[TYPE_OFFSET] = REGULAR_FILE;
         System.arraycopy(MAGIC, 0, header, MAGIC_OFFSET, MAGIC.length);
@@ -227,6 +227,26 @@ public final class TarGzWriter implements Closeable {
     }
 
     /**
+     * {@code value} in octal when it fits the field, otherwise in base-256: the high bit of the first byte marks it,
+     * the rest is the value big-endian.
+     */
+    private static void putNumber(byte[] header, int offset, int length, long value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("Negative value " + value + " for a ustar field");
+        }
+        if (value < 1L << (3 * (length - 1))) {
+            putOctal(header, offset, length, value);
+            return;
+        }
+        header[offset] = (byte) 0x80;
+        long rest = value;
+        for (int i = offset + length - 1; i > offset; i--) {
+            header[i] = (byte) rest;
+            rest >>>= 8;
+        }
+    }
+
+    /**
      * {@code value} as {@code length - 1} zero-padded octal digits and a NUL.
      */
     private static void putOctal(byte[] header, int offset, int length, long value) {
@@ -242,6 +262,24 @@ public final class TarGzWriter implements Closeable {
             header[offset + padding + i] = (byte) octal.charAt(i);
         }
         header[offset + length - 1] = 0;
+    }
+
+    /**
+     * The permission bits and the numeric owner and group of a file, from its unix attributes; mode 0644 and 0:0 where
+     * the file system has none.
+     */
+    record Owner(int mode, long uid, long gid) {
+
+        static Owner of(Path file) {
+            try {
+                Map<String, Object> unix = Files.readAttributes(file, "unix:mode,uid,gid", LinkOption.NOFOLLOW_LINKS);
+                return new Owner((Integer) unix.get("mode"), ((Number) unix.get("uid")).longValue(),
+                        ((Number) unix.get("gid")).longValue());
+            } catch (UnsupportedOperationException | IllegalArgumentException | IOException e) {
+                return new Owner(DEFAULT_MODE, 0, 0);
+            }
+        }
+
     }
 
     /**
