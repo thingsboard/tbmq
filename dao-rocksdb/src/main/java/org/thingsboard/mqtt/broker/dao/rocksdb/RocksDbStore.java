@@ -184,11 +184,23 @@ public class RocksDbStore {
                     path, memoryBudget.blockCacheBytes(), memoryBudget.writeBufferBytes(), meta.installId());
         } catch (RocksDBException e) {
             releaseNativeResources();
-            throw new StoreException("Cannot open the store at " + path + ": " + e.getMessage(), e);
+            throw refusal(path, e);
         } catch (RuntimeException e) {
             releaseNativeResources();
+            // the reads of the meta load and of the migrations come wrapped in a StoreException
+            RocksDBException corruption = StoreCorruptedException.corruptionIn(e);
+            if (corruption != null) {
+                throw StoreCorruptedException.of(path, properties.getBackups().getPath(), corruption, e);
+            }
             throw e;
         }
+    }
+
+    private StoreException refusal(String path, RocksDBException e) {
+        if (StoreCorruptedException.corruptionIn(e) != null) {
+            return StoreCorruptedException.of(path, properties.getBackups().getPath(), e, e);
+        }
+        return new StoreException("Cannot open the store at " + path + ": " + e.getMessage(), e);
     }
 
     private void doOpen(String path, WalSyncMode walSyncMode) throws RocksDBException {
