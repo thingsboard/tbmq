@@ -47,6 +47,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -72,6 +73,11 @@ class Schema1FixtureUpgradeTest {
     private static final int RETAINED_HEADER_SIZE = 6;
     private static final int RETAINED_CREATED_TIME_FIELD = 5;
     private static final int DEVICE_MSG_QUEUE_KEY_OFFSET = Long.BYTES + Integer.BYTES;
+    // ClientSessionInfoProto.sessionInfo, SessionInfoProto.sessionExpiryInterval, BlockedClientProto.expirationTime
+    private static final int CLIENT_SESSION_SESSION_INFO_FIELD = 2;
+    private static final int SESSION_INFO_SESSION_EXPIRY_INTERVAL_FIELD = 7;
+    private static final int BLOCKED_CLIENT_EXPIRATION_TIME_FIELD = 2;
+    private static final long TEN_YEARS_SEC = ChronoUnit.YEARS.getDuration().multipliedBy(10).toSeconds();
 
     @TempDir
     Path dir;
@@ -143,6 +149,8 @@ class Schema1FixtureUpgradeTest {
     /**
      * The store keeps absolute expiry times, so a fixture written with the default TTLs would expire a week later and
      * fail the upgrade tests for a reason that has nothing to do with the upgrade. This test names the entry instead.
+     * The Session Expiry Interval of fx-dev-1 counts from its stored disconnect time and a block ends at its stored
+     * expiration time, so those are checked as well.
      */
     @Test
     void theFixtureIsNotAboutToExpire() {
@@ -184,7 +192,36 @@ class Schema1FixtureUpgradeTest {
             return count;
         });
 
+        Long sessionExpiryInterval = withReadOnly(pristine, (db, handles) -> {
+            byte[] session = db.get(handles.get(StoreColumnFamily.CLIENT_SESSION.columnFamilyName()), utf8("fx-dev-1"));
+            assertThat(session).as("client session fx-dev-1").isNotNull();
+            byte[] sessionInfo = protoBytes(session, CLIENT_SESSION_SESSION_INFO_FIELD, "client session fx-dev-1");
+            assertThat(sessionInfo).as("session info of the client session fx-dev-1").isNotNull();
+            return protoVarint(sessionInfo, SESSION_INFO_SESSION_EXPIRY_INTERVAL_FIELD, "client session fx-dev-1");
+        });
+        if (sessionExpiryInterval == null || sessionExpiryInterval < TEN_YEARS_SEC) {
+            expiring.add("client session fx-dev-1: Session Expiry Interval " + sessionExpiryInterval + " s");
+        }
+        int blocked = withReadOnly(pristine, (db, handles) -> {
+            int count = 0;
+            try (RocksIterator it = db.newIterator(handles.get(StoreColumnFamily.BLOCKED_CLIENT.columnFamilyName()))) {
+                for (it.seekToFirst(); it.isValid(); it.next()) {
+                    count++;
+                    String name = "blocked client " + new String(it.key(), StandardCharsets.UTF_8);
+                    Long expirationTime = protoVarint(it.value(), BLOCKED_CLIENT_EXPIRATION_TIME_FIELD, name);
+                    // proto3 leaves a 0 out
+                    long expiresAtMs = expirationTime == null ? 0 : expirationTime;
+                    if (expiresAtMs != 0 && expiresAtMs <= bound) {
+                        expiring.add(name + ": expiration time " + Instant.ofEpochMilli(expiresAtMs));
+                    }
+                }
+                it.status();
+            }
+            return count;
+        });
+
         assertThat(deviceEntries).as("device_msg entries").isEqualTo(BROKER_STATE.get(StoreColumnFamily.DEVICE_MSG));
+        assertThat(blocked).as("blocked_client entries").isEqualTo(BROKER_STATE.get(StoreColumnFamily.BLOCKED_CLIENT));
         assertThat(retainedWithInterval).as("retained messages with a Message Expiry Interval").isEqualTo(1);
         assertThat(expiring).as("fixture entries that expire within 10 years").isEmpty();
     }
@@ -236,6 +273,42 @@ class Schema1FixtureUpgradeTest {
             throw new AssertionError("The retained message " + topic + " is not a retained message proto", e);
         }
         throw new AssertionError("The retained message " + topic + " has no created time");
+    }
+
+    /**
+     * The value of the varint field {@code field} of a proto, or {@code null} when the proto leaves it out.
+     */
+    private static Long protoVarint(byte[] proto, int field, String name) {
+        try {
+            CodedInputStream in = CodedInputStream.newInstance(proto);
+            for (int tag = in.readTag(); tag != 0; tag = in.readTag()) {
+                if (WireFormat.getTagFieldNumber(tag) == field) {
+                    return in.readInt64();
+                }
+                in.skipField(tag);
+            }
+            return null;
+        } catch (IOException e) {
+            throw new AssertionError("The " + name + " is not a proto: " + e, e);
+        }
+    }
+
+    /**
+     * The bytes of the length-delimited field {@code field} of a proto, or {@code null} when the proto leaves it out.
+     */
+    private static byte[] protoBytes(byte[] proto, int field, String name) {
+        try {
+            CodedInputStream in = CodedInputStream.newInstance(proto);
+            for (int tag = in.readTag(); tag != 0; tag = in.readTag()) {
+                if (WireFormat.getTagFieldNumber(tag) == field) {
+                    return in.readByteArray();
+                }
+                in.skipField(tag);
+            }
+            return null;
+        } catch (IOException e) {
+            throw new AssertionError("The " + name + " is not a proto: " + e, e);
+        }
     }
 
     private static byte[] meta(Path path, String key) {

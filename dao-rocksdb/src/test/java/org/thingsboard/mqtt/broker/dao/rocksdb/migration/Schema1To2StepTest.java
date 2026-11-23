@@ -114,7 +114,7 @@ class Schema1To2StepTest {
     }
 
     @Test
-    void aStoreWrittenBetweenTheEntityPrsAndThisOneOpens() {
+    void aSchemaOneStoreWithEntitiesAndAKeyButNoSeedMarkerOpens() {
         Path path = dir.resolve("store");
         RocksDbStore writer = open(path, List.of());
         writeWhatDevelopmentBuildsWrote(writer);

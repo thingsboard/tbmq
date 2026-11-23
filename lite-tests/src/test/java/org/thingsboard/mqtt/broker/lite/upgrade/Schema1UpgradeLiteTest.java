@@ -75,10 +75,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class Schema1UpgradeLiteTest extends AbstractControllerTest {
 
     /**
-     * Inside the class rule of the base class, which points {@code store.path} at an empty directory: copies the
-     * fixture into it and gives the pre-upgrade checkpoint a directory of its own.
+     * Copies the fixture into the empty directory the class rule of the base class points {@code store.path} at, and
+     * gives the pre-upgrade checkpoint a directory of its own. The highest order makes it the innermost class rule
+     * (JUnit runs a rule of a higher order inside one of a lower order), so it runs after every class rule of the base
+     * classes, whatever their order.
      */
-    @ClassRule
+    @ClassRule(order = Integer.MAX_VALUE)
     public static final Schema1Store schema1Store = new Schema1Store();
 
     private static final UUID FIXTURE_INSTALL_ID = UUID.fromString("f61b7502-608d-4b6a-a5c0-3ad396336e04");
@@ -272,7 +274,7 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
                     Files.copy(file, store.resolve(file.getFileName()));
                 }
             }
-            backups = Files.createTempDirectory("tbmq-lite-backups");
+            backups = Files.createTempDirectory("tbmq-store-backups");
             previousBackups = System.setProperty(BACKUPS_PATH, backups.toString());
         }
 
