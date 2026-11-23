@@ -711,6 +711,15 @@ public class RocksDbStore {
         }
     }
 
+    /**
+     * The record of an unfinished upgrade, or {@code null} when there is none or it is malformed. An open store normally
+     * holds none: an upgrade finishes before the store is published as open.
+     */
+    public StoreMigrationRunner.UpgradeRecord upgradeRecord() {
+        byte[] stored = get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+        return stored == null ? null : StoreMigrationRunner.UpgradeRecord.decode(stored);
+    }
+
     public StoreMeta meta() {
         acquire(OP_META, null);
         try {
