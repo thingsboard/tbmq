@@ -1242,6 +1242,13 @@ store:
     # Maximum time (in ms of uptime) the age-based cleanups stay postponed by a clock behind the recorded time. When it ends,
     # the current clock is accepted and overwrites the recorded time. Defaults to 24 hours.
     max-postpone-ms: "${STORE_CLOCK_MAX_POSTPONE_MS:86400000}"
+  backups:
+    # Directory of the checkpoints taken before a store upgrade. Defaults to the `backups` folder inside DATA_FOLDER
+    # (`/data` unless set). Keep it on the same volume as the store, because a checkpoint is made of hard links.
+    path: "${STORE_BACKUPS_PATH:${DATA_FOLDER:/data}/backups}"
+    # Number of the checkpoints taken before a store upgrade that are kept. Older ones are deleted after a successful
+    # upgrade. Must be greater than 0, otherwise the start fails.
+    keep: "${STORE_BACKUPS_KEEP:3}"
   device-msg:
     # Maximum number of messages read from a persisted DEVICE client queue in one page.
     read-page-size: "${STORE_DEVICE_MSG_READ_PAGE_SIZE:256}"

@@ -151,6 +151,7 @@
                     <systemPropertyVariables>
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
                         <tbmq.openapi.spec.path>${project.basedir}/../api/openapi.json</tbmq.openapi.spec.path>
+                        <tbmq.fixtures.schema-1.path>${project.basedir}/../dao-rocksdb/src/test/resources/fixtures/schema-1/db</tbmq.fixtures.schema-1.path>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>

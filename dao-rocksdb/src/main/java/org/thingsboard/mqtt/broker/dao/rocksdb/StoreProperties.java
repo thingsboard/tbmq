@@ -36,6 +36,7 @@ public class StoreProperties {
     private Memory memory = new Memory();
     private Disk disk = new Disk();
     private ClockGuard clock = new ClockGuard();
+    private Backups backups = new Backups();
 
     @Data
     public static class Memory {
@@ -81,6 +82,21 @@ public class StoreProperties {
          * uptime).
          */
         private long maxPostponeMs = 86400000L;
+
+    }
+
+    @Data
+    public static class Backups {
+
+        /**
+         * Directory of the checkpoints taken before a store upgrade; on the volume of the store, because a checkpoint
+         * is made of hard links.
+         */
+        private String path;
+        /**
+         * Number of pre-upgrade checkpoints kept; older ones are deleted after a successful upgrade. Must be positive.
+         */
+        private int keep = 3;
 
     }
 

@@ -100,7 +100,7 @@ class RocksDbUnauthorizedClientDaoTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.resolve("watermark").toString());
         DiskSpaceMonitor monitor = new DiskSpaceMonitor(properties, path -> space.get());
-        RocksDbStore watermarkedStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor);
+        RocksDbStore watermarkedStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor, List.of());
         watermarkedStore.open();
         try {
             RocksEntityStore entityStore = new RocksEntityStore(watermarkedStore);

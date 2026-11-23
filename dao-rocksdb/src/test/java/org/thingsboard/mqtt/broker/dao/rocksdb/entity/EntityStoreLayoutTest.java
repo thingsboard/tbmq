@@ -85,7 +85,7 @@ class EntityStoreLayoutTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDbStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        rocksDbStore = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         rocksDbStore.open();
         store = new RocksEntityStore(rocksDbStore);
     }

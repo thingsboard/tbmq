@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
+import org.rocksdb.Checkpoint;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -41,6 +42,9 @@ import org.rocksdb.WriteOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationRunner;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -48,6 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -76,7 +81,7 @@ import java.util.function.LongSupplier;
 @Component
 public class RocksDbStore {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     public static final String PRODUCT = "LITE";
 
     static final byte[] META_SCHEMA_VERSION_KEY = "schema_version".getBytes(StandardCharsets.UTF_8);
@@ -84,6 +89,11 @@ public class RocksDbStore {
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
     static final int JWT_SIGNING_KEY_BYTES = 64;
+    // while an upgrade is unfinished: the 8-byte big-endian latest sequence number of the store right after the last
+    // write of this key, the directory name (UTF-8) of the checkpoint to resume with, one 0x00 byte and the directory
+    // name (UTF-8) of the upgrade's first pre-upgrade checkpoint; removed by the last bump, and by a build that opens the
+    // store at its own schema. A checkpoint taken by a start that could not resume holds the record naming itself
+    static final byte[] META_UPGRADE_CHECKPOINT_KEY = "upgrade_checkpoint".getBytes(StandardCharsets.UTF_8);
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
 
@@ -99,10 +109,12 @@ public class RocksDbStore {
     private static final String OP_WRITE = "write a batch";
     private static final String OP_SYNC_WAL = "sync the WAL";
     private static final String OP_META = "read the meta";
+    private static final String OP_CHECKPOINT = "create a checkpoint";
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
     private final DiskSpaceMonitor diskSpaceMonitor;
+    private final List<StoreMigrationStep> migrationSteps;
     private final LongSupplier nanoClock;
 
     private final Map<StoreColumnFamily, ColumnFamilyHandle> handles = new EnumMap<>(StoreColumnFamily.class);
@@ -119,16 +131,18 @@ public class RocksDbStore {
     private boolean open;
 
     @Autowired
-    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor) {
-        this(properties, memoryBudget, diskSpaceMonitor, System::nanoTime);
+    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor,
+                        List<StoreMigrationStep> migrationSteps) {
+        this(properties, memoryBudget, diskSpaceMonitor, migrationSteps, System::nanoTime);
     }
 
     // the clock is a seam for the test of the slow-close warning
     RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor,
-                 LongSupplier nanoClock) {
+                 List<StoreMigrationStep> migrationSteps, LongSupplier nanoClock) {
         this.properties = properties;
         this.memoryBudget = memoryBudget;
         this.diskSpaceMonitor = diskSpaceMonitor;
+        this.migrationSteps = List.copyOf(migrationSteps);
         this.nanoClock = nanoClock;
     }
 
@@ -152,6 +166,10 @@ public class RocksDbStore {
             throw new StoreException("The store at " + path + " is already open");
         }
         WalSyncMode walSyncMode = WalSyncMode.parse(properties.getWalSync());
+        int keep = properties.getBackups().getKeep();
+        if (keep <= 0) {
+            throw new StoreException("Cannot open the store at " + path + ": store.backups.keep must be positive, but is " + keep);
+        }
         try {
             Files.createDirectories(Path.of(path));
         } catch (IOException e) {
@@ -217,7 +235,157 @@ public class RocksDbStore {
         }
         otherHandles.addAll(opened.subList(known, opened.size()));
         meta = loadOrInitMeta(path);
+        StoreProperties.Backups backups = properties.getBackups();
+        int schemaVersion = new StoreMigrationRunner(migrationSteps, SCHEMA_VERSION, backups.getPath(), backups.getKeep(),
+                Clock.systemUTC()).run(new OpeningStore(path));
+        meta = new StoreMeta(schemaVersion, meta.product(), meta.installId());
+        // after the migrations: also covers a crash between the first meta write and the key
         ensureJwtSigningKey();
+    }
+
+    /**
+     * The store while {@link #doOpen} holds the write lock and before it is published as open: the migrations work on
+     * the raw database, every write synced.
+     */
+    private final class OpeningStore implements StoreMigrationRunner.Target, MigrationContext {
+
+        private final String path;
+
+        private OpeningStore(String path) {
+            this.path = path;
+        }
+
+        @Override
+        public String path() {
+            return path;
+        }
+
+        @Override
+        public int schemaVersion() {
+            return meta.schemaVersion();
+        }
+
+        @Override
+        public long latestSequenceNumber() {
+            return db.getLatestSequenceNumber();
+        }
+
+        @Override
+        public void bumpSchemaVersion(int version, String checkpoint, String origin) {
+            try (WriteBatch batch = new WriteBatch()) {
+                batch.put(handles.get(StoreColumnFamily.META), META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+                writeWithUpgradeRecord(batch, checkpoint, origin);
+            } catch (RocksDBException e) {
+                throw failure(OP_WRITE, StoreColumnFamily.META, e);
+            }
+        }
+
+        @Override
+        public void finishUpgrade(int version) {
+            try (WriteBatch batch = new WriteBatch(); WriteOptions synced = new WriteOptions().setSync(true)) {
+                batch.put(handles.get(StoreColumnFamily.META), META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+                batch.delete(handles.get(StoreColumnFamily.META), META_UPGRADE_CHECKPOINT_KEY);
+                db.write(synced, batch);
+            } catch (RocksDBException e) {
+                throw failure(OP_WRITE, StoreColumnFamily.META, e);
+            }
+        }
+
+        @Override
+        public byte[] upgradeRecord() {
+            return get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+        }
+
+        @Override
+        public void recordUpgradeCheckpoint(String checkpoint, String origin) {
+            try (WriteBatch batch = new WriteBatch()) {
+                writeWithUpgradeRecord(batch, checkpoint, origin);
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, StoreColumnFamily.META, e);
+            }
+        }
+
+        @Override
+        public void removeUpgradeRecord() {
+            delete(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+        }
+
+        /**
+         * Adds the record of the upgrade with {@code checkpoint} and {@code origin} to {@code batch} and writes the batch
+         * with a WAL sync. The record carries the sequence number the store is at right after this write: RocksDB gives
+         * every entry of a batch one sequence number, and nothing else writes while the open holds the write lock. A
+         * different number afterwards is only logged: the next open then finds the store changed and takes a new
+         * checkpoint.
+         */
+        private void writeWithUpgradeRecord(WriteBatch batch, String checkpoint, String origin) throws RocksDBException {
+            long expected = db.getLatestSequenceNumber() + batch.count() + 1;
+            batch.put(handles.get(StoreColumnFamily.META), META_UPGRADE_CHECKPOINT_KEY,
+                    new StoreMigrationRunner.UpgradeRecord(expected, checkpoint, origin).encode());
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.write(synced, batch);
+            }
+            long latest = db.getLatestSequenceNumber();
+            if (latest != expected) {
+                log.debug("The store at {} is at sequence number {} after recording the upgrade checkpoint {} with {}; "
+                        + "the next start will take a new checkpoint", path, latest, checkpoint, expected);
+            }
+        }
+
+        @Override
+        public void checkpoint(Path dir) {
+            RocksDbStore.this.checkpoint(db, dir);
+        }
+
+        @Override
+        public MigrationContext context() {
+            return this;
+        }
+
+        @Override
+        public byte[] get(StoreColumnFamily cf, byte[] key) {
+            try {
+                return db.get(handles.get(cf), key);
+            } catch (RocksDBException e) {
+                throw failure(OP_GET, cf, e);
+            }
+        }
+
+        @Override
+        public void put(StoreColumnFamily cf, byte[] key, byte[] value) {
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.put(handles.get(cf), synced, key, value);
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, cf, e);
+            }
+        }
+
+        @Override
+        public void delete(StoreColumnFamily cf, byte[] key) {
+            try (WriteOptions synced = new WriteOptions().setSync(true)) {
+                db.delete(handles.get(cf), synced, key);
+            } catch (RocksDBException e) {
+                throw failure(OP_DELETE, cf, e);
+            }
+        }
+
+        @Override
+        public <T> T scan(StoreColumnFamily cf, byte[] lo, byte[] hi, Function<RocksIterator, T> reader) {
+            try {
+                return scanRaw(db, cf, lo, hi, reader);
+            } catch (RocksDBException e) {
+                throw failure(OP_SCAN, cf, e);
+            }
+        }
+
+        @Override
+        public void ensureJwtSigningKey() {
+            try {
+                RocksDbStore.this.ensureJwtSigningKey();
+            } catch (RocksDBException e) {
+                throw failure(OP_PUT, StoreColumnFamily.META, e);
+            }
+        }
+
     }
 
     /**
@@ -447,6 +615,17 @@ public class RocksDbStore {
      */
     public <T> T scan(StoreColumnFamily cf, byte[] lowerInclusive, byte[] upperExclusive, Function<RocksIterator, T> reader) {
         RocksDB database = acquire(OP_SCAN, cf);
+        try {
+            return scanRaw(database, cf, lowerInclusive, upperExclusive, reader);
+        } catch (RocksDBException e) {
+            throw failure(OP_SCAN, cf, e);
+        } finally {
+            release();
+        }
+    }
+
+    private <T> T scanRaw(RocksDB database, StoreColumnFamily cf, byte[] lowerInclusive, byte[] upperExclusive,
+                          Function<RocksIterator, T> reader) throws RocksDBException {
         try (Slice lower = lowerInclusive == null ? null : new Slice(lowerInclusive);
              Slice upper = upperExclusive == null ? null : new Slice(upperExclusive);
              ReadOptions readOptions = scanOptions(cf, lower, upper, lowerInclusive, upperExclusive);
@@ -460,10 +639,6 @@ public class RocksDbStore {
             // an iterator that hits a read error just becomes invalid, which looks like the end of the range
             iterator.status();
             return result;
-        } catch (RocksDBException e) {
-            throw failure(OP_SCAN, cf, e);
-        } finally {
-            release();
         }
     }
 
@@ -496,6 +671,43 @@ public class RocksDbStore {
             throw failure(OP_SYNC_WAL, null, e);
         } finally {
             release();
+        }
+    }
+
+    /**
+     * Writes a consistent point-in-time copy of the store into {@code target}, which must not exist; its parent
+     * directories are created. On the volume of the store a checkpoint is made of hard links and costs no extra space
+     * until the store compacts the linked files away. The directory opens as a store.
+     */
+    public void createCheckpoint(Path target) {
+        RocksDB database = acquire(OP_CHECKPOINT, null);
+        try {
+            checkpoint(database, target);
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Takes the checkpoint of an open {@code database}; the caller holds the lock. Takes the raw handle, so that a
+     * caller that is still opening the store can use it before the store is published as open.
+     */
+    private void checkpoint(RocksDB database, Path target) {
+        if (Files.exists(target)) {
+            throw new StoreException("Cannot create a checkpoint of the store at " + properties.getPath()
+                    + ": the target " + target + " already exists");
+        }
+        try {
+            Path parent = target.toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            try (Checkpoint checkpoint = Checkpoint.create(database)) {
+                checkpoint.createCheckpoint(target.toAbsolutePath().toString());
+            }
+        } catch (RocksDBException | IOException e) {
+            throw new StoreException("Failed to create a checkpoint of the store at " + properties.getPath()
+                    + " in " + target + " (check store.backups.path): " + e, e);
         }
     }
 

@@ -52,7 +52,7 @@ class StandaloneDeviceMsgServiceTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
-                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)));
+                new DiskSpaceMonitor(properties, path -> new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE)), List.of());
         rocksDb.open();
         service = new StandaloneDeviceMsgService(new RocksDbDeviceMsgQueueStore(rocksDb, 10, 600, Clock.systemUTC()));
     }

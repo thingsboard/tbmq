@@ -31,7 +31,13 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.CheckpointInfo;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.Schema1To2Step;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationRunner;
+import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -55,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -79,7 +86,7 @@ class RocksDbStoreTest {
         UUID id = open(dir).meta().installId();
         closeAll();
 
-        assertThat(open(dir).meta()).isEqualTo(new StoreMeta(1, "LITE", id));
+        assertThat(open(dir).meta()).isEqualTo(new StoreMeta(2, "LITE", id));
     }
 
     @Test
@@ -113,9 +120,10 @@ class RocksDbStoreTest {
     void aStoreCreatedWithOnlyTheEightPhaseTwoFamiliesOpensAndGainsTheNewOnes() throws RocksDBException {
         List<String> phaseTwo = List.of("meta", "client_session", "client_subscriptions", "retained_msg", "blocked_client",
                 "client_session_attr", "device_msg", "device_msg_meta");
-        createWithFamilies(dir, phaseTwo);
+        Path path = dir.resolve("store");
+        createWithFamilies(path, phaseTwo);
 
-        RocksDbStore store = open(dir);
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
 
         for (StoreColumnFamily cf : List.of(StoreColumnFamily.ENTITY, StoreColumnFamily.ENTITY_INDEX,
                 StoreColumnFamily.SESSION_CTX, StoreColumnFamily.TS, StoreColumnFamily.TS_LATEST)) {
@@ -123,7 +131,225 @@ class RocksDbStoreTest {
             store.put(StoreWriteClass.NEW_DATA, cf, bytes("k"), bytes("v-" + cf.name()));
             assertThat(store.get(cf, bytes("k"))).isEqualTo(bytes("v-" + cf.name()));
         }
-        assertThat(store.meta().schemaVersion()).isEqualTo(1);
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void aFailedMigrationStepStopsTheOpenLeavesTheVersionAndReleasesTheStore() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        StoreMigrationStep failing = new StoreMigrationStep() {
+            @Override
+            public int fromVersion() {
+                return 1;
+            }
+
+            @Override
+            public void apply(MigrationContext ctx) {
+                ctx.put(StoreColumnFamily.ENTITY, bytes("written"), bytes("by the step"));
+                throw new IllegalStateException("boom");
+            }
+        };
+
+        assertThatThrownBy(() -> openMigrating(path, List.of(failing)))
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("Migration from schema 1 to 2 failed: boom");
+        byte[][] storedVersion = new byte[1][];
+        withRawMeta(path, (db, meta) -> storedVersion[0] = db.get(meta, RocksDbStore.META_SCHEMA_VERSION_KEY));
+        assertThat(storedVersion[0]).isEqualTo(new byte[]{0, 0, 0, 1});
+
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        // the step's write was synced before it failed
+        assertThat(store.get(StoreColumnFamily.ENTITY, bytes("written"))).isEqualTo(bytes("by the step"));
+    }
+
+    @Test
+    void aStoreThatNeedsAMigrationWithoutABackupsPathIsRefusedNamingTheSetting() throws RocksDBException {
+        createWithFamilies(dir, List.of("meta"));
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(dir.toString());
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                TestDiskSpaceMonitors.roomy(properties), List.of(new Schema1To2Step()));
+
+        assertThatThrownBy(store::open)
+                .isInstanceOf(StoreException.class)
+                .hasMessageContaining("store.backups.path")
+                .hasMessageContaining(dir.toString());
+    }
+
+    @Test
+    void aFailedStepResumesWithItsCheckpointOnAnUnchangedStore() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        assertThatThrownBy(() -> openMigrating(path, List.of(writingThenFailingStep()))).hasMessageContaining("boom");
+
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        assertThat(store.get(StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
+        assertThat(StoreCheckpoints.list(backups())).extracting(CheckpointInfo::name).containsExactly("pre-upgrade-1-2");
+    }
+
+    @Test
+    void aStoreWrittenAfterAFailedUpgradeGetsANewCheckpointThatHoldsTheWriteAndKeepsTheFirst() throws RocksDBException {
+        Path path = dir.resolve("store");
+        createWithFamilies(path, List.of("meta"));
+        assertThatThrownBy(() -> openMigrating(path, List.of(writingThenFailingStep()))).hasMessageContaining("boom");
+        // the rolled-back older build ignores the record of the upgrade and takes writes
+        withRawFamily(path, StoreColumnFamily.CLIENT_SESSION, (db, cf) -> db.put(cf, bytes("c1"), bytes("by the older build")));
+        ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
+        try {
+            // with store.backups.keep=1 the first checkpoint stays as well
+            openMigrating(path, 1, List.of(new Schema1To2Step()));
+        } finally {
+            releaseLog(StoreMigrationRunner.class, logged);
+        }
+
+        Path first = backups().resolve("pre-upgrade-1-2");
+        List<Path> checkpoints = StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::path).toList();
+        assertThat(checkpoints).hasSize(2).contains(first);
+        Path fresh = checkpoints.stream().filter(checkpoint -> !checkpoint.equals(first)).findFirst().orElseThrow();
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isEqualTo(bytes("by the older build"));
+        assertThat(readOnlyGet(first, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isNull();
+        // recorded before it was taken: the new checkpoint opens and holds the record naming itself, at its own
+        // latest sequence number, with the first checkpoint as the origin
+        long freshSequence = withReadOnly(fresh, (db, handles) -> db.getLatestSequenceNumber());
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY))
+                .isEqualTo(new StoreMigrationRunner.UpgradeRecord(freshSequence, fresh.getFileName().toString(),
+                        "pre-upgrade-1-2").encode());
+        // the first checkpoint was taken before the record
+        assertThat(readOnlyGet(first, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade"));
+    }
+
+    @Test
+    void aStoreStartedFromACheckpointWhoseRecordNamesItselfTakesANewCheckpointBeforeMigrating() throws Exception {
+        Path running = Files.createDirectories(backups()).resolve("pre-upgrade-1-2");
+        createWithFamilies(running, Stream.of(StoreColumnFamily.values()).map(StoreColumnFamily::columnFamilyName).toList());
+        // the record a start that could not resume leaves in its new checkpoint: itself as the checkpoint and the
+        // origin, at the checkpoint's own sequence number
+        withRawMeta(running, (db, meta) -> db.put(meta, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY,
+                new StoreMigrationRunner.UpgradeRecord(db.getLatestSequenceNumber() + 1, "pre-upgrade-1-2", "pre-upgrade-1-2").encode()));
+        ListAppender<ILoggingEvent> runnerLog = captureLog(StoreMigrationRunner.class);
+        ListAppender<ILoggingEvent> retentionLog = captureLog(StoreCheckpoints.class);
+        RocksDbStore store;
+        try {
+            store = openMigrating(running, 1, List.of(new Schema1To2Step()));
+        } finally {
+            releaseLog(StoreMigrationRunner.class, runnerLog);
+            releaseLog(StoreCheckpoints.class, retentionLog);
+        }
+
+        assertThat(store.meta().schemaVersion()).isEqualTo(2);
+        List<Path> checkpoints = StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::path).toList();
+        assertThat(checkpoints).hasSize(2).contains(running);
+        Path fresh = checkpoints.stream().filter(checkpoint -> !checkpoint.equals(running)).findFirst().orElseThrow();
+        // the store before the migration, and the origin of the upgrade
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY)).isEqualTo(new byte[]{0, 0, 0, 1});
+        long freshSequence = withReadOnly(fresh, (db, handles) -> db.getLatestSequenceNumber());
+        String freshName = fresh.getFileName().toString();
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY))
+                .isEqualTo(new StoreMigrationRunner.UpgradeRecord(freshSequence, freshName, freshName).encode());
+        assertThat(runnerLog.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("runs from " + running)
+                        .contains("is the directory the store runs from"));
+        // the directory the store runs from stays
+        assertThat(retentionLog.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("Kept the checkpoint " + running));
+    }
+
+    @Test
+    void aCurrentStoreWithARecordLeftByALaterBuildOpensWithTheRecordRemoved() throws RocksDBException {
+        open(dir);
+        closeAll();
+        // a later build's unfinished upgrade, then a rollback to this build
+        putMetaKey(dir, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY,
+                new StoreMigrationRunner.UpgradeRecord(7, "pre-upgrade-2-3", "pre-upgrade-2-3").encode());
+        ListAppender<ILoggingEvent> logged = captureLog(StoreMigrationRunner.class);
+        RocksDbStore store;
+        try {
+            store = open(dir);
+        } finally {
+            releaseLog(StoreMigrationRunner.class, logged);
+        }
+
+        assertThat(store.get(StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("Removed the record").contains("pre-upgrade-2-3"));
+    }
+
+    private static StoreMigrationStep writingThenFailingStep() {
+        return new StoreMigrationStep() {
+            @Override
+            public int fromVersion() {
+                return 1;
+            }
+
+            @Override
+            public void apply(MigrationContext ctx) {
+                ctx.put(StoreColumnFamily.ENTITY, bytes("written"), bytes("by the step"));
+                throw new IllegalStateException("boom");
+            }
+        };
+    }
+
+    private Path backups() {
+        return dir.resolve("backups");
+    }
+
+    /**
+     * The value of {@code key} in the family {@code cf} of the store or checkpoint at {@code path}, opened read-only.
+     */
+    private static byte[] readOnlyGet(Path path, StoreColumnFamily cf, byte[] key) throws RocksDBException {
+        return withReadOnly(path, (db, handles) -> db.get(handles.get(cf.ordinal() + 1), key));
+    }
+
+    private interface ReadOnlyAction<T> {
+        T run(RocksDB db, List<ColumnFamilyHandle> handles) throws RocksDBException;
+    }
+
+    /**
+     * Opens the store or checkpoint at {@code path} read-only; the handles are the default family's, then one per
+     * {@link StoreColumnFamily} in ordinal order.
+     */
+    private static <T> T withReadOnly(Path path, ReadOnlyAction<T> action) throws RocksDBException {
+        try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
+            List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
+            descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
+            for (StoreColumnFamily family : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(family.columnFamilyName()), options));
+            }
+            List<ColumnFamilyHandle> handles = new ArrayList<>();
+            try (RocksDB raw = RocksDB.openReadOnly(dbOptions, path.toString(), descriptors, handles)) {
+                try {
+                    return action.run(raw, handles);
+                } finally {
+                    handles.forEach(ColumnFamilyHandle::close);
+                }
+            }
+        }
+    }
+
+    private RocksDbStore openMigrating(Path path, List<StoreMigrationStep> steps) {
+        return openMigrating(path, 3, steps);
+    }
+
+    private RocksDbStore openMigrating(Path path, int keep, List<StoreMigrationStep> steps) {
+        StoreProperties properties = new StoreProperties();
+        properties.setPath(path.toString());
+        properties.getBackups().setPath(dir.resolve("backups").toString());
+        properties.getBackups().setKeep(keep);
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                TestDiskSpaceMonitors.roomy(properties), steps);
+        opened.add(store);
+        store.open();
+        return store;
     }
 
     private static void createWithFamilies(Path path, List<String> families) throws RocksDBException {
@@ -169,24 +395,32 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreOfAnotherProductIsRefused() {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        Path path = dir.resolve("store");
+        RocksDbStore store = openMigrating(path, List.of(new Schema1To2Step()));
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_PRODUCT_KEY, bytes("X"));
+        // an older schema too: the refusal comes before any migration
+        store.put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
         closeAll();
 
-        assertThatThrownBy(() -> open(dir))
+        assertThatThrownBy(() -> openMigrating(path, List.of(new Schema1To2Step())))
                 .isInstanceOf(StoreException.class)
                 .hasMessageContaining("product 'X'")
-                .hasMessageContaining(dir.toString());
+                .hasMessageContaining(path.toString());
+        assertThat(dir.resolve("backups")).doesNotExist();
     }
 
     @Test
     void aStoreWithAHigherSchemaVersionIsRefused() {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        Path path = dir.resolve("store");
+        openMigrating(path, List.of(new Schema1To2Step()))
+                .put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
         closeAll();
 
-        assertThatThrownBy(() -> open(dir))
+        assertThatThrownBy(() -> openMigrating(path, List.of(new Schema1To2Step())))
                 .isInstanceOf(StoreException.class)
-                .hasMessageContaining("schema version 2")
-                .hasMessageContaining(dir.toString());
+                .hasMessageContaining("schema version 3")
+                .hasMessageContaining(path.toString());
+        assertThat(dir.resolve("backups")).doesNotExist();
     }
 
     @Test
@@ -353,13 +587,13 @@ class RocksDbStoreTest {
 
     @Test
     void aStoreWithAnUnknownColumnFamilyAndALaterSchemaIsRefusedWithTheSchemaMessage() throws RocksDBException {
-        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 2});
+        open(dir).put(StoreWriteClass.UPDATE, StoreColumnFamily.META, RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 3});
         closeAll();
         addColumnFamily(dir, "future_cf");
 
         assertThatThrownBy(() -> open(dir))
                 .isInstanceOf(StoreException.class)
-                .hasMessageContaining("schema version 2")
+                .hasMessageContaining("schema version 3")
                 .hasMessageContaining(dir.toString());
     }
 
@@ -455,20 +689,24 @@ class RocksDbStoreTest {
         withRawMeta(path, (db, meta) -> db.put(meta, key, value));
     }
 
-    private interface RawMetaAction {
-        void run(RocksDB db, ColumnFamilyHandle meta) throws RocksDBException;
+    private interface RawFamilyAction {
+        void run(RocksDB db, ColumnFamilyHandle cf) throws RocksDBException;
     }
 
-    private static void withRawMeta(Path path, RawMetaAction action) throws RocksDBException {
+    private static void withRawMeta(Path path, RawFamilyAction action) throws RocksDBException {
+        withRawFamily(path, StoreColumnFamily.META, action);
+    }
+
+    private static void withRawFamily(Path path, StoreColumnFamily cf, RawFamilyAction action) throws RocksDBException {
         try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
             List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
             descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
-            for (StoreColumnFamily cf : StoreColumnFamily.values()) {
-                descriptors.add(new ColumnFamilyDescriptor(bytes(cf.columnFamilyName()), options));
+            for (StoreColumnFamily family : StoreColumnFamily.values()) {
+                descriptors.add(new ColumnFamilyDescriptor(bytes(family.columnFamilyName()), options));
             }
             List<ColumnFamilyHandle> handles = new ArrayList<>();
             try (RocksDB raw = RocksDB.open(dbOptions, path.toString(), descriptors, handles)) {
-                action.run(raw, handles.get(StoreColumnFamily.META.ordinal() + 1));
+                action.run(raw, handles.get(cf.ordinal() + 1));
                 handles.forEach(ColumnFamilyHandle::close);
             }
         }
@@ -628,7 +866,15 @@ class RocksDbStoreTest {
     }
 
     private ListAppender<ILoggingEvent> captureStoreLog() {
-        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+        return captureLog(RocksDbStore.class);
+    }
+
+    private void releaseStoreLog(ListAppender<ILoggingEvent> appender) {
+        releaseLog(RocksDbStore.class, appender);
+    }
+
+    private static ListAppender<ILoggingEvent> captureLog(Class<?> source) {
+        Logger logger = (Logger) LoggerFactory.getLogger(source);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
@@ -636,8 +882,8 @@ class RocksDbStoreTest {
         return appender;
     }
 
-    private void releaseStoreLog(ListAppender<ILoggingEvent> appender) {
-        Logger logger = (Logger) LoggerFactory.getLogger(RocksDbStore.class);
+    private static void releaseLog(Class<?> source, ListAppender<ILoggingEvent> appender) {
+        Logger logger = (Logger) LoggerFactory.getLogger(source);
         logger.detachAppender(appender);
         logger.setAdditive(true);
     }
@@ -646,10 +892,25 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync("periodic");
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), nanoClock);
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of(), nanoClock);
         opened.add(store);
         store.open();
         return store;
+    }
+
+    @Test
+    void aNonPositiveBackupsKeepFailsTheOpenNamingTheSetting() {
+        for (int keep : new int[]{0, -1}) {
+            StoreProperties properties = new StoreProperties();
+            properties.setPath(dir.toString());
+            properties.getBackups().setKeep(keep);
+            RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
+                    TestDiskSpaceMonitors.roomy(properties), List.of());
+
+            assertThatThrownBy(store::open)
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining("store.backups.keep");
+        }
     }
 
     private RocksDbStore open(Path path) {
@@ -660,7 +921,7 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync(walSync);
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         opened.add(store);
         store.open();
         return store;

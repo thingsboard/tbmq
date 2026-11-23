@@ -86,7 +86,7 @@ class StoreClockGuardTest {
         properties.setPath(dir.toString());
         // long enough that the scheduled recording never runs during a test: the tests record by hand
         properties.getClock().setRecordIntervalMs(HOUR_MS);
-        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
+        store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), List.of());
         store.open();
         guardLogger = (Logger) LoggerFactory.getLogger(StoreClockGuard.class);
         logged = new ListAppender<>();
