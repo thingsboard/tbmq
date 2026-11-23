@@ -228,6 +228,19 @@ class StoreMigrationRunnerTest {
     }
 
     @Test
+    void theCheckpointOfThisRunIsKeptEvenWhenItLooksOlderThanTheOthers() throws Exception {
+        // a newer modification time than the one the checkpoint of this run gets
+        Path other = Files.createDirectories(backups().resolve("pre-upgrade-0-1"));
+        Files.setLastModifiedTime(other, FileTime.from(Instant.now().plusSeconds(365L * 24 * 3600)));
+        FakeStore store = new FakeStore(1);
+
+        new StoreMigrationRunner(List.of(new RecordingStep(1, store)), 2, backups().toString(), 1, CLOCK).run(store);
+
+        assertThat(backups().resolve("pre-upgrade-1-2")).isDirectory();
+        assertThat(other).doesNotExist();
+    }
+
+    @Test
     void aFailedRetentionAfterTheLastBumpIsLoggedAndStartupContinues() throws Exception {
         Path old = Files.createDirectories(backups().resolve("pre-upgrade-0-1"));
         Path locked = Files.createDirectories(old.resolve("locked"));

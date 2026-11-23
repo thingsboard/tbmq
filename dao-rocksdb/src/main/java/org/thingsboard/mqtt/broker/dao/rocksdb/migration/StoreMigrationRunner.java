@@ -30,10 +30,11 @@ import java.util.TreeMap;
  * left alone. An older one gets one checkpoint {@code pre-upgrade-<from>-<to>} under {@code store.backups.path} before
  * any step runs; then each step runs in version order and the stored version is bumped after each, so a store from
  * several versions back runs every step and a crash before a bump reruns only that step. After the last bump the
- * oldest checkpoints beyond {@code store.backups.keep} are deleted.
+ * oldest checkpoints beyond {@code store.backups.keep} are deleted; the checkpoint of this run is always kept.
  * <p>
- * A step outside the schemas this build migrates, two steps from one schema, a missing step, a missing backups path, a failed checkpoint and a failed step stop the open; the store stays at the
- * last version reached. A failed deletion of old checkpoints is only logged: the store is migrated by then.
+ * A step outside the schemas this build migrates, two steps from one schema, a missing step, a missing backups path,
+ * a failed checkpoint and a failed step stop the open; the store stays at the last version reached. A failed deletion
+ * of old checkpoints is only logged: the store is migrated by then.
  */
 @Slf4j
 public class StoreMigrationRunner {
@@ -114,7 +115,7 @@ public class StoreMigrationRunner {
             log.info("Migrated the store at {} from schema {} to {}", target.path(), version, version + 1);
         }
         try {
-            StoreCheckpoints.retainNewest(backups, keep);
+            StoreCheckpoints.retainNewest(backups, keep, checkpoint);
         } catch (RuntimeException e) {
             log.warn("The store at {} is migrated to schema {}, but the old checkpoints in {} (store.backups.path) "
                     + "could not be deleted", target.path(), targetVersion, backups, e);

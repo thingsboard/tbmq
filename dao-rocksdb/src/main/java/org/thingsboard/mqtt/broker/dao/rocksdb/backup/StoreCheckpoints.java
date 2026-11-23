@@ -27,18 +27,24 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
  * The checkpoints taken before a store upgrade, kept as {@code pre-upgrade-*} directories under
- * {@code store.backups.path}. Works on the file system only; it never opens a store. Other entries of the directory
- * are never touched.
+ * {@code store.backups.path}. Works on the file system only; it never opens a store. Only the directories named
+ * exactly as {@link #preUpgradeDir} names them are checkpoints; other entries of the directory, such as the
+ * {@code .tmp} staging directory a crash during a checkpoint leaves behind, are never touched.
  */
 @Slf4j
 public final class StoreCheckpoints {
 
     static final String PRE_UPGRADE_PREFIX = "pre-upgrade-";
+    // pre-upgrade-<from>-<to>, optionally -<yyyyMMdd-HHmmss>, optionally -<n> when that one is taken as well
+    private static final Pattern CHECKPOINT_NAME = Pattern.compile(
+            Pattern.quote(PRE_UPGRADE_PREFIX) + "\\d+-\\d+(-\\d{8}-\\d{6}(-\\d+)?)?");
 
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
     // newest first by modification time; equal times fall back to the name, descending
@@ -51,19 +57,25 @@ public final class StoreCheckpoints {
     /**
      * The directory for a checkpoint taken before upgrading from schema {@code from} to {@code to}:
      * {@code pre-upgrade-<from>-<to>}, or {@code pre-upgrade-<from>-<to>-<yyyyMMdd-HHmmss>} (UTC) when that one is
-     * taken. Only computes the path.
+     * taken, or that name with the first free suffix {@code -2}, {@code -3}, ... when that one is taken as well. Only
+     * computes the path.
      */
     public static Path preUpgradeDir(Path backupsPath, int from, int to, Clock clock) {
         String name = PRE_UPGRADE_PREFIX + from + "-" + to;
         Path path = backupsPath.resolve(name);
-        if (Files.exists(path)) {
-            path = backupsPath.resolve(name + "-" + TIMESTAMP.format(clock.instant()));
+        if (!Files.exists(path)) {
+            return path;
+        }
+        String timestamped = name + "-" + TIMESTAMP.format(clock.instant());
+        path = backupsPath.resolve(timestamped);
+        for (int suffix = 2; Files.exists(path); suffix++) {
+            path = backupsPath.resolve(timestamped + "-" + suffix);
         }
         return path;
     }
 
     /**
-     * The {@code pre-upgrade-*} directories of {@code backupsPath}, newest first. A missing directory has none.
+     * The checkpoint directories of {@code backupsPath}, newest first. A missing directory has none.
      */
     public static List<CheckpointInfo> list(Path backupsPath) {
         if (!Files.isDirectory(backupsPath)) {
@@ -71,7 +83,7 @@ public final class StoreCheckpoints {
         }
         try (Stream<Path> entries = Files.list(backupsPath)) {
             return entries
-                    .filter(path -> path.getFileName().toString().startsWith(PRE_UPGRADE_PREFIX))
+                    .filter(path -> CHECKPOINT_NAME.matcher(path.getFileName().toString()).matches())
                     .filter(Files::isDirectory)
                     .map(StoreCheckpoints::describe)
                     .sorted(NEWEST_FIRST)
@@ -82,15 +94,32 @@ public final class StoreCheckpoints {
     }
 
     /**
-     * Deletes all but the {@code keep} newest {@code pre-upgrade-*} directories of {@code backupsPath}.
+     * Deletes all but the {@code keep} newest checkpoint directories of {@code backupsPath}.
      */
     public static void retainNewest(Path backupsPath, int keep) {
-        List<CheckpointInfo> checkpoints = list(backupsPath);
-        int kept = Math.min(Math.max(keep, 0), checkpoints.size());
-        for (CheckpointInfo checkpoint : checkpoints.subList(kept, checkpoints.size())) {
+        retainNewest(backupsPath, keep, null);
+    }
+
+    /**
+     * Deletes all but {@code keep} checkpoint directories of {@code backupsPath}: {@code protect}, when it is one of
+     * them, and the newest of the others. {@code protect} is never deleted, so the checkpoint just taken survives a
+     * clock that was behind when it was taken or a modification time of an older one moved forward.
+     */
+    public static void retainNewest(Path backupsPath, int keep, Path protect) {
+        List<CheckpointInfo> others = new ArrayList<>(list(backupsPath));
+        int kept = Math.max(keep, 0);
+        if (protect != null && others.removeIf(checkpoint -> isSameDir(checkpoint.path(), protect))) {
+            kept = Math.max(kept - 1, 0);
+        }
+        kept = Math.min(kept, others.size());
+        for (CheckpointInfo checkpoint : others.subList(kept, others.size())) {
             deleteRecursively(checkpoint.path());
             log.info("Deleted the old checkpoint {}", checkpoint.path());
         }
+    }
+
+    private static boolean isSameDir(Path a, Path b) {
+        return a.toAbsolutePath().normalize().equals(b.toAbsolutePath().normalize());
     }
 
     private static CheckpointInfo describe(Path path) {

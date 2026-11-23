@@ -641,7 +641,7 @@ public class RocksDbStore {
             }
         } catch (RocksDBException | IOException e) {
             throw new StoreException("Failed to create a checkpoint of the store at " + properties.getPath()
-                    + " in " + target + ": " + e.getMessage(), e);
+                    + " in " + target + " (check store.backups.path): " + e, e);
         }
     }
 

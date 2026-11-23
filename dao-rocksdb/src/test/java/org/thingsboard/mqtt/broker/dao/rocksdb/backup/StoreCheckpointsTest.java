@@ -39,6 +39,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class StoreCheckpointsTest {
 
@@ -90,6 +91,25 @@ class StoreCheckpointsTest {
     }
 
     @Test
+    void aCheckpointThatCannotBeWrittenFailsNamingTheCauseAndTheSetting() throws IOException {
+        RocksDbStore store = open(dir.resolve("db"));
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        assertThat(backups.toFile().setWritable(false)).isTrue();
+        try {
+            assumeFalse(Files.isWritable(backups), "running as a user that ignores directory permissions");
+            Path target = backups.resolve("nested").resolve("pre-upgrade-1-2");
+
+            assertThatThrownBy(() -> store.createCheckpoint(target))
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining(target.toString())
+                    .hasMessageContaining("store.backups.path")
+                    .hasMessageContaining("AccessDeniedException");
+        } finally {
+            backups.toFile().setWritable(true);
+        }
+    }
+
+    @Test
     void preUpgradeDirNamesTheVersionsAndOnlyComputesThePath() {
         Path backups = dir.resolve("backups");
 
@@ -107,6 +127,20 @@ class StoreCheckpointsTest {
         Path second = StoreCheckpoints.preUpgradeDir(backups, 1, 2, clock());
 
         assertThat(second).isEqualTo(backups.resolve("pre-upgrade-1-2-20261123-080509"));
+    }
+
+    @Test
+    void aTakenTimestampedNameGetsTheFirstFreeNumericSuffix() throws IOException {
+        Path backups = dir.resolve("backups");
+        Files.createDirectories(backups.resolve("pre-upgrade-1-2"));
+        Files.createDirectories(backups.resolve("pre-upgrade-1-2-20261123-080509"));
+
+        Path third = StoreCheckpoints.preUpgradeDir(backups, 1, 2, clock());
+        assertThat(third).isEqualTo(backups.resolve("pre-upgrade-1-2-20261123-080509-2"));
+        Files.createDirectories(third);
+
+        assertThat(StoreCheckpoints.preUpgradeDir(backups, 1, 2, clock()))
+                .isEqualTo(backups.resolve("pre-upgrade-1-2-20261123-080509-3"));
     }
 
     @Test
@@ -134,6 +168,36 @@ class StoreCheckpointsTest {
                 new CheckpointInfo("pre-upgrade-2-3", Instant.ofEpochSecond(3000), b),
                 new CheckpointInfo("pre-upgrade-3-4", Instant.ofEpochSecond(2000), c),
                 new CheckpointInfo("pre-upgrade-1-2", Instant.ofEpochSecond(1000), a));
+    }
+
+    @Test
+    void onlyTheNamesPreUpgradeDirGivesAreCheckpoints() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        checkpointDir(backups, "pre-upgrade-1-2", 1000);
+        checkpointDir(backups, "pre-upgrade-1-2-20261123-080509", 2000);
+        checkpointDir(backups, "pre-upgrade-1-2-20261123-080509-2", 3000);
+        // the staging directory RocksDB leaves behind when a checkpoint is interrupted, and lookalikes
+        for (String name : List.of("pre-upgrade-1-2.tmp", "pre-upgrade-1-2-20261123-080509.tmp", "pre-upgrade-x-2",
+                "pre-upgrade-1-2-old", "pre-upgrade-1-2-2026-080509", "pre-upgrade-1-2-20261123-080509-")) {
+            checkpointDir(backups, name, 1);
+        }
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::name).containsExactly(
+                "pre-upgrade-1-2-20261123-080509-2", "pre-upgrade-1-2-20261123-080509", "pre-upgrade-1-2");
+    }
+
+    @Test
+    void retainNewestNeverDeletesAStagingDirectory() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path staging = checkpointDir(backups, "pre-upgrade-1-2.tmp", 1);
+        checkpointDir(backups, "pre-upgrade-2-3", 2000);
+        checkpointDir(backups, "pre-upgrade-3-4", 3000);
+
+        StoreCheckpoints.retainNewest(backups, 1);
+
+        assertThat(staging).isDirectory();
+        assertThat(backups.resolve("pre-upgrade-2-3")).doesNotExist();
+        assertThat(backups.resolve("pre-upgrade-3-4")).isDirectory();
     }
 
     @Test
@@ -195,6 +259,44 @@ class StoreCheckpointsTest {
         StoreCheckpoints.retainNewest(dir.resolve("missing"), 3);
 
         assertThat(StoreCheckpoints.list(backups)).hasSize(1);
+    }
+
+    @Test
+    void retainNewestNeverDeletesTheProtectedCheckpointEvenWhenItLooksOldest() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        // taken with a clock that was behind: it looks older than every other checkpoint
+        Path current = checkpointDir(backups, "pre-upgrade-4-5", 500);
+        checkpointDir(backups, "pre-upgrade-1-2", 1000);
+        checkpointDir(backups, "pre-upgrade-2-3", 2000);
+        checkpointDir(backups, "pre-upgrade-3-4", 3000);
+
+        StoreCheckpoints.retainNewest(backups, 2, current);
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::name)
+                .containsExactly("pre-upgrade-3-4", "pre-upgrade-4-5");
+    }
+
+    @Test
+    void retainNewestWithKeepOneKeepsOnlyTheProtectedCheckpoint() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        Path current = checkpointDir(backups, "pre-upgrade-2-3", 500);
+        checkpointDir(backups, "pre-upgrade-1-2", 1000);
+
+        // a relative, unnormalized path names the same directory
+        StoreCheckpoints.retainNewest(backups, 1, dir.resolve("backups/./pre-upgrade-2-3"));
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(current);
+    }
+
+    @Test
+    void retainNewestWithAProtectedPathThatIsNoCheckpointKeepsTheNewest() throws IOException {
+        Path backups = Files.createDirectories(dir.resolve("backups"));
+        checkpointDir(backups, "pre-upgrade-1-2", 1000);
+        checkpointDir(backups, "pre-upgrade-2-3", 2000);
+
+        StoreCheckpoints.retainNewest(backups, 1, backups.resolve("pre-upgrade-9-10"));
+
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::name).containsExactly("pre-upgrade-2-3");
     }
 
     private static Path checkpointDir(Path backups, String name, long modifiedEpochSecond) throws IOException {
