@@ -31,11 +31,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Streams a gzip-compressed POSIX ustar archive of regular files to an output stream, through a fixed buffer, so an
- * archive of any size never sits in memory. Each entry is a regular file. A file added from disk keeps its permission
+ * Streams a gzip-compressed POSIX ustar archive of regular files and directories to an output stream, through a fixed
+ * buffer, so an archive of any size never sits in memory. A file or directory added from disk keeps its permission
  * bits and its numeric owner and group, with empty owner and group names, so {@code tar -x} as root restores the owner
- * of the source and as another user gives the files to that user; where the file system has no unix attributes the
- * entry gets mode 0644 and owner 0:0, as does an entry added from bytes.
+ * of the source and as another user gives the entries to that user; where the file system has no unix attributes a
+ * file gets mode 0644, a directory 0755, and both owner 0:0, as does an entry added from bytes.
  * <p>
  * An entry name of up to 100 bytes (UTF-8) goes into the name field; a longer one is split at a {@code /} into the
  * prefix field (up to 155 bytes) and the name field, and one that cannot be split so is refused. A size up to
@@ -53,6 +53,7 @@ public final class TarGzWriter implements Closeable {
     private static final int PREFIX_LENGTH = 155;
     private static final int BUFFER_SIZE = 64 * 1024;
     private static final int DEFAULT_MODE = 0644;
+    private static final int DEFAULT_DIRECTORY_MODE = 0755;
     private static final int PERMISSION_BITS = 07777;
 
     private static final int NAME_OFFSET = 0;
@@ -68,6 +69,7 @@ public final class TarGzWriter implements Closeable {
     private static final int MAGIC_OFFSET = 257;
     private static final int PREFIX_OFFSET = 345;
     private static final byte REGULAR_FILE = '0';
+    private static final byte DIRECTORY = '5';
     private static final byte[] MAGIC = "ustar\0".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] VERSION = "00".getBytes(StandardCharsets.US_ASCII);
 
@@ -99,8 +101,9 @@ public final class TarGzWriter implements Closeable {
             throw new IllegalArgumentException("Cannot add " + file + " to the archive: not a regular file");
         }
         long size = attributes.size();
-        Owner owner = Owner.of(file);
-        gzip.write(header(name, size, attributes.lastModifiedTime().to(TimeUnit.SECONDS), owner.mode(), owner.uid(), owner.gid()));
+        Owner owner = Owner.of(file, DEFAULT_MODE);
+        gzip.write(header(name, size, attributes.lastModifiedTime().to(TimeUnit.SECONDS), owner.mode(), owner.uid(),
+                owner.gid(), REGULAR_FILE));
         long copied = 0;
         try (InputStream in = Files.newInputStream(file)) {
             while (copied < size) {
@@ -119,11 +122,30 @@ public final class TarGzWriter implements Closeable {
     }
 
     /**
+     * Adds the directory {@code directory} as {@code name}, with a {@code /} appended when it has none, and with the
+     * directory's modification time but none of its entries. Add a directory before the files under it, so that
+     * {@code tar -x} creates it with its own mode and owner rather than as the extracting user with the default mode.
+     *
+     * @throws IllegalArgumentException when {@code directory} is not a directory or {@code name} does not fit ustar
+     * @throws IOException              when {@code directory} cannot be read or the output stream fails
+     */
+    public void addDirectory(String name, Path directory) throws IOException {
+        ensureWritable();
+        BasicFileAttributes attributes = Files.readAttributes(directory, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        if (!attributes.isDirectory()) {
+            throw new IllegalArgumentException("Cannot add " + directory + " to the archive as a directory: not a directory");
+        }
+        Owner owner = Owner.of(directory, DEFAULT_DIRECTORY_MODE);
+        gzip.write(header(name.endsWith("/") ? name : name + "/", 0, attributes.lastModifiedTime().to(TimeUnit.SECONDS),
+                owner.mode(), owner.uid(), owner.gid(), DIRECTORY));
+    }
+
+    /**
      * Adds {@code content} as the regular file {@code name}, modified now.
      */
     public void addBytes(String name, byte[] content) throws IOException {
         ensureWritable();
-        gzip.write(header(name, content.length, Instant.now().getEpochSecond(), DEFAULT_MODE, 0, 0));
+        gzip.write(header(name, content.length, Instant.now().getEpochSecond(), DEFAULT_MODE, 0, 0, REGULAR_FILE));
         gzip.write(content);
         pad(content.length);
     }
@@ -175,6 +197,13 @@ public final class TarGzWriter implements Closeable {
     }
 
     static byte[] header(String name, long size, long mtimeEpochSecond, int mode, long uid, long gid) {
+        return header(name, size, mtimeEpochSecond, mode, uid, gid, REGULAR_FILE);
+    }
+
+    /**
+     * The ustar header block of an entry of the given type: {@code '0'} a regular file, {@code '5'} a directory.
+     */
+    static byte[] header(String name, long size, long mtimeEpochSecond, int mode, long uid, long gid, byte type) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative size " + size + " of the archive entry " + name);
         }
@@ -185,7 +214,7 @@ public final class TarGzWriter implements Closeable {
         putNumber(header, GID_OFFSET, 8, gid);
         putNumber(header, SIZE_OFFSET, SIZE_LENGTH, size);
         putOctal(header, MTIME_OFFSET, 12, Math.max(mtimeEpochSecond, 0));
-        header[TYPE_OFFSET] = REGULAR_FILE;
+        header[TYPE_OFFSET] = type;
         System.arraycopy(MAGIC, 0, header, MAGIC_OFFSET, MAGIC.length);
         System.arraycopy(VERSION, 0, header, MAGIC_OFFSET + MAGIC.length, VERSION.length);
         // the checksum is computed with its own field as spaces, then written as 6 octal digits, NUL and space
@@ -265,18 +294,18 @@ public final class TarGzWriter implements Closeable {
     }
 
     /**
-     * The permission bits and the numeric owner and group of a file, from its unix attributes; mode 0644 and 0:0 where
-     * the file system has none.
+     * The permission bits and the numeric owner and group of a file or directory, from its unix attributes; the given
+     * default mode and 0:0 where the file system has none.
      */
     record Owner(int mode, long uid, long gid) {
 
-        static Owner of(Path file) {
+        static Owner of(Path file, int defaultMode) {
             try {
                 Map<String, Object> unix = Files.readAttributes(file, "unix:mode,uid,gid", LinkOption.NOFOLLOW_LINKS);
                 return new Owner((Integer) unix.get("mode"), ((Number) unix.get("uid")).longValue(),
                         ((Number) unix.get("gid")).longValue());
             } catch (UnsupportedOperationException | IllegalArgumentException | IOException e) {
-                return new Owner(DEFAULT_MODE, 0, 0);
+                return new Owner(defaultMode, 0, 0);
             }
         }
 

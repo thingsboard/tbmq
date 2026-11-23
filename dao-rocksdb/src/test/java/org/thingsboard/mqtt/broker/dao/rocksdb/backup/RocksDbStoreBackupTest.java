@@ -85,6 +85,8 @@ class RocksDbStoreBackupTest {
             backup(store).write(out);
         }
 
+        // db/ has its own entry, so tar -x gives it the checkpoint directory's mode and owner, not the extracting user's
+        assertThat(SystemTar.list(archive).output()).containsPattern("(?m)^d\\S+ .* db/$");
         Path extracted = Files.createDirectory(dir.resolve("restored"));
         SystemTar.extract(archive, extracted);
         assertThat(names(extracted)).containsExactlyInAnyOrder(RocksDbStoreBackup.MANIFEST_NAME, "db");

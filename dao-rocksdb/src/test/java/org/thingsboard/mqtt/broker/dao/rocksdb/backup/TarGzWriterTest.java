@@ -156,6 +156,68 @@ class TarGzWriterTest {
     }
 
     @Test
+    void aDirectoryEntryKeepsTheModeAndTheNumericOwnerOfItsSourceDirectory() throws IOException {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("unix"), "no unix file attributes");
+        Path source = Files.createDirectory(dir.resolve("checkpoint"));
+        Files.setPosixFilePermissions(source, PosixFilePermissions.fromString("rwx------"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try (TarGzWriter tar = new TarGzWriter(out)) {
+            tar.addDirectory("db", source);
+            tar.finish();
+        }
+
+        byte[] archive;
+        try (InputStream in = new GZIPInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+            archive = in.readAllBytes();
+        }
+        // a trailing slash, type '5', no content: the next block is the end of the archive
+        assertThat(new String(archive, 0, 100, StandardCharsets.UTF_8).replace("\0", "")).isEqualTo("db/");
+        assertThat(archive[156]).as("type").isEqualTo((byte) '5');
+        assertThat(octal(archive, 124, 12)).as("size").isZero();
+        assertThat(octal(archive, 100, 8)).as("mode").isEqualTo(0700);
+        assertThat(octal(archive, 108, 8)).as("uid").isEqualTo(((Number) Files.getAttribute(source, "unix:uid")).longValue());
+        assertThat(octal(archive, 116, 8)).as("gid").isEqualTo(((Number) Files.getAttribute(source, "unix:gid")).longValue());
+        assertThat(Arrays.copyOfRange(archive, 265, 265 + 64)).as("owner and group names").containsOnly(0);
+        assertThat(Arrays.copyOfRange(archive, TarGzWriter.BLOCK, 3 * TarGzWriter.BLOCK)).containsOnly(0);
+    }
+
+    @Test
+    void systemTarCreatesTheDirectoryWithItsModeAndOwner() throws IOException {
+        SystemTar.assumeAvailable();
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("unix"), "no unix file attributes");
+        Path source = Files.createDirectory(dir.resolve("checkpoint"));
+        Path file = Files.write(source.resolve("CURRENT"), bytes("MANIFEST-000005\n"));
+        Files.setPosixFilePermissions(source, PosixFilePermissions.fromString("rwx------"));
+        Path archive = dir.resolve("dir.tar.gz");
+
+        try (OutputStream out = Files.newOutputStream(archive); TarGzWriter tar = new TarGzWriter(out)) {
+            tar.addDirectory("db/", source);
+            tar.addFile("db/CURRENT", file);
+            tar.finish();
+        }
+
+        Path extracted = Files.createDirectory(dir.resolve("out"));
+        SystemTar.extract(archive, extracted);
+        Path db = extracted.resolve("db");
+        assertThat(db).isDirectory();
+        assertThat(PosixFilePermissions.toString(Files.getPosixFilePermissions(db))).isEqualTo("rwx------");
+        // as root tar restores the numeric owner; as another user it is that user, who also owns the source here
+        assertThat(Files.getAttribute(db, "unix:uid")).isEqualTo(Files.getAttribute(source, "unix:uid"));
+        assertThat(Files.getAttribute(db, "unix:gid")).isEqualTo(Files.getAttribute(source, "unix:gid"));
+        assertThat(db.resolve("CURRENT")).hasBinaryContent(bytes("MANIFEST-000005\n"));
+    }
+
+    @Test
+    void onlyDirectoriesAreAddedAsDirectories() throws IOException {
+        Path file = Files.write(dir.resolve("file"), bytes("f"));
+        TarGzWriter tar = new TarGzWriter(new ByteArrayOutputStream());
+
+        assertThatThrownBy(() -> tar.addDirectory("db/", file)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not a directory");
+    }
+
+    @Test
     void anIdBeyondTheOctalFieldIsWrittenInBase256() {
         byte[] header = TarGzWriter.header("x", 0, 0, 0644, 3_000_000L, 7);
 

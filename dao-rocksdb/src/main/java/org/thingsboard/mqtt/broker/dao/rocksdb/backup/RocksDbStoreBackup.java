@@ -52,8 +52,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Backs up the store as a {@code .tar.gz} archive: a {@value #MANIFEST_NAME} that names the store, then every file of
- * a checkpoint of the store under {@code db/}. {@link #reserve()} takes the checkpoint into
+ * Backs up the store as a {@code .tar.gz} archive: a {@value #MANIFEST_NAME} that names the store, then the
+ * {@code db/} directory with the mode and owner of the checkpoint's directory, then every file of the checkpoint under
+ * it. {@link #reserve()} takes the checkpoint into
  * {@code <store.backups.path>/tmp-backup-<uuid>}; it is deleted once the archive is written or fails, also when the
  * output stream fails because the client is gone, or when the reservation is closed without writing.
  * The extracted {@code db} directory opens as a store. One backup runs at a time.
@@ -184,10 +185,13 @@ public class RocksDbStoreBackup implements StoreBackup {
         return Path.of(configured);
     }
 
-    private void writeArchive(byte[] manifest, List<Path> files, OutputStream out) throws IOException {
+    private void writeArchive(byte[] manifest, Path checkpoint, List<Path> files, OutputStream out) throws IOException {
         long startNs = System.nanoTime();
         try (TarGzWriter tar = new TarGzWriter(out)) {
             tar.addBytes(MANIFEST_NAME, manifest);
+            // its own entry, before its files: otherwise tar -x as root creates db/ as root with mode 0755, and a
+            // broker that runs as another user cannot create its LOCK, LOG and WAL files there
+            tar.addDirectory(DB_PREFIX, checkpoint);
             for (Path file : files) {
                 tar.addFile(DB_PREFIX + file.getFileName(), file);
             }
@@ -288,7 +292,7 @@ public class RocksDbStoreBackup implements StoreBackup {
                 throw new IllegalStateException("This backup reservation was already used or released");
             }
             try {
-                writeArchive(manifest, files, out);
+                writeArchive(manifest, checkpoint, files, out);
             } finally {
                 release();
             }
